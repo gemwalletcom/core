@@ -4,6 +4,8 @@ use std::time::Duration;
 use gem_tracing::info_with_fields;
 use tokio::sync::watch;
 
+pub use job_runner::sleep_or_shutdown;
+
 pub type ShutdownSender = Arc<watch::Sender<bool>>;
 pub type ShutdownReceiver = watch::Receiver<bool>;
 

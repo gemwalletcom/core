@@ -68,6 +68,10 @@ pub struct Postgres {
 pub struct RabbitMQ {
     pub url: String,
     pub prefetch: u16,
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub retry_delay: Duration,
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub retry_max_delay: Duration,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -199,6 +203,7 @@ pub struct UD {
 #[allow(unused)]
 pub struct Metrics {
     pub path: String,
+    pub redis: Redis,
 }
 
 #[derive(Debug, Deserialize, Clone)]

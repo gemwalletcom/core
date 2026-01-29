@@ -33,9 +33,9 @@ pub use store_prices_consumer::StorePricesConsumer;
 pub use store_transactions_consumer::StoreTransactionsConsumer;
 pub use store_transactions_consumer_config::StoreTransactionsConsumerConfig;
 use streamer::{
-    AssetsAddressPayload, ChainAddressPayload, ChartsPayload, ConsumerConfig, FetchAssetsPayload, FetchBlocksPayload, FetchPricesPayload, FiatWebhookPayload,
-    InAppNotificationPayload, PricesPayload, QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, ShutdownReceiver, StreamConnection, StreamProducer, StreamReader,
-    StreamReaderConfig, SupportWebhookPayload, TransactionsPayload, run_consumer,
+    AssetsAddressPayload, ChainAddressPayload, ChartsPayload, ConsumerConfig, ConsumerStatusReporter, FetchAssetsPayload, FetchBlocksPayload, FetchPricesPayload,
+    FiatWebhookPayload, InAppNotificationPayload, PricesPayload, QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, ShutdownReceiver, StreamConnection,
+    StreamProducer, StreamProducerConfig, StreamReader, StreamReaderConfig, SupportWebhookPayload, TransactionsPayload, run_consumer,
 };
 
 use crate::consumers::{
@@ -74,10 +74,11 @@ struct ChainConsumerRunner {
     cacher: CacherClient,
     config: ConsumerConfig,
     shutdown_rx: ShutdownReceiver,
+    reporter: Arc<dyn ConsumerStatusReporter>,
 }
 
 impl ChainConsumerRunner {
-    async fn new(settings: Settings, queue: QueueName, shutdown_rx: ShutdownReceiver) -> Result<Self, Box<dyn Error + Send + Sync>> {
+    async fn new(settings: Settings, queue: QueueName, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<Self, Box<dyn Error + Send + Sync>> {
         let database = Database::new(&settings.postgres.url, settings.postgres.pool);
         let connection = StreamConnection::new(&settings.rabbitmq.url, queue.to_string()).await?;
         let cacher = CacherClient::new(&settings.redis.url).await;
@@ -89,6 +90,7 @@ impl ChainConsumerRunner {
             cacher,
             config,
             shutdown_rx,
+            reporter,
         })
     }
 
@@ -113,7 +115,7 @@ impl ChainConsumerRunner {
     }
 }
 
-pub async fn run_consumer_fetch_assets(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn run_consumer_fetch_assets(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let queue = QueueName::FetchAssets;
     let name = queue.to_string();
@@ -125,28 +127,50 @@ pub async fn run_consumer_fetch_assets(settings: Settings, shutdown_rx: Shutdown
         database,
         cacher,
     };
-    run_consumer::<FetchAssetsPayload, FetchAssetsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx).await
+    run_consumer::<FetchAssetsPayload, FetchAssetsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx, reporter).await
 }
 
-pub async fn run_consumer_store_transactions(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let database = Database::new(&settings.postgres.url, settings.postgres.pool);
-    let queue = QueueName::StoreTransactions;
-    let name = queue.to_string();
-    let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
-    let stream_reader = StreamReader::new(config).await?;
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, &name).await?;
-    let consumer = StoreTransactionsConsumer {
-        database: database.clone(),
-        config_cacher: ConfigCacher::new(database.clone()),
-        stream_producer,
-        pusher: Pusher::new(database.clone()),
-        config: StoreTransactionsConsumerConfig {},
-    };
-    run_consumer::<TransactionsPayload, StoreTransactionsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx).await
+pub async fn run_consumer_store_transactions(
+    settings: Settings,
+    shutdown_rx: ShutdownReceiver,
+    reporter: Arc<dyn ConsumerStatusReporter>,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
+    ChainConsumerRunner::new(settings, QueueName::StoreTransactions, shutdown_rx, reporter)
+        .await?
+        .run(|runner, chain| async move {
+            let queue = QueueName::StoreTransactions;
+            let name = format!("{}.{}", queue, chain.as_ref());
+            let stream_reader = StreamReader::from_connection(&runner.connection, runner.settings.rabbitmq.prefetch).await?;
+            let stream_producer = StreamProducer::from_connection(&runner.connection).await?;
+            let database = Database::new(&runner.settings.postgres.url, runner.settings.postgres.pool);
+            let consumer = StoreTransactionsConsumer {
+                database: database.clone(),
+                config_cacher: ConfigCacher::new(database.clone()),
+                stream_producer,
+                pusher: Pusher::new(database.clone()),
+                config: StoreTransactionsConsumerConfig {},
+            };
+            run_consumer::<TransactionsPayload, StoreTransactionsConsumer, usize>(
+                &name,
+                stream_reader,
+                queue,
+                Some(chain.as_ref()),
+                consumer,
+                runner.config,
+                runner.shutdown_rx,
+                runner.reporter,
+            )
+            .await
+        })
+        .await
 }
 
-pub async fn run_consumer_fetch_address_transactions(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn Error + Send + Sync>> {
-    ChainConsumerRunner::new(settings, QueueName::FetchAddressTransactions, shutdown_rx)
+pub async fn run_consumer_fetch_address_transactions(
+    settings: Settings,
+    shutdown_rx: ShutdownReceiver,
+    reporter: Arc<dyn ConsumerStatusReporter>,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
+    ChainConsumerRunner::new(settings, QueueName::FetchAddressTransactions, shutdown_rx, reporter)
         .await?
         .run(|runner, chain| async move {
             let queue = QueueName::FetchAddressTransactions;
@@ -162,14 +186,15 @@ pub async fn run_consumer_fetch_address_transactions(settings: Settings, shutdow
                 consumer,
                 runner.config,
                 runner.shutdown_rx,
+                runner.reporter,
             )
             .await
         })
         .await
 }
 
-pub async fn run_consumer_fetch_blocks(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn Error + Send + Sync>> {
-    ChainConsumerRunner::new(settings, QueueName::FetchBlocks, shutdown_rx)
+pub async fn run_consumer_fetch_blocks(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
+    ChainConsumerRunner::new(settings, QueueName::FetchBlocks, shutdown_rx, reporter)
         .await?
         .run(|runner, chain| async move {
             let queue = QueueName::FetchBlocks;
@@ -177,23 +202,42 @@ pub async fn run_consumer_fetch_blocks(settings: Settings, shutdown_rx: Shutdown
             let stream_reader = StreamReader::from_connection(&runner.connection, runner.settings.rabbitmq.prefetch).await?;
             let stream_producer = StreamProducer::from_connection(&runner.connection).await?;
             let consumer = FetchBlocksConsumer::new(chain_providers(&runner.settings, &name), stream_producer);
-            run_consumer::<FetchBlocksPayload, FetchBlocksConsumer, usize>(&name, stream_reader, queue, Some(chain.as_ref()), consumer, runner.config, runner.shutdown_rx).await
+            run_consumer::<FetchBlocksPayload, FetchBlocksConsumer, usize>(
+                &name,
+                stream_reader,
+                queue,
+                Some(chain.as_ref()),
+                consumer,
+                runner.config,
+                runner.shutdown_rx,
+                runner.reporter,
+            )
+            .await
         })
         .await
 }
 
-pub async fn run_consumer_store_assets_associations(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn run_consumer_store_assets_associations(
+    settings: Settings,
+    shutdown_rx: ShutdownReceiver,
+    reporter: Arc<dyn ConsumerStatusReporter>,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let queue = QueueName::StoreAssetsAssociations;
     let name = queue.to_string();
     let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
     let stream_reader = StreamReader::new(config).await?;
     let consumer = AssetsAddressesConsumer::new(database);
-    run_consumer::<AssetsAddressPayload, AssetsAddressesConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx).await
+    run_consumer::<AssetsAddressPayload, AssetsAddressesConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx, reporter)
+        .await
 }
 
-pub async fn run_consumer_fetch_token_associations(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn Error + Send + Sync>> {
-    ChainConsumerRunner::new(settings, QueueName::FetchTokenAssociations, shutdown_rx)
+pub async fn run_consumer_fetch_token_associations(
+    settings: Settings,
+    shutdown_rx: ShutdownReceiver,
+    reporter: Arc<dyn ConsumerStatusReporter>,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
+    ChainConsumerRunner::new(settings, QueueName::FetchTokenAssociations, shutdown_rx, reporter)
         .await?
         .run(|runner, chain| async move {
             let queue = QueueName::FetchTokenAssociations;
@@ -201,28 +245,54 @@ pub async fn run_consumer_fetch_token_associations(settings: Settings, shutdown_
             let stream_reader = StreamReader::from_connection(&runner.connection, runner.settings.rabbitmq.prefetch).await?;
             let stream_producer = StreamProducer::from_connection(&runner.connection).await?;
             let consumer = FetchTokenAddressesConsumer::new(chain_providers(&runner.settings, &name), runner.database, stream_producer, runner.cacher);
-            run_consumer::<ChainAddressPayload, FetchTokenAddressesConsumer, usize>(&name, stream_reader, queue, Some(chain.as_ref()), consumer, runner.config, runner.shutdown_rx)
-                .await
+            run_consumer::<ChainAddressPayload, FetchTokenAddressesConsumer, usize>(
+                &name,
+                stream_reader,
+                queue,
+                Some(chain.as_ref()),
+                consumer,
+                runner.config,
+                runner.shutdown_rx,
+                runner.reporter,
+            )
+            .await
         })
         .await
 }
 
-pub async fn run_consumer_fetch_coin_associations(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn Error + Send + Sync>> {
-    ChainConsumerRunner::new(settings, QueueName::FetchCoinAssociations, shutdown_rx)
+pub async fn run_consumer_fetch_coin_associations(
+    settings: Settings,
+    shutdown_rx: ShutdownReceiver,
+    reporter: Arc<dyn ConsumerStatusReporter>,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
+    ChainConsumerRunner::new(settings, QueueName::FetchCoinAssociations, shutdown_rx, reporter)
         .await?
         .run(|runner, chain| async move {
             let queue = QueueName::FetchCoinAssociations;
             let name = format!("{}.{}", queue, chain.as_ref());
             let stream_reader = StreamReader::from_connection(&runner.connection, runner.settings.rabbitmq.prefetch).await?;
             let consumer = FetchCoinAddressesConsumer::new(chain_providers(&runner.settings, &name), runner.database, runner.cacher);
-            run_consumer::<ChainAddressPayload, FetchCoinAddressesConsumer, String>(&name, stream_reader, queue, Some(chain.as_ref()), consumer, runner.config, runner.shutdown_rx)
-                .await
+            run_consumer::<ChainAddressPayload, FetchCoinAddressesConsumer, String>(
+                &name,
+                stream_reader,
+                queue,
+                Some(chain.as_ref()),
+                consumer,
+                runner.config,
+                runner.shutdown_rx,
+                runner.reporter,
+            )
+            .await
         })
         .await
 }
 
-pub async fn run_consumer_fetch_nft_associations(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn Error + Send + Sync>> {
-    ChainConsumerRunner::new(settings, QueueName::FetchNftAssociations, shutdown_rx)
+pub async fn run_consumer_fetch_nft_associations(
+    settings: Settings,
+    shutdown_rx: ShutdownReceiver,
+    reporter: Arc<dyn ConsumerStatusReporter>,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
+    ChainConsumerRunner::new(settings, QueueName::FetchNftAssociations, shutdown_rx, reporter)
         .await?
         .run(|runner, chain| async move {
             FetchNftAssetsAddressesConsumer::run(
@@ -233,13 +303,14 @@ pub async fn run_consumer_fetch_nft_associations(settings: Settings, shutdown_rx
                 runner.cacher,
                 runner.config,
                 runner.shutdown_rx,
+                runner.reporter,
             )
             .await
         })
         .await
 }
 
-pub async fn run_consumer_support(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn run_consumer_support(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
     use support::support_webhook_consumer::SupportWebhookConsumer;
     let queue = QueueName::SupportWebhooks;
     let name = queue.to_string();
@@ -247,10 +318,10 @@ pub async fn run_consumer_support(settings: Settings, shutdown_rx: ShutdownRecei
     let stream_reader = StreamReader::new(config).await?;
     let consumer = SupportWebhookConsumer::new(&settings).await?;
     let consumer_config = consumer_config(&settings.consumer);
-    run_consumer::<SupportWebhookPayload, SupportWebhookConsumer, bool>(&name, stream_reader, queue, None, consumer, consumer_config, shutdown_rx).await
+    run_consumer::<SupportWebhookPayload, SupportWebhookConsumer, bool>(&name, stream_reader, queue, None, consumer, consumer_config, shutdown_rx, reporter).await
 }
 
-pub async fn run_consumer_fiat(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn run_consumer_fiat(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
     use crate::worker::fiat::fiat_webhook_consumer::FiatWebhookConsumer;
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let queue = QueueName::FiatOrderWebhooks;
@@ -259,10 +330,10 @@ pub async fn run_consumer_fiat(settings: Settings, shutdown_rx: ShutdownReceiver
     let stream_reader = StreamReader::new(config).await?;
     let consumer = FiatWebhookConsumer::new(database, settings.clone());
     let consumer_config = consumer_config(&settings.consumer);
-    run_consumer::<FiatWebhookPayload, FiatWebhookConsumer, bool>(&name, stream_reader, queue, None, consumer, consumer_config, shutdown_rx).await
+    run_consumer::<FiatWebhookPayload, FiatWebhookConsumer, bool>(&name, stream_reader, queue, None, consumer, consumer_config, shutdown_rx, reporter).await
 }
 
-pub async fn run_consumer_store_prices(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn run_consumer_store_prices(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let queue = QueueName::StorePrices;
     let name = queue.to_string();
@@ -273,10 +344,10 @@ pub async fn run_consumer_store_prices(settings: Settings, shutdown_rx: Shutdown
     let config = ConfigCacher::new(database.clone());
     let ttl_seconds = config.get_duration(ConfigKey::PriceOutdated)?.as_secs() as i64;
     let consumer = StorePricesConsumer::new(database, price_client, ttl_seconds);
-    run_consumer::<PricesPayload, StorePricesConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx).await
+    run_consumer::<PricesPayload, StorePricesConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx, reporter).await
 }
 
-pub async fn run_consumer_store_charts(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn run_consumer_store_charts(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let queue = QueueName::StoreCharts;
     let name = queue.to_string();
@@ -285,34 +356,45 @@ pub async fn run_consumer_store_charts(settings: Settings, shutdown_rx: Shutdown
     let cacher_client = CacherClient::new(&settings.redis.url).await;
     let price_client = PriceClient::new(database, cacher_client);
     let consumer = StoreChartsConsumer::new(price_client);
-    run_consumer::<ChartsPayload, StoreChartsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx).await
+    run_consumer::<ChartsPayload, StoreChartsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx, reporter).await
 }
 
-pub async fn run_consumer_rewards(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn run_consumer_rewards(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let queue = QueueName::RewardsEvents;
     let name = queue.to_string();
     let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
     let stream_reader = StreamReader::new(config).await?;
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, &name).await?;
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+    let stream_producer = StreamProducer::new(&rabbitmq_config, &name).await?;
     let consumer = rewards_consumer::RewardsConsumer::new(database, stream_producer);
     let consumer_config = consumer_config(&settings.consumer);
-    run_consumer::<RewardsNotificationPayload, rewards_consumer::RewardsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config, shutdown_rx).await
+    run_consumer::<RewardsNotificationPayload, rewards_consumer::RewardsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config, shutdown_rx, reporter).await
 }
 
-pub async fn run_consumer_in_app_notifications(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn run_consumer_in_app_notifications(
+    settings: Settings,
+    shutdown_rx: ShutdownReceiver,
+    reporter: Arc<dyn ConsumerStatusReporter>,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let queue = QueueName::NotificationsInApp;
     let name = queue.to_string();
     let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
     let stream_reader = StreamReader::new(config).await?;
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, &name).await?;
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+    let stream_producer = StreamProducer::new(&rabbitmq_config, &name).await?;
     let consumer = notifications::InAppNotificationsConsumer::new(database, stream_producer);
     let consumer_config = consumer_config(&settings.consumer);
-    run_consumer::<InAppNotificationPayload, notifications::InAppNotificationsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config, shutdown_rx).await
+    run_consumer::<InAppNotificationPayload, notifications::InAppNotificationsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config, shutdown_rx, reporter)
+        .await
 }
 
-pub async fn run_rewards_redemption_consumer(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn run_rewards_redemption_consumer(
+    settings: Settings,
+    shutdown_rx: ShutdownReceiver,
+    reporter: Arc<dyn ConsumerStatusReporter>,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let config = ConfigCacher::new(database.clone());
     let retry_config = rewards_redemption_consumer::RedemptionRetryConfig {
@@ -324,7 +406,8 @@ pub async fn run_rewards_redemption_consumer(settings: Settings, shutdown_rx: Sh
     let name = queue.to_string();
     let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
     let stream_reader = StreamReader::new(config).await?;
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, &name).await?;
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+    let stream_producer = StreamProducer::new(&rabbitmq_config, &name).await?;
     let wallets = parse_rewards_wallets(&settings)?;
     let client_provider = create_evm_client_provider(settings.clone());
     let redemption_service = Arc::new(TransferRedemptionService::new(wallets, client_provider));
@@ -338,6 +421,7 @@ pub async fn run_rewards_redemption_consumer(settings: Settings, shutdown_rx: Sh
         consumer,
         consumer_config,
         shutdown_rx,
+        reporter,
     )
     .await
 }
@@ -369,7 +453,7 @@ fn create_evm_client_provider(settings: Settings) -> EvmClientProvider {
     })
 }
 
-pub async fn run_consumer_fetch_prices(settings: Settings, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn run_consumer_fetch_prices(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let queue = QueueName::FetchPrices;
     let name = queue.to_string();
@@ -378,8 +462,9 @@ pub async fn run_consumer_fetch_prices(settings: Settings, shutdown_rx: Shutdown
     let cacher_client = CacherClient::new(&settings.redis.url).await;
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
     let price_client = PriceClient::new(database, cacher_client);
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, &name).await?;
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+    let stream_producer = StreamProducer::new(&rabbitmq_config, &name).await?;
     let price_updater = PriceUpdater::new(price_client, coingecko_client, stream_producer);
     let consumer = FetchPricesConsumer::new(price_updater);
-    run_consumer::<FetchPricesPayload, FetchPricesConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx).await
+    run_consumer::<FetchPricesPayload, FetchPricesConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx, reporter).await
 }

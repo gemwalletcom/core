@@ -34,6 +34,10 @@ pub enum CacheKey<'a> {
     // Auth keys (device_id, nonce)
     AuthNonce(&'a str, &'a str),
 
+    // Status keys
+    JobStatus(&'a str),
+    ConsumerStatus(&'a str),
+
     // Price WebSocket observed assets
     ObservedAssets,
 }
@@ -58,6 +62,8 @@ impl CacheKey<'_> {
             Self::FiatQuote(quote_id) => format!("fiat:quote:{}", quote_id),
             Self::FiatIpCheck(ip_address) => format!("fiat:ip_check:{}", ip_address),
             Self::AuthNonce(device_id, nonce) => format!("auth:nonce:{}:{}", device_id, nonce),
+            Self::JobStatus(name) => format!("jobs:status:{}", name),
+            Self::ConsumerStatus(name) => format!("consumers:status:{}", name),
             Self::ObservedAssets => "observed_assets".to_string(),
         }
     }
@@ -81,6 +87,8 @@ impl CacheKey<'_> {
             Self::FiatQuote(_) => 15 * SECONDS_PER_MINUTE,
             Self::FiatIpCheck(_) => SECONDS_PER_DAY,
             Self::AuthNonce(_, _) => 5 * SECONDS_PER_MINUTE,
+            Self::JobStatus(_) => 7 * SECONDS_PER_DAY,
+            Self::ConsumerStatus(_) => 7 * SECONDS_PER_DAY,
             Self::ObservedAssets => 2 * SECONDS_PER_MINUTE,
         }
     }

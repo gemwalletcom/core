@@ -9,6 +9,7 @@ pub mod stream_reader;
 
 pub use connection::StreamConnection;
 pub use consumer::ConsumerConfig;
+pub use consumer::ConsumerStatusReporter;
 pub use consumer::run_consumer;
 pub use exchange::ExchangeName;
 pub use lapin::ExchangeKind;
@@ -16,5 +17,5 @@ pub use payload::*;
 pub use primitives::{AssetId, PushErrorLog};
 pub use queue::QueueName;
 pub use steam_producer_queue::StreamProducerQueue;
-pub use stream_producer::StreamProducer;
+pub use stream_producer::{StreamProducer, StreamProducerConfig};
 pub use stream_reader::{ShutdownReceiver, StreamReader, StreamReaderConfig};
