@@ -8,6 +8,7 @@ pub(crate) mod model;
 mod provider;
 mod quote_data_mapper;
 
+use bigint::value_to;
 use primitives::Chain;
 use std::sync::Arc;
 
@@ -53,7 +54,7 @@ where
     fn map_quote_error(&self, error: SwapperError, decimals: i32) -> SwapperError {
         match error {
             SwapperError::InputAmountError { min_amount: Some(min) } => SwapperError::InputAmountError {
-                min_amount: Some(self.value_to(min, decimals).to_string()),
+                min_amount: value_to(&min, decimals).ok().map(|v| v.to_string()),
             },
             other => other,
         }
