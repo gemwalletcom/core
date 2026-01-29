@@ -43,6 +43,7 @@ impl<C: Client> ChainTransactionLoad for TronClient<C> {
             parent_hash: block.parent_hash.clone(),
             witness_address: block.witness_address.clone(),
             votes,
+            raw_data_hex: None,
         };
 
         let fee = match &input.input_type {

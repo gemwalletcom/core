@@ -3554,6 +3554,7 @@ dependencies = [
  "futures",
  "gem_client",
  "gem_evm",
+ "gem_hash",
  "hex",
  "num-bigint",
  "num-traits",
@@ -3562,6 +3563,8 @@ dependencies = [
  "serde",
  "serde_json",
  "settings",
+ "sha2",
+ "signer",
  "tokio",
 ]
 

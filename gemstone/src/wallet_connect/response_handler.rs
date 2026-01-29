@@ -26,7 +26,7 @@ impl ChainResponseHandler for WalletConnectResponseHandler {
 impl WalletConnectResponseHandler {
     pub fn encode_sign_message(chain_type: ChainType, signature: String) -> WalletConnectResponseType {
         match chain_type {
-            ChainType::Solana | ChainType::Sui => {
+            ChainType::Solana | ChainType::Sui | ChainType::Tron => {
                 let result = serde_json::json!({
                     "signature": signature
                 });
@@ -59,6 +59,7 @@ impl WalletConnectResponseHandler {
                 };
                 WalletConnectResponseType::Object { json: result.to_string() }
             }
+            ChainType::Tron => WalletConnectResponseType::Object { json: transaction_id },
             _ => WalletConnectResponseType::String { value: transaction_id },
         }
     }
@@ -111,12 +112,34 @@ mod tests {
     }
 
     #[test]
+    fn test_encode_sign_message_tron() {
+        let result = WalletConnectResponseHandler::encode_sign_message(ChainType::Tron, "tronsig123".to_string());
+        match result {
+            WalletConnectResponseType::Object { json } => {
+                assert!(json.contains("\"signature\""));
+                assert!(json.contains("tronsig123"));
+            }
+            _ => panic!("Expected Object response for Tron"),
+        }
+    }
+
+    #[test]
     fn test_encode_sign_transaction_ethereum() {
         let result = WalletConnectResponseHandler::encode_sign_transaction(ChainType::Ethereum, "0xtxid".to_string());
         let WalletConnectResponseType::String { value } = result else {
             panic!("Expected String response for Ethereum")
         };
         assert_eq!(value, "0xtxid");
+    }
+
+    #[test]
+    fn test_encode_sign_transaction_tron() {
+        let json = r#"{"signature":["sig"]}"#.to_string();
+        let result = WalletConnectResponseHandler::encode_sign_transaction(ChainType::Tron, json.clone());
+        let WalletConnectResponseType::Object { json: result_json } = result else {
+            panic!("Expected Object response for Tron")
+        };
+        assert_eq!(result_json, json);
     }
 
     #[test]

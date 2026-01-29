@@ -422,6 +422,7 @@ pub enum GemTransactionLoadMetadata {
         parent_hash: String,
         witness_address: String,
         votes: HashMap<String, u64>,
+        raw_data_hex: Option<String>,
     },
     Sui {
         message_bytes: String,
@@ -504,6 +505,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 parent_hash,
                 witness_address,
                 votes,
+                raw_data_hex,
             } => GemTransactionLoadMetadata::Tron {
                 block_number,
                 block_version,
@@ -512,6 +514,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 parent_hash,
                 witness_address,
                 votes,
+                raw_data_hex,
             },
             TransactionLoadMetadata::Sui { message_bytes } => GemTransactionLoadMetadata::Sui { message_bytes },
             TransactionLoadMetadata::Hyperliquid { order } => GemTransactionLoadMetadata::Hyperliquid { order },
@@ -592,6 +595,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 parent_hash,
                 witness_address,
                 votes,
+                raw_data_hex,
             } => TransactionLoadMetadata::Tron {
                 block_number,
                 block_version,
@@ -600,6 +604,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 parent_hash,
                 witness_address,
                 votes,
+                raw_data_hex,
             },
             GemTransactionLoadMetadata::Sui { message_bytes } => TransactionLoadMetadata::Sui { message_bytes },
             GemTransactionLoadMetadata::Hyperliquid { order } => TransactionLoadMetadata::Hyperliquid { order },

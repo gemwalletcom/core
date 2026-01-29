@@ -15,6 +15,7 @@ use super::{
 };
 use crate::{GemstoneError, siwe::SiweMessage};
 use gem_bitcoin::signer::{BitcoinSignMessageData, sign_personal as bitcoin_sign_personal};
+use gem_tron::signer::tron_hash_message;
 use zeroize::Zeroizing;
 
 const SIGNATURE_LENGTH: usize = 65;
@@ -42,7 +43,7 @@ impl MessageSigner {
 
     pub fn preview(&self) -> Result<MessagePreview, GemstoneError> {
         match self.message.sign_type {
-            SignDigestType::SuiPersonal | SignDigestType::Eip191 => {
+            SignDigestType::SuiPersonal | SignDigestType::Eip191 | SignDigestType::TronPersonal => {
                 let string = String::from_utf8(self.message.data.clone());
                 let preview = string.unwrap_or(encode_prefixed(&self.message.data));
                 Ok(MessagePreview::Text(preview))
@@ -89,7 +90,12 @@ impl MessageSigner {
 
     pub fn plain_preview(&self) -> String {
         match self.message.sign_type {
-            SignDigestType::SuiPersonal | SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::TonPersonal | SignDigestType::BitcoinPersonal => match self.preview() {
+            SignDigestType::SuiPersonal
+            | SignDigestType::Eip191
+            | SignDigestType::TronPersonal
+            | SignDigestType::Base58
+            | SignDigestType::TonPersonal
+            | SignDigestType::BitcoinPersonal => match self.preview() {
                 Ok(MessagePreview::Text(preview)) => preview,
                 _ => "".to_string(),
             },
@@ -112,6 +118,7 @@ impl MessageSigner {
                 let ton_data = TonSignMessageData::from_bytes(string.as_bytes())?;
                 Ok(ton_data.payload.hash())
             }
+            SignDigestType::TronPersonal => Ok(tron_hash_message(&self.message.data).to_vec()),
             SignDigestType::Eip191 | SignDigestType::Siwe => Ok(eip191_hash_message(&self.message.data).to_vec()),
             SignDigestType::Eip712 => {
                 let json = String::from_utf8(self.message.data.clone())?;
@@ -128,7 +135,7 @@ impl MessageSigner {
 
     pub fn get_result(&self, data: &[u8]) -> String {
         match &self.message.sign_type {
-            SignDigestType::Eip191 | SignDigestType::Eip712 | SignDigestType::Siwe => {
+            SignDigestType::Eip191 | SignDigestType::Eip712 | SignDigestType::Siwe | SignDigestType::TronPersonal => {
                 if data.len() < SIGNATURE_LENGTH {
                     return encode_prefixed(data);
                 }
@@ -164,7 +171,7 @@ impl MessageSigner {
                 let (signature, public_key) = ton_sign_personal(&self.message.data, &private_key)?;
                 self.get_ton_result(&signature, &public_key)
             }
-            SignDigestType::Eip191 | SignDigestType::Eip712 | SignDigestType::Siwe => {
+            SignDigestType::Eip191 | SignDigestType::Eip712 | SignDigestType::Siwe | SignDigestType::TronPersonal => {
                 let signed = Signer::sign_digest(SignatureScheme::Secp256k1, hash, private_key.to_vec())?;
                 Ok(self.get_result(&signed))
             }
@@ -176,6 +183,7 @@ impl MessageSigner {
         }
     }
 }
+
 
 #[cfg(test)]
 mod tests {

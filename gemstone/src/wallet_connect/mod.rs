@@ -8,8 +8,7 @@ fn current_timestamp() -> i64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0)
 }
 
-use crate::message::sign_type::{SignDigestType, SignMessage};
-use crate::siwe::SiweMessage;
+use crate::{GemstoneError, message::sign_type::{SignDigestType, SignMessage}, siwe::SiweMessage};
 
 pub mod actions;
 pub mod handler_traits;
@@ -168,7 +167,7 @@ impl WalletConnect {
         Some(primitives::WalletConnectCAIP2::get_chain(caip2, caip10)?.to_string())
     }
 
-    pub fn parse_request(&self, topic: String, method: String, params: String, chain_id: String, domain: String) -> Result<WalletConnectAction, crate::GemstoneError> {
+    pub fn parse_request(&self, topic: String, method: String, params: String, chain_id: String, domain: String) -> Result<WalletConnectAction, GemstoneError> {
         let request = WalletConnectRequest {
             topic,
             method,
@@ -176,7 +175,7 @@ impl WalletConnect {
             chain_id: Some(chain_id),
             domain,
         };
-        WalletConnectRequestHandler::parse_request(request).map_err(|e| crate::GemstoneError::AnyError { msg: e })
+        WalletConnectRequestHandler::parse_request(request).map_err(|e| GemstoneError::AnyError { msg: e })
     }
 
     pub fn validate_origin(&self, metadata_url: String, origin: Option<String>, validation: WalletConnectionVerificationStatus) -> WalletConnectionVerificationStatus {
@@ -195,33 +194,38 @@ impl WalletConnect {
         WalletConnectResponseHandler::encode_send_transaction(chain.chain_type(), transaction_id)
     }
 
-    pub fn validate_sign_message(&self, chain: Chain, sign_type: SignDigestType, data: String) -> Result<(), crate::GemstoneError> {
+    pub fn validate_sign_message(&self, chain: Chain, sign_type: SignDigestType, data: String) -> Result<(), GemstoneError> {
         match sign_type {
             SignDigestType::Eip712 => {
-                let expected_chain_id = chain.network_id().parse::<u64>().map_err(|_| crate::GemstoneError::AnyError {
+                let expected_chain_id = chain.network_id().parse::<u64>().map_err(|_| GemstoneError::AnyError {
                     msg: format!("Chain {} does not have a numeric network ID", chain),
                 })?;
-                gem_evm::eip712::validate_eip712_chain_id(&data, expected_chain_id).map_err(|e| crate::GemstoneError::AnyError { msg: e })
+                gem_evm::eip712::validate_eip712_chain_id(&data, expected_chain_id).map_err(|e| GemstoneError::AnyError { msg: e })
             }
             SignDigestType::TonPersonal => {
                 gem_ton::signer::TonSignMessageData::from_bytes(data.as_bytes())?;
                 Ok(())
             }
-            SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::SuiPersonal | SignDigestType::Siwe | SignDigestType::BitcoinPersonal => Ok(()),
+            SignDigestType::Eip191
+            | SignDigestType::Base58
+            | SignDigestType::SuiPersonal
+            | SignDigestType::Siwe
+            | SignDigestType::BitcoinPersonal
+            | SignDigestType::TronPersonal => Ok(()),
         }
     }
 
-    pub fn validate_send_transaction(&self, transaction_type: WalletConnectTransactionType, data: String) -> Result<(), crate::GemstoneError> {
+    pub fn validate_send_transaction(&self, transaction_type: WalletConnectTransactionType, data: String) -> Result<(), GemstoneError> {
         let WalletConnectTransactionType::Ton { .. } = transaction_type else {
             return Ok(());
         };
 
-        let json: serde_json::Value = serde_json::from_str(&data).map_err(|_| crate::GemstoneError::AnyError { msg: "Invalid JSON".to_string() })?;
+        let json: serde_json::Value = serde_json::from_str(&data).map_err(|_| GemstoneError::AnyError { msg: "Invalid JSON".to_string() })?;
 
         if let Some(valid_until) = json.get("valid_until").and_then(|v| v.as_i64())
             && current_timestamp() >= valid_until
         {
-            return Err(crate::GemstoneError::AnyError {
+            return Err(GemstoneError::AnyError {
                 msg: "Transaction expired".to_string(),
             });
         }
@@ -264,7 +268,7 @@ impl WalletConnect {
         })
     }
 
-    pub fn decode_send_transaction(&self, transaction_type: WalletConnectTransactionType, data: String) -> Result<WalletConnectTransaction, crate::GemstoneError> {
+    pub fn decode_send_transaction(&self, transaction_type: WalletConnectTransactionType, data: String) -> Result<WalletConnectTransaction, GemstoneError> {
         match transaction_type {
             WalletConnectTransactionType::Ethereum => {
                 let tx: WCEthereumTransaction = serde_json::from_str(&data)?;
@@ -276,7 +280,7 @@ impl WalletConnect {
                 let transaction = json
                     .get("transaction")
                     .and_then(|v| v.as_str())
-                    .ok_or_else(|| crate::GemstoneError::AnyError {
+                    .ok_or_else(|| GemstoneError::AnyError {
                         msg: "Missing transaction field".to_string(),
                     })?
                     .to_string();
@@ -292,7 +296,7 @@ impl WalletConnect {
                 let transaction = json
                     .get("transaction")
                     .and_then(|v| v.as_str())
-                    .ok_or_else(|| crate::GemstoneError::AnyError {
+                    .ok_or_else(|| GemstoneError::AnyError {
                         msg: "Missing transaction field".to_string(),
                     })?
                     .to_string();
@@ -309,7 +313,7 @@ impl WalletConnect {
 
                 let messages = json
                     .get("messages")
-                    .ok_or_else(|| crate::GemstoneError::AnyError {
+                    .ok_or_else(|| GemstoneError::AnyError {
                         msg: "Missing messages field".to_string(),
                     })?
                     .to_string();
@@ -317,6 +321,18 @@ impl WalletConnect {
                 Ok(WalletConnectTransaction::Ton { messages, output_type })
             }
             WalletConnectTransactionType::Bitcoin { output_type } => Ok(WalletConnectTransaction::Bitcoin { data, output_type }),
+            WalletConnectTransactionType::Tron { output_type } => {
+                let json: serde_json::Value = serde_json::from_str(&data)?;
+
+                let transaction = json
+                    .get("transaction")
+                    .ok_or_else(|| GemstoneError::AnyError {
+                        msg: "Missing transaction field".to_string(),
+                    })?
+                    .to_string();
+
+                Ok(WalletConnectTransaction::Tron { data: transaction, output_type })
+            }
         }
     }
 }
