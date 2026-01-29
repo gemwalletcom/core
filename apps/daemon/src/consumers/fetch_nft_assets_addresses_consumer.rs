@@ -7,7 +7,10 @@ use cacher::{CacheKey, CacherClient};
 use primitives::Chain;
 use settings::Settings;
 use storage::Database;
-use streamer::{ChainAddressPayload, ConsumerConfig, QueueName, ShutdownReceiver, StreamConnection, StreamProducer, StreamReader, consumer::MessageConsumer, run_consumer};
+use streamer::{
+    ChainAddressPayload, ConsumerConfig, ConsumerStatusReporter, QueueName, ShutdownReceiver, StreamConnection, StreamProducer, StreamReader, consumer::MessageConsumer,
+    run_consumer,
+};
 
 pub struct FetchNftAssetsAddressesConsumer {
     #[allow(dead_code)]
@@ -27,6 +30,7 @@ impl FetchNftAssetsAddressesConsumer {
         cacher: CacherClient,
         consumer_config: ConsumerConfig,
         shutdown_rx: ShutdownReceiver,
+        reporter: Arc<dyn ConsumerStatusReporter>,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         let queue = QueueName::FetchNftAssociations;
         let name = format!("{}.{}", queue, chain.as_ref());
@@ -41,7 +45,7 @@ impl FetchNftAssetsAddressesConsumer {
             cacher,
             nft_client,
         };
-        run_consumer::<ChainAddressPayload, Self, usize>(&name, stream_reader, queue, Some(chain.as_ref()), consumer, consumer_config, shutdown_rx).await
+        run_consumer::<ChainAddressPayload, Self, usize>(&name, stream_reader, queue, Some(chain.as_ref()), consumer, consumer_config, shutdown_rx, reporter).await
     }
 }
 

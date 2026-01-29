@@ -253,6 +253,10 @@ pub mod notification;
 pub use self::notification::InAppNotification;
 pub mod ip_usage_type;
 pub use self::ip_usage_type::IpUsageType;
+pub mod job_status;
+pub use self::job_status::JobStatus;
+pub mod consumer_status;
+pub use self::consumer_status::{ConsumerError, ConsumerStatus};
 
 #[cfg(any(test, feature = "testkit"))]
 pub mod testkit;
