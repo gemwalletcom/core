@@ -6,7 +6,8 @@ license = { workspace = true }
 
 [features]
 default = []
-swap_integration_tests = []
+reqwest_provider = ["dep:reqwest"]
+swap_integration_tests = ["reqwest_provider"]
 
 [dependencies]
 primitives = { path = "../primitives" }
@@ -17,12 +18,13 @@ gem_evm = { path = "../gem_evm", features = ["rpc"] }
 gem_sui = { path = "../gem_sui", features = ["rpc"] }
 gem_aptos = { path = "../gem_aptos", features = ["rpc"] }
 gem_hash = { path = "../gem_hash" }
-gem_jsonrpc = { path = "../gem_jsonrpc", features = ["client"] }
+gem_jsonrpc = { path = "../gem_jsonrpc" }
 gem_client = { path = "../gem_client" }
 gem_hypercore = { path = "../gem_hypercore" }
 serde_serializers = { path = "../serde_serializers" }
 number_formatter = { path = "../number_formatter" }
 
+reqwest = { workspace = true, optional = true }
 typeshare = { version = "1.0.4" }
 
 strum = { workspace = true }
@@ -48,4 +50,3 @@ tracing = "0.1.44"
 
 [dev-dependencies]
 tokio.workspace = true
-gem_jsonrpc = { path = "../gem_jsonrpc", features = ["reqwest"] }
