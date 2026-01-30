@@ -7,7 +7,7 @@ use chrono::{DateTime, Utc};
 use pricer::PriceClient;
 use primitives::{Asset, AssetBasic, AssetFull, AssetId, ChainAddress, NFTCollection, PerpetualSearchData};
 use search_index::{ASSETS_INDEX_NAME, AssetDocument, NFTDocument, NFTS_INDEX_NAME, PERPETUALS_INDEX_NAME, PerpetualDocument, SearchIndexClient};
-use storage::{AssetsAddressesRepository, AssetsRepository, Database, SubscriptionsRepository};
+use storage::{AssetsAddressesRepository, AssetsRepository, Database, SubscriptionsRepository, WalletsRepository};
 
 #[derive(Clone)]
 pub struct AssetsClient {
@@ -40,6 +40,14 @@ impl AssetsClient {
     pub fn get_assets_by_device_id(&self, device_id: &str, wallet_index: i32, from_timestamp: Option<u64>) -> Result<Vec<AssetId>, Box<dyn Error + Send + Sync>> {
         let subscriptions = self.database.subscriptions()?.get_subscriptions_by_device_id(device_id, Some(wallet_index))?;
         let chain_addresses = subscriptions.into_iter().map(|x| ChainAddress::new(x.chain, x.address)).collect();
+        let from_datetime = from_timestamp.and_then(|ts| DateTime::<Utc>::from_timestamp(ts as i64, 0).map(|dt| dt.naive_utc()));
+
+        Ok(self.database.assets_addresses()?.get_assets_by_addresses(chain_addresses, from_datetime, true)?)
+    }
+
+    pub fn get_assets_by_wallet_id(&self, device_id: i32, wallet_id: i32, from_timestamp: Option<u64>) -> Result<Vec<AssetId>, Box<dyn Error + Send + Sync>> {
+        let subscriptions = self.database.wallets()?.get_subscriptions_by_wallet_id(device_id, wallet_id)?;
+        let chain_addresses: Vec<ChainAddress> = subscriptions.into_iter().map(|(sub, addr)| ChainAddress::new(sub.chain.0, addr.address)).collect();
         let from_datetime = from_timestamp.and_then(|ts| DateTime::<Utc>::from_timestamp(ts as i64, 0).map(|dt| dt.naive_utc()));
 
         Ok(self.database.assets_addresses()?.get_assets_by_addresses(chain_addresses, from_datetime, true)?)

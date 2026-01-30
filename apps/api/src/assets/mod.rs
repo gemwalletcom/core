@@ -50,6 +50,7 @@ pub async fn get_assets_search(
     Ok(client.lock().await.get_assets_search(&request).await?.into())
 }
 
+// TODO: Remove once all clients migrate to /v1/devices/<device_id>/wallets/<wallet_id>/assets
 #[get("/assets/device/<device_id>?<wallet_index>&<from_timestamp>")]
 pub async fn get_assets_by_device_id(
     device_id: DeviceIdParam,

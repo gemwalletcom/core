@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use primitives::{Chain, NFTAsset, NFTAssetId, NFTCollection, NFTCollectionId, NFTData};
 use storage::database::devices::DevicesStore;
-use storage::{Database, NftRepository, SubscriptionsRepository};
+use storage::{Database, NftRepository, SubscriptionsRepository, WalletsRepository};
 
 use crate::NFTProviderConfig;
 use crate::factory::NFTProviderFactory;
@@ -40,6 +40,12 @@ impl NFTClient {
     pub async fn get_nft_assets(&self, device_id: &str, wallet_index: i32) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {
         let subscriptions = self.get_subscriptions(device_id, wallet_index)?;
         let addresses: HashMap<Chain, String> = subscriptions.into_iter().map(|x| (x.chain, x.address)).collect();
+        self.fetch_assets_for_addresses(addresses).await
+    }
+
+    pub async fn get_nft_assets_by_wallet_id(&self, device_id: i32, wallet_id: i32) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {
+        let subscriptions = self.database.wallets()?.get_subscriptions_by_wallet_id(device_id, wallet_id)?;
+        let addresses: HashMap<Chain, String> = subscriptions.into_iter().map(|(sub, addr)| (sub.chain.0, addr.address)).collect();
         self.fetch_assets_for_addresses(addresses).await
     }
 

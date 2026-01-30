@@ -15,6 +15,7 @@ impl Device {
             is_push_enabled: true,
             is_price_alerts_enabled: Some(true),
             subscriptions_version: 1,
+            public_key: None,
         }
     }
 
