@@ -20,8 +20,8 @@ use nft::NFTClient;
 use primitives::device::Device;
 use primitives::rewards::{RedemptionRequest, RedemptionResult};
 use primitives::{
-    AssetId, AuthNonce, InAppNotification, NFTData, ReportNft, RewardEvent, Rewards, ScanTransaction, ScanTransactionPayload, SupportDevice, SupportDeviceRequest,
-    TransactionsResponse, WalletSubscription, WalletSubscriptionChains,
+    AssetId, AuthNonce, InAppNotification, MigrateDeviceIdRequest, NFTData, ReportNft, RewardEvent, Rewards, ScanTransaction, ScanTransactionPayload, SupportDevice,
+    SupportDeviceRequest, TransactionsResponse, WalletSubscription, WalletSubscriptionChains,
 };
 use rocket::{State, delete, get, post, put, serde::json::Json, tokio::sync::Mutex};
 use std::sync::Arc;
@@ -67,6 +67,11 @@ pub async fn delete_device_v2(device: AuthenticatedDevice, client: &State<Mutex<
 #[get("/devices/is_registered")]
 pub async fn is_device_registered_v2(device_id: DeviceId, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<bool>, ApiError> {
     Ok(client.lock().await.is_device_registered(&device_id.0)?.into())
+}
+
+#[post("/devices/migrate", format = "json", data = "<request>")]
+pub async fn migrate_device_id_v2(request: Json<MigrateDeviceIdRequest>, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<Device>, ApiError> {
+    Ok(client.lock().await.migrate_device_id(&request.old_device_id, &request.public_key)?.into())
 }
 
 #[get("/devices/assets?<from_timestamp>")]

@@ -233,6 +233,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 devices::get_device_v2,
                 devices::delete_device_v2,
                 devices::is_device_registered_v2,
+                devices::migrate_device_id_v2,
                 devices::update_device_v2,
                 devices::send_push_notification_device_v2,
                 devices::report_device_nft_v2,

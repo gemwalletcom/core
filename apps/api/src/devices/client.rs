@@ -49,4 +49,8 @@ impl DevicesClient {
     pub fn is_device_registered(&self, device_id: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
         Ok(self.database.devices()?.get_device_exist(device_id)?)
     }
+
+    pub fn migrate_device_id(&self, old_device_id: &str, new_device_id: &str) -> Result<Device, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.devices()?.migrate_device_id(old_device_id, new_device_id)?)
+    }
 }

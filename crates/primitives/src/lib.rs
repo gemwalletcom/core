@@ -83,7 +83,7 @@ pub use self::platform::{Platform, PlatformStore};
 pub mod payment_type;
 pub use self::payment_type::PaymentType;
 pub mod device;
-pub use self::device::Device;
+pub use self::device::{Device, MigrateDeviceIdRequest};
 pub mod transaction;
 pub use self::transaction::{Transaction, TransactionsResponse};
 pub mod transaction_type;
