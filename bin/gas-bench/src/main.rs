@@ -1,6 +1,7 @@
 mod client;
 mod etherscan;
 mod gasflow;
+mod helius;
 mod jito;
 mod solana_client;
 
@@ -15,8 +16,9 @@ use crate::{
     client::{GemstoneClient, GemstoneFeeData},
     etherscan::EtherscanClient,
     gasflow::GasflowClient,
+    helius::{HeliusClient, HeliusPriorityFees},
     jito::{JitoClient, JitoTipFloor},
-    solana_client::{SolanaFeeData, SolanaGasClient},
+    solana_client::{JUPITER_PROGRAM, SolanaFeeData, SolanaGasClient},
 };
 use gem_evm::ether_conv::EtherConv;
 use gemstone::alien::reqwest_provider::NativeProvider;
@@ -80,6 +82,10 @@ struct Cli {
     /// Skip Jito API comparison (Solana only)
     #[clap(long, action = clap::ArgAction::SetTrue)]
     skip_jito: bool,
+
+    /// Helius API key for getPriorityFeeEstimate (Solana only)
+    #[clap(long, env = "HELIUS_API_KEY")]
+    helius_api_key: Option<String>,
 }
 
 async fn run_ethereum(args: Cli) -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -250,12 +256,14 @@ async fn run_solana(args: Cli) -> Result<(), Box<dyn Error + Send + Sync>> {
     let native_provider = Arc::new(NativeProvider::new().set_debug(args.debug));
     let solana_client = SolanaGasClient::new(native_provider);
     let jito_client = if args.skip_jito { None } else { Some(JitoClient::new()) };
+    let helius_client = args.helius_api_key.as_ref().map(|key| HeliusClient::new(key));
 
     let mut last_printed_slot: Option<u64> = None;
 
     println!("gas-bench [Solana]: monitoring priority fees and Jito tips");
     println!("  Compute units for fee calculation: {}", args.compute_units);
     println!("  Jito comparison: {}", if jito_client.is_some() { "enabled" } else { "disabled" });
+    println!("  Helius comparison: {}", if helius_client.is_some() { "enabled" } else { "disabled (set HELIUS_API_KEY)" });
     println!();
 
     loop {
@@ -272,8 +280,14 @@ async fn run_solana(args: Cli) -> Result<(), Box<dyn Error + Send + Sync>> {
                 None => None,
             }
         };
+        let helius_future = async {
+            match &helius_client {
+                Some(client) => Some(client.fetch_priority_fee_estimate(Some(vec![JUPITER_PROGRAM.to_string()])).await),
+                None => None,
+            }
+        };
 
-        let (solana_res, jito_res) = tokio::join!(solana_future, jito_future);
+        let (solana_res, jito_res, helius_res) = tokio::join!(solana_future, jito_future, helius_future);
 
         match solana_res {
             Ok(fee_data) => {
@@ -281,7 +295,7 @@ async fn run_solana(args: Cli) -> Result<(), Box<dyn Error + Send + Sync>> {
                     continue;
                 }
 
-                print_solana_fee_data(&fee_data, &jito_res, args.compute_units);
+                print_solana_fee_data(&fee_data, &jito_res, &helius_res, args.compute_units);
                 last_printed_slot = Some(fee_data.slot);
             }
             Err(e) => {
@@ -293,7 +307,12 @@ async fn run_solana(args: Cli) -> Result<(), Box<dyn Error + Send + Sync>> {
     }
 }
 
-fn print_solana_fee_data(fee_data: &SolanaFeeData, jito_res: &Option<Result<JitoTipFloor, Box<dyn Error + Send + Sync>>>, compute_units: u64) {
+fn print_solana_fee_data(
+    fee_data: &SolanaFeeData,
+    jito_res: &Option<Result<JitoTipFloor, Box<dyn Error + Send + Sync>>>,
+    helius_res: &Option<Result<HeliusPriorityFees, Box<dyn Error + Send + Sync>>>,
+    compute_units: u64,
+) {
     println!("\n--- Slot: {} ---", fee_data.slot);
 
     let accounts = [
@@ -307,25 +326,30 @@ fn print_solana_fee_data(fee_data: &SolanaFeeData, jito_res: &Option<Result<Jito
         .map(|(name, _)| *name)
         .collect();
 
+    let jito_available = jito_res.as_ref().is_some_and(|r| r.is_ok());
+    let helius_data = helius_res.as_ref().and_then(|r| r.as_ref().ok());
+
     if !active_accounts.is_empty() {
-        println!("Sampling: {} (avg: {} µL/CU)", active_accounts.join(", "), fee_data.raw_fees.avg);
+        print!("Sampling: {} (avg: {} µL/CU)", active_accounts.join(", "), fee_data.raw_fees.avg);
     }
+    if let Some(helius) = helius_data {
+        print!(
+            " | Helius: slow={} normal={} fast={}",
+            format_micro_lamports(helius.low),
+            format_micro_lamports(helius.medium),
+            format_micro_lamports(helius.high)
+        );
+    }
+    println!();
 
     let mut table = Table::new();
     table.set_format(*format::consts::FORMAT_NO_BORDER_LINE_SEPARATOR);
 
-    let jito_available = jito_res.as_ref().is_some_and(|r| r.is_ok());
+    let mut header = vec![Cell::new("Level"), Cell::new("Priority (70%)"), Cell::new("Jito Tip (30%)"), Cell::new("Total")];
     if jito_available {
-        table.add_row(Row::new(vec![
-            Cell::new("Level"),
-            Cell::new("Priority Fee"),
-            Cell::new("Est. Jito Tip"),
-            Cell::new("Jito Floor"),
-            Cell::new("Diff %"),
-        ]));
-    } else {
-        table.add_row(Row::new(vec![Cell::new("Level"), Cell::new("Priority Fee"), Cell::new("Est. Jito Tip")]));
+        header.push(Cell::new("Jito Floor"));
     }
+    table.add_row(Row::new(header));
 
     let levels = [
         ("Slow", fee_data.priority_fees.slow, fee_data.jito_tips.slow),
@@ -335,10 +359,14 @@ fn print_solana_fee_data(fee_data: &SolanaFeeData, jito_res: &Option<Result<Jito
 
     let jito_data = jito_res.as_ref().and_then(|r| r.as_ref().ok());
 
-    for (level, priority_fee, jito_estimate) in levels.iter() {
+    for (level, priority_fee, jito_tip) in levels.iter() {
         let priority_lamports = priority_fee_to_lamports(*priority_fee, compute_units);
+        let total_lamports = priority_lamports + jito_tip;
         let priority_display = format!("{} ({})", format_micro_lamports(*priority_fee), lamports_to_sol(priority_lamports));
-        let jito_estimate_display = format!("{} ({})", jito_estimate, lamports_to_sol(*jito_estimate));
+        let jito_tip_display = lamports_to_sol(*jito_tip);
+        let total_display = lamports_to_sol(total_lamports);
+
+        let mut row = vec![Cell::new(level), Cell::new(&priority_display), Cell::new(&jito_tip_display), Cell::new(&total_display)];
 
         if let Some(jito) = jito_data {
             let jito_floor = match *level {
@@ -347,30 +375,20 @@ fn print_solana_fee_data(fee_data: &SolanaFeeData, jito_res: &Option<Result<Jito
                 "Fast" => jito.p75_lamports,
                 _ => 0,
             };
-            let jito_floor_display = format!("{} ({})", jito_floor, lamports_to_sol(jito_floor));
-            let diff_pct = if jito_floor > 0 {
-                let diff = (*jito_estimate as f64 - jito_floor as f64) / jito_floor as f64 * 100.0;
-                format!("{:+.1}%", diff)
-            } else {
-                "N/A".to_string()
-            };
-
-            table.add_row(Row::new(vec![
-                Cell::new(level),
-                Cell::new(&priority_display),
-                Cell::new(&jito_estimate_display),
-                Cell::new(&jito_floor_display),
-                Cell::new(&diff_pct),
-            ]));
-        } else {
-            table.add_row(Row::new(vec![Cell::new(level), Cell::new(&priority_display), Cell::new(&jito_estimate_display)]));
+            let jito_floor_display = lamports_to_sol(jito_floor);
+            row.push(Cell::new(&jito_floor_display));
         }
+
+        table.add_row(Row::new(row));
     }
 
     table.printstd();
 
     if let Some(Err(e)) = jito_res {
         println!("  (Jito API error: {})", e);
+    }
+    if let Some(Err(e)) = helius_res {
+        println!("  (Helius API error: {})", e);
     }
 }
 

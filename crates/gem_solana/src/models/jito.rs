@@ -3,7 +3,7 @@ use rand::seq::IndexedRandom;
 
 use crate::SYSTEM_PROGRAM_ID;
 
-pub const JITO_TIP_MIN_LAMPORTS: u64 = 1_000;
+pub const JITO_TIP_MIN_LAMPORTS: u64 = 10_000; // 0.00001 SOL
 
 pub const JITO_TIP_ACCOUNTS: [&str; 8] = [
     "96gYZGLnJYVFmbjzopPSU6QiEV5fGqZNyN9nmNhvrZU5",
