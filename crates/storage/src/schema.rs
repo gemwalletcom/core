@@ -98,6 +98,7 @@ diesel::table! {
         staking_apr -> Nullable<Float8>,
         is_earnable -> Bool,
         earn_apr -> Nullable<Float8>,
+        has_image -> Bool,
     }
 }
 
