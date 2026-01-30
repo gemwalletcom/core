@@ -54,3 +54,9 @@ x-device-body-hash: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852
   }
 }
 ```
+
+## Implementation
+
+- Signature verification: [`crates/gem_auth/src/device_signature.rs`](../crates/gem_auth/src/device_signature.rs)
+- Request guards: [`apps/api/src/devices/guard.rs`](../apps/api/src/devices/guard.rs)
+- Tests: [`crates/gem_auth/src/device_signature.rs#L25`](../crates/gem_auth/src/device_signature.rs#L25)
