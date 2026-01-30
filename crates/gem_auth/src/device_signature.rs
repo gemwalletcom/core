@@ -62,6 +62,18 @@ mod tests {
     }
 
     #[test]
+    fn test_reject_wrong_public_key() {
+        let signing_key = SigningKey::from_bytes(&[1u8; 32]);
+        let wrong_key = SigningKey::from_bytes(&[2u8; 32]);
+        let wrong_public_key_hex = hex::encode(wrong_key.verifying_key().as_bytes());
+        let message = "v1.1706000000000.GET./v1/devices/abc.e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+        let signature = signing_key.sign(message.as_bytes());
+        let signature_base64 = STANDARD.encode(signature.to_bytes());
+
+        assert!(!verify_device_signature(&wrong_public_key_hex, message, &signature_base64));
+    }
+
+    #[test]
     fn test_reject_invalid_base64() {
         assert!(!verify_device_signature("not_hex", "msg", "!!!invalid!!!"));
         assert!(!verify_device_signature("aabb", "msg", "dG9vc2hvcnQ="));
