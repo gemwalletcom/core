@@ -217,12 +217,6 @@ impl<'r> FromData<'r> for DeviceParam {
             return Error((Status::BadRequest, format!("Invalid locale: {}", device.locale)));
         }
 
-        if let Some(ref public_key) = device.public_key
-            && let Err((status, msg)) = verify_request_signature(_req, public_key)
-        {
-            return Error((status, msg));
-        }
-
         Success(DeviceParam(device))
     }
 }

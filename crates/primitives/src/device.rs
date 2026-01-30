@@ -19,7 +19,6 @@ pub struct Device {
     pub is_push_enabled: bool,
     pub is_price_alerts_enabled: Option<bool>,
     pub subscriptions_version: i32,
-    pub public_key: Option<String>,
 }
 
 impl Device {

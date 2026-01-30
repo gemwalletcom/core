@@ -17,7 +17,6 @@ CREATE TABLE devices (
     is_price_alerts_enabled boolean NOT NULL DEFAULT false,
     os VARCHAR(64) NOT NULL,
     model VARCHAR(128) NOT NULL,
-    public_key VARCHAR(128),
     UNIQUE(device_id)
 );
 

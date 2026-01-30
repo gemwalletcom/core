@@ -231,8 +231,6 @@ diesel::table! {
         os -> Varchar,
         #[max_length = 128]
         model -> Varchar,
-        #[max_length = 128]
-        public_key -> Nullable<Varchar>,
     }
 }
 
