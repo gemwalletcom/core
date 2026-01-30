@@ -228,6 +228,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 chain::balance::get_balances_staking,
                 chain::transaction::get_transactions,
                 webhooks::create_support_webhook,
+                support::add_device_legacy,
                 support::add_device,
                 support::get_support_device,
                 fiat::get_ip_address,
