@@ -52,6 +52,11 @@ impl<'r> FromRequest<'r> for AuthenticatedDevice {
             Err(error) => return error,
         };
 
+        if let Err((status, msg)) = verify_request_signature(req, &device_id) {
+            cache_error(req, &msg);
+            return Error((status, msg));
+        }
+
         let Success(database) = req.guard::<&rocket::State<Database>>().await else {
             return auth_error_outcome(req, DeviceError::DatabaseUnavailable);
         };
@@ -63,11 +68,6 @@ impl<'r> FromRequest<'r> for AuthenticatedDevice {
         let Ok(device_row) = DevicesStore::get_device(&mut db_client, &device_id) else {
             return auth_error_outcome(req, DeviceError::DeviceNotFound);
         };
-
-        if let Err((status, msg)) = verify_request_signature(req, &device_id) {
-            cache_error(req, &msg);
-            return Error((status, msg));
-        }
 
         Success(AuthenticatedDevice { device_row })
     }
@@ -106,6 +106,11 @@ impl<'r> FromRequest<'r> for AuthenticatedDeviceWallet {
             return auth_error_outcome(req, DeviceError::MissingHeader(HEADER_WALLET_ID));
         };
 
+        if let Err((status, msg)) = verify_request_signature(req, &device_id) {
+            cache_error(req, &msg);
+            return Error((status, msg));
+        }
+
         let Success(database) = req.guard::<&rocket::State<Database>>().await else {
             return auth_error_outcome(req, DeviceError::DatabaseUnavailable);
         };
@@ -117,11 +122,6 @@ impl<'r> FromRequest<'r> for AuthenticatedDeviceWallet {
         let Ok(device_row) = DevicesStore::get_device(&mut db_client, &device_id) else {
             return auth_error_outcome(req, DeviceError::DeviceNotFound);
         };
-
-        if let Err((status, msg)) = verify_request_signature(req, &device_id) {
-            cache_error(req, &msg);
-            return Error((status, msg));
-        }
 
         let Ok(wallet_row) = WalletsStore::get_wallet(&mut db_client, &wallet_id_str) else {
             return auth_error_outcome(req, DeviceError::WalletNotFound);
