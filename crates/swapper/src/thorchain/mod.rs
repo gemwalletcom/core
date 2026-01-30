@@ -1,4 +1,5 @@
 mod asset;
+mod bigint;
 mod chain;
 mod client;
 mod constants;
@@ -7,9 +8,9 @@ pub(crate) mod model;
 mod provider;
 mod quote_data_mapper;
 
-use num_bigint::BigInt;
+use bigint::value_to;
 use primitives::Chain;
-use std::{str::FromStr, sync::Arc};
+use std::sync::Arc;
 
 use crate::alien::RpcProvider;
 use gem_client::Client;
@@ -46,20 +47,6 @@ where
         }
     }
 
-    fn value_from(&self, value: String, decimals: i32) -> BigInt {
-        let value = BigInt::from_str(&value).unwrap();
-        let decimals = decimals - 8;
-        let factor = BigInt::from(10).pow(decimals.unsigned_abs());
-        if decimals > 0 { value / factor } else { value * factor }
-    }
-
-    fn value_to(&self, value: String, decimals: i32) -> BigInt {
-        let value = BigInt::from_str(&value).unwrap();
-        let decimals = decimals - 8;
-        let factor = BigInt::from(10).pow(decimals.unsigned_abs());
-        if decimals > 0 { value * factor } else { value / factor }
-    }
-
     fn get_eta_in_seconds(&self, destination_chain: Chain, total_swap_seconds: Option<u32>) -> u32 {
         destination_chain.block_time() / 1000 + OUTBOUND_DELAY_SECONDS + total_swap_seconds.unwrap_or(0)
     }
@@ -67,7 +54,7 @@ where
     fn map_quote_error(&self, error: SwapperError, decimals: i32) -> SwapperError {
         match error {
             SwapperError::InputAmountError { min_amount: Some(min) } => SwapperError::InputAmountError {
-                min_amount: Some(self.value_to(min, decimals).to_string()),
+                min_amount: value_to(&min, decimals).ok().map(|v| v.to_string()),
             },
             other => other,
         }

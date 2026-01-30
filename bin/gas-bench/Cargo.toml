@@ -13,6 +13,7 @@ serde = { workspace = true, features = ["derive"] }
 prettytable-rs = "^0.10"
 
 primitives = { path = "../../crates/primitives" }
+gem_jsonrpc = { path = "../../crates/gem_jsonrpc" }
 gemstone = { path = "../../gemstone", features = ["reqwest_provider"] }
 gem_evm = { path = "../../crates/gem_evm" }
 serde_serializers = { path = "../../crates/serde_serializers" }

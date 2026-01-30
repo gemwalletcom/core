@@ -1,0 +1,83 @@
+use alloy_primitives::Address;
+use primitives::{AssetId, Chain, swap::ApprovalData};
+use strum::{AsRefStr, Display, EnumString};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, EnumString, AsRefStr)]
+#[strum(serialize_all = "lowercase")]
+pub enum YieldProvider {
+    Yo,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Display, EnumString, AsRefStr)]
+#[strum(serialize_all = "lowercase")]
+pub enum RiskLevel {
+    Low,
+    Medium,
+    High,
+}
+
+#[derive(Debug, Clone)]
+pub struct Yield {
+    pub name: String,
+    pub asset_id: AssetId,
+    pub provider: YieldProvider,
+    pub apy: Option<f64>,
+    pub risk: RiskLevel,
+}
+
+impl Yield {
+    pub fn new(name: impl Into<String>, asset_id: AssetId, provider: YieldProvider, apy: Option<f64>, risk: RiskLevel) -> Self {
+        Self {
+            name: name.into(),
+            asset_id,
+            provider,
+            apy,
+            risk,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct YieldTransaction {
+    pub chain: Chain,
+    pub from: String,
+    pub to: String,
+    pub data: String,
+    pub value: Option<String>,
+    pub approval: Option<ApprovalData>,
+}
+
+#[derive(Debug, Clone)]
+pub struct YieldDetailsRequest {
+    pub asset_id: AssetId,
+    pub wallet_address: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct YieldPosition {
+    pub name: String,
+    pub asset_id: AssetId,
+    pub provider: YieldProvider,
+    pub vault_token_address: String,
+    pub asset_token_address: String,
+    pub vault_balance_value: Option<String>,
+    pub asset_balance_value: Option<String>,
+    pub apy: Option<f64>,
+    pub rewards: Option<String>,
+}
+
+impl YieldPosition {
+    pub fn new(name: impl Into<String>, asset_id: AssetId, provider: YieldProvider, share_token: Address, asset_token: Address) -> Self {
+        Self {
+            name: name.into(),
+            asset_id,
+            provider,
+            vault_token_address: share_token.to_string(),
+            asset_token_address: asset_token.to_string(),
+            vault_balance_value: None,
+            asset_balance_value: None,
+            apy: None,
+            rewards: None,
+        }
+    }
+}

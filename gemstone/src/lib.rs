@@ -6,6 +6,7 @@ pub mod config;
 pub mod ethereum;
 pub mod gateway;
 pub mod gem_swapper;
+pub mod gem_yielder;
 pub mod message;
 pub mod models;
 pub mod network;
@@ -16,6 +17,7 @@ pub mod siwe;
 pub mod wallet_connect;
 
 use alien::AlienError;
+use yielder::YieldError;
 
 uniffi::setup_scaffolding!("gemstone");
 static LIB_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -103,6 +105,23 @@ impl From<serde_json::Error> for GemstoneError {
 
 impl From<std::string::FromUtf8Error> for GemstoneError {
     fn from(error: std::string::FromUtf8Error) -> Self {
+        Self::AnyError { msg: error.to_string() }
+    }
+}
+impl From<YieldError> for GemstoneError {
+    fn from(error: YieldError) -> Self {
+        Self::AnyError { msg: error.to_string() }
+    }
+}
+
+impl From<strum::ParseError> for GemstoneError {
+    fn from(error: strum::ParseError) -> Self {
+        Self::AnyError { msg: error.to_string() }
+    }
+}
+
+impl From<gateway::GatewayError> for GemstoneError {
+    fn from(error: gateway::GatewayError) -> Self {
         Self::AnyError { msg: error.to_string() }
     }
 }
