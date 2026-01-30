@@ -1,4 +1,3 @@
-use crate::responders::verify_request_signature;
 use primitives::currency::Currency;
 use primitives::{Chain, ChartPeriod, Device, FiatQuoteType, NFTAssetId, NFTCollectionId, TransactionId, WalletId};
 use rocket::data::{FromData, Outcome, ToByteUnit};

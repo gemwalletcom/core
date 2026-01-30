@@ -3,6 +3,7 @@ pub mod client;
 pub mod constants;
 pub mod error;
 pub mod guard;
+pub mod signature;
 use crate::assets::AssetsClient;
 use crate::notifications::NotificationsClient;
 use crate::params::{DeviceIdParam, DeviceParam};

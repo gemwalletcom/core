@@ -9,12 +9,12 @@ use storage::models::DeviceRow;
 
 use crate::devices::constants::{HEADER_DEVICE_ID, HEADER_WALLET_ID};
 use crate::devices::error::DeviceError;
+use crate::devices::signature::verify_request_signature;
 use crate::responders::cache_error;
 
 fn auth_error_outcome<T>(req: &Request<'_>, error: DeviceError) -> Outcome<T, String> {
     let status = match error {
-        DeviceError::MissingHeader(_) => Status::Unauthorized,
-        DeviceError::MissingParameter(_) => Status::BadRequest,
+        DeviceError::MissingHeader(_) | DeviceError::InvalidTimestamp | DeviceError::TimestampExpired | DeviceError::InvalidSignature => Status::Unauthorized,
         DeviceError::DeviceNotFound | DeviceError::WalletNotFound => Status::NotFound,
         DeviceError::DatabaseUnavailable | DeviceError::DatabaseError => Status::InternalServerError,
     };
@@ -47,6 +47,11 @@ impl<'r> FromRequest<'r> for AuthenticatedDevice {
         let Ok(device_row) = DevicesStore::get_device(&mut db_client, &device_id) else {
             return auth_error_outcome(req, DeviceError::DeviceNotFound);
         };
+
+        if let Err((status, msg)) = verify_request_signature(req, device_id) {
+            cache_error(req, &msg);
+            return Error((status, msg));
+        }
 
         Success(AuthenticatedDevice { device_row })
     }
@@ -95,6 +100,11 @@ impl<'r> FromRequest<'r> for AuthenticatedDeviceWallet {
         let Ok(device_row) = DevicesStore::get_device(&mut db_client, &device_id) else {
             return auth_error_outcome(req, DeviceError::DeviceNotFound);
         };
+
+        if let Err((status, msg)) = verify_request_signature(req, device_id) {
+            cache_error(req, &msg);
+            return Error((status, msg));
+        }
 
         let Ok(wallet_row) = WalletsStore::get_wallet(&mut db_client, &wallet_id_str) else {
             return auth_error_outcome(req, DeviceError::WalletNotFound);
