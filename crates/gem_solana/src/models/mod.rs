@@ -1,6 +1,7 @@
 pub mod balances;
 pub mod block;
 pub mod blockhash;
+pub mod jito;
 pub mod prioritization_fee;
 pub mod rpc;
 pub mod stake;
