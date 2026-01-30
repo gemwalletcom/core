@@ -6,6 +6,7 @@ use rocket::http::Status;
 use rocket::outcome::Outcome::{Error, Success};
 use rocket::{Data, Request, State};
 use serde::de::DeserializeOwned;
+use sha2::{Digest, Sha256};
 use std::sync::Arc;
 use storage::Database;
 use storage::database::devices::DevicesStore;
@@ -34,7 +35,16 @@ async fn verify_wallet_signature<'r, T: DeserializeOwned + Send, O>(req: &'r Req
         return Err(error_outcome(req, Status::BadRequest, "Request body too large"));
     }
 
-    let Ok(body) = serde_json::from_slice::<AuthenticatedRequest<T>>(&bytes.into_inner()) else {
+    let raw_body = bytes.into_inner();
+
+    if let Some(expected_hash) = req.headers().get_one("x-device-body-hash") {
+        let actual_hash = format!("{:x}", Sha256::digest(&raw_body));
+        if actual_hash != expected_hash {
+            return Err(error_outcome(req, Status::BadRequest, "Body hash mismatch"));
+        }
+    }
+
+    let Ok(body) = serde_json::from_slice::<AuthenticatedRequest<T>>(&raw_body) else {
         return Err(error_outcome(req, Status::BadRequest, "Invalid JSON"));
     };
 

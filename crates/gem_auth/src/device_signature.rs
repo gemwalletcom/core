@@ -1,7 +1,8 @@
 use alloy_primitives::hex;
+use base64::{Engine, engine::general_purpose::STANDARD};
 use ed25519_dalek::{Signature, VerifyingKey};
 
-pub fn verify_device_signature(public_key_hex: &str, message: &str, signature_hex: &str) -> bool {
+pub fn verify_device_signature(public_key_hex: &str, message: &str, signature_base64: &str) -> bool {
     let Ok(pk_bytes) = hex::decode(public_key_hex) else {
         return false;
     };
@@ -11,7 +12,7 @@ pub fn verify_device_signature(public_key_hex: &str, message: &str, signature_he
     let Ok(verifying_key) = VerifyingKey::from_bytes(&pk_array) else {
         return false;
     };
-    let Ok(sig_bytes) = hex::decode(signature_hex) else {
+    let Ok(sig_bytes) = STANDARD.decode(signature_base64) else {
         return false;
     };
     let Ok(sig_array): Result<[u8; 64], _> = sig_bytes.try_into() else {
@@ -31,19 +32,19 @@ mod tests {
     fn test_verify_valid_signature() {
         let signing_key = SigningKey::from_bytes(&[1u8; 32]);
         let public_key_hex = hex::encode(signing_key.verifying_key().as_bytes());
-        let message = "1706000000.GET./v1/devices/abc.e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+        let message = "v1.1706000000000.GET./v1/devices/abc.e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
         let signature = signing_key.sign(message.as_bytes());
-        let signature_hex = hex::encode(signature.to_bytes());
+        let signature_base64 = STANDARD.encode(signature.to_bytes());
 
-        assert!(verify_device_signature(&public_key_hex, message, &signature_hex));
+        assert!(verify_device_signature(&public_key_hex, message, &signature_base64));
     }
 
     #[test]
     fn test_reject_invalid_signature() {
         let signing_key = SigningKey::from_bytes(&[1u8; 32]);
         let public_key_hex = hex::encode(signing_key.verifying_key().as_bytes());
-        let message = "1706000000.GET./v1/devices/abc.e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
-        let wrong_sig = hex::encode([0u8; 64]);
+        let message = "v1.1706000000000.GET./v1/devices/abc.e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+        let wrong_sig = STANDARD.encode([0u8; 64]);
 
         assert!(!verify_device_signature(&public_key_hex, message, &wrong_sig));
     }
@@ -52,17 +53,17 @@ mod tests {
     fn test_reject_tampered_message() {
         let signing_key = SigningKey::from_bytes(&[1u8; 32]);
         let public_key_hex = hex::encode(signing_key.verifying_key().as_bytes());
-        let message = "1706000000.GET./v1/devices/abc.e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+        let message = "v1.1706000000000.GET./v1/devices/abc.e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
         let signature = signing_key.sign(message.as_bytes());
-        let signature_hex = hex::encode(signature.to_bytes());
+        let signature_base64 = STANDARD.encode(signature.to_bytes());
 
-        let tampered = "1706000000.POST./v1/devices/abc.e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
-        assert!(!verify_device_signature(&public_key_hex, tampered, &signature_hex));
+        let tampered = "v1.1706000000000.POST./v1/devices/abc.e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+        assert!(!verify_device_signature(&public_key_hex, tampered, &signature_base64));
     }
 
     #[test]
-    fn test_reject_invalid_hex() {
-        assert!(!verify_device_signature("not_hex", "msg", "not_hex"));
-        assert!(!verify_device_signature("aabb", "msg", "aabb"));
+    fn test_reject_invalid_base64() {
+        assert!(!verify_device_signature("not_hex", "msg", "!!!invalid!!!"));
+        assert!(!verify_device_signature("aabb", "msg", "dG9vc2hvcnQ="));
     }
 }

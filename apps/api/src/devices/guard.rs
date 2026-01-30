@@ -12,7 +12,7 @@ use storage::models::DeviceRow;
 
 use crate::responders::cache_error;
 
-const TIMESTAMP_TOLERANCE_SECS: u64 = 300;
+const TIMESTAMP_TOLERANCE_MS: u64 = 300_000;
 
 fn error_outcome<T>(req: &Request<'_>, status: Status, message: &str) -> Outcome<T, String> {
     cache_error(req, message);
@@ -26,29 +26,28 @@ fn verify_signature(req: &Request<'_>, device_row: &DeviceRow) -> Result<(), (St
 
     let signature = req
         .headers()
-        .get_one("X-Device-Signature")
-        .ok_or((Status::Unauthorized, "Missing X-Device-Signature".to_string()))?;
+        .get_one("x-device-signature")
+        .ok_or((Status::Unauthorized, "Missing x-device-signature".to_string()))?;
     let timestamp_str = req
         .headers()
-        .get_one("X-Device-Timestamp")
-        .ok_or((Status::Unauthorized, "Missing X-Device-Timestamp".to_string()))?;
+        .get_one("x-device-timestamp")
+        .ok_or((Status::Unauthorized, "Missing x-device-timestamp".to_string()))?;
     let body_hash = req
         .headers()
-        .get_one("X-Device-Body-Hash")
-        .ok_or((Status::Unauthorized, "Missing X-Device-Body-Hash".to_string()))?;
+        .get_one("x-device-body-hash")
+        .ok_or((Status::Unauthorized, "Missing x-device-body-hash".to_string()))?;
 
-    let timestamp: u64 = timestamp_str.parse().map_err(|_| (Status::Unauthorized, "Invalid timestamp".to_string()))?;
+    let timestamp_ms: u64 = timestamp_str.parse().map_err(|_| (Status::Unauthorized, "Invalid timestamp".to_string()))?;
 
-    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs();
+    let now_ms = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_millis() as u64;
 
-    let diff = now.abs_diff(timestamp);
-    if diff > TIMESTAMP_TOLERANCE_SECS {
+    if now_ms.abs_diff(timestamp_ms) > TIMESTAMP_TOLERANCE_MS {
         return Err((Status::Unauthorized, "Timestamp expired".to_string()));
     }
 
     let method = req.method().as_str();
     let path = req.uri().path().as_str();
-    let message = format!("{timestamp_str}.{method}.{path}.{body_hash}");
+    let message = format!("v1.{timestamp_str}.{method}.{path}.{body_hash}");
 
     if !verify_device_signature(public_key, &message, signature) {
         return Err((Status::Unauthorized, "Invalid signature".to_string()));
