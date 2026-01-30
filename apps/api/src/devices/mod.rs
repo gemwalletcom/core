@@ -3,7 +3,7 @@ pub mod client;
 pub mod guard;
 use crate::assets::AssetsClient;
 use crate::notifications::NotificationsClient;
-use crate::params::{DeviceIdParam, DeviceParam};
+use crate::params::DeviceParam;
 use crate::responders::{ApiError, ApiResponse};
 use crate::transactions::TransactionsClient;
 use crate::wallets::WalletsClient;
@@ -25,31 +25,31 @@ pub async fn add_device(device: DeviceParam, client: &State<Mutex<DevicesClient>
     Ok(client.lock().await.add_device(device.0)?.into())
 }
 
-#[get("/devices/<device_id>")]
-pub async fn get_device(device_id: DeviceIdParam, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<Device>, ApiError> {
-    Ok(client.lock().await.get_device(&device_id.0)?.into())
+#[get("/devices/<_device_id>")]
+pub async fn get_device(_device_id: &str, device: AuthenticatedDevice) -> ApiResponse<Device> {
+    device.device_row.as_primitive().into()
 }
 
-#[put("/devices/<device_id>", format = "json", data = "<device>")]
-pub async fn update_device(device: DeviceParam, #[allow(unused)] device_id: DeviceIdParam, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<Device>, ApiError> {
-    Ok(client.lock().await.update_device(device.0)?.into())
+#[put("/devices/<_device_id>", format = "json", data = "<device_param>")]
+pub async fn update_device(_device_id: &str, _device: AuthenticatedDevice, device_param: DeviceParam, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<Device>, ApiError> {
+    Ok(client.lock().await.update_device(device_param.0)?.into())
 }
 
-#[post("/devices/<device_id>/push-notification")]
-pub async fn send_push_notification_device(device_id: DeviceIdParam, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<bool>, ApiError> {
+#[post("/devices/<_device_id>/push-notification")]
+pub async fn send_push_notification_device(_device_id: &str, device: AuthenticatedDevice, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<bool>, ApiError> {
     Ok(ApiResponse::from(
-        client.lock().await.send_push_notification_device(&device_id.0).await.map_err(ApiError::from)?,
+        client.lock().await.send_push_notification_device(&device.device_row.device_id).await.map_err(ApiError::from)?,
     ))
 }
 
-#[delete("/devices/<device_id>")]
-pub async fn delete_device(device_id: DeviceIdParam, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<usize>, ApiError> {
-    Ok(client.lock().await.delete_device(&device_id.0)?.into())
+#[delete("/devices/<_device_id>")]
+pub async fn delete_device(_device_id: &str, device: AuthenticatedDevice, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<usize>, ApiError> {
+    Ok(client.lock().await.delete_device(&device.device_row.device_id)?.into())
 }
 
-#[get("/devices/<_device_id>/is_registered")]
-pub async fn is_device_registered(_device_id: &str, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<bool>, ApiError> {
-    Ok(client.lock().await.is_device_registered(_device_id)?.into())
+#[get("/devices/<device_id>/is_registered")]
+pub async fn is_device_registered(device_id: &str, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<bool>, ApiError> {
+    Ok(client.lock().await.is_device_registered(device_id)?.into())
 }
 
 #[get("/devices/<_device_id>/price_alerts?<asset_id>")]
