@@ -5,6 +5,7 @@ use crate::assets::AssetsClient;
 use crate::notifications::NotificationsClient;
 use crate::params::DeviceParam;
 use crate::responders::{ApiError, ApiResponse};
+use crate::scan::ScanClient;
 use crate::transactions::TransactionsClient;
 use crate::wallets::WalletsClient;
 pub use cacher::DeviceCacher;
@@ -14,7 +15,10 @@ use nft::NFTClient;
 use pricer::PriceAlertClient;
 use primitives::device::Device;
 use primitives::rewards::{RedemptionRequest, RedemptionResult, RewardRedemptionOption};
-use primitives::{AssetId, InAppNotification, NFTData, PriceAlerts, ReferralLeaderboard, RewardEvent, Rewards, TransactionsResponse, WalletSubscription, WalletSubscriptionChains};
+use primitives::{
+    AssetId, InAppNotification, NFTData, PriceAlerts, ReferralLeaderboard, ReportNft, RewardEvent, Rewards, ScanTransaction, ScanTransactionPayload, TransactionsResponse,
+    WalletSubscription, WalletSubscriptionChains,
+};
 use rocket::{State, delete, get, post, put, serde::json::Json, tokio::sync::Mutex};
 
 use crate::auth::WalletSigned;
@@ -31,14 +35,24 @@ pub async fn get_device(_device_id: &str, device: AuthenticatedDevice) -> ApiRes
 }
 
 #[put("/devices/<_device_id>", format = "json", data = "<device_param>")]
-pub async fn update_device(_device_id: &str, _device: AuthenticatedDevice, device_param: DeviceParam, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<Device>, ApiError> {
+pub async fn update_device(
+    _device_id: &str,
+    _device: AuthenticatedDevice,
+    device_param: DeviceParam,
+    client: &State<Mutex<DevicesClient>>,
+) -> Result<ApiResponse<Device>, ApiError> {
     Ok(client.lock().await.update_device(device_param.0)?.into())
 }
 
 #[post("/devices/<_device_id>/push-notification")]
 pub async fn send_push_notification_device(_device_id: &str, device: AuthenticatedDevice, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<bool>, ApiError> {
     Ok(ApiResponse::from(
-        client.lock().await.send_push_notification_device(&device.device_row.device_id).await.map_err(ApiError::from)?,
+        client
+            .lock()
+            .await
+            .send_push_notification_device(&device.device_row.device_id)
+            .await
+            .map_err(ApiError::from)?,
     ))
 }
 
@@ -263,4 +277,28 @@ pub async fn redeem_device_rewards(
         .redeem_by_wallet_id(device.wallet_id, &request.data.id, device.device_row.id)
         .await?
         .into())
+}
+
+#[post("/devices/<_device_id>/nft/report", format = "json", data = "<request>")]
+pub async fn report_device_nft(_device_id: &str, device: AuthenticatedDevice, request: Json<ReportNft>, client: &State<Mutex<NFTClient>>) -> Result<ApiResponse<bool>, ApiError> {
+    Ok(client
+        .lock()
+        .await
+        .report_nft(
+            &device.device_row.device_id,
+            request.collection_id.clone(),
+            request.asset_id.clone(),
+            request.reason.clone(),
+        )?
+        .into())
+}
+
+#[post("/devices/<_device_id>/scan/transaction", data = "<request>")]
+pub async fn scan_device_transaction(
+    _device_id: &str,
+    _device: AuthenticatedDevice,
+    request: Json<ScanTransactionPayload>,
+    client: &State<Mutex<ScanClient>>,
+) -> Result<ApiResponse<ScanTransaction>, ApiError> {
+    Ok(client.lock().await.get_scan_transaction(request.0).await?.into())
 }
