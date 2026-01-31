@@ -19,6 +19,7 @@ pub trait WalletsStore {
     fn get_devices_by_wallet_id(&mut self, wallet_id: i32) -> Result<Vec<DeviceRow>, DatabaseError>;
     fn add_subscriptions(&mut self, subscriptions: Vec<NewWalletSubscriptionRow>) -> Result<usize, DatabaseError>;
     fn delete_subscriptions(&mut self, device_id: i32, wallet_id: i32, chain: ChainRow, address_ids: Vec<i32>) -> Result<usize, DatabaseError>;
+    fn delete_wallet_subscriptions(&mut self, device_id: i32, wallet_ids: Vec<i32>) -> Result<usize, DatabaseError>;
 }
 
 impl WalletsStore for DatabaseClient {
@@ -138,6 +139,15 @@ impl WalletsStore for DatabaseClient {
             .filter(wallets_subscriptions::wallet_id.eq(wallet_id))
             .filter(wallets_subscriptions::chain.eq(chain))
             .filter(wallets_subscriptions::address_id.eq_any(address_ids))
+            .execute(&mut self.connection)?;
+
+        Ok(count)
+    }
+
+    fn delete_wallet_subscriptions(&mut self, device_id: i32, wallet_ids: Vec<i32>) -> Result<usize, DatabaseError> {
+        let count = diesel::delete(wallets_subscriptions::table)
+            .filter(wallets_subscriptions::device_id.eq(device_id))
+            .filter(wallets_subscriptions::wallet_id.eq_any(wallet_ids))
             .execute(&mut self.connection)?;
 
         Ok(count)

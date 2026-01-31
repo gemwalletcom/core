@@ -124,4 +124,18 @@ impl WalletsClient {
 
         Ok(count)
     }
+
+    pub async fn delete_subscriptions_by_wallet_ids(&self, device_row_id: i32, wallet_identifiers: Vec<String>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        if wallet_identifiers.is_empty() {
+            return Ok(0);
+        }
+
+        let mut store = self.database.wallets()?;
+
+        let wallet_row_ids: Vec<i32> = store.get_wallets(wallet_identifiers)?.into_iter().map(|x| x.id).collect();
+
+        let count = store.delete_wallet_subscriptions(device_row_id, wallet_row_ids)?;
+
+        Ok(count)
+    }
 }

@@ -16,6 +16,7 @@ pub trait WalletsRepository {
     fn get_devices_by_wallet_id(&mut self, wallet_id: i32) -> Result<Vec<DeviceRow>, DatabaseError>;
     fn add_subscriptions(&mut self, device_id: i32, subscriptions: Vec<(i32, Chain, String)>) -> Result<usize, DatabaseError>;
     fn delete_subscriptions(&mut self, device_id: i32, subscriptions: Vec<(i32, Chain, String)>) -> Result<usize, DatabaseError>;
+    fn delete_wallet_subscriptions(&mut self, device_id: i32, wallet_ids: Vec<i32>) -> Result<usize, DatabaseError>;
 }
 
 impl WalletsRepository for DatabaseClient {
@@ -127,5 +128,9 @@ impl WalletsRepository for DatabaseClient {
         }
 
         Ok(count)
+    }
+
+    fn delete_wallet_subscriptions(&mut self, device_id: i32, wallet_ids: Vec<i32>) -> Result<usize, DatabaseError> {
+        WalletsStore::delete_wallet_subscriptions(self, device_id, wallet_ids)
     }
 }

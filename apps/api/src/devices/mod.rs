@@ -246,13 +246,13 @@ pub async fn add_device_subscriptions_v2(
     Ok(client.lock().await.add_subscriptions(&device.device_row.device_id, subscriptions.0).await?.into())
 }
 
-#[delete("/devices/subscriptions", format = "json", data = "<subscriptions>")]
+#[delete("/devices/subscriptions", format = "json", data = "<wallet_ids>")]
 pub async fn delete_device_subscriptions_v2(
     device: AuthenticatedDevice,
-    subscriptions: Json<Vec<WalletSubscription>>,
+    wallet_ids: Json<Vec<String>>,
     client: &State<Mutex<WalletsClient>>,
 ) -> Result<ApiResponse<usize>, ApiError> {
-    Ok(client.lock().await.delete_subscriptions(&device.device_row.device_id, subscriptions.0).await?.into())
+    Ok(client.lock().await.delete_subscriptions_by_wallet_ids(device.device_row.id, wallet_ids.0).await?.into())
 }
 
 #[get("/devices/auth/nonce")]
