@@ -21,12 +21,13 @@ pub async fn add_subscriptions(
     Ok(client.lock().await.add_subscriptions(&device_id.0, subscriptions.0).await?.into())
 }
 
-// TODO: Remove once all clients migrate to /v1/devices/<device_id>/subscriptions
+// TODO: Remove once all clients migrate to /v2/devices/subscriptions
 #[delete("/subscriptions/<device_id>", format = "json", data = "<subscriptions>")]
 pub async fn delete_subscriptions(
     device_id: DeviceIdParam,
     subscriptions: Json<Vec<WalletSubscription>>,
     client: &State<Mutex<WalletsClient>>,
 ) -> Result<ApiResponse<usize>, ApiError> {
-    Ok(client.lock().await.delete_subscriptions(&device_id.0, subscriptions.0).await?.into())
+    let _ = (device_id, subscriptions, client);
+    Ok(0.into())
 }
