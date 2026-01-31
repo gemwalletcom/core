@@ -38,6 +38,7 @@ fn get_validated_device_id<T>(req: &Request<'_>) -> Result<String, Outcome<T, St
     Ok(device_id.to_string())
 }
 
+// Signature verified + device exists in database
 pub struct AuthenticatedDevice {
     pub device_row: DeviceRow,
 }
@@ -73,20 +74,28 @@ impl<'r> FromRequest<'r> for AuthenticatedDevice {
     }
 }
 
-pub struct DeviceId(pub String);
+// Signature verified, no database check (for device registration)
+pub struct VerifiedDeviceId(pub String);
 
 #[rocket::async_trait]
-impl<'r> FromRequest<'r> for DeviceId {
+impl<'r> FromRequest<'r> for VerifiedDeviceId {
     type Error = String;
 
     async fn from_request(req: &'r Request<'_>) -> Outcome<Self, String> {
         match get_validated_device_id(req) {
-            Ok(id) => Success(DeviceId(id)),
+            Ok(id) => {
+                if let Err((status, msg)) = verify_request_signature(req, &id) {
+                    cache_error(req, &msg);
+                    return Error((status, msg));
+                }
+                Success(VerifiedDeviceId(id))
+            }
             Err(error) => error,
         }
     }
 }
 
+// Signature verified + device and wallet exist in database
 pub struct AuthenticatedDeviceWallet {
     pub device_row: DeviceRow,
     pub wallet_id: i32,

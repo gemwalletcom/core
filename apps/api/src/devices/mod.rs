@@ -15,7 +15,7 @@ use crate::wallets::WalletsClient;
 pub use cacher::DeviceCacher;
 pub use client::DevicesClient;
 use gem_auth::AuthClient;
-use guard::{AuthenticatedDevice, AuthenticatedDeviceWallet, DeviceId};
+use guard::{AuthenticatedDevice, AuthenticatedDeviceWallet, VerifiedDeviceId};
 use nft::NFTClient;
 use primitives::device::Device;
 use primitives::rewards::{RedemptionRequest, RedemptionResult};
@@ -35,7 +35,7 @@ pub async fn add_device(device: DeviceParam, client: &State<Mutex<DevicesClient>
 }
 
 #[post("/devices", format = "json", data = "<device>")]
-pub async fn add_device_v2(_device_id: DeviceId, device: DeviceParam, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<Device>, ApiError> {
+pub async fn add_device_v2(_device_id: VerifiedDeviceId, device: DeviceParam, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<Device>, ApiError> {
     Ok(client.lock().await.add_device(device.0)?.into())
 }
 
@@ -65,7 +65,7 @@ pub async fn delete_device_v2(device: AuthenticatedDevice, client: &State<Mutex<
 }
 
 #[get("/devices/is_registered")]
-pub async fn is_device_registered_v2(device_id: DeviceId, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<bool>, ApiError> {
+pub async fn is_device_registered_v2(device_id: VerifiedDeviceId, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<bool>, ApiError> {
     Ok(client.lock().await.is_device_registered(&device_id.0)?.into())
 }
 
