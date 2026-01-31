@@ -26,6 +26,7 @@ pub const ASSETS_RANKING_RULES: &[&str] = &[
     "words",
     "typo",
     "score.rank:desc",
+    "properties.hasImage:desc",
     "properties.isBuyable:desc",
     "properties.isSellable:desc",
     "properties.isSwapable:desc",
