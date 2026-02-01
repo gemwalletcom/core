@@ -122,13 +122,13 @@ mod tests {
         assert_eq!(orders[0].oid, 8804521338);
         assert_eq!(orders[0].trigger_px, Some(110000.0));
         assert_eq!(orders[0].limit_px, Some(110000.0));
-        assert_eq!(orders[0].is_position_tpsl, true);
+        assert!(orders[0].is_position_tpsl);
         assert_eq!(orders[0].order_type, "Take Profit Market");
         assert_eq!(orders[1].coin, "BTC");
         assert_eq!(orders[1].oid, 8804521339);
         assert_eq!(orders[1].trigger_px, Some(95000.0));
         assert_eq!(orders[1].limit_px, Some(95000.0));
-        assert_eq!(orders[1].is_position_tpsl, true);
+        assert!(orders[1].is_position_tpsl);
         assert_eq!(orders[1].order_type, "Stop Market");
     }
 

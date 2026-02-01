@@ -132,7 +132,7 @@ impl<'r> FromRequest<'r> for AuthenticatedDeviceWallet {
             return auth_error_outcome(req, DeviceError::DeviceNotFound);
         };
 
-        let Ok(wallet_row) = WalletsStore::get_wallet(&mut db_client, &wallet_id_str) else {
+        let Ok(wallet_row) = WalletsStore::get_wallet(&mut db_client, wallet_id_str) else {
             return auth_error_outcome(req, DeviceError::WalletNotFound);
         };
 
