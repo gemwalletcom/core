@@ -10,6 +10,10 @@ use strum::ParseError;
 
 pub struct ErrorContext(pub String);
 
+pub fn cache_error(req: &Request<'_>, message: &str) {
+    req.local_cache(|| ErrorContext(message.to_string()));
+}
+
 #[derive(Debug)]
 pub enum ApiError {
     BadRequest(String),

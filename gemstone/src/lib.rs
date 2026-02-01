@@ -14,6 +14,7 @@ pub mod payment;
 pub mod perpetual;
 pub mod signer;
 pub mod siwe;
+pub mod solana;
 pub mod wallet_connect;
 
 use alien::AlienError;
