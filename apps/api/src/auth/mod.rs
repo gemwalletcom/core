@@ -1,6 +1,6 @@
 mod guard;
 
-pub use guard::{Authenticated, VerifiedAuth};
+pub use guard::{Authenticated, WalletSigned};
 
 use crate::responders::{ApiError, ApiResponse};
 use gem_auth::AuthClient;

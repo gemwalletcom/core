@@ -22,7 +22,11 @@ impl RewardsRedemptionClient {
 
     pub async fn redeem(&self, wallet_identifier: &str, id: &str, device_id: i32) -> Result<RedemptionResult, Box<dyn std::error::Error + Send + Sync>> {
         let wallet = self.database.wallets()?.get_wallet(wallet_identifier)?;
-        let rewards = self.database.rewards()?.get_reward_by_wallet_id(wallet.id)?;
+        self.redeem_by_wallet_id(wallet.id, id, device_id).await
+    }
+
+    pub async fn redeem_by_wallet_id(&self, wallet_id: i32, id: &str, device_id: i32) -> Result<RedemptionResult, Box<dyn std::error::Error + Send + Sync>> {
+        let rewards = self.database.rewards()?.get_reward_by_wallet_id(wallet_id)?;
 
         if !rewards.status.is_enabled() {
             return Err(RewardsRedemptionError::NotEligible("Not eligible for rewards".to_string()).into());
@@ -32,7 +36,7 @@ impl RewardsRedemptionClient {
 
         self.check_redemption_limits(&username, &rewards)?;
 
-        let response = redeem_points(&mut self.database.client()?, &username, id, device_id, wallet.id)?;
+        let response = redeem_points(&mut self.database.client()?, &username, id, device_id, wallet_id)?;
         self.stream_producer
             .publish_rewards_redemption(streamer::RewardsRedemptionPayload::new(response.redemption_id))
             .await?;
