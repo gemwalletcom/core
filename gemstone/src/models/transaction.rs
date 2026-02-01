@@ -731,10 +731,12 @@ impl From<GemGasPriceType> for GasPriceType {
                 gas_price,
                 priority_fee,
                 unit_price,
+                jito_tip,
             } => GasPriceType::Solana {
                 gas_price: gas_price.parse().unwrap_or_default(),
                 priority_fee: priority_fee.parse().unwrap_or_default(),
                 unit_price: unit_price.parse().unwrap_or_default(),
+                jito_tip,
             },
         }
     }
