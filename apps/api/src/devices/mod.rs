@@ -20,7 +20,7 @@ use nft::NFTClient;
 use primitives::device::Device;
 use primitives::rewards::{RedemptionRequest, RedemptionResult};
 use primitives::{
-    AssetId, AuthNonce, InAppNotification, MigrateDeviceIdRequest, NFTData, ReportNft, RewardEvent, Rewards, ScanTransaction, ScanTransactionPayload, SupportDevice,
+    AssetId, AuthNonce, InAppNotification, MigrateDeviceIdRequest, NFTData, PriceAlerts, ReportNft, RewardEvent, Rewards, ScanTransaction, ScanTransactionPayload, SupportDevice,
     SupportDeviceRequest, TransactionsResponse, WalletSubscription, WalletSubscriptionChains,
 };
 use rocket::{State, delete, get, post, put, serde::json::Json, tokio::sync::Mutex};
@@ -258,4 +258,31 @@ pub async fn delete_device_subscriptions_v2(
 #[get("/devices/auth/nonce")]
 pub async fn get_auth_nonce_v2(device: AuthenticatedDevice, client: &State<Arc<AuthClient>>) -> Result<ApiResponse<AuthNonce>, ApiError> {
     Ok(client.get_nonce(&device.device_row.device_id).await?.into())
+}
+
+#[get("/devices/price_alerts?<asset_id>")]
+pub async fn get_device_price_alerts_v2(
+    device: AuthenticatedDevice,
+    asset_id: Option<&str>,
+    client: &State<Mutex<crate::price_alerts::PriceAlertClient>>,
+) -> Result<ApiResponse<PriceAlerts>, ApiError> {
+    Ok(client.lock().await.get_price_alerts(&device.device_row.device_id, asset_id).await?.into())
+}
+
+#[post("/devices/price_alerts", format = "json", data = "<price_alerts>")]
+pub async fn add_device_price_alerts_v2(
+    device: AuthenticatedDevice,
+    price_alerts: Json<PriceAlerts>,
+    client: &State<Mutex<crate::price_alerts::PriceAlertClient>>,
+) -> Result<ApiResponse<usize>, ApiError> {
+    Ok(client.lock().await.add_price_alerts(&device.device_row.device_id, price_alerts.0).await?.into())
+}
+
+#[delete("/devices/price_alerts", format = "json", data = "<price_alerts>")]
+pub async fn delete_device_price_alerts_v2(
+    device: AuthenticatedDevice,
+    price_alerts: Json<PriceAlerts>,
+    client: &State<Mutex<crate::price_alerts::PriceAlertClient>>,
+) -> Result<ApiResponse<usize>, ApiError> {
+    Ok(client.lock().await.delete_price_alerts(&device.device_row.device_id, price_alerts.0).await?.into())
 }
