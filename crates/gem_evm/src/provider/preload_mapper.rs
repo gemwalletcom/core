@@ -195,8 +195,10 @@ pub fn get_extra_fee_gas_limit(input: &TransactionLoadInput) -> Result<BigInt, B
             }
         }
         TransactionInputType::Yield(_, _, earn_data) => {
-            if earn_data.approval.is_some() && earn_data.gas_limit.is_some() {
-                Ok(BigInt::from_str_radix(earn_data.gas_limit.as_ref().unwrap(), 10)?)
+            if let Some(gas_limit) = earn_data.gas_limit.as_ref()
+                && earn_data.approval.is_some()
+            {
+                Ok(BigInt::from_str_radix(gas_limit, 10)?)
             } else {
                 Ok(BigInt::from(0))
             }
