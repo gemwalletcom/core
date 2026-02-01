@@ -259,6 +259,8 @@ pub mod job_status;
 pub use self::job_status::JobStatus;
 pub mod consumer_status;
 pub use self::consumer_status::{ConsumerError, ConsumerStatus};
+pub mod parser_status;
+pub use self::parser_status::{ParserError, ParserStatus};
 
 #[cfg(any(test, feature = "testkit"))]
 pub mod testkit;

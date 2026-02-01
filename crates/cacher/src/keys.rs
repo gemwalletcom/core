@@ -37,6 +37,7 @@ pub enum CacheKey<'a> {
     // Status keys
     JobStatus(&'a str),
     ConsumerStatus(&'a str),
+    ParserStatus(&'a str),
 
     // Price WebSocket observed assets
     ObservedAssets,
@@ -64,6 +65,7 @@ impl CacheKey<'_> {
             Self::AuthNonce(device_id, nonce) => format!("auth:nonce:{}:{}", device_id, nonce),
             Self::JobStatus(name) => format!("jobs:status:{}", name),
             Self::ConsumerStatus(name) => format!("consumers:status:{}", name),
+            Self::ParserStatus(chain) => format!("parser:status:{}", chain),
             Self::ObservedAssets => "observed_assets".to_string(),
         }
     }
@@ -89,6 +91,7 @@ impl CacheKey<'_> {
             Self::AuthNonce(_, _) => 5 * SECONDS_PER_MINUTE,
             Self::JobStatus(_) => 7 * SECONDS_PER_DAY,
             Self::ConsumerStatus(_) => 7 * SECONDS_PER_DAY,
+            Self::ParserStatus(_) => 7 * SECONDS_PER_DAY,
             Self::ObservedAssets => 2 * SECONDS_PER_MINUTE,
         }
     }
