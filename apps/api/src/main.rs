@@ -25,6 +25,7 @@ mod transactions;
 mod wallets;
 mod webhooks;
 mod websocket_prices;
+mod websocket_stream;
 
 use std::{str::FromStr, sync::Arc};
 
@@ -277,6 +278,21 @@ async fn rocket_ws_prices(settings: Settings) -> Rocket<Build> {
         .mount("/v1/ws", routes![websocket_prices::ws_prices])
 }
 
+async fn rocket_ws_stream(settings: Settings) -> Rocket<Build> {
+    let cacher_client = CacherClient::new(&settings.redis.url).await;
+    let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
+    let price_client = PriceClient::new(database.clone(), cacher_client);
+    let stream_observer_config = websocket_stream::StreamObserverConfig {
+        redis_url: settings.redis.url.clone(),
+    };
+
+    rocket::build()
+        .manage(database)
+        .manage(Arc::new(Mutex::new(price_client)))
+        .manage(Arc::new(Mutex::new(stream_observer_config)))
+        .mount("/v2/devices", routes![websocket_stream::ws_stream])
+}
+
 #[tokio::main]
 async fn main() {
     let settings = Settings::new().unwrap();
@@ -294,6 +310,10 @@ async fn main() {
     match service {
         APIService::WebsocketPrices => {
             let rocket_api = rocket_ws_prices(settings.clone()).await;
+            rocket_api.launch().await.expect("Failed to launch Rocket");
+        }
+        APIService::WebsocketStream => {
+            let rocket_api = rocket_ws_stream(settings.clone()).await;
             rocket_api.launch().await.expect("Failed to launch Rocket");
         }
         APIService::Api => {

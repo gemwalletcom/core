@@ -179,7 +179,7 @@ pub mod swap_provider;
 pub use self::swap_provider::SwapProvider;
 pub mod swap;
 pub mod websocket;
-pub use self::websocket::{WebSocketPriceAction, WebSocketPriceActionType, WebSocketPricePayload};
+pub use self::websocket::{StreamMessage, WebSocketPriceAction, WebSocketPriceActionType, WebSocketPricePayload};
 pub mod asset_balance;
 pub use self::asset_balance::{AssetBalance, Balance};
 pub mod chain_address;
