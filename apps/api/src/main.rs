@@ -25,6 +25,7 @@ mod transactions;
 mod wallets;
 mod webhooks;
 mod websocket_prices;
+mod websocket_stream;
 
 use std::{str::FromStr, sync::Arc};
 
@@ -170,27 +171,6 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 devices::get_device,
                 devices::update_device,
                 devices::delete_device,
-                devices::send_push_notification_device,
-                devices::is_device_registered,
-                devices::get_device_price_alerts,
-                devices::add_device_price_alerts,
-                devices::delete_device_price_alerts,
-                devices::get_device_subscriptions,
-                devices::add_device_subscriptions,
-                devices::delete_device_subscriptions,
-                devices::get_device_transactions,
-                devices::get_device_assets,
-                devices::get_device_nft_assets,
-                devices::get_device_notifications,
-                devices::mark_device_notifications_read,
-                devices::get_device_rewards,
-                devices::get_device_rewards_events,
-                devices::get_device_rewards_leaderboard,
-                devices::get_device_rewards_redemption_option,
-                devices::create_device_referral,
-                devices::use_device_referral_code,
-                devices::redeem_device_rewards,
-                devices::report_device_nft,
                 auth::get_auth_nonce,
                 assets::get_asset,
                 assets::get_assets,
@@ -250,7 +230,30 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 transactions::get_transactions_by_device_id_v2,
                 nft::get_nft_assets_v2,
                 scan::scan_transaction_v2,
-                devices::scan_device_transaction,
+                devices::add_device_v2,
+                devices::get_device_v2,
+                devices::delete_device_v2,
+                devices::is_device_registered_v2,
+                devices::migrate_device_id_v2,
+                devices::update_device_v2,
+                devices::send_push_notification_device_v2,
+                devices::report_device_nft_v2,
+                devices::scan_device_transaction_v2,
+                devices::get_device_assets_v2,
+                devices::get_device_transactions_v2,
+                devices::get_device_nft_assets_v2,
+                devices::get_device_rewards_v2,
+                devices::get_device_rewards_events_v2,
+                devices::create_device_referral_v2,
+                devices::use_device_referral_code_v2,
+                devices::redeem_device_rewards_v2,
+                devices::get_device_notifications_v2,
+                devices::mark_device_notifications_read_v2,
+                devices::add_device_support_v2,
+                devices::get_device_subscriptions_v2,
+                devices::add_device_subscriptions_v2,
+                devices::delete_device_subscriptions_v2,
+                devices::get_auth_nonce_v2,
                 wallets::get_subscriptions,
                 wallets::add_subscriptions,
                 wallets::delete_subscriptions,
@@ -275,6 +278,21 @@ async fn rocket_ws_prices(settings: Settings) -> Rocket<Build> {
         .mount("/v1/ws", routes![websocket_prices::ws_prices])
 }
 
+async fn rocket_ws_stream(settings: Settings) -> Rocket<Build> {
+    let cacher_client = CacherClient::new(&settings.redis.url).await;
+    let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
+    let price_client = PriceClient::new(database.clone(), cacher_client);
+    let stream_observer_config = websocket_stream::StreamObserverConfig {
+        redis_url: settings.redis.url.clone(),
+    };
+
+    rocket::build()
+        .manage(database)
+        .manage(Arc::new(Mutex::new(price_client)))
+        .manage(Arc::new(Mutex::new(stream_observer_config)))
+        .mount("/v2/devices", routes![websocket_stream::ws_stream])
+}
+
 #[tokio::main]
 async fn main() {
     let settings = Settings::new().unwrap();
@@ -292,6 +310,10 @@ async fn main() {
     match service {
         APIService::WebsocketPrices => {
             let rocket_api = rocket_ws_prices(settings.clone()).await;
+            rocket_api.launch().await.expect("Failed to launch Rocket");
+        }
+        APIService::WebsocketStream => {
+            let rocket_api = rocket_ws_stream(settings.clone()).await;
             rocket_api.launch().await.expect("Failed to launch Rocket");
         }
         APIService::Api => {

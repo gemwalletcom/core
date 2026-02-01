@@ -210,7 +210,7 @@ diesel::table! {
 
     devices (id) {
         id -> Int4,
-        #[max_length = 32]
+        #[max_length = 64]
         device_id -> Varchar,
         is_push_enabled -> Bool,
         platform -> Platform,
@@ -231,8 +231,6 @@ diesel::table! {
         os -> Varchar,
         #[max_length = 128]
         model -> Varchar,
-        #[max_length = 128]
-        public_key -> Nullable<Varchar>,
     }
 }
 

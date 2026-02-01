@@ -7,20 +7,38 @@ use storage::database::devices::DevicesStore;
 use storage::database::wallets::WalletsStore;
 use storage::models::DeviceRow;
 
-use crate::responders::{cache_error, verify_request_signature};
+use crate::devices::constants::{DEVICE_ID_LENGTH, HEADER_DEVICE_ID, HEADER_WALLET_ID};
+use crate::devices::error::DeviceError;
+use crate::devices::signature::verify_request_signature;
+use crate::responders::cache_error;
 
-fn error_outcome<T>(req: &Request<'_>, status: Status, message: &str) -> Outcome<T, String> {
-    cache_error(req, message);
-    Error((status, message.to_string()))
-}
-
-fn verify_signature(req: &Request<'_>, device_row: &DeviceRow) -> Result<(), (Status, String)> {
-    let Some(ref public_key) = device_row.public_key else {
-        return Ok(());
+fn auth_error_outcome<T>(req: &Request<'_>, error: DeviceError) -> Outcome<T, String> {
+    let status = match error {
+        DeviceError::MissingHeader(_) | DeviceError::InvalidDeviceId | DeviceError::InvalidTimestamp | DeviceError::TimestampExpired | DeviceError::InvalidSignature => {
+            Status::Unauthorized
+        }
+        DeviceError::DeviceNotFound | DeviceError::WalletNotFound => Status::NotFound,
+        DeviceError::DatabaseUnavailable | DeviceError::DatabaseError => Status::InternalServerError,
     };
-    verify_request_signature(req, public_key)
+    let message = error.to_string();
+    cache_error(req, &message);
+    Error((status, message))
 }
 
+fn get_validated_device_id<T>(req: &Request<'_>) -> Result<String, Outcome<T, String>> {
+    let device_id = req
+        .headers()
+        .get_one(HEADER_DEVICE_ID)
+        .ok_or_else(|| auth_error_outcome(req, DeviceError::MissingHeader(HEADER_DEVICE_ID)))?;
+
+    if device_id.len() != DEVICE_ID_LENGTH {
+        return Err(auth_error_outcome(req, DeviceError::InvalidDeviceId));
+    }
+
+    Ok(device_id.to_string())
+}
+
+// Signature verified + device exists in database
 pub struct AuthenticatedDevice {
     pub device_row: DeviceRow,
 }
@@ -30,30 +48,54 @@ impl<'r> FromRequest<'r> for AuthenticatedDevice {
     type Error = String;
 
     async fn from_request(req: &'r Request<'_>) -> Outcome<Self, String> {
-        let Some(device_id) = req.routed_segment(1).map(|s: &str| s.to_string()) else {
-            return error_outcome(req, Status::BadRequest, "Missing device_id");
+        let device_id = match get_validated_device_id(req) {
+            Ok(id) => id,
+            Err(error) => return error,
         };
 
+        if let Err((status, msg)) = verify_request_signature(req, &device_id) {
+            cache_error(req, &msg);
+            return Error((status, msg));
+        }
+
         let Success(database) = req.guard::<&rocket::State<Database>>().await else {
-            return error_outcome(req, Status::InternalServerError, "Database not available");
+            return auth_error_outcome(req, DeviceError::DatabaseUnavailable);
         };
 
         let Ok(mut db_client) = database.client() else {
-            return error_outcome(req, Status::InternalServerError, "Database error");
+            return auth_error_outcome(req, DeviceError::DatabaseError);
         };
 
         let Ok(device_row) = DevicesStore::get_device(&mut db_client, &device_id) else {
-            return error_outcome(req, Status::NotFound, "Device not found");
+            return auth_error_outcome(req, DeviceError::DeviceNotFound);
         };
-
-        if let Err((status, msg)) = verify_signature(req, &device_row) {
-            return error_outcome(req, status, &msg);
-        }
 
         Success(AuthenticatedDevice { device_row })
     }
 }
 
+// Signature verified, no database check (for device registration)
+pub struct VerifiedDeviceId(pub String);
+
+#[rocket::async_trait]
+impl<'r> FromRequest<'r> for VerifiedDeviceId {
+    type Error = String;
+
+    async fn from_request(req: &'r Request<'_>) -> Outcome<Self, String> {
+        match get_validated_device_id(req) {
+            Ok(id) => {
+                if let Err((status, msg)) = verify_request_signature(req, &id) {
+                    cache_error(req, &msg);
+                    return Error((status, msg));
+                }
+                Success(VerifiedDeviceId(id))
+            }
+            Err(error) => error,
+        }
+    }
+}
+
+// Signature verified + device and wallet exist in database
 pub struct AuthenticatedDeviceWallet {
     pub device_row: DeviceRow,
     pub wallet_id: i32,
@@ -64,32 +106,34 @@ impl<'r> FromRequest<'r> for AuthenticatedDeviceWallet {
     type Error = String;
 
     async fn from_request(req: &'r Request<'_>) -> Outcome<Self, String> {
-        let Some(device_id) = req.routed_segment(1).map(|s: &str| s.to_string()) else {
-            return error_outcome(req, Status::BadRequest, "Missing device_id");
+        let device_id = match get_validated_device_id(req) {
+            Ok(id) => id,
+            Err(error) => return error,
         };
 
-        let Some(wallet_id_str) = req.routed_segment(3).map(|s: &str| s.to_string()) else {
-            return error_outcome(req, Status::BadRequest, "Missing wallet_id");
+        let Some(wallet_id_str) = req.headers().get_one(HEADER_WALLET_ID) else {
+            return auth_error_outcome(req, DeviceError::MissingHeader(HEADER_WALLET_ID));
         };
+
+        if let Err((status, msg)) = verify_request_signature(req, &device_id) {
+            cache_error(req, &msg);
+            return Error((status, msg));
+        }
 
         let Success(database) = req.guard::<&rocket::State<Database>>().await else {
-            return error_outcome(req, Status::InternalServerError, "Database not available");
+            return auth_error_outcome(req, DeviceError::DatabaseUnavailable);
         };
 
         let Ok(mut db_client) = database.client() else {
-            return error_outcome(req, Status::InternalServerError, "Database error");
+            return auth_error_outcome(req, DeviceError::DatabaseError);
         };
 
         let Ok(device_row) = DevicesStore::get_device(&mut db_client, &device_id) else {
-            return error_outcome(req, Status::NotFound, "Device not found");
+            return auth_error_outcome(req, DeviceError::DeviceNotFound);
         };
 
-        if let Err((status, msg)) = verify_signature(req, &device_row) {
-            return error_outcome(req, status, &msg);
-        }
-
         let Ok(wallet_row) = WalletsStore::get_wallet(&mut db_client, &wallet_id_str) else {
-            return error_outcome(req, Status::NotFound, "Wallet not found");
+            return auth_error_outcome(req, DeviceError::WalletNotFound);
         };
 
         Success(AuthenticatedDeviceWallet {

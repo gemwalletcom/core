@@ -19,7 +19,6 @@ pub struct Device {
     pub is_push_enabled: bool,
     pub is_price_alerts_enabled: Option<bool>,
     pub subscriptions_version: i32,
-    pub public_key: Option<String>,
 }
 
 impl Device {
@@ -30,6 +29,14 @@ impl Device {
     pub fn can_receive_price_alerts(&self) -> bool {
         self.can_receive_push_notification() && self.is_price_alerts_enabled == Some(true)
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct MigrateDeviceIdRequest {
+    pub old_device_id: String,
+    pub public_key: String,
 }
 
 #[cfg(test)]

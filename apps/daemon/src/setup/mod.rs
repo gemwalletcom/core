@@ -163,7 +163,6 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
         subscriptions_version: 1,
         os: "iOS 18".to_string(),
         model: "iPhone 16".to_string(),
-        public_key: None,
     };
 
     let android_device = UpdateDeviceRow {
@@ -179,7 +178,6 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
         subscriptions_version: 1,
         os: "Android 15".to_string(),
         model: "Pixel 9".to_string(),
-        public_key: None,
     };
 
     let _ = database.devices()?.add_device(ios_device).expect("Failed to add iOS device");

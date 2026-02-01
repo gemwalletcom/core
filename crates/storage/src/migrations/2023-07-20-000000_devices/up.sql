@@ -3,7 +3,7 @@ CREATE TYPE platform_store AS ENUM ('appStore', 'googlePlay', 'fdroid', 'huawei'
 
 CREATE TABLE devices (
     id SERIAL PRIMARY KEY,
-    device_id VARCHAR(32) NOT NULL,
+    device_id VARCHAR(64) NOT NULL,
     is_push_enabled boolean NOT NULL,
     platform platform NOT NULL,
     platform_store platform_store NOT NULL,
@@ -17,7 +17,6 @@ CREATE TABLE devices (
     is_price_alerts_enabled boolean NOT NULL DEFAULT false,
     os VARCHAR(64) NOT NULL,
     model VARCHAR(128) NOT NULL,
-    public_key VARCHAR(128),
     UNIQUE(device_id)
 );
 

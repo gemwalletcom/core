@@ -1,4 +1,3 @@
-use crate::responders::verify_request_signature;
 use primitives::currency::Currency;
 use primitives::{Chain, ChartPeriod, Device, FiatQuoteType, NFTAssetId, NFTCollectionId, TransactionId, WalletId};
 use rocket::data::{FromData, Outcome, ToByteUnit};
@@ -215,12 +214,6 @@ impl<'r> FromData<'r> for DeviceParam {
 
         if device.locale.parse::<LanguageIdentifier>().is_err() {
             return Error((Status::BadRequest, format!("Invalid locale: {}", device.locale)));
-        }
-
-        if let Some(ref public_key) = device.public_key
-            && let Err((status, msg)) = verify_request_signature(_req, public_key)
-        {
-            return Error((status, msg));
         }
 
         Success(DeviceParam(device))
