@@ -1,9 +1,9 @@
 use cacher::{CacheKey, CacherClient};
+use primitives::ParserStatus;
 use prometheus_client::encoding::EncodeLabelSet;
 use prometheus_client::metrics::family::Family;
 use prometheus_client::metrics::gauge::Gauge;
 use prometheus_client::registry::Registry;
-use primitives::ParserStatus;
 use std::sync::OnceLock;
 use storage::Database;
 
