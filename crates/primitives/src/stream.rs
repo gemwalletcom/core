@@ -7,7 +7,6 @@ use crate::{AssetId, Chain, Transaction, WalletId, WebSocketPricePayload};
 #[serde(rename_all = "camelCase")]
 #[typeshare(swift = "Sendable")]
 pub struct StreamMessagePrices {
-    #[serde(default)]
     pub assets: Vec<AssetId>,
 }
 
