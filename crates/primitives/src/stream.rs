@@ -4,21 +4,20 @@ use typeshare::typeshare;
 use crate::{AssetId, Chain, Transaction, WalletId, WebSocketPricePayload};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+#[typeshare(swift = "Sendable")]
+pub struct StreamMessagePrices {
+    #[serde(default)]
+    pub assets: Vec<AssetId>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "data", rename_all = "camelCase")]
 #[typeshare(swift = "Sendable")]
 pub enum StreamMessage {
-    SubscribePrices {
-        #[serde(default)]
-        assets: Vec<AssetId>,
-    },
-    UnsubscribePrices {
-        #[serde(default)]
-        assets: Vec<AssetId>,
-    },
-    AddPrices {
-        #[serde(default)]
-        assets: Vec<AssetId>,
-    },
+    SubscribePrices(StreamMessagePrices),
+    UnsubscribePrices(StreamMessagePrices),
+    AddPrices(StreamMessagePrices),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
