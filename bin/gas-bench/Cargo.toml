@@ -14,7 +14,6 @@ serde_json = { workspace = true }
 prettytable-rs = "^0.10"
 
 primitives = { path = "../../crates/primitives" }
-gem_jsonrpc = { path = "../../crates/gem_jsonrpc" }
 gemstone = { path = "../../gemstone", features = ["reqwest_provider"] }
 gem_evm = { path = "../../crates/gem_evm" }
 gem_solana = { path = "../../crates/gem_solana", features = ["reqwest"] }
