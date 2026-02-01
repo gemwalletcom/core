@@ -45,14 +45,6 @@ pub fn init_consumer_metrics(registry: &mut Registry) {
     CONSUMER_ERROR_DETAIL.set(error_detail).ok();
 }
 
-struct AggregatedConsumer {
-    total_processed: u64,
-    total_errors: u64,
-    last_success: Option<u64>,
-    avg_duration_sum: u64,
-    avg_duration_count: u64,
-}
-
 pub async fn update_consumer_metrics(cacher: &CacherClient) {
     let keys = match cacher.keys(&format!("{}*", CONSUMERS_STATUS_PREFIX)).await {
         Ok(k) => k,

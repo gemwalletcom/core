@@ -279,6 +279,7 @@ async fn rocket_ws_prices(settings: Settings) -> Rocket<Build> {
         .manage(Arc::new(Mutex::new(price_observer_config)))
         .mount("/", routes![websocket_prices::ws_health])
         .mount("/v1/ws", routes![websocket_prices::ws_prices])
+        .register("/", catchers![catchers::default_catcher])
 }
 
 async fn rocket_ws_stream(settings: Settings) -> Rocket<Build> {
@@ -294,6 +295,7 @@ async fn rocket_ws_stream(settings: Settings) -> Rocket<Build> {
         .manage(Arc::new(Mutex::new(price_client)))
         .manage(Arc::new(Mutex::new(stream_observer_config)))
         .mount("/v2/devices", routes![websocket_stream::ws_stream])
+        .register("/", catchers![catchers::default_catcher])
 }
 
 #[tokio::main]
