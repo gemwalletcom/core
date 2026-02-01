@@ -42,8 +42,6 @@ pub enum StreamMessage {
         #[serde(default)]
         assets: Vec<AssetId>,
     },
-    SubscribeBalances,
-    UnsubscribeBalances,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

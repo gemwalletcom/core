@@ -125,9 +125,6 @@ impl StreamObserverClient {
                 self.build_and_send_payload(stream, payload).await?;
                 return Ok(redis_connection.subscribe(self.get_asset_ids()).await?);
             }
-            StreamMessage::SubscribeBalances | StreamMessage::UnsubscribeBalances => {
-                return Ok(());
-            }
         };
 
         if needs_clear {
