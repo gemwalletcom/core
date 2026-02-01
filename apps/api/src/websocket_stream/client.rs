@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use gem_tracing::info_with_fields;
 use pricer::PriceClient;
-use primitives::{AssetId, AssetPrice, AssetPriceInfo, StreamMessage, WebSocketPricePayload, asset::AssetHashSetExt};
+use primitives::{AssetId, AssetPrice, AssetPriceInfo, StreamEvent, StreamMessage, WebSocketPricePayload, asset::AssetHashSetExt};
 use redis::aio::MultiplexedConnection;
 use redis::{PushInfo, PushKind};
 use rocket::futures::SinkExt;
@@ -75,7 +75,8 @@ impl StreamObserverClient {
     }
 
     pub async fn build_and_send_payload(&mut self, stream: &mut DuplexStream, payload: WebSocketPricePayload) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let text = serde_json::to_string(&payload)?;
+        let event = StreamEvent::Prices(payload);
+        let text = serde_json::to_string(&event)?;
         let item = Message::Text(text);
         Ok(stream.send(item).await?)
     }
