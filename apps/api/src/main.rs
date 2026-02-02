@@ -302,6 +302,7 @@ async fn rocket_ws_stream(settings: Settings) -> Rocket<Build> {
         .manage(Arc::new(Mutex::new(price_client)))
         .manage(Arc::new(Mutex::new(stream_observer_config)))
         .mount("/v2/devices", routes![websocket_stream::ws_stream])
+        .mount("/", routes![websocket_stream::ws_health])
         .register("/", catchers![catchers::default_catcher])
 }
 
