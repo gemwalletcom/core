@@ -182,7 +182,7 @@ pub mod swap;
 pub mod websocket;
 pub use self::websocket::{WebSocketPriceAction, WebSocketPriceActionType, WebSocketPricePayload};
 pub mod stream;
-pub use self::stream::{StreamBalanceUpdate, StreamEvent, StreamMessage, StreamTransactionsUpdate};
+pub use self::stream::{StreamBalanceUpdate, StreamEvent, StreamMessage, StreamMessagePrices, StreamTransactionsUpdate};
 pub mod asset_balance;
 pub use self::asset_balance::{AssetBalance, Balance};
 pub mod chain_address;
@@ -262,6 +262,8 @@ pub mod job_status;
 pub use self::job_status::JobStatus;
 pub mod consumer_status;
 pub use self::consumer_status::{ConsumerError, ConsumerStatus};
+pub mod parser_status;
+pub use self::parser_status::{ParserError, ParserStatus};
 
 #[cfg(any(test, feature = "testkit"))]
 pub mod testkit;

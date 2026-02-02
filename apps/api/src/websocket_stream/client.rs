@@ -110,16 +110,16 @@ impl StreamObserverClient {
         let message = serde_json::from_slice::<StreamMessage>(&data)?;
 
         let (new_assets, needs_clear, needs_rates) = match &message {
-            StreamMessage::SubscribePrices { assets } => {
-                let assets_set: HashSet<AssetId> = assets.iter().cloned().collect();
+            StreamMessage::SubscribePrices(msg) => {
+                let assets_set: HashSet<AssetId> = msg.assets.iter().cloned().collect();
                 (assets_set, true, true)
             }
-            StreamMessage::AddPrices { assets } => {
-                let assets_set: HashSet<AssetId> = assets.iter().cloned().collect();
+            StreamMessage::AddPrices(msg) => {
+                let assets_set: HashSet<AssetId> = msg.assets.iter().cloned().collect();
                 (assets_set, false, false)
             }
-            StreamMessage::UnsubscribePrices { assets } => {
-                for asset in assets {
+            StreamMessage::UnsubscribePrices(msg) => {
+                for asset in &msg.assets {
                     self.assets.remove(asset);
                 }
                 let payload = self.fetch_payload_data(false).await?;
