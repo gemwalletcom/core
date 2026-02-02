@@ -16,9 +16,9 @@ use primitives::{
     FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatQuotes, FiatQuotesOld,
 };
 use reqwest::Client as RequestClient;
-use storage::database::devices::DevicesStore;
 use storage::{
-    AssetFilter, AssetsRepository, ConfigCacher, Database, SubscriptionsRepository,
+    AssetFilter, AssetsRepository, ConfigCacher, Database, SubscriptionsRepository, WalletsRepository,
+    database::devices::DevicesStore,
     models::{FiatQuoteRequestRow, FiatQuoteRow, NewFiatWebhookRow},
 };
 use streamer::{FiatWebhook, FiatWebhookPayload, StreamProducer};
@@ -339,7 +339,7 @@ impl FiatClient {
         Ok(FiatQuotes { quotes, errors })
     }
 
-    pub async fn get_quote_url(&self, quote_id: &str, wallet_address: &str, ip_address: &str, device_id: &str) -> Result<(FiatQuoteUrl, FiatQuote), Box<dyn Error + Send + Sync>> {
+    pub async fn get_quote_url_legacy(&self, quote_id: &str, wallet_address: &str, ip_address: &str, device_id: &str) -> Result<(FiatQuoteUrl, FiatQuote), Box<dyn Error + Send + Sync>> {
         let mut client = self.database.client()?;
         let device = DevicesStore::get_device(&mut client, device_id)?;
 
@@ -361,6 +361,42 @@ impl FiatClient {
 
         self.database.fiat()?.add_fiat_quote_request(FiatQuoteRequestRow {
             device_id: device.id,
+            quote_id: quote_id.to_string(),
+        })?;
+
+        Ok((url, quote.quote))
+    }
+
+    pub async fn get_quote_url(
+        &self,
+        quote_id: &str,
+        wallet_id: i32,
+        device_id: i32,
+        ip_address: &str,
+        locale: &str,
+    ) -> Result<(FiatQuoteUrl, FiatQuote), Box<dyn Error + Send + Sync>> {
+        let quote = self.fiat_cacher.get_quote(quote_id).await?;
+        let provider = self.provider(&quote.quote.provider.id)?;
+
+        let asset = self.database.assets()?.get_asset(&quote.quote.asset_id)?;
+
+        let wallet_address = self.database.client()?.subscriptions_wallet_address_for_chain(device_id, wallet_id, asset.chain)?;
+
+        let data = FiatQuoteUrlData {
+            quote: quote.quote.clone(),
+            asset_symbol: quote.asset_symbol,
+            wallet_address,
+            ip_address: ip_address.to_string(),
+            locale: locale.to_string(),
+        };
+
+        let url = provider.get_quote_url(data).await?;
+
+        let db_quote = FiatQuoteRow::from_primitive(&quote.quote);
+        self.database.fiat()?.add_fiat_quotes(vec![db_quote])?;
+
+        self.database.fiat()?.add_fiat_quote_request(FiatQuoteRequestRow {
+            device_id,
             quote_id: quote_id.to_string(),
         })?;
 

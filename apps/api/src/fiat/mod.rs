@@ -1,6 +1,7 @@
 mod client;
 
-use crate::metrics::{metrics_fiat_quote_url, metrics_fiat_quotes};
+pub use crate::metrics::metrics_fiat_quote_url;
+use crate::metrics::metrics_fiat_quotes;
 use crate::params::{AddressParam, AssetIdParam, CurrencyParam, FiatQuoteTypeParam};
 use crate::responders::{ApiError, ApiResponse};
 pub use client::FiatQuotesClient;
@@ -10,7 +11,7 @@ use rocket::{State, get, post, serde::json::Json, tokio::sync::Mutex};
 use std::str::FromStr;
 use streamer::FiatWebhook;
 
-const DEBUG_FIAT_IP: &str = "64.94.85.118";
+pub const DEBUG_FIAT_IP: &str = "210.138.184.59";
 
 #[get("/fiat/quotes/<asset_id>?<fiat_amount>&<crypto_value>&<type>&<currency>&<wallet_address>&<ip_address>&<provider>")]
 pub async fn get_fiat_quotes(
@@ -72,7 +73,8 @@ pub async fn get_fiat_quotes_by_type(
 #[post("/fiat/quotes/url", data = "<request>")]
 pub async fn get_fiat_quote_url(request: Json<FiatQuoteUrlRequest>, ip: std::net::IpAddr, client: &State<Mutex<FiatQuotesClient>>) -> Result<ApiResponse<FiatQuoteUrl>, ApiError> {
     let ip_address = if cfg!(debug_assertions) { DEBUG_FIAT_IP } else { &ip.to_string() };
-    let (url, quote) = client.lock().await.get_quote_url(&request, ip_address).await?;
+
+    let (url, quote) = client.lock().await.get_quote_url_legacy(&request.quote_id, &request.wallet_address, ip_address, &request.device_id).await?;
     metrics_fiat_quote_url(&quote);
     Ok(url.into())
 }

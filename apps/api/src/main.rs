@@ -227,6 +227,8 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .mount(
             "/v2",
             routes![
+                devices::get_fiat_quotes_v2,
+                devices::get_fiat_quote_url_v2,
                 transactions::get_transactions_by_device_id_v2,
                 nft::get_nft_assets_v2,
                 scan::scan_transaction_v2,
