@@ -18,7 +18,7 @@ pub struct StakeData {
     pub to: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, AsRefStr, EnumString)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, AsRefStr, EnumString)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "camelCase")]
 #[strum(serialize_all = "camelCase")]
@@ -53,4 +53,22 @@ pub enum StakeType {
     Rewards(Vec<DelegationValidator>),
     Withdraw(Delegation),
     Freeze(FreezeData),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TronVote {
+    pub validator: String,
+    pub count: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct TronUnfreeze {
+    pub resource: Resource,
+    pub amount: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum TronStakeData {
+    Votes(Vec<TronVote>),
+    Unfreeze(Vec<TronUnfreeze>),
 }

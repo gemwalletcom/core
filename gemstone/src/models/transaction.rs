@@ -2,9 +2,10 @@ use crate::models::*;
 use num_bigint::BigInt;
 use primitives::stake_type::{FreezeData, StakeData};
 use primitives::{
-    AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType, TransactionChange,
-    TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata, TransactionState,
-    TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, UInt64, WalletConnectionSessionAppMetadata,
+    AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, Resource, StakeType,
+    TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata,
+    TransactionState, TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, TronStakeData,
+    TronUnfreeze, TronVote, UInt64, WalletConnectionSessionAppMetadata,
     perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualReduceData, TPSLOrderData},
 };
 use std::collections::HashMap;
@@ -23,6 +24,27 @@ pub type GemTransactionState = TransactionState;
 pub type GemTransactionChange = TransactionChange;
 pub type GemTransactionUpdate = TransactionUpdate;
 pub type GemTransactionType = TransactionType;
+pub type GemTronVote = TronVote;
+pub type GemTronUnfreeze = TronUnfreeze;
+pub type GemTronStakeData = TronStakeData;
+
+#[uniffi::remote(Record)]
+pub struct TronVote {
+    pub validator: String,
+    pub count: u64,
+}
+
+#[uniffi::remote(Record)]
+pub struct TronUnfreeze {
+    pub resource: Resource,
+    pub amount: u64,
+}
+
+#[uniffi::remote(Enum)]
+pub enum TronStakeData {
+    Votes(Vec<TronVote>),
+    Unfreeze(Vec<TronUnfreeze>),
+}
 
 #[uniffi::remote(Enum)]
 pub enum PerpetualDirection {
@@ -421,7 +443,7 @@ pub enum GemTransactionLoadMetadata {
         transaction_tree_root: String,
         parent_hash: String,
         witness_address: String,
-        votes: HashMap<String, u64>,
+        stake_data: GemTronStakeData,
     },
     Sui {
         message_bytes: String,
@@ -503,7 +525,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 transaction_tree_root,
                 parent_hash,
                 witness_address,
-                votes,
+                stake_data,
             } => GemTransactionLoadMetadata::Tron {
                 block_number,
                 block_version,
@@ -511,7 +533,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 transaction_tree_root,
                 parent_hash,
                 witness_address,
-                votes,
+                stake_data,
             },
             TransactionLoadMetadata::Sui { message_bytes } => GemTransactionLoadMetadata::Sui { message_bytes },
             TransactionLoadMetadata::Hyperliquid { order } => GemTransactionLoadMetadata::Hyperliquid { order },
@@ -591,7 +613,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 transaction_tree_root,
                 parent_hash,
                 witness_address,
-                votes,
+                stake_data,
             } => TransactionLoadMetadata::Tron {
                 block_number,
                 block_version,
@@ -599,7 +621,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 transaction_tree_root,
                 parent_hash,
                 witness_address,
-                votes,
+                stake_data,
             },
             GemTransactionLoadMetadata::Sui { message_bytes } => TransactionLoadMetadata::Sui { message_bytes },
             GemTransactionLoadMetadata::Hyperliquid { order } => TransactionLoadMetadata::Hyperliquid { order },
