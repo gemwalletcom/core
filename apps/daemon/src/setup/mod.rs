@@ -6,7 +6,7 @@ use primitives::{
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
 use storage::Database;
-use storage::models::{ConfigRow, FiatRateRow, UpdateDeviceRow};
+use storage::models::{ConfigRow, FiatAssetRow, FiatProviderCountryRow, FiatRateRow, UpdateDeviceRow};
 use storage::sql_types::{Platform, PlatformStore};
 use storage::{
     AssetsRepository, ChainsRepository, ConfigRepository, DevicesRepository, MigrationsRepository, NewNotificationRow, NewWalletRow, NotificationsRepository,
@@ -150,8 +150,11 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
 
     info_with_fields!("setup_dev", step = "add devices");
 
+    let ios_device_id = "0".repeat(64);
+    let android_device_id = "1".repeat(64);
+
     let ios_device = UpdateDeviceRow {
-        device_id: "test".to_string(),
+        device_id: ios_device_id.clone(),
         platform: Platform::IOS,
         platform_store: PlatformStore::AppStore,
         token: "test_token".to_string(),
@@ -166,7 +169,7 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
     };
 
     let android_device = UpdateDeviceRow {
-        device_id: "test-android".to_string(),
+        device_id: android_device_id.clone(),
         platform: Platform::Android,
         platform_store: PlatformStore::GooglePlay,
         token: "test_token_android".to_string(),
@@ -181,29 +184,32 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
     };
 
     let _ = database.devices()?.add_device(ios_device).expect("Failed to add iOS device");
-    info_with_fields!("setup_dev", step = "device added", device_id = "test");
+    info_with_fields!("setup_dev", step = "device added", device_id = ios_device_id.as_str());
 
     let _ = database.devices()?.add_device(android_device).expect("Failed to add Android device");
-    info_with_fields!("setup_dev", step = "device added", device_id = "test-android");
+    info_with_fields!("setup_dev", step = "device added", device_id = android_device_id.as_str());
 
-    let device_row_id = database.devices()?.get_device_row_id("test").expect("Failed to get device row id");
+    let ios_device_row_id = database.devices()?.get_device_row_id(&ios_device_id).expect("Failed to get iOS device row id");
+    let android_device_row_id = database.devices()?.get_device_row_id(&android_device_id).expect("Failed to get Android device row id");
+
+    let wallet_address = "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4";
 
     info_with_fields!("setup_dev", step = "add subscription");
 
     let subscription = Subscription {
         wallet_index: 1,
         chain: Chain::Ethereum,
-        address: "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4".to_string(),
+        address: wallet_address.to_string(),
     };
 
-    let result = SubscriptionsRepository::add_subscriptions(&mut database.subscriptions()?, vec![subscription], "test").expect("Failed to add subscription");
+    let result = SubscriptionsRepository::add_subscriptions(&mut database.subscriptions()?, vec![subscription], &ios_device_id).expect("Failed to add subscription");
     info_with_fields!("setup_dev", step = "subscription added", count = result);
 
     info_with_fields!("setup_dev", step = "add wallet");
 
-    let wallet_identifier = "multicoin_0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4".to_string();
+    let wallet_identifier = format!("multicoin_{}", wallet_address);
     let new_wallet = NewWalletRow {
-        identifier: wallet_identifier.clone(),
+        identifier: wallet_identifier,
         wallet_type: WalletType::Multicoin,
         source: WalletSource::Create,
     };
@@ -211,11 +217,15 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
     let wallet = database.wallets()?.get_or_create_wallet(new_wallet).expect("Failed to create wallet");
     info_with_fields!("setup_dev", step = "wallet added", wallet_id = wallet.id);
 
-    info_with_fields!("setup_dev", step = "add wallet subscription");
+    info_with_fields!("setup_dev", step = "add wallet subscriptions");
 
-    let wallet_subscriptions = vec![(wallet.id, Chain::Ethereum, "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4".to_string())];
-    let result = WalletsRepository::add_subscriptions(&mut database.wallets()?, device_row_id, wallet_subscriptions).expect("Failed to add wallet subscription");
-    info_with_fields!("setup_dev", step = "wallet subscription added", count = result);
+    let ios_subscriptions = vec![(wallet.id, Chain::Ethereum, wallet_address.to_string())];
+    let result = WalletsRepository::add_subscriptions(&mut database.wallets()?, ios_device_row_id, ios_subscriptions).expect("Failed to add iOS wallet subscription");
+    info_with_fields!("setup_dev", step = "ios wallet subscription added", count = result);
+
+    let android_subscriptions = vec![(wallet.id, Chain::Ethereum, wallet_address.to_string())];
+    let result = WalletsRepository::add_subscriptions(&mut database.wallets()?, android_device_row_id, android_subscriptions).expect("Failed to add Android wallet subscription");
+    info_with_fields!("setup_dev", step = "android wallet subscription added", count = result);
 
     info_with_fields!("setup_dev", step = "add rewards");
 
@@ -278,8 +288,58 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
         PriceAlert::new_price(AssetId::from_chain(Chain::Bitcoin), "USD".to_string(), 50000.0, PriceAlertDirection::Down),
     ];
 
-    let result = database.price_alerts()?.add_price_alerts("test", price_alerts).expect("Failed to create price alerts");
+    let result = database.price_alerts()?.add_price_alerts(&ios_device_id, price_alerts).expect("Failed to create price alerts");
     info_with_fields!("setup_dev", step = "price alerts added", count = result);
+
+    info_with_fields!("setup_dev", step = "add fiat assets");
+
+    let ethereum_asset_id = AssetId::from_chain(Chain::Ethereum).to_string();
+    let smartchain_asset_id = AssetId::from_chain(Chain::SmartChain).to_string();
+
+    let fiat_asset = |provider: &str, code: &str, symbol: &str, network: &str, asset_id: &str| FiatAssetRow {
+        id: format!("{}_{}", provider, code),
+        asset_id: Some(asset_id.to_string()),
+        provider: provider.to_string(),
+        code: code.to_string(),
+        symbol: symbol.to_string(),
+        network: Some(network.to_string()),
+        token_id: None,
+        is_enabled: true,
+        is_enabled_by_provider: true,
+        is_buy_enabled: true,
+        is_sell_enabled: true,
+        buy_limits: None,
+        sell_limits: None,
+        unsupported_countries: None,
+    };
+
+    let fiat_assets = vec![
+        fiat_asset(FiatProviderName::MoonPay.as_ref(), "eth", "ETH", "ethereum", &ethereum_asset_id),
+        fiat_asset(FiatProviderName::Mercuryo.as_ref(), "ETH", "ETH", "ETHEREUM", &ethereum_asset_id),
+        fiat_asset(FiatProviderName::MoonPay.as_ref(), "bnb_bsc", "BNB", "binance_smart_chain", &smartchain_asset_id),
+        fiat_asset(FiatProviderName::Mercuryo.as_ref(), "BNB", "BNB", "BINANCESMARTCHAIN", &smartchain_asset_id),
+    ];
+
+    let result = database.fiat()?.add_fiat_assets(fiat_assets).expect("Failed to add fiat assets");
+    info_with_fields!("setup_dev", step = "fiat assets added", count = result);
+
+    info_with_fields!("setup_dev", step = "add fiat provider countries");
+
+    let fiat_countries: Vec<FiatProviderCountryRow> = FiatProviderName::all()
+        .into_iter()
+        .map(|provider| {
+            let id = provider.id();
+            FiatProviderCountryRow {
+                id: format!("{}_us", id),
+                provider: id.to_string(),
+                alpha2: "US".to_string(),
+                is_allowed: true,
+            }
+        })
+        .collect();
+
+    let result = database.fiat()?.add_fiat_providers_countries(fiat_countries).expect("Failed to add fiat provider countries");
+    info_with_fields!("setup_dev", step = "fiat provider countries added", count = result);
 
     info_with_fields!("setup_dev", step = "complete");
     Ok(())

@@ -76,19 +76,6 @@ pub struct FiatQuoteRequest {
     pub ip_address: String,
 }
 
-impl FiatQuoteRequest {
-    pub fn new(request: FiatQuoteRequest, asset_id: String, quote_type: FiatQuoteType, ip_address: String) -> Self {
-        Self {
-            asset_id,
-            quote_type,
-            ip_address,
-            amount: request.amount,
-            currency: request.currency,
-            provider_id: request.provider_id,
-        }
-    }
-}
-
 impl FiatQuoteOldRequest {
     pub fn get_buy_quote(&self, asset: Asset, fiat_value: String) -> FiatBuyQuote {
         FiatBuyQuote {

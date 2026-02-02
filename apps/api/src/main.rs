@@ -120,8 +120,10 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let rewards_client = referral::RewardsClient::new(database.clone(), stream_producer.clone(), ip_security_client, pusher_client.clone());
     let redemption_client = referral::RewardsRedemptionClient::new(database.clone(), stream_producer.clone());
     let notifications_client = NotificationsClient::new(database.clone());
+    let auth_config = devices::auth_config::AuthConfig::new(settings.api.auth.enabled, settings.api.auth.tolerance);
 
     rocket::build()
+        .manage(auth_config)
         .manage(database)
         .manage(Mutex::new(fiat_quotes_client))
         .manage(Mutex::new(price_client))

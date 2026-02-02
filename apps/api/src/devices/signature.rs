@@ -4,10 +4,10 @@ use gem_auth::verify_device_signature;
 use rocket::Request;
 use rocket::http::Status;
 
-use crate::devices::constants::{HEADER_DEVICE_BODY_HASH, HEADER_DEVICE_SIGNATURE, HEADER_DEVICE_TIMESTAMP, SIGNATURE_TIMESTAMP_TOLERANCE_MS};
+use crate::devices::constants::{HEADER_DEVICE_BODY_HASH, HEADER_DEVICE_SIGNATURE, HEADER_DEVICE_TIMESTAMP};
 use crate::devices::error::DeviceError;
 
-pub fn verify_request_signature(req: &Request<'_>, public_key: &str) -> Result<(), (Status, String)> {
+pub fn verify_request_signature(req: &Request<'_>, public_key: &str, tolerance_ms: u64) -> Result<(), (Status, String)> {
     let signature = req
         .headers()
         .get_one(HEADER_DEVICE_SIGNATURE)
@@ -27,7 +27,7 @@ pub fn verify_request_signature(req: &Request<'_>, public_key: &str) -> Result<(
         .map_err(|_| (Status::Unauthorized, DeviceError::InvalidTimestamp.to_string()))?
         .as_millis() as u64;
 
-    if now_ms.abs_diff(timestamp_ms) > SIGNATURE_TIMESTAMP_TOLERANCE_MS {
+    if now_ms.abs_diff(timestamp_ms) > tolerance_ms {
         return Err((Status::Unauthorized, DeviceError::TimestampExpired.to_string()));
     }
 
