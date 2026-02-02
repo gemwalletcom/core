@@ -287,7 +287,7 @@ pub async fn delete_device_price_alerts_v2(
     Ok(client.lock().await.delete_price_alerts(&device.device_row.device_id, price_alerts.0).await?.into())
 }
 
-#[post("/fiat/quotes/<quote_type>/<asset_id>", data = "<request>")]
+#[post("/devices/fiat/quotes/<quote_type>/<asset_id>", data = "<request>")]
 pub async fn get_fiat_quotes_v2(
     _device: AuthenticatedDeviceWallet,
     quote_type: FiatQuoteTypeParam,
@@ -303,7 +303,7 @@ pub async fn get_fiat_quotes_v2(
     Ok(quotes.into())
 }
 
-#[get("/fiat/quotes/<quote_id>/url")]
+#[get("/devices/fiat/quotes/<quote_id>/url")]
 pub async fn get_fiat_quote_url_v2(
     device: AuthenticatedDeviceWallet,
     quote_id: &str,
