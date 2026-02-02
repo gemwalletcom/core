@@ -294,7 +294,10 @@ async fn rocket_ws_stream(settings: Settings) -> Rocket<Build> {
         redis_url: settings.redis.url.clone(),
     };
 
+    let auth_config = devices::auth_config::AuthConfig::new(settings.api.auth.enabled, settings.api.auth.tolerance);
+
     rocket::build()
+        .manage(auth_config)
         .manage(database)
         .manage(Arc::new(Mutex::new(price_client)))
         .manage(Arc::new(Mutex::new(stream_observer_config)))
