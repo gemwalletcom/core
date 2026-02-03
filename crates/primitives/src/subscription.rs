@@ -8,7 +8,6 @@ use crate::wallet::WalletSource;
 use crate::wallet_id::WalletId;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Hashable, Sendable")]
 pub struct Subscription {
     pub wallet_index: i32,
     pub chain: Chain,
