@@ -62,7 +62,7 @@ pub fn map_position(position: Position, address: String, orders: &[OpenOrder]) -
     let (take_profit, stop_loss) = map_tp_sl_from_orders(orders, &position.coin);
 
     PerpetualPosition {
-        id: format!("{}_{}", address, position.coin.clone()),
+        id: format!("{}_{}", address.to_lowercase(), position.coin.clone()),
         perpetual_id,
         asset_id,
         size: size.abs(),
