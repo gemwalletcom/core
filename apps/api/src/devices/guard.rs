@@ -3,6 +3,7 @@ use rocket::http::Status;
 use rocket::outcome::Outcome::{Error, Success};
 use rocket::request::{FromRequest, Outcome};
 use storage::Database;
+use storage::database::device_sessions::DeviceSessionsStore;
 use storage::database::devices::DevicesStore;
 use storage::database::wallets::WalletsStore;
 use storage::models::DeviceRow;
@@ -81,6 +82,10 @@ impl<'r> FromRequest<'r> for AuthenticatedDevice {
             return auth_error_outcome(req, DeviceError::DeviceNotFound);
         };
 
+        if DeviceSessionsStore::add_device_session(&mut db_client, device_row.id).is_err() {
+            return auth_error_outcome(req, DeviceError::DatabaseError);
+        }
+
         Success(AuthenticatedDevice { device_row })
     }
 }
@@ -146,6 +151,10 @@ impl<'r> FromRequest<'r> for AuthenticatedDeviceWallet {
         let Ok(wallet_row) = WalletsStore::get_wallet(&mut db_client, wallet_id_str) else {
             return auth_error_outcome(req, DeviceError::WalletNotFound);
         };
+
+        if DeviceSessionsStore::add_device_session(&mut db_client, device_row.id).is_err() {
+            return auth_error_outcome(req, DeviceError::DatabaseError);
+        }
 
         Success(AuthenticatedDeviceWallet {
             device_row,
