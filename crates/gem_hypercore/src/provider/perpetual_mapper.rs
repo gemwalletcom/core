@@ -8,10 +8,14 @@ use crate::models::{
 use primitives::{
     Asset, AssetId, AssetType, Chain, Perpetual, PerpetualBalance, PerpetualDirection, PerpetualMarginType, PerpetualOrderType, PerpetualPosition, PerpetualProvider,
     PerpetualTriggerOrder,
-    chart::ChartCandleStick,
+    chart::{ChartCandleStick, ChartDateValue},
     perpetual::{PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
-    portfolio::{PerpetualAccountSummary, PerpetualPortfolio},
+    portfolio::{PerpetualAccountSummary, PerpetualPortfolio, PerpetualPortfolioTimeframeData},
 };
+use std::collections::BTreeMap;
+
+const HIP3_PERP_ASSET_OFFSET: u32 = 100_000;
+const HIP3_PERP_ASSET_STRIDE: u32 = 10_000;
 
 pub fn create_perpetual_asset_id(coin: &str) -> AssetId {
     AssetId::from(Chain::HyperCore, Some(AssetId::sub_token_id(&["perpetual".to_string(), coin.to_string()])))
@@ -83,7 +87,7 @@ pub fn map_position(position: Position, address: String, orders: &[OpenOrder]) -
     }
 }
 
-pub fn map_perpetuals_data(metadata: HypercoreMetadataResponse) -> Vec<PerpetualData> {
+pub fn map_perpetuals_data(metadata: HypercoreMetadataResponse, perp_dex_index: u32) -> Vec<PerpetualData> {
     let universe = metadata.universe();
     let asset_metadata = metadata.asset_metadata();
 
@@ -95,6 +99,7 @@ pub fn map_perpetuals_data(metadata: HypercoreMetadataResponse) -> Vec<Perpetual
             let metadata_item = asset_metadata.get(index);
 
             let asset_id = create_perpetual_asset_id(&universe_asset.name);
+            let asset_index = perp_asset_index(perp_dex_index, index as u32);
 
             let current_price = metadata_item
                 .and_then(|m| m.mid_px.as_ref().and_then(|mid| mid.parse().ok()).or_else(|| m.mark_px.parse().ok()))
@@ -115,7 +120,7 @@ pub fn map_perpetuals_data(metadata: HypercoreMetadataResponse) -> Vec<Perpetual
                 name: universe_asset.name.clone(),
                 provider: PerpetualProvider::Hypercore,
                 asset_id: asset_id.clone(),
-                identifier: index.to_string(),
+                identifier: asset_index.to_string(),
                 price: current_price,
                 price_percent_change_24h: price_change_24h,
                 open_interest: open_interest_usd,
@@ -141,6 +146,14 @@ pub fn map_perpetuals_data(metadata: HypercoreMetadataResponse) -> Vec<Perpetual
         .collect()
 }
 
+fn perp_asset_index(perp_dex_index: u32, meta_index: u32) -> u32 {
+    if perp_dex_index == 0 {
+        meta_index
+    } else {
+        HIP3_PERP_ASSET_OFFSET + perp_dex_index * HIP3_PERP_ASSET_STRIDE + meta_index
+    }
+}
+
 pub fn map_candlesticks(candlesticks: Vec<Candlestick>) -> Vec<ChartCandleStick> {
     candlesticks.into_iter().map(|c| c.into()).collect()
 }
@@ -154,6 +167,32 @@ pub fn map_account_summary(positions: &AssetPositions) -> PerpetualAccountSummar
     let margin_usage = if account_value > 0.0 { total_margin_used / account_value } else { 0.0 };
 
     let unrealized_pnl: f64 = positions.asset_positions.iter().map(|p| p.position.unrealized_pnl.parse::<f64>().unwrap_or(0.0)).sum();
+
+    PerpetualAccountSummary {
+        account_value,
+        account_leverage,
+        margin_usage,
+        unrealized_pnl,
+    }
+}
+
+pub fn map_account_summary_aggregate(positions: &[AssetPositions]) -> PerpetualAccountSummary {
+    let mut account_value = 0.0;
+    let mut total_ntl_pos = 0.0;
+    let mut total_margin_used = 0.0;
+    let mut unrealized_pnl = 0.0;
+
+    for positions in positions {
+        account_value += positions.margin_summary.account_value.parse::<f64>().unwrap_or(0.0);
+        total_ntl_pos += positions.margin_summary.total_ntl_pos.parse::<f64>().unwrap_or(0.0);
+        total_margin_used += positions.margin_summary.total_margin_used.parse::<f64>().unwrap_or(0.0);
+        for position in &positions.asset_positions {
+            unrealized_pnl += position.position.unrealized_pnl.parse::<f64>().unwrap_or(0.0);
+        }
+    }
+
+    let account_leverage = if account_value > 0.0 { total_ntl_pos / account_value } else { 0.0 };
+    let margin_usage = if account_value > 0.0 { total_margin_used / account_value } else { 0.0 };
 
     PerpetualAccountSummary {
         account_value,
@@ -182,6 +221,70 @@ pub fn map_perpetual_portfolio(response: HypercorePortfolioResponse, positions: 
         all_time,
         account_summary: Some(map_account_summary(positions)),
     }
+}
+
+pub fn merge_perpetual_portfolios(portfolios: Vec<PerpetualPortfolio>, account_summary: Option<PerpetualAccountSummary>) -> PerpetualPortfolio {
+    let mut day = Vec::new();
+    let mut week = Vec::new();
+    let mut month = Vec::new();
+    let mut all_time = Vec::new();
+
+    for portfolio in portfolios {
+        if let Some(value) = portfolio.day {
+            day.push(value);
+        }
+        if let Some(value) = portfolio.week {
+            week.push(value);
+        }
+        if let Some(value) = portfolio.month {
+            month.push(value);
+        }
+        if let Some(value) = portfolio.all_time {
+            all_time.push(value);
+        }
+    }
+
+    PerpetualPortfolio {
+        day: merge_portfolio_timeframes(day),
+        week: merge_portfolio_timeframes(week),
+        month: merge_portfolio_timeframes(month),
+        all_time: merge_portfolio_timeframes(all_time),
+        account_summary,
+    }
+}
+
+fn merge_portfolio_timeframes(values: Vec<PerpetualPortfolioTimeframeData>) -> Option<PerpetualPortfolioTimeframeData> {
+    if values.is_empty() {
+        return None;
+    }
+
+    let mut account_value_histories = Vec::new();
+    let mut pnl_histories = Vec::new();
+    let mut volume = 0.0;
+
+    for value in values {
+        account_value_histories.push(value.account_value_history);
+        pnl_histories.push(value.pnl_history);
+        volume += value.volume;
+    }
+
+    Some(PerpetualPortfolioTimeframeData {
+        account_value_history: merge_chart_histories(account_value_histories),
+        pnl_history: merge_chart_histories(pnl_histories),
+        volume,
+    })
+}
+
+fn merge_chart_histories(values: Vec<Vec<ChartDateValue>>) -> Vec<ChartDateValue> {
+    let mut grouped = BTreeMap::new();
+    for history in values {
+        for point in history {
+            let entry = grouped.entry(point.date).or_insert(0.0);
+            *entry += point.value;
+        }
+    }
+
+    grouped.into_iter().map(|(date, value)| ChartDateValue { date, value }).collect()
 }
 
 fn determine_order_type(order_type_str: &str) -> PerpetualOrderType {
@@ -308,7 +411,7 @@ mod tests {
         }];
 
         let metadata_response = HypercoreMetadataResponse(universe_response, asset_metadata);
-        let result = map_perpetuals_data(metadata_response);
+        let result = map_perpetuals_data(metadata_response, 0);
 
         assert_eq!(result.len(), 1);
 
@@ -325,6 +428,36 @@ mod tests {
         assert_eq!(eth_data.asset.symbol, "ETH");
         assert_eq!(eth_data.asset.decimals, 4);
         assert_eq!(eth_data.asset.id.to_string(), "hypercore_perpetual::ETH");
+    }
+
+    #[test]
+    fn test_map_perpetuals_data_builder_asset_index() {
+        let universe_response = HypercoreUniverseResponse {
+            universe: vec![UniverseAsset {
+                name: "FOO".to_string(),
+                sz_decimals: 1,
+                max_leverage: 10,
+                only_isolated: Some(false),
+            }],
+        };
+
+        let asset_metadata = vec![AssetMetadata {
+            funding: "0".to_string(),
+            open_interest: "0".to_string(),
+            prev_day_px: "1".to_string(),
+            day_ntl_vlm: "0".to_string(),
+            premium: None,
+            oracle_px: "1".to_string(),
+            mark_px: "1".to_string(),
+            mid_px: Some("1".to_string()),
+            impact_pxs: None,
+            day_base_vlm: "0".to_string(),
+        }];
+
+        let metadata_response = HypercoreMetadataResponse(universe_response, asset_metadata);
+        let result = map_perpetuals_data(metadata_response, 2);
+
+        assert_eq!(result[0].perpetual.identifier, "120000");
     }
 
     #[test]
