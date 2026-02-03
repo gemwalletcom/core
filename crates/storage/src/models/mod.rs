@@ -5,6 +5,7 @@ pub mod chain;
 pub mod chart;
 pub mod config;
 pub mod device;
+pub mod device_session;
 pub mod fiat;
 pub mod nft_asset;
 pub mod nft_collection;
@@ -34,6 +35,7 @@ pub use self::chain::ChainRow;
 pub use self::chart::{ChartRow, DailyChartRow, HourlyChartRow};
 pub use self::config::ConfigRow;
 pub use self::device::{DeviceRow, UpdateDeviceRow};
+pub use self::device_session::{DeviceSessionRow, NewDeviceSessionRow};
 pub use self::fiat::{
     FiatAssetRow, FiatProviderCountryRow, FiatProviderRow, FiatQuoteRequestRow, FiatQuoteRow, FiatRateRow, FiatTransactionRow, FiatTransactionUpdateRow, NewFiatWebhookRow,
 };

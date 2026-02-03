@@ -56,7 +56,6 @@ pub struct FiatQuotes {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct FiatQuoteUrlRequest {
     pub quote_id: String,
