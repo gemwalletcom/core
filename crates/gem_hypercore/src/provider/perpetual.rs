@@ -2,30 +2,115 @@ use std::error::Error;
 
 use async_trait::async_trait;
 use chain_traits::{ChainAddressStatus, ChainPerpetual};
-use futures::try_join;
+use futures::{future::try_join_all, try_join};
 use gem_client::Client;
 use primitives::{
     ChartPeriod,
     chart::ChartCandleStick,
-    perpetual::{PerpetualData, PerpetualPositionsSummary},
+    perpetual::{PerpetualBalance, PerpetualData, PerpetualPositionsSummary},
     portfolio::PerpetualPortfolio,
 };
 
 use crate::{
-    provider::perpetual_mapper::{map_candlesticks, map_perpetual_portfolio, map_perpetuals_data, map_positions},
+    models::position::AssetPositions,
+    provider::perpetual_mapper::{map_account_summary_aggregate, map_candlesticks, map_perpetual_portfolio, map_perpetuals_data, map_positions, merge_perpetual_portfolios},
     rpc::client::HyperCoreClient,
 };
+
+impl<C: Client> HyperCoreClient<C> {
+    async fn fetch_positions_for_dex(&self, address: String, dex: Option<String>) -> Result<PerpetualPositionsSummary, Box<dyn Error + Sync + Send>> {
+        let (positions, orders) = try_join!(self.get_clearinghouse_state_with_dex(&address, dex.clone()), self.get_open_orders_with_dex(&address, dex))?;
+        Ok(map_positions(positions, address, &orders))
+    }
+
+    async fn fetch_portfolio_for_dex(&self, address: String, dex: Option<String>) -> Result<(PerpetualPortfolio, AssetPositions), Box<dyn Error + Sync + Send>> {
+        let (response, positions) = try_join!(
+            self.get_perpetual_portfolio_with_dex(&address, dex.clone()),
+            self.get_clearinghouse_state_with_dex(&address, dex)
+        )?;
+        Ok((map_perpetual_portfolio(response, &positions), positions))
+    }
+}
 
 #[async_trait]
 impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
     async fn get_positions(&self, address: String) -> Result<PerpetualPositionsSummary, Box<dyn Error + Sync + Send>> {
+        let perp_dexs = self.get_perp_dexs().await;
+        if let Ok(perp_dexs) = perp_dexs {
+            let mut requests = Vec::new();
+            for (index, entry) in perp_dexs.iter().enumerate() {
+                if index == 0 {
+                    requests.push(self.fetch_positions_for_dex(address.clone(), None));
+                    continue;
+                }
+
+                let dex = entry
+                    .as_ref()
+                    .and_then(|dex| dex.name.as_ref())
+                    .map(|name| name.to_string())
+                    .filter(|name| !name.is_empty());
+
+                if let Some(dex) = dex {
+                    requests.push(self.fetch_positions_for_dex(address.clone(), Some(dex)));
+                }
+            }
+
+            if !requests.is_empty() {
+                let summaries = try_join_all(requests).await?;
+                let mut positions = Vec::new();
+                let mut balance = PerpetualBalance {
+                    available: 0.0,
+                    reserved: 0.0,
+                    withdrawable: 0.0,
+                };
+                for summary in summaries {
+                    positions.extend(summary.positions);
+                    balance.available += summary.balance.available;
+                    balance.reserved += summary.balance.reserved;
+                    balance.withdrawable += summary.balance.withdrawable;
+                }
+                return Ok(PerpetualPositionsSummary { positions, balance });
+            }
+        }
+
         let (positions, orders) = try_join!(self.get_clearinghouse_state(&address), self.get_open_orders(&address))?;
         Ok(map_positions(positions, address, &orders))
     }
 
     async fn get_perpetuals_data(&self) -> Result<Vec<PerpetualData>, Box<dyn Error + Sync + Send>> {
+        let perp_dexs = self.get_perp_dexs().await;
+        if let Ok(perp_dexs) = perp_dexs {
+            let mut requests = Vec::new();
+            let mut dex_indexes = Vec::new();
+
+            for (index, entry) in perp_dexs.iter().enumerate() {
+                if index == 0 {
+                    requests.push(self.get_metadata_with_dex(None));
+                    dex_indexes.push(index as u32);
+                    continue;
+                }
+
+                let name = entry.as_ref().and_then(|dex| dex.name.as_ref());
+                if let Some(name) = name
+                    && !name.is_empty()
+                {
+                    requests.push(self.get_metadata_with_dex(Some(name.to_string())));
+                    dex_indexes.push(index as u32);
+                }
+            }
+
+            if !requests.is_empty() {
+                let metadata = try_join_all(requests).await?;
+                let mut result = Vec::new();
+                for (dex_index, meta) in dex_indexes.into_iter().zip(metadata) {
+                    result.extend(map_perpetuals_data(meta, dex_index));
+                }
+                return Ok(result);
+            }
+        }
+
         let metadata = self.get_metadata().await?;
-        Ok(map_perpetuals_data(metadata))
+        Ok(map_perpetuals_data(metadata, 0))
     }
 
     async fn get_perpetual_candlesticks(&self, symbol: String, period: ChartPeriod) -> Result<Vec<ChartCandleStick>, Box<dyn Error + Sync + Send>> {
@@ -53,6 +138,41 @@ impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
     }
 
     async fn get_perpetual_portfolio(&self, address: String) -> Result<PerpetualPortfolio, Box<dyn Error + Sync + Send>> {
+        let perp_dexs = self.get_perp_dexs().await;
+        if let Ok(perp_dexs) = perp_dexs {
+            let mut requests = Vec::new();
+
+            for (index, entry) in perp_dexs.iter().enumerate() {
+                if index == 0 {
+                    requests.push(self.fetch_portfolio_for_dex(address.clone(), None));
+                    continue;
+                }
+
+                let dex = entry
+                    .as_ref()
+                    .and_then(|dex| dex.name.as_ref())
+                    .map(|name| name.to_string())
+                    .filter(|name| !name.is_empty());
+
+                if let Some(dex) = dex {
+                    requests.push(self.fetch_portfolio_for_dex(address.clone(), Some(dex)));
+                }
+            }
+
+            if !requests.is_empty() {
+                let results = try_join_all(requests).await?;
+                let mut portfolios = Vec::new();
+                let mut positions = Vec::new();
+                for (portfolio, asset_positions) in results {
+                    portfolios.push(portfolio);
+                    positions.push(asset_positions);
+                }
+
+                let account_summary = Some(map_account_summary_aggregate(&positions));
+                return Ok(merge_perpetual_portfolios(portfolios, account_summary));
+            }
+        }
+
         let (response, positions) = try_join!(self.get_perpetual_portfolio(&address), self.get_clearinghouse_state(&address))?;
         Ok(map_perpetual_portfolio(response, &positions))
     }
