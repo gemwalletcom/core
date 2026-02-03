@@ -14,6 +14,7 @@ serde_json = { workspace = true }
 chrono = { workspace = true, features = ["serde"], optional = true }
 num-bigint = { workspace = true, optional = true }
 num-traits = { workspace = true, optional = true }
+number_formatter = { path = "../number_formatter", optional = true }
 gem_evm = { path = "../gem_evm", optional = true }
 gem_client = { path = "../gem_client", optional = true }
 chain_traits = { path = "../chain_traits", optional = true }
@@ -28,6 +29,7 @@ rpc = [
     "dep:chrono",
     "dep:num-bigint",
     "dep:num-traits",
+    "dep:number_formatter",
     "dep:gem_evm",
     "dep:gem_client",
     "dep:chain_traits",
