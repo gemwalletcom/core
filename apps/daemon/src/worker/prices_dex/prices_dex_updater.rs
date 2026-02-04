@@ -28,7 +28,7 @@ impl PricesDexUpdater {
         }
     }
 
-    pub async fn update_feeds(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn update_feeds(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let feeds = self.provider.get_supported_feeds().await?;
         self.save_feeds(feeds)
     }
@@ -44,7 +44,7 @@ impl PricesDexUpdater {
         Ok(existing_assets.into_iter().map(|a| a.asset.id.to_string()).collect())
     }
 
-    fn save_feeds(&self, feeds: Vec<AssetPriceFeed>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    fn save_feeds(&self, feeds: Vec<AssetPriceFeed>) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let asset_ids: Vec<String> = feeds.iter().map(|feed| feed.asset_id.to_string()).collect();
         let existing_asset_ids = self.validate_asset_ids(asset_ids)?;
 
@@ -52,7 +52,7 @@ impl PricesDexUpdater {
         let missing_feeds: Vec<&AssetPriceFeed> = feeds.iter().filter(|feed| !existing_asset_ids.contains(&feed.asset_id.to_string())).collect();
 
         if valid_feeds.is_empty() {
-            return Ok(());
+            return Ok(0);
         }
 
         let feed_records: Vec<PriceDexRow> = valid_feeds
@@ -74,7 +74,7 @@ impl PricesDexUpdater {
             total = feeds.len()
         );
 
-        Ok(())
+        Ok(valid_feeds.len())
     }
 
     fn save_prices(&self, prices: Vec<DexAssetPrice>) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {

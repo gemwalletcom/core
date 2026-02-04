@@ -3,13 +3,17 @@ mod markets_updater;
 mod observed_prices_updater;
 pub mod price_updater;
 
+use crate::model::WorkerService;
+use crate::worker::context::WorkerContext;
+use crate::worker::jobs::WorkerJob;
+use crate::worker::plan::JobPlanBuilder;
 use std::error::Error;
 use std::sync::Arc;
 
 use cacher::CacherClient;
 use charts_updater::ChartsUpdater;
 use coingecko::CoinGeckoClient;
-use job_runner::{JobStatusReporter, ShutdownReceiver, run_job};
+use job_runner::{JobHandle, ShutdownReceiver};
 use markets_updater::MarketsUpdater;
 use observed_prices_updater::ObservedPricesUpdater;
 use price_updater::{PriceUpdater, UpdatePrices};
@@ -18,262 +22,201 @@ use primitives::ConfigKey;
 use settings::Settings;
 use storage::{ConfigCacher, Database};
 use streamer::{StreamProducer, StreamProducerConfig};
-use tokio::task::JoinHandle;
 
-pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shutdown_rx: ShutdownReceiver) -> Result<Vec<JoinHandle<()>>, Box<dyn Error + Send + Sync>> {
+pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
+    let runtime = ctx.runtime();
+    let database = ctx.database();
+    let settings = ctx.settings();
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
     let cacher_client = CacherClient::new(&settings.redis.url).await;
-    let database = Database::new(&settings.postgres.url, settings.postgres.pool);
-    let config = ConfigCacher::new(database.clone());
+    let config = Arc::new(ConfigCacher::new(database.clone()));
 
-    let price_outdated = config.get_duration(ConfigKey::PriceOutdated)?.as_secs();
-
-    let clean_updated_assets = tokio::spawn(run_job(
-        "cleanup_outdated_assets",
-        config.get_duration(ConfigKey::PriceTimerCleanOutdated)?,
-        reporter.clone(),
-        shutdown_rx.clone(),
-        {
+    JobPlanBuilder::with_config(WorkerService::Pricer, runtime.plan(shutdown_rx), config.as_ref())
+        .job(WorkerJob::CleanupOutdatedAssets, {
+            let settings = settings.clone();
             let cacher_client = cacher_client.clone();
             let database = database.clone();
-            let settings = Arc::new(settings.clone());
+            let config = config.clone();
             move || {
+                let settings = settings.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
-                let settings = Arc::clone(&settings);
+                let config = config.clone();
                 async move {
-                    let updater = price_updater_factory(&database, &cacher_client, &settings).await;
-                    updater.clean_outdated_assets(price_outdated).await
+                    let price_outdated = config.get_duration(ConfigKey::PriceOutdated)?.as_secs();
+                    price_updater_factory(&database, &cacher_client, &settings)
+                        .await?
+                        .clean_outdated_assets(price_outdated)
+                        .await
                 }
             }
-        },
-    ));
-    let update_fiat_rates = tokio::spawn(run_job(
-        "update_fiat_rates",
-        config.get_duration(ConfigKey::PriceTimerFiatRates)?,
-        reporter.clone(),
-        shutdown_rx.clone(),
-        {
-            let settings = Arc::new(settings.clone());
+        })
+        .job(WorkerJob::UpdateFiatRates, {
+            let settings = settings.clone();
             let cacher_client = cacher_client.clone();
             let database = database.clone();
             move || {
-                let settings = Arc::clone(&settings);
+                let settings = settings.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
-                async move {
-                    let updater = price_updater_factory(&database, &cacher_client, &settings).await;
-                    updater.update_fiat_rates().await
-                }
+                async move { price_updater_factory(&database, &cacher_client, &settings).await?.update_fiat_rates().await }
             }
-        },
-    ));
-
-    let update_prices_top_market_cap = tokio::spawn(run_job(
-        "update_prices_top_market_cap",
-        config.get_duration(ConfigKey::PriceTimerTopMarketCap)?,
-        reporter.clone(),
-        shutdown_rx.clone(),
-        {
-            let settings = Arc::new(settings.clone());
+        })
+        .job(WorkerJob::UpdatePricesTopMarketCap, {
+            let settings = settings.clone();
             let cacher_client = cacher_client.clone();
             let database = database.clone();
             move || {
-                let settings = Arc::clone(&settings);
+                let settings = settings.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
                 async move {
-                    let updater = price_updater_factory(&database, &cacher_client, &settings.clone()).await;
-                    updater.update_prices_type(UpdatePrices::Top).await
+                    price_updater_factory(&database, &cacher_client, &settings)
+                        .await?
+                        .update_prices_type(UpdatePrices::Top)
+                        .await
                 }
             }
-        },
-    ));
-
-    let update_prices_high_market_cap = tokio::spawn(run_job(
-        "update_prices_high_market_cap",
-        config.get_duration(ConfigKey::PriceTimerHighMarketCap)?,
-        reporter.clone(),
-        shutdown_rx.clone(),
-        {
-            let settings = Arc::new(settings.clone());
+        })
+        .job(WorkerJob::UpdatePricesHighMarketCap, {
+            let settings = settings.clone();
             let cacher_client = cacher_client.clone();
             let database = database.clone();
             move || {
-                let settings = Arc::clone(&settings);
+                let settings = settings.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
                 async move {
-                    let updater = price_updater_factory(&database, &cacher_client, &settings.clone()).await;
-                    updater.update_prices_type(UpdatePrices::High).await
+                    price_updater_factory(&database, &cacher_client, &settings)
+                        .await?
+                        .update_prices_type(UpdatePrices::High)
+                        .await
                 }
             }
-        },
-    ));
-
-    let update_prices_low_market_cap = tokio::spawn(run_job(
-        "update_prices_low_market_cap",
-        config.get_duration(ConfigKey::PriceTimerLowMarketCap)?,
-        reporter.clone(),
-        shutdown_rx.clone(),
-        {
-            let settings = Arc::new(settings.clone());
+        })
+        .job(WorkerJob::UpdatePricesLowMarketCap, {
+            let settings = settings.clone();
             let cacher_client = cacher_client.clone();
             let database = database.clone();
             move || {
-                let settings = Arc::clone(&settings);
+                let settings = settings.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
                 async move {
-                    let updater = price_updater_factory(&database, &cacher_client, &settings.clone()).await;
-                    updater.update_prices_type(UpdatePrices::Low).await
+                    price_updater_factory(&database, &cacher_client, &settings)
+                        .await?
+                        .update_prices_type(UpdatePrices::Low)
+                        .await
                 }
             }
-        },
-    ));
-
-    let update_hourly_charts_job = tokio::spawn(run_job(
-        "aggregate_hourly_charts",
-        config.get_duration(ConfigKey::PriceTimerChartsHourly)?,
-        reporter.clone(),
-        shutdown_rx.clone(),
-        {
-            let settings = Arc::new(settings.clone());
+        })
+        .job(WorkerJob::AggregateHourlyCharts, {
+            let settings = settings.clone();
             let coingecko_client = coingecko_client.clone();
             let cacher_client = cacher_client.clone();
             let database = database.clone();
             move || {
-                let settings = Arc::clone(&settings);
+                let settings = settings.clone();
                 let coingecko_client = coingecko_client.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
                 async move {
-                    let updater = charts_updater_factory(&database, &cacher_client, &settings, coingecko_client).await;
-                    updater.aggregate_hourly_charts().await
+                    charts_updater_factory(&database, &cacher_client, &settings, coingecko_client)
+                        .await?
+                        .aggregate_hourly_charts()
+                        .await
                 }
             }
-        },
-    ));
-
-    let update_daily_charts_job = tokio::spawn(run_job(
-        "aggregate_daily_charts",
-        config.get_duration(ConfigKey::PriceTimerChartsDaily)?,
-        reporter.clone(),
-        shutdown_rx.clone(),
-        {
-            let settings = Arc::new(settings.clone());
+        })
+        .job(WorkerJob::AggregateDailyCharts, {
+            let settings = settings.clone();
             let coingecko_client = coingecko_client.clone();
             let cacher_client = cacher_client.clone();
             let database = database.clone();
             move || {
-                let settings = Arc::clone(&settings);
+                let settings = settings.clone();
                 let coingecko_client = coingecko_client.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
                 async move {
-                    let updater = charts_updater_factory(&database, &cacher_client, &settings, coingecko_client).await;
-                    updater.aggregate_daily_charts().await
+                    charts_updater_factory(&database, &cacher_client, &settings, coingecko_client)
+                        .await?
+                        .aggregate_daily_charts()
+                        .await
                 }
             }
-        },
-    ));
-
-    let cleanup_charts_data_job = tokio::spawn(run_job(
-        "cleanup_charts_data",
-        config.get_duration(ConfigKey::PriceTimerCleanupCharts)?,
-        reporter.clone(),
-        shutdown_rx.clone(),
-        {
-            let settings = Arc::new(settings.clone());
+        })
+        .job(WorkerJob::CleanupChartsData, {
+            let settings = settings.clone();
             let coingecko_client = coingecko_client.clone();
             let cacher_client = cacher_client.clone();
             let database = database.clone();
             move || {
-                let settings = Arc::clone(&settings);
+                let settings = settings.clone();
                 let coingecko_client = coingecko_client.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
                 async move {
-                    let updater = charts_updater_factory(&database, &cacher_client, &settings, coingecko_client).await;
-                    updater.cleanup_charts_data().await
+                    charts_updater_factory(&database, &cacher_client, &settings, coingecko_client)
+                        .await?
+                        .cleanup_charts_data()
+                        .await
                 }
             }
-        },
-    ));
-
-    let update_markets = tokio::spawn(run_job(
-        "update_markets",
-        config.get_duration(ConfigKey::PriceTimerMarkets)?,
-        reporter.clone(),
-        shutdown_rx.clone(),
-        {
-            let settings = Arc::new(settings.clone());
+        })
+        .job(WorkerJob::UpdateMarkets, {
+            let settings = settings.clone();
             let cacher_client = cacher_client.clone();
             let database = database.clone();
             move || {
-                let settings = Arc::clone(&settings);
+                let settings = settings.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
-                async move { markets_updater_factory(&database, &cacher_client, &settings.clone()).update_markets().await }
+                async move { markets_updater_factory(&database, &cacher_client, &settings).update_markets().await }
             }
-        },
-    ));
-
-    let max_observed_assets = config.get_usize(ConfigKey::PriceObservedMaxAssets)?;
-    let min_observers = config.get_usize(ConfigKey::PriceObservedMinObservers)?;
-    let update_observed_prices = tokio::spawn(run_job(
-        "update_observed_prices",
-        config.get_duration(ConfigKey::PriceObservedFetchInterval)?,
-        reporter.clone(),
-        shutdown_rx,
-        {
-            let settings = Arc::new(settings.clone());
+        })
+        .job(WorkerJob::UpdateObservedPrices, {
+            let settings = settings.clone();
             let cacher_client = cacher_client.clone();
             let database = database.clone();
+            let config = config.clone();
             move || {
-                let settings = Arc::clone(&settings);
+                let settings = settings.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
+                let config = config.clone();
                 async move {
+                    let max_observed_assets = config.get_usize(ConfigKey::PriceObservedMaxAssets)?;
+                    let min_observers = config.get_usize(ConfigKey::PriceObservedMinObservers)?;
                     let price_client = PriceClient::new(database.clone(), cacher_client.clone());
                     let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
-                    let stream_producer = StreamProducer::new(&rabbitmq_config, "observed_prices_worker")
-                        .await
-                        .expect("Failed to create stream producer");
+                    let stream_producer = StreamProducer::new(&rabbitmq_config, "observed_prices_worker").await?;
                     let updater = ObservedPricesUpdater::new(cacher_client, price_client, stream_producer, max_observed_assets, min_observers);
                     updater.update().await
                 }
             }
-        },
-    ));
-
-    Ok(vec![
-        clean_updated_assets,
-        update_fiat_rates,
-        update_prices_top_market_cap,
-        update_prices_high_market_cap,
-        update_prices_low_market_cap,
-        update_hourly_charts_job,
-        update_daily_charts_job,
-        cleanup_charts_data_job,
-        update_markets,
-        update_observed_prices,
-    ])
+        })
+        .finish()
 }
 
-async fn price_updater_factory(database: &Database, cacher: &CacherClient, settings: &Settings) -> PriceUpdater {
+async fn price_updater_factory(database: &Database, cacher: &CacherClient, settings: &Settings) -> Result<PriceUpdater, Box<dyn std::error::Error + Send + Sync>> {
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret.clone());
     let price_client = PriceClient::new(database.clone(), cacher.clone());
     let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
-    let stream_producer = StreamProducer::new(&rabbitmq_config, "pricer_worker").await.expect("Failed to create stream producer");
-    PriceUpdater::new(price_client, coingecko_client, stream_producer)
+    let stream_producer = StreamProducer::new(&rabbitmq_config, "pricer_worker").await?;
+    Ok(PriceUpdater::new(price_client, coingecko_client, stream_producer))
 }
 
-async fn charts_updater_factory(database: &Database, cacher: &CacherClient, settings: &Settings, coingecko_client: CoinGeckoClient) -> ChartsUpdater {
+async fn charts_updater_factory(
+    database: &Database,
+    cacher: &CacherClient,
+    settings: &Settings,
+    coingecko_client: CoinGeckoClient,
+) -> Result<ChartsUpdater, Box<dyn std::error::Error + Send + Sync>> {
     let price_client = PriceClient::new(database.clone(), cacher.clone());
     let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
-    let stream_producer = StreamProducer::new(&rabbitmq_config, "charts_worker").await.expect("Failed to create stream producer");
-    ChartsUpdater::new(price_client, coingecko_client, stream_producer)
+    let stream_producer = StreamProducer::new(&rabbitmq_config, "charts_worker").await?;
+    Ok(ChartsUpdater::new(price_client, coingecko_client, stream_producer))
 }
 
 fn markets_updater_factory(database: &Database, cacher: &CacherClient, settings: &Settings) -> MarketsUpdater {

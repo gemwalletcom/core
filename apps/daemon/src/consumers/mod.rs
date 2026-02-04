@@ -1,4 +1,5 @@
 pub mod assets_addresses_consumer;
+pub mod consumer_reporter;
 pub mod fetch_address_transactions_consumer;
 pub mod fetch_assets_consumer;
 pub mod fetch_blocks_consumer;
@@ -6,6 +7,7 @@ pub mod fetch_coin_addresses_consumer;
 pub mod fetch_nft_assets_addresses_consumer;
 pub mod fetch_prices_consumer;
 pub mod fetch_token_addresses_consumer;
+pub mod nft;
 pub mod notifications;
 pub mod rewards_consumer;
 pub mod rewards_redemption_consumer;
@@ -58,7 +60,7 @@ pub fn chain_providers(settings: &Settings, name: &str) -> ChainProviders {
     ChainProviders::from_settings(settings, &service_user_agent("consumer", Some(name)))
 }
 
-fn consumer_config(consumer: &settings::Consumer) -> ConsumerConfig {
+pub(crate) fn consumer_config(consumer: &settings::Consumer) -> ConsumerConfig {
     ConsumerConfig {
         timeout_on_error: consumer.error.timeout,
         skip_on_error: consumer.error.skip,

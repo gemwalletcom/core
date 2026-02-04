@@ -22,8 +22,8 @@ pub fn spawn_signal_handler(shutdown_tx: ShutdownSender) -> tokio::task::JoinHan
     })
 }
 
-pub async fn wait_with_timeout(handles: Vec<tokio::task::JoinHandle<()>>, timeout: Duration) {
-    let _ = tokio::time::timeout(timeout, futures::future::join_all(handles)).await;
+pub async fn wait_with_timeout(handles: Vec<tokio::task::JoinHandle<()>>, timeout: Duration) -> bool {
+    tokio::time::timeout(timeout, futures::future::join_all(handles)).await.is_ok()
 }
 
 async fn wait_for_signal() {

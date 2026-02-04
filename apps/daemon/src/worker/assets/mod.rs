@@ -5,184 +5,136 @@ mod perpetual_updater;
 mod staking_apy_updater;
 mod usage_rank_updater;
 
+use crate::model::WorkerService;
+use crate::worker::context::WorkerContext;
+use crate::worker::jobs::WorkerJob;
+use crate::worker::plan::JobPlanBuilder;
 use api_connector::StaticAssetsClient;
 use asset_rank_updater::AssetRankUpdater;
 use asset_updater::AssetUpdater;
 use assets_images_updater::AssetsImagesUpdater;
 use cacher::CacherClient;
 use coingecko::CoinGeckoClient;
-use job_runner::{JobStatusReporter, ShutdownReceiver, run_job};
+use job_runner::{JobHandle, ShutdownReceiver};
 use perpetual_updater::PerpetualUpdater;
-use primitives::ConfigKey;
-use settings::{Settings, service_user_agent};
+use primitives::Chain;
+use settings::service_user_agent;
 use settings_chain::ChainProviders;
 use staking_apy_updater::StakeApyUpdater;
 use std::error::Error;
-use std::sync::Arc;
 use storage::ConfigCacher;
-use tokio::task::JoinHandle;
 use usage_rank_updater::UsageRankUpdater;
 
-pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shutdown_rx: ShutdownReceiver) -> Result<Vec<JoinHandle<()>>, Box<dyn Error + Send + Sync>> {
-    let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
+pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
+    let runtime = ctx.runtime();
+    let database = ctx.database();
+    let settings = ctx.settings();
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
     let cacher_client = CacherClient::new(&settings.redis.url).await;
     let config = ConfigCacher::new(database.clone());
 
-    let update_existing_assets = tokio::spawn(run_job(
-        "update_existing_prices_assets",
-        config.get_duration(ConfigKey::AssetsTimerUpdateExisting)?,
-        reporter.clone(),
-        shutdown_rx.clone(),
-        {
-            let (coingecko_client, database, cacher_client) = (coingecko_client.clone(), database.clone(), cacher_client.clone());
-            move || {
-                let asset_updater = AssetUpdater::new(coingecko_client.clone(), database.clone(), cacher_client.clone());
-                async move { asset_updater.update_existing_assets().await }
-            }
-        },
-    ));
+    let asset_updater = {
+        let coingecko_client = coingecko_client.clone();
+        let database = database.clone();
+        let cacher_client = cacher_client.clone();
+        move || AssetUpdater::new(coingecko_client.clone(), database.clone(), cacher_client.clone())
+    };
 
-    let update_all_assets = tokio::spawn(run_job(
-        "update_all_prices_assets",
-        config.get_duration(ConfigKey::AssetsTimerUpdateAll)?,
-        reporter.clone(),
-        shutdown_rx.clone(),
-        {
-            let (coingecko_client, database, cacher_client) = (coingecko_client.clone(), database.clone(), cacher_client.clone());
+    JobPlanBuilder::with_config(WorkerService::Assets, runtime.plan(shutdown_rx), &config)
+        .job(WorkerJob::UpdateExistingPricesAssets, {
+            let asset_updater = asset_updater.clone();
             move || {
-                let asset_updater = AssetUpdater::new(coingecko_client.clone(), database.clone(), cacher_client.clone());
-                async move { asset_updater.update_assets().await }
+                let updater = asset_updater();
+                async move { updater.update_existing_assets().await }
             }
-        },
-    ));
-
-    let update_native_prices_assets = tokio::spawn(run_job(
-        "update_native_prices_assets",
-        config.get_duration(ConfigKey::AssetsTimerUpdateNative)?,
-        reporter.clone(),
-        shutdown_rx.clone(),
-        {
-            let (coingecko_client, database, cacher_client) = (coingecko_client.clone(), database.clone(), cacher_client.clone());
+        })
+        .job(WorkerJob::UpdateAllPricesAssets, {
+            let asset_updater = asset_updater.clone();
             move || {
-                let asset_updater = AssetUpdater::new(coingecko_client.clone(), database.clone(), cacher_client.clone());
-                async move { asset_updater.update_native_prices_assets().await }
+                let updater = asset_updater();
+                async move { updater.update_assets().await }
             }
-        },
-    ));
-
-    let update_tranding_assets = tokio::spawn(run_job(
-        "update_coingecko_trending_assets",
-        config.get_duration(ConfigKey::AssetsTimerUpdateTrending)?,
-        reporter.clone(),
-        shutdown_rx.clone(),
-        {
-            let (coingecko_client, database, cacher_client) = (coingecko_client.clone(), database.clone(), cacher_client.clone());
+        })
+        .job(WorkerJob::UpdateNativePricesAssets, {
+            let asset_updater = asset_updater.clone();
             move || {
-                let asset_updater = AssetUpdater::new(coingecko_client.clone(), database.clone(), cacher_client.clone());
-                async move { asset_updater.update_trending_assets().await }
+                let updater = asset_updater();
+                async move { updater.update_native_prices_assets().await }
             }
-        },
-    ));
-
-    let update_recently_added_assets = tokio::spawn(run_job(
-        "update_coingecko_recently_added_assets",
-        config.get_duration(ConfigKey::AssetsTimerUpdateRecentlyAdded)?,
-        reporter.clone(),
-        shutdown_rx.clone(),
-        {
-            let (coingecko_client, database, cacher_client) = (coingecko_client.clone(), database.clone(), cacher_client.clone());
+        })
+        .job(WorkerJob::UpdateCoingeckoTrendingAssets, {
+            let asset_updater = asset_updater.clone();
             move || {
-                let asset_updater = AssetUpdater::new(coingecko_client.clone(), database.clone(), cacher_client.clone());
-                async move { asset_updater.update_recently_added_assets().await }
+                let updater = asset_updater();
+                async move { updater.update_trending_assets().await }
             }
-        },
-    ));
-
-    let update_suspicious_assets = tokio::spawn(run_job(
-        "update_suspicious_asset_ranks",
-        config.get_duration(ConfigKey::AssetsTimerUpdateSuspicious)?,
-        reporter.clone(),
-        shutdown_rx.clone(),
-        {
+        })
+        .job(WorkerJob::UpdateCoingeckoRecentlyAddedAssets, {
+            let asset_updater = asset_updater.clone();
+            move || {
+                let updater = asset_updater();
+                async move { updater.update_recently_added_assets().await }
+            }
+        })
+        .job(WorkerJob::UpdateSuspiciousAssetRanks, {
             let database = database.clone();
             move || {
                 let suspicious_updater = AssetRankUpdater::new(database.clone());
                 async move { suspicious_updater.update_suspicious_assets().await }
             }
-        },
-    ));
-
-    let update_staking_apy = tokio::spawn(run_job(
-        "update_staking_apy",
-        config.get_duration(ConfigKey::AssetsTimerUpdateStakingApy)?,
-        reporter.clone(),
-        shutdown_rx.clone(),
-        {
-            let settings = settings.clone();
-            let database = database.clone();
-            move || {
-                let chain_providers = ChainProviders::from_settings(&settings, &service_user_agent("daemon", Some("staking_apy")));
-                let updater = StakeApyUpdater::new(chain_providers, database.clone());
-                async move { updater.update_staking_apy().await }
-            }
-        },
-    ));
-
-    let update_perpetuals = tokio::spawn(run_job(
-        "update_perpetuals",
-        config.get_duration(ConfigKey::AssetsTimerUpdatePerpetuals)?,
-        reporter.clone(),
-        shutdown_rx.clone(),
-        {
-            let settings = settings.clone();
-            let database = database.clone();
-            move || {
-                let updater = PerpetualUpdater::new(settings.clone(), database.clone());
-                async move { updater.update_perpetuals().await }
-            }
-        },
-    ));
-
-    let update_usage_ranks = tokio::spawn(run_job(
-        "update_usage_ranks",
-        config.get_duration(ConfigKey::AssetsTimerUpdateUsageRank)?,
-        reporter.clone(),
-        shutdown_rx.clone(),
-        {
+        })
+        .jobs(
+            WorkerJob::UpdatePerpetuals,
+            PerpetualUpdater::chains(),
+            |chain| chain.as_ref().to_string(),
+            |chain, _| {
+                let chain = *chain;
+                let settings = settings.clone();
+                let database = database.clone();
+                move || {
+                    let settings = settings.clone();
+                    let database = database.clone();
+                    async move {
+                        let updater = PerpetualUpdater::new((*settings.as_ref()).clone(), database.clone());
+                        updater.update_chain(chain).await
+                    }
+                }
+            },
+        )
+        .job(WorkerJob::UpdateUsageRanks, {
             let database = database.clone();
             move || {
                 let updater = UsageRankUpdater::new(database.clone());
                 async move { updater.update_usage_ranks().await }
             }
-        },
-    ));
-
-    let update_assets_images = tokio::spawn(run_job(
-        "update_assets_images",
-        config.get_duration(ConfigKey::AssetsTimerUpdateImages)?,
-        reporter.clone(),
-        shutdown_rx,
-        {
+        })
+        .job(WorkerJob::UpdateAssetsImages, {
             let static_assets_client = StaticAssetsClient::new(&settings.assets.url);
             let database = database.clone();
             move || {
                 let updater = AssetsImagesUpdater::new(static_assets_client.clone(), database.clone());
                 async move { updater.update_assets_images().await }
             }
-        },
-    ));
-
-    Ok(vec![
-        update_existing_assets,
-        update_all_assets,
-        update_native_prices_assets,
-        update_tranding_assets,
-        update_recently_added_assets,
-        update_suspicious_assets,
-        update_staking_apy,
-        update_perpetuals,
-        update_usage_ranks,
-        update_assets_images,
-    ])
+        })
+        .jobs(
+            WorkerJob::UpdateStakingApy,
+            Chain::stakeable(),
+            |chain| chain.as_ref().to_string(),
+            |chain, _| {
+                let chain = chain.clone();
+                let settings = settings.clone();
+                let database = database.clone();
+                move || {
+                    let chain = chain.clone();
+                    let settings = settings.clone();
+                    let database = database.clone();
+                    async move {
+                        let providers = ChainProviders::from_settings(&settings, &service_user_agent("daemon", Some("staking_apy")));
+                        let updater = StakeApyUpdater::new(providers, database.clone());
+                        updater.update_chain(chain).await
+                    }
+                }
+            },
+        )
+        .finish()
 }

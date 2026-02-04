@@ -4454,6 +4454,7 @@ checksum = "8eaf4bc02d17cbdd7ff4c7438cafcdf7fb9a4613313ad11b4f8fefe7d3fa0130"
 name = "job_runner"
 version = "1.0.0"
 dependencies = [
+ "async-trait",
  "gem_tracing",
  "tokio",
 ]

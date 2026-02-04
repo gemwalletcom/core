@@ -22,9 +22,10 @@ pub enum ConsumerService {
     StorePrices,
     StoreCharts,
     FetchPrices,
+    Nft,
 }
 
-#[derive(Debug, Clone, AsRefStr, EnumString, PartialEq)]
+#[derive(Debug, Clone, Copy, AsRefStr, EnumString, PartialEq, Eq)]
 #[strum(serialize_all = "snake_case")]
 pub enum WorkerService {
     Alerter,
@@ -36,7 +37,6 @@ pub enum WorkerService {
     Transaction,
     Device,
     Search,
-    Nft,
     Scan,
     Rewards,
 }
