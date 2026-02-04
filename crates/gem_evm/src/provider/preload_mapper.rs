@@ -8,7 +8,7 @@ use num_bigint::BigInt;
 use num_traits::Num;
 use primitives::swap::SwapQuoteDataType;
 use primitives::{
-    AssetSubtype, Chain, EVMChain, FeeRate, NFTType, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, YieldAction, fee::FeePriority,
+    AssetSubtype, Chain, EVMChain, EarnAction, FeeRate, NFTType, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, fee::FeePriority,
     fee::GasPriceType,
 };
 
@@ -142,7 +142,7 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
             }
             _ => Err("Unsupported chain for staking".into()),
         },
-        TransactionInputType::Yield(_, action, earn_data) => {
+        TransactionInputType::Earn(_, action, earn_data) => {
             if let Some(approval) = &earn_data.approval {
                 Ok(TransactionParams::new(approval.token.clone(), encode_erc20_approve(&approval.spender)?, BigInt::from(0)))
             } else {
@@ -150,8 +150,8 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
                 let contract_address = earn_data.contract_address.as_ref().ok_or("Missing contract_address")?;
                 let decoded_data = hex::decode(call_data)?;
                 let tx_value = match action {
-                    YieldAction::Deposit => BigInt::from(0),
-                    YieldAction::Withdraw => BigInt::from(0),
+                    EarnAction::Deposit => BigInt::from(0),
+                    EarnAction::Withdraw => BigInt::from(0),
                 };
                 Ok(TransactionParams::new(contract_address.clone(), decoded_data, tx_value))
             }
@@ -194,7 +194,7 @@ pub fn get_extra_fee_gas_limit(input: &TransactionLoadInput) -> Result<BigInt, B
                 Ok(BigInt::from(0))
             }
         }
-        TransactionInputType::Yield(_, _, earn_data) => {
+        TransactionInputType::Earn(_, _, earn_data) => {
             if let Some(gas_limit) = earn_data.gas_limit.as_ref()
                 && earn_data.approval.is_some()
             {

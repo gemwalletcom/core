@@ -3,6 +3,7 @@ use std::{collections::HashMap, str::FromStr, sync::Arc};
 use alloy_primitives::{Address, U256};
 use async_trait::async_trait;
 use gem_evm::jsonrpc::TransactionObject;
+use num_bigint::BigInt;
 use primitives::{AssetId, Chain, swap::ApprovalData};
 
 use crate::models::{Yield, YieldDetailsRequest, YieldPosition, YieldProvider, YieldTransaction};
@@ -106,14 +107,20 @@ impl YieldProviderClient for YoYieldProvider {
         let one_share = U256::from(10u64).pow(U256::from(vault.asset_decimals));
         let asset_value = data.share_balance.saturating_mul(data.latest_price) / one_share;
 
+        let asset_value_string = asset_value.to_string();
+        let asset_value_value = BigInt::from_str(&asset_value_string)
+            .map_err(|e| format!("invalid asset value {asset_value_string}: {e}"))?;
+        let share_balance_value = BigInt::from_str(&data.share_balance.to_string())
+            .map_err(|e| format!("invalid share balance {}: {e}", data.share_balance))?;
         Ok(YieldPosition {
             name: vault.name.to_string(),
             asset_id: request.asset_id.clone(),
             provider: self.provider(),
             vault_token_address: vault.yo_token.to_string(),
             asset_token_address: vault.asset_token.to_string(),
-            vault_balance_value: Some(data.share_balance.to_string()),
-            asset_balance_value: Some(asset_value.to_string()),
+            vault_balance_value: share_balance_value,
+            asset_balance_value: asset_value_value,
+            balance: asset_value_string,
             apy: None,
             rewards: None,
         })

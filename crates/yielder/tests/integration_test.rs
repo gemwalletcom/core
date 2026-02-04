@@ -3,8 +3,9 @@
 use std::{collections::HashMap, sync::Arc};
 
 use gem_evm::rpc::EthereumClient;
-use gem_jsonrpc::client::JsonRpcClient;
 use gem_jsonrpc::NativeProvider;
+use gem_jsonrpc::client::JsonRpcClient;
+use num_bigint::BigInt;
 use primitives::{Chain, EVMChain};
 use yielder::{YO_GATEWAY, YO_USDC, YieldDetailsRequest, YieldProviderClient, Yielder, YoGatewayClient, YoProvider, YoYieldProvider};
 
@@ -72,8 +73,8 @@ async fn test_yo_positions() -> Result<(), Box<dyn std::error::Error + Send + Sy
         position.vault_balance_value, position.asset_balance_value
     );
 
-    assert!(position.vault_balance_value.is_some(), "vault balance should be present");
-    assert!(position.asset_balance_value.is_some(), "asset balance should be present");
+    assert!(position.vault_balance_value >= BigInt::from(0));
+    assert!(position.asset_balance_value >= BigInt::from(0));
 
     Ok(())
 }

@@ -2,10 +2,9 @@ use crate::models::*;
 use num_bigint::BigInt;
 use primitives::stake_type::FreezeData;
 use primitives::{
-    AccountDataType, Asset, EarnData, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType,
+    AccountDataType, Asset, EarnAction, EarnData, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType,
     TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata, TransactionState,
     TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, UInt64, WalletConnectionSessionAppMetadata,
-    YieldAction,
     perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualReduceData, TPSLOrderData},
 };
 use std::collections::HashMap;
@@ -236,10 +235,10 @@ pub enum PerpetualType {
     Reduce(PerpetualReduceData),
 }
 
-pub type GemYieldAction = YieldAction;
+pub type GemEarnAction = EarnAction;
 
 #[uniffi::remote(Enum)]
-pub enum YieldAction {
+pub enum EarnAction {
     Deposit,
     Withdraw,
 }
@@ -294,9 +293,9 @@ pub enum GemTransactionInputType {
         asset: GemAsset,
         perpetual_type: GemPerpetualType,
     },
-    Yield {
+    Earn {
         asset: GemAsset,
-        action: GemYieldAction,
+        action: GemEarnAction,
         data: GemEarnData,
     },
 }
@@ -312,7 +311,7 @@ impl GemTransactionInputType {
             | Self::TransferNft { asset, .. }
             | Self::Account { asset, .. }
             | Self::Perpetual { asset, .. }
-            | Self::Yield { asset, .. } => asset,
+            | Self::Earn { asset, .. } => asset,
             Self::Swap { from_asset, .. } => from_asset,
         }
     }
@@ -678,7 +677,7 @@ impl From<TransactionInputType> for GemTransactionInputType {
             TransactionInputType::TransferNft(asset, nft_asset) => GemTransactionInputType::TransferNft { asset, nft_asset },
             TransactionInputType::Account(asset, account_type) => GemTransactionInputType::Account { asset, account_type },
             TransactionInputType::Perpetual(asset, perpetual_type) => GemTransactionInputType::Perpetual { asset, perpetual_type },
-            TransactionInputType::Yield(asset, action, data) => GemTransactionInputType::Yield { asset, action, data },
+            TransactionInputType::Earn(asset, action, data) => GemTransactionInputType::Earn { asset, action, data },
         }
     }
 }
@@ -832,7 +831,7 @@ impl From<GemTransactionInputType> for TransactionInputType {
             GemTransactionInputType::TransferNft { asset, nft_asset } => TransactionInputType::TransferNft(asset, nft_asset),
             GemTransactionInputType::Account { asset, account_type } => TransactionInputType::Account(asset, account_type),
             GemTransactionInputType::Perpetual { asset, perpetual_type } => TransactionInputType::Perpetual(asset, perpetual_type),
-            GemTransactionInputType::Yield { asset, action, data } => TransactionInputType::Yield(asset, action, data),
+            GemTransactionInputType::Earn { asset, action, data } => TransactionInputType::Earn(asset, action, data),
         }
     }
 }

@@ -16,6 +16,7 @@ pub mod transaction;
 pub use address::*;
 pub use asset::*;
 pub use balance::*;
+pub use custom_types::{DateTimeUtc, GemBigInt, GemBigUint};
 pub use gateway::*;
 pub use nft::*;
 pub use node::*;

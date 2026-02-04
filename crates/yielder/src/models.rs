@@ -1,12 +1,7 @@
-use alloy_primitives::Address;
-use primitives::{AssetId, Chain, swap::ApprovalData};
-use strum::{AsRefStr, Display, EnumString};
+use primitives::{AssetId, Chain, EarnPosition, EarnProvider, swap::ApprovalData};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, EnumString, AsRefStr)]
-#[strum(serialize_all = "lowercase")]
-pub enum YieldProvider {
-    Yo,
-}
+pub type YieldProvider = EarnProvider;
+pub type YieldPosition = EarnPosition;
 
 #[derive(Debug, Clone)]
 pub struct Yield {
@@ -41,33 +36,4 @@ pub struct YieldTransaction {
 pub struct YieldDetailsRequest {
     pub asset_id: AssetId,
     pub wallet_address: String,
-}
-
-#[derive(Debug, Clone)]
-pub struct YieldPosition {
-    pub name: String,
-    pub asset_id: AssetId,
-    pub provider: YieldProvider,
-    pub vault_token_address: String,
-    pub asset_token_address: String,
-    pub vault_balance_value: Option<String>,
-    pub asset_balance_value: Option<String>,
-    pub apy: Option<f64>,
-    pub rewards: Option<String>,
-}
-
-impl YieldPosition {
-    pub fn new(name: impl Into<String>, asset_id: AssetId, provider: YieldProvider, share_token: Address, asset_token: Address) -> Self {
-        Self {
-            name: name.into(),
-            asset_id,
-            provider,
-            vault_token_address: share_token.to_string(),
-            asset_token_address: asset_token.to_string(),
-            vault_balance_value: None,
-            asset_balance_value: None,
-            apy: None,
-            rewards: None,
-        }
-    }
 }

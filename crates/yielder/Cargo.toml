@@ -15,6 +15,7 @@ yield_integration_tests = [
 [dependencies]
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }
+num-bigint = { workspace = true }
 gem_client = { path = "../gem_client" }
 gem_evm = { path = "../gem_evm", features = ["rpc"] }
 gem_jsonrpc = { path = "../gem_jsonrpc" }

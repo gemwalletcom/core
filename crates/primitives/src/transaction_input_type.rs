@@ -1,8 +1,9 @@
+use crate::earn_action::EarnAction;
+use crate::earn_data::EarnData;
 use crate::stake_type::StakeType;
 use crate::swap::{ApprovalData, SwapData};
 use crate::transaction_fee::TransactionFee;
 use crate::transaction_load_metadata::TransactionLoadMetadata;
-use crate::yield_data::{EarnData, YieldAction};
 use crate::{
     Asset, GasPriceType, PerpetualType, TransactionPreloadInput, TransactionType, TransferDataExtra, WalletConnectionSessionAppMetadata, nft::NFTAsset, perpetual::AccountDataType,
 };
@@ -22,7 +23,7 @@ pub enum TransactionInputType {
     TransferNft(Asset, NFTAsset),
     Account(Asset, AccountDataType),
     Perpetual(Asset, PerpetualType),
-    Yield(Asset, YieldAction, EarnData),
+    Earn(Asset, EarnAction, EarnData),
 }
 
 impl TransactionInputType {
@@ -37,7 +38,7 @@ impl TransactionInputType {
             TransactionInputType::TransferNft(asset, _) => asset,
             TransactionInputType::Account(asset, _) => asset,
             TransactionInputType::Perpetual(asset, _) => asset,
-            TransactionInputType::Yield(asset, _, _) => asset,
+            TransactionInputType::Earn(asset, _, _) => asset,
         }
     }
 
@@ -52,7 +53,7 @@ impl TransactionInputType {
             TransactionInputType::TransferNft(asset, _) => asset,
             TransactionInputType::Account(asset, _) => asset,
             TransactionInputType::Perpetual(asset, _) => asset,
-            TransactionInputType::Yield(asset, _, _) => asset,
+            TransactionInputType::Earn(asset, _, _) => asset,
         }
     }
 
@@ -77,9 +78,9 @@ impl TransactionInputType {
                 PerpetualType::Close(_) | PerpetualType::Reduce(_) => TransactionType::PerpetualClosePosition,
                 PerpetualType::Modify(_) => TransactionType::PerpetualModifyPosition,
             },
-            TransactionInputType::Yield(_, action, _) => match action {
-                YieldAction::Deposit => TransactionType::EarnDeposit,
-                YieldAction::Withdraw => TransactionType::EarnWithdraw,
+            TransactionInputType::Earn(_, action, _) => match action {
+                EarnAction::Deposit => TransactionType::EarnDeposit,
+                EarnAction::Withdraw => TransactionType::EarnWithdraw,
             },
         }
     }

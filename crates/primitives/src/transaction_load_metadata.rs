@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{UTXO, solana_token_program::SolanaTokenProgramId, yield_data::EarnData};
+use crate::{UTXO, earn_data::EarnData, solana_token_program::SolanaTokenProgramId};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HyperliquidOrder {

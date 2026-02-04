@@ -12,7 +12,7 @@ use gem_evm::rpc::EthereumClient;
 use gem_jsonrpc::client::JsonRpcClient;
 use gem_jsonrpc::rpc::RpcClient;
 use primitives::{AssetId, Chain, EVMChain};
-use yielder::{YO_GATEWAY, YieldDetailsRequest, YieldProvider, YieldProviderClient, YieldTransaction, Yielder, YoGatewayClient, YoProvider, YoYieldProvider, GAS_LIMIT};
+use yielder::{GAS_LIMIT, YO_GATEWAY, YieldDetailsRequest, YieldProvider, YieldProviderClient, YieldTransaction, Yielder, YoGatewayClient, YoProvider, YoYieldProvider};
 
 #[derive(uniffi::Object)]
 pub struct GemYielder {
@@ -31,33 +31,29 @@ impl GemYielder {
         self.yielder.yields_for_asset_with_apy(asset_id).await.map_err(Into::into)
     }
 
-    pub async fn deposit(&self, provider: String, asset: AssetId, wallet_address: String, value: String) -> Result<GemYieldTransaction, GemstoneError> {
-        let provider = provider.parse::<YieldProvider>()?;
+    pub async fn deposit(&self, provider: GemEarnProvider, asset: AssetId, wallet_address: String, value: String) -> Result<GemYieldTransaction, GemstoneError> {
         self.yielder.deposit(provider, &asset, &wallet_address, &value).await.map_err(Into::into)
     }
 
-    pub async fn withdraw(&self, provider: String, asset: AssetId, wallet_address: String, value: String) -> Result<GemYieldTransaction, GemstoneError> {
-        let provider = provider.parse::<YieldProvider>()?;
+    pub async fn withdraw(&self, provider: GemEarnProvider, asset: AssetId, wallet_address: String, value: String) -> Result<GemYieldTransaction, GemstoneError> {
         self.yielder.withdraw(provider, &asset, &wallet_address, &value).await.map_err(Into::into)
     }
 
-    pub async fn positions(&self, provider: String, asset: AssetId, wallet_address: String) -> Result<GemYieldPosition, GemstoneError> {
-        let provider = provider.parse::<YieldProvider>()?;
+    pub async fn positions(&self, provider: GemEarnProvider, asset: AssetId, wallet_address: String) -> Result<GemEarnPosition, GemstoneError> {
         let request = YieldDetailsRequest { asset_id: asset, wallet_address };
         self.yielder.positions(provider, &request).await.map_err(Into::into)
     }
 
     pub async fn build_transaction(
         &self,
-        action: GemYieldAction,
-        provider: String,
+        action: GemEarnAction,
+        provider: GemEarnProvider,
         asset: AssetId,
         wallet_address: String,
         value: String,
         nonce: u64,
         chain_id: u64,
     ) -> Result<GemYieldTransactionData, GemstoneError> {
-        let provider = provider.parse::<YieldProvider>()?;
         let transaction = build_yield_transaction(&self.yielder, &action, provider, &asset, &wallet_address, &value).await?;
 
         Ok(GemYieldTransactionData {
@@ -90,12 +86,12 @@ pub(crate) fn build_yielder(rpc_provider: Arc<dyn AlienProvider>) -> Result<Yiel
 
 pub(crate) async fn prepare_yield_input(yielder: &Yielder, input: GemTransactionLoadInput) -> Result<GemTransactionLoadInput, GemstoneError> {
     match &input.input_type {
-        GemTransactionInputType::Yield { asset, action, data } => {
+        GemTransactionInputType::Earn { asset, action, data } => {
             if data.contract_address.is_none() || data.call_data.is_none() {
                 let transaction = build_yield_transaction(yielder, action, YieldProvider::Yo, &asset.id, &input.sender_address, &input.value).await?;
 
                 Ok(GemTransactionLoadInput {
-                    input_type: GemTransactionInputType::Yield {
+                    input_type: GemTransactionInputType::Earn {
                         asset: asset.clone(),
                         action: action.clone(),
                         data: GemEarnData {
@@ -124,14 +120,14 @@ pub(crate) async fn prepare_yield_input(yielder: &Yielder, input: GemTransaction
 
 async fn build_yield_transaction(
     yielder: &Yielder,
-    action: &GemYieldAction,
+    action: &GemEarnAction,
     provider: YieldProvider,
     asset: &AssetId,
     wallet_address: &str,
     value: &str,
 ) -> Result<YieldTransaction, GemstoneError> {
     match action {
-        GemYieldAction::Deposit => Ok(yielder.deposit(provider, asset, wallet_address, value).await?),
-        GemYieldAction::Withdraw => Ok(yielder.withdraw(provider, asset, wallet_address, value).await?),
+        GemEarnAction::Deposit => Ok(yielder.deposit(provider, asset, wallet_address, value).await?),
+        GemEarnAction::Withdraw => Ok(yielder.withdraw(provider, asset, wallet_address, value).await?),
     }
 }

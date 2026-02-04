@@ -9222,6 +9222,7 @@ dependencies = [
  "gem_client",
  "gem_evm",
  "gem_jsonrpc",
+ "num-bigint",
  "primitives",
  "reqwest 0.13.1",
  "serde",

@@ -92,11 +92,7 @@ where
     }
 
     async fn get_position(&self, vault: YoVault, owner: Address, lookback_blocks: u64) -> Result<PositionData, YieldError> {
-        let latest_block = self
-            .ethereum_client
-            .get_latest_block()
-            .await
-            .map_err(|e| format!("failed to fetch latest block: {e}"))?;
+        let latest_block = self.ethereum_client.get_latest_block().await.map_err(|e| format!("failed to fetch latest block: {e}"))?;
 
         let lookback_block = latest_block.saturating_sub(lookback_blocks);
         let one_share = U256::from(10u64).pow(U256::from(vault.asset_decimals));
@@ -158,8 +154,7 @@ where
             .await
             .map_err(|e| format!("convert_to_shares eth_call failed: {e}"))?;
         let bytes = hex::decode(&result).map_err(|e| format!("convert_to_shares hex decode failed: {e}"))?;
-        let shares =
-            IYoGateway::quoteConvertToSharesCall::abi_decode_returns(&bytes).map_err(|e| format!("convert_to_shares abi decode failed: {e}"))?;
+        let shares = IYoGateway::quoteConvertToSharesCall::abi_decode_returns(&bytes).map_err(|e| format!("convert_to_shares abi decode failed: {e}"))?;
         Ok(shares)
     }
 }
