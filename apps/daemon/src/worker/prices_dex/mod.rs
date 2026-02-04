@@ -1,12 +1,13 @@
 pub mod prices_dex_updater;
 
-use job_runner::{JobStatusReporter, ShutdownReceiver, run_job};
+use crate::model::WorkerService;
+use crate::worker::context::WorkerContext;
+use crate::worker::jobs::{JobInstance, WorkerJob};
+use crate::worker::plan::JobPlanBuilder;
+use job_runner::{JobHandle, ShutdownReceiver};
 use prices_dex::PriceFeedProvider;
 pub use prices_dex_updater::PricesDexUpdater;
-use settings::Settings;
-use std::sync::Arc;
 use std::time::Duration;
-use tokio::task::JoinHandle;
 
 struct ProviderConfig {
     provider_type: PriceFeedProvider,
@@ -15,8 +16,10 @@ struct ProviderConfig {
     timer: u64,
 }
 
-pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shutdown_rx: ShutdownReceiver) -> Vec<JoinHandle<()>> {
-    let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
+pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn std::error::Error + Send + Sync>> {
+    let runtime = ctx.runtime();
+    let database = ctx.database();
+    let settings = ctx.settings();
     let providers = vec![
         ProviderConfig {
             provider_type: PriceFeedProvider::Pyth,
@@ -32,44 +35,33 @@ pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shut
         },
     ];
 
-    let mut all_jobs = Vec::new();
-
-    for provider_config in providers {
-        let feeds_job_name = format!("update_{}_feeds", provider_config.name.to_lowercase()).leak() as &'static str;
-        let feeds_job = tokio::spawn(run_job(feeds_job_name, Duration::from_secs(3600), reporter.clone(), shutdown_rx.clone(), {
-            let url = provider_config.url.clone();
-            let database = database.clone();
-            let provider_type = provider_config.provider_type.clone();
-            move || {
-                let url = url.clone();
+    providers
+        .into_iter()
+        .fold(JobPlanBuilder::new(WorkerService::PricesDex, runtime.plan(shutdown_rx)), |builder, provider| {
+            let slug = provider.name.to_lowercase();
+            let builder = builder.job(JobInstance::labeled(WorkerJob::UpdateDexFeeds, slug.clone()).every(Duration::from_secs(3600)), {
+                let url = provider.url.clone();
                 let database = database.clone();
-                let provider_type = provider_type.clone();
-                async move { PricesDexUpdater::new(provider_type, &url, database).update_feeds().await }
-            }
-        }));
+                let provider_type = provider.provider_type.clone();
+                move || {
+                    let url = url.clone();
+                    let database = database.clone();
+                    let provider_type = provider_type.clone();
+                    async move { PricesDexUpdater::new(provider_type, &url, database).update_feeds().await }
+                }
+            });
 
-        let prices_job_name = format!("update_{}_prices", provider_config.name.to_lowercase()).leak() as &'static str;
-        let prices_job = tokio::spawn(run_job(
-            prices_job_name,
-            Duration::from_secs(provider_config.timer),
-            reporter.clone(),
-            shutdown_rx.clone(),
-            {
-                let url = provider_config.url.clone();
+            builder.job(JobInstance::labeled(WorkerJob::UpdateDexPrices, slug).every(Duration::from_secs(provider.timer)), {
+                let url = provider.url.clone();
                 let database = database.clone();
-                let provider_type = provider_config.provider_type.clone();
+                let provider_type = provider.provider_type.clone();
                 move || {
                     let url = url.clone();
                     let database = database.clone();
                     let provider_type = provider_type.clone();
                     async move { PricesDexUpdater::new(provider_type, &url, database).update_prices().await }
                 }
-            },
-        ));
-
-        all_jobs.push(feeds_job);
-        all_jobs.push(prices_job);
-    }
-
-    all_jobs
+            })
+        })
+        .finish()
 }

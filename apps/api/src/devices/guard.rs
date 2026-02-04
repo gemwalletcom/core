@@ -3,10 +3,12 @@ use rocket::http::Status;
 use rocket::outcome::Outcome::{Error, Success};
 use rocket::request::{FromRequest, Outcome};
 use storage::Database;
+use storage::database::device_sessions::DeviceSessionsStore;
 use storage::database::devices::DevicesStore;
 use storage::database::wallets::WalletsStore;
 use storage::models::DeviceRow;
 
+use crate::devices::auth_config::AuthConfig;
 use crate::devices::constants::{DEVICE_ID_LENGTH, HEADER_DEVICE_ID, HEADER_WALLET_ID};
 use crate::devices::error::DeviceError;
 use crate::devices::signature::verify_request_signature;
@@ -38,6 +40,16 @@ fn get_validated_device_id<T>(req: &Request<'_>) -> Result<String, Outcome<T, St
     Ok(device_id.to_string())
 }
 
+async fn verify_signature(req: &Request<'_>, device_id: &str) -> Result<(), (Status, String)> {
+    let Success(config) = req.guard::<&rocket::State<AuthConfig>>().await else {
+        panic!("AuthConfig not configured");
+    };
+    if !config.enabled {
+        return Ok(());
+    }
+    verify_request_signature(req, device_id, config.tolerance.as_millis() as u64)
+}
+
 // Signature verified + device exists in database
 pub struct AuthenticatedDevice {
     pub device_row: DeviceRow,
@@ -53,7 +65,7 @@ impl<'r> FromRequest<'r> for AuthenticatedDevice {
             Err(error) => return error,
         };
 
-        if let Err((status, msg)) = verify_request_signature(req, &device_id) {
+        if let Err((status, msg)) = verify_signature(req, &device_id).await {
             cache_error(req, &msg);
             return Error((status, msg));
         }
@@ -70,6 +82,10 @@ impl<'r> FromRequest<'r> for AuthenticatedDevice {
             return auth_error_outcome(req, DeviceError::DeviceNotFound);
         };
 
+        if DeviceSessionsStore::add_device_session(&mut db_client, device_row.id).is_err() {
+            return auth_error_outcome(req, DeviceError::DatabaseError);
+        }
+
         Success(AuthenticatedDevice { device_row })
     }
 }
@@ -84,7 +100,7 @@ impl<'r> FromRequest<'r> for VerifiedDeviceId {
     async fn from_request(req: &'r Request<'_>) -> Outcome<Self, String> {
         match get_validated_device_id(req) {
             Ok(id) => {
-                if let Err((status, msg)) = verify_request_signature(req, &id) {
+                if let Err((status, msg)) = verify_signature(req, &id).await {
                     cache_error(req, &msg);
                     return Error((status, msg));
                 }
@@ -115,7 +131,7 @@ impl<'r> FromRequest<'r> for AuthenticatedDeviceWallet {
             return auth_error_outcome(req, DeviceError::MissingHeader(HEADER_WALLET_ID));
         };
 
-        if let Err((status, msg)) = verify_request_signature(req, &device_id) {
+        if let Err((status, msg)) = verify_signature(req, &device_id).await {
             cache_error(req, &msg);
             return Error((status, msg));
         }
@@ -135,6 +151,10 @@ impl<'r> FromRequest<'r> for AuthenticatedDeviceWallet {
         let Ok(wallet_row) = WalletsStore::get_wallet(&mut db_client, wallet_id_str) else {
             return auth_error_outcome(req, DeviceError::WalletNotFound);
         };
+
+        if DeviceSessionsStore::add_device_session(&mut db_client, device_row.id).is_err() {
+            return auth_error_outcome(req, DeviceError::DatabaseError);
+        }
 
         Success(AuthenticatedDeviceWallet {
             device_row,

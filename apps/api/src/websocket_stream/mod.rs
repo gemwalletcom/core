@@ -5,10 +5,16 @@ use rocket::State;
 use rocket::tokio::sync::Mutex;
 use rocket_ws::{Channel, WebSocket};
 
+use crate::devices::auth_config::AuthConfig;
 use crate::devices::guard::AuthenticatedDevice;
 
 mod client;
 mod stream;
+
+#[rocket::get("/health")]
+pub fn ws_health(_config: &State<AuthConfig>) -> rocket::http::Status {
+    rocket::http::Status::Ok
+}
 
 pub use client::{StreamObserverClient, StreamObserverConfig};
 use stream::Stream;

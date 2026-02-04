@@ -14,8 +14,9 @@ impl VersionClient {
         Self { database }
     }
 
-    pub async fn update_store_versions(&self) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub async fn update_store_versions(&self) -> Result<Vec<(String, String)>, Box<dyn Error + Send + Sync>> {
         let platforms = [PlatformStore::AppStore, PlatformStore::ApkUniversal, PlatformStore::SamsungStore];
+        let mut updates = Vec::new();
 
         for platform in platforms {
             let version = match platform {
@@ -26,8 +27,9 @@ impl VersionClient {
             };
 
             info_with_fields!("update_store_version", platform = platform.as_ref(), version = version.as_str());
+            updates.push((platform.as_ref().to_string(), version));
         }
-        Ok(())
+        Ok(updates)
     }
 
     async fn update_app_store_version(&self) -> Result<String, Box<dyn Error + Send + Sync>> {
@@ -59,8 +61,12 @@ impl VersionClient {
     async fn get_app_store_version(&self) -> Result<String, Box<dyn Error + Send + Sync>> {
         let url = "https://itunes.apple.com/lookup?bundleId=com.gemwallet.ios";
         let response = reqwest::get(url).await?.json::<ITunesLookupResponse>().await?;
-        let result = response.results.first().expect("expect result");
-        Ok(result.version.to_string())
+        let version = response
+            .results
+            .first()
+            .map(|result| result.version.to_string())
+            .ok_or_else(|| "app store lookup returned no results".to_string())?;
+        Ok(version)
     }
 
     async fn get_github_apk_version(&self) -> Result<String, Box<dyn Error + Send + Sync>> {
@@ -71,7 +77,10 @@ impl VersionClient {
             .into_iter()
             .filter(|x| !x.draft && !x.prerelease && x.assets.clone().into_iter().any(|x| x.name.contains("gem_wallet_universal_")))
             .collect::<Vec<_>>();
-        let result = results.first().expect("expect github repository");
-        Ok(result.name.clone())
+        let version = results
+            .first()
+            .map(|result| result.name.clone())
+            .ok_or_else(|| "github releases list is empty".to_string())?;
+        Ok(version)
     }
 }

@@ -120,8 +120,10 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let rewards_client = referral::RewardsClient::new(database.clone(), stream_producer.clone(), ip_security_client, pusher_client.clone());
     let redemption_client = referral::RewardsRedemptionClient::new(database.clone(), stream_producer.clone());
     let notifications_client = NotificationsClient::new(database.clone());
+    let auth_config = devices::auth_config::AuthConfig::new(settings.api.auth.enabled, settings.api.auth.tolerance);
 
     rocket::build()
+        .manage(auth_config)
         .manage(database)
         .manage(Mutex::new(fiat_quotes_client))
         .manage(Mutex::new(price_client))
@@ -227,6 +229,8 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .mount(
             "/v2",
             routes![
+                devices::get_fiat_quotes_v2,
+                devices::get_fiat_quote_url_v2,
                 transactions::get_transactions_by_device_id_v2,
                 nft::get_nft_assets_v2,
                 scan::scan_transaction_v2,
@@ -290,11 +294,15 @@ async fn rocket_ws_stream(settings: Settings) -> Rocket<Build> {
         redis_url: settings.redis.url.clone(),
     };
 
+    let auth_config = devices::auth_config::AuthConfig::new(settings.api.auth.enabled, settings.api.auth.tolerance);
+
     rocket::build()
+        .manage(auth_config)
         .manage(database)
         .manage(Arc::new(Mutex::new(price_client)))
         .manage(Arc::new(Mutex::new(stream_observer_config)))
         .mount("/v2/devices", routes![websocket_stream::ws_stream])
+        .mount("/", routes![websocket_stream::ws_health])
         .register("/", catchers![catchers::default_catcher])
 }
 

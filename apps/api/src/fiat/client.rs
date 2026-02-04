@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use fiat::FiatClient;
 use primitives::currency::Currency;
-use primitives::{FiatQuote, FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlRequest, FiatQuotes, FiatQuotesOld};
+use primitives::{FiatQuote, FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuotes, FiatQuotesOld};
 
 pub struct FiatQuotesClient {
     fiat_client: FiatClient,
@@ -47,10 +47,19 @@ impl FiatQuotesClient {
         self.fiat_client.get_quotes(request).await
     }
 
-    pub async fn get_quote_url(&self, request: &FiatQuoteUrlRequest, ip_address: &str) -> Result<(FiatQuoteUrl, FiatQuote), Box<dyn Error + Send + Sync>> {
-        self.fiat_client
-            .get_quote_url(&request.quote_id, &request.wallet_address, ip_address, &request.device_id)
-            .await
+    pub async fn get_quote_url_legacy(&self, quote_id: &str, wallet_address: &str, ip_address: &str, device_id: &str) -> Result<(FiatQuoteUrl, FiatQuote), Box<dyn Error + Send + Sync>> {
+        self.fiat_client.get_quote_url_legacy(quote_id, wallet_address, ip_address, device_id).await
+    }
+
+    pub async fn get_quote_url(
+        &self,
+        quote_id: &str,
+        wallet_id: i32,
+        device_id: i32,
+        ip_address: &str,
+        locale: &str,
+    ) -> Result<(FiatQuoteUrl, FiatQuote), Box<dyn Error + Send + Sync>> {
+        self.fiat_client.get_quote_url(quote_id, wallet_id, device_id, ip_address, locale).await
     }
 
     pub async fn get_on_ramp_assets(&self) -> Result<primitives::FiatAssets, Box<dyn Error + Send + Sync>> {
