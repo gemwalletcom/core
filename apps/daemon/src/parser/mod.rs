@@ -61,16 +61,9 @@ impl Parser {
         let cache_key = CacheKey::ParserStatus(self.chain.as_ref());
         let key = cache_key.key();
         let mut status = self.cacher.get_value::<ParserStatus>(&key).await.unwrap_or_default();
-        let timestamp = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs();
+        let timestamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
 
-        let truncated = if error.len() > 200 {
-            error[..200].to_string()
-        } else {
-            error.to_string()
-        };
+        let truncated = if error.len() > 200 { error[..200].to_string() } else { error.to_string() };
 
         if let Some(entry) = status.errors.iter_mut().find(|e| e.message == truncated) {
             entry.count += 1;
@@ -281,7 +274,8 @@ pub async fn run(settings: Settings, chain: Option<Chain>) -> Result<(), Box<dyn
     }
 
     signal_handle.await.ok();
-    shutdown::wait_with_timeout(handles, shutdown_timeout).await;
+    info_with_fields!("waiting for parser shutdown", tasks = handles.len());
+    let _ = shutdown::wait_with_timeout(handles, shutdown_timeout).await;
 
     info_with_fields!("all parsers stopped", status = "ok");
     Ok(())

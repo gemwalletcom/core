@@ -9,13 +9,16 @@ mod worker;
 use std::str::FromStr;
 use std::sync::Arc;
 
+use crate::consumers::consumer_reporter::CacherConsumerReporter;
 use crate::model::{ConsumerService, DaemonService, WorkerService};
 use crate::shutdown::ShutdownReceiver;
-use crate::worker::consumer_reporter::CacherConsumerReporter;
+use crate::worker::context::WorkerContext;
+use crate::worker::job_history::CacheJobSchedule;
 use crate::worker::job_reporter::CacherJobReporter;
+use crate::worker::runtime::WorkerRuntime;
 use cacher::CacherClient;
-use gem_tracing::{SentryConfig, SentryTracing, info_with_fields};
-use job_runner::JobStatusReporter;
+use gem_tracing::{SentryConfig, SentryTracing, error_with_fields, info_with_fields};
+use job_runner::{JobHandle, JobSchedule, JobStatusReporter};
 use streamer::ConsumerStatusReporter;
 
 #[tokio::main]
@@ -59,32 +62,60 @@ pub async fn main() {
 }
 
 async fn run_worker_mode(settings: settings::Settings, service: WorkerService) {
+    let settings = Arc::new(settings);
     let (shutdown_tx, shutdown_rx) = shutdown::channel();
     let shutdown_timeout = settings.daemon.shutdown.timeout;
 
     let metrics_cacher = CacherClient::new(&settings.metrics.redis.url).await;
-    let consumer_reporter: Arc<dyn ConsumerStatusReporter> = Arc::new(CacherConsumerReporter::new(metrics_cacher.clone()));
-    let reporter: Arc<dyn JobStatusReporter> = Arc::new(CacherJobReporter::new(metrics_cacher, service.as_ref()));
+    let reporter: Arc<dyn JobStatusReporter> = Arc::new(CacherJobReporter::new(metrics_cacher.clone(), service.as_ref()));
+    let job_history: Arc<dyn JobSchedule> = Arc::new(CacheJobSchedule::new(&metrics_cacher));
+    let runtime = WorkerRuntime::new(reporter.clone(), job_history.clone());
 
     let signal_handle = shutdown::spawn_signal_handler(shutdown_tx);
 
-    let services = match service {
-        WorkerService::Alerter => worker::alerter::jobs(settings, reporter, shutdown_rx).await.unwrap(),
-        WorkerService::Pricer => worker::pricer::jobs(settings, reporter, shutdown_rx).await.unwrap(),
-        WorkerService::PricesDex => worker::prices_dex::jobs(settings, reporter, shutdown_rx).await,
-        WorkerService::Fiat => worker::fiat::jobs(settings, reporter, shutdown_rx).await.unwrap(),
-        WorkerService::Assets => worker::assets::jobs(settings, reporter, shutdown_rx).await.unwrap(),
-        WorkerService::Version => worker::version::jobs(settings, reporter, shutdown_rx).await.unwrap(),
-        WorkerService::Transaction => worker::transaction::jobs(settings, reporter, shutdown_rx).await.unwrap(),
-        WorkerService::Device => worker::device::jobs(settings, reporter, shutdown_rx).await.unwrap(),
-        WorkerService::Search => worker::search::jobs(settings, reporter, shutdown_rx).await.unwrap(),
-        WorkerService::Nft => worker::nft::jobs(settings, reporter, consumer_reporter.clone(), shutdown_rx).await,
-        WorkerService::Scan => worker::scan::jobs(settings, reporter, shutdown_rx).await.unwrap(),
-        WorkerService::Rewards => worker::rewards::jobs(settings, reporter, shutdown_rx).await.unwrap(),
+    let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
+    let worker_context = WorkerContext::new(settings.clone(), database.clone(), runtime.clone());
+
+    let worker_result: Result<Vec<JobHandle>, Box<dyn std::error::Error + Send + Sync>> = match service {
+        WorkerService::Alerter => worker::alerter::jobs(worker_context.clone(), shutdown_rx).await,
+        WorkerService::Pricer => worker::pricer::jobs(worker_context.clone(), shutdown_rx).await,
+        WorkerService::PricesDex => worker::prices_dex::jobs(worker_context.clone(), shutdown_rx).await,
+        WorkerService::Fiat => worker::fiat::jobs(worker_context.clone(), shutdown_rx).await,
+        WorkerService::Assets => worker::assets::jobs(worker_context.clone(), shutdown_rx).await,
+        WorkerService::Version => worker::version::jobs(worker_context.clone(), shutdown_rx).await,
+        WorkerService::Transaction => worker::transaction::jobs(worker_context.clone(), shutdown_rx).await,
+        WorkerService::Device => worker::device::jobs(worker_context.clone(), shutdown_rx).await,
+        WorkerService::Search => worker::search::jobs(worker_context.clone(), shutdown_rx).await,
+        WorkerService::Scan => worker::scan::jobs(worker_context.clone(), shutdown_rx).await,
+        WorkerService::Rewards => worker::rewards::jobs(worker_context, shutdown_rx).await,
+    };
+
+    let services = match worker_result {
+        Ok(handles) => handles,
+        Err(err) => {
+            error_with_fields!("worker init failed", &*err, worker = service.as_ref());
+            return;
+        }
     };
 
     signal_handle.await.ok();
-    shutdown::wait_with_timeout(services, shutdown_timeout).await;
+    let status_flags: Vec<_> = services
+        .iter()
+        .map(|job| (job.name().to_string(), job.status_flag(), job.is_finished()))
+        .collect();
+    let initial_pending: Vec<_> = status_flags
+        .iter()
+        .filter_map(|(name, _, done)| if *done { None } else { Some(name.clone()) })
+        .collect();
+    if !initial_pending.is_empty() {
+        info_with_fields!(
+            "waiting for worker shutdown",
+            worker = service.as_ref(),
+            jobs = initial_pending.join(", ")
+        );
+    }
+    let handles_only = services.into_iter().map(JobHandle::into_handle).collect();
+    let _ = shutdown::wait_with_timeout(handles_only, shutdown_timeout).await;
     info_with_fields!("all workers stopped", status = "ok");
 }
 
@@ -126,5 +157,6 @@ async fn run_consumer(
         ConsumerService::StorePrices => consumers::run_consumer_store_prices(settings, shutdown_rx, reporter).await,
         ConsumerService::StoreCharts => consumers::run_consumer_store_charts(settings, shutdown_rx, reporter).await,
         ConsumerService::FetchPrices => consumers::run_consumer_fetch_prices(settings, shutdown_rx, reporter).await,
+        ConsumerService::Nft => consumers::nft::run_consumer_nft_collections(settings, shutdown_rx, reporter).await,
     }
 }

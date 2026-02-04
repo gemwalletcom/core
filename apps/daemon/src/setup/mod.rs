@@ -146,7 +146,7 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
     };
 
     info_with_fields!("setup_dev", step = "add rate", currency = "USD");
-    let _ = database.fiat()?.set_fiat_rates(vec![fiat_rate.clone()]).expect("Failed to add currency");
+    database.fiat()?.set_fiat_rates(vec![fiat_rate.clone()])?;
 
     info_with_fields!("setup_dev", step = "add devices");
 
@@ -183,14 +183,14 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
         model: "Pixel 9".to_string(),
     };
 
-    let _ = database.devices()?.add_device(ios_device).expect("Failed to add iOS device");
+    database.devices()?.add_device(ios_device)?;
     info_with_fields!("setup_dev", step = "device added", device_id = ios_device_id.as_str());
 
-    let _ = database.devices()?.add_device(android_device).expect("Failed to add Android device");
+    database.devices()?.add_device(android_device)?;
     info_with_fields!("setup_dev", step = "device added", device_id = android_device_id.as_str());
 
-    let ios_device_row_id = database.devices()?.get_device_row_id(&ios_device_id).expect("Failed to get iOS device row id");
-    let android_device_row_id = database.devices()?.get_device_row_id(&android_device_id).expect("Failed to get Android device row id");
+    let ios_device_row_id = database.devices()?.get_device_row_id(&ios_device_id)?;
+    let android_device_row_id = database.devices()?.get_device_row_id(&android_device_id)?;
 
     let wallet_address = "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4";
 
@@ -202,7 +202,7 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
         address: wallet_address.to_string(),
     };
 
-    let result = SubscriptionsRepository::add_subscriptions(&mut database.subscriptions()?, vec![subscription], &ios_device_id).expect("Failed to add subscription");
+    let result = SubscriptionsRepository::add_subscriptions(&mut database.subscriptions()?, vec![subscription], &ios_device_id)?;
     info_with_fields!("setup_dev", step = "subscription added", count = result);
 
     info_with_fields!("setup_dev", step = "add wallet");
@@ -214,22 +214,22 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
         source: WalletSource::Create,
     };
 
-    let wallet = database.wallets()?.get_or_create_wallet(new_wallet).expect("Failed to create wallet");
+    let wallet = database.wallets()?.get_or_create_wallet(new_wallet)?;
     info_with_fields!("setup_dev", step = "wallet added", wallet_id = wallet.id);
 
     info_with_fields!("setup_dev", step = "add wallet subscriptions");
 
     let ios_subscriptions = vec![(wallet.id, Chain::Ethereum, wallet_address.to_string())];
-    let result = WalletsRepository::add_subscriptions(&mut database.wallets()?, ios_device_row_id, ios_subscriptions).expect("Failed to add iOS wallet subscription");
+    let result = WalletsRepository::add_subscriptions(&mut database.wallets()?, ios_device_row_id, ios_subscriptions)?;
     info_with_fields!("setup_dev", step = "ios wallet subscription added", count = result);
 
     let android_subscriptions = vec![(wallet.id, Chain::Ethereum, wallet_address.to_string())];
-    let result = WalletsRepository::add_subscriptions(&mut database.wallets()?, android_device_row_id, android_subscriptions).expect("Failed to add Android wallet subscription");
+    let result = WalletsRepository::add_subscriptions(&mut database.wallets()?, android_device_row_id, android_subscriptions)?;
     info_with_fields!("setup_dev", step = "android wallet subscription added", count = result);
 
     info_with_fields!("setup_dev", step = "add rewards");
 
-    let devices = database.wallets()?.get_devices_by_wallet_id(wallet.id).expect("Failed to get devices");
+    let devices = database.wallets()?.get_devices_by_wallet_id(wallet.id)?;
     if let Some(device) = devices.first() {
         let result = database.rewards()?.create_reward(wallet.id, "gemcoder", device.id);
         match result {
@@ -273,7 +273,7 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
         },
     ];
 
-    let result = database.notifications()?.create_notifications(notifications).expect("Failed to create notifications");
+    let result = database.notifications()?.create_notifications(notifications)?;
     info_with_fields!("setup_dev", step = "notifications added", count = result);
 
     info_with_fields!("setup_dev", step = "add assets");
@@ -288,7 +288,7 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
         PriceAlert::new_price(AssetId::from_chain(Chain::Bitcoin), "USD".to_string(), 50000.0, PriceAlertDirection::Down),
     ];
 
-    let result = database.price_alerts()?.add_price_alerts(&ios_device_id, price_alerts).expect("Failed to create price alerts");
+    let result = database.price_alerts()?.add_price_alerts(&ios_device_id, price_alerts)?;
     info_with_fields!("setup_dev", step = "price alerts added", count = result);
 
     info_with_fields!("setup_dev", step = "add fiat assets");
@@ -320,7 +320,7 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
         fiat_asset(FiatProviderName::Mercuryo.as_ref(), "BNB", "BNB", "BINANCESMARTCHAIN", &smartchain_asset_id),
     ];
 
-    let result = database.fiat()?.add_fiat_assets(fiat_assets).expect("Failed to add fiat assets");
+    let result = database.fiat()?.add_fiat_assets(fiat_assets)?;
     info_with_fields!("setup_dev", step = "fiat assets added", count = result);
 
     info_with_fields!("setup_dev", step = "add fiat provider countries");
@@ -338,7 +338,7 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
         })
         .collect();
 
-    let result = database.fiat()?.add_fiat_providers_countries(fiat_countries).expect("Failed to add fiat provider countries");
+    let result = database.fiat()?.add_fiat_providers_countries(fiat_countries)?;
     info_with_fields!("setup_dev", step = "fiat provider countries added", count = result);
 
     info_with_fields!("setup_dev", step = "complete");

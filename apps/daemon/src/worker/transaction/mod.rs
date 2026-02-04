@@ -1,31 +1,27 @@
 mod transaction_updater;
 
-use job_runner::{JobStatusReporter, ShutdownReceiver, run_job};
-use primitives::ConfigKey;
-use settings::Settings;
+use crate::model::WorkerService;
+use crate::worker::context::WorkerContext;
+use crate::worker::jobs::WorkerJob;
+use crate::worker::plan::JobPlanBuilder;
+use job_runner::{JobHandle, ShutdownReceiver};
 use std::error::Error;
-use std::sync::Arc;
 use storage::ConfigCacher;
-use tokio::task::JoinHandle;
 use transaction_updater::TransactionUpdater;
 
-pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shutdown_rx: ShutdownReceiver) -> Result<Vec<JoinHandle<()>>, Box<dyn Error + Send + Sync>> {
-    let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
+pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
+    let runtime = ctx.runtime();
+    let database = ctx.database();
     let config = ConfigCacher::new(database.clone());
-    let transaction_updater = tokio::spawn(run_job(
-        "cleanup_processed_transactions",
-        config.get_duration(ConfigKey::TransactionTimerUpdater)?,
-        reporter.clone(),
-        shutdown_rx,
-        {
+
+    JobPlanBuilder::with_config(WorkerService::Transaction, runtime.plan(shutdown_rx), &config)
+        .job(WorkerJob::CleanupProcessedTransactions, {
             let database = database.clone();
             move || {
                 let database = database.clone();
                 let transaction_updater = TransactionUpdater::new(database);
                 async move { transaction_updater.update().await }
             }
-        },
-    ));
-
-    Ok(vec![transaction_updater])
+        })
+        .finish()
 }
