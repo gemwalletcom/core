@@ -142,7 +142,7 @@ impl WorkerJob {
             UpdateFiatAssets => JobSpec::new(WorkerService::Fiat, JobInterval::Config(ConfigKey::FiatTimerUpdateAssets)),
             UpdateFiatProviderCountries => JobSpec::new(WorkerService::Fiat, JobInterval::Config(ConfigKey::FiatTimerUpdateProviderCountries)),
             UpdateFiatBuyableAssets => JobSpec::new(WorkerService::Fiat, JobInterval::Config(ConfigKey::FiatTimerUpdateBuyableAssets)),
-            UpdateFiatSellableAssets => JobSpec::new(WorkerService::Fiat, JobInterval::Config(ConfigKey::FiatTimerUpdateBuyableAssets)),
+            UpdateFiatSellableAssets => JobSpec::new(WorkerService::Fiat, JobInterval::Config(ConfigKey::FiatTimerUpdateSellableAssets)),
             UpdateTrendingFiatAssets => JobSpec::new(WorkerService::Fiat, JobInterval::Config(ConfigKey::FiatTimerUpdateTrending)),
             UpdateAssetsIndex => JobSpec::new(WorkerService::Search, JobInterval::Config(ConfigKey::SearchAssetsUpdateInterval)),
             UpdatePerpetualsIndex => JobSpec::new(WorkerService::Search, JobInterval::Config(ConfigKey::SearchPerpetualsUpdateInterval)),
