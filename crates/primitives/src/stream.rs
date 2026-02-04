@@ -31,6 +31,8 @@ pub enum StreamMessage {
     SubscribePrices(StreamMessagePrices),
     UnsubscribePrices(StreamMessagePrices),
     AddPrices(StreamMessagePrices),
+    SubscribeRealtimePrices(StreamMessagePrices),
+    UnsubscribeRealtimePrices(StreamMessagePrices),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
