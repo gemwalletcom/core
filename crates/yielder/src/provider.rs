@@ -38,7 +38,7 @@ impl Yielder {
         }
         yields.sort_by(|a, b| {
             let apy_cmp = b.apy.partial_cmp(&a.apy).unwrap_or(std::cmp::Ordering::Equal);
-            apy_cmp.then_with(|| a.risk.cmp(&b.risk))
+            apy_cmp.then_with(|| a.name.cmp(&b.name))
         });
         Ok(yields)
     }

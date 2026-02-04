@@ -61,7 +61,7 @@ impl YieldProviderClient for YoYieldProvider {
 
     fn yields(&self, asset_id: &AssetId) -> Vec<Yield> {
         self.vaults_for_asset(asset_id)
-            .map(|vault| Yield::new(vault.name, vault.asset_id(), self.provider(), None, vault.risk))
+            .map(|vault| Yield::new(vault.name, vault.asset_id(), self.provider(), None))
             .collect()
     }
 
@@ -69,7 +69,7 @@ impl YieldProviderClient for YoYieldProvider {
         let mut results = Vec::new();
         for vault in self.vaults_for_asset(asset_id) {
             let apy = self.fetch_vault_apy(vault).await.ok();
-            results.push(Yield::new(vault.name, vault.asset_id(), self.provider(), apy, vault.risk));
+            results.push(Yield::new(vault.name, vault.asset_id(), self.provider(), apy));
         }
         Ok(results)
     }

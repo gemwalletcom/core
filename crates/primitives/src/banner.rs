@@ -19,7 +19,7 @@ pub enum BannerEvent {
     SuspiciousAsset,
     Onboarding,
     TradePerpetuals,
-    Yield,
+    Earn,
 }
 
 #[typeshare(swift = "Equatable, CaseIterable, Sendable")]
