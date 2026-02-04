@@ -89,11 +89,9 @@ fn get_chain_parameter_value(parameters: &[ChainParameter], key: &str) -> Result
 pub fn calculate_unfreeze_amounts(frozen: Option<&Vec<TronFrozen>>, total: u64) -> Vec<TronUnfreeze> {
     frozen
         .map(|frozen| {
-            let mut items: Vec<_> = frozen.iter().filter(|f| f.amount > 0).collect();
-            items.sort_by_key(|f| std::cmp::Reverse(f.amount));
-
-            items
-                .into_iter()
+            frozen
+                .iter()
+                .filter(|f| f.amount > 0)
                 .scan(total, |remaining, f| {
                     (*remaining > 0).then(|| {
                         let take = (*remaining).min(f.amount);

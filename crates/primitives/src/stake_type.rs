@@ -1,4 +1,4 @@
-use crate::{Delegation, DelegationValidator};
+use crate::{Delegation, DelegationValidator, UInt64};
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumString};
 use typeshare::typeshare;
@@ -55,19 +55,23 @@ pub enum StakeType {
     Freeze(FreezeData),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 pub struct TronVote {
     pub validator: String,
-    pub count: u64,
+    pub count: UInt64,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 pub struct TronUnfreeze {
     pub resource: Resource,
-    pub amount: u64,
+    pub amount: UInt64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "type", content = "content")]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 pub enum TronStakeData {
     Votes(Vec<TronVote>),
     Unfreeze(Vec<TronUnfreeze>),
