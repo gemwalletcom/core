@@ -604,13 +604,16 @@ mod tests {
         assert_eq!(fee_in_token.to_string(), "6243790");
     }
 
-    #[cfg(all(test, feature = "swap_integration_tests", feature = "reqwest_provider"))]
+    #[cfg(all(test, feature = "swap_integration_tests"))]
     mod swap_integration_tests {
         use super::*;
         use crate::{
-            FetchQuoteData, NativeProvider, Options, QuoteRequest, SwapperError, SwapperMode,
+            FetchQuoteData, Options, QuoteRequest, SwapperError, SwapperMode,
+            across::api::DepositStatus,
+            alien::Target,
             config::{ReferralFee, ReferralFees},
         };
+        use gem_jsonrpc::{RpcProvider, native_provider::NativeProvider};
         use primitives::{AssetId, Chain, swap::SwapStatus};
         use std::{sync::Arc, time::SystemTime};
 
@@ -650,7 +653,7 @@ mod tests {
             println!("<== quote: {:?}", quote);
             assert!(quote.to_value.parse::<u64>().unwrap() > 0);
 
-            let quote_data = swap_provider.fetch_quote_data(&quote, FetchQuoteData::EstimateGas).await?;
+            let quote_data = swap_provider.fetch_quote_data(&quote, FetchQuoteData::None).await?;
             println!("<== quote_data: {:?}", quote_data);
 
             Ok(())
@@ -688,7 +691,7 @@ mod tests {
             println!("<== quote: {:?}", quote);
             assert!(quote.to_value.parse::<u64>().unwrap() > 0);
 
-            let quote_data = swap_provider.fetch_quote_data(&quote, FetchQuoteData::EstimateGas).await?;
+            let quote_data = swap_provider.fetch_quote_data(&quote, FetchQuoteData::None).await?;
             println!("<== quote_data: {:?}", quote_data);
 
             Ok(())
@@ -699,22 +702,24 @@ mod tests {
             let network_provider = Arc::new(NativeProvider::default());
             let swap_provider = Across::new(network_provider.clone());
 
-            // https://uniscan.xyz/tx/0x9827ca4bdd5dea3a310cff3485f87463987cdc52118077dba34f86ee79456952
-            // IMPORTANT: This transaction may not be available on the default Unichain RPC endpoint
-            // (https://mainnet.unichain.org). It works on https://unichain-rpc.publicnode.com
-            // The transaction receipt contains:
-            // - Log 1, Topic 2: deposit ID (0x86f4 = 34548)
-            let tx_hash = "0x9827ca4bdd5dea3a310cff3485f87463987cdc52118077dba34f86ee79456952";
-            let chain = Chain::Unichain;
+            let chain = Chain::Ethereum;
+            let deposit_id = "3602896";
+            let status_url = format!("https://app.across.to/api/deposit/status?originChainId={}&depositId={}", chain.network_id(), deposit_id);
+            let target = Target::get(&status_url);
+            let response = network_provider.request(target).await?;
+            let status: DepositStatus = serde_json::from_slice(&response.data)?;
+            let tx_hash = status.deposit_tx_hash.clone();
 
-            let result = swap_provider.get_swap_result(chain, tx_hash).await?;
+            let result = swap_provider.get_swap_result(chain, &tx_hash).await?;
 
             println!("Across swap result: {:?}", result);
             assert_eq!(result.from_chain, chain);
             assert_eq!(result.from_tx_hash, tx_hash);
-            assert_eq!(result.status, SwapStatus::Completed);
-            assert_eq!(result.to_chain, Some(Chain::Linea));
-            assert_eq!(result.to_tx_hash, Some("0xcba653515ab00f5b3ebc16eb4d099e29611e1e59b3fd8f2800cf2302d175f9fe".to_string()));
+            assert_eq!(result.status, status.swap_status());
+            assert_eq!(result.to_chain, Chain::from_chain_id(status.destination_chain_id));
+            if result.status == SwapStatus::Completed {
+                assert_eq!(result.to_tx_hash, status.fill_tx);
+            }
 
             Ok(())
         }

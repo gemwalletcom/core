@@ -24,9 +24,7 @@ impl Display for GatewayError {
 impl Error for GatewayError {}
 
 pub(crate) fn map_network_error(error: Box<dyn Error + Send + Sync>) -> GatewayError {
-    if let Some(jsonrpc_error) = error.downcast_ref::<JsonRpcError>()
-        && jsonrpc_error.code == ERROR_CLIENT_ERROR
-    {
+    if let Some(jsonrpc_error) = error.downcast_ref::<JsonRpcError>().filter(|candidate| candidate.code == ERROR_CLIENT_ERROR) {
         return GatewayError::NetworkError {
             msg: jsonrpc_error.message.clone(),
         };
@@ -50,15 +48,11 @@ fn http_status_from_error(error: &(dyn Error + 'static)) -> Option<u16> {
     let mut current_error: Option<&(dyn Error + 'static)> = Some(error);
 
     while let Some(err) = current_error {
-        if let Some(alien_error) = err.downcast_ref::<AlienError>()
-            && let AlienError::Http { status, .. } = alien_error
-        {
+        if let Some(AlienError::Http { status, .. }) = err.downcast_ref::<AlienError>() {
             return Some(*status);
         }
 
-        if let Some(client_error) = err.downcast_ref::<gem_client::ClientError>()
-            && let gem_client::ClientError::Http { status, .. } = client_error
-        {
+        if let Some(gem_client::ClientError::Http { status, .. }) = err.downcast_ref::<gem_client::ClientError>() {
             return Some(*status);
         }
 
@@ -74,7 +68,7 @@ mod tests {
 
     #[test]
     fn test_map_network_error_with_status_code() {
-        let error = AlienError::Http { status: 404, len: 0 };
+        let error = AlienError::Http { status: 404, body: Vec::new() };
         let mapped = map_network_error(Box::new(error));
 
         match mapped {

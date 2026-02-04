@@ -29,10 +29,10 @@ pub fn create_eth_client(provider: Arc<dyn RpcProvider>, chain: Chain) -> Result
     Ok(EthereumClient::new(client, evm_chain))
 }
 
-#[cfg(all(test, feature = "reqwest_provider", feature = "swap_integration_tests"))]
+#[cfg(all(test, feature = "swap_integration_tests"))]
 mod tests {
     use super::*;
-    use crate::NativeProvider;
+    use gem_jsonrpc::native_provider::NativeProvider;
     use gem_solana::{jsonrpc::SolanaRpc, models::blockhash::SolanaBlockhashResult};
     use std::sync::Arc;
 

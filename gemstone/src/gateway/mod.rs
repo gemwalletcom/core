@@ -10,6 +10,7 @@ use preferences::PreferencesWrapper;
 
 use crate::alien::{AlienProvider, new_alien_client};
 use crate::api_client::GemApiClient;
+use crate::gem_yielder::{build_yielder, prepare_yield_input};
 use crate::models::*;
 use crate::network::JsonRpcClient;
 use chain_traits::ChainTraits;
@@ -32,6 +33,7 @@ use gem_xrp::rpc::client::XRPClient;
 use std::sync::Arc;
 
 use primitives::{BitcoinChain, Chain, ChartPeriod, EVMChain, ScanAddressTarget, ScanTransactionPayload, TransactionPreloadInput, chain_cosmos::CosmosChain};
+use yielder::Yielder;
 
 #[uniffi::export(with_foreign)]
 #[async_trait::async_trait]
@@ -46,6 +48,7 @@ pub struct GemGateway {
     pub preferences: Arc<dyn GemPreferences>,
     pub secure_preferences: Arc<dyn GemPreferences>,
     pub api_client: GemApiClient,
+    yielder: Option<Yielder>,
 }
 
 impl std::fmt::Debug for GemGateway {
@@ -141,11 +144,13 @@ impl GemGateway {
     #[uniffi::constructor]
     pub fn new(provider: Arc<dyn AlienProvider>, preferences: Arc<dyn GemPreferences>, secure_preferences: Arc<dyn GemPreferences>, api_url: String) -> Self {
         let api_client = GemApiClient::new(api_url, provider.clone());
+        let yielder = build_yielder(provider.clone()).ok();
         Self {
             provider,
             preferences,
             secure_preferences,
             api_client,
+            yielder,
         }
     }
 
@@ -266,9 +271,8 @@ impl GemGateway {
 
     pub async fn get_transaction_preload(&self, chain: Chain, input: GemTransactionPreloadInput) -> Result<GemTransactionLoadMetadata, GatewayError> {
         let preload_input: primitives::TransactionPreloadInput = input.into();
-        let metadata = self
-            .provider(chain)
-            .await?
+        let provider = self.provider(chain).await?;
+        let metadata = provider
             .get_transaction_preload(preload_input)
             .await
             .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
@@ -316,6 +320,12 @@ impl GemGateway {
     }
 
     pub async fn get_transaction_load(&self, chain: Chain, input: GemTransactionLoadInput, provider: Arc<dyn GemGatewayEstimateFee>) -> Result<GemTransactionData, GatewayError> {
+        let input = if let Some(yielder) = &self.yielder {
+            prepare_yield_input(yielder, input).await.map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?
+        } else {
+            input
+        };
+
         let fee = self.get_fee(chain, input.clone(), provider.clone()).await?;
 
         let load_data = self
@@ -408,7 +418,7 @@ impl GemGateway {
 #[cfg(all(test, feature = "reqwest_provider"))]
 mod tests {
     use super::*;
-    use crate::alien::reqwest_provider::NativeProvider;
+    use gem_jsonrpc::native_provider::NativeProvider;
 
     #[tokio::test]
     async fn test_get_node_status_http_404_error() {

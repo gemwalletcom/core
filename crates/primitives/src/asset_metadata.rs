@@ -1,23 +1,20 @@
+use serde::{Deserialize, Serialize};
+use typeshare::typeshare;
+
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
-struct AssetMetaData {
-    #[serde(rename = "isEnabled")]
-    is_enabled: bool,
-    #[serde(rename = "isBalanceEnabled")]
-    is_balance_enabled: bool,
-    #[serde(rename = "isBuyEnabled")]
-    is_buy_enabled: bool,
-    #[serde(rename = "isSellEnabled")]
-    is_sell_enabled: bool,
-    #[serde(rename = "isSwapEnabled")]
-    is_swap_enabled: bool,
-    #[serde(rename = "isStakeEnabled")]
-    is_stake_enabled: bool,
-    #[serde(rename = "isPinned")]
-    is_pinned: bool,
-    #[serde(rename = "isActive")]
-    is_active: bool,
-    #[serde(rename = "stakingApr")]
-    staking_apr: Option<f64>,
-    #[serde(rename = "rankScore")]
-    rank_score: i32,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AssetMetaData {
+    pub is_enabled: bool,
+    pub is_balance_enabled: bool,
+    pub is_buy_enabled: bool,
+    pub is_sell_enabled: bool,
+    pub is_swap_enabled: bool,
+    pub is_stake_enabled: bool,
+    pub staking_apr: Option<f64>,
+    pub is_earn_enabled: bool,
+    pub earn_apr: Option<f64>,
+    pub is_pinned: bool,
+    pub is_active: bool,
+    pub rank_score: i32,
 }

@@ -65,7 +65,7 @@ class GemstoneTest {
     @Test
     fun testProviderThrowsAlienException() = runBlocking {
         val errorMessage = "Request failed"
-        val provider = MockProvider { throw AlienException.RequestException(errorMessage) }
+        val provider = MockProvider { throw AlienException.Network(errorMessage) }
         val gateway = createGateway(provider)
 
         try {
