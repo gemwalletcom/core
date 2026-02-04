@@ -1,8 +1,8 @@
 use primitives::{AssetId, EarnPosition, EarnProvider};
 use yielder::{Yield, YieldTransaction};
 
-use crate::models::swap::GemApprovalData;
 use crate::models::GemBigInt;
+use crate::models::swap::GemApprovalData;
 pub use crate::models::transaction::GemEarnAction;
 
 pub type GemEarnProvider = EarnProvider;
@@ -46,7 +46,6 @@ pub type GemEarnPosition = EarnPosition;
 
 #[uniffi::remote(Record)]
 pub struct GemEarnPosition {
-    pub name: String,
     pub asset_id: AssetId,
     pub provider: GemEarnProvider,
     pub vault_token_address: String,

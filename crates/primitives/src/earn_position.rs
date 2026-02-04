@@ -11,7 +11,6 @@ use crate::earn_provider::EarnProvider;
 pub struct EarnPosition {
     pub asset_id: AssetId,
     pub provider: EarnProvider,
-    pub name: String,
     pub vault_token_address: String,
     pub asset_token_address: String,
     pub vault_balance_value: BigInt,

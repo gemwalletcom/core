@@ -108,12 +108,9 @@ impl YieldProviderClient for YoYieldProvider {
         let asset_value = data.share_balance.saturating_mul(data.latest_price) / one_share;
 
         let asset_value_string = asset_value.to_string();
-        let asset_value_value = BigInt::from_str(&asset_value_string)
-            .map_err(|e| format!("invalid asset value {asset_value_string}: {e}"))?;
-        let share_balance_value = BigInt::from_str(&data.share_balance.to_string())
-            .map_err(|e| format!("invalid share balance {}: {e}", data.share_balance))?;
+        let asset_value_value = BigInt::from_str(&asset_value_string).map_err(|e| format!("invalid asset value {asset_value_string}: {e}"))?;
+        let share_balance_value = BigInt::from_str(&data.share_balance.to_string()).map_err(|e| format!("invalid share balance {}: {e}", data.share_balance))?;
         Ok(YieldPosition {
-            name: vault.name.to_string(),
             asset_id: request.asset_id.clone(),
             provider: self.provider(),
             vault_token_address: vault.yo_token.to_string(),

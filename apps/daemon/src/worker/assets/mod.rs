@@ -121,7 +121,6 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
             Chain::stakeable(),
             |chain| chain.as_ref().to_string(),
             |chain, _| {
-                let chain = chain;
                 let settings = settings.clone();
                 let database = database.clone();
                 move || {
