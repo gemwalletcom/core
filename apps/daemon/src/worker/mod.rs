@@ -5,6 +5,7 @@ pub mod device;
 pub mod fiat;
 pub mod job_schedule;
 pub mod jobs;
+pub mod nft;
 pub mod plan;
 pub mod pricer;
 pub mod prices_dex;
@@ -35,6 +36,7 @@ impl WorkerService {
             WorkerService::Search => search::jobs(ctx, shutdown_rx).await,
             WorkerService::Scan => scan::jobs(ctx, shutdown_rx).await,
             WorkerService::Rewards => rewards::jobs(ctx, shutdown_rx).await,
+            WorkerService::Nft => nft::jobs(ctx, shutdown_rx).await,
         }
     }
 }

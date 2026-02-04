@@ -45,6 +45,7 @@ pub enum WorkerService {
     Search,
     Scan,
     Rewards,
+    Nft,
 }
 
 impl WorkerService {
