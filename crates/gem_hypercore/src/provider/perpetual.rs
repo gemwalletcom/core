@@ -161,12 +161,7 @@ impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
 
             if !requests.is_empty() {
                 let results = try_join_all(requests).await?;
-                let mut portfolios = Vec::new();
-                let mut positions = Vec::new();
-                for (portfolio, asset_positions) in results {
-                    portfolios.push(portfolio);
-                    positions.push(asset_positions);
-                }
+                let (portfolios, positions): (Vec<_>, Vec<_>) = results.into_iter().unzip();
 
                 let account_summary = Some(map_account_summary_aggregate(&positions));
                 return Ok(merge_perpetual_portfolios(portfolios, account_summary));
