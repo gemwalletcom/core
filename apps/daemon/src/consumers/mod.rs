@@ -52,7 +52,7 @@ use gem_evm::rpc::EthereumClient;
 use gem_jsonrpc::JsonRpcClient;
 use gem_rewards::{EvmClientProvider, TransferRedemptionService, WalletConfig};
 use primitives::rewards::RedemptionStatus;
-use primitives::{Chain, ChainType, EVMChain};
+use primitives::{Chain, ChainType, EVMChain, NFTChain};
 use settings::service_user_agent;
 use settings_chain::ProviderFactory;
 
@@ -101,7 +101,15 @@ impl ChainConsumerRunner {
         F: Fn(Self, Chain) -> Fut + Clone + Send + 'static,
         Fut: std::future::Future<Output = Result<(), Box<dyn Error + Send + Sync>>> + Send + 'static,
     {
-        let tasks: Vec<_> = Chain::all()
+        self.run_for_chains(Chain::all(), f).await
+    }
+
+    async fn run_for_chains<F, Fut>(self, chains: Vec<Chain>, f: F) -> Result<(), Box<dyn Error + Send + Sync>>
+    where
+        F: Fn(Self, Chain) -> Fut + Clone + Send + 'static,
+        Fut: std::future::Future<Output = Result<(), Box<dyn Error + Send + Sync>>> + Send + 'static,
+    {
+        let tasks: Vec<_> = chains
             .into_iter()
             .map(|chain| {
                 let runner = self.clone();
@@ -294,9 +302,10 @@ pub async fn run_consumer_fetch_nft_associations(
     shutdown_rx: ShutdownReceiver,
     reporter: Arc<dyn ConsumerStatusReporter>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let chains: Vec<Chain> = NFTChain::all().into_iter().map(Into::into).collect();
     ChainConsumerRunner::new(settings, QueueName::FetchNftAssociations, shutdown_rx, reporter)
         .await?
-        .run(|runner, chain| async move {
+        .run_for_chains(chains, |runner, chain| async move {
             FetchNftAssetsAddressesConsumer::run(
                 runner.settings,
                 runner.database,
