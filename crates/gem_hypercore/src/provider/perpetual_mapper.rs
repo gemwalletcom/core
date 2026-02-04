@@ -230,18 +230,10 @@ pub fn merge_perpetual_portfolios(portfolios: Vec<PerpetualPortfolio>, account_s
     let mut all_time = Vec::new();
 
     for portfolio in portfolios {
-        if let Some(value) = portfolio.day {
-            day.push(value);
-        }
-        if let Some(value) = portfolio.week {
-            week.push(value);
-        }
-        if let Some(value) = portfolio.month {
-            month.push(value);
-        }
-        if let Some(value) = portfolio.all_time {
-            all_time.push(value);
-        }
+        day.extend(portfolio.day);
+        week.extend(portfolio.week);
+        month.extend(portfolio.month);
+        all_time.extend(portfolio.all_time);
     }
 
     PerpetualPortfolio {
