@@ -1,5 +1,5 @@
 use crate::model::WorkerService;
-use primitives::ConfigKey;
+use primitives::{Chain, ConfigKey, FiatProviderName};
 use std::error::Error;
 use std::time::Duration;
 use storage::ConfigCacher;
@@ -32,6 +32,50 @@ struct JobSpec {
 impl JobSpec {
     const fn new(worker: WorkerService, interval: JobInterval) -> Self {
         Self { worker, interval }
+    }
+}
+
+pub trait JobLabel {
+    fn job_label(&self) -> String;
+}
+
+impl JobLabel for str {
+    fn job_label(&self) -> String {
+        self.to_string()
+    }
+}
+
+impl JobLabel for String {
+    fn job_label(&self) -> String {
+        self.clone()
+    }
+}
+
+impl<'a, T> JobLabel for &'a T
+where
+    T: JobLabel + ?Sized,
+{
+    fn job_label(&self) -> String {
+        (*self).job_label()
+    }
+}
+
+impl JobLabel for Chain {
+    fn job_label(&self) -> String {
+        self.as_ref().to_string()
+    }
+}
+
+impl JobLabel for FiatProviderName {
+    fn job_label(&self) -> String {
+        self.as_ref().to_string()
+    }
+}
+
+fn compose_job_name(base: &str, label: Option<&str>) -> String {
+    match label.map(str::trim).filter(|value| !value.is_empty()) {
+        Some(suffix) => format!("{base}.{suffix}"),
+        None => base.to_string(),
     }
 }
 
@@ -133,32 +177,25 @@ impl WorkerJob {
 }
 
 #[derive(Clone, Debug)]
-pub struct JobInstance {
+pub struct JobVariant {
     job: WorkerJob,
-    name: String,
+    label: Option<String>,
     override_interval: Option<Duration>,
 }
 
-impl JobInstance {
+impl JobVariant {
     pub fn new(job: WorkerJob) -> Self {
         Self {
-            name: job.as_ref().to_string(),
             job,
+            label: None,
             override_interval: None,
         }
     }
 
     pub fn labeled(job: WorkerJob, label: impl Into<String>) -> Self {
-        let label = label.into();
-        let trimmed = label.trim();
-        let name = if trimmed.is_empty() {
-            job.as_ref().to_string()
-        } else {
-            format!("{}.{}", job.as_ref(), trimmed)
-        };
         Self {
             job,
-            name,
+            label: Some(label.into()),
             override_interval: None,
         }
     }
@@ -168,8 +205,8 @@ impl JobInstance {
         self
     }
 
-    pub fn name(&self) -> &str {
-        &self.name
+    pub fn name(&self) -> String {
+        job_name(self.job, self.label.as_deref())
     }
 
     pub fn worker(&self) -> WorkerService {
@@ -185,8 +222,12 @@ impl JobInstance {
     }
 }
 
-impl From<WorkerJob> for JobInstance {
+impl From<WorkerJob> for JobVariant {
     fn from(job: WorkerJob) -> Self {
-        JobInstance::new(job)
+        JobVariant::new(job)
     }
+}
+
+pub fn job_name(job: WorkerJob, label: Option<&str>) -> String {
+    compose_job_name(job.as_ref(), label)
 }

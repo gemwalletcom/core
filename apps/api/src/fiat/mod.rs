@@ -74,7 +74,11 @@ pub async fn get_fiat_quotes_by_type(
 pub async fn get_fiat_quote_url(request: Json<FiatQuoteUrlRequest>, ip: std::net::IpAddr, client: &State<Mutex<FiatQuotesClient>>) -> Result<ApiResponse<FiatQuoteUrl>, ApiError> {
     let ip_address = if cfg!(debug_assertions) { DEBUG_FIAT_IP } else { &ip.to_string() };
 
-    let (url, quote) = client.lock().await.get_quote_url_legacy(&request.quote_id, &request.wallet_address, ip_address, &request.device_id).await?;
+    let (url, quote) = client
+        .lock()
+        .await
+        .get_quote_url_legacy(&request.quote_id, &request.wallet_address, ip_address, &request.device_id)
+        .await?;
     metrics_fiat_quote_url(&quote);
     Ok(url.into())
 }

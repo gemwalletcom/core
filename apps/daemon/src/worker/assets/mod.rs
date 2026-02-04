@@ -83,24 +83,19 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                 async move { suspicious_updater.update_suspicious_assets().await }
             }
         })
-        .jobs(
-            WorkerJob::UpdatePerpetuals,
-            PerpetualUpdater::chains(),
-            |chain| chain.as_ref().to_string(),
-            |chain, _| {
-                let chain = *chain;
+        .jobs(WorkerJob::UpdatePerpetuals, PerpetualUpdater::chains(), |chain, _| {
+            let chain = *chain;
+            let settings = settings.clone();
+            let database = database.clone();
+            move || {
                 let settings = settings.clone();
                 let database = database.clone();
-                move || {
-                    let settings = settings.clone();
-                    let database = database.clone();
-                    async move {
-                        let updater = PerpetualUpdater::new((*settings.as_ref()).clone(), database.clone());
-                        updater.update_chain(chain).await
-                    }
+                async move {
+                    let updater = PerpetualUpdater::new((*settings.as_ref()).clone(), database.clone());
+                    updater.update_chain(chain).await
                 }
-            },
-        )
+            }
+        })
         .job(WorkerJob::UpdateUsageRanks, {
             let database = database.clone();
             move || {
@@ -116,23 +111,18 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                 async move { updater.update_assets_images().await }
             }
         })
-        .jobs(
-            WorkerJob::UpdateStakingApy,
-            Chain::stakeable(),
-            |chain| chain.as_ref().to_string(),
-            |chain, _| {
+        .jobs(WorkerJob::UpdateStakingApy, Chain::stakeable(), |chain, _| {
+            let settings = settings.clone();
+            let database = database.clone();
+            move || {
                 let settings = settings.clone();
                 let database = database.clone();
-                move || {
-                    let settings = settings.clone();
-                    let database = database.clone();
-                    async move {
-                        let providers = ChainProviders::from_settings(&settings, &service_user_agent("daemon", Some("staking_apy")));
-                        let updater = StakeApyUpdater::new(providers, database.clone());
-                        updater.update_chain(chain).await
-                    }
+                async move {
+                    let providers = ChainProviders::from_settings(&settings, &service_user_agent("daemon", Some("staking_apy")));
+                    let updater = StakeApyUpdater::new(providers, database.clone());
+                    updater.update_chain(chain).await
                 }
-            },
-        )
+            }
+        })
         .finish()
 }

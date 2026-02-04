@@ -23,44 +23,34 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
         .collect();
 
     JobPlanBuilder::with_config(WorkerService::Fiat, runtime.plan(shutdown_rx), &config)
-        .jobs(
-            WorkerJob::UpdateFiatAssets,
-            provider_names.clone(),
-            |provider| provider.id().to_string(),
-            |provider_name, _| {
+        .jobs(WorkerJob::UpdateFiatAssets, provider_names.clone(), |provider_name, _| {
+            let settings = settings.clone();
+            let database = database.clone();
+            move || {
                 let settings = settings.clone();
                 let database = database.clone();
-                move || {
-                    let settings = settings.clone();
-                    let database = database.clone();
-                    let provider_name = provider_name.clone();
-                    async move {
-                        let providers = FiatProviderFactory::new_providers((*settings).clone());
-                        let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
-                        fiat_assets_updater.update_fiat_assets_for(provider_name).await
-                    }
+                let provider_name = provider_name.clone();
+                async move {
+                    let providers = FiatProviderFactory::new_providers((*settings).clone());
+                    let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
+                    fiat_assets_updater.update_fiat_assets_for(provider_name).await
                 }
-            },
-        )
-        .jobs(
-            WorkerJob::UpdateFiatProviderCountries,
-            provider_names.clone(),
-            |provider| provider.id().to_string(),
-            |provider_name, _| {
+            }
+        })
+        .jobs(WorkerJob::UpdateFiatProviderCountries, provider_names.clone(), |provider_name, _| {
+            let settings = settings.clone();
+            let database = database.clone();
+            move || {
                 let settings = settings.clone();
                 let database = database.clone();
-                move || {
-                    let settings = settings.clone();
-                    let database = database.clone();
-                    let provider_name = provider_name.clone();
-                    async move {
-                        let providers = FiatProviderFactory::new_providers((*settings).clone());
-                        let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
-                        fiat_assets_updater.update_fiat_countries_for(provider_name).await
-                    }
+                let provider_name = provider_name.clone();
+                async move {
+                    let providers = FiatProviderFactory::new_providers((*settings).clone());
+                    let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
+                    fiat_assets_updater.update_fiat_countries_for(provider_name).await
                 }
-            },
-        )
+            }
+        })
         .job(WorkerJob::UpdateFiatBuyableAssets, {
             let settings = settings.clone();
             let database = database.clone();

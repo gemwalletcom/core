@@ -2,9 +2,9 @@ use std::error::Error;
 
 use num_bigint::BigInt;
 
-use crate::models::account::TronFrozen;
 use crate::models::ChainParameter;
 use crate::models::TronAccountUsage;
+use crate::models::account::TronFrozen;
 use crate::rpc::constants::{DEFAULT_BANDWIDTH_BYTES, GET_CREATE_ACCOUNT_FEE, GET_CREATE_NEW_ACCOUNT_FEE_IN_SYSTEM_CONTRACT, GET_ENERGY_FEE, GET_TRANSACTION_FEE};
 use primitives::{Resource, StakeType, TronUnfreeze};
 
@@ -134,8 +134,8 @@ impl TronAccountUsage {
 mod tests {
     use super::*;
     use crate::models::account::TronFrozen;
-    use primitives::delegation::DelegationValidator;
     use primitives::Chain;
+    use primitives::delegation::DelegationValidator;
 
     fn chain_parameter(key: &str, value: i64) -> ChainParameter {
         ChainParameter {
@@ -315,17 +315,36 @@ mod tests {
     #[test]
     fn test_calculate_unfreeze_amounts() {
         let frozen = vec![
-            TronFrozen { frozen_type: Some("ENERGY".to_string()), amount: 100 },
-            TronFrozen { frozen_type: Some("BANDWIDTH".to_string()), amount: 50 },
+            TronFrozen {
+                frozen_type: Some("ENERGY".to_string()),
+                amount: 100,
+            },
+            TronFrozen {
+                frozen_type: Some("BANDWIDTH".to_string()),
+                amount: 50,
+            },
         ];
 
-        assert_eq!(calculate_unfreeze_amounts(Some(&frozen), 120), vec![
-            TronUnfreeze { resource: Resource::Energy, amount: 100 },
-            TronUnfreeze { resource: Resource::Bandwidth, amount: 20 },
-        ]);
-        assert_eq!(calculate_unfreeze_amounts(Some(&frozen), 50), vec![
-            TronUnfreeze { resource: Resource::Energy, amount: 50 },
-        ]);
+        assert_eq!(
+            calculate_unfreeze_amounts(Some(&frozen), 120),
+            vec![
+                TronUnfreeze {
+                    resource: Resource::Energy,
+                    amount: 100
+                },
+                TronUnfreeze {
+                    resource: Resource::Bandwidth,
+                    amount: 20
+                },
+            ]
+        );
+        assert_eq!(
+            calculate_unfreeze_amounts(Some(&frozen), 50),
+            vec![TronUnfreeze {
+                resource: Resource::Energy,
+                amount: 50
+            },]
+        );
         assert!(calculate_unfreeze_amounts(None, 100).is_empty());
         assert!(calculate_unfreeze_amounts(Some(&frozen), 0).is_empty());
     }

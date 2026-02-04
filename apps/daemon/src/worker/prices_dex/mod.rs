@@ -2,7 +2,7 @@ pub mod prices_dex_updater;
 
 use crate::model::WorkerService;
 use crate::worker::context::WorkerContext;
-use crate::worker::jobs::{JobInstance, WorkerJob};
+use crate::worker::jobs::{JobVariant, WorkerJob};
 use crate::worker::plan::JobPlanBuilder;
 use job_runner::{JobHandle, ShutdownReceiver};
 use prices_dex::PriceFeedProvider;
@@ -39,7 +39,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
         .into_iter()
         .fold(JobPlanBuilder::new(WorkerService::PricesDex, runtime.plan(shutdown_rx)), |builder, provider| {
             let slug = provider.name.to_lowercase();
-            let builder = builder.job(JobInstance::labeled(WorkerJob::UpdateDexFeeds, slug.clone()).every(Duration::from_secs(3600)), {
+            let builder = builder.job(JobVariant::labeled(WorkerJob::UpdateDexFeeds, slug.clone()).every(Duration::from_secs(3600)), {
                 let url = provider.url.clone();
                 let database = database.clone();
                 let provider_type = provider.provider_type.clone();
@@ -51,7 +51,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                 }
             });
 
-            builder.job(JobInstance::labeled(WorkerJob::UpdateDexPrices, slug).every(Duration::from_secs(provider.timer)), {
+            builder.job(JobVariant::labeled(WorkerJob::UpdateDexPrices, slug).every(Duration::from_secs(provider.timer)), {
                 let url = provider.url.clone();
                 let database = database.clone();
                 let provider_type = provider.provider_type.clone();

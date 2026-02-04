@@ -28,9 +28,8 @@ pub async fn sleep_or_shutdown(duration: Duration, shutdown_rx: &ShutdownReceive
 }
 
 fn human_duration(duration: Duration) -> String {
-    let ms = duration.as_millis();
-    if ms == 0 {
-        return "0ms".to_string();
+    if duration.is_zero() {
+        return "0s".to_string();
     }
 
     let mut parts = Vec::new();
@@ -48,7 +47,7 @@ fn human_duration(duration: Duration) -> String {
         }
     }
 
-    if parts.is_empty() { format!("{ms}ms") } else { parts.join(" ") }
+    if parts.is_empty() { format!("{}ms", duration.subsec_millis()) } else { parts.join(" ") }
 }
 
 pub async fn run_job<Name, F, Fut, R>(
@@ -205,19 +204,26 @@ mod tests {
     use std::time::Duration;
 
     #[test]
-    fn human_duration_sub_second() {
-        assert_eq!(human_duration(Duration::from_millis(500)), "500ms");
+    fn duration_zero() {
+        assert_eq!(human_duration(Duration::ZERO), "0s");
     }
 
     #[test]
-    fn human_duration_seconds_minutes() {
+    fn duration_sub_second() {
+        assert_eq!(human_duration(Duration::from_millis(250)), "250ms");
+    }
+
+    #[test]
+    fn duration_seconds_and_minutes() {
         assert_eq!(human_duration(Duration::from_secs(12)), "12s");
         assert_eq!(human_duration(Duration::from_secs(90)), "1m 30s");
+        assert_eq!(human_duration(Duration::from_secs(65)), "1m 5s");
     }
 
     #[test]
-    fn human_duration_hours_days() {
+    fn duration_hours_and_days() {
         assert_eq!(human_duration(Duration::from_secs(3_600 * 5 + 42)), "5h 42s");
         assert_eq!(human_duration(Duration::from_secs(86_400 + 3_600 * 2)), "1d 2h");
+        assert_eq!(human_duration(Duration::from_secs(90_000)), "1d 1h");
     }
 }

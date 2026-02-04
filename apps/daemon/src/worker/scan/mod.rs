@@ -24,41 +24,31 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
     let static_providers = Arc::new(ChainProviders::from_settings(&settings, &service_user_agent("daemon", Some("scan_static_assets"))));
 
     JobPlanBuilder::with_config(WorkerService::Scan, runtime.plan(shutdown_rx), &config)
-        .jobs(
-            WorkerJob::UpdateChainValidators,
-            Chain::stakeable(),
-            |chain| chain.as_ref().to_string(),
-            |chain, _| {
-                let providers = validator_providers.clone();
+        .jobs(WorkerJob::UpdateChainValidators, Chain::stakeable(), |chain, _| {
+            let providers = validator_providers.clone();
+            let database = database.clone();
+            move || {
+                let providers = providers.clone();
                 let database = database.clone();
-                move || {
-                    let providers = providers.clone();
-                    let database = database.clone();
-                    async move {
-                        let scanner = ValidatorScanner::new(providers, database);
-                        scanner.update_validators_for_chain(chain).await
-                    }
+                async move {
+                    let scanner = ValidatorScanner::new(providers, database);
+                    scanner.update_validators_for_chain(chain).await
                 }
-            },
-        )
-        .jobs(
-            WorkerJob::UpdateValidatorsFromStaticAssets,
-            [Chain::Tron, Chain::SmartChain],
-            |chain| chain.as_ref().to_string(),
-            |chain, _| {
-                let providers = static_providers.clone();
+            }
+        })
+        .jobs(WorkerJob::UpdateValidatorsFromStaticAssets, [Chain::Tron, Chain::SmartChain], |chain, _| {
+            let providers = static_providers.clone();
+            let database = database.clone();
+            let assets_url = assets_url.clone();
+            move || {
+                let providers = providers.clone();
                 let database = database.clone();
                 let assets_url = assets_url.clone();
-                move || {
-                    let providers = providers.clone();
-                    let database = database.clone();
-                    let assets_url = assets_url.clone();
-                    async move {
-                        let scanner = ValidatorScanner::new(providers, database);
-                        scanner.update_validators_from_static_assets_for_chain(chain, assets_url.as_str()).await
-                    }
+                async move {
+                    let scanner = ValidatorScanner::new(providers, database);
+                    scanner.update_validators_from_static_assets_for_chain(chain, assets_url.as_str()).await
                 }
-            },
-        )
+            }
+        })
         .finish()
 }
