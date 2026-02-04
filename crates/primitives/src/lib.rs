@@ -223,7 +223,7 @@ pub use self::transaction_preload_input::TransactionPreloadInput;
 pub mod transaction_fee;
 pub use self::transaction_fee::{FeeOption, TransactionFee};
 pub mod stake_type;
-pub use self::stake_type::{RedelegateData, StakeData, StakeType};
+pub use self::stake_type::{RedelegateData, Resource, StakeData, StakeType, TronStakeData, TronUnfreeze, TronVote};
 pub mod transaction_load_metadata;
 pub use self::transaction_load_metadata::{HyperliquidOrder, TransactionLoadMetadata};
 pub mod transaction_input_type;
