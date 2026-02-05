@@ -40,12 +40,11 @@ impl ChainSigner for TronChainSigner {
 fn sign_data(input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
     let (transaction, metadata) = extract_transaction(input)?;
     if !transaction.signature.is_empty() {
-        return Err(SignerError::InvalidInput("Tron multisig not supported for WalletConnect signing".to_string()));
+        return Err(invalid_input("Tron multisig not supported for WalletConnect signing"));
     }
     let raw_bytes = decode_hex(&metadata.raw_data_hex)?;
     let digest = Sha256::digest(&raw_bytes);
-    let signature = Signer::sign_digest(SignatureScheme::Secp256k1, digest.to_vec(), private_key.to_vec())
-        .map_err(|err| SignerError::InvalidInput(err.to_string()))?;
+    let signature = sign_digest(&digest, private_key)?;
     let signature_hex = hex::encode(signature);
 
     match metadata.output_type {
@@ -55,7 +54,7 @@ fn sign_data(input: &TransactionLoadInput, private_key: &[u8]) -> Result<String,
             let result_payload = match metadata.output_action {
                 TransferDataOutputAction::Send => {
                     extract_transaction_payload(&payload)
-                        .ok_or_else(|| SignerError::InvalidInput("Missing transaction object for Tron broadcast".to_string()))?
+                        .ok_or_else(|| invalid_input("Missing transaction object for Tron broadcast"))?
                 }
                 TransferDataOutputAction::Sign => payload,
             };
@@ -67,19 +66,17 @@ fn sign_data(input: &TransactionLoadInput, private_key: &[u8]) -> Result<String,
 
 fn extract_transaction(input: &TransactionLoadInput) -> Result<(TronTransaction, PayloadMetadata), SignerError> {
     let TransactionInputType::Generic(_, _, extra) = &input.input_type else {
-        return Err(SignerError::InvalidInput("Expected generic transaction input".to_string()));
+        return Err(invalid_input("Expected generic transaction input"));
     };
-    let data = extra.data.as_ref().ok_or_else(|| SignerError::InvalidInput("Missing transaction data".to_string()))?;
+    let data = extra.data.as_ref().ok_or_else(|| invalid_input("Missing transaction data"))?;
 
-    let mut payload: Value = serde_json::from_slice(data)?;
-    if let Value::String(raw_json) = &payload
-        && let Ok(parsed) = serde_json::from_str::<Value>(raw_json)
-    {
-        payload = parsed;
-    }
+    let payload = match serde_json::from_slice::<Value>(data)? {
+        Value::String(raw_json) => serde_json::from_str::<Value>(&raw_json).unwrap_or(Value::String(raw_json)),
+        value => value,
+    };
 
     let transaction_value = extract_transaction_payload(&payload)
-        .ok_or_else(|| SignerError::InvalidInput("Missing transaction object for Tron broadcast".to_string()))?;
+        .ok_or_else(|| invalid_input("Missing transaction object for Tron broadcast"))?;
     let transaction: TronTransaction = serde_json::from_value(transaction_value)?;
     let raw_data_hex = match &input.metadata {
         TransactionLoadMetadata::Tron {
@@ -89,7 +86,7 @@ fn extract_transaction(input: &TransactionLoadInput) -> Result<(TronTransaction,
         _ => transaction
             .raw_data_hex
             .clone()
-            .ok_or_else(|| SignerError::InvalidInput("Missing raw_data_hex in Tron transaction payload".to_string()))?,
+            .ok_or_else(|| invalid_input("Missing raw_data_hex in Tron transaction payload"))?,
     };
 
     let metadata = PayloadMetadata {
@@ -99,6 +96,11 @@ fn extract_transaction(input: &TransactionLoadInput) -> Result<(TronTransaction,
         raw_data_hex,
     };
     Ok((transaction, metadata))
+}
+
+fn sign_digest(digest: &[u8], private_key: &[u8]) -> Result<Vec<u8>, SignerError> {
+    Signer::sign_digest(SignatureScheme::Secp256k1, digest.to_vec(), private_key.to_vec())
+        .map_err(|err| invalid_input(err.to_string()))
 }
 
 fn extract_transaction_payload(value: &Value) -> Option<Value> {
@@ -121,10 +123,10 @@ fn extract_transaction_payload(value: &Value) -> Option<Value> {
 
 fn apply_signature(payload: Value, signature_hex: &str) -> Result<Value, SignerError> {
     let transaction_value = extract_transaction_payload(&payload)
-        .ok_or_else(|| SignerError::InvalidInput("Missing transaction object for Tron broadcast".to_string()))?;
+        .ok_or_else(|| invalid_input("Missing transaction object for Tron broadcast"))?;
     let mut transaction: TronTransaction = serde_json::from_value(transaction_value)?;
     if !transaction.signature.is_empty() {
-        return Err(SignerError::InvalidInput("Tron multisig not supported for WalletConnect signing".to_string()));
+        return Err(invalid_input("Tron multisig not supported for WalletConnect signing"));
     }
     transaction.signature = vec![signature_hex.to_string()];
     let updated_transaction = serde_json::to_value(transaction)?;
@@ -136,9 +138,13 @@ fn apply_signature(payload: Value, signature_hex: &str) -> Result<Value, SignerE
                 map.insert("transaction".to_string(), updated_transaction);
                 Ok(Value::Object(map))
             } else {
-                Err(SignerError::InvalidInput("Missing raw_data_hex in Tron transaction payload".to_string()))
+                Err(invalid_input("Missing raw_data_hex in Tron transaction payload"))
             }
         }
-        _ => Err(SignerError::InvalidInput("Invalid Tron transaction payload".to_string())),
+        _ => Err(invalid_input("Invalid Tron transaction payload")),
     }
+}
+
+fn invalid_input(message: impl Into<String>) -> SignerError {
+    SignerError::InvalidInput(message.into())
 }
