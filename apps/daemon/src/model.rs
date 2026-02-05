@@ -6,7 +6,7 @@ use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 #[strum(serialize_all = "snake_case")]
 pub enum ConsumerService {
     Store,
-    Chain,
+    Indexer,
     Notifications,
     Rewards,
     Support,

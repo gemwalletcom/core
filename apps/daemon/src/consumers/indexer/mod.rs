@@ -18,14 +18,13 @@ use crate::consumers::runner::ChainConsumerRunner;
 use crate::consumers::{chain_providers, consumer_config, reader_for_queue};
 
 use fetch_address_transactions_consumer::FetchAddressTransactionsConsumer;
-
 use fetch_assets_consumer::FetchAssetsConsumer;
 use fetch_blocks_consumer::FetchBlocksConsumer;
 use fetch_coin_addresses_consumer::FetchCoinAddressesConsumer;
 use fetch_nft_assets_addresses_consumer::FetchNftAssetsAddressesConsumer;
 use fetch_token_addresses_consumer::FetchTokenAddressesConsumer;
 
-pub async fn run_consumer_chain(
+pub async fn run_consumer_indexer(
     settings: Settings,
     shutdown_rx: ShutdownReceiver,
     reporter: Arc<dyn ConsumerStatusReporter>,

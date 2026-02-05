@@ -215,7 +215,7 @@ async fn run_consumer(
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     match service {
         ConsumerService::Store => consumers::run_consumer_store(settings, shutdown_rx, reporter).await,
-        ConsumerService::Chain => consumers::run_consumer_chain(settings, shutdown_rx, reporter).await,
+        ConsumerService::Indexer => consumers::run_consumer_indexer(settings, shutdown_rx, reporter).await,
         ConsumerService::Notifications => consumers::notifications::run(settings, shutdown_rx, reporter).await,
         ConsumerService::Rewards => consumers::run_consumer_rewards(settings, shutdown_rx, reporter).await,
         ConsumerService::Support => consumers::run_consumer_support(settings, shutdown_rx, reporter).await,
