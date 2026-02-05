@@ -214,14 +214,10 @@ async fn run_consumer(
     reporter: Arc<dyn ConsumerStatusReporter>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     match service {
-        ConsumerService::FetchAddressTransactions => consumers::run_consumer_fetch_address_transactions(settings, shutdown_rx, reporter).await,
         ConsumerService::StoreTransactions => consumers::run_consumer_store_transactions(settings, shutdown_rx, reporter).await,
         ConsumerService::FetchBlocks => consumers::run_consumer_fetch_blocks(settings, shutdown_rx, reporter).await,
         ConsumerService::FetchAssets => consumers::run_consumer_fetch_assets(settings, shutdown_rx, reporter).await,
-        ConsumerService::FetchTokenAssociations => consumers::run_consumer_fetch_token_associations(settings, shutdown_rx, reporter).await,
-        ConsumerService::FetchCoinAssociations => consumers::run_consumer_fetch_coin_associations(settings, shutdown_rx, reporter).await,
-        ConsumerService::StoreAssetsAssociations => consumers::run_consumer_store_assets_associations(settings, shutdown_rx, reporter).await,
-        ConsumerService::FetchNftAssociations => consumers::run_consumer_fetch_nft_associations(settings, shutdown_rx, reporter).await,
+        ConsumerService::FetchAssociations => consumers::run_consumer_fetch_associations(settings, shutdown_rx, reporter).await,
         ConsumerService::Notifications => consumers::notifications::run(settings, shutdown_rx, reporter).await,
         ConsumerService::InAppNotifications => consumers::run_consumer_in_app_notifications(settings, shutdown_rx, reporter).await,
         ConsumerService::Rewards => consumers::run_consumer_rewards(settings, shutdown_rx, reporter).await,
@@ -229,7 +225,6 @@ async fn run_consumer(
         ConsumerService::Support => consumers::run_consumer_support(settings, shutdown_rx, reporter).await,
         ConsumerService::Fiat => consumers::run_consumer_fiat(settings, shutdown_rx, reporter).await,
         ConsumerService::StorePrices => consumers::run_consumer_store_prices(settings, shutdown_rx, reporter).await,
-        ConsumerService::StoreCharts => consumers::run_consumer_store_charts(settings, shutdown_rx, reporter).await,
         ConsumerService::FetchPrices => consumers::run_consumer_fetch_prices(settings, shutdown_rx, reporter).await,
         ConsumerService::Nft => consumers::nft::run_consumer_nft_collections(settings, shutdown_rx, reporter).await,
     }

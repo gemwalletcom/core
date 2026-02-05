@@ -22,13 +22,13 @@ use streamer::{
     run_consumer,
 };
 
-pub use assets::{run_consumer_fetch_assets, run_consumer_store_assets_associations};
-pub use associations::{run_consumer_fetch_coin_associations, run_consumer_fetch_nft_associations, run_consumer_fetch_token_associations};
+pub use assets::run_consumer_fetch_assets;
+pub use associations::run_consumer_fetch_associations;
 pub use blocks::run_consumer_fetch_blocks;
 pub use fiat::run_consumer_fiat;
-pub use prices::{run_consumer_fetch_prices, run_consumer_store_charts, run_consumer_store_prices};
+pub use prices::{run_consumer_fetch_prices, run_consumer_store_prices};
 pub use rewards::{run_consumer_rewards, run_rewards_redemption_consumer};
-pub use transactions::{run_consumer_fetch_address_transactions, run_consumer_store_transactions};
+pub use transactions::run_consumer_store_transactions;
 
 pub fn chain_providers(settings: &Settings, name: &str) -> ChainProviders {
     ChainProviders::from_settings(settings, &settings::service_user_agent("consumer", Some(name)))

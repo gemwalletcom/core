@@ -2,9 +2,6 @@ pub mod fetch_prices_consumer;
 pub mod store_charts_consumer;
 pub mod store_prices_consumer;
 
-pub use store_charts_consumer::StoreChartsConsumer;
-pub use store_prices_consumer::StorePricesConsumer;
-
 use std::error::Error;
 use std::sync::Arc;
 
@@ -19,7 +16,22 @@ use streamer::{ChartsPayload, ConsumerStatusReporter, FetchPricesPayload, Prices
 use crate::consumers::{consumer_config, producer_for_queue, reader_for_queue};
 use crate::worker::prices::price_updater::PriceUpdater;
 
+use store_charts_consumer::StoreChartsConsumer;
+use store_prices_consumer::StorePricesConsumer;
+
 pub async fn run_consumer_store_prices(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let settings = Arc::new(settings);
+
+    futures::future::try_join_all(vec![
+        tokio::spawn(run_store_prices(settings.clone(), shutdown_rx.clone(), reporter.clone())),
+        tokio::spawn(run_store_charts(settings.clone(), shutdown_rx.clone(), reporter.clone())),
+    ])
+    .await?;
+
+    Ok(())
+}
+
+async fn run_store_prices(settings: Arc<Settings>, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let queue = QueueName::StorePrices;
     let (name, stream_reader) = reader_for_queue(&settings, &queue).await?;
@@ -31,7 +43,7 @@ pub async fn run_consumer_store_prices(settings: Settings, shutdown_rx: Shutdown
     run_consumer::<PricesPayload, StorePricesConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx, reporter).await
 }
 
-pub async fn run_consumer_store_charts(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn run_store_charts(settings: Arc<Settings>, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let queue = QueueName::StoreCharts;
     let (name, stream_reader) = reader_for_queue(&settings, &queue).await?;

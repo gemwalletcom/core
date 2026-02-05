@@ -3,7 +3,7 @@ use std::{collections::HashMap, error::Error};
 
 use async_trait::async_trait;
 use primitives::{AssetIdVecExt, ConfigKey, Transaction, TransactionId};
-use storage::{AssetsRepository, ConfigCacher, Database, SubscriptionsRepository, TransactionsRepository};
+use storage::{AssetsAddressesRepository, AssetsRepository, ConfigCacher, Database, SubscriptionsRepository, TransactionsRepository};
 use streamer::{AssetId, AssetsAddressPayload, NotificationsPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
 
 use crate::consumers::transactions::StoreTransactionsConsumerConfig;
@@ -113,11 +113,12 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
         let transactions_count = self.store_transactions(transactions_map.into_values().collect()).await?;
         let _ = self.stream_producer.publish_fetch_assets(fetch_assets_payload).await;
         let _ = self.stream_producer.publish_notifications_transactions(notifications_payload).await;
+
         let assets_addresses: Vec<_> = address_assets_payload.into_iter().flat_map(|p| p.values).collect::<HashSet<_>>().into_iter().collect();
-        let _ = self
-            .stream_producer
-            .publish_store_assets_addresses_associations(AssetsAddressPayload::new(assets_addresses))
-            .await;
+        if !assets_addresses.is_empty() {
+            let _ = self.database.assets_addresses()?.add_assets_addresses(assets_addresses);
+        }
+
         Ok(transactions_count)
     }
 }
