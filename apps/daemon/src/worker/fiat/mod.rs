@@ -10,7 +10,6 @@ use std::error::Error;
 use storage::ConfigCacher;
 
 mod fiat_assets_updater;
-pub mod fiat_webhook_consumer;
 
 pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
     let runtime = ctx.runtime();

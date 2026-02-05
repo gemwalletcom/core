@@ -4,7 +4,7 @@ use std::error::Error;
 use streamer::FetchPricesPayload;
 use streamer::consumer::MessageConsumer;
 
-use crate::worker::pricer::price_updater::PriceUpdater;
+use crate::worker::prices::price_updater::PriceUpdater;
 
 pub struct FetchPricesConsumer {
     price_updater: PriceUpdater,

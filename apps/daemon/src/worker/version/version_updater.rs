@@ -54,11 +54,7 @@ impl VersionUpdater {
     async fn get_app_store_version(&self) -> Result<String, Box<dyn Error + Send + Sync>> {
         let url = "https://itunes.apple.com/lookup?bundleId=com.gemwallet.ios";
         let response = reqwest::get(url).await?.json::<ITunesLookupResponse>().await?;
-        response
-            .results
-            .first()
-            .map(|r| r.version.clone())
-            .ok_or_else(|| "no results".into())
+        response.results.first().map(|r| r.version.clone()).ok_or_else(|| "no results".into())
     }
 
     async fn get_github_version(&self) -> Result<String, Box<dyn Error + Send + Sync>> {

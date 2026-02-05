@@ -6,7 +6,8 @@ use primitives::{AssetIdVecExt, ConfigKey, Transaction, TransactionId};
 use storage::{AssetsRepository, ConfigCacher, Database, SubscriptionsRepository, TransactionsRepository};
 use streamer::{AssetId, AssetsAddressPayload, NotificationsPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
 
-use crate::{consumers::StoreTransactionsConsumerConfig, pusher::Pusher};
+use crate::consumers::transactions::StoreTransactionsConsumerConfig;
+use crate::pusher::Pusher;
 
 const TRANSACTION_BATCH_SIZE: usize = 100;
 

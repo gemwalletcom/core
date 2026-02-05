@@ -7,8 +7,7 @@ pub mod job_schedule;
 pub mod jobs;
 pub mod nft;
 pub mod plan;
-pub mod pricer;
-pub mod prices_dex;
+pub mod prices;
 pub mod rewards;
 pub mod runtime;
 pub mod scan;
@@ -26,8 +25,7 @@ impl WorkerService {
     pub async fn run_jobs(self, ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
         match self {
             WorkerService::Alerter => alerter::jobs(ctx, shutdown_rx).await,
-            WorkerService::Pricer => pricer::jobs(ctx, shutdown_rx).await,
-            WorkerService::PricesDex => prices_dex::jobs(ctx, shutdown_rx).await,
+            WorkerService::Prices => prices::jobs(ctx, shutdown_rx).await,
             WorkerService::Fiat => fiat::jobs(ctx, shutdown_rx).await,
             WorkerService::Assets => assets::jobs(ctx, shutdown_rx).await,
             WorkerService::Version => version::jobs(ctx, shutdown_rx).await,

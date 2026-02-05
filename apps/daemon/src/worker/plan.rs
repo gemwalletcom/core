@@ -15,14 +15,6 @@ pub struct JobPlanBuilder<'a> {
 }
 
 impl<'a> JobPlanBuilder<'a> {
-    pub fn new(worker: WorkerService, plan: JobPlan) -> Self {
-        Self {
-            worker,
-            plan: Ok(plan),
-            config: None,
-        }
-    }
-
     pub fn with_config(worker: WorkerService, plan: JobPlan, config: &'a ConfigCacher) -> Self {
         Self {
             worker,

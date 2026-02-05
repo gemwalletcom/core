@@ -35,8 +35,7 @@ impl ConsumerService {
 #[strum(serialize_all = "snake_case")]
 pub enum WorkerService {
     Alerter,
-    Pricer,
-    PricesDex,
+    Prices,
     Fiat,
     Assets,
     Version,
