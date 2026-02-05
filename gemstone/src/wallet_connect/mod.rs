@@ -236,7 +236,6 @@ mod tests {
                 parent_hash: "".to_string(),
                 witness_address: "".to_string(),
                 stake_data: TronStakeData::Votes(vec![]),
-                raw_data_hex: None,
             },
         };
 

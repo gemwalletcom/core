@@ -1,13 +1,4 @@
-use primitives::{
-    ChainSigner,
-    SignerError,
-    TransactionInputType,
-    TransactionLoadInput,
-    TransactionLoadMetadata,
-    TransferDataOutputAction,
-    TransferDataOutputType,
-    hex::decode_hex,
-};
+use primitives::{ChainSigner, SignerError, TransactionInputType, TransactionLoadInput, TransferDataOutputAction, TransferDataOutputType, hex::decode_hex};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 use signer::{SignatureScheme, Signer};
@@ -26,7 +17,6 @@ struct PayloadMetadata {
     payload: Value,
     output_type: TransferDataOutputType,
     output_action: TransferDataOutputAction,
-    raw_data_hex: String,
 }
 
 pub struct TronChainSigner;
@@ -42,7 +32,11 @@ fn sign_data(input: &TransactionLoadInput, private_key: &[u8]) -> Result<String,
     if !transaction.signature.is_empty() {
         return Err(invalid_input("Tron multisig not supported for WalletConnect signing"));
     }
-    let raw_bytes = decode_hex(&metadata.raw_data_hex)?;
+    let raw_data_hex = transaction
+        .raw_data_hex
+        .as_deref()
+        .ok_or_else(|| invalid_input("Missing raw_data_hex in Tron transaction payload"))?;
+    let raw_bytes = decode_hex(raw_data_hex)?;
     let digest = sha256(&raw_bytes);
     let signature = sign_digest(&digest, private_key)?;
     let signature_hex = hex::encode(signature);
@@ -78,22 +72,10 @@ fn extract_transaction(input: &TransactionLoadInput) -> Result<(TronTransaction,
     };
     let transaction_value = map.get("transaction").cloned().ok_or_else(|| invalid_input("Missing transaction field"))?;
     let transaction: TronTransaction = serde_json::from_value(transaction_value)?;
-    let raw_data_hex = match &input.metadata {
-        TransactionLoadMetadata::Tron {
-            raw_data_hex: Some(raw_data_hex),
-            ..
-        } => raw_data_hex.clone(),
-        _ => transaction
-            .raw_data_hex
-            .clone()
-            .ok_or_else(|| invalid_input("Missing raw_data_hex in Tron transaction payload"))?,
-    };
-
     let metadata = PayloadMetadata {
         payload,
         output_type: extra.output_type.clone(),
         output_action: extra.output_action.clone(),
-        raw_data_hex,
     };
     Ok((transaction, metadata))
 }

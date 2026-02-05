@@ -88,7 +88,6 @@ pub enum TransactionLoadMetadata {
         parent_hash: String,
         witness_address: String,
         stake_data: TronStakeData,
-        raw_data_hex: Option<String>,
     },
     Sui {
         message_bytes: String,
