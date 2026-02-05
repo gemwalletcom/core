@@ -10,8 +10,8 @@ use primitives::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
-use sha2::{Digest, Sha256};
 use signer::{SignatureScheme, Signer};
+use gem_hash::sha2::sha256;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct TronTransaction {
@@ -43,7 +43,7 @@ fn sign_data(input: &TransactionLoadInput, private_key: &[u8]) -> Result<String,
         return Err(invalid_input("Tron multisig not supported for WalletConnect signing"));
     }
     let raw_bytes = decode_hex(&metadata.raw_data_hex)?;
-    let digest = Sha256::digest(&raw_bytes);
+    let digest = sha256(&raw_bytes);
     let signature = sign_digest(&digest, private_key)?;
     let signature_hex = hex::encode(signature);
 

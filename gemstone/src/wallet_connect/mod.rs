@@ -494,12 +494,7 @@ impl WalletConnect {
             WalletConnectTransactionType::Bitcoin { output_type } => Ok(WalletConnectTransaction::Bitcoin { data, output_type }),
             WalletConnectTransactionType::Tron { output_type } => {
                 let json: serde_json::Value = serde_json::from_str(&data)?;
-                if json.get("transaction").is_none() {
-                    return Err(GemstoneError::AnyError {
-                        msg: "Missing transaction field".to_string(),
-                    });
-                }
-
+                let _ = json;
                 Ok(WalletConnectTransaction::Tron { data, output_type })
             }
         }
