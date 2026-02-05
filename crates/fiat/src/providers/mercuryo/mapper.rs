@@ -50,6 +50,7 @@ pub fn map_asset_chain(chain: String) -> Option<Chain> {
         "BITCOINCASH" => Some(Chain::BitcoinCash),
         "SUI" => Some(Chain::Sui),
         "SONIC" => Some(Chain::Sonic),
+        "MONAD" => Some(Chain::Monad),
         _ => None,
     }
 }
@@ -78,6 +79,7 @@ pub fn map_symbol_to_chain(symbol: &str) -> Option<Chain> {
         "TON" => Some(Chain::Ton),
         "SUI" => Some(Chain::Sui),
         "APT" => Some(Chain::Aptos),
+        "MON" => Some(Chain::Monad),
         _ => None, // For ERC-20 tokens and others, default to Ethereum
     }
 }

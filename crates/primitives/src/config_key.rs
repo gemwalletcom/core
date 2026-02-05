@@ -142,6 +142,7 @@ pub enum ConfigKey {
     FiatTimerUpdateAssets,
     FiatTimerUpdateProviderCountries,
     FiatTimerUpdateBuyableAssets,
+    FiatTimerUpdateSellableAssets,
     FiatTimerUpdateTrending,
 
     // Scan
@@ -300,13 +301,14 @@ impl ConfigKey {
             Self::FiatTimerUpdateAssets => "1h",
             Self::FiatTimerUpdateProviderCountries => "1h",
             Self::FiatTimerUpdateBuyableAssets => "1h",
+            Self::FiatTimerUpdateSellableAssets => "1h",
             Self::FiatTimerUpdateTrending => "1h",
             Self::ScanTimerUpdateValidators => "1d",
             Self::ScanTimerUpdateValidatorsStatic => "1h",
             Self::RewardsTimerAbuseChecker => "60s",
             Self::DeviceTimerUpdater => "1d",
             Self::DeviceTimerInactiveObserver => "1d",
-            Self::VersionTimerUpdateStoreVersions => "12h",
+            Self::VersionTimerUpdateStoreVersions => "1h",
             Self::TransactionTimerUpdater => "1d",
             Self::SearchAssetsUpdateInterval => "30m",
             Self::SearchPerpetualsUpdateInterval => "30m",

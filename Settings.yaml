@@ -249,6 +249,9 @@ consumer:
 
 api:
   service: ""
+  auth:
+    enabled: true
+    tolerance: 5m
 
 ankr:
   key:

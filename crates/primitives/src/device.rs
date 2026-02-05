@@ -31,6 +31,14 @@ impl Device {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct MigrateDeviceIdRequest {
+    pub old_device_id: String,
+    pub public_key: String,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

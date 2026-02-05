@@ -2,9 +2,10 @@ use crate::models::*;
 use num_bigint::BigInt;
 use primitives::stake_type::{FreezeData, StakeData};
 use primitives::{
-    AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType, TransactionChange,
-    TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata, TransactionState,
-    TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, UInt64, WalletConnectionSessionAppMetadata,
+    AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, Resource, StakeType,
+    TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata, TransactionState,
+    TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, TronStakeData, TronUnfreeze, TronVote,
+    UInt64, WalletConnectionSessionAppMetadata,
     perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualReduceData, TPSLOrderData},
 };
 use std::collections::HashMap;
@@ -23,6 +24,27 @@ pub type GemTransactionState = TransactionState;
 pub type GemTransactionChange = TransactionChange;
 pub type GemTransactionUpdate = TransactionUpdate;
 pub type GemTransactionType = TransactionType;
+pub type GemTronVote = TronVote;
+pub type GemTronUnfreeze = TronUnfreeze;
+pub type GemTronStakeData = TronStakeData;
+
+#[uniffi::remote(Record)]
+pub struct TronVote {
+    pub validator: String,
+    pub count: u64,
+}
+
+#[uniffi::remote(Record)]
+pub struct TronUnfreeze {
+    pub resource: Resource,
+    pub amount: u64,
+}
+
+#[uniffi::remote(Enum)]
+pub enum TronStakeData {
+    Votes(Vec<TronVote>),
+    Unfreeze(Vec<TronUnfreeze>),
+}
 
 #[uniffi::remote(Enum)]
 pub enum PerpetualDirection {
@@ -124,14 +146,6 @@ pub struct GemTransactionStateRequest {
 
 pub type GemHyperliquidOrder = HyperliquidOrder;
 
-pub type GemStakeData = StakeData;
-
-#[uniffi::remote(Record)]
-pub struct GemStakeData {
-    pub data: Option<String>,
-    pub to: Option<String>,
-}
-
 #[uniffi::remote(Record)]
 pub struct GemHyperliquidOrder {
     pub approve_agent_required: bool,
@@ -140,6 +154,14 @@ pub struct GemHyperliquidOrder {
     pub builder_fee_bps: u32,
     pub agent_address: String,
     pub agent_private_key: String,
+}
+
+pub type GemStakeData = StakeData;
+
+#[uniffi::remote(Record)]
+pub struct GemStakeData {
+    pub data: Option<String>,
+    pub to: Option<String>,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -421,7 +443,7 @@ pub enum GemTransactionLoadMetadata {
         transaction_tree_root: String,
         parent_hash: String,
         witness_address: String,
-        votes: HashMap<String, u64>,
+        stake_data: GemTronStakeData,
         raw_data_hex: Option<String>,
     },
     Sui {
@@ -504,7 +526,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 transaction_tree_root,
                 parent_hash,
                 witness_address,
-                votes,
+                stake_data,
                 raw_data_hex,
             } => GemTransactionLoadMetadata::Tron {
                 block_number,
@@ -513,7 +535,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 transaction_tree_root,
                 parent_hash,
                 witness_address,
-                votes,
+                stake_data,
                 raw_data_hex,
             },
             TransactionLoadMetadata::Sui { message_bytes } => GemTransactionLoadMetadata::Sui { message_bytes },
@@ -594,7 +616,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 transaction_tree_root,
                 parent_hash,
                 witness_address,
-                votes,
+                stake_data,
                 raw_data_hex,
             } => TransactionLoadMetadata::Tron {
                 block_number,
@@ -603,7 +625,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 transaction_tree_root,
                 parent_hash,
                 witness_address,
-                votes,
+                stake_data,
                 raw_data_hex,
             },
             GemTransactionLoadMetadata::Sui { message_bytes } => TransactionLoadMetadata::Sui { message_bytes },
@@ -736,10 +758,12 @@ impl From<GemGasPriceType> for GasPriceType {
                 gas_price,
                 priority_fee,
                 unit_price,
+                jito_tip,
             } => GasPriceType::Solana {
                 gas_price: gas_price.parse().unwrap_or_default(),
                 priority_fee: priority_fee.parse().unwrap_or_default(),
                 unit_price: unit_price.parse().unwrap_or_default(),
+                jito_tip,
             },
         }
     }

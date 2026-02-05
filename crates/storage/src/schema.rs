@@ -210,7 +210,7 @@ diesel::table! {
 
     devices (id) {
         id -> Int4,
-        #[max_length = 32]
+        #[max_length = 64]
         device_id -> Varchar,
         is_push_enabled -> Bool,
         platform -> Platform,
@@ -231,6 +231,14 @@ diesel::table! {
         os -> Varchar,
         #[max_length = 128]
         model -> Varchar,
+    }
+}
+
+diesel::table! {
+    devices_sessions (id) {
+        id -> Int4,
+        device_id -> Int4,
+        created_at -> Timestamp,
     }
 }
 
@@ -952,6 +960,7 @@ diesel::joinable!(charts -> prices (coin_id));
 diesel::joinable!(charts_daily -> prices (coin_id));
 diesel::joinable!(charts_hourly -> prices (coin_id));
 diesel::joinable!(devices -> fiat_rates (currency));
+diesel::joinable!(devices_sessions -> devices (device_id));
 diesel::joinable!(fiat_assets -> assets (asset_id));
 diesel::joinable!(fiat_assets -> fiat_providers (provider));
 diesel::joinable!(fiat_providers_countries -> fiat_providers (provider));
@@ -1025,6 +1034,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     charts_hourly,
     config,
     devices,
+    devices_sessions,
     fiat_assets,
     fiat_providers,
     fiat_providers_countries,

@@ -1,53 +1,46 @@
 mod device_updater;
 mod observers;
 
+use crate::model::WorkerService;
+use crate::worker::context::WorkerContext;
+use crate::worker::jobs::WorkerJob;
+use crate::worker::plan::JobPlanBuilder;
 use cacher::CacherClient;
 use device_updater::DeviceUpdater;
-use job_runner::{JobStatusReporter, ShutdownReceiver, run_job};
+use job_runner::{JobHandle, ShutdownReceiver};
 use observers::InactiveDevicesObserver;
-use primitives::ConfigKey;
-use settings::Settings;
 use std::error::Error;
-use std::sync::Arc;
 use storage::ConfigCacher;
 use streamer::{StreamProducer, StreamProducerConfig};
-use tokio::task::JoinHandle;
 
-pub async fn jobs(settings: Settings, reporter: Arc<dyn JobStatusReporter>, shutdown_rx: ShutdownReceiver) -> Result<Vec<JoinHandle<()>>, Box<dyn Error + Send + Sync>> {
-    let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
+pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
+    let runtime = ctx.runtime();
+    let database = ctx.database();
+    let settings = ctx.settings();
     let config = ConfigCacher::new(database.clone());
     let cacher_client = CacherClient::new(settings.redis.url.as_str()).await;
 
-    let device_updater = tokio::spawn(run_job(
-        "cleanup_stale_device_subscriptions",
-        config.get_duration(ConfigKey::DeviceTimerUpdater)?,
-        reporter.clone(),
-        shutdown_rx.clone(),
-        {
+    JobPlanBuilder::with_config(WorkerService::Device, runtime.plan(shutdown_rx), &config)
+        .job(WorkerJob::CleanupStaleDeviceSubscriptions, {
             let database = database.clone();
             move || {
                 let device_updater = DeviceUpdater::new(database.clone());
                 async move { device_updater.update().await }
             }
-        },
-    ));
-
-    let inactive_devices_observer = tokio::spawn(run_job(
-        "observe_inactive_devices",
-        config.get_duration(ConfigKey::DeviceTimerInactiveObserver)?,
-        reporter.clone(),
-        shutdown_rx,
-        {
-            let settings = Arc::new(settings.clone());
+        })
+        .job(WorkerJob::ObserveInactiveDevices, {
             let database = database.clone();
             let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
-            let stream_producer = StreamProducer::new(&rabbitmq_config, "observe_inactive_devices").await.unwrap();
+            let stream_producer = StreamProducer::new(&rabbitmq_config, "observe_inactive_devices").await?;
             move || {
-                let observer = InactiveDevicesObserver::new(database.clone(), cacher_client.clone(), stream_producer.clone());
-                async move { observer.observe().await }
+                let database = database.clone();
+                let stream_producer = stream_producer.clone();
+                let cacher_client = cacher_client.clone();
+                async move {
+                    let observer = InactiveDevicesObserver::new(database, cacher_client, stream_producer);
+                    observer.observe().await
+                }
             }
-        },
-    ));
-
-    Ok(vec![device_updater, inactive_devices_observer])
+        })
+        .finish()
 }

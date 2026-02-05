@@ -54,12 +54,12 @@ impl ConsumerStatusReporter for CacherConsumerReporter {
 
             if let Some(entry) = status.errors.iter_mut().find(|e| e.message == truncated) {
                 entry.count += 1;
-                entry.last_seen = timestamp;
+                entry.timestamp = timestamp;
             } else {
                 status.errors.push(ConsumerError {
                     message: truncated,
                     count: 1,
-                    last_seen: timestamp,
+                    timestamp,
                 });
             }
 

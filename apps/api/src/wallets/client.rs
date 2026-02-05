@@ -99,28 +99,22 @@ impl WalletsClient {
         Ok(count)
     }
 
-    pub async fn delete_subscriptions(&self, device_id: &str, wallet_subscriptions: Vec<WalletSubscription>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        if wallet_subscriptions.is_empty() {
+    pub async fn delete_subscriptions(&self, device_row_id: i32, subscriptions: Vec<WalletSubscriptionChains>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        if subscriptions.is_empty() {
             return Ok(0);
         }
 
-        let device_row_id = self.device_cacher.get_device_row_id(device_id).await?;
         let mut store = self.database.wallets()?;
 
-        let identifiers: Vec<String> = wallet_subscriptions.iter().map(|x| x.wallet_id.id()).collect();
+        let identifiers: Vec<String> = subscriptions.iter().map(|x| x.wallet_id.id()).collect();
         let wallet_ids: HashMap<String, i32> = store.get_wallets(identifiers)?.into_iter().map(|x| (x.wallet_id.id(), x.id)).collect();
 
-        let subscriptions: Vec<(i32, Chain, String)> = wallet_subscriptions
-            .into_iter()
-            .filter_map(|ws| {
-                wallet_ids
-                    .get(&ws.wallet_id.id())
-                    .map(|&wallet_id| ws.subscriptions.into_iter().map(move |s| (wallet_id, s.chain, s.address)))
-            })
-            .flatten()
-            .collect();
-
-        let count = store.delete_subscriptions(device_row_id, subscriptions)?;
+        let mut count = 0;
+        for ws in subscriptions {
+            if let Some(&wallet_id) = wallet_ids.get(&ws.wallet_id.id()) {
+                count += store.delete_wallet_chains(device_row_id, wallet_id, ws.chains)?;
+            }
+        }
 
         Ok(count)
     }

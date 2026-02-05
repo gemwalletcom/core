@@ -321,6 +321,15 @@ pub struct ConsumerError {
 #[allow(unused)]
 pub struct API {
     pub service: String,
+    pub auth: Auth,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct Auth {
+    pub enabled: bool,
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub tolerance: Duration,
 }
 
 #[derive(Debug, Deserialize, Clone)]

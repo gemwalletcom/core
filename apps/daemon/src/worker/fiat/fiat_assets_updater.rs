@@ -1,6 +1,6 @@
 use chrono::{Duration, Utc};
 use fiat::{FiatProvider, model::FiatProviderAsset};
-use gem_tracing::{error_with_fields, info_with_fields};
+use gem_tracing::info_with_fields;
 use primitives::{AssetTag, Diff, FiatProviderName, currency::Currency};
 use storage::{AssetFilter, AssetUpdate};
 use storage::{AssetsRepository, Database, TagRepository};
@@ -56,23 +56,6 @@ impl FiatAssetsUpdater {
         Ok(self.database.tag()?.set_assets_tags_for_tag(AssetTag::TrendingFiatPurchase.as_ref(), asset_ids.clone())?)
     }
 
-    pub async fn update_fiat_assets(&self, name: &str) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let mut total_assets = 0;
-
-        for i in 0..self.providers.len() {
-            let provider_name = self.providers[i].name();
-            match self.update_fiat_assets_for_provider(provider_name.clone()).await {
-                Ok(count) => {
-                    info_with_fields!(name, provider = provider_name.id(), assets = count.to_string());
-                    total_assets += count;
-                }
-                Err(e) => error_with_fields!(name, &*e, provider = provider_name.id()),
-            }
-        }
-
-        Ok(total_assets)
-    }
-
     fn get_provider(&self, provider_name: FiatProviderName) -> Result<&(dyn FiatProvider + Send + Sync), Box<dyn std::error::Error + Send + Sync>> {
         self.providers
             .iter()
@@ -81,8 +64,8 @@ impl FiatAssetsUpdater {
             .ok_or_else(|| format!("Provider {} not found", provider_name.id()).into())
     }
 
-    async fn update_fiat_assets_for_provider(&self, provider_name: FiatProviderName) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let provider = self.get_provider(provider_name)?;
+    pub async fn update_fiat_assets_for(&self, provider_name: FiatProviderName) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+        let provider = self.get_provider(provider_name.clone())?;
         let assets = provider.get_assets().await?;
         let asset_count = assets.len();
 
@@ -112,27 +95,19 @@ impl FiatAssetsUpdater {
             self.database.fiat()?.add_fiat_assets(vec![asset])?;
         }
 
+        info_with_fields!("fiat update assets", provider = provider_name.id(), assets = asset_count);
+
         Ok(asset_count)
     }
 
-    pub async fn update_fiat_countries(&self, name: &str) -> Result<bool, Box<dyn std::error::Error + Send + Sync>> {
-        for i in 0..self.providers.len() {
-            let provider_name = self.providers[i].name();
-            match self.update_fiat_countries_for_provider(provider_name.clone()).await {
-                Ok(count) => info_with_fields!(name, provider = provider_name.id(), countries = count.to_string()),
-                Err(e) => error_with_fields!(name, &*e, provider = provider_name.id()),
-            }
-        }
-        Ok(true)
-    }
-
-    async fn update_fiat_countries_for_provider(&self, provider_name: FiatProviderName) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let provider = self.get_provider(provider_name)?;
+    pub async fn update_fiat_countries_for(&self, provider_name: FiatProviderName) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+        let provider = self.get_provider(provider_name.clone())?;
         let countries = provider.get_countries().await?;
         let country_count = countries.len();
         self.database
             .fiat()?
             .add_fiat_providers_countries(countries.into_iter().map(storage::models::FiatProviderCountryRow::from_primitive).collect())?;
+        info_with_fields!("fiat update countries", provider = provider_name.id(), countries = country_count);
         Ok(country_count)
     }
 

@@ -11,5 +11,6 @@ pub mod spot;
 pub mod timestamp;
 pub mod token;
 pub mod user;
+pub mod websocket;
 
 pub type UInt64 = u64;

@@ -14,5 +14,5 @@ pub struct ConsumerStatus {
 pub struct ConsumerError {
     pub message: String,
     pub count: u64,
-    pub last_seen: u64,
+    pub timestamp: u64,
 }

@@ -1,12 +1,13 @@
 use gem_tracing::info_with_fields;
 use prices_dex::PriceFeedProvider;
 use primitives::{
-    Asset, AssetId, AssetTag, Chain, ConfigKey, FiatProviderName, NotificationType, PlatformStore as PrimitivePlatformStore, PriceAlert, PriceAlertDirection, Subscription,
+    Asset, AssetId, AssetTag, Chain, ConfigKey, FiatProviderName, NFTChain, NotificationType, PlatformStore as PrimitivePlatformStore, PriceAlert, PriceAlertDirection,
+    Subscription,
 };
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
 use storage::Database;
-use storage::models::{ConfigRow, FiatRateRow, UpdateDeviceRow};
+use storage::models::{ConfigRow, FiatAssetRow, FiatProviderCountryRow, FiatRateRow, UpdateDeviceRow};
 use storage::sql_types::{Platform, PlatformStore};
 use storage::{
     AssetsRepository, ChainsRepository, ConfigRepository, DevicesRepository, MigrationsRepository, NewNotificationRow, NewWalletRow, NotificationsRepository,
@@ -17,13 +18,21 @@ use streamer::{ExchangeKind, ExchangeName, QueueName, StreamProducer, StreamProd
 pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     info_with_fields!("setup", step = "init");
 
-    let postgres_url = settings.postgres.url.as_str();
-    let database: Database = Database::new(postgres_url, settings.postgres.pool);
+    let database: Database = Database::new(&settings.postgres.url, settings.postgres.pool);
+
+    setup_database(&database)?;
+    setup_search_index(&settings).await?;
+    setup_queues(&settings).await?;
+
+    info_with_fields!("setup", step = "complete");
+    Ok(())
+}
+
+fn setup_database(database: &Database) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     database.migrations()?.run_migrations().unwrap();
     info_with_fields!("setup", step = "postgres migrations complete");
 
     let chains = Chain::all();
-
     info_with_fields!("setup", step = "chains", chains = format!("{:?}", chains));
 
     info_with_fields!("setup", step = "add chains");
@@ -46,7 +55,6 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
     let _ = database.fiat()?.add_fiat_providers(providers);
 
     info_with_fields!("setup", step = "releases");
-
     let releases = PrimitivePlatformStore::all()
         .into_iter()
         .map(|x| storage::models::ReleaseRow {
@@ -55,7 +63,6 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
             upgrade_required: false,
         })
         .collect::<Vec<_>>();
-
     let _ = database.releases()?.add_releases(releases);
 
     info_with_fields!("setup", step = "assets tags");
@@ -74,6 +81,10 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
     let configs = ConfigKey::all().into_iter().map(ConfigRow::from_primitive).collect::<Vec<_>>();
     let _ = database.client()?.add_config(configs);
 
+    Ok(())
+}
+
+async fn setup_search_index(settings: &Settings) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     info_with_fields!(
         "setup",
         step = "search index",
@@ -83,6 +94,10 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
     let search_index_client = SearchIndexClient::new(&settings.meilisearch.url, settings.meilisearch.key.as_str());
     search_index_client.setup(INDEX_CONFIGS, INDEX_PRIMARY_KEY).await.unwrap();
 
+    Ok(())
+}
+
+async fn setup_queues(settings: &Settings) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     info_with_fields!("setup", step = "queues");
 
     let chain_queues = QueueName::chain_queues();
@@ -94,16 +109,18 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
     let stream_producer = StreamProducer::new(&rabbitmq_config, "setup").await.unwrap();
     let _ = stream_producer.declare_queues(non_chain_queues).await;
     let _ = stream_producer.declare_exchanges(exchanges.clone()).await;
+
     info_with_fields!(
         "setup",
         step = "queue exchanges for chain-based consumers",
         queues = format!("{:?}", chain_queues.iter().map(|q| q.to_string()).collect::<Vec<_>>()),
         chains = format!("{:?}", chains)
     );
+
     for queue in &chain_queues {
         let exchange_name = format!("{}_exchange", queue);
         let _ = stream_producer.declare_exchange(&exchange_name, ExchangeKind::Topic).await;
-        for chain in &chains {
+        for chain in queue_supported_chains(queue, &chains) {
             let _ = stream_producer.bind_queue_routing_key(queue.clone(), chain.as_ref()).await;
         }
     }
@@ -120,23 +137,37 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
             queues = format!("{:?}", exchange_queues.iter().map(|q| q.to_string()).collect::<Vec<_>>())
         );
         for queue in &exchange_queues {
-            for chain in &chains {
+            for chain in queue_supported_chains(queue, &chains) {
                 let queue_name = format!("{}.{}", queue, chain.as_ref());
                 let _ = stream_producer.bind_queue(&queue_name, &exchange.to_string(), chain.as_ref()).await;
             }
         }
     }
 
-    info_with_fields!("setup", step = "complete");
     Ok(())
+}
+
+fn queue_supported_chains(queue: &QueueName, all_chains: &[Chain]) -> Vec<Chain> {
+    match queue {
+        QueueName::FetchNftAssociations => NFTChain::all().into_iter().map(Into::into).collect(),
+        _ => all_chains.to_vec(),
+    }
 }
 
 pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     info_with_fields!("setup_dev", step = "init");
 
-    let postgres_url = settings.postgres.url.as_str();
-    let database: Database = Database::new(postgres_url, settings.postgres.pool);
+    let database: Database = Database::new(&settings.postgres.url, settings.postgres.pool);
 
+    setup_dev_currency(&database)?;
+    setup_dev_devices(&database)?;
+    setup_dev_assets(&database)?;
+
+    info_with_fields!("setup_dev", step = "complete");
+    Ok(())
+}
+
+fn setup_dev_currency(database: &Database) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     info_with_fields!("setup_dev", step = "add currency");
 
     let fiat_rate = FiatRateRow {
@@ -146,17 +177,24 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
     };
 
     info_with_fields!("setup_dev", step = "add rate", currency = "USD");
-    let _ = database.fiat()?.set_fiat_rates(vec![fiat_rate.clone()]).expect("Failed to add currency");
+    database.fiat()?.set_fiat_rates(vec![fiat_rate])?;
 
+    Ok(())
+}
+
+fn setup_dev_devices(database: &Database) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     info_with_fields!("setup_dev", step = "add devices");
 
+    let ios_device_id = "0".repeat(64);
+    let android_device_id = "1".repeat(64);
+
     let ios_device = UpdateDeviceRow {
-        device_id: "test".to_string(),
+        device_id: ios_device_id.clone(),
         platform: Platform::IOS,
         platform_store: PlatformStore::AppStore,
         token: "test_token".to_string(),
         locale: "en".to_string(),
-        currency: fiat_rate.id.clone(),
+        currency: "USD".to_string(),
         is_push_enabled: true,
         is_price_alerts_enabled: true,
         version: "1.0.0".to_string(),
@@ -166,12 +204,12 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
     };
 
     let android_device = UpdateDeviceRow {
-        device_id: "test-android".to_string(),
+        device_id: android_device_id.clone(),
         platform: Platform::Android,
         platform_store: PlatformStore::GooglePlay,
         token: "test_token_android".to_string(),
         locale: "en".to_string(),
-        currency: fiat_rate.id.clone(),
+        currency: "USD".to_string(),
         is_push_enabled: true,
         is_price_alerts_enabled: true,
         version: "1.0.0".to_string(),
@@ -180,46 +218,47 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
         model: "Pixel 9".to_string(),
     };
 
-    let _ = database.devices()?.add_device(ios_device).expect("Failed to add iOS device");
-    info_with_fields!("setup_dev", step = "device added", device_id = "test");
+    database.devices()?.add_device(ios_device)?;
+    info_with_fields!("setup_dev", step = "device added", device_id = ios_device_id.as_str());
 
-    let _ = database.devices()?.add_device(android_device).expect("Failed to add Android device");
-    info_with_fields!("setup_dev", step = "device added", device_id = "test-android");
+    database.devices()?.add_device(android_device)?;
+    info_with_fields!("setup_dev", step = "device added", device_id = android_device_id.as_str());
 
-    let device_row_id = database.devices()?.get_device_row_id("test").expect("Failed to get device row id");
+    let ios_device_row_id = database.devices()?.get_device_row_id(&ios_device_id)?;
+    let android_device_row_id = database.devices()?.get_device_row_id(&android_device_id)?;
+
+    let wallet_address = "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4";
 
     info_with_fields!("setup_dev", step = "add subscription");
-
     let subscription = Subscription {
         wallet_index: 1,
         chain: Chain::Ethereum,
-        address: "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4".to_string(),
+        address: wallet_address.to_string(),
     };
-
-    let result = SubscriptionsRepository::add_subscriptions(&mut database.subscriptions()?, vec![subscription], "test").expect("Failed to add subscription");
+    let result = SubscriptionsRepository::add_subscriptions(&mut database.subscriptions()?, vec![subscription], &ios_device_id)?;
     info_with_fields!("setup_dev", step = "subscription added", count = result);
 
     info_with_fields!("setup_dev", step = "add wallet");
-
-    let wallet_identifier = "multicoin_0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4".to_string();
+    let wallet_identifier = format!("multicoin_{}", wallet_address);
     let new_wallet = NewWalletRow {
-        identifier: wallet_identifier.clone(),
+        identifier: wallet_identifier,
         wallet_type: WalletType::Multicoin,
         source: WalletSource::Create,
     };
-
-    let wallet = database.wallets()?.get_or_create_wallet(new_wallet).expect("Failed to create wallet");
+    let wallet = database.wallets()?.get_or_create_wallet(new_wallet)?;
     info_with_fields!("setup_dev", step = "wallet added", wallet_id = wallet.id);
 
-    info_with_fields!("setup_dev", step = "add wallet subscription");
+    info_with_fields!("setup_dev", step = "add wallet subscriptions");
+    let ios_subscriptions = vec![(wallet.id, Chain::Ethereum, wallet_address.to_string())];
+    let result = WalletsRepository::add_subscriptions(&mut database.wallets()?, ios_device_row_id, ios_subscriptions)?;
+    info_with_fields!("setup_dev", step = "ios wallet subscription added", count = result);
 
-    let wallet_subscriptions = vec![(wallet.id, Chain::Ethereum, "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4".to_string())];
-    let result = WalletsRepository::add_subscriptions(&mut database.wallets()?, device_row_id, wallet_subscriptions).expect("Failed to add wallet subscription");
-    info_with_fields!("setup_dev", step = "wallet subscription added", count = result);
+    let android_subscriptions = vec![(wallet.id, Chain::Ethereum, wallet_address.to_string())];
+    let result = WalletsRepository::add_subscriptions(&mut database.wallets()?, android_device_row_id, android_subscriptions)?;
+    info_with_fields!("setup_dev", step = "android wallet subscription added", count = result);
 
     info_with_fields!("setup_dev", step = "add rewards");
-
-    let devices = database.wallets()?.get_devices_by_wallet_id(wallet.id).expect("Failed to get devices");
+    let devices = database.wallets()?.get_devices_by_wallet_id(wallet.id)?;
     if let Some(device) = devices.first() {
         let result = database.rewards()?.create_reward(wallet.id, "gemcoder", device.id);
         match result {
@@ -229,7 +268,6 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
     }
 
     info_with_fields!("setup_dev", step = "add notifications");
-
     let notifications = vec![
         NewNotificationRow {
             wallet_id: wallet.id,
@@ -262,25 +300,75 @@ pub async fn run_setup_dev(settings: Settings) -> Result<(), Box<dyn std::error:
             metadata: Some(serde_json::json!({"username": "bob", "points": 200})),
         },
     ];
-
-    let result = database.notifications()?.create_notifications(notifications).expect("Failed to create notifications");
+    let result = database.notifications()?.create_notifications(notifications)?;
     info_with_fields!("setup_dev", step = "notifications added", count = result);
 
+    info_with_fields!("setup_dev", step = "add price alerts");
+    let price_alerts = vec![
+        PriceAlert::new_price(AssetId::from_chain(Chain::Ethereum), "USD".to_string(), 3000.0, PriceAlertDirection::Up),
+        PriceAlert::new_price(AssetId::from_chain(Chain::Bitcoin), "USD".to_string(), 50000.0, PriceAlertDirection::Down),
+    ];
+    let result = database.price_alerts()?.add_price_alerts(&ios_device_id, price_alerts)?;
+    info_with_fields!("setup_dev", step = "price alerts added", count = result);
+
+    Ok(())
+}
+
+fn setup_dev_assets(database: &Database) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     info_with_fields!("setup_dev", step = "add assets");
 
     let assets = Chain::all().into_iter().map(|x| Asset::from_chain(x).as_basic_primitive()).collect::<Vec<_>>();
     let _ = database.assets()?.add_assets(assets);
 
-    info_with_fields!("setup_dev", step = "add price alerts");
+    info_with_fields!("setup_dev", step = "add fiat assets");
 
-    let price_alerts = vec![
-        PriceAlert::new_price(AssetId::from_chain(Chain::Ethereum), "USD".to_string(), 3000.0, PriceAlertDirection::Up),
-        PriceAlert::new_price(AssetId::from_chain(Chain::Bitcoin), "USD".to_string(), 50000.0, PriceAlertDirection::Down),
+    let ethereum_asset_id = AssetId::from_chain(Chain::Ethereum).to_string();
+    let smartchain_asset_id = AssetId::from_chain(Chain::SmartChain).to_string();
+
+    let fiat_asset = |provider: &str, code: &str, symbol: &str, network: &str, asset_id: &str| FiatAssetRow {
+        id: format!("{}_{}", provider, code),
+        asset_id: Some(asset_id.to_string()),
+        provider: provider.to_string(),
+        code: code.to_string(),
+        symbol: symbol.to_string(),
+        network: Some(network.to_string()),
+        token_id: None,
+        is_enabled: true,
+        is_enabled_by_provider: true,
+        is_buy_enabled: true,
+        is_sell_enabled: true,
+        buy_limits: None,
+        sell_limits: None,
+        unsupported_countries: None,
+    };
+
+    let fiat_assets = vec![
+        fiat_asset(FiatProviderName::MoonPay.as_ref(), "eth", "ETH", "ethereum", &ethereum_asset_id),
+        fiat_asset(FiatProviderName::Mercuryo.as_ref(), "ETH", "ETH", "ETHEREUM", &ethereum_asset_id),
+        fiat_asset(FiatProviderName::MoonPay.as_ref(), "bnb_bsc", "BNB", "binance_smart_chain", &smartchain_asset_id),
+        fiat_asset(FiatProviderName::Mercuryo.as_ref(), "BNB", "BNB", "BINANCESMARTCHAIN", &smartchain_asset_id),
     ];
 
-    let result = database.price_alerts()?.add_price_alerts("test", price_alerts).expect("Failed to create price alerts");
-    info_with_fields!("setup_dev", step = "price alerts added", count = result);
+    let result = database.fiat()?.add_fiat_assets(fiat_assets)?;
+    info_with_fields!("setup_dev", step = "fiat assets added", count = result);
 
-    info_with_fields!("setup_dev", step = "complete");
+    info_with_fields!("setup_dev", step = "add fiat provider countries");
+
+    let fiat_countries: Vec<FiatProviderCountryRow> = FiatProviderName::all()
+        .into_iter()
+        .map(|provider| {
+            let id = provider.id();
+            FiatProviderCountryRow {
+                id: format!("{}_us", id),
+                provider: id.to_string(),
+                alpha2: "US".to_string(),
+                is_allowed: true,
+            }
+        })
+        .collect();
+
+    let result = database.fiat()?.add_fiat_providers_countries(fiat_countries)?;
+    info_with_fields!("setup_dev", step = "fiat provider countries added", count = result);
+
     Ok(())
 }

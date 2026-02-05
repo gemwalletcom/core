@@ -84,6 +84,13 @@ impl AssetId {
         }
     }
 
+    pub fn token(chain: Chain, token_id: impl Into<String>) -> AssetId {
+        AssetId {
+            chain,
+            token_id: Some(token_id.into()),
+        }
+    }
+
     pub fn from_chain(chain: Chain) -> AssetId {
         AssetId { chain, token_id: None }
     }
