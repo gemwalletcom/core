@@ -214,18 +214,12 @@ async fn run_consumer(
     reporter: Arc<dyn ConsumerStatusReporter>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     match service {
-        ConsumerService::StoreTransactions => consumers::run_consumer_store_transactions(settings, shutdown_rx, reporter).await,
-        ConsumerService::FetchBlocks => consumers::run_consumer_fetch_blocks(settings, shutdown_rx, reporter).await,
-        ConsumerService::FetchAssets => consumers::run_consumer_fetch_assets(settings, shutdown_rx, reporter).await,
-        ConsumerService::FetchAssociations => consumers::run_consumer_fetch_associations(settings, shutdown_rx, reporter).await,
+        ConsumerService::Store => consumers::run_consumer_store(settings, shutdown_rx, reporter).await,
+        ConsumerService::Chain => consumers::run_consumer_chain(settings, shutdown_rx, reporter).await,
         ConsumerService::Notifications => consumers::notifications::run(settings, shutdown_rx, reporter).await,
-        ConsumerService::InAppNotifications => consumers::run_consumer_in_app_notifications(settings, shutdown_rx, reporter).await,
         ConsumerService::Rewards => consumers::run_consumer_rewards(settings, shutdown_rx, reporter).await,
-        ConsumerService::RewardsRedemptions => consumers::run_rewards_redemption_consumer(settings, shutdown_rx, reporter).await,
         ConsumerService::Support => consumers::run_consumer_support(settings, shutdown_rx, reporter).await,
         ConsumerService::Fiat => consumers::run_consumer_fiat(settings, shutdown_rx, reporter).await,
-        ConsumerService::StorePrices => consumers::run_consumer_store_prices(settings, shutdown_rx, reporter).await,
         ConsumerService::FetchPrices => consumers::run_consumer_fetch_prices(settings, shutdown_rx, reporter).await,
-        ConsumerService::Nft => consumers::nft::run_consumer_nft_collections(settings, shutdown_rx, reporter).await,
     }
 }

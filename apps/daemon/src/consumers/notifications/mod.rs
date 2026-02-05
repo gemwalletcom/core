@@ -12,8 +12,8 @@ use std::error::Error;
 use std::sync::Arc;
 use storage::Database;
 use streamer::{
-    ConsumerConfig, ConsumerStatusReporter, NotificationsFailedPayload, NotificationsPayload, QueueName, ShutdownReceiver, StreamProducer, StreamProducerConfig, StreamReader,
-    StreamReaderConfig, run_consumer,
+    ConsumerConfig, ConsumerStatusReporter, InAppNotificationPayload, NotificationsFailedPayload, NotificationsPayload, QueueName, ShutdownReceiver, StreamProducer,
+    StreamProducerConfig, StreamReader, StreamReaderConfig, run_consumer,
 };
 
 fn consumer_config(consumer: &settings::Consumer) -> ConsumerConfig {
@@ -67,6 +67,12 @@ pub async fn run(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Ar
             shutdown_rx.clone(),
             reporter.clone(),
         )),
+        tokio::spawn(run_in_app_notifications_consumer(
+            settings.clone(),
+            database.clone(),
+            shutdown_rx.clone(),
+            reporter.clone(),
+        )),
     ])
     .await?;
 
@@ -105,4 +111,22 @@ async fn run_notifications_failed_consumer(
 
     let consumer_config = consumer_config(&settings.consumer);
     run_consumer::<NotificationsFailedPayload, NotificationsFailedConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config, shutdown_rx, reporter).await
+}
+
+async fn run_in_app_notifications_consumer(
+    settings: Arc<Settings>,
+    database: Arc<Database>,
+    shutdown_rx: ShutdownReceiver,
+    reporter: Arc<dyn ConsumerStatusReporter>,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let queue = QueueName::NotificationsInApp;
+    let name = queue.to_string();
+    let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
+    let stream_reader = StreamReader::new(config).await?;
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+    let stream_producer = StreamProducer::new(&rabbitmq_config, &name).await?;
+    let consumer = InAppNotificationsConsumer::new((*database).clone(), stream_producer);
+
+    let consumer_config = consumer_config(&settings.consumer);
+    run_consumer::<InAppNotificationPayload, InAppNotificationsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config, shutdown_rx, reporter).await
 }
