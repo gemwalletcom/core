@@ -145,7 +145,7 @@ mod tests {
         let WalletConnectResponseType::Object { json: result_json } = result else {
             panic!("Expected Object response for Tron")
         };
-        assert_eq!(result_json, r#"{"signature":["sig"],"result":true}"#);
+        assert_eq!(result_json, r#"{"signature":["sig"]}"#);
     }
 
     #[test]
