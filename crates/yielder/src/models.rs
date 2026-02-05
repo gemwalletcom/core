@@ -1,7 +1,6 @@
-use primitives::{AssetId, Chain, EarnPosition, EarnProvider, swap::ApprovalData};
-
-pub type YieldProvider = EarnProvider;
-pub type YieldPosition = EarnPosition;
+pub use primitives::YieldProvider;
+pub use primitives::EarnPositionBase;
+use primitives::{AssetId, Chain, swap::ApprovalData};
 
 #[derive(Debug, Clone)]
 pub struct Yield {

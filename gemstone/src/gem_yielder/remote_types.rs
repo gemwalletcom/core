@@ -1,14 +1,14 @@
-use primitives::{AssetId, EarnPosition, EarnProvider};
+use primitives::{AssetId, YieldProvider};
 use yielder::{Yield, YieldTransaction};
 
-use crate::models::GemBigInt;
 use crate::models::swap::GemApprovalData;
+pub use crate::models::earn::{GemEarnPositionBase, GemEarnPositionState, GemEarnProvider, GemEarnProviderType};
 pub use crate::models::transaction::GemEarnAction;
 
-pub type GemEarnProvider = EarnProvider;
+pub type GemYieldProvider = YieldProvider;
 
 #[uniffi::remote(Enum)]
-pub enum GemEarnProvider {
+pub enum GemYieldProvider {
     Yo,
 }
 
@@ -26,7 +26,7 @@ pub type GemYield = Yield;
 pub struct GemYield {
     pub name: String,
     pub asset_id: AssetId,
-    pub provider: GemEarnProvider,
+    pub provider: GemYieldProvider,
     pub apy: Option<f64>,
 }
 
@@ -40,19 +40,4 @@ pub struct GemYieldTransaction {
     pub data: String,
     pub value: Option<String>,
     pub approval: Option<GemApprovalData>,
-}
-
-pub type GemEarnPosition = EarnPosition;
-
-#[uniffi::remote(Record)]
-pub struct GemEarnPosition {
-    pub asset_id: AssetId,
-    pub provider: GemEarnProvider,
-    pub vault_token_address: String,
-    pub asset_token_address: String,
-    pub vault_balance_value: GemBigInt,
-    pub asset_balance_value: GemBigInt,
-    pub balance: String,
-    pub apy: Option<f64>,
-    pub rewards: Option<String>,
 }
