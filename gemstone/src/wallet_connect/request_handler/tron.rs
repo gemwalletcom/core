@@ -4,6 +4,7 @@ use crate::wallet_connect::handler_traits::ChainRequestHandler;
 use primitives::{Chain, TransferDataOutputType};
 use serde_json::Value;
 
+// https://docs.reown.com/advanced/multichain/rpc-reference/tron-rpc
 pub struct TronRequestHandler;
 
 impl ChainRequestHandler for TronRequestHandler {
@@ -18,7 +19,7 @@ impl ChainRequestHandler for TronRequestHandler {
     }
 
     fn parse_sign_transaction(_chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
-        if params.get("transaction").is_none() && params.get("raw_data_hex").is_none() {
+        if params.get("transaction").is_none() {
             return Err("Missing transaction parameter".to_string());
         }
 
@@ -32,7 +33,7 @@ impl ChainRequestHandler for TronRequestHandler {
     }
 
     fn parse_send_transaction(_chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
-        if params.get("transaction").is_none() && params.get("raw_data_hex").is_none() {
+        if params.get("transaction").is_none() {
             return Err("Missing transaction parameter".to_string());
         }
 
@@ -81,11 +82,11 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_sign_transaction_with_raw_data_hex() {
-        let params = serde_json::from_str(r#"{"raw_data_hex":"abc"}"#).unwrap();
-        let action = TronRequestHandler::parse_sign_transaction(Chain::Tron, params).unwrap();
-        let WalletConnectAction::SignTransaction { chain, transaction_type, data } = action else {
-            panic!("Expected SignTransaction action")
+    fn test_parse_send_transaction() {
+        let params = serde_json::from_str(r#"{"transaction":{"raw_data_hex":"abc"}}"#).unwrap();
+        let action = TronRequestHandler::parse_send_transaction(Chain::Tron, params).unwrap();
+        let WalletConnectAction::SendTransaction { chain, transaction_type, data } = action else {
+            panic!("Expected SendTransaction action")
         };
         assert_eq!(chain, Chain::Tron);
         let WalletConnectTransactionType::Tron {
@@ -95,6 +96,6 @@ mod tests {
             panic!("Expected Tron transaction type with EncodedTransaction output")
         };
         let parsed_data: serde_json::Value = serde_json::from_str(&data).expect("Data should be valid JSON");
-        assert!(parsed_data.get("raw_data_hex").is_some());
+        assert!(parsed_data.get("transaction").is_some());
     }
 }

@@ -23,6 +23,10 @@ impl WalletConnectRequestHandler {
         let method =
             serde_json::from_value::<WalletConnectionMethods>(serde_json::Value::String(request.method.clone())).map_err(|_| format!("Unsupported method: {}", request.method))?;
         let params = serde_json::from_str::<Value>(&request.params).map_err(|e| format!("Failed to parse params: {}", e))?;
+        let params = match params {
+            Value::String(raw_json) => serde_json::from_str::<Value>(&raw_json).unwrap_or(Value::String(raw_json)),
+            value => value,
+        };
 
         let domain = &request.domain;
 

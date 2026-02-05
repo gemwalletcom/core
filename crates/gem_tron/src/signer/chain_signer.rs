@@ -52,10 +52,8 @@ fn sign_data(input: &TransactionLoadInput, private_key: &[u8]) -> Result<String,
         TransferDataOutputType::EncodedTransaction => {
             let payload = apply_signature(metadata.payload, &signature_hex)?;
             let result_payload = match metadata.output_action {
-                TransferDataOutputAction::Send => {
-                    extract_transaction_payload(&payload)
-                        .ok_or_else(|| invalid_input("Missing transaction object for Tron broadcast"))?
-                }
+                TransferDataOutputAction::Send => extract_transaction_value(&payload)
+                    .ok_or_else(|| invalid_input("Missing transaction object for Tron broadcast"))?,
                 TransferDataOutputAction::Sign => payload,
             };
 
@@ -75,8 +73,10 @@ fn extract_transaction(input: &TransactionLoadInput) -> Result<(TronTransaction,
         value => value,
     };
 
-    let transaction_value = extract_transaction_payload(&payload)
-        .ok_or_else(|| invalid_input("Missing transaction object for Tron broadcast"))?;
+    let Value::Object(map) = &payload else {
+        return Err(invalid_input("Invalid Tron transaction payload"));
+    };
+    let transaction_value = map.get("transaction").cloned().ok_or_else(|| invalid_input("Missing transaction field"))?;
     let transaction: TronTransaction = serde_json::from_value(transaction_value)?;
     let raw_data_hex = match &input.metadata {
         TransactionLoadMetadata::Tron {
@@ -103,46 +103,27 @@ fn sign_digest(digest: &[u8], private_key: &[u8]) -> Result<Vec<u8>, SignerError
         .map_err(|err| invalid_input(err.to_string()))
 }
 
-fn extract_transaction_payload(value: &Value) -> Option<Value> {
-    match value {
-        Value::Object(map) => {
-            if map.get("raw_data_hex").is_some() {
-                return Some(value.clone());
-            }
-            if let Some(transaction) = map.get("transaction")
-                && let Some(found) = extract_transaction_payload(transaction)
-            {
-                return Some(found);
-            }
-            map.values().find_map(extract_transaction_payload)
-        }
-        Value::Array(values) => values.iter().find_map(extract_transaction_payload),
+fn extract_transaction_value(payload: &Value) -> Option<Value> {
+    match payload {
+        Value::Object(map) => map.get("transaction").cloned(),
         _ => None,
     }
 }
 
 fn apply_signature(payload: Value, signature_hex: &str) -> Result<Value, SignerError> {
-    let transaction_value = extract_transaction_payload(&payload)
-        .ok_or_else(|| invalid_input("Missing transaction object for Tron broadcast"))?;
+    let Value::Object(mut map) = payload else {
+        return Err(invalid_input("Invalid Tron transaction payload"));
+    };
+    let transaction_value = map.get("transaction").cloned().ok_or_else(|| invalid_input("Missing transaction field"))?;
     let mut transaction: TronTransaction = serde_json::from_value(transaction_value)?;
     if !transaction.signature.is_empty() {
         return Err(invalid_input("Tron multisig not supported for WalletConnect signing"));
     }
     transaction.signature = vec![signature_hex.to_string()];
-    let updated_transaction = serde_json::to_value(transaction)?;
-    match payload {
-        Value::Object(mut map) => {
-            if map.get("raw_data_hex").is_some() {
-                Ok(updated_transaction)
-            } else if map.get("transaction").is_some() {
-                map.insert("transaction".to_string(), updated_transaction);
-                Ok(Value::Object(map))
-            } else {
-                Err(invalid_input("Missing raw_data_hex in Tron transaction payload"))
-            }
-        }
-        _ => Err(invalid_input("Invalid Tron transaction payload")),
-    }
+    map.insert("transaction".to_string(), serde_json::to_value(transaction)?);
+    map.entry("signature".to_string())
+        .or_insert(serde_json::Value::String(signature_hex.to_string()));
+    Ok(Value::Object(map))
 }
 
 fn invalid_input(message: impl Into<String>) -> SignerError {

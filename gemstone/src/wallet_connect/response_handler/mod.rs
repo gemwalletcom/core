@@ -1,6 +1,10 @@
 use crate::wallet_connect::handler_traits::ChainResponseHandler;
 use primitives::ChainType;
 
+mod tron;
+
+use tron::TronResponseHandler;
+
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum WalletConnectResponseType {
     String { value: String },
@@ -26,7 +30,8 @@ impl ChainResponseHandler for WalletConnectResponseHandler {
 impl WalletConnectResponseHandler {
     pub fn encode_sign_message(chain_type: ChainType, signature: String) -> WalletConnectResponseType {
         match chain_type {
-            ChainType::Solana | ChainType::Sui | ChainType::Tron => {
+            ChainType::Tron => TronResponseHandler::encode_sign_message(signature),
+            ChainType::Solana | ChainType::Sui => {
                 let result = serde_json::json!({
                     "signature": signature
                 });
@@ -41,6 +46,7 @@ impl WalletConnectResponseHandler {
 
     pub fn encode_sign_transaction(chain_type: ChainType, transaction_id: String) -> WalletConnectResponseType {
         match chain_type {
+            ChainType::Tron => TronResponseHandler::encode_sign_transaction(transaction_id),
             ChainType::Solana | ChainType::Ton => WalletConnectResponseType::Object {
                 json: serde_json::json!({ "signature": transaction_id }).to_string(),
             },
@@ -59,13 +65,13 @@ impl WalletConnectResponseHandler {
                 };
                 WalletConnectResponseType::Object { json: result.to_string() }
             }
-            ChainType::Tron => WalletConnectResponseType::Object { json: transaction_id },
             _ => WalletConnectResponseType::String { value: transaction_id },
         }
     }
 
     pub fn encode_send_transaction(chain_type: ChainType, transaction_id: String) -> WalletConnectResponseType {
         match chain_type {
+            ChainType::Tron => TronResponseHandler::encode_send_transaction(transaction_id),
             ChainType::Sui => WalletConnectResponseType::Object {
                 json: serde_json::json!({ "digest": transaction_id }).to_string(),
             },
@@ -139,7 +145,7 @@ mod tests {
         let WalletConnectResponseType::Object { json: result_json } = result else {
             panic!("Expected Object response for Tron")
         };
-        assert_eq!(result_json, json);
+        assert_eq!(result_json, r#"{"signature":["sig"],"result":true}"#);
     }
 
     #[test]
@@ -186,6 +192,19 @@ mod tests {
                 assert!(json.contains("digest123"));
             }
             _ => panic!("Expected Object response for Sui"),
+        }
+    }
+
+    #[test]
+    fn test_encode_send_transaction_tron() {
+        let result = WalletConnectResponseHandler::encode_send_transaction(ChainType::Tron, "txid123".to_string());
+        match result {
+            WalletConnectResponseType::Object { json } => {
+                assert!(json.contains("\"result\""));
+                assert!(json.contains("\"txid\""));
+                assert!(json.contains("txid123"));
+            }
+            _ => panic!("Expected Object response for Tron"),
         }
     }
 
