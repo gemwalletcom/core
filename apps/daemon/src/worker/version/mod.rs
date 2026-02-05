@@ -8,7 +8,7 @@ use crate::worker::plan::JobPlanBuilder;
 use job_runner::{JobHandle, ShutdownReceiver};
 use std::error::Error;
 use storage::ConfigCacher;
-use version_updater::VersionClient;
+use version_updater::VersionUpdater;
 
 pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
     let runtime = ctx.runtime();
@@ -16,12 +16,12 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
     let config = ConfigCacher::new(database.clone());
 
     JobPlanBuilder::with_config(WorkerService::Version, runtime.plan(shutdown_rx), &config)
-        .job(WorkerJob::UpdateStoreVersions, {
+        .jobs(WorkerJob::UpdateStoreVersion, VersionUpdater::stores(), |store, _| {
+            let store = *store;
             let database = database.clone();
             move || {
-                let database = database.clone();
-                let version_client = VersionClient::new(database);
-                async move { version_client.update_store_versions().await }
+                let updater = VersionUpdater::new(database.clone());
+                async move { updater.update_store(store).await }
             }
         })
         .finish()

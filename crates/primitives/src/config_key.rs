@@ -308,7 +308,7 @@ impl ConfigKey {
             Self::RewardsTimerAbuseChecker => "60s",
             Self::DeviceTimerUpdater => "1d",
             Self::DeviceTimerInactiveObserver => "1d",
-            Self::VersionTimerUpdateStoreVersions => "12h",
+            Self::VersionTimerUpdateStoreVersions => "1h",
             Self::TransactionTimerUpdater => "1d",
             Self::SearchAssetsUpdateInterval => "30m",
             Self::SearchPerpetualsUpdateInterval => "30m",

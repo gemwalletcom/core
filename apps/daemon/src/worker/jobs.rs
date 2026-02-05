@@ -1,5 +1,5 @@
 use crate::model::WorkerService;
-use primitives::{Chain, ConfigKey, FiatProviderName};
+use primitives::{Chain, ConfigKey, FiatProviderName, PlatformStore};
 use std::error::Error;
 use std::time::Duration;
 use storage::ConfigCacher;
@@ -51,7 +51,7 @@ impl JobLabel for String {
     }
 }
 
-impl<'a, T> JobLabel for &'a T
+impl<T> JobLabel for &T
 where
     T: JobLabel + ?Sized,
 {
@@ -67,6 +67,12 @@ impl JobLabel for Chain {
 }
 
 impl JobLabel for FiatProviderName {
+    fn job_label(&self) -> String {
+        self.as_ref().to_string()
+    }
+}
+
+impl JobLabel for PlatformStore {
     fn job_label(&self) -> String {
         self.as_ref().to_string()
     }
@@ -104,7 +110,7 @@ pub enum WorkerJob {
     UpdatePerpetualsIndex,
     UpdateNftsIndex,
     CleanupProcessedTransactions,
-    UpdateStoreVersions,
+    UpdateStoreVersion,
     UpdateChainValidators,
     UpdateValidatorsFromStaticAssets,
     CheckRewardsAbuse,
@@ -148,7 +154,7 @@ impl WorkerJob {
             UpdatePerpetualsIndex => JobSpec::new(WorkerService::Search, JobInterval::Config(ConfigKey::SearchPerpetualsUpdateInterval)),
             UpdateNftsIndex => JobSpec::new(WorkerService::Search, JobInterval::Config(ConfigKey::SearchNftsUpdateInterval)),
             CleanupProcessedTransactions => JobSpec::new(WorkerService::Transaction, JobInterval::Config(ConfigKey::TransactionTimerUpdater)),
-            UpdateStoreVersions => JobSpec::new(WorkerService::Version, JobInterval::Config(ConfigKey::VersionTimerUpdateStoreVersions)),
+            UpdateStoreVersion => JobSpec::new(WorkerService::Version, JobInterval::Config(ConfigKey::VersionTimerUpdateStoreVersions)),
             UpdateChainValidators => JobSpec::new(WorkerService::Scan, JobInterval::Config(ConfigKey::ScanTimerUpdateValidators)),
             UpdateValidatorsFromStaticAssets => JobSpec::new(WorkerService::Scan, JobInterval::Config(ConfigKey::ScanTimerUpdateValidatorsStatic)),
             CheckRewardsAbuse => JobSpec::new(WorkerService::Rewards, JobInterval::Config(ConfigKey::RewardsTimerAbuseChecker)),

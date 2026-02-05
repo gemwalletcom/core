@@ -1,86 +1,79 @@
-use gem_tracing::info_with_fields;
 use primitives::{PlatformStore, config::Release};
 use std::error::Error;
 use storage::{Database, ReleasesRepository};
 
 use super::model::{GitHubRepository, ITunesLookupResponse, SamsungStoreDetail};
 
-pub struct VersionClient {
+const DEFAULT_VERSION: &str = "1.0.0";
+
+pub struct VersionUpdater {
     database: Database,
 }
 
-impl VersionClient {
+impl VersionUpdater {
     pub fn new(database: Database) -> Self {
         Self { database }
     }
 
-    pub async fn update_store_versions(&self) -> Result<Vec<(String, String)>, Box<dyn Error + Send + Sync>> {
-        let platforms = [PlatformStore::AppStore, PlatformStore::ApkUniversal, PlatformStore::SamsungStore];
-        let mut updates = Vec::new();
+    pub fn stores() -> &'static [PlatformStore] {
+        &[PlatformStore::AppStore, PlatformStore::ApkUniversal, PlatformStore::SamsungStore]
+    }
 
-        for platform in platforms {
-            let version = match platform {
-                PlatformStore::AppStore => self.update_app_store_version().await?,
-                PlatformStore::ApkUniversal => self.update_apk_version().await?,
-                PlatformStore::SamsungStore => self.update_samsung_store_version().await?,
-                _ => continue,
-            };
+    pub async fn update_store(&self, store: PlatformStore) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let version = self.get_store_version(store).await.unwrap_or_else(|_| DEFAULT_VERSION.to_string());
+        let current = self.get_current_version(store)?;
 
-            info_with_fields!("update_store_version", platform = platform.as_ref(), version = version.as_str());
-            updates.push((platform.as_ref().to_string(), version));
+        if current.as_ref() != Some(&version) {
+            self.set_release(Release::new(store, version.clone(), false))?;
         }
-        Ok(updates)
-    }
 
-    async fn update_app_store_version(&self) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let version = self.get_app_store_version().await?;
-        self.set_release(Release::new(PlatformStore::AppStore, version.clone(), false))?;
         Ok(version)
     }
 
-    async fn update_apk_version(&self) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let version = self.get_github_apk_version().await?;
-        self.set_release(Release::new(PlatformStore::ApkUniversal, version.clone(), false))?;
+    fn get_current_version(&self, store: PlatformStore) -> Result<Option<String>, Box<dyn Error + Send + Sync>> {
+        let releases = self.database.releases()?.get_releases()?;
+        let version = releases.into_iter().find(|r| r.platform_store.0 == store).map(|r| r.version);
         Ok(version)
     }
 
-    async fn update_samsung_store_version(&self) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let url = "https://galaxystore.samsung.com/api/detail/com.gemwallet.android";
-        let response = reqwest::get(url).await?.json::<SamsungStoreDetail>().await?;
-        let version = response.details.version.clone();
-        self.set_release(Release::new(PlatformStore::SamsungStore, version.clone(), false))?;
-        Ok(version)
+    async fn get_store_version(&self, store: PlatformStore) -> Result<String, Box<dyn Error + Send + Sync>> {
+        match store {
+            PlatformStore::AppStore => self.get_app_store_version().await,
+            PlatformStore::ApkUniversal => self.get_github_version().await,
+            PlatformStore::SamsungStore => self.get_samsung_version().await,
+            _ => Ok(DEFAULT_VERSION.to_string()),
+        }
     }
 
-    fn set_release(&self, release: Release) -> Result<Release, Box<dyn Error + Send + Sync>> {
-        let releases = storage::models::ReleaseRow::from_primitive(release.clone()).clone();
-        let _ = self.database.releases()?.update_release(releases)?;
-        Ok(release)
+    fn set_release(&self, release: Release) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let row = storage::models::ReleaseRow::from_primitive(release);
+        self.database.releases()?.update_release(row)?;
+        Ok(())
     }
 
     async fn get_app_store_version(&self) -> Result<String, Box<dyn Error + Send + Sync>> {
         let url = "https://itunes.apple.com/lookup?bundleId=com.gemwallet.ios";
         let response = reqwest::get(url).await?.json::<ITunesLookupResponse>().await?;
-        let version = response
+        response
             .results
             .first()
-            .map(|result| result.version.to_string())
-            .ok_or_else(|| "app store lookup returned no results".to_string())?;
-        Ok(version)
+            .map(|r| r.version.clone())
+            .ok_or_else(|| "no results".into())
     }
 
-    async fn get_github_apk_version(&self) -> Result<String, Box<dyn Error + Send + Sync>> {
+    async fn get_github_version(&self) -> Result<String, Box<dyn Error + Send + Sync>> {
         let url = "https://api.github.com/repos/gemwalletcom/gem-android/releases";
-        let client = reqwest::Client::new();
-        let response = client.get(url).send().await?.json::<Vec<GitHubRepository>>().await?;
-        let results = response
+        let response = reqwest::Client::new().get(url).send().await?.json::<Vec<GitHubRepository>>().await?;
+        response
             .into_iter()
-            .filter(|x| !x.draft && !x.prerelease && x.assets.clone().into_iter().any(|x| x.name.contains("gem_wallet_universal_")))
-            .collect::<Vec<_>>();
-        let version = results
-            .first()
-            .map(|result| result.name.clone())
-            .ok_or_else(|| "github releases list is empty".to_string())?;
-        Ok(version)
+            .find(|x| !x.draft && !x.prerelease && x.assets.iter().any(|a| a.name.contains("gem_wallet_universal_")))
+            .map(|r| r.name)
+            .ok_or_else(|| "no releases".into())
+    }
+
+    async fn get_samsung_version(&self) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let url = "https://galaxystore.samsung.com/api/detail/com.gemwallet.android";
+        let response = reqwest::get(url).await?.json::<SamsungStoreDetail>().await?;
+        Ok(response.details.version)
     }
 }

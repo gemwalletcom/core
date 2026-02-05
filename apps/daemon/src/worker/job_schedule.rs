@@ -30,7 +30,7 @@ impl CacherJobTracker {
 
     async fn persist_status(&self, job_name: &str, status: &JobStatus) -> Result<(), JobError> {
         let cache_key = CacheKey::JobStatus(&self.job_key(job_name));
-        self.cacher.set_cached(cache_key, status).await.map_err(|err| err)
+        self.cacher.set_cached(cache_key, status).await
     }
 }
 
