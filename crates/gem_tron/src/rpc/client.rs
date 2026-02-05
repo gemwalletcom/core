@@ -6,8 +6,8 @@ use std::{error::Error, str::FromStr};
 
 use crate::address::TronAddress;
 use crate::models::{
-    Block, BlockTransactions, BlockTransactionsInfo, ChainParameter, ChainParametersResponse, Transaction, TransactionReceiptData, TriggerConstantContractRequest,
-    TriggerConstantContractResponse, TronTransactionBroadcast, WitnessesList,
+    Block, BlockTransactions, BlockTransactionsInfo, ChainParameter, ChainParametersResponse, Transaction, TransactionReceiptData, TriggerConstantContractDataRequest,
+    TriggerConstantContractRequest, TriggerConstantContractResponse, TronTransactionBroadcast, WitnessesList,
 };
 use crate::models::{TronAccount, TronAccountRequest, TronAccountUsage, TronBlock, TronEmptyAccount, TronReward, TronSmartContractCall, TronSmartContractResult};
 use crate::rpc::constants::{DECIMALS_SELECTOR, DEFAULT_OWNER_ADDRESS, NAME_SELECTOR, SYMBOL_SELECTOR};
@@ -16,7 +16,6 @@ use alloy_primitives::Address as AlloyAddress;
 use alloy_sol_types::SolCall;
 use gem_client::Client;
 use gem_evm::contracts::erc20::{decode_abi_string, decode_abi_uint8};
-use serde_json::Value;
 
 #[derive(Clone)]
 pub struct TronClient<C: Client> {
@@ -127,24 +126,38 @@ impl<C: Client> TronClient<C> {
             visible: true,
         };
 
-        let response: Value = self.client.post("/wallet/triggerconstantcontract", &request_payload, None).await?;
-
-        if let Some(result_obj) = response.get("result") {
-            let is_success = result_obj.get("result").and_then(|value| value.as_bool()).unwrap_or(false);
-            if !is_success {
-                let code = result_obj.get("code").and_then(|v| v.as_str()).unwrap_or_default();
-                let message_hex = result_obj.get("message").and_then(|v| v.as_str()).unwrap_or_default();
-                let message = hex::decode(message_hex)
-                    .ok()
-                    .and_then(|bytes| String::from_utf8(bytes).ok())
-                    .unwrap_or_else(|| message_hex.to_string());
-                return Err(format!("Estimate energy failed. Code: {}, Message: {}", code, message).into());
-            }
+        let response = self.trigger_constant_contract_request(&request_payload).await?;
+        if let Some(error) = response.check_error() {
+            return Err(Box::new(error));
         }
+        let energy_used = response.energy_used;
+        let energy_penalty = response.energy_penalty.unwrap_or_default();
+        Ok(energy_used + energy_penalty)
+    }
 
-        let energy_used = response.get("energy_used").and_then(|value| value.as_u64()).unwrap_or_default();
-        let energy_penalty = response.get("energy_penalty").and_then(|value| value.as_u64()).unwrap_or_default();
+    pub async fn estimate_energy_with_data(
+        &self,
+        owner_address: &str,
+        contract_address: &str,
+        data: &str,
+        fee_limit: Option<u64>,
+        call_value: Option<u64>,
+    ) -> Result<u64, Box<dyn Error + Send + Sync>> {
+        let request_payload = TriggerConstantContractDataRequest {
+            owner_address: owner_address.to_string(),
+            contract_address: contract_address.to_string(),
+            data: data.to_string(),
+            fee_limit,
+            call_value,
+            visible: true,
+        };
 
+        let response: TriggerConstantContractResponse = self.client.post("/wallet/triggerconstantcontract", &request_payload, None).await?;
+        if let Some(error) = response.check_error() {
+            return Err(Box::new(error));
+        }
+        let energy_used = response.energy_used;
+        let energy_penalty = response.energy_penalty.unwrap_or_default();
         Ok(energy_used + energy_penalty)
     }
 }
