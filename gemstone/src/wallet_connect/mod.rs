@@ -8,7 +8,11 @@ fn current_timestamp() -> i64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0)
 }
 
-use crate::{GemstoneError, message::sign_type::{SignDigestType, SignMessage}, siwe::SiweMessage};
+use crate::{
+    GemstoneError,
+    message::sign_type::{SignDigestType, SignMessage},
+    siwe::SiweMessage,
+};
 
 pub mod actions;
 pub mod handler_traits;
@@ -40,8 +44,8 @@ mod tests {
     use crate::message::signer::MessageSigner;
     use gem_tron::TronChainSigner;
     use primitives::{
-        Asset, ChainSigner, GasPriceType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransferDataExtra, TransferDataOutputAction,
-        TransferDataOutputType, TronStakeData, WalletConnectionSessionAppMetadata,
+        Asset, ChainSigner, GasPriceType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType,
+        TronStakeData, WalletConnectionSessionAppMetadata,
     };
 
     fn make_request(method: &str, params: &str, chain_id: Option<&str>) -> WalletConnectRequest {
@@ -180,19 +184,10 @@ mod tests {
     fn parse_tron_sign_transaction_and_sign() {
         let wallet_connect = WalletConnect::new();
         let params = include_str!("./test/tron_sign_transaction.json");
-        let request = make_request(
-            "tron_signTransaction",
-            &serde_json::to_string(&params.trim()).unwrap(),
-            Some("tron:0x2b6653dc"),
-        );
+        let request = make_request("tron_signTransaction", &serde_json::to_string(&params.trim()).unwrap(), Some("tron:0x2b6653dc"));
 
         let action = WalletConnectRequestHandler::parse_request(request).unwrap();
-        let WalletConnectAction::SignTransaction {
-            chain,
-            transaction_type,
-            data,
-        } = action
-        else {
+        let WalletConnectAction::SignTransaction { chain, transaction_type, data } = action else {
             panic!("Expected SignTransaction action");
         };
 
@@ -267,19 +262,10 @@ mod tests {
     #[test]
     fn parse_tron_send_transaction() {
         let params = include_str!("./test/tron_send_transaction.json");
-        let request = make_request(
-            "tron_sendTransaction",
-            &serde_json::to_string(&params.trim()).unwrap(),
-            Some("tron:0x2b6653dc"),
-        );
+        let request = make_request("tron_sendTransaction", &serde_json::to_string(&params.trim()).unwrap(), Some("tron:0x2b6653dc"));
 
         let action = WalletConnectRequestHandler::parse_request(request).unwrap();
-        let WalletConnectAction::SendTransaction {
-            chain,
-            transaction_type,
-            data,
-        } = action
-        else {
+        let WalletConnectAction::SendTransaction { chain, transaction_type, data } = action else {
             panic!("Expected SendTransaction action");
         };
 
@@ -491,11 +477,7 @@ impl WalletConnect {
                 Ok(WalletConnectTransaction::Ton { messages, output_type })
             }
             WalletConnectTransactionType::Bitcoin { output_type } => Ok(WalletConnectTransaction::Bitcoin { data, output_type }),
-            WalletConnectTransactionType::Tron { output_type } => {
-                let json: serde_json::Value = serde_json::from_str(&data)?;
-                let _ = json;
-                Ok(WalletConnectTransaction::Tron { data, output_type })
-            }
+            WalletConnectTransactionType::Tron { output_type } => Ok(WalletConnectTransaction::Tron { data, output_type }),
         }
     }
 }
