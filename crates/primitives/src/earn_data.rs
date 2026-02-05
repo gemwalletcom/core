@@ -4,6 +4,7 @@ use typeshare::typeshare;
 
 use crate::swap::ApprovalData;
 
+#[deprecated(since = "1.0.0", note = "Use transaction-specific data instead")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]

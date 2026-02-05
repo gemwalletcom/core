@@ -31,15 +31,15 @@ impl GemYielder {
         self.yielder.yields_for_asset_with_apy(asset_id).await.map_err(Into::into)
     }
 
-    pub async fn deposit(&self, provider: GemEarnProvider, asset: AssetId, wallet_address: String, value: String) -> Result<GemYieldTransaction, GemstoneError> {
+    pub async fn deposit(&self, provider: GemYieldProvider, asset: AssetId, wallet_address: String, value: String) -> Result<GemYieldTransaction, GemstoneError> {
         self.yielder.deposit(provider, &asset, &wallet_address, &value).await.map_err(Into::into)
     }
 
-    pub async fn withdraw(&self, provider: GemEarnProvider, asset: AssetId, wallet_address: String, value: String) -> Result<GemYieldTransaction, GemstoneError> {
+    pub async fn withdraw(&self, provider: GemYieldProvider, asset: AssetId, wallet_address: String, value: String) -> Result<GemYieldTransaction, GemstoneError> {
         self.yielder.withdraw(provider, &asset, &wallet_address, &value).await.map_err(Into::into)
     }
 
-    pub async fn positions(&self, provider: GemEarnProvider, asset: AssetId, wallet_address: String) -> Result<GemEarnPosition, GemstoneError> {
+    pub async fn positions(&self, provider: GemYieldProvider, asset: AssetId, wallet_address: String) -> Result<GemEarnPositionBase, GemstoneError> {
         let request = YieldDetailsRequest { asset_id: asset, wallet_address };
         self.yielder.positions(provider, &request).await.map_err(Into::into)
     }
@@ -47,7 +47,7 @@ impl GemYielder {
     pub async fn build_transaction(
         &self,
         action: GemEarnAction,
-        provider: GemEarnProvider,
+        provider: GemYieldProvider,
         asset: AssetId,
         wallet_address: String,
         value: String,
