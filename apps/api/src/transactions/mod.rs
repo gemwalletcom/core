@@ -5,6 +5,7 @@ pub use client::TransactionsClient;
 use primitives::{Transaction, TransactionsResponse};
 use rocket::{State, get, tokio::sync::Mutex};
 
+// TODO: Remove once all clients migrate to /v1/devices/<device_id>/wallets/<wallet_id>/transactions
 #[get("/transactions/device/<device_id>?<wallet_index>&<asset_id>&<from_timestamp>")]
 pub async fn get_transactions_by_device_id_v1(
     device_id: DeviceIdParam,
@@ -21,6 +22,7 @@ pub async fn get_transactions_by_device_id_v1(
         .into())
 }
 
+// TODO: Remove once all clients migrate to /v1/devices/<device_id>/wallets/<wallet_id>/transactions
 #[get("/transactions/device/<device_id>?<wallet_index>&<asset_id>&<from_timestamp>")]
 pub async fn get_transactions_by_device_id_v2(
     device_id: DeviceIdParam,

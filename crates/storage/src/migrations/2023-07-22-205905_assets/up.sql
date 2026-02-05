@@ -21,6 +21,7 @@ CREATE TABLE assets (
     staking_apr float,
     is_earnable boolean NOT NULL default false,
     earn_apr float,
+    has_image boolean NOT NULL default false,
 
     UNIQUE(id)
 );
@@ -68,3 +69,11 @@ CREATE INDEX assets_addresses_asset_id_idx ON assets_addresses (asset_id);
 CREATE INDEX assets_addresses_address_idx ON assets_addresses (address);
 
 SELECT diesel_manage_updated_at('assets_addresses');
+
+CREATE TABLE assets_usage_ranks (
+    asset_id VARCHAR(128) PRIMARY KEY REFERENCES assets (id) ON DELETE CASCADE,
+    usage_rank INTEGER NOT NULL,
+    updated_at timestamp NOT NULL default current_timestamp
+);
+
+SELECT diesel_manage_updated_at('assets_usage_ranks');

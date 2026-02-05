@@ -29,6 +29,13 @@ pub struct PerpetualBasic {
     pub provider: PerpetualProvider,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable")]
+pub struct PerpetualSearchData {
+    pub perpetual: Perpetual,
+    pub asset: Asset,
+}
+
 impl Perpetual {
     pub fn as_basic(&self) -> PerpetualBasic {
         PerpetualBasic {

@@ -62,7 +62,7 @@ pub fn map_position(position: Position, address: String, orders: &[OpenOrder]) -
     let (take_profit, stop_loss) = map_tp_sl_from_orders(orders, &position.coin);
 
     PerpetualPosition {
-        id: format!("{}_{}", address, position.coin.clone()),
+        id: format!("{}_{}", address.to_lowercase(), position.coin.clone()),
         perpetual_id,
         asset_id,
         size: size.abs(),
@@ -334,6 +334,7 @@ mod tests {
         let candlesticks = vec![
             Candlestick {
                 t: 1640995200000u64, // 2022-01-01 00:00:00 UTC
+                i: "1h".to_string(),
                 o: "50000.0".to_string(),
                 h: "51000.0".to_string(),
                 l: "49000.0".to_string(),
@@ -342,6 +343,7 @@ mod tests {
             },
             Candlestick {
                 t: 1640998800000u64, // 2022-01-01 01:00:00 UTC
+                i: "1h".to_string(),
                 o: "50500.0".to_string(),
                 h: "52000.0".to_string(),
                 l: "50000.0".to_string(),

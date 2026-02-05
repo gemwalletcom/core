@@ -47,6 +47,7 @@ pub struct NewTransactionRow {
     pub utxo_outputs: Option<serde_json::Value>,
     pub fee_asset_id: String,
     pub metadata: Option<serde_json::Value>,
+    pub created_at: NaiveDateTime,
 }
 
 impl TransactionRow {
@@ -136,6 +137,7 @@ impl NewTransactionRow {
             utxo_inputs,
             utxo_outputs,
             metadata,
+            created_at: transaction.created_at.naive_utc(),
         }
     }
 }

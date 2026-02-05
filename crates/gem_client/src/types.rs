@@ -8,12 +8,26 @@ pub struct Response {
     pub data: Vec<u8>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum ClientError {
     Network(String),
     Timeout,
     Http { status: u16, body: Vec<u8> },
     Serialization(String),
+}
+
+impl fmt::Debug for ClientError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Network(msg) => f.debug_tuple("Network").field(msg).finish(),
+            Self::Timeout => write!(f, "Timeout"),
+            Self::Http { status, body } => {
+                let body_str = String::from_utf8_lossy(&body[..body.len().min(256)]);
+                f.debug_struct("Http").field("status", status).field("body", &body_str).finish()
+            }
+            Self::Serialization(msg) => f.debug_tuple("Serialization").field(msg).finish(),
+        }
+    }
 }
 
 pub fn decode_json_byte_array(values: Vec<Value>) -> Result<Vec<u8>, ClientError> {

@@ -25,8 +25,6 @@ pub enum QueueName {
     FetchNFTCollection,
     // Fetch and store nft collection assets
     FetchNFTCollectionAssets,
-    // Store assets associations to address_assets table
-    StoreAssetsAssociations,
     // Fetch address token balances from providers and store to db
     FetchTokenAssociations,
     // Fetch address coin balances from providers and store to db
@@ -48,6 +46,7 @@ pub enum QueueName {
     // Rewards redemptions
     RewardsRedemptions,
     NotificationsInApp,
+    FetchPrices,
 }
 
 impl QueueName {
@@ -57,6 +56,7 @@ impl QueueName {
 
     pub fn chain_queues() -> Vec<QueueName> {
         vec![
+            QueueName::StoreTransactions,
             QueueName::FetchBlocks,
             QueueName::FetchTokenAssociations,
             QueueName::FetchCoinAssociations,
@@ -77,7 +77,6 @@ impl fmt::Display for QueueName {
             QueueName::FetchBlocks => write!(f, "fetch_blocks"),
             QueueName::FetchNFTCollection => write!(f, "fetch_nft_collection"),
             QueueName::FetchNFTCollectionAssets => write!(f, "fetch_nft_collection_assets"),
-            QueueName::StoreAssetsAssociations => write!(f, "store_assets_associations"),
             QueueName::FetchTokenAssociations => write!(f, "fetch_token_associations"),
             QueueName::FetchCoinAssociations => write!(f, "fetch_coin_associations"),
             QueueName::FetchAddressTransactions => write!(f, "fetch_address_transactions"),
@@ -92,6 +91,7 @@ impl fmt::Display for QueueName {
             QueueName::StorePrices => write!(f, "store_prices"),
             QueueName::StoreCharts => write!(f, "store_charts"),
             QueueName::NotificationsInApp => write!(f, "notifications_in_app"),
+            QueueName::FetchPrices => write!(f, "fetch_prices"),
         }
     }
 }

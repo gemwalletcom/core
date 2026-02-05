@@ -1,10 +1,16 @@
+use std::collections::HashMap;
+
 use chrono::{DateTime, Utc};
+use gem_hypercore::models::order::OpenOrder;
+use gem_hypercore::models::websocket::{HyperliquidSocketMessage, PositionsDiff};
 use primitives::{
     Asset, AssetId, PerpetualDirection, PerpetualMarginType, PerpetualOrderType, PerpetualPosition, PerpetualProvider, PerpetualTriggerOrder,
     chart::{ChartCandleStick, ChartDateValue},
     perpetual::{Perpetual, PerpetualBalance, PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
 };
 
+pub type GemHyperliquidOpenOrder = OpenOrder;
+pub type GemPositionsDiff = PositionsDiff;
 pub type GemPerpetualMarginType = PerpetualMarginType;
 pub type GemPerpetualOrderType = PerpetualOrderType;
 pub type GemPerpetualPositionsSummary = PerpetualPositionsSummary;
@@ -99,6 +105,7 @@ pub struct GemPerpetualMetadata {
 #[uniffi::remote(Record)]
 pub struct GemChartCandleStick {
     pub date: DateTime<Utc>,
+    pub interval: String,
     pub open: f64,
     pub high: f64,
     pub low: f64,
@@ -110,4 +117,32 @@ pub struct GemChartCandleStick {
 pub struct GemChartDateValue {
     pub date: DateTime<Utc>,
     pub value: f64,
+}
+
+#[uniffi::remote(Record)]
+pub struct GemPositionsDiff {
+    pub delete_position_ids: Vec<String>,
+    pub positions: Vec<PerpetualPosition>,
+}
+
+#[uniffi::remote(Record)]
+pub struct GemHyperliquidOpenOrder {
+    pub coin: String,
+    pub oid: u64,
+    pub trigger_px: Option<f64>,
+    pub limit_px: Option<f64>,
+    pub is_position_tpsl: bool,
+    pub order_type: String,
+}
+
+pub type GemHyperliquidSocketMessage = HyperliquidSocketMessage;
+
+#[uniffi::remote(Enum)]
+pub enum GemHyperliquidSocketMessage {
+    ClearinghouseState { balance: PerpetualBalance, positions: Vec<PerpetualPosition> },
+    OpenOrders { orders: Vec<GemHyperliquidOpenOrder> },
+    Candle { candle: ChartCandleStick },
+    AllMids { prices: HashMap<String, f64> },
+    SubscriptionResponse { subscription_type: String },
+    Unknown,
 }

@@ -4,8 +4,9 @@ use num_bigint::BigInt;
 
 use crate::models::ChainParameter;
 use crate::models::TronAccountUsage;
+use crate::models::account::TronFrozen;
 use crate::rpc::constants::{DEFAULT_BANDWIDTH_BYTES, GET_CREATE_ACCOUNT_FEE, GET_CREATE_NEW_ACCOUNT_FEE_IN_SYSTEM_CONTRACT, GET_ENERGY_FEE, GET_TRANSACTION_FEE};
-use primitives::StakeType;
+use primitives::{Resource, StakeType, TronUnfreeze};
 
 const FEE_LIMIT_BUFFER_PERCENT: u64 = 20;
 
@@ -25,8 +26,8 @@ pub fn calculate_transfer_fee_rate(chain_parameters: &[ChainParameter], account_
 
         Ok(total_fee)
     } else {
-        let missing_bandwidth = account_usage.missing_bandwidth(DEFAULT_BANDWIDTH_BYTES);
-        Ok(BigInt::from(missing_bandwidth) * BigInt::from(bandwidth_price))
+        let fee = bandwidth_fee(account_usage, DEFAULT_BANDWIDTH_BYTES, bandwidth_price as u64);
+        Ok(BigInt::from(fee))
     }
 }
 
@@ -43,9 +44,9 @@ pub fn calculate_transfer_token_fee_rate(
 }
 
 pub fn calculate_stake_fee_rate(chain_parameters: &[ChainParameter], account_usage: &TronAccountUsage, _stake_type: &StakeType) -> Result<BigInt, Box<dyn Error + Send + Sync>> {
-    let bandwidth_price = get_chain_parameter_value(chain_parameters, GET_TRANSACTION_FEE)?;
-    let missing_bandwidth = account_usage.missing_bandwidth(DEFAULT_BANDWIDTH_BYTES);
-    Ok(BigInt::from(missing_bandwidth) * BigInt::from(bandwidth_price))
+    let bandwidth_price = get_chain_parameter_value(chain_parameters, GET_TRANSACTION_FEE)? as u64;
+    let fee = bandwidth_fee(account_usage, DEFAULT_BANDWIDTH_BYTES, bandwidth_price);
+    Ok(BigInt::from(fee))
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -58,16 +59,19 @@ pub struct TokenTransferFee {
 pub fn calculate_token_transfer_fee(account_usage: &TronAccountUsage, estimated_energy: u64, energy_price: u64, bandwidth_price: u64) -> TokenTransferFee {
     let energy_with_buffer = apply_buffer(estimated_energy, FEE_LIMIT_BUFFER_PERCENT);
     let chargeable_energy = account_usage.missing_energy(energy_with_buffer);
-    let missing_bandwidth = account_usage.missing_bandwidth(DEFAULT_BANDWIDTH_BYTES);
 
     let energy_fee = chargeable_energy * energy_price;
-    let bandwidth_fee = missing_bandwidth * bandwidth_price;
+    let bandwidth_fee = bandwidth_fee(account_usage, DEFAULT_BANDWIDTH_BYTES, bandwidth_price);
 
     TokenTransferFee {
         fee: energy_fee + bandwidth_fee,
         fee_limit: energy_with_buffer * energy_price,
         energy_price,
     }
+}
+
+fn bandwidth_fee(account_usage: &TronAccountUsage, required: u64, price: u64) -> u64 {
+    if account_usage.available_bandwidth() >= required { 0 } else { required * price }
 }
 
 fn apply_buffer(value: u64, percent: u64) -> u64 {
@@ -80,6 +84,30 @@ fn get_chain_parameter_value(parameters: &[ChainParameter], key: &str) -> Result
         .find(|param| param.key == key)
         .and_then(|param| param.value)
         .ok_or_else(|| format!("Missing chain parameter: {}", key).into())
+}
+
+pub fn calculate_unfreeze_amounts(frozen: Option<&Vec<TronFrozen>>, total: u64) -> Vec<TronUnfreeze> {
+    frozen
+        .map(|frozen| {
+            frozen
+                .iter()
+                .filter(|f| f.amount > 0)
+                .scan(total, |remaining, f| {
+                    (*remaining > 0).then(|| {
+                        let take = (*remaining).min(f.amount);
+                        *remaining -= take;
+                        TronUnfreeze {
+                            resource: match f.frozen_type.as_deref() {
+                                Some("ENERGY") => Resource::Energy,
+                                _ => Resource::Bandwidth,
+                            },
+                            amount: take,
+                        }
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default()
 }
 
 impl TronAccountUsage {
@@ -105,6 +133,7 @@ impl TronAccountUsage {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::account::TronFrozen;
     use primitives::Chain;
     use primitives::delegation::DelegationValidator;
 
@@ -213,7 +242,7 @@ mod tests {
         assert_eq!(calculate_transfer_fee_rate(&params, &with_bandwidth, false).unwrap(), BigInt::from(0));
 
         let without_bandwidth = account_usage(100, 0, 0);
-        let expected = BigInt::from((DEFAULT_BANDWIDTH_BYTES - 100) * 1000);
+        let expected = BigInt::from(DEFAULT_BANDWIDTH_BYTES * 1000);
         assert_eq!(calculate_transfer_fee_rate(&params, &without_bandwidth, false).unwrap(), expected);
     }
 
@@ -254,7 +283,7 @@ mod tests {
         assert_eq!(calculate_stake_fee_rate(&params, &with_bandwidth, &stake_type).unwrap(), BigInt::from(0));
 
         let without_bandwidth = account_usage(100, 0, 0);
-        let expected = BigInt::from((DEFAULT_BANDWIDTH_BYTES - 100) * 1000);
+        let expected = BigInt::from(DEFAULT_BANDWIDTH_BYTES * 1000);
         assert_eq!(calculate_stake_fee_rate(&params, &without_bandwidth, &stake_type).unwrap(), expected);
     }
 
@@ -265,5 +294,58 @@ mod tests {
         assert_eq!(get_chain_parameter_value(&params, GET_ENERGY_FEE).unwrap(), 420);
         assert_eq!(get_chain_parameter_value(&params, GET_TRANSACTION_FEE).unwrap(), 1000);
         assert!(get_chain_parameter_value(&params, "missing").is_err());
+    }
+
+    #[test]
+    fn test_bandwidth_fee() {
+        assert_eq!(bandwidth_fee(&account_usage(DEFAULT_BANDWIDTH_BYTES, 0, 0), DEFAULT_BANDWIDTH_BYTES, 1000), 0);
+        assert_eq!(bandwidth_fee(&account_usage(100, 200, 0), DEFAULT_BANDWIDTH_BYTES, 1000), 0);
+        assert_eq!(bandwidth_fee(&account_usage(0, 0, 0), DEFAULT_BANDWIDTH_BYTES, 1000), DEFAULT_BANDWIDTH_BYTES * 1000);
+        assert_eq!(bandwidth_fee(&account_usage(76, 0, 0), DEFAULT_BANDWIDTH_BYTES, 1000), DEFAULT_BANDWIDTH_BYTES * 1000);
+    }
+
+    #[test]
+    fn test_calculate_token_transfer_fee_partial_bandwidth() {
+        let fee = calculate_token_transfer_fee(&account_usage(76, 0, 0), 64285, 420, 1000);
+
+        assert_eq!(fee.fee, 77142 * 420 + DEFAULT_BANDWIDTH_BYTES * 1000);
+        assert_eq!(fee.fee_limit, 77142 * 420);
+    }
+
+    #[test]
+    fn test_calculate_unfreeze_amounts() {
+        let frozen = vec![
+            TronFrozen {
+                frozen_type: Some("ENERGY".to_string()),
+                amount: 100,
+            },
+            TronFrozen {
+                frozen_type: Some("BANDWIDTH".to_string()),
+                amount: 50,
+            },
+        ];
+
+        assert_eq!(
+            calculate_unfreeze_amounts(Some(&frozen), 120),
+            vec![
+                TronUnfreeze {
+                    resource: Resource::Energy,
+                    amount: 100
+                },
+                TronUnfreeze {
+                    resource: Resource::Bandwidth,
+                    amount: 20
+                },
+            ]
+        );
+        assert_eq!(
+            calculate_unfreeze_amounts(Some(&frozen), 50),
+            vec![TronUnfreeze {
+                resource: Resource::Energy,
+                amount: 50
+            },]
+        );
+        assert!(calculate_unfreeze_amounts(None, 100).is_empty());
+        assert!(calculate_unfreeze_amounts(Some(&frozen), 0).is_empty());
     }
 }

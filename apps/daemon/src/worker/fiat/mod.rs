@@ -1,65 +1,81 @@
+use crate::model::WorkerService;
+use crate::worker::context::WorkerContext;
+use crate::worker::jobs::WorkerJob;
+use crate::worker::plan::JobPlanBuilder;
 use fiat::FiatProviderFactory;
 use fiat_assets_updater::FiatAssetsUpdater;
-use job_runner::run_job;
-use primitives::ConfigKey;
-use settings::Settings;
+use job_runner::{JobHandle, ShutdownReceiver};
+use primitives::FiatProviderName;
 use std::error::Error;
-use std::future::Future;
-use std::pin::Pin;
-use std::sync::Arc;
 use storage::ConfigCacher;
 
 mod fiat_assets_updater;
-pub mod fiat_webhook_consumer;
 
-pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = ()> + Send>>>, Box<dyn Error + Send + Sync>> {
-    let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
+pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
+    let runtime = ctx.runtime();
+    let database = ctx.database();
+    let settings = ctx.settings();
     let config = ConfigCacher::new(database.clone());
+    let provider_names: Vec<FiatProviderName> = FiatProviderFactory::new_providers((*settings).clone())
+        .into_iter()
+        .map(|provider| provider.name())
+        .collect();
 
-    let update_fiat_assets_job = run_job("Update fiat assets", config.get_duration(ConfigKey::FiatTimerUpdateAssets)?, {
-        let settings = Arc::new(settings.clone());
-        let database = database.clone();
-        move || {
-            let providers = FiatProviderFactory::new_providers((*settings).clone());
-            let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
-            async move { fiat_assets_updater.update_fiat_assets("fiat_update_assets").await }
-        }
-    });
-
-    let update_fiat_provider_countries_job = run_job("Update providers countries", config.get_duration(ConfigKey::FiatTimerUpdateProviderCountries)?, {
-        let settings = Arc::new(settings.clone());
-        let database = database.clone();
-        move || {
-            let providers = FiatProviderFactory::new_providers((*settings).clone());
-            let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
-            async move { fiat_assets_updater.update_fiat_countries("fiat_update_countries").await }
-        }
-    });
-
-    let update_fiat_buyable_assets_job = run_job("Update fiat buyable/sellable assets", config.get_duration(ConfigKey::FiatTimerUpdateBuyableAssets)?, {
-        let settings = Arc::new(settings.clone());
-        let database = database.clone();
-        move || {
-            let providers = FiatProviderFactory::new_providers((*settings).clone());
-            let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
-            async move { fiat_assets_updater.update_buyable_sellable_assets().await }
-        }
-    });
-
-    let update_trending_fiat_assets_job = run_job("Update trending fiat assets", config.get_duration(ConfigKey::FiatTimerUpdateTrending)?, {
-        let settings = Arc::new(settings.clone());
-        let database = database.clone();
-        move || {
-            let providers = FiatProviderFactory::new_providers((*settings).clone());
-            let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
-            async move { fiat_assets_updater.update_trending_fiat_assets().await }
-        }
-    });
-
-    Ok(vec![
-        Box::pin(update_fiat_assets_job),
-        Box::pin(update_fiat_provider_countries_job),
-        Box::pin(update_fiat_buyable_assets_job),
-        Box::pin(update_trending_fiat_assets_job),
-    ])
+    JobPlanBuilder::with_config(WorkerService::Fiat, runtime.plan(shutdown_rx), &config)
+        .jobs(WorkerJob::UpdateFiatAssets, provider_names.clone(), |provider_name, _| {
+            let settings = settings.clone();
+            let database = database.clone();
+            move || {
+                let settings = settings.clone();
+                let database = database.clone();
+                let provider_name = provider_name.clone();
+                async move {
+                    let providers = FiatProviderFactory::new_providers((*settings).clone());
+                    let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
+                    fiat_assets_updater.update_fiat_assets_for(provider_name).await
+                }
+            }
+        })
+        .jobs(WorkerJob::UpdateFiatProviderCountries, provider_names.clone(), |provider_name, _| {
+            let settings = settings.clone();
+            let database = database.clone();
+            move || {
+                let settings = settings.clone();
+                let database = database.clone();
+                let provider_name = provider_name.clone();
+                async move {
+                    let providers = FiatProviderFactory::new_providers((*settings).clone());
+                    let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
+                    fiat_assets_updater.update_fiat_countries_for(provider_name).await
+                }
+            }
+        })
+        .job(WorkerJob::UpdateFiatBuyableAssets, {
+            let settings = settings.clone();
+            let database = database.clone();
+            move || {
+                let providers = FiatProviderFactory::new_providers((*settings).clone());
+                let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
+                async move { fiat_assets_updater.update_buyable_assets().await }
+            }
+        })
+        .job(WorkerJob::UpdateFiatSellableAssets, {
+            let settings = settings.clone();
+            let database = database.clone();
+            move || {
+                let providers = FiatProviderFactory::new_providers((*settings).clone());
+                let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
+                async move { fiat_assets_updater.update_sellable_assets().await }
+            }
+        })
+        .job(WorkerJob::UpdateTrendingFiatAssets, {
+            let settings = settings.clone();
+            let database = database.clone();
+            move || {
+                let providers = FiatProviderFactory::new_providers((*settings).clone());
+                let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
+                async move { fiat_assets_updater.update_trending_fiat_assets().await }
+            }
+        })
+        .finish()
 }

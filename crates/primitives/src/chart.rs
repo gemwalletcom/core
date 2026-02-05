@@ -7,6 +7,7 @@ use typeshare::typeshare;
 #[serde(rename_all = "camelCase")]
 pub struct ChartCandleStick {
     pub date: DateTime<Utc>,
+    pub interval: String,
     pub open: f64,
     pub high: f64,
     pub low: f64,

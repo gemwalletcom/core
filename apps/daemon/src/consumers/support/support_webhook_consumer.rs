@@ -5,7 +5,7 @@ use gem_tracing::{error_with_fields, info_with_fields};
 use settings::Settings;
 use storage::Database;
 use streamer::consumer::MessageConsumer;
-use streamer::{StreamProducer, SupportWebhookPayload};
+use streamer::{StreamProducer, StreamProducerConfig, SupportWebhookPayload};
 
 use primitives::Device;
 use support::{ChatwootWebhookPayload, EVENT_CONVERSATION_STATUS_CHANGED, EVENT_CONVERSATION_UPDATED, EVENT_MESSAGE_CREATED, SupportClient};
@@ -17,7 +17,8 @@ pub struct SupportWebhookConsumer {
 impl SupportWebhookConsumer {
     pub async fn new(settings: &Settings) -> Result<Self, Box<dyn Error + Send + Sync>> {
         let database = Database::new(&settings.postgres.url, settings.postgres.pool);
-        let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "daemon_support_producer").await?;
+        let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+        let stream_producer = StreamProducer::new(&rabbitmq_config, "daemon_support_producer").await?;
         Ok(Self {
             support_client: SupportClient::new(database, stream_producer),
         })

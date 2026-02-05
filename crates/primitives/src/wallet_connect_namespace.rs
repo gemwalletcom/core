@@ -7,19 +7,12 @@ use strum::{AsRefStr, EnumString};
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum WalletConnectCAIP2 {
-    #[serde(rename = "eip155")]
     Eip155,
-    #[serde(rename = "solana")]
     Solana,
-    #[serde(rename = "cosmos")]
     Cosmos,
-    #[serde(rename = "algorand")]
     Algorand,
-    #[serde(rename = "sui")]
     Sui,
-    #[serde(rename = "ton")]
     Ton,
-    #[serde(rename = "bip122")]
     Bip122,
 }
 

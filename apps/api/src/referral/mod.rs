@@ -62,7 +62,11 @@ pub async fn use_referral_code(
     ip: std::net::IpAddr,
     client: &State<Mutex<RewardsClient>>,
 ) -> Result<ApiResponse<Vec<RewardEvent>>, ApiError> {
-    let events = client.lock().await.use_referral_code(&request.auth, &request.data.code, &ip.to_string()).await?;
+    let events = client
+        .lock()
+        .await
+        .use_referral_code(&request.auth.device, &request.auth.address, &request.data.code, &ip.to_string())
+        .await?;
     Ok(events.into())
 }
 

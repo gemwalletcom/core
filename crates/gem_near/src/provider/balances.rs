@@ -3,15 +3,22 @@ use chain_traits::ChainBalances;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::AssetBalance;
+use gem_jsonrpc::types::JsonRpcError;
+use primitives::{AssetBalance, Chain};
 
 use super::balances_mapper;
 use crate::rpc::client::NearClient;
 
+const ACCOUNT_NOT_FOUND_ERROR_CODE: i32 = -32000;
+
 #[async_trait]
 impl<C: Client + Clone> ChainBalances for NearClient<C> {
     async fn get_balance_coin(&self, address: String) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
-        let account = self.get_account(&address).await?;
+        let account = match self.get_account(&address).await {
+            Ok(account) => account,
+            Err(error) if is_account_missing(&error) => return Ok(AssetBalance::new_zero_balance(Chain::Near.as_asset_id())),
+            Err(error) => return Err(error.into()),
+        };
         balances_mapper::map_native_balance(&account)
     }
 
@@ -26,6 +33,10 @@ impl<C: Client + Clone> ChainBalances for NearClient<C> {
     async fn get_balance_assets(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
         Ok(vec![])
     }
+}
+
+fn is_account_missing(error: &JsonRpcError) -> bool {
+    error.code == ACCOUNT_NOT_FOUND_ERROR_CODE
 }
 
 #[cfg(all(test, feature = "chain_integration_tests"))]

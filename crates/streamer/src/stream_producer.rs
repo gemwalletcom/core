@@ -1,11 +1,30 @@
 use std::error::Error;
+use std::time::Duration;
 
+use gem_tracing::info_with_fields;
 use lapin::{BasicProperties, Channel, Connection, ConnectionProperties, ExchangeKind, options::*, publisher_confirm::Confirmation, types::FieldTable};
 
 use crate::{ExchangeName, QueueName, StreamConnection};
 
 const ROUTING_KEY_EXCHANGE_SUFFIX: &str = "_exchange";
 const MAX_QUEUE_BYTES: i64 = 1_000_000_000;
+
+#[derive(Clone)]
+pub struct StreamProducerConfig {
+    pub url: String,
+    pub retry_delay: Duration,
+    pub retry_max_delay: Duration,
+}
+
+impl StreamProducerConfig {
+    pub fn new(url: String, retry_delay: Duration, retry_max_delay: Duration) -> Self {
+        Self {
+            url,
+            retry_delay,
+            retry_max_delay,
+        }
+    }
+}
 
 fn queue_args() -> FieldTable {
     let mut args = FieldTable::default();
@@ -19,10 +38,31 @@ pub struct StreamProducer {
 }
 
 impl StreamProducer {
-    pub async fn new(url: &str, connection_name: &str) -> Result<Self, Box<dyn Error + Send + Sync>> {
-        let connection = Connection::connect(url, ConnectionProperties::default().with_connection_name(connection_name.into())).await?;
-        let channel = connection.create_channel().await?;
-        Ok(Self { channel })
+    pub async fn new(config: &StreamProducerConfig, connection_name: &str) -> Result<Self, Box<dyn Error + Send + Sync>> {
+        let options = ConnectionProperties::default().with_connection_name(connection_name.into());
+        let mut delay = config.retry_delay;
+        let mut attempt: u32 = 0;
+
+        loop {
+            attempt += 1;
+            match Connection::connect(&config.url, options.clone()).await {
+                Ok(connection) => {
+                    let channel = connection.create_channel().await?;
+                    return Ok(Self { channel });
+                }
+                Err(err) => {
+                    info_with_fields!(
+                        "rabbitmq connect retry",
+                        connection = connection_name,
+                        attempt = attempt,
+                        delay_secs = delay.as_secs(),
+                        error = format!("{err}")
+                    );
+                    tokio::time::sleep(delay).await;
+                    delay = (delay * 2).min(config.retry_max_delay);
+                }
+            }
+        }
     }
 
     pub async fn from_connection(connection: &StreamConnection) -> Result<Self, Box<dyn Error + Send + Sync>> {

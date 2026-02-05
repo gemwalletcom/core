@@ -1,28 +1,35 @@
 mod rewards_abuse_checker;
 
-use job_runner::run_job;
-use primitives::ConfigKey;
+use crate::model::WorkerService;
+use crate::worker::context::WorkerContext;
+use crate::worker::jobs::WorkerJob;
+use crate::worker::plan::JobPlanBuilder;
+use job_runner::{JobHandle, ShutdownReceiver};
 use rewards_abuse_checker::RewardsAbuseChecker;
-use settings::Settings;
 use std::error::Error;
-use std::future::Future;
-use std::pin::Pin;
 use storage::ConfigCacher;
-use streamer::StreamProducer;
+use streamer::{StreamProducer, StreamProducerConfig};
 
-pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = ()> + Send>>>, Box<dyn Error + Send + Sync>> {
-    let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
+pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
+    let runtime = ctx.runtime();
+    let database = ctx.database();
+    let settings = ctx.settings();
     let config = ConfigCacher::new(database.clone());
-    let stream_producer = StreamProducer::new(&settings.rabbitmq.url, "rewards_abuse_checker").await.unwrap();
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+    let stream_producer = StreamProducer::new(&rabbitmq_config, "check_rewards_abuse").await?;
 
-    let abuse_checker = run_job("rewards abuse checker", config.get_duration(ConfigKey::RewardsTimerAbuseChecker)?, {
-        let database = database.clone();
-        let stream_producer = stream_producer.clone();
-        move || {
-            let checker = RewardsAbuseChecker::new(database.clone(), stream_producer.clone());
-            async move { checker.check().await }
-        }
-    });
-
-    Ok(vec![Box::pin(abuse_checker)])
+    JobPlanBuilder::with_config(WorkerService::Rewards, runtime.plan(shutdown_rx), &config)
+        .job(WorkerJob::CheckRewardsAbuse, {
+            let database = database.clone();
+            let stream_producer = stream_producer.clone();
+            move || {
+                let database = database.clone();
+                let stream_producer = stream_producer.clone();
+                async move {
+                    let checker = RewardsAbuseChecker::new(database, stream_producer);
+                    checker.check().await
+                }
+            }
+        })
+        .finish()
 }

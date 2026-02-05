@@ -28,12 +28,7 @@ impl MessageConsumer<NotificationsPayload, usize> for NotificationsConsumer {
         let success = &result.response.success;
         let logs = &result.response.logs;
 
-        info_with_fields!(
-            "gorush response",
-            counts = counts,
-            success = success.as_str(),
-            logs = format!("{:?}", logs)
-        );
+        info_with_fields!("gorush response", counts = counts, success = success.as_str(), logs = format!("{:?}", logs));
 
         let failures = result.failures();
 

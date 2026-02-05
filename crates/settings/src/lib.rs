@@ -68,6 +68,10 @@ pub struct Postgres {
 pub struct RabbitMQ {
     pub url: String,
     pub prefetch: u16,
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub retry_delay: Duration,
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub retry_max_delay: Duration,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -199,6 +203,7 @@ pub struct UD {
 #[allow(unused)]
 pub struct Metrics {
     pub path: String,
+    pub redis: Redis,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -275,15 +280,24 @@ pub enum ChainURLType {
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
-pub struct Parser {
+pub struct Shutdown {
     #[serde(deserialize_with = "duration::deserialize")]
     pub timeout: Duration,
 }
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
+pub struct Parser {
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub timeout: Duration,
+    pub shutdown: Shutdown,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
 pub struct Daemon {
     pub service: String,
+    pub shutdown: Shutdown,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -292,6 +306,7 @@ pub struct Consumer {
     pub error: ConsumerError,
     #[serde(default, deserialize_with = "duration::deserialize")]
     pub delay: Duration,
+    pub shutdown: Shutdown,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -306,6 +321,15 @@ pub struct ConsumerError {
 #[allow(unused)]
 pub struct API {
     pub service: String,
+    pub auth: Auth,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct Auth {
+    pub enabled: bool,
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub tolerance: Duration,
 }
 
 #[derive(Debug, Deserialize, Clone)]

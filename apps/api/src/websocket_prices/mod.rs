@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use pricer::PriceClient;
 use rocket::State;
 use rocket::http::Status;
 use rocket::tokio::sync::Mutex;
@@ -9,7 +10,6 @@ mod client;
 mod stream;
 
 pub use client::{PriceObserverClient, PriceObserverConfig};
-use pricer::PriceClient;
 use stream::Stream;
 
 #[rocket::get("/prices")]

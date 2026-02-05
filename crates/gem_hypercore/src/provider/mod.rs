@@ -18,6 +18,7 @@ pub mod transaction_state;
 pub mod transaction_state_mapper;
 pub mod transactions;
 pub mod transactions_mapper;
+pub mod websocket_mapper;
 
 use crate::rpc::client::HyperCoreClient;
 

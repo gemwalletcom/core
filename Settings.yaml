@@ -9,6 +9,8 @@ meilisearch:
 rabbitmq:
   url: "amqp://username:password@localhost:5672"
   prefetch: 50
+  retry_delay: 1s
+  retry_max_delay: 30s
 coingecko:
   key:
     secret: ""
@@ -83,6 +85,8 @@ name:
 
 metrics:
   path: /metrics
+  redis:
+    url: "redis://default:@localhost:6379/1?protocol=resp3"
 chains:
   solana:
     url: https://solana-rpc.publicnode.com
@@ -222,6 +226,8 @@ scan:
 
 parser:
   timeout: 1s
+  shutdown:
+    timeout: 15s
 
 pusher:
   url: "http://localhost:8088"
@@ -230,15 +236,22 @@ pusher:
 
 daemon:
   service: ""
+  shutdown:
+    timeout: 15s
 
 consumer:
   error:
     timeout: 0s
     skip: true
   delay: 0s
+  shutdown:
+    timeout: 15s
 
 api:
   service: ""
+  auth:
+    enabled: true
+    tolerance: 5m
 
 ankr:
   key:

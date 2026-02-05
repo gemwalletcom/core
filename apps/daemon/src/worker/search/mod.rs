@@ -2,56 +2,49 @@ mod assets_index_updater;
 mod nfts_index_updater;
 mod perpetuals_index_updater;
 
+use crate::model::WorkerService;
+use crate::worker::context::WorkerContext;
+use crate::worker::jobs::WorkerJob;
+use crate::worker::plan::JobPlanBuilder;
 use assets_index_updater::AssetsIndexUpdater;
-use job_runner::run_job;
+use job_runner::{JobHandle, ShutdownReceiver};
 use nfts_index_updater::NftsIndexUpdater;
 use perpetuals_index_updater::PerpetualsIndexUpdater;
-use primitives::ConfigKey;
 use search_index::SearchIndexClient;
-use settings::Settings;
 use std::error::Error;
-use std::future::Future;
-use std::pin::Pin;
 use storage::ConfigCacher;
 
-pub async fn jobs(settings: Settings) -> Result<Vec<Pin<Box<dyn Future<Output = ()> + Send>>>, Box<dyn Error + Send + Sync>> {
-    let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
+pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
+    let runtime = ctx.runtime();
+    let database = ctx.database();
+    let settings = ctx.settings();
     let search_index_client = SearchIndexClient::new(&settings.meilisearch.url, settings.meilisearch.key.as_str());
     let config = ConfigCacher::new(database.clone());
 
-    let assets_update_interval = config.get_duration(ConfigKey::SearchAssetsUpdateInterval)?;
-    let perpetuals_update_interval = config.get_duration(ConfigKey::SearchPerpetualsUpdateInterval)?;
-    let nfts_update_interval = config.get_duration(ConfigKey::SearchNftsUpdateInterval)?;
-
-    let assets_index_updater = run_job("Update assets index", assets_update_interval, {
-        let database = database.clone();
-        let search_index_client = search_index_client.clone();
-
-        move || {
-            let updater = AssetsIndexUpdater::new(database.clone(), &search_index_client);
-            async move { updater.update().await }
-        }
-    });
-
-    let perpetuals_index_updater = run_job("Update perpetuals index", perpetuals_update_interval, {
-        let database = database.clone();
-        let search_index_client = search_index_client.clone();
-
-        move || {
-            let updater = PerpetualsIndexUpdater::new(database.clone(), &search_index_client);
-            async move { updater.update().await }
-        }
-    });
-
-    let nfts_index_updater = run_job("Update NFTs index", nfts_update_interval, {
-        let database = database.clone();
-        let search_index_client = search_index_client.clone();
-
-        move || {
-            let updater = NftsIndexUpdater::new(database.clone(), &search_index_client);
-            async move { updater.update().await }
-        }
-    });
-
-    Ok(vec![Box::pin(assets_index_updater), Box::pin(perpetuals_index_updater), Box::pin(nfts_index_updater)])
+    JobPlanBuilder::with_config(WorkerService::Search, runtime.plan(shutdown_rx), &config)
+        .job(WorkerJob::UpdateAssetsIndex, {
+            let database = database.clone();
+            let search_index_client = search_index_client.clone();
+            move || {
+                let updater = AssetsIndexUpdater::new(database.clone(), &search_index_client);
+                async move { updater.update().await }
+            }
+        })
+        .job(WorkerJob::UpdatePerpetualsIndex, {
+            let database = database.clone();
+            let search_index_client = search_index_client.clone();
+            move || {
+                let updater = PerpetualsIndexUpdater::new(database.clone(), &search_index_client);
+                async move { updater.update().await }
+            }
+        })
+        .job(WorkerJob::UpdateNftsIndex, {
+            let database = database.clone();
+            let search_index_client = search_index_client.clone();
+            move || {
+                let updater = NftsIndexUpdater::new(database.clone(), &search_index_client);
+                async move { updater.update().await }
+            }
+        })
+        .finish()
 }

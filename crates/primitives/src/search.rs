@@ -1,4 +1,4 @@
-use crate::{AssetBasic, NFTCollection, Perpetual};
+use crate::{AssetBasic, NFTCollection, PerpetualSearchData};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
@@ -6,7 +6,7 @@ use typeshare::typeshare;
 #[typeshare(swift = "Codable, Sendable")]
 pub struct SearchResponse {
     pub assets: Vec<AssetBasic>,
-    pub perpetuals: Vec<Perpetual>,
+    pub perpetuals: Vec<PerpetualSearchData>,
     pub nfts: Vec<NFTCollection>,
 }
 

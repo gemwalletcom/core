@@ -1,3 +1,4 @@
+use cacher::{CacheKey, CacherClient};
 use chrono::NaiveDateTime;
 use primitives::{AssetMarketPrice, AssetPriceInfo, AssetPrices, FiatRate};
 use std::error::Error;
@@ -5,8 +6,6 @@ use storage::{
     ChartsRepository, Database, PricesRepository,
     models::{ChartRow, PriceAssetRow, PriceRow},
 };
-
-use cacher::CacherClient;
 
 #[derive(Clone)]
 pub struct PriceClient {
@@ -26,6 +25,19 @@ impl PriceClient {
         let prices = self.database.prices()?.get_prices_assets_for_asset_id(asset_id)?;
         let price = prices.first().ok_or("no price for asset_id")?;
         Ok(price.price_id.clone())
+    }
+
+    pub fn get_price_ids_for_asset_ids(&self, asset_ids: &[String]) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
+        let prices_assets = self.database.prices()?.get_prices_assets()?;
+        let requested: std::collections::HashSet<&String> = asset_ids.iter().collect();
+        let price_ids: Vec<String> = prices_assets
+            .into_iter()
+            .filter(|pa| requested.contains(&pa.asset_id))
+            .map(|pa| pa.price_id)
+            .collect::<std::collections::HashSet<_>>()
+            .into_iter()
+            .collect();
+        Ok(price_ids)
     }
 
     pub fn set_prices(&self, prices: Vec<PriceRow>) -> Result<usize, Box<dyn Error + Send + Sync>> {
@@ -133,5 +145,10 @@ impl PriceClient {
 
     pub async fn cleanup_charts_data(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         Ok(self.database.charts()?.cleanup_charts_data()?)
+    }
+
+    pub async fn track_observed_assets(&self, asset_ids: &[String]) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let key = CacheKey::ObservedAssets;
+        self.cacher_client.sorted_set_incr_with_expire(&key.key(), asset_ids, key.ttl() as i64).await
     }
 }

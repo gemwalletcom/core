@@ -108,6 +108,6 @@ mod tests {
         assert_ne!(id2, id3);
         assert_eq!(id1.len(), 8);
         assert_eq!(id2.len(), 8);
-        assert_eq!(id1.chars().all(|c| c.is_ascii_hexdigit()), true);
+        assert!(id1.chars().all(|c| c.is_ascii_hexdigit()));
     }
 }

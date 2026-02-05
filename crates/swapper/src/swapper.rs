@@ -77,17 +77,30 @@ impl GemSwapper {
     }
 
     fn prioritized_error(errors: &[SwapperError]) -> Option<SwapperError> {
-        errors
+        let input_errors: Vec<_> = errors
             .iter()
             .filter_map(|err| match err {
                 SwapperError::InputAmountError { min_amount } => {
-                    let value = min_amount.as_ref().and_then(|s| s.parse::<u128>().ok()).unwrap_or(u128::MAX);
+                    let value = min_amount.as_ref().and_then(|s| s.parse::<u128>().ok());
                     Some((value, min_amount.clone()))
                 }
                 _ => None,
             })
+            .collect();
+
+        if input_errors.is_empty() {
+            return None;
+        }
+
+        input_errors
+            .iter()
+            .filter(|(value, _)| value.is_some())
             .min_by_key(|(value, _)| *value)
-            .map(|(_, min_amount)| SwapperError::InputAmountError { min_amount })
+            .map(|(value, _)| {
+                let adjusted = value.and_then(|v| v.checked_mul(11)).map(|v| (v / 10).to_string());
+                SwapperError::InputAmountError { min_amount: adjusted }
+            })
+            .or(Some(SwapperError::InputAmountError { min_amount: None }))
     }
 }
 
@@ -410,7 +423,9 @@ mod tests {
             rpc_provider: Arc::new(NativeProvider::default()),
             swappers: vec![
                 Box::new(MockSwapper::new(SwapperProvider::UniswapV3, || Err(SwapperError::InputAmountError { min_amount: None }))),
-                Box::new(MockSwapper::new(SwapperProvider::PancakeswapV3, || Err(SwapperError::InputAmountError { min_amount: None }))),
+                Box::new(MockSwapper::new(SwapperProvider::PancakeswapV3, || {
+                    Err(SwapperError::InputAmountError { min_amount: None })
+                })),
                 Box::new(MockSwapper::new(SwapperProvider::Jupiter, || Err(SwapperError::NoQuoteAvailable))),
             ],
         };
@@ -419,11 +434,28 @@ mod tests {
         let gem_swapper = GemSwapper {
             rpc_provider: Arc::new(NativeProvider::default()),
             swappers: vec![
-                Box::new(MockSwapper::new(SwapperProvider::UniswapV3, || Err(SwapperError::InputAmountError { min_amount: Some("19630000".into()) }))),
-                Box::new(MockSwapper::new(SwapperProvider::PancakeswapV3, || Err(SwapperError::InputAmountError { min_amount: Some("1264000".into()) }))),
-                Box::new(MockSwapper::new(SwapperProvider::Jupiter, || Err(SwapperError::InputAmountError { min_amount: Some("68000000".into()) }))),
+                Box::new(MockSwapper::new(SwapperProvider::UniswapV3, || {
+                    Err(SwapperError::InputAmountError {
+                        min_amount: Some("19630000".into()),
+                    })
+                })),
+                Box::new(MockSwapper::new(SwapperProvider::PancakeswapV3, || {
+                    Err(SwapperError::InputAmountError {
+                        min_amount: Some("1264000".into()),
+                    })
+                })),
+                Box::new(MockSwapper::new(SwapperProvider::Jupiter, || {
+                    Err(SwapperError::InputAmountError {
+                        min_amount: Some("68000000".into()),
+                    })
+                })),
             ],
         };
-        assert_eq!(gem_swapper.fetch_quote(&request).await, Err(SwapperError::InputAmountError { min_amount: Some("1264000".into()) }));
+        assert_eq!(
+            gem_swapper.fetch_quote(&request).await,
+            Err(SwapperError::InputAmountError {
+                min_amount: Some("1390400".into())
+            })
+        );
     }
 }

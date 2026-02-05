@@ -52,6 +52,8 @@ jobs:
 
       - name: Restore cargo cache
         uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: "ci-rust"
 
       - name: Run sccache-cache
         uses: mozilla-actions/sccache-action@v0.0.9

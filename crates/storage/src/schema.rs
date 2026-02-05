@@ -98,6 +98,7 @@ diesel::table! {
         staking_apr -> Nullable<Float8>,
         is_earnable -> Bool,
         earn_apr -> Nullable<Float8>,
+        has_image -> Bool,
     }
 }
 
@@ -141,6 +142,15 @@ diesel::table! {
         tag_id -> Varchar,
         order -> Nullable<Int4>,
         created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    assets_usage_ranks (asset_id) {
+        #[max_length = 128]
+        asset_id -> Varchar,
+        usage_rank -> Int4,
+        updated_at -> Timestamp,
     }
 }
 
@@ -200,7 +210,7 @@ diesel::table! {
 
     devices (id) {
         id -> Int4,
-        #[max_length = 32]
+        #[max_length = 64]
         device_id -> Varchar,
         is_push_enabled -> Bool,
         platform -> Platform,
@@ -221,6 +231,14 @@ diesel::table! {
         os -> Varchar,
         #[max_length = 128]
         model -> Varchar,
+    }
+}
+
+diesel::table! {
+    devices_sessions (id) {
+        id -> Int4,
+        device_id -> Int4,
+        created_at -> Timestamp,
     }
 }
 
@@ -937,10 +955,12 @@ diesel::joinable!(assets_addresses -> chains (chain));
 diesel::joinable!(assets_links -> assets (asset_id));
 diesel::joinable!(assets_tags -> assets (asset_id));
 diesel::joinable!(assets_tags -> tags (tag_id));
+diesel::joinable!(assets_usage_ranks -> assets (asset_id));
 diesel::joinable!(charts -> prices (coin_id));
 diesel::joinable!(charts_daily -> prices (coin_id));
 diesel::joinable!(charts_hourly -> prices (coin_id));
 diesel::joinable!(devices -> fiat_rates (currency));
+diesel::joinable!(devices_sessions -> devices (device_id));
 diesel::joinable!(fiat_assets -> assets (asset_id));
 diesel::joinable!(fiat_assets -> fiat_providers (provider));
 diesel::joinable!(fiat_providers_countries -> fiat_providers (provider));
@@ -1007,12 +1027,14 @@ diesel::allow_tables_to_appear_in_same_query!(
     assets_addresses,
     assets_links,
     assets_tags,
+    assets_usage_ranks,
     chains,
     charts,
     charts_daily,
     charts_hourly,
     config,
     devices,
+    devices_sessions,
     fiat_assets,
     fiat_providers,
     fiat_providers_countries,

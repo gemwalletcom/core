@@ -20,8 +20,11 @@ impl SearchIndexClient {
         Self { client }
     }
 
-    pub async fn create_index(&self, name: &str, primary_key: &str) -> Result<TaskInfo, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.create_index(name, Some(primary_key)).await?)
+    pub async fn get_or_create_index(&self, name: &str, primary_key: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+        if self.client.get_index(name).await.is_err() {
+            self.client.create_index(name, Some(primary_key)).await?;
+        }
+        Ok(())
     }
 
     pub async fn get_documents_all<T: DeserializeOwned + Send + Sync + 'static>(&self, index: &str) -> Result<Vec<T>, Box<dyn Error + Send + Sync>> {
@@ -94,7 +97,7 @@ impl SearchIndexClient {
 
     pub async fn setup(&self, configs: &[crate::IndexConfig], primary_key: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
         for config in configs {
-            self.create_index(config.name, primary_key).await?;
+            self.get_or_create_index(config.name, primary_key).await?;
             self.set_filterable_attributes(config.name, config.filters.to_vec()).await?;
             self.set_sortable_attributes(config.name, config.sorts.to_vec()).await?;
             self.set_searchable_attributes(config.name, config.search_attributes.to_vec()).await?;

@@ -1,9 +1,11 @@
 pub mod asset;
 pub mod asset_address;
+pub mod asset_usage_rank;
 pub mod chain;
 pub mod chart;
 pub mod config;
 pub mod device;
+pub mod device_session;
 pub mod fiat;
 pub mod nft_asset;
 pub mod nft_collection;
@@ -26,22 +28,24 @@ pub mod transaction_addresses;
 pub mod username;
 pub mod wallet;
 
-pub use self::asset::{AssetLinkRow, AssetRow};
+pub use self::asset::{AssetLinkRow, AssetRow, NewAssetRow};
 pub use self::asset_address::AssetAddressRow;
+pub use self::asset_usage_rank::AssetUsageRankRow;
 pub use self::chain::ChainRow;
 pub use self::chart::{ChartRow, DailyChartRow, HourlyChartRow};
 pub use self::config::ConfigRow;
 pub use self::device::{DeviceRow, UpdateDeviceRow};
+pub use self::device_session::{DeviceSessionRow, NewDeviceSessionRow};
 pub use self::fiat::{
     FiatAssetRow, FiatProviderCountryRow, FiatProviderRow, FiatQuoteRequestRow, FiatQuoteRow, FiatRateRow, FiatTransactionRow, FiatTransactionUpdateRow, NewFiatWebhookRow,
 };
 pub use self::nft_asset::NftAssetRow;
-pub use self::nft_collection::NftCollectionRow;
+pub use self::nft_collection::{NewNftCollectionRow, NftCollectionRow};
 pub use self::nft_link::NftLinkRow;
 pub use self::nft_report::NewNftReportRow;
 pub use self::notification::{NewNotificationRow, NotificationRow};
 pub use self::parser_state::ParserStateRow;
-pub use self::perpetual::{NewPerpetualAssetRow, PerpetualRow};
+pub use self::perpetual::{NewPerpetualAssetRow, NewPerpetualRow, PerpetualRow};
 pub use self::price::{NewPriceRow, PriceAssetDataRow, PriceAssetRow, PriceRow};
 pub use self::price_alert::{NewPriceAlertRow, PriceAlertRow};
 pub use self::price_dex::{PriceDexAssetRow, PriceDexProviderRow, PriceDexRow};

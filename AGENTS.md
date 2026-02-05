@@ -158,7 +158,7 @@ Follow the existing code style patterns unless explicitly asked to change
 - Line length: 160 characters maximum (configured in `rustfmt.toml`)
 - Indentation: 4 spaces (Rust standard)
 - Imports: Automatically reordered with rustfmt
-- Only format files you modified: `cargo fmt -- <file1> <file2> ...` (avoid `just format` which formats entire workspace)
+- Only format files you modified: `rustfmt --edition 2024 <file1> <file2> ...` (avoid `just format` which formats entire workspace)
 - Formatter enforces consistent style across all crates/workspace
 
 ### Commit Messages
@@ -173,6 +173,8 @@ Follow the existing code style patterns unless explicitly asked to change
 - Helper names: inside a module stick to concise names that rely on scope rather than repeating crate/module prefixes (e.g., prefer `is_spot_swap` over `is_hypercore_spot_swap` in `core_signer.rs`).
 - Don't use `util`, `utils`, `normalize`, or any other similar names for modules or functions.
 - Avoid using `matches!` for pattern matching as much as possible, it's easy to missing a case later.
+- Avoid type suffixes like `_str`, `_int`, `_vec` in variable names; Rust's type system makes them redundant.
+- Don't add docstrings, comments, or type annotations unless explicitly asked to (including in mod.rs files).
 
 ### Imports
 1. Standard library imports first
@@ -183,7 +185,7 @@ Follow the existing code style patterns unless explicitly asked to change
 IMPORTANT: Always import models and types at the top of the file. Never use inline imports inside functions (e.g., `use crate::models::SomeType` inside a function). Never use full paths inline (e.g., `storage::DatabaseClient::new()`), always import types first. Declare all imports in the file header.
 
 ### Error Handling
-- Use `thiserror` for custom error types
+- Prefer plain `Error` types over `thiserror` macros
 - Implement `From` traits for error conversion
 - Use consistent `Result<T, Error>` return types
 - Propagate errors with the `?` operator
@@ -210,6 +212,24 @@ IMPORTANT: Always import models and types at the top of the file. Never use inli
 - Database models use Diesel ORM with automatic migrations
 - Consider cross-platform performance constraints for mobile
 - Shared U256 conversions: prefer `u256_to_biguint` and `biguint_to_u256` from `crates/gem_evm/src/u256.rs` for Alloy `U256` <-> `BigUint` conversions.
+
+### Code Organization
+- **Modular structure**: Break down long files into smaller, focused modules by logical responsibility
+- **Avoid duplication**: Before writing new code, search for existing implementations in the codebase; reuse existing code or crates
+- **Shared crates**: If functionality could be reused, create a shared crate rather than duplicating logic
+- **Bird's eye view**: Step back and look at the overall structure; identify opportunities to simplify and consolidate
+- **Avoid `mut`**: Prefer immutable bindings; use `mut` only when truly necessary
+- **No `#[allow(dead_code)]`**: Remove dead code instead of suppressing warnings
+- **No unused fields**: Remove unused fields from structs/models; don't keep fields "for future use"
+- **Constants for magic numbers**: Extract magic numbers into named constants with clear meaning
+- **Minimum interface**: Don't expose unnecessary functions; if client only needs one function, don't add multiple variants
+- **Use uniffi::remote**: For UniFFI wrapper types around external models, use `#[uniffi::remote]` instead of creating duplicate structs with `From` implementations:
+  ```rust
+  use primitives::AuthNonce;
+  pub type GemAuthNonce = AuthNonce;
+  #[uniffi::remote(Record)]
+  pub struct GemAuthNonce { pub nonce: String, pub timestamp: u32 }
+  ```
 
 ### Repository Pattern
 
@@ -254,9 +274,7 @@ Direct repository access methods available on `DatabaseClient` include:
 
 ### RPC Client Patterns
 - Use `gem_jsonrpc::JsonRpcClient` for blockchain RPC interactions
-- Prefer `alloy_primitives::hex::encode_prefixed()` for hex encoding with `0x` prefix
-- **Always use `alloy_primitives::hex::decode()` for hex decoding** - it handles `0x` prefix automatically
-- Use `alloy_primitives::Address::to_string()` instead of manual formatting
+- **Use `primitives::hex`** for hex encoding/decoding (not `alloy_primitives::hex`)
 - RPC calls expect hex strings directly; avoid double encoding
 - Use `JsonRpcClient::batch_call()` for batch operations
 - Propagate errors via `JsonRpcError`
@@ -291,4 +309,4 @@ Before finishing a task, always:
 1. **Review for simplification**: Take an overall look at the code you touched and identify opportunities to simplify (reduce duplication, extract helpers, consolidate modules, remove dead code)
 2. **Run tests**: Ensure all relevant tests pass
 3. **Run clippy**: `cargo clippy -p <crate> -- -D warnings`
-4. **Format only touched files**: `cargo fmt -- <files>`
+4. **Format only touched files**: `rustfmt --edition 2024 <files>`

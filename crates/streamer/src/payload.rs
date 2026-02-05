@@ -333,3 +333,20 @@ impl fmt::Display for InAppNotificationPayload {
         }
     }
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FetchPricesPayload {
+    pub price_ids: Vec<String>,
+}
+
+impl FetchPricesPayload {
+    pub fn new(price_ids: Vec<String>) -> Self {
+        Self { price_ids }
+    }
+}
+
+impl fmt::Display for FetchPricesPayload {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "price_ids: {}", self.price_ids.len())
+    }
+}

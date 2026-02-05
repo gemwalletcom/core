@@ -95,12 +95,7 @@ impl ErrorResponse {
     pub fn parse_min_amount(&self) -> Option<String> {
         self.message
             .find(Self::MIN_AMOUNT_PREFIX)
-            .map(|start| {
-                self.message[start + Self::MIN_AMOUNT_PREFIX.len()..]
-                    .chars()
-                    .take_while(|c| c.is_ascii_digit())
-                    .collect()
-            })
+            .map(|start| self.message[start + Self::MIN_AMOUNT_PREFIX.len()..].chars().take_while(|c| c.is_ascii_digit()).collect())
             .filter(|s: &String| !s.is_empty())
     }
 }

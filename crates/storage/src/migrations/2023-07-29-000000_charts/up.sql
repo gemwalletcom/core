@@ -35,7 +35,8 @@ BEGIN
     FROM charts
     WHERE charts.created_at >= DATE_TRUNC('hour', NOW()) - INTERVAL '1 hour'
     GROUP BY charts.coin_id, DATE_TRUNC('hour', charts.created_at)
-    ON CONFLICT (coin_id, created_at) DO UPDATE SET price = EXCLUDED.price;
+    ON CONFLICT (coin_id, created_at) DO UPDATE SET price = EXCLUDED.price
+    WHERE charts_hourly.price <> EXCLUDED.price;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -49,7 +50,8 @@ BEGIN
     FROM charts_hourly
     WHERE charts_hourly.created_at >= DATE_TRUNC('day', NOW()) - INTERVAL '1 day'
     GROUP BY charts_hourly.coin_id, DATE_TRUNC('day', charts_hourly.created_at)
-    ON CONFLICT (coin_id, created_at) DO UPDATE SET price = EXCLUDED.price;
+    ON CONFLICT (coin_id, created_at) DO UPDATE SET price = EXCLUDED.price
+    WHERE charts_daily.price <> EXCLUDED.price;
 END;
 $$ LANGUAGE plpgsql;
 

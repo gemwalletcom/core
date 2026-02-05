@@ -1,10 +1,14 @@
 use std::error::Error;
 
 use futures::StreamExt;
+use gem_tracing::error_with_fields;
 use lapin::{Channel, Connection, ConnectionProperties, options::*, types::FieldTable};
 use serde::de::DeserializeOwned;
+use tokio::sync::watch;
 
 use crate::{QueueName, StreamConnection};
+
+pub type ShutdownReceiver = watch::Receiver<bool>;
 
 pub struct StreamReaderConfig {
     pub url: String,
@@ -41,7 +45,7 @@ impl StreamReader {
         Ok(())
     }
 
-    pub async fn read<T, F>(&mut self, queue: QueueName, routing_key: Option<&str>, callback: F) -> Result<(), Box<dyn Error + Send + Sync>>
+    pub async fn read<T, F>(&mut self, queue: QueueName, routing_key: Option<&str>, callback: F, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn Error + Send + Sync>>
     where
         T: DeserializeOwned,
         F: FnMut(T) -> Result<(), Box<dyn Error + Send + Sync>>,
@@ -50,19 +54,11 @@ impl StreamReader {
             Some(key) => (format!("{}.{}", queue, key), format!("consumer-{}-{}", queue, key)),
             None => (queue.to_string(), format!("consumer-{queue}")),
         };
-        self.consume(&queue_name, &consumer_tag, callback).await
-    }
-
-    async fn consume<T, F>(&mut self, queue_name: &str, consumer_tag: &str, mut callback: F) -> Result<(), Box<dyn Error + Send + Sync>>
-    where
-        T: DeserializeOwned,
-        F: FnMut(T) -> Result<(), Box<dyn Error + Send + Sync>>,
-    {
         let mut consumer = self
             .channel
             .basic_consume(
-                queue_name,
-                consumer_tag,
+                queue_name.as_str(),
+                consumer_tag.as_str(),
                 BasicConsumeOptions {
                     no_local: false,
                     no_ack: false,
@@ -73,9 +69,27 @@ impl StreamReader {
             )
             .await?;
 
-        while let Some(delivery) = consumer.next().await {
+        self.consume(&mut consumer, callback, shutdown_rx).await
+    }
+
+    async fn consume<T, F>(&mut self, consumer: &mut lapin::Consumer, mut callback: F, shutdown_rx: ShutdownReceiver) -> Result<(), Box<dyn Error + Send + Sync>>
+    where
+        T: DeserializeOwned,
+        F: FnMut(T) -> Result<(), Box<dyn Error + Send + Sync>>,
+    {
+        loop {
+            if *shutdown_rx.borrow() {
+                break;
+            }
+
+            let mut rx = shutdown_rx.clone();
+            let delivery = tokio::select! {
+                d = consumer.next() => d,
+                _ = rx.changed() => break,
+            };
+
             match delivery {
-                Ok(delivery) => {
+                Some(Ok(delivery)) => {
                     let delivery_tag = delivery.delivery_tag;
                     let data = serde_json::from_slice::<T>(&delivery.data);
                     match data {
@@ -84,12 +98,13 @@ impl StreamReader {
                             Err(_) => self.nack(delivery_tag, true).await?,
                         },
                         Err(e) => {
-                            println!("Consumer deserialization error: {}, payload: {:?}", e, String::from_utf8_lossy(&delivery.data));
+                            error_with_fields!("deserialization error", &e, payload = String::from_utf8_lossy(&delivery.data).to_string());
                             let _ = self.nack(delivery_tag, false).await;
                         }
                     }
                 }
-                Err(e) => return Err(Box::new(e)),
+                Some(Err(e)) => return Err(Box::new(e)),
+                None => break,
             }
         }
 

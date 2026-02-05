@@ -82,7 +82,8 @@ where
                 fee.address,
                 fee.bps.into(),
             )
-            .await?;
+            .await
+            .map_err(|e| self.map_quote_error(e, from_asset.decimals as i32))?;
 
         let to_value = self.value_to(quote.expected_amount_out, to_asset.decimals as i32);
         let inbound_address = RouteData::get_inbound_address(&from_asset, quote.inbound_address.clone())?;
@@ -167,9 +168,7 @@ where
             .as_ref()
             .and_then(|hashes| hashes.iter().find(|h| *h != ZERO_HASH && !h.is_empty()).cloned());
 
-        let (to_chain, to_tx_hash) = destination_chain
-            .map(|chain| (Some(chain), destination_tx_hash))
-            .unwrap_or((None, None));
+        let (to_chain, to_tx_hash) = destination_chain.map(|chain| (Some(chain), destination_tx_hash)).unwrap_or((None, None));
 
         Ok(SwapResult {
             status: swap_status,

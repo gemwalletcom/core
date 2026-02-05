@@ -10,6 +10,8 @@ use primitives::{Asset, AssetBalance};
 use super::balances_mapper::{map_balance_coin, map_balance_staking, map_balance_tokens};
 use crate::rpc::client::HyperCoreClient;
 
+const NATIVE_TOKEN_INDEX: u32 = 150;
+
 #[async_trait]
 impl<C: Client> ChainBalances for HyperCoreClient<C> {
     async fn get_balance_coin(&self, address: String) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
@@ -18,9 +20,9 @@ impl<C: Client> ChainBalances for HyperCoreClient<C> {
             .await?
             .balances
             .into_iter()
-            .find(|x| x.token == 150)
-            .ok_or("not found")?
-            .total;
+            .find(|balance| balance.token == NATIVE_TOKEN_INDEX)
+            .map(|balance| balance.total)
+            .unwrap_or_else(|| "0".to_string());
         let native_decimals = Asset::from_chain(self.chain).decimals as u32;
         let available: String = BigNumberFormatter::value_from_amount(&total, native_decimals)?;
         Ok(map_balance_coin(available, self.chain))
