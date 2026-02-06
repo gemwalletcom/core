@@ -15,8 +15,8 @@ pub struct CacherClient {
 
 impl CacherClient {
     pub async fn new(redis_url: &str) -> Self {
-        let client = Client::open(redis_url).unwrap();
-        let connection = ConnectionManager::new(client).await.unwrap();
+        let client = Client::open(redis_url).expect("invalid redis url");
+        let connection = ConnectionManager::new(client).await.expect("failed to connect to redis");
         Self { connection }
     }
 
