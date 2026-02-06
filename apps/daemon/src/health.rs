@@ -35,3 +35,12 @@ fn health(state: &State<Arc<HealthState>>) -> Status {
 pub async fn run_server(state: Arc<HealthState>) {
     let _ = rocket::build().manage(state).mount("/", routes![health]).launch().await;
 }
+
+pub fn spawn_server() -> Arc<HealthState> {
+    let state = Arc::new(HealthState::new());
+    tokio::spawn({
+        let state = state.clone();
+        async move { run_server(state).await }
+    });
+    state
+}

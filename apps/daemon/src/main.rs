@@ -58,7 +58,8 @@ pub async fn main() {
             run_worker_services(settings, &services).await;
         }
         DaemonService::Parser(chain) => {
-            parser::run(settings, chain).await.expect("Parser failed");
+            let health_state = health::spawn_server();
+            parser::run(settings, chain, health_state).await.expect("Parser failed");
         }
         DaemonService::Consumer(service) => {
             let services = match service {
@@ -83,11 +84,7 @@ async fn run_worker_services(settings: settings::Settings, services: &[WorkerSer
     let metrics_cacher = CacherClient::new(&settings.metrics.redis.url).await;
     let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
 
-    let health_state = Arc::new(health::HealthState::new());
-    tokio::spawn({
-        let state = health_state.clone();
-        async move { health::run_server(state).await }
-    });
+    let health_state = health::spawn_server();
 
     let signal_handle = shutdown::spawn_signal_handler(shutdown_tx);
 
@@ -179,14 +176,9 @@ async fn run_consumer_services(settings: settings::Settings, services: &[Consume
 
     let metrics_cacher = CacherClient::new(&settings.metrics.redis.url).await;
 
-    let health_state = Arc::new(health::HealthState::new());
+    let health_state = health::spawn_server();
     let reporter: Arc<dyn ConsumerStatusReporter> = Arc::new(CacherConsumerReporter::new(metrics_cacher));
     let failures = Arc::new(Mutex::new(Vec::new()));
-
-    tokio::spawn({
-        let state = health_state.clone();
-        async move { health::run_server(state).await }
-    });
 
     let handles: Vec<_> = services
         .iter()

@@ -7,6 +7,7 @@ use parser_state::ParserStateService;
 
 use std::{
     error::Error,
+    sync::Arc,
     time::{Duration, Instant},
 };
 
@@ -257,7 +258,7 @@ impl Parser {
     }
 }
 
-pub async fn run(settings: Settings, chain: Option<Chain>) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn run(settings: Settings, chain: Option<Chain>, health_state: Arc<crate::health::HealthState>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let cacher = CacherClient::new(&settings.redis.url).await;
 
@@ -307,6 +308,9 @@ pub async fn run(settings: Settings, chain: Option<Chain>) -> Result<(), Box<dyn
             run_parser(database, cacher, stream_producer, provider, options, shutdown_rx).await;
         }));
     }
+
+    health_state.set_ready();
+    info_with_fields!("parsers ready", chains = handles.len());
 
     signal_handle.await.ok();
     info_with_fields!("waiting for parser shutdown", tasks = handles.len());
