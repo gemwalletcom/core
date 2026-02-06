@@ -2209,6 +2209,7 @@ dependencies = [
  "prices_dex",
  "primitives",
  "reqwest 0.13.1",
+ "rocket",
  "search_index",
  "serde",
  "serde_json",

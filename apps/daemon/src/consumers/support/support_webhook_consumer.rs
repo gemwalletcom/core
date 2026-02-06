@@ -17,7 +17,8 @@ pub struct SupportWebhookConsumer {
 impl SupportWebhookConsumer {
     pub async fn new(settings: &Settings) -> Result<Self, Box<dyn Error + Send + Sync>> {
         let database = Database::new(&settings.postgres.url, settings.postgres.pool);
-        let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+        let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
+        let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
         let stream_producer = StreamProducer::new(&rabbitmq_config, "daemon_support_producer").await?;
         Ok(Self {
             support_client: SupportClient::new(database, stream_producer),

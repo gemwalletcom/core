@@ -215,7 +215,8 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                     let max_observed_assets = config.get_usize(ConfigKey::PriceObservedMaxAssets)?;
                     let min_observers = config.get_usize(ConfigKey::PriceObservedMinObservers)?;
                     let price_client = PriceClient::new(database.clone(), cacher_client.clone());
-                    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+                    let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
+                    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
                     let stream_producer = StreamProducer::new(&rabbitmq_config, "observed_prices_worker").await?;
                     let updater = ObservedPricesUpdater::new(cacher_client, price_client, stream_producer, max_observed_assets, min_observers);
                     updater.update().await
@@ -257,7 +258,8 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
 async fn price_updater_factory(database: &Database, cacher: &CacherClient, settings: &Settings) -> Result<PriceUpdater, Box<dyn std::error::Error + Send + Sync>> {
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret.clone());
     let price_client = PriceClient::new(database.clone(), cacher.clone());
-    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+    let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
     let stream_producer = StreamProducer::new(&rabbitmq_config, "pricer_worker").await?;
     Ok(PriceUpdater::new(price_client, coingecko_client, stream_producer))
 }
@@ -269,7 +271,8 @@ async fn charts_updater_factory(
     coingecko_client: CoinGeckoClient,
 ) -> Result<ChartsUpdater, Box<dyn std::error::Error + Send + Sync>> {
     let price_client = PriceClient::new(database.clone(), cacher.clone());
-    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+    let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
     let stream_producer = StreamProducer::new(&rabbitmq_config, "charts_worker").await?;
     Ok(ChartsUpdater::new(price_client, coingecko_client, stream_producer))
 }

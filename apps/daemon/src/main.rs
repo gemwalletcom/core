@@ -1,4 +1,5 @@
 mod consumers;
+mod health;
 mod model;
 mod parser;
 mod pusher;
@@ -82,6 +83,12 @@ async fn run_worker_services(settings: settings::Settings, services: &[WorkerSer
     let metrics_cacher = CacherClient::new(&settings.metrics.redis.url).await;
     let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
 
+    let health_state = Arc::new(health::HealthState::new());
+    tokio::spawn({
+        let state = health_state.clone();
+        async move { health::run_server(state).await }
+    });
+
     let signal_handle = shutdown::spawn_signal_handler(shutdown_tx);
 
     let worker_jobs: Vec<_> = futures::future::join_all(services.iter().map(|service| {
@@ -106,6 +113,10 @@ async fn run_worker_services(settings: settings::Settings, services: &[WorkerSer
     .into_iter()
     .flatten()
     .collect();
+
+    let job_count: usize = worker_jobs.iter().map(|(_, jobs)| jobs.len()).sum();
+    health_state.set_ready();
+    info_with_fields!("workers ready", workers = worker_jobs.len(), jobs = job_count);
 
     signal_handle.await.ok();
 
@@ -167,8 +178,15 @@ async fn run_consumer_services(settings: settings::Settings, services: &[Consume
     let signal_handle = shutdown::spawn_signal_handler(shutdown_tx);
 
     let metrics_cacher = CacherClient::new(&settings.metrics.redis.url).await;
+
+    let health_state = Arc::new(health::HealthState::new());
     let reporter: Arc<dyn ConsumerStatusReporter> = Arc::new(CacherConsumerReporter::new(metrics_cacher));
     let failures = Arc::new(Mutex::new(Vec::new()));
+
+    tokio::spawn({
+        let state = health_state.clone();
+        async move { health::run_server(state).await }
+    });
 
     let handles: Vec<_> = services
         .iter()
@@ -193,6 +211,8 @@ async fn run_consumer_services(settings: settings::Settings, services: &[Consume
             })
         })
         .collect();
+
+    health_state.set_ready();
 
     signal_handle.await.ok();
     futures::future::join_all(handles).await;

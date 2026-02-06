@@ -53,7 +53,9 @@ where
     R: std::fmt::Debug,
     for<'a> P: Deserialize<'a> + std::fmt::Debug,
 {
-    info_with_fields!("running consumer", consumer = name, queue = queue_name.to_string(), routing_key = routing_key.unwrap_or(""));
+    if routing_key.is_none() {
+        info_with_fields!("running consumer", consumer = queue_name.to_string());
+    }
     stream_reader
         .read::<P, _>(
             queue_name,

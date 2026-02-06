@@ -41,11 +41,7 @@ async fn run_rewards_events(settings: Arc<Settings>, shutdown_rx: ShutdownReceiv
     run_consumer::<RewardsNotificationPayload, rewards_consumer::RewardsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config, shutdown_rx, reporter).await
 }
 
-async fn run_rewards_redemptions(
-    settings: Arc<Settings>,
-    shutdown_rx: ShutdownReceiver,
-    reporter: Arc<dyn ConsumerStatusReporter>,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn run_rewards_redemptions(settings: Arc<Settings>, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let config = ConfigCacher::new(database.clone());
     let retry_config = rewards_redemption_consumer::RedemptionRetryConfig {

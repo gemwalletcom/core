@@ -2,13 +2,13 @@ use std::error::Error;
 use std::sync::Arc;
 
 use cacher::CacherClient;
-use gem_tracing::error_with_fields;
+use gem_tracing::{error_with_fields, info_with_fields};
 use primitives::Chain;
 use settings::Settings;
 use storage::Database;
 use streamer::{ConsumerConfig, ConsumerStatusReporter, ShutdownReceiver, StreamConnection, StreamProducer, StreamReader};
 
-use crate::consumers::consumer_config;
+use crate::consumers::{consumer_config, reader_config};
 
 #[derive(Clone)]
 pub struct ChainConsumerRunner {
@@ -19,6 +19,7 @@ pub struct ChainConsumerRunner {
     pub config: ConsumerConfig,
     pub shutdown_rx: ShutdownReceiver,
     pub reporter: Arc<dyn ConsumerStatusReporter>,
+    queue: streamer::QueueName,
 }
 
 impl ChainConsumerRunner {
@@ -40,11 +41,13 @@ impl ChainConsumerRunner {
             config,
             shutdown_rx,
             reporter,
+            queue,
         })
     }
 
     pub async fn stream_reader(&self) -> Result<StreamReader, Box<dyn Error + Send + Sync>> {
-        StreamReader::from_connection(&self.connection, self.settings.rabbitmq.prefetch).await
+        let config = reader_config(&self.settings.rabbitmq, self.connection.name().to_string());
+        StreamReader::from_connection(&self.connection, config).await
     }
 
     pub async fn stream_producer(&self) -> Result<StreamProducer, Box<dyn Error + Send + Sync>> {
@@ -64,6 +67,7 @@ impl ChainConsumerRunner {
         F: Fn(Self, Chain) -> Fut + Clone + Send + 'static,
         Fut: std::future::Future<Output = Result<(), Box<dyn Error + Send + Sync>>> + Send + 'static,
     {
+        info_with_fields!("running consumer", consumer = self.queue.to_string(), chains = chains.len());
         let tasks = chains.into_iter().map(|chain| {
             let runner = self.clone();
             let f = f.clone();

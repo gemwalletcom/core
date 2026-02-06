@@ -24,11 +24,7 @@ use fetch_coin_addresses_consumer::FetchCoinAddressesConsumer;
 use fetch_nft_assets_addresses_consumer::FetchNftAssetsAddressesConsumer;
 use fetch_token_addresses_consumer::FetchTokenAddressesConsumer;
 
-pub async fn run_consumer_indexer(
-    settings: Settings,
-    shutdown_rx: ShutdownReceiver,
-    reporter: Arc<dyn ConsumerStatusReporter>,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn run_consumer_indexer(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let settings = Arc::new(settings);
 
     futures::future::try_join_all(vec![
@@ -44,11 +40,7 @@ pub async fn run_consumer_indexer(
     Ok(())
 }
 
-async fn run_fetch_blocks(
-    settings: Arc<Settings>,
-    shutdown_rx: ShutdownReceiver,
-    reporter: Arc<dyn ConsumerStatusReporter>,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn run_fetch_blocks(settings: Arc<Settings>, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
     ChainConsumerRunner::new((*settings).clone(), QueueName::FetchBlocks, shutdown_rx, reporter)
         .await?
         .run(|runner, chain| async move {
@@ -72,11 +64,7 @@ async fn run_fetch_blocks(
         .await
 }
 
-async fn run_fetch_assets(
-    settings: Arc<Settings>,
-    shutdown_rx: ShutdownReceiver,
-    reporter: Arc<dyn ConsumerStatusReporter>,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn run_fetch_assets(settings: Arc<Settings>, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let queue = QueueName::FetchAssets;
     let (name, stream_reader) = reader_for_queue(&settings, &queue).await?;
@@ -86,17 +74,7 @@ async fn run_fetch_assets(
         database,
         cacher,
     };
-    run_consumer::<FetchAssetsPayload, FetchAssetsConsumer, usize>(
-        &name,
-        stream_reader,
-        queue,
-        None,
-        consumer,
-        consumer_config(&settings.consumer),
-        shutdown_rx,
-        reporter,
-    )
-    .await
+    run_consumer::<FetchAssetsPayload, FetchAssetsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx, reporter).await
 }
 
 async fn run_fetch_token_associations(
@@ -154,11 +132,7 @@ async fn run_fetch_coin_associations(
         .await
 }
 
-async fn run_fetch_nft_associations(
-    settings: Arc<Settings>,
-    shutdown_rx: ShutdownReceiver,
-    reporter: Arc<dyn ConsumerStatusReporter>,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn run_fetch_nft_associations(settings: Arc<Settings>, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let chains: Vec<Chain> = NFTChain::all().into_iter().map(Into::into).collect();
     ChainConsumerRunner::new((*settings).clone(), QueueName::FetchNftAssociations, shutdown_rx, reporter)
         .await?

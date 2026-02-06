@@ -33,15 +33,21 @@ pub(crate) fn consumer_config(consumer: &settings::Consumer) -> ConsumerConfig {
     }
 }
 
+pub(crate) fn reader_config(rabbitmq: &settings::RabbitMQ, name: String) -> StreamReaderConfig {
+    let retry = streamer::Retry::new(rabbitmq.retry.delay, rabbitmq.retry.timeout);
+    StreamReaderConfig::new(rabbitmq.url.clone(), name, rabbitmq.prefetch, retry)
+}
+
 pub(crate) async fn reader_for_queue(settings: &Settings, queue: &QueueName) -> Result<(String, StreamReader), Box<dyn Error + Send + Sync>> {
     let name = queue.to_string();
-    let config = StreamReaderConfig::new(settings.rabbitmq.url.clone(), name.clone(), settings.rabbitmq.prefetch);
+    let config = reader_config(&settings.rabbitmq, name.clone());
     let reader = StreamReader::new(config).await?;
     Ok((name, reader))
 }
 
 fn producer_config(settings: &Settings) -> StreamProducerConfig {
-    StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay)
+    let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
+    StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry)
 }
 
 pub(crate) async fn producer_for_queue(settings: &Settings, name: &str) -> Result<StreamProducer, Box<dyn Error + Send + Sync>> {

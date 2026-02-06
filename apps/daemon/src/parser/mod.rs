@@ -161,9 +161,7 @@ impl Parser {
         if should_reload_catchup(plan.range.remaining, self.options.catchup_reload_interval) {
             return Ok(false);
         }
-        if state.timeout_between_blocks > 0
-            && self.sleep_or_shutdown(Duration::from_millis(state.timeout_between_blocks as u64)).await
-        {
+        if state.timeout_between_blocks > 0 && self.sleep_or_shutdown(Duration::from_millis(state.timeout_between_blocks as u64)).await {
             return Ok(false);
         }
 
@@ -295,7 +293,8 @@ pub async fn run(settings: Settings, chain: Option<Chain>) -> Result<(), Box<dyn
 
         let provider = settings_chain::ProviderFactory::new_from_settings_with_user_agent(chain, &settings, &settings::service_user_agent("parser", None));
 
-        let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+        let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
+        let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
         let stream_producer = StreamProducer::new(&rabbitmq_config, format!("parser_{chain}").as_str()).await?;
 
         let options = ParserOptions {

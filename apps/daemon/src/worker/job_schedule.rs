@@ -24,8 +24,8 @@ impl CacherJobTracker {
     }
 
     async fn load_status(&self, job_name: &str) -> JobStatus {
-        let key = self.job_key(job_name);
-        self.cacher.get_value(&key).await.unwrap_or_default()
+        let cache_key = CacheKey::JobStatus(&self.job_key(job_name));
+        self.cacher.get_value(&cache_key.key()).await.unwrap_or_default()
     }
 
     async fn persist_status(&self, job_name: &str, status: &JobStatus) -> Result<(), JobError> {

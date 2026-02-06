@@ -12,6 +12,8 @@ use streamer::{
     run_consumer,
 };
 
+use crate::consumers::reader_config;
+
 pub struct FetchNftAssetsAddressesConsumer {
     #[allow(dead_code)]
     pub database: Database,
@@ -34,7 +36,8 @@ impl FetchNftAssetsAddressesConsumer {
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         let queue = QueueName::FetchNftAssociations;
         let name = format!("{}.{}", queue, chain.as_ref());
-        let stream_reader = StreamReader::from_connection(connection, settings.rabbitmq.prefetch).await?;
+        let config = reader_config(&settings.rabbitmq, name.clone());
+        let stream_reader = StreamReader::from_connection(connection, config).await?;
         let stream_producer = StreamProducer::from_connection(connection).await?;
         let nft_config = NFTProviderConfig::new(settings.nft.opensea.key.secret.clone(), settings.nft.magiceden.key.secret.clone());
         let nft_client = NFTClient::new(database.clone(), nft_config);

@@ -47,11 +47,7 @@ pub fn plan_next_block(state: &ParserStateRow, current_block: i64, latest_block:
     };
 
     Some(BlockPlan {
-        range: BlockRange {
-            blocks,
-            end_block,
-            remaining,
-        },
+        range: BlockRange { blocks, end_block, remaining },
         kind,
     })
 }
@@ -60,15 +56,10 @@ pub fn plan_next_block(state: &ParserStateRow, current_block: i64, latest_block:
 mod tests {
     use super::{BlockPlanKind, plan_next_block, should_reload_catchup, timeout_for_state};
     use chrono::NaiveDateTime;
-    use storage::models::ParserStateRow;
     use std::time::Duration;
+    use storage::models::ParserStateRow;
 
-    fn state(
-        await_blocks: i32,
-        parallel_blocks: i32,
-        timeout_latest_block: i32,
-        queue_behind_blocks: Option<i32>,
-    ) -> ParserStateRow {
+    fn state(await_blocks: i32, parallel_blocks: i32, timeout_latest_block: i32, queue_behind_blocks: Option<i32>) -> ParserStateRow {
         ParserStateRow {
             chain: "ethereum".to_string(),
             current_block: 0,

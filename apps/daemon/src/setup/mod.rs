@@ -105,7 +105,8 @@ async fn setup_queues(settings: &Settings) -> Result<(), Box<dyn std::error::Err
     let exchanges = ExchangeName::all();
     let chains = Chain::all();
 
-    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+    let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
     let stream_producer = StreamProducer::new(&rabbitmq_config, "setup").await.unwrap();
     let _ = stream_producer.declare_queues(non_chain_queues).await;
     let _ = stream_producer.declare_exchanges(exchanges.clone()).await;

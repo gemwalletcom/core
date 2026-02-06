@@ -4,8 +4,6 @@ use storage::{Database, ReleasesRepository};
 
 use super::model::{GitHubRepository, ITunesLookupResponse, SamsungStoreDetail};
 
-const DEFAULT_VERSION: &str = "1.0.0";
-
 pub struct VersionUpdater {
     database: Database,
 }
@@ -20,7 +18,7 @@ impl VersionUpdater {
     }
 
     pub async fn update_store(&self, store: PlatformStore) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let version = self.get_store_version(store).await.unwrap_or_else(|_| DEFAULT_VERSION.to_string());
+        let version = self.get_store_version(store).await?;
         let current = self.get_current_version(store)?;
 
         if current.as_ref() != Some(&version) {
@@ -41,7 +39,7 @@ impl VersionUpdater {
             PlatformStore::AppStore => self.get_app_store_version().await,
             PlatformStore::ApkUniversal => self.get_github_version().await,
             PlatformStore::SamsungStore => self.get_samsung_version().await,
-            _ => Ok(DEFAULT_VERSION.to_string()),
+            _ => Err(format!("unsupported store: {:?}", store).into()),
         }
     }
 

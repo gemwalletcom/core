@@ -79,7 +79,8 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
 
     let chain_client = chain::ChainClient::new(ChainProviders::new(ProviderFactory::new_providers(&settings)));
 
-    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+    let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
     let pusher_client = PusherClient::new(settings.pusher.url, settings.pusher.ios.topic);
     let devices_client = DevicesClient::new(database.clone(), pusher_client.clone());
     let transactions_client = TransactionsClient::new(database.clone());

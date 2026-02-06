@@ -10,11 +10,7 @@ use crate::consumers::{consumer_config, reader_for_queue};
 
 use support_webhook_consumer::SupportWebhookConsumer;
 
-pub async fn run_consumer_support(
-    settings: Settings,
-    shutdown_rx: ShutdownReceiver,
-    reporter: Arc<dyn ConsumerStatusReporter>,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn run_consumer_support(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let queue = QueueName::SupportWebhooks;
     let (name, stream_reader) = reader_for_queue(&settings, &queue).await?;
     let consumer = SupportWebhookConsumer::new(&settings).await?;
