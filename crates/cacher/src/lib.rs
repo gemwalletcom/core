@@ -219,4 +219,18 @@ impl CacherClient {
             .query_async(&mut self.connection.clone())
             .await?)
     }
+
+    pub async fn sorted_set_card(&self, key: &str) -> Result<u64, Box<dyn Error + Send + Sync>> {
+        Ok(redis::cmd("ZCARD").arg(key).query_async(&mut self.connection.clone()).await?)
+    }
+
+    pub async fn sorted_set_rev_range_with_scores(&self, key: &str, start: isize, stop: isize) -> Result<Vec<(String, f64)>, Box<dyn Error + Send + Sync>> {
+        Ok(redis::cmd("ZREVRANGE")
+            .arg(key)
+            .arg(start)
+            .arg(stop)
+            .arg("WITHSCORES")
+            .query_async(&mut self.connection.clone())
+            .await?)
+    }
 }
