@@ -27,7 +27,7 @@ pub use self::repositories::{
     notifications_repository::NotificationsRepository, parser_state_repository::ParserStateRepository, perpetuals_repository::PerpetualsRepository,
     price_alerts_repository::PriceAlertsRepository, prices_dex_repository::PricesDexRepository, prices_repository::PricesRepository, releases_repository::ReleasesRepository,
     rewards_redemptions_repository::RewardsRedemptionsRepository, rewards_repository::RewardsRepository, risk_signals_repository::RiskSignalsRepository,
-    scan_addresses_repository::ScanAddressesRepository, subscriptions_repository::SubscriptionsRepository, support_repository::SupportRepository, tag_repository::TagRepository,
+    scan_addresses_repository::ScanAddressesRepository, subscriptions_repository::SubscriptionsRepository, tag_repository::TagRepository,
     transactions_repository::TransactionsRepository, wallets_repository::WalletsRepository,
 };
 pub use self::sql_types::{NotificationType, WalletSource, WalletType};
@@ -128,10 +128,6 @@ impl Database {
     }
 
     pub fn subscriptions(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
-        self.client()
-    }
-
-    pub fn support(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
         self.client()
     }
 

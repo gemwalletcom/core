@@ -25,10 +25,10 @@ impl SupportWebhookConsumer {
         })
     }
 
-    async fn process_webhook(&self, device: &Device, support_device_id: &str, webhook: &ChatwootWebhookPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    async fn process_webhook(&self, device: &Device, webhook: &ChatwootWebhookPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         match webhook.event.as_str() {
-            EVENT_MESSAGE_CREATED => self.support_client.handle_message_created(device, support_device_id, webhook).await,
-            EVENT_CONVERSATION_UPDATED | EVENT_CONVERSATION_STATUS_CHANGED => self.support_client.handle_conversation_updated(support_device_id, webhook).map(|_| 0),
+            EVENT_MESSAGE_CREATED => self.support_client.handle_message_created(device, webhook).await,
+            EVENT_CONVERSATION_UPDATED | EVENT_CONVERSATION_STATUS_CHANGED => self.support_client.handle_conversation_updated(webhook).map(|_| 0),
             _ => Ok(0),
         }
     }
@@ -49,28 +49,23 @@ impl MessageConsumer<SupportWebhookPayload, bool> for SupportWebhookConsumer {
             }
         };
 
-        let Some(support_device_id) = webhook.get_support_device_id() else {
-            info_with_fields!("Support webhook missing support_device_id", event = webhook.event);
+        let Some(device_id) = webhook.get_device_id() else {
+            info_with_fields!("Support webhook missing device_id", event = webhook.event);
             return Ok(true);
         };
 
-        let Some(device) = self.support_client.get_device(&support_device_id)? else {
-            info_with_fields!("Support webhook device not found", support_device_id = support_device_id);
+        let Some(device) = self.support_client.get_device(&device_id)? else {
+            info_with_fields!("Support webhook device not found", device_id = device_id);
             return Ok(true);
         };
 
-        match self.process_webhook(&device, &support_device_id, &webhook).await {
+        match self.process_webhook(&device, &webhook).await {
             Ok(notifications) => {
-                info_with_fields!(
-                    "Support webhook processed",
-                    support_device_id = support_device_id,
-                    event = webhook.event,
-                    notifications = notifications
-                );
+                info_with_fields!("Support webhook processed", device_id = device_id, event = webhook.event, notifications = notifications);
                 Ok(true)
             }
             Err(error) => {
-                error_with_fields!("Support webhook failed", &*error, support_device_id = support_device_id, payload = payload.data.to_string());
+                error_with_fields!("Support webhook failed", &*error, device_id = device_id, payload = payload.data.to_string());
                 Err(error)
             }
         }

@@ -19,7 +19,6 @@ mod responders;
 mod scan;
 mod status;
 mod subscriptions;
-mod support;
 mod swap;
 mod transactions;
 mod wallets;
@@ -55,7 +54,6 @@ use settings_chain::{ChainProviders, ProviderFactory};
 use storage::Database;
 use streamer::{StreamProducer, StreamProducerConfig};
 use subscriptions::SubscriptionsClient;
-use support::SupportClient;
 use swap::SwapClient;
 use transactions::TransactionsClient;
 use wallets::WalletsClient;
@@ -112,7 +110,6 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let auth_client = Arc::new(AuthClient::new(cacher_client.clone()));
     let markets_client = MarketsClient::new(database.clone(), cacher_client.clone());
     let webhooks_client = WebhooksClient::new(stream_producer.clone());
-    let support_client = SupportClient::new(database.clone());
     let ip_check_providers: Vec<Arc<dyn IpCheckProvider>> = vec![
         Arc::new(AbuseIPDBClient::new(settings.ip.abuseipdb.url.clone(), settings.ip.abuseipdb.key.secret.clone())),
         Arc::new(IpApiClient::new(settings.ip.ipapi.url.clone(), settings.ip.ipapi.key.secret.clone())),
@@ -144,7 +141,6 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(chain_client))
         .manage(Mutex::new(markets_client))
         .manage(Mutex::new(webhooks_client))
-        .manage(Mutex::new(support_client))
         .manage(Mutex::new(fiat_ip_check_client))
         .manage(Mutex::new(rewards_client))
         .manage(Mutex::new(redemption_client))
@@ -212,9 +208,6 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 chain::balance::get_balances_staking,
                 chain::transaction::get_transactions,
                 webhooks::create_support_webhook,
-                support::add_device_legacy,
-                support::add_device,
-                support::get_support_device,
                 fiat::get_ip_address,
                 referral::get_rewards_leaderboard,
                 referral::get_rewards_redemption_option,
@@ -254,7 +247,6 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 devices::redeem_device_rewards_v2,
                 devices::get_device_notifications_v2,
                 devices::mark_device_notifications_read_v2,
-                devices::add_device_support_v2,
                 devices::get_device_subscriptions_v2,
                 devices::add_device_subscriptions_v2,
                 devices::delete_device_subscriptions_v2,

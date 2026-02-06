@@ -56,7 +56,7 @@
           "currency": "USD",
           "platform": "android",
           "app_version": "1.0.0",
-          "supportDeviceId": "test-device-id"
+          "device_id": "test-device-id"
         },
         "email": null,
         "id": 1,

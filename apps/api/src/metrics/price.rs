@@ -44,11 +44,7 @@ pub async fn update_price_metrics(database: &Database, cacher: &CacherClient) {
 }
 
 fn update_db_price_metrics(database: &Database) {
-    let prices = database
-        .client()
-        .ok()
-        .and_then(|mut c| c.prices().get_prices().ok())
-        .unwrap_or_default();
+    let prices = database.client().ok().and_then(|mut c| c.prices().get_prices().ok()).unwrap_or_default();
 
     if let Some(gauge) = PRICE_ASSETS_TOTAL.get() {
         gauge.set(prices.len() as i64);

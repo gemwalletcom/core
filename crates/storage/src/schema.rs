@@ -837,18 +837,6 @@ diesel::table! {
 }
 
 diesel::table! {
-    support (id) {
-        id -> Int4,
-        #[max_length = 32]
-        support_id -> Varchar,
-        device_id -> Int4,
-        unread -> Int4,
-        updated_at -> Timestamp,
-        created_at -> Timestamp,
-    }
-}
-
-diesel::table! {
     tags (id) {
         #[max_length = 64]
         id -> Varchar,
@@ -1012,7 +1000,6 @@ diesel::joinable!(scan_addresses -> chains (chain));
 diesel::joinable!(subscriptions -> chains (chain));
 diesel::joinable!(subscriptions -> devices (device_id));
 diesel::joinable!(subscriptions_addresses_exclude -> chains (chain));
-diesel::joinable!(support -> devices (device_id));
 diesel::joinable!(transactions -> chains (chain));
 diesel::joinable!(transactions_addresses -> assets (asset_id));
 diesel::joinable!(transactions_addresses -> transactions (transaction_id));
@@ -1068,7 +1055,6 @@ diesel::allow_tables_to_appear_in_same_query!(
     scan_addresses,
     subscriptions,
     subscriptions_addresses_exclude,
-    support,
     tags,
     transactions,
     transactions_addresses,

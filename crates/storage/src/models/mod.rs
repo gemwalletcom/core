@@ -21,7 +21,6 @@ pub mod release;
 pub mod reward;
 pub mod scan_addresses;
 pub mod subscription;
-pub mod support;
 pub mod tag;
 pub mod transaction;
 pub mod transaction_addresses;
@@ -56,7 +55,6 @@ pub use self::reward::{
 };
 pub use self::scan_addresses::{NewScanAddressRow, ScanAddressRow};
 pub use self::subscription::{SubscriptionAddressExcludeRow, SubscriptionRow};
-pub use self::support::SupportRow;
 pub use self::tag::{AssetTagRow, TagRow};
 pub use self::transaction::{NewTransactionRow, TransactionRow};
 pub use self::transaction_addresses::{AddressChainIdResultRow, NewTransactionAddressesRow, TransactionAddressesRow};
