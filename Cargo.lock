@@ -513,9 +513,9 @@ dependencies = [
 
 [[package]]
 name = "alloy-signer"
-version = "1.5.2"
+version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f7481dc8316768f042495eaf305d450c32defbc9bce09d8bf28afcd956895bb"
+checksum = "1bea4c8f30eddb11d7ab56e83e49c814655daa78ca708df26c300c10d0189cbc"
 dependencies = [
  "alloy-primitives",
  "async-trait",
