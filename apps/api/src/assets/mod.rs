@@ -2,7 +2,7 @@ pub mod cilent;
 mod filter;
 mod model;
 
-use crate::params::{AssetIdParam, DeviceIdParam, SearchQueryParam};
+use crate::params::{AssetIdParam, SearchQueryParam};
 use crate::responders::{ApiError, ApiResponse};
 pub use cilent::{AssetsClient, SearchClient};
 pub use model::SearchRequest;
@@ -48,17 +48,6 @@ pub async fn get_assets_search(
 ) -> Result<ApiResponse<Vec<AssetBasic>>, ApiError> {
     let request = SearchRequest::new(&query.0, chains, tags, limit, offset);
     Ok(client.lock().await.get_assets_search(&request).await?.into())
-}
-
-// TODO: Remove once all clients migrate to /v1/devices/<device_id>/wallets/<wallet_id>/assets
-#[get("/assets/device/<device_id>?<wallet_index>&<from_timestamp>")]
-pub async fn get_assets_by_device_id(
-    device_id: DeviceIdParam,
-    wallet_index: i32,
-    from_timestamp: Option<u64>,
-    client: &State<Mutex<AssetsClient>>,
-) -> Result<ApiResponse<Vec<AssetId>>, ApiError> {
-    Ok(client.lock().await.get_assets_by_device_id(&device_id.0, wallet_index, from_timestamp)?.into())
 }
 
 #[get("/search?<query>&<chains>&<tags>&<limit>&<offset>")]

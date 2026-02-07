@@ -3,7 +3,7 @@ use std::{collections::HashMap, error::Error};
 
 use async_trait::async_trait;
 use primitives::{AssetIdVecExt, ConfigKey, Transaction, TransactionId};
-use storage::{AssetsAddressesRepository, AssetsRepository, ConfigCacher, Database, SubscriptionsRepository, TransactionsRepository};
+use storage::{AssetsAddressesRepository, AssetsRepository, ConfigCacher, Database, TransactionsRepository, WalletsRepository};
 use streamer::{AssetId, AssetsAddressPayload, NotificationsPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
 
 use crate::consumers::store::StoreTransactionsConsumerConfig;
@@ -32,9 +32,9 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
         let min_amount = self.config_cacher.get_f64(ConfigKey::TransactionsMinAmountUsd)?;
 
         let addresses: Vec<_> = transactions.iter().flat_map(|tx| tx.addresses()).collect::<HashSet<_>>().into_iter().collect();
-        let subscriptions = self.database.subscriptions()?.get_subscriptions(chain, addresses)?;
+        let subscriptions = self.database.wallets()?.get_subscriptions_by_chain_addresses(chain, addresses)?;
 
-        let subscription_addresses: HashSet<_> = subscriptions.iter().map(|s| &s.subscription.address).collect();
+        let subscription_addresses: HashSet<_> = subscriptions.iter().map(|s| &s.address).collect();
 
         let asset_ids: Vec<AssetId> = transactions
             .iter()
@@ -58,7 +58,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
 
         for subscription in &subscriptions {
             for transaction in &transactions {
-                if !transaction.addresses().contains(&subscription.subscription.address) {
+                if !transaction.addresses().contains(&subscription.address) {
                     continue;
                 }
 
@@ -75,7 +75,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
                 let assets_addresses = transaction
                     .assets_addresses_with_fee()
                     .into_iter()
-                    .filter(|x| existing_assets_map.contains_key(&x.asset_id) && subscription.subscription.address == x.address)
+                    .filter(|x| existing_assets_map.contains_key(&x.asset_id) && subscription.address == x.address)
                     .collect::<Vec<_>>();
 
                 address_assets_payload.push(AssetsAddressPayload::new(assets_addresses));
@@ -99,11 +99,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
                         .map(|asset_price| asset_price.asset.asset.clone())
                         .collect();
 
-                    if let Ok(notifications) = self
-                        .pusher
-                        .get_messages(subscription.device.clone(), transaction.clone(), subscription.subscription.clone(), assets)
-                        .await
-                    {
+                    if let Ok(notifications) = self.pusher.get_messages(subscription, transaction.clone(), assets).await {
                         notifications_payload.push(NotificationsPayload::new(notifications));
                     }
                 }

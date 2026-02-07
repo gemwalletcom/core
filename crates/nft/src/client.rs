@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use primitives::{Chain, NFTAsset, NFTAssetId, NFTCollection, NFTCollectionId, NFTData};
 use storage::database::devices::DevicesStore;
-use storage::{Database, NftRepository, SubscriptionsRepository, WalletsRepository};
+use storage::{Database, NftRepository, WalletsRepository};
 
 use crate::NFTProviderConfig;
 use crate::factory::NFTProviderFactory;
@@ -35,12 +35,6 @@ impl NFTClient {
 
     pub async fn update_asset(&self, _asset_id: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
         Ok(true)
-    }
-
-    pub async fn get_nft_assets(&self, device_id: &str, wallet_index: i32) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {
-        let subscriptions = self.get_subscriptions(device_id, wallet_index)?;
-        let addresses: HashMap<Chain, String> = subscriptions.into_iter().map(|x| (x.chain, x.address)).collect();
-        self.fetch_assets_for_addresses(addresses).await
     }
 
     pub async fn get_nft_assets_by_wallet_id(&self, device_id: i32, wallet_id: i32) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {
@@ -103,10 +97,6 @@ impl NFTClient {
         self.database.nft()?.add_nft_assets(new_assets)?;
 
         Ok(assets)
-    }
-
-    pub fn get_subscriptions(&self, device_id: &str, wallet_index: i32) -> Result<Vec<primitives::Subscription>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.subscriptions()?.get_subscriptions_by_device_id(device_id, Some(wallet_index))?)
     }
 
     pub async fn get_nft_assets_by_chain(&self, chain: Chain, address: &str) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {

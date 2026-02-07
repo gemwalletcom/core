@@ -127,7 +127,11 @@ impl StreamReader {
                 break;
             }
             let error = result.err().map(|e| e.to_string());
-            info_with_fields!("consumer reconnecting", connection = self.config.name.as_str(), error = error.as_deref().unwrap_or("stream ended"));
+            info_with_fields!(
+                "consumer reconnecting",
+                connection = self.config.name.as_str(),
+                error = error.as_deref().unwrap_or("stream ended")
+            );
             if !self.reconnect(&shutdown_rx).await? {
                 break;
             }

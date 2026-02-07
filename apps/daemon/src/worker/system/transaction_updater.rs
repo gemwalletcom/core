@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::error::Error;
 use storage::models::SubscriptionAddressExcludeRow;
-use storage::{Database, SubscriptionsRepository, TransactionsRepository};
+use storage::{Database, TransactionsRepository, WalletsRepository};
 
 pub struct TransactionUpdater {
     database: Database,
@@ -21,7 +21,7 @@ impl TransactionUpdater {
                 chain: x.chain_id,
             })
             .collect();
-        let subscriptions_excluded_added = self.database.subscriptions()?.add_subscriptions_exclude_addresses(subscriptions_exclude)?;
+        let subscriptions_excluded_added = self.database.wallets()?.add_subscriptions_exclude_addresses(subscriptions_exclude)?;
 
         let addresses = addresses_result.clone().into_iter().map(|x| x.address).collect::<Vec<_>>();
         let result = self.database.transactions()?.delete_transactions_addresses(addresses.clone())?;

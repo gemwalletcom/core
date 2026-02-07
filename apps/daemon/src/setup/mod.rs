@@ -2,7 +2,6 @@ use gem_tracing::info_with_fields;
 use prices_dex::PriceFeedProvider;
 use primitives::{
     Asset, AssetId, AssetTag, Chain, ConfigKey, FiatProviderName, NFTChain, NotificationType, PlatformStore as PrimitivePlatformStore, PriceAlert, PriceAlertDirection,
-    Subscription,
 };
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
@@ -11,7 +10,7 @@ use storage::models::{ConfigRow, FiatAssetRow, FiatProviderCountryRow, FiatRateR
 use storage::sql_types::{Platform, PlatformStore};
 use storage::{
     AssetsRepository, ChainsRepository, ConfigRepository, DevicesRepository, MigrationsRepository, NewNotificationRow, NewWalletRow, NotificationsRepository,
-    PriceAlertsRepository, PricesDexRepository, ReleasesRepository, RewardsRepository, SubscriptionsRepository, TagRepository, WalletSource, WalletType, WalletsRepository,
+    PriceAlertsRepository, PricesDexRepository, ReleasesRepository, RewardsRepository, TagRepository, WalletSource, WalletType, WalletsRepository,
 };
 use streamer::{ExchangeKind, ExchangeName, QueueName, StreamProducer, StreamProducerConfig};
 
@@ -229,15 +228,6 @@ fn setup_dev_devices(database: &Database) -> Result<(), Box<dyn std::error::Erro
     let android_device_row_id = database.devices()?.get_device_row_id(&android_device_id)?;
 
     let wallet_address = "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4";
-
-    info_with_fields!("setup_dev", step = "add subscription");
-    let subscription = Subscription {
-        wallet_index: 1,
-        chain: Chain::Ethereum,
-        address: wallet_address.to_string(),
-    };
-    let result = SubscriptionsRepository::add_subscriptions(&mut database.subscriptions()?, vec![subscription], &ios_device_id)?;
-    info_with_fields!("setup_dev", step = "subscription added", count = result);
 
     info_with_fields!("setup_dev", step = "add wallet");
     let wallet_identifier = format!("multicoin_{}", wallet_address);
