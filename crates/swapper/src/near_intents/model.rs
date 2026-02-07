@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-pub const DEFAULT_REFERRAL: &str = "gemwallet";
 pub const DEPOSIT_TYPE_ORIGIN: &str = "ORIGIN_CHAIN";
 pub const RECIPIENT_TYPE_DESTINATION: &str = "DESTINATION_CHAIN";
 pub const DEFAULT_WAIT_TIME_MS: u32 = 1_024;
@@ -18,29 +17,19 @@ pub struct QuoteRequest {
     pub origin_asset: String,
     pub destination_asset: String,
     pub amount: String,
-    #[serde(default = "default_referral")]
     pub referral: String,
     pub recipient: String,
     pub swap_type: SwapType,
-    #[serde(default = "default_slippage_tolerance")]
     pub slippage_tolerance: u32,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub app_fees: Option<Vec<AppFee>>,
-    #[serde(default = "default_deposit_type")]
     pub deposit_type: String,
-    #[serde(default)]
     pub refund_to: String,
-    #[serde(default = "default_refund_type")]
     pub refund_type: String,
-    #[serde(default = "default_recipient_type")]
     pub recipient_type: String,
-    #[serde(default)]
     pub deadline: String,
-    #[serde(default = "default_quote_waiting_time_ms")]
-    pub quote_waiting_time_ms: u32,
-    #[serde(default)]
+    pub quote_waiting_time_ms: Option<u32>,
     pub dry: bool,
-    #[serde(default)]
     pub deposit_mode: DepositMode,
 }
 
@@ -83,7 +72,6 @@ pub enum QuoteResponseResult {
 pub struct Quote {
     pub deposit_address: Option<String>,
     pub deposit_memo: Option<String>,
-    #[serde(default)]
     pub deposit_mode: Option<DepositMode>,
     pub amount_in: String,
     pub amount_in_formatted: String,
@@ -99,27 +87,19 @@ pub struct Quote {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ExecutionStatus {
-    #[serde(default)]
     pub quote_response: Option<QuoteResponse>,
     pub status: String,
-    #[serde(default)]
     pub updated_at: String,
-    #[serde(default)]
     pub swap_details: Option<SwapDetails>,
 }
 
 #[derive(Debug, Clone, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct SwapDetails {
-    #[serde(default)]
     pub amount_in: Option<String>,
-    #[serde(default)]
     pub amount_out: Option<String>,
-    #[serde(default)]
     pub origin_chain_tx_hashes: Vec<TransactionDetails>,
-    #[serde(default)]
     pub destination_chain_tx_hashes: Vec<TransactionDetails>,
-    #[serde(default)]
     pub refunded_amount: Option<String>,
 }
 
@@ -127,30 +107,5 @@ pub struct SwapDetails {
 #[serde(rename_all = "camelCase")]
 pub struct TransactionDetails {
     pub hash: String,
-    #[serde(default)]
     pub explorer_url: Option<String>,
-}
-
-fn default_referral() -> String {
-    DEFAULT_REFERRAL.to_string()
-}
-
-fn default_deposit_type() -> String {
-    DEPOSIT_TYPE_ORIGIN.to_string()
-}
-
-fn default_refund_type() -> String {
-    DEPOSIT_TYPE_ORIGIN.to_string()
-}
-
-fn default_recipient_type() -> String {
-    RECIPIENT_TYPE_DESTINATION.to_string()
-}
-
-fn default_slippage_tolerance() -> u32 {
-    0
-}
-
-fn default_quote_waiting_time_ms() -> u32 {
-    DEFAULT_WAIT_TIME_MS
 }

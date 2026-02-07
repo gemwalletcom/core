@@ -153,19 +153,6 @@ impl ProxyProvider<RpcClient> {
 
         Self::new_with_path(SwapperProvider::Mayan, "mayan", assets, rpc_provider)
     }
-
-    pub fn new_relay(rpc_provider: Arc<dyn RpcProvider>) -> Self {
-        Self::new_with_path(
-            SwapperProvider::Relay,
-            "relay",
-            vec![
-                SwapperChainAsset::All(Chain::Hyperliquid),
-                SwapperChainAsset::All(Chain::Manta),
-                SwapperChainAsset::All(Chain::Berachain),
-            ],
-            rpc_provider,
-        )
-    }
 }
 
 #[async_trait]
