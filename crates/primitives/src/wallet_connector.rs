@@ -57,6 +57,12 @@ pub enum WalletConnectionMethods {
     TonSendMessage,
     #[serde(rename = "ton_signData")]
     TonSignData,
+    #[serde(rename = "tron_signMessage")]
+    TronSignMessage,
+    #[serde(rename = "tron_signTransaction")]
+    TronSignTransaction,
+    #[serde(rename = "tron_sendTransaction")]
+    TronSendTransaction,
     #[serde(rename = "sendTransfer")]
     BtcSendTransfer,
     #[serde(rename = "signMessage")]

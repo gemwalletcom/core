@@ -3338,6 +3338,7 @@ dependencies = [
 name = "gem_hash"
 version = "1.0.0"
 dependencies = [
+ "sha2",
  "sha3",
  "tiny-keccak",
 ]
@@ -3562,6 +3563,7 @@ dependencies = [
  "futures",
  "gem_client",
  "gem_evm",
+ "gem_hash",
  "hex",
  "num-bigint",
  "num-traits",
@@ -3571,6 +3573,7 @@ dependencies = [
  "serde",
  "serde_json",
  "settings",
+ "signer",
  "tokio",
 ]
 

@@ -8,8 +8,11 @@ fn current_timestamp() -> i64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0)
 }
 
-use crate::message::sign_type::{SignDigestType, SignMessage};
-use crate::siwe::SiweMessage;
+use crate::{
+    GemstoneError,
+    message::sign_type::{SignDigestType, SignMessage},
+    siwe::SiweMessage,
+};
 
 pub mod actions;
 pub mod handler_traits;
@@ -38,6 +41,22 @@ impl Default for WalletConnect {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::message::signer::MessageSigner;
+    use gem_tron::TronChainSigner;
+    use primitives::{
+        Asset, ChainSigner, GasPriceType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType,
+        TronStakeData, WalletConnectionSessionAppMetadata,
+    };
+
+    fn make_request(method: &str, params: &str, chain_id: Option<&str>) -> WalletConnectRequest {
+        WalletConnectRequest {
+            topic: "test-topic".to_string(),
+            method: method.to_string(),
+            params: params.to_string(),
+            chain_id: chain_id.map(|value| value.to_string()),
+            domain: "example.com".to_string(),
+        }
+    }
 
     fn sample_siwe_message() -> String {
         [
@@ -127,6 +146,142 @@ mod tests {
     }
 
     #[test]
+    fn parse_tron_sign_message_and_sign() {
+        let wallet_connect = WalletConnect::new();
+        let params = include_str!("./test/tron_sign_message.json");
+        let raw_params = serde_json::to_string(&params.trim()).unwrap();
+        let request = make_request("tron_signMessage", &raw_params, Some("tron:0x2b6653dc"));
+
+        let action = WalletConnectRequestHandler::parse_request(request).unwrap();
+        let WalletConnectAction::SignMessage { chain, sign_type, data } = action else {
+            panic!("Expected SignMessage action");
+        };
+
+        assert_eq!(chain, Chain::Tron);
+        assert_eq!(sign_type, SignDigestType::TronPersonal);
+        assert_eq!(data, "This is a message to be signed for Tron");
+
+        let sign_message = wallet_connect.decode_sign_message(chain, sign_type, data);
+        let signer = MessageSigner::new(sign_message);
+        let signature = signer.sign(vec![1u8; 32]).unwrap();
+
+        assert_eq!(
+            signature,
+            "0xa0cbc20e8f0a9c19dd3d97e15fd99eee49edb8c0bcca52b684bbf13e1344b99670201d57633881cb20b0c00b626397530e3165049044b2fa4089840cf41a0a761b"
+        );
+
+        let response = wallet_connect.encode_sign_message(chain, signature.clone());
+        match response {
+            WalletConnectResponseType::Object { json } => {
+                let expected_json = include_str!("./test/tron_sign_message_response.json");
+                assert_eq!(json, expected_json.trim());
+            }
+            _ => panic!("Expected Object response for Tron"),
+        }
+    }
+
+    #[test]
+    fn parse_tron_sign_transaction_and_sign() {
+        let wallet_connect = WalletConnect::new();
+        let params = include_str!("./test/tron_sign_transaction.json");
+        let request = make_request("tron_signTransaction", &serde_json::to_string(&params.trim()).unwrap(), Some("tron:0x2b6653dc"));
+
+        let action = WalletConnectRequestHandler::parse_request(request).unwrap();
+        let WalletConnectAction::SignTransaction { chain, transaction_type, data } = action else {
+            panic!("Expected SignTransaction action");
+        };
+
+        assert_eq!(chain, Chain::Tron);
+        let WalletConnectTransactionType::Tron {
+            output_type: TransferDataOutputType::EncodedTransaction,
+        } = transaction_type
+        else {
+            panic!("Expected Tron transaction type with EncodedTransaction output");
+        };
+
+        let input = TransactionLoadInput {
+            input_type: TransactionInputType::Generic(
+                Asset::from_chain(Chain::Tron),
+                WalletConnectionSessionAppMetadata {
+                    name: "Test Dapp".to_string(),
+                    description: "Test Dapp".to_string(),
+                    url: "https://example.com".to_string(),
+                    icon: "https://example.com/icon.png".to_string(),
+                },
+                TransferDataExtra {
+                    to: "".to_string(),
+                    gas_limit: None,
+                    gas_price: None,
+                    data: Some(data.as_bytes().to_vec()),
+                    output_type: TransferDataOutputType::EncodedTransaction,
+                    output_action: TransferDataOutputAction::Sign,
+                },
+            ),
+            sender_address: "TJoSEwEqt7cT3TUwmEoUYnYs5cZR3xSukM".to_string(),
+            destination_address: "".to_string(),
+            value: "0".to_string(),
+            gas_price: GasPriceType::regular(0),
+            memo: None,
+            is_max_value: false,
+            metadata: TransactionLoadMetadata::Tron {
+                block_number: 0,
+                block_version: 0,
+                block_timestamp: 0,
+                transaction_tree_root: "".to_string(),
+                parent_hash: "".to_string(),
+                witness_address: "".to_string(),
+                stake_data: TronStakeData::Votes(vec![]),
+            },
+        };
+
+        let signature_payload = TronChainSigner.sign_data(&input, &[1u8; 32]).unwrap();
+        let value: serde_json::Value = serde_json::from_str(&signature_payload).unwrap();
+        let signature = value
+            .get("transaction")
+            .and_then(|v| v.get("signature"))
+            .and_then(|v| v.get(0))
+            .and_then(|v| v.as_str())
+            .unwrap_or_default()
+            .to_string();
+
+        assert_eq!(
+            signature,
+            "943d286dfd1fb6a2cd31c9af7a6cfd23ee062ec2e0abcf82c7daa0c7bb43ab04458e0e88ebe3a94060122cccc8fb4395e5eb922720327df04ae840139c729a1f00"
+        );
+
+        let response = wallet_connect.encode_sign_transaction(chain, signature_payload.clone());
+        match response {
+            WalletConnectResponseType::Object { json } => {
+                let expected_json = include_str!("./test/tron_sign_transaction_response.json");
+                assert_eq!(json, expected_json.trim());
+            }
+            _ => panic!("Expected Object response for Tron"),
+        }
+    }
+
+    #[test]
+    fn parse_tron_send_transaction() {
+        let params = include_str!("./test/tron_send_transaction.json");
+        let request = make_request("tron_sendTransaction", &serde_json::to_string(&params.trim()).unwrap(), Some("tron:0x2b6653dc"));
+
+        let action = WalletConnectRequestHandler::parse_request(request).unwrap();
+        let WalletConnectAction::SendTransaction { chain, transaction_type, data } = action else {
+            panic!("Expected SendTransaction action");
+        };
+
+        assert_eq!(chain, Chain::Tron);
+        let WalletConnectTransactionType::Tron {
+            output_type: TransferDataOutputType::EncodedTransaction,
+        } = transaction_type
+        else {
+            panic!("Expected Tron transaction type with EncodedTransaction output");
+        };
+
+        let parsed_data: serde_json::Value = serde_json::from_str(&data).unwrap();
+        assert!(parsed_data.get("transaction").is_some());
+    }
+
+    #[test]
     fn validate_ton_send_transaction() {
         let wallet_connect = WalletConnect::new();
         let ton_type = WalletConnectTransactionType::Ton {
@@ -168,7 +323,7 @@ impl WalletConnect {
         Some(primitives::WalletConnectCAIP2::get_chain(caip2, caip10)?.to_string())
     }
 
-    pub fn parse_request(&self, topic: String, method: String, params: String, chain_id: String, domain: String) -> Result<WalletConnectAction, crate::GemstoneError> {
+    pub fn parse_request(&self, topic: String, method: String, params: String, chain_id: String, domain: String) -> Result<WalletConnectAction, GemstoneError> {
         let request = WalletConnectRequest {
             topic,
             method,
@@ -176,7 +331,7 @@ impl WalletConnect {
             chain_id: Some(chain_id),
             domain,
         };
-        WalletConnectRequestHandler::parse_request(request).map_err(|e| crate::GemstoneError::AnyError { msg: e })
+        WalletConnectRequestHandler::parse_request(request).map_err(|e| GemstoneError::AnyError { msg: e })
     }
 
     pub fn validate_origin(&self, metadata_url: String, origin: Option<String>, validation: WalletConnectionVerificationStatus) -> WalletConnectionVerificationStatus {
@@ -195,33 +350,38 @@ impl WalletConnect {
         WalletConnectResponseHandler::encode_send_transaction(chain.chain_type(), transaction_id)
     }
 
-    pub fn validate_sign_message(&self, chain: Chain, sign_type: SignDigestType, data: String) -> Result<(), crate::GemstoneError> {
+    pub fn validate_sign_message(&self, chain: Chain, sign_type: SignDigestType, data: String) -> Result<(), GemstoneError> {
         match sign_type {
             SignDigestType::Eip712 => {
-                let expected_chain_id = chain.network_id().parse::<u64>().map_err(|_| crate::GemstoneError::AnyError {
+                let expected_chain_id = chain.network_id().parse::<u64>().map_err(|_| GemstoneError::AnyError {
                     msg: format!("Chain {} does not have a numeric network ID", chain),
                 })?;
-                gem_evm::eip712::validate_eip712_chain_id(&data, expected_chain_id).map_err(|e| crate::GemstoneError::AnyError { msg: e })
+                gem_evm::eip712::validate_eip712_chain_id(&data, expected_chain_id).map_err(|e| GemstoneError::AnyError { msg: e })
             }
             SignDigestType::TonPersonal => {
                 gem_ton::signer::TonSignMessageData::from_bytes(data.as_bytes())?;
                 Ok(())
             }
-            SignDigestType::Eip191 | SignDigestType::Base58 | SignDigestType::SuiPersonal | SignDigestType::Siwe | SignDigestType::BitcoinPersonal => Ok(()),
+            SignDigestType::Eip191
+            | SignDigestType::Base58
+            | SignDigestType::SuiPersonal
+            | SignDigestType::Siwe
+            | SignDigestType::BitcoinPersonal
+            | SignDigestType::TronPersonal => Ok(()),
         }
     }
 
-    pub fn validate_send_transaction(&self, transaction_type: WalletConnectTransactionType, data: String) -> Result<(), crate::GemstoneError> {
+    pub fn validate_send_transaction(&self, transaction_type: WalletConnectTransactionType, data: String) -> Result<(), GemstoneError> {
         let WalletConnectTransactionType::Ton { .. } = transaction_type else {
             return Ok(());
         };
 
-        let json: serde_json::Value = serde_json::from_str(&data).map_err(|_| crate::GemstoneError::AnyError { msg: "Invalid JSON".to_string() })?;
+        let json: serde_json::Value = serde_json::from_str(&data).map_err(|_| GemstoneError::AnyError { msg: "Invalid JSON".to_string() })?;
 
         if let Some(valid_until) = json.get("valid_until").and_then(|v| v.as_i64())
             && current_timestamp() >= valid_until
         {
-            return Err(crate::GemstoneError::AnyError {
+            return Err(GemstoneError::AnyError {
                 msg: "Transaction expired".to_string(),
             });
         }
@@ -264,7 +424,7 @@ impl WalletConnect {
         })
     }
 
-    pub fn decode_send_transaction(&self, transaction_type: WalletConnectTransactionType, data: String) -> Result<WalletConnectTransaction, crate::GemstoneError> {
+    pub fn decode_send_transaction(&self, transaction_type: WalletConnectTransactionType, data: String) -> Result<WalletConnectTransaction, GemstoneError> {
         match transaction_type {
             WalletConnectTransactionType::Ethereum => {
                 let tx: WCEthereumTransaction = serde_json::from_str(&data)?;
@@ -276,7 +436,7 @@ impl WalletConnect {
                 let transaction = json
                     .get("transaction")
                     .and_then(|v| v.as_str())
-                    .ok_or_else(|| crate::GemstoneError::AnyError {
+                    .ok_or_else(|| GemstoneError::AnyError {
                         msg: "Missing transaction field".to_string(),
                     })?
                     .to_string();
@@ -292,7 +452,7 @@ impl WalletConnect {
                 let transaction = json
                     .get("transaction")
                     .and_then(|v| v.as_str())
-                    .ok_or_else(|| crate::GemstoneError::AnyError {
+                    .ok_or_else(|| GemstoneError::AnyError {
                         msg: "Missing transaction field".to_string(),
                     })?
                     .to_string();
@@ -309,7 +469,7 @@ impl WalletConnect {
 
                 let messages = json
                     .get("messages")
-                    .ok_or_else(|| crate::GemstoneError::AnyError {
+                    .ok_or_else(|| GemstoneError::AnyError {
                         msg: "Missing messages field".to_string(),
                     })?
                     .to_string();
@@ -317,6 +477,7 @@ impl WalletConnect {
                 Ok(WalletConnectTransaction::Ton { messages, output_type })
             }
             WalletConnectTransactionType::Bitcoin { output_type } => Ok(WalletConnectTransaction::Bitcoin { data, output_type }),
+            WalletConnectTransactionType::Tron { output_type } => Ok(WalletConnectTransaction::Tron { data, output_type }),
         }
     }
 }

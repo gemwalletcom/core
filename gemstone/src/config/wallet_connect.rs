@@ -7,7 +7,7 @@ pub struct WalletConnectConfig {
 
 pub fn get_wallet_connect_config() -> WalletConnectConfig {
     let chains: Vec<Chain> = [
-        vec![Chain::Bitcoin, Chain::Solana, Chain::Sui, Chain::Ton],
+        vec![Chain::Bitcoin, Chain::Solana, Chain::Sui, Chain::Ton, Chain::Tron],
         EVMChain::all().iter().map(|x| x.to_chain()).collect(),
     ]
     .concat();

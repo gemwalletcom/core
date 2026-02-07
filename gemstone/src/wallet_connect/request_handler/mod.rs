@@ -3,6 +3,7 @@ mod ethereum;
 mod solana;
 mod sui;
 mod ton;
+mod tron;
 
 use crate::wallet_connect::actions::{WalletConnectAction, WalletConnectChainOperation};
 use crate::wallet_connect::handler_traits::ChainRequestHandler;
@@ -13,6 +14,7 @@ use serde_json::Value;
 use solana::SolanaRequestHandler;
 use sui::SuiRequestHandler;
 use ton::TonRequestHandler;
+use tron::TronRequestHandler;
 
 pub struct WalletConnectRequestHandler;
 
@@ -21,6 +23,10 @@ impl WalletConnectRequestHandler {
         let method =
             serde_json::from_value::<WalletConnectionMethods>(serde_json::Value::String(request.method.clone())).map_err(|_| format!("Unsupported method: {}", request.method))?;
         let params = serde_json::from_str::<Value>(&request.params).map_err(|e| format!("Failed to parse params: {}", e))?;
+        let params = match params {
+            Value::String(raw_json) => serde_json::from_str::<Value>(&raw_json).unwrap_or(Value::String(raw_json)),
+            value => value,
+        };
 
         let domain = &request.domain;
 
@@ -60,6 +66,9 @@ impl WalletConnectRequestHandler {
             WalletConnectionMethods::SuiSignAndExecuteTransaction => SuiRequestHandler::parse_send_transaction(Chain::Sui, params),
             WalletConnectionMethods::TonSignData => TonRequestHandler::parse_sign_message(Chain::Ton, params, domain),
             WalletConnectionMethods::TonSendMessage => TonRequestHandler::parse_send_transaction(Chain::Ton, params),
+            WalletConnectionMethods::TronSignMessage => TronRequestHandler::parse_sign_message(Chain::Tron, params, domain),
+            WalletConnectionMethods::TronSignTransaction => TronRequestHandler::parse_sign_transaction(Chain::Tron, params),
+            WalletConnectionMethods::TronSendTransaction => TronRequestHandler::parse_send_transaction(Chain::Tron, params),
             WalletConnectionMethods::BtcSignMessage => BitcoinRequestHandler::parse_sign_message(Chain::Bitcoin, params, domain),
             WalletConnectionMethods::BtcSendTransfer => BitcoinRequestHandler::parse_send_transaction(Chain::Bitcoin, params),
         }

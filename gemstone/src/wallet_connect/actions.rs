@@ -59,6 +59,7 @@ pub enum WalletConnectTransactionType {
     Sui { output_type: TransferDataOutputType },
     Ton { output_type: TransferDataOutputType },
     Bitcoin { output_type: TransferDataOutputType },
+    Tron { output_type: TransferDataOutputType },
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -80,6 +81,10 @@ pub enum WalletConnectTransaction {
         output_type: TransferDataOutputType,
     },
     Bitcoin {
+        data: String,
+        output_type: TransferDataOutputType,
+    },
+    Tron {
         data: String,
         output_type: TransferDataOutputType,
     },
