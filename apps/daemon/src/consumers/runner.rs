@@ -77,6 +77,7 @@ impl ChainConsumerRunner {
         for (chain, result) in futures::future::join_all(tasks).await {
             if let Err(err) = result {
                 error_with_fields!("consumer chain error", &*err, chain = chain.as_ref());
+                self.reporter.report_error(&self.queue.to_string(), &format!("{:?}", err)).await;
             }
         }
         Ok(())

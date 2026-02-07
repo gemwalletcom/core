@@ -2,7 +2,6 @@ use std::future::Future;
 use std::pin::Pin;
 
 use cacher::{CacheKey, CacherClient};
-use gem_tracing::info_with_fields;
 use primitives::{ConsumerError, ConsumerStatus};
 use streamer::ConsumerStatusReporter;
 
@@ -23,7 +22,10 @@ impl ConsumerStatusReporter for CacherConsumerReporter {
         Box::pin(async move {
             let cache_key = CacheKey::ConsumerStatus(&normalized);
             let key = cache_key.key();
-            let mut status = self.cacher.get_value::<ConsumerStatus>(&key).await.unwrap_or_default();
+            let mut status = match self.cacher.get_value::<ConsumerStatus>(&key).await {
+                Ok(status) => status,
+                Err(_) => ConsumerStatus::default(),
+            };
             let timestamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
 
             status.total_processed += 1;
@@ -33,9 +35,7 @@ impl ConsumerStatusReporter for CacherConsumerReporter {
             let prev_total = status.total_processed - 1;
             status.avg_duration = (status.avg_duration * prev_total + duration) / status.total_processed;
 
-            if let Err(e) = self.cacher.set_cached(cache_key, &status).await {
-                info_with_fields!("consumer status report failed", consumer = key, error = format!("{:?}", e));
-            }
+            let _ = self.cacher.set_cached(cache_key, &status).await;
         })
     }
 
@@ -45,27 +45,28 @@ impl ConsumerStatusReporter for CacherConsumerReporter {
         Box::pin(async move {
             let cache_key = CacheKey::ConsumerStatus(&normalized);
             let key = cache_key.key();
-            let mut status = self.cacher.get_value::<ConsumerStatus>(&key).await.unwrap_or_default();
+            let mut status = match self.cacher.get_value::<ConsumerStatus>(&key).await {
+                Ok(status) => status,
+                Err(_) => ConsumerStatus::default(),
+            };
             let timestamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
 
             status.total_errors += 1;
 
-            let truncated = if error.len() > 200 { error[..200].to_string() } else { error.clone() };
+            let message = if error.len() > 200 { &error[..200] } else { &error };
 
-            if let Some(entry) = status.errors.iter_mut().find(|e| e.message == truncated) {
+            if let Some(entry) = status.errors.iter_mut().find(|e| e.message == message) {
                 entry.count += 1;
                 entry.timestamp = timestamp;
             } else {
                 status.errors.push(ConsumerError {
-                    message: truncated,
+                    message: message.to_string(),
                     count: 1,
                     timestamp,
                 });
             }
 
-            if let Err(e) = self.cacher.set_cached(cache_key, &status).await {
-                info_with_fields!("consumer status report failed", consumer = key, error = format!("{:?}", e));
-            }
+            let _ = self.cacher.set_cached(cache_key, &status).await;
         })
     }
 }

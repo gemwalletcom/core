@@ -1,3 +1,4 @@
+mod error_reporter;
 mod parser_options;
 mod parser_state;
 mod plan;
@@ -11,10 +12,11 @@ use std::{
     time::{Duration, Instant},
 };
 
-use cacher::{CacheKey, CacherClient};
+use cacher::CacherClient;
 use chain_traits::ChainTraits;
+use error_reporter::ErrorReporter;
 use gem_tracing::{DurationMs, error_with_fields, info_with_fields};
-use primitives::{Chain, ParserError, ParserStatus};
+use primitives::Chain;
 use settings::Settings;
 use std::str::FromStr;
 use streamer::{StreamProducer, StreamProducerConfig, StreamProducerQueue, TransactionsPayload};
@@ -28,7 +30,7 @@ pub struct Parser {
     provider: Box<dyn ChainTraits>,
     stream_producer: StreamProducer,
     state_service: ParserStateService,
-    cacher: CacherClient,
+    reporter: ErrorReporter,
     options: ParserOptions,
     shutdown_rx: ShutdownReceiver,
 }
@@ -44,12 +46,13 @@ impl Parser {
     ) -> Self {
         let chain = provider.get_chain();
         let state_service = ParserStateService::new(chain, database);
+        let reporter = ErrorReporter::new(chain, cacher);
         Self {
             chain,
             provider,
             stream_producer,
             state_service,
-            cacher,
+            reporter,
             options,
             shutdown_rx,
         }
@@ -119,6 +122,7 @@ impl Parser {
             }
             Err(err) => {
                 error_with_fields!("parser parse_block", &*err, chain = self.chain.as_ref(), blocks = blocks_desc);
+                self.reporter.error(&format!("block: {:?}", err)).await;
                 self.sleep_or_shutdown(timeout).await;
                 return Ok(false);
             }
@@ -154,30 +158,6 @@ impl Parser {
         Ok(())
     }
 
-    async fn report_error(&self, error: &str) {
-        let cache_key = CacheKey::ParserStatus(self.chain.as_ref());
-        let key = cache_key.key();
-        let mut status = self.cacher.get_value::<ParserStatus>(&key).await.unwrap_or_default();
-        let timestamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
-
-        let truncated = if error.len() > 200 { error[..200].to_string() } else { error.to_string() };
-
-        if let Some(entry) = status.errors.iter_mut().find(|e| e.message == truncated) {
-            entry.count += 1;
-            entry.timestamp = timestamp;
-        } else {
-            status.errors.push(ParserError {
-                message: truncated,
-                count: 1,
-                timestamp,
-            });
-        }
-
-        if let Err(e) = self.cacher.set_cached(cache_key, &status).await {
-            info_with_fields!("parser status report failed", chain = self.chain.as_ref(), error = format!("{:?}", e));
-        }
-    }
-
     pub async fn start(&self) -> Result<(), Box<dyn Error + Send + Sync>> {
         loop {
             if self.is_shutdown() {
@@ -196,6 +176,7 @@ impl Parser {
                 Ok(block) => block,
                 Err(err) => {
                     error_with_fields!("parser latest_block", &*err, chain = self.chain.as_ref());
+                    self.reporter.error(&format!("latest_block: {:?}", err)).await;
                     self.sleep_or_shutdown(self.options.error_interval).await;
                     continue;
                 }
@@ -321,7 +302,7 @@ async fn run_parser(
         if let Err(e) = parser.start().await {
             let error_msg = format!("{:?}", e);
             error_with_fields!("parser error", &*e, chain = chain.as_ref());
-            parser.report_error(&error_msg).await;
+            parser.reporter.error(&error_msg).await;
 
             if shutdown::sleep_or_shutdown(timeout, &shutdown_rx).await {
                 break;

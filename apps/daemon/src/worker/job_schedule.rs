@@ -25,7 +25,10 @@ impl CacherJobTracker {
 
     async fn load_status(&self, job_name: &str) -> JobStatus {
         let cache_key = CacheKey::JobStatus(&self.job_key(job_name));
-        self.cacher.get_value(&cache_key.key()).await.unwrap_or_default()
+        match self.cacher.get_value(&cache_key.key()).await {
+            Ok(status) => status,
+            Err(_) => JobStatus::default(),
+        }
     }
 
     async fn persist_status(&self, job_name: &str, status: &JobStatus) -> Result<(), JobError> {
@@ -40,7 +43,10 @@ impl JobStatusReporter for CacherJobTracker {
         let job_key = self.job_key(name);
         Box::pin(async move {
             let cache_key = CacheKey::JobStatus(&job_key);
-            let mut status = cacher.get_value::<JobStatus>(&cache_key.key()).await.unwrap_or_default();
+            let mut status = match cacher.get_value::<JobStatus>(&cache_key.key()).await {
+                Ok(status) => status,
+                Err(_) => JobStatus::default(),
+            };
             let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs();
 
             status.interval = interval;
@@ -48,11 +54,10 @@ impl JobStatusReporter for CacherJobTracker {
 
             if success {
                 status.last_success = Some(timestamp);
-                status.last_error = None;
-                status.last_error_at = None;
             } else if let Some(msg) = error {
                 status.last_error = Some(msg);
                 status.last_error_at = Some(timestamp);
+                status.error_count += 1;
             }
 
             let _ = cacher.set_cached(cache_key, &status).await;
@@ -78,8 +83,6 @@ impl JobSchedule for CacherJobTracker {
         let mut status = self.load_status(job_name).await;
         let seconds = timestamp.duration_since(UNIX_EPOCH).map_err(|err| Box::new(err) as JobError)?.as_secs();
         status.last_success = Some(seconds);
-        status.last_error = None;
-        status.last_error_at = None;
         self.persist_status(job_name, &status).await
     }
 }

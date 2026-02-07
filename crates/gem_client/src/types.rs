@@ -71,10 +71,6 @@ where
         Ok(value) => Ok(value),
         Err(error) => {
             validate_http_status(response)?;
-
-            let preview_bytes = if response.data.len() > 256 { &response.data[..256] } else { &response.data };
-            println!("Deserialize error: {}, response: {}", error, String::from_utf8_lossy(preview_bytes));
-
             Err(ClientError::Serialization(error.to_string()))
         }
     }
