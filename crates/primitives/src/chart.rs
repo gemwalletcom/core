@@ -7,12 +7,20 @@ use typeshare::typeshare;
 #[serde(rename_all = "camelCase")]
 pub struct ChartCandleStick {
     pub date: DateTime<Utc>,
-    pub interval: String,
     pub open: f64,
     pub high: f64,
     pub low: f64,
     pub close: f64,
     pub volume: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[typeshare(swift = "Equatable, Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct ChartCandleUpdate {
+    pub coin: String,
+    pub interval: String,
+    pub candle: ChartCandleStick,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
