@@ -9,11 +9,11 @@ use std::sync::OnceLock;
 const JOBS_STATUS_PREFIX: &str = "jobs:status:";
 
 static JOB_LAST_SUCCESS_AT: OnceLock<Family<JobLabels, Gauge>> = OnceLock::new();
-static JOB_INTERVAL_SECONDS: OnceLock<Family<JobLabels, Gauge>> = OnceLock::new();
+static JOB_INTERVAL: OnceLock<Family<JobLabels, Gauge>> = OnceLock::new();
 static JOB_LAST_ERROR_AT: OnceLock<Family<JobLabels, Gauge>> = OnceLock::new();
-static JOB_DURATION_MS: OnceLock<Family<JobLabels, Gauge>> = OnceLock::new();
-static JOB_LAST_ERROR: OnceLock<Family<JobErrorLabels, Gauge>> = OnceLock::new();
-static JOB_ERROR_COUNT: OnceLock<Family<JobLabels, Gauge>> = OnceLock::new();
+static JOB_DURATION: OnceLock<Family<JobLabels, Gauge>> = OnceLock::new();
+static JOB_ERROR_DETAIL: OnceLock<Family<JobErrorLabels, Gauge>> = OnceLock::new();
+static JOB_ERRORS: OnceLock<Family<JobLabels, Gauge>> = OnceLock::new();
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
 struct JobErrorLabels {
@@ -39,16 +39,16 @@ pub fn init_job_metrics(registry: &mut Registry) {
     registry.register("job_last_success_at", "Last successful job run (unix timestamp)", last_success.clone());
     registry.register("job_interval_seconds", "Job interval in seconds", interval.clone());
     registry.register("job_last_error_at", "Last job error (unix timestamp)", last_error.clone());
-    registry.register("job_duration_ms", "Last job duration in milliseconds", duration.clone());
-    registry.register("job_last_error", "Last job error message", last_error_detail.clone());
-    registry.register("job_error_count", "Total error count", error_count.clone());
+    registry.register("job_duration_milliseconds", "Last job duration in milliseconds", duration.clone());
+    registry.register("job_error_detail", "Job error details by service and message", last_error_detail.clone());
+    registry.register("job_errors", "Total error count", error_count.clone());
 
     JOB_LAST_SUCCESS_AT.set(last_success).ok();
-    JOB_INTERVAL_SECONDS.set(interval).ok();
+    JOB_INTERVAL.set(interval).ok();
     JOB_LAST_ERROR_AT.set(last_error).ok();
-    JOB_DURATION_MS.set(duration).ok();
-    JOB_LAST_ERROR.set(last_error_detail).ok();
-    JOB_ERROR_COUNT.set(error_count).ok();
+    JOB_DURATION.set(duration).ok();
+    JOB_ERROR_DETAIL.set(last_error_detail).ok();
+    JOB_ERRORS.set(error_count).ok();
 }
 
 pub async fn update_job_metrics(cacher: &CacherClient) {
@@ -68,13 +68,13 @@ pub async fn update_job_metrics(cacher: &CacherClient) {
             job_name: job_name.to_string(),
         };
 
-        if let Some(family) = JOB_INTERVAL_SECONDS.get() {
+        if let Some(family) = JOB_INTERVAL.get() {
             family.get_or_create(&labels).set(status.interval as i64);
         }
-        if let Some(family) = JOB_DURATION_MS.get() {
+        if let Some(family) = JOB_DURATION.get() {
             family.get_or_create(&labels).set(status.duration as i64);
         }
-        if let Some(family) = JOB_ERROR_COUNT.get() {
+        if let Some(family) = JOB_ERRORS.get() {
             family.get_or_create(&labels).set(status.error_count as i64);
         }
         if let (Some(family), Some(ts)) = (JOB_LAST_SUCCESS_AT.get(), status.last_success) {
@@ -83,7 +83,7 @@ pub async fn update_job_metrics(cacher: &CacherClient) {
         if let (Some(family), Some(ts)) = (JOB_LAST_ERROR_AT.get(), status.last_error_at) {
             family.get_or_create(&labels).set(ts as i64);
         }
-        if let (Some(family), Some(msg), Some(ts)) = (JOB_LAST_ERROR.get(), &status.last_error, status.last_error_at) {
+        if let (Some(family), Some(msg), Some(ts)) = (JOB_ERROR_DETAIL.get(), &status.last_error, status.last_error_at) {
             let error_labels = JobErrorLabels {
                 service: service.to_string(),
                 job_name: job_name.to_string(),

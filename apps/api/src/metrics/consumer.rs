@@ -11,7 +11,7 @@ const CONSUMERS_STATUS_PREFIX: &str = "consumers:status:";
 static CONSUMER_PROCESSED: OnceLock<Family<ConsumerLabels, Gauge>> = OnceLock::new();
 static CONSUMER_ERRORS: OnceLock<Family<ConsumerLabels, Gauge>> = OnceLock::new();
 static CONSUMER_LAST_SUCCESS_AT: OnceLock<Family<ConsumerLabels, Gauge>> = OnceLock::new();
-static CONSUMER_AVG_DURATION_MS: OnceLock<Family<ConsumerLabels, Gauge>> = OnceLock::new();
+static CONSUMER_AVG_DURATION: OnceLock<Family<ConsumerLabels, Gauge>> = OnceLock::new();
 static CONSUMER_ERROR_DETAIL: OnceLock<Family<ConsumerErrorLabels, Gauge>> = OnceLock::new();
 static CONSUMER_LAST_ERROR_AT: OnceLock<Family<ConsumerErrorLabels, Gauge>> = OnceLock::new();
 
@@ -37,14 +37,14 @@ pub fn init_consumer_metrics(registry: &mut Registry) {
     registry.register("consumer_processed", "Messages processed", processed.clone());
     registry.register("consumer_errors", "Errors encountered", errors.clone());
     registry.register("consumer_last_success_at", "Last successful processing (unix timestamp)", last_success.clone());
-    registry.register("consumer_avg_duration_ms", "Average processing duration in milliseconds", avg_duration.clone());
+    registry.register("consumer_avg_duration_milliseconds", "Average processing duration in milliseconds", avg_duration.clone());
     registry.register("consumer_error_detail", "Error occurrence count per consumer and error message", error_detail.clone());
     registry.register("consumer_last_error_at", "Last error timestamp (unix)", error_at.clone());
 
     CONSUMER_PROCESSED.set(processed).ok();
     CONSUMER_ERRORS.set(errors).ok();
     CONSUMER_LAST_SUCCESS_AT.set(last_success).ok();
-    CONSUMER_AVG_DURATION_MS.set(avg_duration).ok();
+    CONSUMER_AVG_DURATION.set(avg_duration).ok();
     CONSUMER_ERROR_DETAIL.set(error_detail).ok();
     CONSUMER_LAST_ERROR_AT.set(error_at).ok();
 }
@@ -72,7 +72,7 @@ pub async fn update_consumer_metrics(cacher: &CacherClient) {
         if let (Some(family), Some(ts)) = (CONSUMER_LAST_SUCCESS_AT.get(), status.last_success) {
             family.get_or_create(&labels).set(ts as i64);
         }
-        if let Some(family) = CONSUMER_AVG_DURATION_MS.get() {
+        if let Some(family) = CONSUMER_AVG_DURATION.get() {
             family.get_or_create(&labels).set(status.avg_duration as i64);
         }
         for err in &status.errors {
