@@ -4,5 +4,6 @@ use std::time::Duration;
 pub struct ParserOptions {
     pub timeout: Duration,
     pub catchup_reload_interval: i64,
-    pub persist_interval: Duration,
+    pub min_check: Duration,
+    pub max_check: Duration,
 }

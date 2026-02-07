@@ -1,6 +1,7 @@
 use std::cmp;
 use std::time::Duration;
 
+use chrono::Utc;
 use storage::models::ParserStateRow;
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
@@ -22,8 +23,17 @@ pub struct BlockPlan {
     pub kind: BlockPlanKind,
 }
 
-pub fn timeout_for_state(state: &ParserStateRow, base_timeout: Duration) -> Duration {
-    cmp::max(Duration::from_millis(state.timeout_latest_block as u64), base_timeout)
+pub fn timeout_for_state(state: &ParserStateRow, min_check: Duration, max_check: Duration) -> Duration {
+    let block_time = Duration::from_millis(state.block_time as u64);
+    if block_time.is_zero() {
+        return cmp::max(Duration::from_millis(state.timeout_latest_block as u64), min_check);
+    }
+
+    let elapsed = Utc::now().naive_utc().signed_duration_since(state.updated_at).num_milliseconds().max(0) as u64;
+
+    let remaining = block_time.saturating_sub(Duration::from_millis(elapsed));
+    let upper = cmp::max(cmp::min(block_time, max_check), min_check);
+    remaining.clamp(min_check, upper)
 }
 
 pub fn should_reload_catchup(remaining: i64, interval: i64) -> bool {
@@ -55,7 +65,7 @@ pub fn plan_next_block(state: &ParserStateRow, current_block: i64, latest_block:
 #[cfg(test)]
 mod tests {
     use super::{BlockPlanKind, plan_next_block, should_reload_catchup, timeout_for_state};
-    use chrono::NaiveDateTime;
+    use chrono::{NaiveDateTime, Utc};
     use std::time::Duration;
     use storage::models::ParserStateRow;
 
@@ -75,14 +85,39 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_timeout_for_state_uses_max() {
-        let state = state(1, 1, 500, None);
-        let timeout = timeout_for_state(&state, Duration::from_secs(1));
-        assert_eq!(timeout, Duration::from_secs(1));
+    const MIN: Duration = Duration::from_secs(1);
+    const MAX: Duration = Duration::from_secs(8);
 
-        let timeout = timeout_for_state(&state, Duration::from_millis(100));
-        assert_eq!(timeout, Duration::from_millis(500));
+    #[test]
+    fn test_timeout_for_state_no_block_time() {
+        let s = state(1, 1, 500, None);
+        assert_eq!(timeout_for_state(&s, MIN, MAX), MIN);
+        assert_eq!(timeout_for_state(&s, Duration::from_millis(100), MAX), Duration::from_millis(500));
+    }
+
+    #[test]
+    fn test_timeout_for_state_uses_remaining_block_time() {
+        let mut s = state(1, 1, 0, None);
+        s.block_time = 12_000;
+        s.updated_at = Utc::now().naive_utc() - chrono::Duration::seconds(4);
+        let timeout = timeout_for_state(&s, MIN, MAX);
+        assert!(timeout >= Duration::from_secs(7) && timeout <= Duration::from_secs(9));
+    }
+
+    #[test]
+    fn test_timeout_for_state_caps_at_max() {
+        let mut s = state(1, 1, 0, None);
+        s.block_time = 600_000;
+        s.updated_at = Utc::now().naive_utc();
+        assert_eq!(timeout_for_state(&s, MIN, MAX), MAX);
+    }
+
+    #[test]
+    fn test_timeout_for_state_overdue_block() {
+        let mut s = state(1, 1, 0, None);
+        s.block_time = 10_000;
+        s.updated_at = Utc::now().naive_utc() - chrono::Duration::seconds(15);
+        assert_eq!(timeout_for_state(&s, MIN, MAX), MIN);
     }
 
     #[test]

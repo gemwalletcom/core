@@ -43,7 +43,7 @@ impl Parser {
         shutdown_rx: ShutdownReceiver,
     ) -> Self {
         let chain = provider.get_chain();
-        let state_service = ParserStateService::new(chain, database, cacher.clone());
+        let state_service = ParserStateService::new(chain, database);
         Self {
             chain,
             provider,
@@ -72,24 +72,17 @@ impl Parser {
         }
     }
 
-    async fn persist_if_due(&self, last_persist: &mut Instant) {
-        if last_persist.elapsed() >= self.options.persist_interval {
-            self.state_service.persist_state().await;
-            *last_persist = Instant::now();
-        }
-    }
-
     async fn refresh_latest_block(&self, state: &ParserStateRow, timeout: Duration) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        let current_block = self.state_service.get_current_block().await;
+        let current_block = state.current_block;
         let next_current_block = current_block + state.await_blocks as i64;
 
         match self.provider.get_block_latest_number().await {
             Ok(latest_block) => {
                 let latest_block_i64 = latest_block as i64;
-                let _ = self.state_service.set_latest_block(latest_block_i64).await;
+                let _ = self.state_service.set_latest_block(latest_block_i64);
 
                 if current_block == 0 {
-                    let _ = self.state_service.set_current_block(latest_block_i64).await;
+                    let _ = self.state_service.set_current_block(latest_block_i64);
                 }
 
                 if next_current_block >= latest_block_i64 {
@@ -98,7 +91,8 @@ impl Parser {
                         chain = self.chain.as_ref(),
                         current_block = current_block,
                         latest_block = latest_block,
-                        await_blocks = state.await_blocks
+                        await_blocks = state.await_blocks,
+                        next_check = DurationMs(timeout)
                     );
                     if self.sleep_or_shutdown(timeout).await {
                         return Ok(false);
@@ -125,7 +119,7 @@ impl Parser {
         match plan.kind {
             BlockPlanKind::Enqueue => {
                 self.stream_producer.publish_blocks(self.chain, &plan.range.blocks).await?;
-                let _ = self.state_service.set_current_block(plan.range.end_block).await;
+                let _ = self.state_service.set_current_block(plan.range.end_block);
 
                 info_with_fields!(
                     "block add to queue",
@@ -141,7 +135,7 @@ impl Parser {
 
         match self.parse_blocks(plan.range.blocks).await {
             Ok(result) => {
-                let _ = self.state_service.set_current_block(plan.range.end_block).await;
+                let _ = self.state_service.set_current_block(plan.range.end_block);
 
                 info_with_fields!(
                     "block complete",
@@ -169,20 +163,19 @@ impl Parser {
         Ok(true)
     }
 
-    async fn process_blocks(&self, state: &ParserStateRow, timeout: Duration) -> Result<(), Box<dyn Error + Send + Sync>> {
+    async fn process_blocks(&self, timeout: Duration) -> Result<(), Box<dyn Error + Send + Sync>> {
         loop {
             if self.is_shutdown() {
                 break;
             }
 
-            let current_block = self.state_service.get_current_block().await;
-            let latest_block = self.state_service.get_latest_block().await;
+            let state = self.state_service.get_state()?;
 
-            let Some(plan) = plan_next_block(state, current_block, latest_block) else {
+            let Some(plan) = plan_next_block(&state, state.current_block, state.latest_block) else {
                 break;
             };
 
-            if !self.execute_plan(plan, state, timeout).await? {
+            if !self.execute_plan(plan, &state, timeout).await? {
                 break;
             }
         }
@@ -215,19 +208,14 @@ impl Parser {
     }
 
     pub async fn start(&self) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.state_service.init().await?;
-
-        let mut last_persist = Instant::now();
-
         loop {
             if self.is_shutdown() {
                 info_with_fields!("shutdown requested", chain = self.chain.as_ref());
                 break;
             }
 
-            self.persist_if_due(&mut last_persist).await;
             let state = self.state_service.get_state()?;
-            let timeout = timeout_for_state(&state, self.options.timeout);
+            let timeout = timeout_for_state(&state, self.options.min_check, self.options.max_check);
 
             if !self.wait_if_disabled(&state, timeout).await {
                 continue;
@@ -237,10 +225,9 @@ impl Parser {
                 continue;
             }
 
-            self.process_blocks(&state, timeout).await?;
+            self.process_blocks(timeout).await?;
         }
 
-        self.state_service.persist_state().await;
         info_with_fields!("parser stopped", chain = self.chain.as_ref());
 
         Ok(())
@@ -264,7 +251,8 @@ pub async fn run(settings: Settings, chain: Option<Chain>, health_state: Arc<cra
 
     let config = storage::ConfigCacher::new(database.clone());
     let catchup_reload_interval = config.get_i64(primitives::ConfigKey::ParserCatchupReloadInterval)?;
-    let persist_interval = config.get_duration(primitives::ConfigKey::ParserPersistInterval)?;
+    let min_check = config.get_duration(primitives::ConfigKey::ParserMinCheckInterval)?;
+    let max_check = config.get_duration(primitives::ConfigKey::ParserMaxCheckInterval)?;
 
     let chains: Vec<Chain> = if let Some(chain) = chain {
         vec![chain]
@@ -301,7 +289,8 @@ pub async fn run(settings: Settings, chain: Option<Chain>, health_state: Arc<cra
         let options = ParserOptions {
             timeout: settings.parser.timeout,
             catchup_reload_interval,
-            persist_interval,
+            min_check,
+            max_check,
         };
 
         handles.push(tokio::spawn(async move {
