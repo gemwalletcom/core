@@ -1,5 +1,3 @@
-use std::future::Future;
-use std::pin::Pin;
 use std::sync::Arc;
 use std::{
     error::Error,
@@ -26,9 +24,10 @@ enum ProcessResult<R> {
     Error(Box<dyn Error + Send + Sync>),
 }
 
+#[async_trait]
 pub trait ConsumerStatusReporter: Send + Sync {
-    fn report_success(&self, name: &str, duration: u64, result: &str) -> Pin<Box<dyn Future<Output = ()> + Send + '_>>;
-    fn report_error(&self, name: &str, error: &str) -> Pin<Box<dyn Future<Output = ()> + Send + '_>>;
+    async fn report_success(&self, name: &str, duration: u64, result: &str);
+    async fn report_error(&self, name: &str, error: &str);
 }
 
 #[async_trait]

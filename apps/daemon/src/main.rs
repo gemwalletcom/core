@@ -3,6 +3,7 @@ mod health;
 mod model;
 mod parser;
 mod pusher;
+mod reporters;
 mod setup;
 mod shutdown;
 mod worker;
@@ -10,7 +11,7 @@ mod worker;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
-use crate::consumers::consumer_reporter::CacherConsumerReporter;
+use crate::reporters::consumer::ConsumerReporter;
 use crate::model::{ConsumerService, DaemonService, WorkerService};
 use crate::shutdown::ShutdownReceiver;
 use crate::worker::context::WorkerContext;
@@ -177,7 +178,7 @@ async fn run_consumer_services(settings: settings::Settings, services: &[Consume
     let metrics_cacher = CacherClient::new(&settings.metrics.redis.url).await;
 
     let health_state = health::spawn_server();
-    let reporter: Arc<dyn ConsumerStatusReporter> = Arc::new(CacherConsumerReporter::new(metrics_cacher));
+    let reporter: Arc<dyn ConsumerStatusReporter> = Arc::new(ConsumerReporter::new(metrics_cacher));
     let failures = Arc::new(Mutex::new(Vec::new()));
 
     let handles: Vec<_> = services

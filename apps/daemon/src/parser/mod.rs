@@ -1,4 +1,3 @@
-mod error_reporter;
 mod parser_options;
 mod parser_state;
 mod plan;
@@ -14,7 +13,7 @@ use std::{
 
 use cacher::CacherClient;
 use chain_traits::ChainTraits;
-use error_reporter::ErrorReporter;
+use crate::reporters::parser::ParserReporter;
 use gem_tracing::{DurationMs, error_with_fields, info_with_fields};
 use primitives::Chain;
 use settings::Settings;
@@ -30,7 +29,7 @@ pub struct Parser {
     provider: Box<dyn ChainTraits>,
     stream_producer: StreamProducer,
     state_service: ParserStateService,
-    reporter: ErrorReporter,
+    reporter: ParserReporter,
     options: ParserOptions,
     shutdown_rx: ShutdownReceiver,
 }
@@ -46,7 +45,7 @@ impl Parser {
     ) -> Self {
         let chain = provider.get_chain();
         let state_service = ParserStateService::new(chain, database);
-        let reporter = ErrorReporter::new(chain, cacher);
+        let reporter = ParserReporter::new(chain, cacher);
         Self {
             chain,
             provider,

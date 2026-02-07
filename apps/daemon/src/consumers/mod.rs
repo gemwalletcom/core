@@ -1,4 +1,3 @@
-pub mod consumer_reporter;
 pub mod fiat;
 pub mod indexer;
 pub mod notifications;
