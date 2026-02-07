@@ -44,6 +44,26 @@ pub struct AssetMarket {
     pub all_time_low_change_percentage: Option<f64>,
 }
 
+impl AssetMarket {
+    pub fn with_rate(self, rate: f64) -> Self {
+        Self {
+            market_cap: self.market_cap.map(|x| x * rate),
+            market_cap_fdv: self.market_cap_fdv.map(|x| x * rate),
+            market_cap_rank: self.market_cap_rank,
+            total_volume: self.total_volume.map(|x| x * rate),
+            circulating_supply: self.circulating_supply,
+            total_supply: self.total_supply,
+            max_supply: self.max_supply,
+            all_time_high: self.all_time_high.map(|x| x * rate),
+            all_time_high_date: self.all_time_high_date,
+            all_time_high_change_percentage: self.all_time_high_change_percentage,
+            all_time_low: self.all_time_low.map(|x| x * rate),
+            all_time_low_date: self.all_time_low_date,
+            all_time_low_change_percentage: self.all_time_low_change_percentage,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
