@@ -123,7 +123,8 @@ pub enum ConfigKey {
     PriceTimerChartsDaily,
     PriceTimerMarkets,
     PriceTimerCleanOutdated,
-    PriceTimerCleanupCharts,
+    PriceTimerCleanupChartsHourly,
+    PriceTimerCleanupChartsDaily,
     PriceOutdated,
 
     // Assets
@@ -174,6 +175,7 @@ pub enum ConfigKey {
     ParserCatchupReloadInterval,
     ParserMinCheckInterval,
     ParserMaxCheckInterval,
+    ParserErrorInterval,
 
     // Price Observed (WebSocket)
     PriceObservedFetchInterval,
@@ -287,7 +289,8 @@ impl ConfigKey {
             Self::PriceTimerChartsDaily => "6m",
             Self::PriceTimerMarkets => "1h",
             Self::PriceTimerCleanOutdated => "1d",
-            Self::PriceTimerCleanupCharts => "1d",
+            Self::PriceTimerCleanupChartsHourly => "1d",
+            Self::PriceTimerCleanupChartsDaily => "1d",
             Self::PriceOutdated => "7d",
             Self::AssetsTimerUpdateExisting => "1d",
             Self::AssetsTimerUpdateAll => "1d",
@@ -320,6 +323,7 @@ impl ConfigKey {
             Self::ParserCatchupReloadInterval => "50",
             Self::ParserMinCheckInterval => "1s",
             Self::ParserMaxCheckInterval => "8s",
+            Self::ParserErrorInterval => "30s",
             Self::PriceObservedFetchInterval => "30s",
             Self::PriceObservedMaxAssets => "100",
             Self::PriceObservedMinObservers => "2",

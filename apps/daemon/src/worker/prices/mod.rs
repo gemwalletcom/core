@@ -22,7 +22,7 @@ use price_updater::{PriceUpdater, UpdatePrices};
 use pricer::{MarketsClient, PriceClient};
 use prices_dex::PriceFeedProvider;
 use prices_dex_updater::PricesDexUpdater;
-use primitives::ConfigKey;
+use primitives::{ChartTimeframe, ConfigKey};
 use settings::Settings;
 use storage::{ConfigCacher, Database};
 use streamer::{StreamProducer, StreamProducerConfig};
@@ -149,7 +149,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                 async move {
                     charts_updater_factory(&database, &cacher_client, &settings, coingecko_client)
                         .await?
-                        .aggregate_hourly_charts()
+                        .aggregate_charts(ChartTimeframe::Hourly)
                         .await
                 }
             }
@@ -167,12 +167,12 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                 async move {
                     charts_updater_factory(&database, &cacher_client, &settings, coingecko_client)
                         .await?
-                        .aggregate_daily_charts()
+                        .aggregate_charts(ChartTimeframe::Daily)
                         .await
                 }
             }
         })
-        .job(WorkerJob::CleanupChartsData, {
+        .job(WorkerJob::CleanupChartsHourly, {
             let settings = settings.clone();
             let coingecko_client = coingecko_client.clone();
             let cacher_client = cacher_client.clone();
@@ -185,7 +185,25 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                 async move {
                     charts_updater_factory(&database, &cacher_client, &settings, coingecko_client)
                         .await?
-                        .cleanup_charts_data()
+                        .cleanup_charts(ChartTimeframe::Hourly)
+                        .await
+                }
+            }
+        })
+        .job(WorkerJob::CleanupChartsDaily, {
+            let settings = settings.clone();
+            let coingecko_client = coingecko_client.clone();
+            let cacher_client = cacher_client.clone();
+            let database = database.clone();
+            move || {
+                let settings = settings.clone();
+                let coingecko_client = coingecko_client.clone();
+                let cacher_client = cacher_client.clone();
+                let database = database.clone();
+                async move {
+                    charts_updater_factory(&database, &cacher_client, &settings, coingecko_client)
+                        .await?
+                        .cleanup_charts(ChartTimeframe::Daily)
                         .await
                 }
             }

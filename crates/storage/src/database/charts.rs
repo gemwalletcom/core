@@ -1,12 +1,13 @@
 use crate::DatabaseClient;
 use crate::models::ChartRow;
 use crate::schema::charts::dsl::{charts, coin_id};
-use crate::schema::charts_daily::dsl::{charts_daily, coin_id as daily_coin_id};
-use crate::schema::charts_hourly::dsl::{charts_hourly, coin_id as hourly_coin_id};
+use crate::schema::charts_daily::dsl::{charts_daily, coin_id as daily_coin_id, created_at as daily_created_at};
+use crate::schema::charts_hourly::dsl::{charts_hourly, coin_id as hourly_coin_id, created_at as hourly_created_at};
+use chrono::Utc;
 use diesel::dsl::sql;
 use diesel::prelude::*;
 use diesel::result::Error;
-use primitives::ChartPeriod;
+use primitives::{ChartPeriod, ChartTimeframe};
 
 pub enum ChartGranularity {
     Minute,
@@ -21,9 +22,8 @@ pub type ChartResult = (chrono::NaiveDateTime, f64);
 pub(crate) trait ChartsStore {
     fn add_charts(&mut self, values: Vec<ChartRow>) -> Result<usize, Error>;
     fn get_charts(&mut self, target_coin_id: String, period: &ChartPeriod) -> Result<Vec<ChartResult>, Error>;
-    fn aggregate_hourly_charts(&mut self) -> Result<usize, diesel::result::Error>;
-    fn aggregate_daily_charts(&mut self) -> Result<usize, diesel::result::Error>;
-    fn cleanup_charts_data(&mut self) -> Result<usize, diesel::result::Error>;
+    fn aggregate_charts(&mut self, timeframe: ChartTimeframe) -> Result<usize, Error>;
+    fn cleanup_charts(&mut self, timeframe: ChartTimeframe) -> Result<usize, Error>;
 }
 
 impl ChartsStore for DatabaseClient {
@@ -60,16 +60,25 @@ impl ChartsStore for DatabaseClient {
         }
     }
 
-    fn aggregate_hourly_charts(&mut self) -> Result<usize, diesel::result::Error> {
-        diesel::sql_query("SELECT aggregate_hourly_charts();").execute(&mut self.connection)
+    fn aggregate_charts(&mut self, timeframe: ChartTimeframe) -> Result<usize, Error> {
+        let query = match timeframe {
+            ChartTimeframe::Hourly => "SELECT aggregate_hourly_charts();",
+            ChartTimeframe::Daily => "SELECT aggregate_daily_charts();",
+        };
+        diesel::sql_query(query).execute(&mut self.connection)
     }
 
-    fn aggregate_daily_charts(&mut self) -> Result<usize, diesel::result::Error> {
-        diesel::sql_query("SELECT aggregate_daily_charts();").execute(&mut self.connection)
-    }
-
-    fn cleanup_charts_data(&mut self) -> Result<usize, diesel::result::Error> {
-        diesel::sql_query("SELECT cleanup_all_charts_data();").execute(&mut self.connection)
+    fn cleanup_charts(&mut self, timeframe: ChartTimeframe) -> Result<usize, Error> {
+        match timeframe {
+            ChartTimeframe::Hourly => {
+                let cutoff = (Utc::now() - chrono::Duration::days(31)).naive_utc();
+                diesel::delete(charts_hourly.filter(hourly_created_at.lt(cutoff))).execute(&mut self.connection)
+            }
+            ChartTimeframe::Daily => {
+                let cutoff = (Utc::now() - chrono::Duration::days(365)).naive_utc();
+                diesel::delete(charts_daily.filter(daily_created_at.lt(cutoff))).execute(&mut self.connection)
+            }
+        }
     }
 }
 

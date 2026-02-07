@@ -117,6 +117,12 @@ pub enum ChartPeriod {
     All,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum ChartTimeframe {
+    Hourly,
+    Daily,
+}
+
 impl ChartPeriod {
     pub fn new(period: String) -> Option<Self> {
         match period.to_lowercase().as_str() {

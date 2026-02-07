@@ -72,44 +72,15 @@ impl Parser {
         }
     }
 
-    async fn refresh_latest_block(&self, state: &ParserStateRow, timeout: Duration) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        let current_block = state.current_block;
-        let next_current_block = current_block + state.await_blocks as i64;
+    async fn get_latest_block(&self, state: &ParserStateRow) -> Result<i64, Box<dyn Error + Send + Sync>> {
+        let latest_block = self.provider.get_block_latest_number().await? as i64;
+        let _ = self.state_service.set_latest_block(latest_block);
 
-        match self.provider.get_block_latest_number().await {
-            Ok(latest_block) => {
-                let latest_block_i64 = latest_block as i64;
-                let _ = self.state_service.set_latest_block(latest_block_i64);
-
-                if current_block == 0 {
-                    let _ = self.state_service.set_current_block(latest_block_i64);
-                }
-
-                if next_current_block >= latest_block_i64 {
-                    info_with_fields!(
-                        "parser ahead",
-                        chain = self.chain.as_ref(),
-                        current_block = current_block,
-                        latest_block = latest_block,
-                        await_blocks = state.await_blocks,
-                        next_check = DurationMs(timeout)
-                    );
-                    if self.sleep_or_shutdown(timeout).await {
-                        return Ok(false);
-                    }
-                    return Ok(false);
-                }
-            }
-            Err(err) => {
-                error_with_fields!("parser latest_block", &*err, chain = self.chain.as_ref());
-                if self.sleep_or_shutdown(timeout * 5).await {
-                    return Ok(false);
-                }
-                return Ok(false);
-            }
+        if state.current_block == 0 {
+            let _ = self.state_service.set_current_block(latest_block);
         }
 
-        Ok(true)
+        Ok(latest_block)
     }
 
     async fn execute_plan(&self, plan: BlockPlan, state: &ParserStateRow, timeout: Duration) -> Result<bool, Box<dyn Error + Send + Sync>> {
@@ -221,7 +192,25 @@ impl Parser {
                 continue;
             }
 
-            if !self.refresh_latest_block(&state, timeout).await? {
+            let latest_block = match self.get_latest_block(&state).await {
+                Ok(block) => block,
+                Err(err) => {
+                    error_with_fields!("parser latest_block", &*err, chain = self.chain.as_ref());
+                    self.sleep_or_shutdown(self.options.error_interval).await;
+                    continue;
+                }
+            };
+
+            if state.current_block + state.await_blocks as i64 >= latest_block {
+                info_with_fields!(
+                    "parser ahead",
+                    chain = self.chain.as_ref(),
+                    current_block = state.current_block,
+                    latest_block = latest_block,
+                    await_blocks = state.await_blocks,
+                    next_check = DurationMs(timeout)
+                );
+                self.sleep_or_shutdown(timeout).await;
                 continue;
             }
 
@@ -253,6 +242,7 @@ pub async fn run(settings: Settings, chain: Option<Chain>, health_state: Arc<cra
     let catchup_reload_interval = config.get_i64(primitives::ConfigKey::ParserCatchupReloadInterval)?;
     let min_check = config.get_duration(primitives::ConfigKey::ParserMinCheckInterval)?;
     let max_check = config.get_duration(primitives::ConfigKey::ParserMaxCheckInterval)?;
+    let error_interval = config.get_duration(primitives::ConfigKey::ParserErrorInterval)?;
 
     let chains: Vec<Chain> = if let Some(chain) = chain {
         vec![chain]
@@ -291,6 +281,7 @@ pub async fn run(settings: Settings, chain: Option<Chain>, health_state: Arc<cra
             catchup_reload_interval,
             min_check,
             max_check,
+            error_interval,
         };
 
         handles.push(tokio::spawn(async move {

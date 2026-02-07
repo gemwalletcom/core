@@ -6,4 +6,5 @@ pub struct ParserOptions {
     pub catchup_reload_interval: i64,
     pub min_check: Duration,
     pub max_check: Duration,
+    pub error_interval: Duration,
 }

@@ -55,7 +55,7 @@ pub use self::asset_score::AssetScore;
 pub mod asset_type;
 pub use self::asset_type::{AssetSubtype, AssetType};
 pub mod asset_price;
-pub use self::asset_price::{AssetMarket, AssetPrice, AssetPrices, AssetPricesRequest, ChartPeriod, ChartValue, Charts};
+pub use self::asset_price::{AssetMarket, AssetPrice, AssetPrices, AssetPricesRequest, ChartPeriod, ChartTimeframe, ChartValue, Charts};
 pub mod asset_price_info;
 pub use self::asset_price_info::AssetPriceInfo;
 pub mod asset_details;
