@@ -136,6 +136,22 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                 }
             }
         })
+        .job(WorkerJob::UpdatePricesVeryLowMarketCap, {
+            let settings = settings.clone();
+            let cacher_client = cacher_client.clone();
+            let database = database.clone();
+            move || {
+                let settings = settings.clone();
+                let cacher_client = cacher_client.clone();
+                let database = database.clone();
+                async move {
+                    price_updater_factory(&database, &cacher_client, &settings)
+                        .await?
+                        .update_prices_type(UpdatePrices::VeryLow)
+                        .await
+                }
+            }
+        })
         .job(WorkerJob::AggregateHourlyCharts, {
             let settings = settings.clone();
             let coingecko_client = coingecko_client.clone();

@@ -16,6 +16,7 @@ pub enum UpdatePrices {
     Top,
     High,
     Low,
+    VeryLow,
 }
 
 const MAX_MARKETS_PER_PAGE: usize = 250;
@@ -34,7 +35,8 @@ impl PriceUpdater {
         let asset_ids = match update_type {
             UpdatePrices::Top => ids.into_iter().take(500).collect::<Vec<_>>(),
             UpdatePrices::High => ids.into_iter().take(2500).skip(500).collect::<Vec<_>>(),
-            UpdatePrices::Low => ids.into_iter().skip(2500).collect::<Vec<_>>(),
+            UpdatePrices::Low => ids.into_iter().take(5000).skip(2500).collect::<Vec<_>>(),
+            UpdatePrices::VeryLow => ids.into_iter().skip(5000).collect::<Vec<_>>(),
         };
         self.update_prices(asset_ids).await
     }
