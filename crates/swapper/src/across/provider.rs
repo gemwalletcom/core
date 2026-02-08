@@ -299,15 +299,48 @@ impl Swapper for Across {
 
     fn supported_assets(&self) -> Vec<SwapperChainAsset> {
         vec![
-            SwapperChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_WETH.id.clone(), ARBITRUM_USDC.id.clone(), ARBITRUM_USDT.id.clone()]),
-            SwapperChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_WETH.id.clone(), ETHEREUM_USDC.id.clone(), ETHEREUM_USDT.id.clone()]),
-            SwapperChainAsset::Assets(Chain::Base, vec![BASE_WETH.id.clone(), BASE_USDC.id.clone()]),
-            SwapperChainAsset::Assets(Chain::Blast, vec![BLAST_WETH.id.clone()]),
-            SwapperChainAsset::Assets(Chain::Linea, vec![LINEA_WETH.id.clone(), LINEA_USDT.id.clone()]),
-            SwapperChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_WETH.id.clone(), OPTIMISM_USDC.id.clone(), OPTIMISM_USDT.id.clone()]),
-            SwapperChainAsset::Assets(Chain::Polygon, vec![POLYGON_WETH.id.clone()]),
-            SwapperChainAsset::Assets(Chain::ZkSync, vec![ZKSYNC_WETH.id.clone(), ZKSYNC_USDT.id.clone()]),
-            SwapperChainAsset::Assets(Chain::World, vec![WORLD_WETH.id.clone()]),
+            SwapperChainAsset::Assets(
+                Chain::Arbitrum,
+                vec![
+                    ARBITRUM_WETH.id.clone(),
+                    ARBITRUM_USDC.id.clone(),
+                    ARBITRUM_USDT.id.clone(),
+                    ARBITRUM_WBTC.id.clone(),
+                    ARBITRUM_DAI.id.clone(),
+                ],
+            ),
+            SwapperChainAsset::Assets(
+                Chain::Ethereum,
+                vec![
+                    ETHEREUM_WETH.id.clone(),
+                    ETHEREUM_USDC.id.clone(),
+                    ETHEREUM_USDT.id.clone(),
+                    ETHEREUM_WBTC.id.clone(),
+                    ETHEREUM_DAI.id.clone(),
+                ],
+            ),
+            SwapperChainAsset::Assets(Chain::Base, vec![BASE_WETH.id.clone(), BASE_USDC.id.clone(), BASE_DAI.id.clone()]),
+            SwapperChainAsset::Assets(Chain::Blast, vec![BLAST_WETH.id.clone(), BLAST_WBTC.id.clone()]),
+            SwapperChainAsset::Assets(
+                Chain::Linea,
+                vec![LINEA_WETH.id.clone(), LINEA_USDT.id.clone(), LINEA_WBTC.id.clone(), LINEA_DAI.id.clone()],
+            ),
+            SwapperChainAsset::Assets(
+                Chain::Optimism,
+                vec![
+                    OPTIMISM_WETH.id.clone(),
+                    OPTIMISM_USDC.id.clone(),
+                    OPTIMISM_USDT.id.clone(),
+                    OPTIMISM_WBTC.id.clone(),
+                    OPTIMISM_DAI.id.clone(),
+                ],
+            ),
+            SwapperChainAsset::Assets(Chain::Polygon, vec![POLYGON_WETH.id.clone(), POLYGON_WBTC.id.clone(), POLYGON_DAI.id.clone()]),
+            SwapperChainAsset::Assets(
+                Chain::ZkSync,
+                vec![ZKSYNC_WETH.id.clone(), ZKSYNC_USDT.id.clone(), ZKSYNC_WBTC.id.clone(), ZKSYNC_DAI.id.clone()],
+            ),
+            SwapperChainAsset::Assets(Chain::World, vec![WORLD_WETH.id.clone(), WORLD_WBTC.id.clone()]),
             SwapperChainAsset::Assets(Chain::Ink, vec![INK_WETH.id.clone(), INK_USDT.id.clone()]),
             SwapperChainAsset::Assets(Chain::Unichain, vec![UNICHAIN_WETH.id.clone(), UNICHAIN_USDC.id.clone()]),
             SwapperChainAsset::Assets(Chain::Monad, vec![MONAD_USDC.id.clone(), MONAD_USDT.id.clone()]),
@@ -574,6 +607,23 @@ mod tests {
         assert!(Across::is_supported_pair(&weth_eth, &weth_bsc));
 
         assert!(!Across::is_supported_pair(&weth_eth, &usdc_eth));
+
+        // WBTC cross-chain pairs
+        let wbtc_eth: AssetId = WBTC_ETH_ASSET_ID.into();
+        let wbtc_arb: AssetId = WBTC_ARB_ASSET_ID.into();
+        let wbtc_op: AssetId = WBTC_OP_ASSET_ID.into();
+        assert!(Across::is_supported_pair(&wbtc_eth, &wbtc_arb));
+        assert!(Across::is_supported_pair(&wbtc_arb, &wbtc_op));
+
+        // DAI cross-chain pairs
+        let dai_eth: AssetId = DAI_ETH_ASSET_ID.into();
+        let dai_arb: AssetId = DAI_ARB_ASSET_ID.into();
+        let dai_base: AssetId = DAI_BASE_ASSET_ID.into();
+        assert!(Across::is_supported_pair(&dai_eth, &dai_arb));
+        assert!(Across::is_supported_pair(&dai_arb, &dai_base));
+
+        // Cross-type pairs should fail
+        assert!(!Across::is_supported_pair(&wbtc_eth, &dai_eth));
 
         // native asset
         let eth = AssetId::from(Chain::Ethereum, None);

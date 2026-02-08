@@ -109,11 +109,23 @@ impl AcrossDeployment {
         HashMap::from([
             (
                 Chain::Ethereum,
-                vec![USDC_ETH_ASSET_ID.into(), USDT_ETH_ASSET_ID.into(), AssetId::from_token(Chain::Ethereum, WETH_ETH_CONTRACT)],
+                vec![
+                    USDC_ETH_ASSET_ID.into(),
+                    USDT_ETH_ASSET_ID.into(),
+                    AssetId::from_token(Chain::Ethereum, WETH_ETH_CONTRACT),
+                    WBTC_ETH_ASSET_ID.into(),
+                    DAI_ETH_ASSET_ID.into(),
+                ],
             ),
             (
                 Chain::Optimism,
-                vec![USDT_OP_ASSET_ID.into(), USDC_OP_ASSET_ID.into(), AssetId::from_token(Chain::Optimism, WETH_OP_CONTRACT)],
+                vec![
+                    USDT_OP_ASSET_ID.into(),
+                    USDC_OP_ASSET_ID.into(),
+                    AssetId::from_token(Chain::Optimism, WETH_OP_CONTRACT),
+                    WBTC_OP_ASSET_ID.into(),
+                    DAI_OP_ASSET_ID.into(),
+                ],
             ),
             (
                 Chain::Polygon,
@@ -121,18 +133,45 @@ impl AcrossDeployment {
                     USDC_POLYGON_ASSET_ID.into(),
                     USDT_POLYGON_ASSET_ID.into(),
                     AssetId::from_token(Chain::Polygon, WETH_POLYGON_CONTRACT),
+                    WBTC_POLYGON_ASSET_ID.into(),
+                    DAI_POLYGON_ASSET_ID.into(),
                 ],
             ),
             (
                 Chain::Arbitrum,
-                vec![USDT_ARB_ASSET_ID.into(), USDC_ARB_ASSET_ID.into(), AssetId::from_token(Chain::Arbitrum, WETH_ARB_CONTRACT)],
+                vec![
+                    USDT_ARB_ASSET_ID.into(),
+                    USDC_ARB_ASSET_ID.into(),
+                    AssetId::from_token(Chain::Arbitrum, WETH_ARB_CONTRACT),
+                    WBTC_ARB_ASSET_ID.into(),
+                    DAI_ARB_ASSET_ID.into(),
+                ],
             ),
-            (Chain::Base, vec![AssetId::from_token(Chain::Base, WETH_BASE_CONTRACT), USDC_BASE_ASSET_ID.into()]),
+            (
+                Chain::Base,
+                vec![AssetId::from_token(Chain::Base, WETH_BASE_CONTRACT), USDC_BASE_ASSET_ID.into(), DAI_BASE_ASSET_ID.into()],
+            ),
             (Chain::Hyperliquid, vec![USDC_HYPEREVM_ASSET_ID.into(), USDT_HYPEREVM_ASSET_ID.into()]),
-            (Chain::Linea, vec![USDT_LINEA_ASSET_ID.into(), AssetId::from_token(Chain::Linea, WETH_LINEA_CONTRACT)]),
-            (Chain::ZkSync, vec![AssetId::from_token(Chain::ZkSync, WETH_ZKSYNC_CONTRACT), USDT_ZKSYNC_ASSET_ID.into()]),
-            (Chain::World, vec![AssetId::from_token(Chain::World, WETH_WORLD_CONTRACT)]),
-            (Chain::Blast, vec![AssetId::from_token(Chain::Blast, WETH_BLAST_CONTRACT)]),
+            (
+                Chain::Linea,
+                vec![
+                    USDT_LINEA_ASSET_ID.into(),
+                    AssetId::from_token(Chain::Linea, WETH_LINEA_CONTRACT),
+                    WBTC_LINEA_ASSET_ID.into(),
+                    DAI_LINEA_ASSET_ID.into(),
+                ],
+            ),
+            (
+                Chain::ZkSync,
+                vec![
+                    AssetId::from_token(Chain::ZkSync, WETH_ZKSYNC_CONTRACT),
+                    USDT_ZKSYNC_ASSET_ID.into(),
+                    WBTC_ZKSYNC_ASSET_ID.into(),
+                    DAI_ZKSYNC_ASSET_ID.into(),
+                ],
+            ),
+            (Chain::World, vec![AssetId::from_token(Chain::World, WETH_WORLD_CONTRACT), WBTC_WORLD_ASSET_ID.into()]),
+            (Chain::Blast, vec![AssetId::from_token(Chain::Blast, WETH_BLAST_CONTRACT), WBTC_BLAST_ASSET_ID.into()]),
             (Chain::Ink, vec![AssetId::from_token(Chain::Ink, WETH_INK_CONTRACT), USDT_INK_ASSET_ID.into()]),
             (
                 Chain::Unichain,
