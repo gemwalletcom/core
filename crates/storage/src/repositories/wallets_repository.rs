@@ -1,8 +1,8 @@
 use crate::database::wallets::WalletsStore;
-use crate::models::{DeviceRow, NewWalletAddressRow, NewWalletRow, NewWalletSubscriptionRow, WalletAddressRow, WalletRow, WalletSubscriptionRow};
+use crate::models::{DeviceRow, NewWalletAddressRow, NewWalletRow, NewWalletSubscriptionRow, SubscriptionAddressExcludeRow, WalletAddressRow, WalletRow, WalletSubscriptionRow};
 use crate::sql_types::ChainRow;
 use crate::{DatabaseClient, DatabaseError};
-use primitives::Chain;
+use primitives::{Chain, DeviceSubscription};
 use std::collections::{HashMap, HashSet};
 
 pub trait WalletsRepository {
@@ -19,6 +19,11 @@ pub trait WalletsRepository {
     fn delete_subscriptions(&mut self, device_id: i32, subscriptions: Vec<(i32, Chain, String)>) -> Result<usize, DatabaseError>;
     fn delete_wallet_subscriptions(&mut self, device_id: i32, wallet_ids: Vec<i32>) -> Result<usize, DatabaseError>;
     fn delete_wallet_chains(&mut self, device_id: i32, wallet_id: i32, chains: Vec<Chain>) -> Result<usize, DatabaseError>;
+
+    fn get_subscriptions_by_chain_addresses(&mut self, chain: Chain, addresses: Vec<String>) -> Result<Vec<DeviceSubscription>, DatabaseError>;
+    fn get_subscription_address_exists(&mut self, chain: Chain, address: &str) -> Result<bool, DatabaseError>;
+    fn add_subscriptions_exclude_addresses(&mut self, values: Vec<SubscriptionAddressExcludeRow>) -> Result<usize, DatabaseError>;
+    fn get_subscriptions_exclude_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<String>, DatabaseError>;
 }
 
 impl WalletsRepository for DatabaseClient {
@@ -142,5 +147,29 @@ impl WalletsRepository for DatabaseClient {
 
     fn delete_wallet_chains(&mut self, device_id: i32, wallet_id: i32, chains: Vec<Chain>) -> Result<usize, DatabaseError> {
         WalletsStore::delete_wallet_chains(self, device_id, wallet_id, chains)
+    }
+
+    fn get_subscriptions_by_chain_addresses(&mut self, chain: Chain, addresses: Vec<String>) -> Result<Vec<DeviceSubscription>, DatabaseError> {
+        Ok(WalletsStore::get_subscriptions_by_chain_addresses(self, chain, addresses)?
+            .into_iter()
+            .map(|(wallet, sub, addr, device)| DeviceSubscription {
+                device: device.as_primitive(),
+                wallet_id: wallet.wallet_id.0.clone(),
+                chain: sub.chain.0,
+                address: addr.address,
+            })
+            .collect())
+    }
+
+    fn get_subscription_address_exists(&mut self, chain: Chain, address: &str) -> Result<bool, DatabaseError> {
+        WalletsStore::get_subscription_address_exists(self, chain, address)
+    }
+
+    fn add_subscriptions_exclude_addresses(&mut self, values: Vec<SubscriptionAddressExcludeRow>) -> Result<usize, DatabaseError> {
+        WalletsStore::add_subscriptions_exclude_addresses(self, values)
+    }
+
+    fn get_subscriptions_exclude_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<String>, DatabaseError> {
+        WalletsStore::get_subscriptions_exclude_addresses(self, addresses)
     }
 }

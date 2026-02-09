@@ -1,4 +1,3 @@
-use crate::database::subscriptions::SubscriptionsStore;
 use crate::{DatabaseClient, models::*};
 use chrono::{Duration, NaiveDateTime, Utc};
 use diesel::{prelude::*, upsert::excluded};
@@ -23,7 +22,7 @@ pub trait DevicesStore {
     fn update_device_fields(&mut self, device_ids: Vec<String>, updates: Vec<DeviceFieldUpdate>) -> Result<usize, diesel::result::Error>;
     fn migrate_device_id(&mut self, old_device_id: &str, new_device_id: &str) -> Result<DeviceRow, diesel::result::Error>;
     fn delete_device(&mut self, device_id: &str) -> Result<usize, diesel::result::Error>;
-    fn delete_devices_subscriptions_after_days(&mut self, days: i64) -> Result<usize, diesel::result::Error>;
+    fn get_stale_device_ids(&mut self, days: i64) -> Result<Vec<i32>, diesel::result::Error>;
     fn get_devices_by_filter(&mut self, filters: Vec<DeviceFilter>) -> Result<Vec<DeviceRow>, diesel::result::Error>;
 }
 
@@ -92,12 +91,10 @@ impl DevicesStore for DatabaseClient {
         diesel::delete(devices.filter(device_id.eq(_device_id))).execute(&mut self.connection)
     }
 
-    // Delete subscriptions for inactive devices
-    fn delete_devices_subscriptions_after_days(&mut self, days: i64) -> Result<usize, diesel::result::Error> {
+    fn get_stale_device_ids(&mut self, days: i64) -> Result<Vec<i32>, diesel::result::Error> {
         use crate::schema::devices::dsl::*;
         let cutoff_date = Utc::now() - Duration::days(days);
-        let device_ids: Vec<i32> = devices.filter(updated_at.lt(cutoff_date.naive_utc())).select(id).load(&mut self.connection)?;
-        SubscriptionsStore::delete_subscriptions_for_device_ids(self, device_ids)
+        devices.filter(updated_at.lt(cutoff_date.naive_utc())).select(id).load(&mut self.connection)
     }
 
     fn get_devices_by_filter(&mut self, filters: Vec<DeviceFilter>) -> Result<Vec<DeviceRow>, diesel::result::Error> {

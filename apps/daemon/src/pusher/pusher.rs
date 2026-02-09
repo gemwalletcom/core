@@ -3,8 +3,8 @@ use std::error::Error;
 use localizer::LanguageLocalizer;
 use number_formatter::BigNumberFormatter;
 use primitives::{
-    AddressFormatter, Asset, AssetVecExt, Chain, GorushNotification, NFTAssetId, PushNotification, PushNotificationTransaction, PushNotificationTypes, Subscription, Transaction,
-    TransactionNFTTransferMetadata, TransactionSwapMetadata, TransactionType,
+    AddressFormatter, Asset, AssetVecExt, Chain, DeviceSubscription, GorushNotification, NFTAssetId, PushNotification, PushNotificationTransaction, PushNotificationTypes,
+    Transaction, TransactionNFTTransferMetadata, TransactionSwapMetadata, TransactionType,
 };
 use storage::{Database, ScanAddressesRepository};
 
@@ -27,7 +27,7 @@ impl Pusher {
         }
     }
 
-    pub fn message(&self, localizer: LanguageLocalizer, transaction: Transaction, subscription: Subscription, assets: Vec<Asset>) -> Result<Message, Box<dyn Error + Send + Sync>> {
+    pub fn message(&self, localizer: LanguageLocalizer, transaction: Transaction, address: &str, assets: Vec<Asset>) -> Result<Message, Box<dyn Error + Send + Sync>> {
         let asset = assets.asset_result(transaction.asset_id.clone())?;
         let amount = BigNumberFormatter::value(transaction.value.as_str(), asset.decimals).unwrap_or_default();
         let chain = transaction.asset_id.chain;
@@ -37,7 +37,7 @@ impl Pusher {
 
         match transaction.transaction_type {
             TransactionType::Transfer | TransactionType::SmartContractCall => {
-                let is_sent = transaction.is_sent(subscription.address.clone());
+                let is_sent = transaction.is_sent(address.to_string());
                 let value = self.get_value(amount, asset.symbol.clone());
                 let title = localizer.notification_transfer_title(is_sent, value.as_str());
                 let message = localizer.notification_transfer_description(is_sent, to_address.as_str(), from_address.as_str());
@@ -54,7 +54,7 @@ impl Pusher {
                 } else {
                     format!("#{}...", nft_asset_id.token_id.get(..6).unwrap_or(&nft_asset_id.token_id))
                 };
-                let is_sent = transaction.is_sent(subscription.address.clone());
+                let is_sent = transaction.is_sent(address.to_string());
                 let title = localizer.notification_nft_transfer_title(is_sent, &name);
                 let message = localizer.notification_transfer_description(is_sent, to_address.as_str(), from_address.as_str());
                 Ok(Message { title, message: Some(message) })
@@ -100,14 +100,12 @@ impl Pusher {
                 })
             }
             TransactionType::PerpetualOpenPosition => {
-                let _is_sent = transaction.is_sent(subscription.address.clone());
                 let value = self.get_value(amount, asset.symbol.clone());
                 let title = format!("Opened Perpetual Position: {value}");
                 let message = format!("Opened perpetual position for {value} at {to_address}");
                 Ok(Message { title, message: Some(message) })
             }
             TransactionType::PerpetualClosePosition => {
-                let _is_sent = transaction.is_sent(subscription.address.clone());
                 let value = self.get_value(amount, asset.symbol.clone());
                 let title = format!("Closed Perpetual Position: {value}");
                 let message = format!("Closed perpetual position for {value} at {to_address}");
@@ -132,24 +130,21 @@ impl Pusher {
 
     pub async fn get_messages(
         &self,
-        device: primitives::Device,
+        subscription: &DeviceSubscription,
         transaction: Transaction,
-        subscription: Subscription,
         assets: Vec<Asset>,
     ) -> Result<Vec<GorushNotification>, Box<dyn Error + Send + Sync>> {
-        if !device.can_receive_push_notification() {
+        if !subscription.device.can_receive_push_notification() {
             return Ok(vec![]);
         }
 
         let transaction = transaction.finalize(vec![subscription.address.clone()]).without_utxo();
 
-        let localizer = LanguageLocalizer::new_with_language(device.locale.as_str());
-        let message = self.message(localizer, transaction.clone(), subscription.clone(), assets.clone())?;
+        let localizer = LanguageLocalizer::new_with_language(subscription.device.locale.as_str());
+        let message = self.message(localizer, transaction.clone(), &subscription.address, assets.clone())?;
 
-        // TODO: Pass wallet_id from subscription once v2 subscriptions migration is complete
         let notification_transaction = PushNotificationTransaction {
-            wallet_index: Some(subscription.wallet_index),
-            wallet_id: String::new(),
+            wallet_id: subscription.wallet_id.id(),
             transaction_id: transaction.id.to_string(),
             transaction: transaction.clone(),
             asset_id: transaction.asset_id.to_string(),
@@ -159,7 +154,7 @@ impl Pusher {
             data: serde_json::to_value(&notification_transaction).ok(),
         };
 
-        let notification = GorushNotification::from_device(device, message.title, message.message.unwrap_or_default(), data);
+        let notification = GorushNotification::from_device(subscription.device.clone(), message.title, message.message.unwrap_or_default(), data);
 
         Ok(vec![notification])
     }

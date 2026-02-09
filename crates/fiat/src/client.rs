@@ -17,7 +17,7 @@ use primitives::{
 };
 use reqwest::Client as RequestClient;
 use storage::{
-    AssetFilter, AssetsRepository, ConfigCacher, Database, SubscriptionsRepository, WalletsRepository,
+    AssetFilter, AssetsRepository, ConfigCacher, Database, WalletsRepository,
     database::devices::DevicesStore,
     models::{FiatQuoteRequestRow, FiatQuoteRow, NewFiatWebhookRow},
 };
@@ -339,7 +339,13 @@ impl FiatClient {
         Ok(FiatQuotes { quotes, errors })
     }
 
-    pub async fn get_quote_url_legacy(&self, quote_id: &str, wallet_address: &str, ip_address: &str, device_id: &str) -> Result<(FiatQuoteUrl, FiatQuote), Box<dyn Error + Send + Sync>> {
+    pub async fn get_quote_url_legacy(
+        &self,
+        quote_id: &str,
+        wallet_address: &str,
+        ip_address: &str,
+        device_id: &str,
+    ) -> Result<(FiatQuoteUrl, FiatQuote), Box<dyn Error + Send + Sync>> {
         let mut client = self.database.client()?;
         let device = DevicesStore::get_device(&mut client, device_id)?;
 
@@ -410,7 +416,7 @@ impl FiatClient {
     }
 
     fn is_address_subscribed(&self, asset: &Asset, wallet_address: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.subscriptions()?.get_subscription_address_exists(asset.chain, wallet_address)?)
+        Ok(self.database.wallets()?.get_subscription_address_exists(asset.chain, wallet_address)?)
     }
 
     fn check_asset_limits_old(request: &FiatQuoteOldRequest, mapping: &FiatMapping) -> Result<(), FiatQuoteError> {

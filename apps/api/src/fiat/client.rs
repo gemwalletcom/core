@@ -47,7 +47,13 @@ impl FiatQuotesClient {
         self.fiat_client.get_quotes(request).await
     }
 
-    pub async fn get_quote_url_legacy(&self, quote_id: &str, wallet_address: &str, ip_address: &str, device_id: &str) -> Result<(FiatQuoteUrl, FiatQuote), Box<dyn Error + Send + Sync>> {
+    pub async fn get_quote_url_legacy(
+        &self,
+        quote_id: &str,
+        wallet_address: &str,
+        ip_address: &str,
+        device_id: &str,
+    ) -> Result<(FiatQuoteUrl, FiatQuote), Box<dyn Error + Send + Sync>> {
         self.fiat_client.get_quote_url_legacy(quote_id, wallet_address, ip_address, device_id).await
     }
 

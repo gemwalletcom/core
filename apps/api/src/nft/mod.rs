@@ -1,7 +1,7 @@
-use crate::params::{AddressParam, ChainParam, DeviceIdParam, NftAssetIdParam, NftCollectionIdParam};
+use crate::params::{AddressParam, ChainParam, NftAssetIdParam, NftCollectionIdParam};
 use crate::responders::{ApiError, ApiResponse};
 use ::nft::NFTClient;
-use primitives::{NFTAsset, NFTData, ReportNft, response::ResponseResultNew};
+use primitives::{NFTAsset, NFTData, ReportNft};
 use rocket::Request;
 use rocket::http::ContentType;
 use rocket::response::{self, Responder};
@@ -9,20 +9,6 @@ use rocket::serde::json::Json;
 use rocket::{State, get, post, put, tokio::sync::Mutex};
 use std::collections::HashMap;
 use std::io::Cursor;
-
-// by device
-
-// TODO: Remove once all clients migrate to /v1/devices/<device_id>/wallets/<wallet_id>/nft_assets
-#[get("/nft/assets/device/<device_id>?<wallet_index>")]
-pub async fn get_nft_assets_old(device_id: DeviceIdParam, wallet_index: i32, client: &State<Mutex<NFTClient>>) -> Result<ApiResponse<ResponseResultNew<Vec<NFTData>>>, ApiError> {
-    Ok(ResponseResultNew::new(client.lock().await.get_nft_assets(&device_id.0, wallet_index).await?).into())
-}
-
-// TODO: Remove once all clients migrate to /v1/devices/<device_id>/wallets/<wallet_id>/nft_assets
-#[get("/nft/assets/device/<device_id>?<wallet_index>")]
-pub async fn get_nft_assets_v2(device_id: DeviceIdParam, wallet_index: i32, client: &State<Mutex<NFTClient>>) -> Result<ApiResponse<Vec<NFTData>>, ApiError> {
-    Ok(client.lock().await.get_nft_assets(&device_id.0, wallet_index).await?.into())
-}
 
 // by address. mostly for testing purposes
 

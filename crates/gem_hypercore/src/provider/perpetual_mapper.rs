@@ -142,7 +142,7 @@ pub fn map_perpetuals_data(metadata: HypercoreMetadataResponse) -> Vec<Perpetual
 }
 
 pub fn map_candlesticks(candlesticks: Vec<Candlestick>) -> Vec<ChartCandleStick> {
-    candlesticks.into_iter().map(|c| c.into()).collect()
+    candlesticks.iter().map(ChartCandleStick::from).collect()
 }
 
 pub fn map_account_summary(positions: &AssetPositions) -> PerpetualAccountSummary {
@@ -334,6 +334,7 @@ mod tests {
         let candlesticks = vec![
             Candlestick {
                 t: 1640995200000u64, // 2022-01-01 00:00:00 UTC
+                s: "BTC".to_string(),
                 i: "1h".to_string(),
                 o: "50000.0".to_string(),
                 h: "51000.0".to_string(),
@@ -343,6 +344,7 @@ mod tests {
             },
             Candlestick {
                 t: 1640998800000u64, // 2022-01-01 01:00:00 UTC
+                s: "BTC".to_string(),
                 i: "1h".to_string(),
                 o: "50500.0".to_string(),
                 h: "52000.0".to_string(),

@@ -19,6 +19,21 @@ pub struct AssetFull {
     pub market: Option<AssetMarket>,
 }
 
+impl AssetFull {
+    pub fn with_rate(self, rate: f64) -> Self {
+        Self {
+            asset: self.asset,
+            properties: self.properties,
+            score: self.score,
+            tags: self.tags,
+            links: self.links,
+            perpetuals: self.perpetuals,
+            price: self.price.map(|p| p.with_rate(rate)),
+            market: self.market.map(|m| m.with_rate(rate)),
+        }
+    }
+}
+
 #[typeshare(swift = "Sendable")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

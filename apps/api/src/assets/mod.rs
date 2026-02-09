@@ -2,16 +2,25 @@ pub mod cilent;
 mod filter;
 mod model;
 
-use crate::params::{AssetIdParam, DeviceIdParam, SearchQueryParam};
+use crate::params::{AssetIdParam, SearchQueryParam};
 use crate::responders::{ApiError, ApiResponse};
 pub use cilent::{AssetsClient, SearchClient};
 pub use model::SearchRequest;
-use primitives::{Asset, AssetBasic, AssetFull, AssetId, SearchResponse};
+use pricer::PriceClient;
+use primitives::{Asset, AssetBasic, AssetFull, AssetId, DEFAULT_FIAT_CURRENCY, SearchResponse};
 use rocket::{State, get, post, serde::json::Json, tokio::sync::Mutex};
 
-#[get("/assets/<asset_id>")]
-pub async fn get_asset(asset_id: AssetIdParam, client: &State<Mutex<AssetsClient>>) -> Result<ApiResponse<AssetFull>, ApiError> {
-    Ok(client.lock().await.get_asset_full(&asset_id.0)?.into())
+#[get("/assets/<asset_id>?<currency>")]
+pub async fn get_asset(
+    asset_id: AssetIdParam,
+    currency: Option<&str>,
+    client: &State<Mutex<AssetsClient>>,
+    price_client: &State<Mutex<PriceClient>>,
+) -> Result<ApiResponse<AssetFull>, ApiError> {
+    let asset = client.lock().await.get_asset_full(&asset_id.0)?;
+    let currency = currency.unwrap_or(DEFAULT_FIAT_CURRENCY);
+    let rate = price_client.lock().await.get_fiat_rate(currency)?.rate;
+    Ok(asset.with_rate(rate).into())
 }
 
 #[post("/assets", format = "json", data = "<asset_ids>")]
@@ -48,17 +57,6 @@ pub async fn get_assets_search(
 ) -> Result<ApiResponse<Vec<AssetBasic>>, ApiError> {
     let request = SearchRequest::new(&query.0, chains, tags, limit, offset);
     Ok(client.lock().await.get_assets_search(&request).await?.into())
-}
-
-// TODO: Remove once all clients migrate to /v1/devices/<device_id>/wallets/<wallet_id>/assets
-#[get("/assets/device/<device_id>?<wallet_index>&<from_timestamp>")]
-pub async fn get_assets_by_device_id(
-    device_id: DeviceIdParam,
-    wallet_index: i32,
-    from_timestamp: Option<u64>,
-    client: &State<Mutex<AssetsClient>>,
-) -> Result<ApiResponse<Vec<AssetId>>, ApiError> {
-    Ok(client.lock().await.get_assets_by_device_id(&device_id.0, wallet_index, from_timestamp)?.into())
 }
 
 #[get("/search?<query>&<chains>&<tags>&<limit>&<offset>")]

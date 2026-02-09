@@ -16,8 +16,8 @@ pub fn channel() -> (ShutdownSender, ShutdownReceiver) {
 
 pub fn spawn_signal_handler(shutdown_tx: ShutdownSender) -> tokio::task::JoinHandle<()> {
     tokio::spawn(async move {
-        wait_for_signal().await;
-        info_with_fields!("shutdown signal received", status = "ok");
+        let signal = wait_for_signal().await;
+        info_with_fields!("shutdown signal received", signal = signal, status = "ok");
         let _ = shutdown_tx.send(true);
     })
 }
@@ -26,7 +26,7 @@ pub async fn wait_with_timeout(handles: Vec<tokio::task::JoinHandle<()>>, timeou
     tokio::time::timeout(timeout, futures::future::join_all(handles)).await.is_ok()
 }
 
-async fn wait_for_signal() {
+async fn wait_for_signal() -> &'static str {
     let ctrl_c = tokio::signal::ctrl_c();
 
     #[cfg(unix)]
@@ -43,7 +43,7 @@ async fn wait_for_signal() {
     let terminate = std::future::pending::<()>();
 
     tokio::select! {
-        _ = ctrl_c => info_with_fields!("received SIGINT", status = "ok"),
-        _ = terminate => info_with_fields!("received SIGTERM", status = "ok"),
+        _ = ctrl_c => "SIGINT",
+        _ = terminate => "SIGTERM",
     }
 }

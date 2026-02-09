@@ -2,7 +2,7 @@ use crate::ChatwootWebhookPayload;
 use localizer::LanguageLocalizer;
 use primitives::{Device, GorushNotification, PushNotification, PushNotificationTypes, push_notification::PushNotificationSupport};
 use std::error::Error;
-use storage::database::support::SupportStore;
+use storage::database::devices::DevicesStore;
 use storage::{Database, OptionalExtension};
 use streamer::{NotificationsPayload, StreamProducer, StreamProducerQueue};
 
@@ -16,11 +16,11 @@ impl SupportClient {
         Self { database, stream_producer }
     }
 
-    pub fn get_device(&self, support_device_id: &str) -> Result<Option<Device>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.support()?.get_support_device(support_device_id).optional()?.map(|d| d.as_primitive()))
+    pub fn get_device(&self, device_id: &str) -> Result<Option<Device>, Box<dyn Error + Send + Sync>> {
+        Ok(DevicesStore::get_device(&mut self.database.client()?, device_id).optional()?.map(|d| d.as_primitive()))
     }
 
-    pub async fn handle_message_created(&self, device: &Device, support_device_id: &str, payload: &ChatwootWebhookPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn handle_message_created(&self, device: &Device, payload: &ChatwootWebhookPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let notifications_count = if let Some(notification) = Self::build_notification(device, payload) {
             self.stream_producer.publish_notifications_support(NotificationsPayload::new(vec![notification])).await?;
             1
@@ -28,19 +28,10 @@ impl SupportClient {
             0
         };
 
-        self.update_unread(support_device_id, payload)?;
         Ok(notifications_count)
     }
 
-    pub fn handle_conversation_updated(&self, support_device_id: &str, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.update_unread(support_device_id, payload)?;
-        Ok(())
-    }
-
-    fn update_unread(&self, support_device_id: &str, payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
-        if let Some(unread) = payload.get_unread() {
-            SupportStore::support_update_unread(&mut self.database.client()?, support_device_id, unread)?;
-        }
+    pub fn handle_conversation_updated(&self, _payload: &ChatwootWebhookPayload) -> Result<(), Box<dyn Error + Send + Sync>> {
         Ok(())
     }
 

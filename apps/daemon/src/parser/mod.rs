@@ -1,32 +1,35 @@
 mod parser_options;
 mod parser_state;
+mod plan;
 
 pub use parser_options::ParserOptions;
 use parser_state::ParserStateService;
 
 use std::{
-    cmp,
     error::Error,
+    sync::Arc,
     time::{Duration, Instant},
 };
 
-use cacher::{CacheKey, CacherClient};
+use cacher::CacherClient;
 use chain_traits::ChainTraits;
+use crate::reporters::parser::ParserReporter;
 use gem_tracing::{DurationMs, error_with_fields, info_with_fields};
-use primitives::{Chain, ParserError, ParserStatus};
+use primitives::Chain;
 use settings::Settings;
 use std::str::FromStr;
-use storage::Database;
 use streamer::{StreamProducer, StreamProducerConfig, StreamProducerQueue, TransactionsPayload};
 
 use crate::shutdown::{self, ShutdownReceiver};
+use plan::{BlockPlan, BlockPlanKind, plan_next_block, should_reload_catchup, timeout_for_state};
+use storage::{Database, models::ParserStateRow};
 
 pub struct Parser {
     chain: Chain,
     provider: Box<dyn ChainTraits>,
     stream_producer: StreamProducer,
     state_service: ParserStateService,
-    cacher: CacherClient,
+    reporter: ParserReporter,
     options: ParserOptions,
     shutdown_rx: ShutdownReceiver,
 }
@@ -41,13 +44,14 @@ impl Parser {
         shutdown_rx: ShutdownReceiver,
     ) -> Self {
         let chain = provider.get_chain();
-        let state_service = ParserStateService::new(chain, database, cacher.clone());
+        let state_service = ParserStateService::new(chain, database);
+        let reporter = ParserReporter::new(chain, cacher);
         Self {
             chain,
             provider,
             stream_producer,
             state_service,
-            cacher,
+            reporter,
             options,
             shutdown_rx,
         }
@@ -57,155 +61,142 @@ impl Parser {
         *self.shutdown_rx.borrow()
     }
 
-    async fn report_error(&self, error: &str) {
-        let cache_key = CacheKey::ParserStatus(self.chain.as_ref());
-        let key = cache_key.key();
-        let mut status = self.cacher.get_value::<ParserStatus>(&key).await.unwrap_or_default();
-        let timestamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
+    async fn sleep_or_shutdown(&self, duration: Duration) -> bool {
+        shutdown::sleep_or_shutdown(duration, &self.shutdown_rx).await
+    }
 
-        let truncated = if error.len() > 200 { error[..200].to_string() } else { error.to_string() };
-
-        if let Some(entry) = status.errors.iter_mut().find(|e| e.message == truncated) {
-            entry.count += 1;
-            entry.timestamp = timestamp;
+    async fn wait_if_disabled(&self, state: &ParserStateRow, timeout: Duration) -> bool {
+        if state.is_enabled {
+            true
         } else {
-            status.errors.push(ParserError {
-                message: truncated,
-                count: 1,
-                timestamp,
-            });
-        }
-
-        if let Err(e) = self.cacher.set_cached(cache_key, &status).await {
-            info_with_fields!("parser status report failed", chain = self.chain.as_ref(), error = format!("{:?}", e));
+            self.sleep_or_shutdown(timeout).await;
+            false
         }
     }
 
+    async fn get_latest_block(&self, state: &ParserStateRow) -> Result<i64, Box<dyn Error + Send + Sync>> {
+        let latest_block = self.provider.get_block_latest_number().await? as i64;
+        let _ = self.state_service.set_latest_block(latest_block);
+
+        if state.current_block == 0 {
+            let _ = self.state_service.set_current_block(latest_block);
+        }
+
+        Ok(latest_block)
+    }
+
+    async fn execute_plan(&self, plan: BlockPlan, state: &ParserStateRow, timeout: Duration) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        let start = Instant::now();
+        let blocks_desc = format!("{:?}", plan.range.blocks);
+
+        match plan.kind {
+            BlockPlanKind::Enqueue => {
+                self.stream_producer.publish_blocks(self.chain, &plan.range.blocks).await?;
+                let _ = self.state_service.set_current_block(plan.range.end_block);
+
+                info_with_fields!(
+                    "block add to queue",
+                    chain = self.chain.as_ref(),
+                    blocks = blocks_desc,
+                    remaining = plan.range.remaining,
+                    duration = DurationMs(start.elapsed())
+                );
+                return Ok(true);
+            }
+            BlockPlanKind::Parse => {}
+        }
+
+        match self.parse_blocks(plan.range.blocks).await {
+            Ok(result) => {
+                let _ = self.state_service.set_current_block(plan.range.end_block);
+
+                info_with_fields!(
+                    "block complete",
+                    chain = self.chain.as_ref(),
+                    blocks = blocks_desc,
+                    transactions = result,
+                    remaining = plan.range.remaining,
+                    duration = DurationMs(start.elapsed())
+                );
+            }
+            Err(err) => {
+                error_with_fields!("parser parse_block", &*err, chain = self.chain.as_ref(), blocks = blocks_desc);
+                self.reporter.error(&format!("block: {:?}", err)).await;
+                self.sleep_or_shutdown(timeout).await;
+                return Ok(false);
+            }
+        }
+
+        if should_reload_catchup(plan.range.remaining, self.options.catchup_reload_interval) {
+            return Ok(false);
+        }
+        if state.timeout_between_blocks > 0 && self.sleep_or_shutdown(Duration::from_millis(state.timeout_between_blocks as u64)).await {
+            return Ok(false);
+        }
+
+        Ok(true)
+    }
+
+    async fn process_blocks(&self, timeout: Duration) -> Result<(), Box<dyn Error + Send + Sync>> {
+        loop {
+            if self.is_shutdown() {
+                break;
+            }
+
+            let state = self.state_service.get_state()?;
+
+            let Some(plan) = plan_next_block(&state, state.current_block, state.latest_block) else {
+                break;
+            };
+
+            if !self.execute_plan(plan, &state, timeout).await? {
+                break;
+            }
+        }
+
+        Ok(())
+    }
+
     pub async fn start(&self) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.state_service.init().await?;
-
-        let mut last_persist = Instant::now();
-
         loop {
             if self.is_shutdown() {
                 info_with_fields!("shutdown requested", chain = self.chain.as_ref());
                 break;
             }
 
-            if last_persist.elapsed() >= self.options.persist_interval {
-                self.state_service.persist_state().await;
-                last_persist = Instant::now();
-            }
-
             let state = self.state_service.get_state()?;
-            let timeout = cmp::max(Duration::from_millis(state.timeout_latest_block as u64), self.options.timeout);
+            let timeout = timeout_for_state(&state, self.options.min_check, self.options.max_check);
 
-            if !state.is_enabled {
-                if shutdown::sleep_or_shutdown(timeout, &self.shutdown_rx).await {
-                    break;
-                }
+            if !self.wait_if_disabled(&state, timeout).await {
                 continue;
             }
 
-            let current_block = self.state_service.get_current_block().await;
-            let next_current_block = current_block + state.await_blocks as i64;
-
-            match self.provider.get_block_latest_number().await {
-                Ok(latest_block) => {
-                    let latest_block_i64 = latest_block as i64;
-                    let _ = self.state_service.set_latest_block(latest_block_i64).await;
-
-                    if current_block == 0 {
-                        let _ = self.state_service.set_current_block(latest_block_i64).await;
-                    }
-
-                    if next_current_block >= latest_block_i64 {
-                        info_with_fields!(
-                            "parser ahead",
-                            chain = self.chain.as_ref(),
-                            current_block = current_block,
-                            latest_block = latest_block,
-                            await_blocks = state.await_blocks
-                        );
-                        if shutdown::sleep_or_shutdown(timeout, &self.shutdown_rx).await {
-                            break;
-                        }
-                        continue;
-                    }
-                }
+            let latest_block = match self.get_latest_block(&state).await {
+                Ok(block) => block,
                 Err(err) => {
                     error_with_fields!("parser latest_block", &*err, chain = self.chain.as_ref());
-                    if shutdown::sleep_or_shutdown(timeout * 5, &self.shutdown_rx).await {
-                        break;
-                    }
+                    self.reporter.error(&format!("latest_block: {:?}", err)).await;
+                    self.sleep_or_shutdown(self.options.error_interval).await;
                     continue;
                 }
+            };
+
+            if state.current_block + state.await_blocks as i64 >= latest_block {
+                info_with_fields!(
+                    "parser ahead",
+                    chain = self.chain.as_ref(),
+                    current_block = state.current_block,
+                    latest_block = latest_block,
+                    await_blocks = state.await_blocks,
+                    next_check = DurationMs(timeout)
+                );
+                self.sleep_or_shutdown(timeout).await;
+                continue;
             }
 
-            loop {
-                if self.is_shutdown() {
-                    break;
-                }
-
-                let start = Instant::now();
-                let current_block = self.state_service.get_current_block().await;
-                let latest_block = self.state_service.get_latest_block().await;
-
-                let start_block = current_block + 1;
-                let end_block = cmp::min(start_block + state.parallel_blocks as i64 - 1, latest_block - state.await_blocks as i64);
-                let next_blocks: Vec<u64> = (start_block..=end_block).map(|b| b as u64).collect();
-                let remaining = latest_block - end_block - state.await_blocks as i64;
-
-                if next_blocks.is_empty() {
-                    break;
-                }
-
-                if let Some(queue_behind_blocks) = state.queue_behind_blocks
-                    && remaining > queue_behind_blocks as i64
-                {
-                    self.stream_producer.publish_blocks(self.chain, &next_blocks).await?;
-                    let _ = self.state_service.set_current_block(end_block).await;
-
-                    info_with_fields!(
-                        "block add to queue",
-                        chain = self.chain.as_ref(),
-                        blocks = format!("{:?}", next_blocks),
-                        remaining = remaining,
-                        duration = DurationMs(start.elapsed())
-                    );
-                    continue;
-                }
-
-                match self.parse_blocks(next_blocks.clone()).await {
-                    Ok(result) => {
-                        let _ = self.state_service.set_current_block(end_block).await;
-
-                        info_with_fields!(
-                            "block complete",
-                            chain = self.chain.as_ref(),
-                            blocks = format!("{:?}", next_blocks),
-                            transactions = result,
-                            remaining = remaining,
-                            duration = DurationMs(start.elapsed())
-                        );
-                    }
-                    Err(err) => {
-                        error_with_fields!("parser parse_block", &*err, chain = self.chain.as_ref(), blocks = format!("{:?}", next_blocks));
-                        shutdown::sleep_or_shutdown(timeout, &self.shutdown_rx).await;
-                        break;
-                    }
-                }
-
-                if remaining % self.options.catchup_reload_interval == 0 {
-                    break;
-                }
-                if state.timeout_between_blocks > 0 && shutdown::sleep_or_shutdown(Duration::from_millis(state.timeout_between_blocks as u64), &self.shutdown_rx).await {
-                    break;
-                }
-            }
+            self.process_blocks(timeout).await?;
         }
 
-        self.state_service.persist_state().await;
         info_with_fields!("parser stopped", chain = self.chain.as_ref());
 
         Ok(())
@@ -223,13 +214,15 @@ impl Parser {
     }
 }
 
-pub async fn run(settings: Settings, chain: Option<Chain>) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn run(settings: Settings, chain: Option<Chain>, health_state: Arc<crate::health::HealthState>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let cacher = CacherClient::new(&settings.redis.url).await;
 
     let config = storage::ConfigCacher::new(database.clone());
     let catchup_reload_interval = config.get_i64(primitives::ConfigKey::ParserCatchupReloadInterval)?;
-    let persist_interval = config.get_duration(primitives::ConfigKey::ParserPersistInterval)?;
+    let min_check = config.get_duration(primitives::ConfigKey::ParserMinCheckInterval)?;
+    let max_check = config.get_duration(primitives::ConfigKey::ParserMaxCheckInterval)?;
+    let error_interval = config.get_duration(primitives::ConfigKey::ParserErrorInterval)?;
 
     let chains: Vec<Chain> = if let Some(chain) = chain {
         vec![chain]
@@ -259,19 +252,25 @@ pub async fn run(settings: Settings, chain: Option<Chain>) -> Result<(), Box<dyn
 
         let provider = settings_chain::ProviderFactory::new_from_settings_with_user_agent(chain, &settings, &settings::service_user_agent("parser", None));
 
-        let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+        let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
+        let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
         let stream_producer = StreamProducer::new(&rabbitmq_config, format!("parser_{chain}").as_str()).await?;
 
         let options = ParserOptions {
             timeout: settings.parser.timeout,
             catchup_reload_interval,
-            persist_interval,
+            min_check,
+            max_check,
+            error_interval,
         };
 
         handles.push(tokio::spawn(async move {
             run_parser(database, cacher, stream_producer, provider, options, shutdown_rx).await;
         }));
     }
+
+    health_state.set_ready();
+    info_with_fields!("parsers ready", chains = handles.len());
 
     signal_handle.await.ok();
     info_with_fields!("waiting for parser shutdown", tasks = handles.len());
@@ -302,7 +301,7 @@ async fn run_parser(
         if let Err(e) = parser.start().await {
             let error_msg = format!("{:?}", e);
             error_with_fields!("parser error", &*e, chain = chain.as_ref());
-            parser.report_error(&error_msg).await;
+            parser.reporter.error(&error_msg).await;
 
             if shutdown::sleep_or_shutdown(timeout, &shutdown_rx).await {
                 break;

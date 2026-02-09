@@ -15,8 +15,8 @@ pub struct CacherClient {
 
 impl CacherClient {
     pub async fn new(redis_url: &str) -> Self {
-        let client = Client::open(redis_url).unwrap();
-        let connection = ConnectionManager::new(client).await.unwrap();
+        let client = Client::open(redis_url).expect("invalid redis url");
+        let connection = ConnectionManager::new(client).await.expect("failed to connect to redis");
         Self { connection }
     }
 
@@ -216,6 +216,20 @@ impl CacherClient {
             .arg("LIMIT")
             .arg(0)
             .arg(limit)
+            .query_async(&mut self.connection.clone())
+            .await?)
+    }
+
+    pub async fn sorted_set_card(&self, key: &str) -> Result<u64, Box<dyn Error + Send + Sync>> {
+        Ok(redis::cmd("ZCARD").arg(key).query_async(&mut self.connection.clone()).await?)
+    }
+
+    pub async fn sorted_set_rev_range_with_scores(&self, key: &str, start: isize, stop: isize) -> Result<Vec<(String, f64)>, Box<dyn Error + Send + Sync>> {
+        Ok(redis::cmd("ZREVRANGE")
+            .arg(key)
+            .arg(start)
+            .arg(stop)
+            .arg("WITHSCORES")
             .query_async(&mut self.connection.clone())
             .await?)
     }
