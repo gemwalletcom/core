@@ -14,10 +14,7 @@ impl ParserReporter {
     pub async fn error(&self, error: &str) {
         let cache_key = CacheKey::ParserStatus(self.chain.as_ref());
         let key = cache_key.key();
-        let mut status = match self.cacher.get_value::<ParserStatus>(&key).await {
-            Ok(status) => status,
-            Err(_) => ParserStatus::default(),
-        };
+        let mut status = self.cacher.get_value::<ParserStatus>(&key).await.unwrap_or_default();
 
         super::record_error(&mut status.errors, error);
 
