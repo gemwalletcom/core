@@ -4,7 +4,7 @@ use alloy_primitives::{Address, U256};
 use async_trait::async_trait;
 use gem_evm::jsonrpc::TransactionObject;
 use num_bigint::BigUint;
-use primitives::{AssetId, Chain, EarnPositionBase, EarnPositionState, swap::ApprovalData};
+use primitives::{AssetId, Chain, EarnPositionData, EarnPositionState, swap::ApprovalData};
 
 use crate::models::{Yield, YieldDetailsRequest, YieldProvider, YieldTransaction};
 use crate::provider::YieldProviderClient;
@@ -98,7 +98,7 @@ impl YieldProviderClient for YoYieldProvider {
         Ok(convert_transaction(vault, tx, approval))
     }
 
-    async fn positions(&self, request: &YieldDetailsRequest) -> Result<EarnPositionBase, YieldError> {
+    async fn positions(&self, request: &YieldDetailsRequest) -> Result<EarnPositionData, YieldError> {
         let vault = self.get_vault(&request.asset_id)?;
         let gateway = self.gateway_for_chain(vault.chain)?;
         let owner = Address::from_str(&request.wallet_address).map_err(|e| format!("invalid address {}: {e}", request.wallet_address))?;
@@ -110,13 +110,13 @@ impl YieldProviderClient for YoYieldProvider {
         let balance = BigUint::from_str(&asset_value.to_string()).map_err(|e| format!("invalid asset value {}: {e}", asset_value))?;
         let shares = BigUint::from_str(&data.share_balance.to_string()).map_err(|e| format!("invalid share balance {}: {e}", data.share_balance))?;
 
-        Ok(EarnPositionBase {
+        Ok(EarnPositionData {
             asset_id: request.asset_id.clone(),
             state: EarnPositionState::Active,
             balance,
             shares,
             rewards: BigUint::ZERO,
-            unlock_date: None,
+            completion_date: None,
             position_id: format!("{}-{}", self.provider(), request.asset_id),
             provider_id: self.provider().to_string(),
         })

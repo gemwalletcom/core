@@ -184,21 +184,21 @@ impl GemGateway {
         Ok(balance)
     }
 
-    pub async fn get_staking_validators(&self, chain: Chain, apy: Option<f64>) -> Result<Vec<GemDelegationValidator>, GatewayError> {
+    pub async fn get_staking_validators(&self, chain: Chain, apy: Option<f64>) -> Result<Vec<GemEarnProvider>, GatewayError> {
         let provider = self.provider(chain).await?;
 
         let validators = provider.get_staking_validators(apy).await.map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
         Ok(validators)
     }
 
-    pub async fn get_staking_delegations(&self, chain: Chain, address: String) -> Result<Vec<GemDelegationBase>, GatewayError> {
-        let delegations = self
+    pub async fn get_staking_delegations(&self, chain: Chain, address: String) -> Result<Vec<GemEarnPositionData>, GatewayError> {
+        let positions = self
             .provider(chain)
             .await?
             .get_staking_delegations(address)
             .await
             .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
-        Ok(delegations)
+        Ok(positions)
     }
 
     pub async fn transaction_broadcast(&self, chain: Chain, data: String, options: GemBroadcastOptions) -> Result<String, GatewayError> {

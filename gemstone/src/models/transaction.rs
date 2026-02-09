@@ -2,7 +2,7 @@ use crate::models::*;
 use num_bigint::BigInt;
 use primitives::stake_type::FreezeData;
 use primitives::{
-    AccountDataType, Asset, EarnAction, EarnData, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType,
+    AccountDataType, Asset, YieldData, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType,
     TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata, TransactionState,
     TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, UInt64, WalletConnectionSessionAppMetadata,
     perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualReduceData, TPSLOrderData},
@@ -138,11 +138,11 @@ pub struct GemHyperliquidOrder {
 
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum GemStakeType {
-    Delegate { validator: GemDelegationValidator },
-    Undelegate { delegation: GemDelegation },
-    Redelegate { delegation: GemDelegation, to_validator: GemDelegationValidator },
-    WithdrawRewards { validators: Vec<GemDelegationValidator> },
-    Withdraw { delegation: GemDelegation },
+    Delegate { validator: GemEarnProvider },
+    Undelegate { delegation: GemEarnPosition },
+    Redelegate { position: GemEarnPosition, to_provider: GemEarnProvider },
+    WithdrawRewards { validators: Vec<GemEarnProvider> },
+    Withdraw { delegation: GemEarnPosition },
     Freeze { freeze_data: GemFreezeData },
 }
 
@@ -235,19 +235,10 @@ pub enum PerpetualType {
     Reduce(PerpetualReduceData),
 }
 
-pub type GemEarnAction = EarnAction;
-
-#[uniffi::remote(Enum)]
-pub enum EarnAction {
-    Deposit,
-    Withdraw,
-}
-
-pub type GemEarnData = EarnData;
+pub type GemYieldData = YieldData;
 
 #[uniffi::remote(Record)]
-pub struct EarnData {
-    pub provider: Option<String>,
+pub struct YieldData {
     pub contract_address: Option<String>,
     pub call_data: Option<String>,
     pub approval: Option<GemApprovalData>,
@@ -295,8 +286,8 @@ pub enum GemTransactionInputType {
     },
     Earn {
         asset: GemAsset,
-        action: GemEarnAction,
-        data: GemEarnData,
+        yield_type: GemYieldType,
+        data: GemYieldData,
     },
 }
 
@@ -401,7 +392,7 @@ pub enum GemTransactionLoadMetadata {
     Evm {
         nonce: u64,
         chain_id: u64,
-        earn_data: Option<GemEarnData>,
+        earn_data: Option<GemYieldData>,
     },
     Near {
         sequence: u64,
@@ -677,7 +668,7 @@ impl From<TransactionInputType> for GemTransactionInputType {
             TransactionInputType::TransferNft(asset, nft_asset) => GemTransactionInputType::TransferNft { asset, nft_asset },
             TransactionInputType::Account(asset, account_type) => GemTransactionInputType::Account { asset, account_type },
             TransactionInputType::Perpetual(asset, perpetual_type) => GemTransactionInputType::Perpetual { asset, perpetual_type },
-            TransactionInputType::Earn(asset, action, data) => GemTransactionInputType::Earn { asset, action, data },
+            TransactionInputType::Earn(asset, yield_type, data) => GemTransactionInputType::Earn { asset, yield_type, data },
         }
     }
 }
@@ -687,7 +678,7 @@ impl From<GemStakeType> for StakeType {
         match value {
             GemStakeType::Delegate { validator } => StakeType::Stake(validator),
             GemStakeType::Undelegate { delegation } => StakeType::Unstake(delegation),
-            GemStakeType::Redelegate { delegation, to_validator } => StakeType::Redelegate(primitives::RedelegateData { delegation, to_validator }),
+            GemStakeType::Redelegate { position, to_provider } => StakeType::Redelegate(primitives::RedelegateData { position, to_provider }),
             GemStakeType::WithdrawRewards { validators } => StakeType::Rewards(validators.into_iter().collect()),
             GemStakeType::Withdraw { delegation } => StakeType::Withdraw(delegation),
             GemStakeType::Freeze { freeze_data } => StakeType::Freeze(freeze_data.into()),
@@ -701,8 +692,8 @@ impl From<StakeType> for GemStakeType {
             StakeType::Stake(validator) => GemStakeType::Delegate { validator },
             StakeType::Unstake(delegation) => GemStakeType::Undelegate { delegation },
             StakeType::Redelegate(data) => GemStakeType::Redelegate {
-                delegation: data.delegation,
-                to_validator: data.to_validator,
+                position: data.position,
+                to_provider: data.to_provider,
             },
             StakeType::Rewards(validators) => GemStakeType::WithdrawRewards { validators },
             StakeType::Withdraw(delegation) => GemStakeType::Withdraw { delegation },
@@ -831,7 +822,7 @@ impl From<GemTransactionInputType> for TransactionInputType {
             GemTransactionInputType::TransferNft { asset, nft_asset } => TransactionInputType::TransferNft(asset, nft_asset),
             GemTransactionInputType::Account { asset, account_type } => TransactionInputType::Account(asset, account_type),
             GemTransactionInputType::Perpetual { asset, perpetual_type } => TransactionInputType::Perpetual(asset, perpetual_type),
-            GemTransactionInputType::Earn { asset, action, data } => TransactionInputType::Earn(asset, action, data),
+            GemTransactionInputType::Earn { asset, yield_type, data } => TransactionInputType::Earn(asset, yield_type, data),
         }
     }
 }

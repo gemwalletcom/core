@@ -6,7 +6,7 @@ use std::{collections::HashMap, sync::Arc};
 use crate::{
     GemstoneError,
     alien::{AlienProvider, AlienProviderWrapper},
-    models::{GemEarnData, GemTransactionInputType, GemTransactionLoadInput},
+    models::{GemYieldData, GemTransactionInputType, GemTransactionLoadInput},
 };
 use gem_evm::rpc::EthereumClient;
 use gem_jsonrpc::client::JsonRpcClient;
@@ -39,14 +39,14 @@ impl GemYielder {
         self.yielder.withdraw(provider, &asset, &wallet_address, &value).await.map_err(Into::into)
     }
 
-    pub async fn positions(&self, provider: GemYieldProvider, asset: AssetId, wallet_address: String) -> Result<GemEarnPositionBase, GemstoneError> {
+    pub async fn positions(&self, provider: GemYieldProvider, asset: AssetId, wallet_address: String) -> Result<GemEarnPositionData, GemstoneError> {
         let request = YieldDetailsRequest { asset_id: asset, wallet_address };
         self.yielder.positions(provider, &request).await.map_err(Into::into)
     }
 
     pub async fn build_transaction(
         &self,
-        action: GemEarnAction,
+        yield_type: GemYieldType,
         provider: GemYieldProvider,
         asset: AssetId,
         wallet_address: String,
@@ -54,7 +54,7 @@ impl GemYielder {
         nonce: u64,
         chain_id: u64,
     ) -> Result<GemYieldTransactionData, GemstoneError> {
-        let transaction = build_yield_transaction(&self.yielder, &action, provider, &asset, &wallet_address, &value).await?;
+        let transaction = build_yield_transaction(&self.yielder, &yield_type, provider, &asset, &wallet_address, &value).await?;
 
         Ok(GemYieldTransactionData {
             transaction,
@@ -86,16 +86,15 @@ pub(crate) fn build_yielder(rpc_provider: Arc<dyn AlienProvider>) -> Result<Yiel
 
 pub(crate) async fn prepare_yield_input(yielder: &Yielder, input: GemTransactionLoadInput) -> Result<GemTransactionLoadInput, GemstoneError> {
     match &input.input_type {
-        GemTransactionInputType::Earn { asset, action, data } => {
+        GemTransactionInputType::Earn { asset, yield_type, data } => {
             if data.contract_address.is_none() || data.call_data.is_none() {
-                let transaction = build_yield_transaction(yielder, action, YieldProvider::Yo, &asset.id, &input.sender_address, &input.value).await?;
+                let transaction = build_yield_transaction(yielder, yield_type, YieldProvider::Yo, &asset.id, &input.sender_address, &input.value).await?;
 
                 Ok(GemTransactionLoadInput {
                     input_type: GemTransactionInputType::Earn {
                         asset: asset.clone(),
-                        action: action.clone(),
-                        data: GemEarnData {
-                            provider: data.provider.clone(),
+                        yield_type: yield_type.clone(),
+                        data: GemYieldData {
                             contract_address: Some(transaction.to),
                             call_data: Some(transaction.data),
                             approval: transaction.approval,
@@ -120,14 +119,14 @@ pub(crate) async fn prepare_yield_input(yielder: &Yielder, input: GemTransaction
 
 async fn build_yield_transaction(
     yielder: &Yielder,
-    action: &GemEarnAction,
+    yield_type: &GemYieldType,
     provider: YieldProvider,
     asset: &AssetId,
     wallet_address: &str,
     value: &str,
 ) -> Result<YieldTransaction, GemstoneError> {
-    match action {
-        GemEarnAction::Deposit => Ok(yielder.deposit(provider, asset, wallet_address, value).await?),
-        GemEarnAction::Withdraw => Ok(yielder.withdraw(provider, asset, wallet_address, value).await?),
+    match yield_type {
+        GemYieldType::Deposit => Ok(yielder.deposit(provider, asset, wallet_address, value).await?),
+        GemYieldType::Withdraw => Ok(yielder.withdraw(provider, asset, wallet_address, value).await?),
     }
 }

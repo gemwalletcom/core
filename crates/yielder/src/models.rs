@@ -1,5 +1,5 @@
 pub use primitives::YieldProvider;
-pub use primitives::EarnPositionBase;
+pub use primitives::EarnPositionData;
 use primitives::{AssetId, Chain, swap::ApprovalData};
 
 #[derive(Debug, Clone)]

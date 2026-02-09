@@ -1,9 +1,9 @@
 use primitives::{AssetId, YieldProvider};
 use yielder::{Yield, YieldTransaction};
 
+pub use crate::models::earn::GemYieldType;
+pub use crate::models::earn::{GemEarnPositionData, GemEarnPositionState, GemEarnProvider, GemEarnProviderType};
 use crate::models::swap::GemApprovalData;
-pub use crate::models::earn::{GemEarnPositionBase, GemEarnPositionState, GemEarnProvider, GemEarnProviderType};
-pub use crate::models::transaction::GemEarnAction;
 
 pub type GemYieldProvider = YieldProvider;
 
