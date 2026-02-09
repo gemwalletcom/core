@@ -1,5 +1,5 @@
-use crate::earn_action::EarnAction;
-use crate::earn_data::EarnData;
+use crate::yield_type::YieldType;
+use crate::yield_data::YieldData;
 use crate::stake_type::StakeType;
 use crate::swap::{ApprovalData, SwapData};
 use crate::transaction_fee::TransactionFee;
@@ -23,7 +23,7 @@ pub enum TransactionInputType {
     TransferNft(Asset, NFTAsset),
     Account(Asset, AccountDataType),
     Perpetual(Asset, PerpetualType),
-    Earn(Asset, EarnAction, EarnData),
+    Earn(Asset, YieldType, YieldData),
 }
 
 impl TransactionInputType {
@@ -78,9 +78,9 @@ impl TransactionInputType {
                 PerpetualType::Close(_) | PerpetualType::Reduce(_) => TransactionType::PerpetualClosePosition,
                 PerpetualType::Modify(_) => TransactionType::PerpetualModifyPosition,
             },
-            TransactionInputType::Earn(_, action, _) => match action {
-                EarnAction::Deposit => TransactionType::EarnDeposit,
-                EarnAction::Withdraw => TransactionType::EarnWithdraw,
+            TransactionInputType::Earn(_, yield_type, _) => match yield_type {
+                YieldType::Deposit => TransactionType::EarnDeposit,
+                YieldType::Withdraw => TransactionType::EarnWithdraw,
             },
         }
     }
@@ -132,13 +132,13 @@ impl TransactionLoadData {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Asset, DelegationValidator, PerpetualConfirmData, PerpetualDirection};
+    use crate::{Asset, EarnProvider, PerpetualConfirmData, PerpetualDirection};
 
     #[test]
     fn transaction_types() {
         assert_eq!(TransactionInputType::Transfer(Asset::mock()).transaction_type(), TransactionType::Transfer);
         assert_eq!(
-            TransactionInputType::Stake(Asset::mock(), StakeType::Stake(DelegationValidator::mock())).transaction_type(),
+            TransactionInputType::Stake(Asset::mock(), StakeType::Stake(EarnProvider::mock())).transaction_type(),
             TransactionType::StakeDelegate
         );
         assert_eq!(

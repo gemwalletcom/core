@@ -1,20 +1,19 @@
-use crate::{Delegation, DelegationValidator};
+use crate::{EarnPosition, EarnProvider};
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(rename_all = "camelCase")]
 pub struct RedelegateData {
-    pub delegation: Delegation,
-    #[serde(rename = "toValidator")]
-    pub to_validator: DelegationValidator,
+    pub position: EarnPosition,
+    pub to_provider: EarnProvider,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, AsRefStr, EnumString)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "camelCase")]
-#[strum(serialize_all = "camelCase")]
 pub enum Resource {
     Bandwidth,
     Energy,
@@ -40,10 +39,10 @@ pub struct FreezeData {
 #[serde(tag = "type", content = "content")]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 pub enum StakeType {
-    Stake(DelegationValidator),
-    Unstake(Delegation),
+    Stake(EarnProvider),
+    Unstake(EarnPosition),
     Redelegate(RedelegateData),
-    Rewards(Vec<DelegationValidator>),
-    Withdraw(Delegation),
+    Rewards(Vec<EarnProvider>),
+    Withdraw(EarnPosition),
     Freeze(FreezeData),
 }
