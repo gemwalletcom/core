@@ -5,7 +5,7 @@ use primitives::chart::ChartCandleStick;
 use primitives::perpetual::{PerpetualData, PerpetualPositionsSummary};
 use primitives::portfolio::PerpetualPortfolio;
 use primitives::{
-    AddressStatus, Asset, AssetBalance, BroadcastOptions, Chain, ChartPeriod, DelegationBase, DelegationValidator, FeeRate, NodeSyncStatus, Transaction, TransactionFee,
+    AddressStatus, Asset, AssetBalance, BroadcastOptions, Chain, ChartPeriod, EarnPositionData, EarnProvider, FeeRate, NodeSyncStatus, Transaction, TransactionFee,
     TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate, UTXO,
 };
 
@@ -50,11 +50,11 @@ pub trait ChainStaking: Send + Sync {
         Ok(None)
     }
 
-    async fn get_staking_validators(&self, _apy: Option<f64>) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
+    async fn get_staking_validators(&self, _apy: Option<f64>) -> Result<Vec<EarnProvider>, Box<dyn Error + Sync + Send>> {
         Ok(vec![])
     }
 
-    async fn get_staking_delegations(&self, _address: String) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
+    async fn get_staking_delegations(&self, _address: String) -> Result<Vec<EarnPositionData>, Box<dyn Error + Sync + Send>> {
         Ok(vec![])
     }
 }
