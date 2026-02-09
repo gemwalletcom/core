@@ -20,10 +20,7 @@ impl ConsumerStatusReporter for ConsumerReporter {
     async fn report_success(&self, name: &str, duration: u64, result: &str) {
         let cache_key = CacheKey::ConsumerStatus(name);
         let key = cache_key.key();
-        let mut status = match self.cacher.get_value::<ConsumerStatus>(&key).await {
-            Ok(status) => status,
-            Err(_) => ConsumerStatus::default(),
-        };
+        let mut status = self.cacher.get_value::<ConsumerStatus>(&key).await.unwrap_or_default();
         let timestamp = SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
 
         status.total_processed += 1;
@@ -39,10 +36,7 @@ impl ConsumerStatusReporter for ConsumerReporter {
     async fn report_error(&self, name: &str, error: &str) {
         let cache_key = CacheKey::ConsumerStatus(name);
         let key = cache_key.key();
-        let mut status = match self.cacher.get_value::<ConsumerStatus>(&key).await {
-            Ok(status) => status,
-            Err(_) => ConsumerStatus::default(),
-        };
+        let mut status = self.cacher.get_value::<ConsumerStatus>(&key).await.unwrap_or_default();
 
         status.total_errors += 1;
 
