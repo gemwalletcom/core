@@ -4,7 +4,7 @@ use futures::try_join;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{DelegationBase, DelegationValidator, chain_cosmos::CosmosChain};
+use primitives::{EarnPositionData, EarnProvider, chain_cosmos::CosmosChain};
 
 use crate::{
     provider::staking_mapper::{calculate_network_apy_cosmos, calculate_network_apy_osmosis, map_staking_delegations, map_staking_validators},
@@ -31,7 +31,7 @@ impl<C: Client> ChainStaking for CosmosClient<C> {
         }
     }
 
-    async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
+    async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<EarnProvider>, Box<dyn Error + Sync + Send>> {
         let chain = self.get_chain();
         match chain {
             CosmosChain::Noble | CosmosChain::Thorchain => Ok(vec![]),
@@ -42,7 +42,7 @@ impl<C: Client> ChainStaking for CosmosClient<C> {
         }
     }
 
-    async fn get_staking_delegations(&self, address: String) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
+    async fn get_staking_delegations(&self, address: String) -> Result<Vec<EarnPositionData>, Box<dyn Error + Sync + Send>> {
         let chain = self.get_chain().as_chain();
         let denom = chain.as_denom().unwrap_or_default();
         let chain = self.get_chain();

@@ -121,10 +121,10 @@ pub fn encode_monad_staking(stake_type: &StakeType, amount: &BigInt) -> Result<(
             Ok((IMonadStaking::delegateCall { validatorId: validator_id }.abi_encode(), amount))
         }
         StakeType::Unstake(delegation) => {
-            let validator_id = delegation.base.validator_id.parse::<u64>().map_err(|_| "Invalid validator id for Monad")?;
+            let validator_id = delegation.data.provider_id.parse::<u64>().map_err(|_| "Invalid validator id for Monad")?;
             let current_withdraw_id = delegation
-                .base
-                .delegation_id
+                .data
+                .position_id
                 .split(':')
                 .nth(1)
                 .and_then(|id| id.parse::<u8>().ok())
@@ -146,10 +146,10 @@ pub fn encode_monad_staking(stake_type: &StakeType, amount: &BigInt) -> Result<(
             ))
         }
         StakeType::Withdraw(delegation) => {
-            let validator_id = delegation.base.validator_id.parse::<u64>().map_err(|_| "Invalid validator id for Monad")?;
+            let validator_id = delegation.data.provider_id.parse::<u64>().map_err(|_| "Invalid validator id for Monad")?;
             let withdraw_id = delegation
-                .base
-                .delegation_id
+                .data
+                .position_id
                 .split(':')
                 .nth(1)
                 .and_then(|id| id.parse::<u8>().ok())

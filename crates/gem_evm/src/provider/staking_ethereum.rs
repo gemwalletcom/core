@@ -1,7 +1,7 @@
 use gem_client::Client;
 use num_bigint::BigUint;
 use num_traits::Zero;
-use primitives::{AssetBalance, AssetId, Balance, Chain, DelegationBase, DelegationState, DelegationValidator};
+use primitives::{AssetBalance, AssetId, Balance, Chain, EarnPositionData, EarnPositionState, EarnProvider, EarnProviderType};
 use std::error::Error;
 
 use crate::everstake::{EVERSTAKE_POOL_ADDRESS, get_everstake_account_state, map_balance_to_delegation, map_withdraw_request_to_delegations};
@@ -24,30 +24,31 @@ impl<C: Client + Clone> EthereumClient<C> {
         }
     }
 
-    pub async fn get_ethereum_validators(&self, apy: f64) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
-        Ok(vec![DelegationValidator {
+    pub async fn get_ethereum_validators(&self, apy: f64) -> Result<Vec<EarnProvider>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![EarnProvider {
             id: EVERSTAKE_POOL_ADDRESS.to_string(),
             chain: Chain::Ethereum,
             name: "Everstake".to_string(),
             is_active: true,
             commission: 0.1,
             apr: apy,
+            provider_type: EarnProviderType::Stake,
         }])
     }
 
-    pub async fn get_ethereum_delegations(&self, address: &str) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
+    pub async fn get_ethereum_delegations(&self, address: &str) -> Result<Vec<EarnPositionData>, Box<dyn Error + Sync + Send>> {
         let state = get_everstake_account_state(self, address).await?;
 
         let mut delegations = Vec::new();
 
         let active_balance = state.deposited_balance;
         if active_balance > BigUint::zero() {
-            delegations.push(map_balance_to_delegation(&active_balance, &state.restaked_reward, DelegationState::Active));
+            delegations.push(map_balance_to_delegation(&active_balance, &state.restaked_reward, EarnPositionState::Active));
         }
 
         let pending_balance = state.pending_balance + state.pending_deposited_balance;
         if pending_balance > BigUint::zero() {
-            delegations.push(map_balance_to_delegation(&pending_balance, &BigUint::zero(), DelegationState::Activating));
+            delegations.push(map_balance_to_delegation(&pending_balance, &BigUint::zero(), EarnPositionState::Activating));
         }
 
         let mut withdraw_delegations = map_withdraw_request_to_delegations(&state.withdraw_request);
@@ -64,11 +65,11 @@ impl<C: Client + Clone> EthereumClient<C> {
         let mut pending = BigUint::zero();
         for delegation in &delegations {
             match delegation.state {
-                DelegationState::Active => {
+                EarnPositionState::Active => {
                     staked += &delegation.balance;
                     rewards += &delegation.rewards;
                 }
-                DelegationState::Activating | DelegationState::Deactivating | DelegationState::AwaitingWithdrawal => {
+                EarnPositionState::Activating | EarnPositionState::Deactivating | EarnPositionState::AwaitingWithdrawal => {
                     pending += &delegation.balance;
                 }
                 _ => {}
@@ -96,8 +97,8 @@ mod tests {
         println!("Delegations for address: {}", address);
         for delegation in &delegations {
             println!(
-                "Delegation - Validator: {}, Balance: {}, Rewards: {}, State: {:?}",
-                delegation.validator_id, delegation.balance, delegation.rewards, delegation.state
+                "Position - Provider: {}, Balance: {}, Rewards: {}, State: {:?}",
+                delegation.provider_id, delegation.balance, delegation.rewards, delegation.state
             );
         }
 

@@ -5,7 +5,7 @@ use num_bigint::BigUint;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{Asset, Chain, DelegationBase, DelegationState, DelegationValidator};
+use primitives::{Asset, Chain, EarnPositionData, EarnPositionState, EarnProvider};
 
 use super::staking_mapper::map_staking_validators;
 use crate::rpc::client::TronClient;
@@ -38,12 +38,12 @@ impl<C: Client + Clone> ChainStaking for TronClient<C> {
         Ok(Some(apy))
     }
 
-    async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
+    async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<EarnProvider>, Box<dyn Error + Sync + Send>> {
         let witnesses = self.get_witnesses_list().await?;
         Ok(map_staking_validators(witnesses, apy))
     }
 
-    async fn get_staking_delegations(&self, address: String) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
+    async fn get_staking_delegations(&self, address: String) -> Result<Vec<EarnPositionData>, Box<dyn Error + Sync + Send>> {
         let (account, reward, validators) = futures::try_join!(self.get_account(&address), self.get_reward(&address), self.get_staking_validators(None))?;
 
         let mut delegations = Vec::new();
@@ -57,20 +57,20 @@ impl<C: Client + Clone> ChainStaking for TronClient<C> {
 
                     let now = Utc::now();
                     let state = if now < completion_date {
-                        DelegationState::Pending
+                        EarnPositionState::Pending
                     } else {
-                        DelegationState::AwaitingWithdrawal
+                        EarnPositionState::AwaitingWithdrawal
                     };
 
-                    delegations.push(DelegationBase {
+                    delegations.push(EarnPositionData {
                         asset_id: asset_id.clone(),
                         state,
                         balance: BigUint::from(amount),
                         shares: BigUint::from(0u32),
                         rewards: BigUint::from(0u32),
                         completion_date: Some(completion_date),
-                        delegation_id: completion_date.timestamp().to_string(),
-                        validator_id: SYSTEM_VALIDATOR_ID.to_string(),
+                        position_id: completion_date.timestamp().to_string(),
+                        provider_id: SYSTEM_VALIDATOR_ID.to_string(),
                     });
                 }
             }
@@ -89,15 +89,15 @@ impl<C: Client + Clone> ChainStaking for TronClient<C> {
                     };
                     let balance = vote.vote_count * 10_u64.pow(Asset::from_chain(Chain::Tron).decimals as u32);
 
-                    delegations.push(DelegationBase {
+                    delegations.push(EarnPositionData {
                         asset_id: asset_id.clone(),
-                        state: DelegationState::Active,
+                        state: EarnPositionState::Active,
                         balance: BigUint::from(balance),
                         shares: BigUint::from(vote.vote_count),
                         rewards: BigUint::from(proportional_reward),
                         completion_date: None,
-                        delegation_id: format!("vote_{}", vote.vote_address),
-                        validator_id: vote.vote_address,
+                        position_id: format!("vote_{}", vote.vote_address),
+                        provider_id: vote.vote_address,
                     });
                 }
             }

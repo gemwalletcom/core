@@ -11,7 +11,7 @@ use crate::models::{OsmosisDistributionProportions, OsmosisMintParams};
 
 use number_formatter::BigNumberFormatter;
 use primitives::chain_cosmos::CosmosChain;
-use primitives::{DelegationBase, DelegationState, DelegationValidator};
+use primitives::{EarnPositionData, EarnPositionState, EarnProvider, EarnProviderType};
 use std::collections::HashMap;
 
 const BOND_STATUS_BONDED: &str = "BOND_STATUS_BONDED";
@@ -53,7 +53,7 @@ pub fn calculate_network_apy_osmosis(mint_params: OsmosisMintParamsResponse, epo
     Some(staking_apy)
 }
 
-pub fn map_staking_validators(validators: Vec<Validator>, chain: CosmosChain, apy: Option<f64>) -> Vec<DelegationValidator> {
+pub fn map_staking_validators(validators: Vec<Validator>, chain: CosmosChain, apy: Option<f64>) -> Vec<EarnProvider> {
     validators
         .into_iter()
         .map(|validator| {
@@ -61,13 +61,14 @@ pub fn map_staking_validators(validators: Vec<Validator>, chain: CosmosChain, ap
             let is_active = !validator.jailed && validator.status == BOND_STATUS_BONDED;
             let validator_apr = if is_active { apy.map(|apr| apr - (apr * commission_rate)).unwrap_or(0.0) } else { 0.0 };
 
-            DelegationValidator {
+            EarnProvider {
                 chain: chain.as_chain(),
                 id: validator.operator_address,
                 name: validator.description.moniker,
                 is_active,
                 commission: commission_rate * 100.0,
                 apr: validator_apr,
+                provider_type: EarnProviderType::Stake,
             }
         })
         .collect()
@@ -80,7 +81,7 @@ pub fn map_staking_delegations(
     validators: Vec<Validator>,
     chain: CosmosChain,
     denom: &str,
-) -> Vec<DelegationBase> {
+) -> Vec<EarnPositionData> {
     let asset_id = chain.as_chain().as_asset_id();
     let mut delegations = Vec::new();
 
@@ -111,9 +112,9 @@ pub fn map_staking_delegations(
 
         let validator = validators_map.get(&delegation.delegation.validator_address);
         let state = if validator.map(|v| !v.jailed && v.status == BOND_STATUS_BONDED).unwrap_or(false) {
-            DelegationState::Active
+            EarnPositionState::Active
         } else {
-            DelegationState::Inactive
+            EarnPositionState::Inactive
         };
 
         let rewards = rewards_map
@@ -121,15 +122,15 @@ pub fn map_staking_delegations(
             .map(|r| r.to_string())
             .unwrap_or_else(|| "0".to_string());
 
-        Some(DelegationBase {
+        Some(EarnPositionData {
             asset_id: asset_id.clone(),
             state,
             balance: parse_to_biguint(&delegation.balance.amount),
             shares: BigUint::from(0u32),
             rewards: parse_to_biguint(&rewards),
             completion_date: None,
-            delegation_id: "".to_string(),
-            validator_id: delegation.delegation.validator_address,
+            position_id: "".to_string(),
+            provider_id: delegation.delegation.validator_address,
         })
     });
     delegations.extend(active_delegations);
@@ -139,15 +140,15 @@ pub fn map_staking_delegations(
             let balance = parse_to_biguint(&entry.balance.to_string());
             let rewards = rewards_map.get(&unbonding.validator_address).map(|r| parse_to_biguint(&r.to_string())).unwrap_or_default();
 
-            delegations.push(DelegationBase {
+            delegations.push(EarnPositionData {
                 asset_id: asset_id.clone(),
-                state: DelegationState::Pending,
+                state: EarnPositionState::Pending,
                 balance,
                 shares: BigUint::from(0u32),
                 rewards,
                 completion_date: entry.completion_time.parse::<chrono::DateTime<chrono::Utc>>().ok(),
-                delegation_id: entry.creation_height,
-                validator_id: unbonding.validator_address.clone(),
+                position_id: entry.creation_height,
+                provider_id: unbonding.validator_address.clone(),
             });
         }
     }
@@ -185,13 +186,13 @@ mod tests {
         assert_eq!(result.len(), 1);
         let delegation = &result[0];
         assert_eq!(delegation.asset_id.to_string(), "cosmos");
-        assert!(matches!(delegation.state, DelegationState::Active));
+        assert!(matches!(delegation.state, EarnPositionState::Active));
         assert_eq!(delegation.balance.to_string(), "10250000");
-        assert_eq!(delegation.validator_id, "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3");
+        assert_eq!(delegation.provider_id, "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3");
         assert_eq!(delegation.rewards.to_string(), "0");
         assert_eq!(delegation.shares.to_string(), "0");
         assert!(delegation.completion_date.is_none());
-        assert_eq!(delegation.delegation_id, "");
+        assert_eq!(delegation.position_id, "");
     }
 
     #[test]
@@ -218,13 +219,13 @@ mod tests {
         assert_eq!(result.len(), 1);
         let delegation = &result[0];
         assert_eq!(delegation.asset_id.to_string(), "cosmos");
-        assert!(matches!(delegation.state, DelegationState::Active));
+        assert!(matches!(delegation.state, EarnPositionState::Active));
         assert_eq!(delegation.balance.to_string(), "10250000");
-        assert_eq!(delegation.validator_id, "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3");
+        assert_eq!(delegation.provider_id, "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3");
         assert_eq!(delegation.rewards.to_string(), "307413"); // Integer part of decimal amount
         assert_eq!(delegation.shares.to_string(), "0");
         assert!(delegation.completion_date.is_none());
-        assert_eq!(delegation.delegation_id, "");
+        assert_eq!(delegation.position_id, "");
     }
 
     #[test]
@@ -240,8 +241,9 @@ mod tests {
         assert_eq!(validator.id, "cosmosvaloper1q9p73lx07tjqc34vs8jrsu5pg3q4ha534uqv4w");
         assert_eq!(validator.name, "Unstake as we will shut down");
         assert!(validator.is_active);
-        assert_eq!(validator.commission, 5.0); // Commission in percentage
+        assert_eq!(validator.commission, 5.0);
         assert_eq!(validator.apr, 17.575);
+        assert_eq!(validator.provider_type, EarnProviderType::Stake);
 
         let validator2 = &result[1];
         assert_eq!(validator2.id, "cosmosvaloper1q6d3d089hg59x6gcx92uumx70s5y5wadklue8s");

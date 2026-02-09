@@ -1,25 +1,26 @@
 use crate::models::balance::{DelegationBalance, Validator};
 use num_bigint::BigUint;
 use number_formatter::BigNumberFormatter;
-use primitives::{Asset, Chain, DelegationBase, DelegationState, DelegationValidator};
+use primitives::{Asset, Chain, EarnPositionData, EarnPositionState, EarnProvider, EarnProviderType};
 use std::str::FromStr;
 
-pub fn map_staking_validators(validators: Vec<Validator>, chain: Chain, apy: Option<f64>) -> Vec<DelegationValidator> {
+pub fn map_staking_validators(validators: Vec<Validator>, chain: Chain, apy: Option<f64>) -> Vec<EarnProvider> {
     let calculated_apy = apy.unwrap_or_else(|| Validator::max_apr(validators.clone()));
     validators
         .into_iter()
-        .map(|x| DelegationValidator {
+        .map(|x| EarnProvider {
             chain,
             id: x.validator_address(),
             name: x.name,
             is_active: x.is_active,
             commission: x.commission,
             apr: calculated_apy,
+            provider_type: EarnProviderType::Stake,
         })
         .collect()
 }
 
-pub fn map_staking_delegations(delegations: Vec<DelegationBalance>, chain: Chain) -> Vec<DelegationBase> {
+pub fn map_staking_delegations(delegations: Vec<DelegationBalance>, chain: Chain) -> Vec<EarnPositionData> {
     let native_decimals = Asset::from_chain(chain).decimals as u32;
     delegations
         .into_iter()
@@ -28,15 +29,15 @@ pub fn map_staking_delegations(delegations: Vec<DelegationBalance>, chain: Chain
                 .ok()
                 .and_then(|s| BigUint::from_str(&s).ok())
                 .unwrap_or_default();
-            DelegationBase {
+            EarnPositionData {
                 asset_id: chain.as_asset_id(),
-                state: DelegationState::Active,
+                state: EarnPositionState::Active,
                 balance,
                 shares: BigUint::from(0u32),
                 rewards: BigUint::from(0u32),
                 completion_date: None,
-                delegation_id: x.validator_address(),
-                validator_id: x.validator_address(),
+                position_id: x.validator_address(),
+                provider_id: x.validator_address(),
             }
         })
         .collect()
@@ -46,7 +47,7 @@ pub fn map_staking_delegations(delegations: Vec<DelegationBalance>, chain: Chain
 mod tests {
     use super::*;
     use crate::models::balance::ValidatorStats;
-    use primitives::{Chain, DelegationState};
+    use primitives::{Chain, EarnPositionState};
 
     #[test]
     fn test_map_staking_validators() {
@@ -93,16 +94,16 @@ mod tests {
 
         let delegation1 = &result[0];
         assert_eq!(delegation1.asset_id.chain, Chain::HyperCore);
-        assert_eq!(delegation1.validator_id, "0x5aC99df645F3414876C816Caa18b2d234024b487");
-        assert_eq!(delegation1.delegation_id, "0x5aC99df645F3414876C816Caa18b2d234024b487");
+        assert_eq!(delegation1.provider_id, "0x5aC99df645F3414876C816Caa18b2d234024b487");
+        assert_eq!(delegation1.position_id, "0x5aC99df645F3414876C816Caa18b2d234024b487");
         assert_eq!(delegation1.balance.to_string(), "271936493373");
-        assert!(matches!(delegation1.state, DelegationState::Active));
+        assert!(matches!(delegation1.state, EarnPositionState::Active));
         assert_eq!(delegation1.shares, num_bigint::BigUint::from(0u32));
         assert_eq!(delegation1.rewards, num_bigint::BigUint::from(0u32));
         assert!(delegation1.completion_date.is_none());
 
         let delegation2 = &result[1];
-        assert_eq!(delegation2.validator_id, "0xaBCDefF4b3727B83A23697500EEf089020DF2cD2");
+        assert_eq!(delegation2.provider_id, "0xaBCDefF4b3727B83A23697500EEf089020DF2cD2");
         assert_eq!(delegation2.balance.to_string(), "1814578086");
     }
 }

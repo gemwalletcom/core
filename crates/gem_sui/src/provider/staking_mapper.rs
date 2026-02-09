@@ -2,24 +2,25 @@ use crate::models::RpcSuiSystemState;
 use crate::models::staking::{SuiStakeDelegation, SuiSystemState, SuiValidators};
 use chrono::{DateTime, Utc};
 use num_bigint::BigUint;
-use primitives::{Chain, DelegationBase, DelegationState, DelegationValidator, StakeValidator};
+use primitives::{Chain, EarnPositionData, EarnPositionState, EarnProvider, EarnProviderType, StakeValidator};
 
-pub fn map_validators(validators: SuiValidators, default_apy: f64) -> Vec<DelegationValidator> {
+pub fn map_validators(validators: SuiValidators, default_apy: f64) -> Vec<EarnProvider> {
     validators
         .apys
         .into_iter()
-        .map(|validator| DelegationValidator {
+        .map(|validator| EarnProvider {
             chain: Chain::Sui,
             id: validator.address,
             name: String::new(),
             is_active: true,
             commission: 0.0,
             apr: default_apy,
+            provider_type: EarnProviderType::Stake,
         })
         .collect()
 }
 
-pub fn map_delegations(delegations: Vec<SuiStakeDelegation>, system_state: SuiSystemState) -> Vec<DelegationBase> {
+pub fn map_delegations(delegations: Vec<SuiStakeDelegation>, system_state: SuiSystemState) -> Vec<EarnPositionData> {
     let epoch_start_ms = system_state.epoch_start_timestamp_ms.parse::<i64>().unwrap_or(0);
     let epoch_duration_ms = system_state.epoch_duration_ms.parse::<i64>().unwrap_or(0);
 
@@ -29,19 +30,19 @@ pub fn map_delegations(delegations: Vec<SuiStakeDelegation>, system_state: SuiSy
             let validator_address = delegation.validator_address.clone();
             delegation.stakes.into_iter().map(move |stake| {
                 let completion_date = match map_stake_state(&stake.status) {
-                    DelegationState::Activating => Some(DateTime::from_timestamp((epoch_start_ms + epoch_duration_ms) / 1000, 0).unwrap_or_else(Utc::now)),
+                    EarnPositionState::Activating => Some(DateTime::from_timestamp((epoch_start_ms + epoch_duration_ms) / 1000, 0).unwrap_or_else(Utc::now)),
                     _ => None,
                 };
 
-                DelegationBase {
+                EarnPositionData {
                     asset_id: Chain::Sui.as_asset_id(),
                     state: map_stake_state(&stake.status),
                     balance: stake.principal,
                     shares: BigUint::from(0u32),
                     rewards: stake.estimated_reward.unwrap_or(BigUint::from(0u32)),
                     completion_date,
-                    delegation_id: stake.staked_sui_id.clone(),
-                    validator_id: validator_address.clone(),
+                    position_id: stake.staked_sui_id.clone(),
+                    provider_id: validator_address.clone(),
                 }
             })
         })
@@ -57,10 +58,10 @@ pub fn map_staking_apy(validators: SuiValidators) -> Result<f64, Box<dyn std::er
     Ok(max_apy * 100.0)
 }
 
-fn map_stake_state(status: &str) -> DelegationState {
+fn map_stake_state(status: &str) -> EarnPositionState {
     match status {
-        "Active" => DelegationState::Active,
-        "Pending" => DelegationState::Activating,
-        _ => DelegationState::Pending,
+        "Active" => EarnPositionState::Active,
+        "Pending" => EarnPositionState::Activating,
+        _ => EarnPositionState::Pending,
     }
 }

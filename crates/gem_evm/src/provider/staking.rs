@@ -4,7 +4,7 @@ use std::error::Error;
 use async_trait::async_trait;
 #[cfg(feature = "rpc")]
 use chain_traits::ChainStaking;
-use primitives::{DelegationBase, DelegationValidator, EVMChain};
+use primitives::{EVMChain, EarnPositionData, EarnProvider};
 
 use crate::rpc::client::EthereumClient;
 use gem_client::Client;
@@ -21,7 +21,7 @@ impl<C: Client + Clone> ChainStaking for EthereumClient<C> {
         }
     }
 
-    async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
+    async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<EarnProvider>, Box<dyn Error + Sync + Send>> {
         match self.chain {
             EVMChain::SmartChain => self.get_smartchain_validators(apy.unwrap_or(0.0)).await,
             EVMChain::Ethereum => self.get_ethereum_validators(apy.unwrap_or(0.0)).await,
@@ -30,7 +30,7 @@ impl<C: Client + Clone> ChainStaking for EthereumClient<C> {
         }
     }
 
-    async fn get_staking_delegations(&self, address: String) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
+    async fn get_staking_delegations(&self, address: String) -> Result<Vec<EarnPositionData>, Box<dyn Error + Sync + Send>> {
         match self.chain {
             EVMChain::SmartChain => self.get_smartchain_delegations(&address).await,
             EVMChain::Ethereum => self.get_ethereum_delegations(&address).await,
@@ -45,7 +45,7 @@ mod chain_integration_tests {
     use crate::provider::testkit::{TEST_MONAD_ADDRESS, TEST_SMARTCHAIN_STAKING_ADDRESS, create_ethereum_test_client, create_monad_test_client, create_smartchain_test_client};
     use chain_traits::ChainStaking;
     use num_bigint::BigUint;
-    use primitives::{Chain, DelegationState};
+    use primitives::{Chain, EarnPositionState};
 
     #[tokio::test]
     async fn test_smartchain_get_staking_validators() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -77,7 +77,7 @@ mod chain_integration_tests {
         for delegation in &delegations {
             println!(
                 "Delegation - Validator: {}, Balance: {}, State: {:?}",
-                delegation.validator_id, delegation.balance, delegation.state
+                delegation.provider_id, delegation.balance, delegation.state
             );
             assert_eq!(delegation.asset_id.chain, Chain::SmartChain);
         }
@@ -136,12 +136,12 @@ mod chain_integration_tests {
         for delegation in &delegations {
             println!(
                 "Delegation - Validator: {}, Balance: {}, State: {:?}",
-                delegation.validator_id, delegation.balance, delegation.state
+                delegation.provider_id, delegation.balance, delegation.state
             );
             assert_eq!(delegation.asset_id.chain, Chain::Ethereum);
             assert!(matches!(
                 delegation.state,
-                DelegationState::Active | DelegationState::Activating | DelegationState::Deactivating | DelegationState::AwaitingWithdrawal
+                EarnPositionState::Active | EarnPositionState::Activating | EarnPositionState::Deactivating | EarnPositionState::AwaitingWithdrawal
             ));
             // Balance should be a valid positive number
             assert!(delegation.balance >= BigUint::from(0u32));

@@ -7,12 +7,12 @@ use gem_bsc::stake_hub::{
 };
 use gem_client::Client;
 use num_bigint::BigUint;
-use primitives::{AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
+use primitives::{AssetId, Chain, EarnPositionData, EarnPositionState, EarnProvider, EarnProviderType};
 use std::{error::Error, str::FromStr};
 
 #[cfg(feature = "rpc")]
 impl<C: Client + Clone> EthereumClient<C> {
-    pub async fn get_smartchain_validators(&self, _apy: f64) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
+    pub async fn get_smartchain_validators(&self, _apy: f64) -> Result<Vec<EarnProvider>, Box<dyn Error + Sync + Send>> {
         let limit = self.get_max_elected_validators().await?;
         let call_data = encode_validators_call(0, limit);
 
@@ -30,13 +30,14 @@ impl<C: Client + Clone> EthereumClient<C> {
 
         Ok(validators
             .into_iter()
-            .map(|v| DelegationValidator {
+            .map(|v| EarnProvider {
                 id: v.operator_address.clone(),
                 chain: Chain::SmartChain,
                 name: v.moniker,
                 is_active: !v.jailed,
                 commission: v.commission as f64 / 10000.0,
                 apr: v.apy as f64 / 100.0,
+                provider_type: EarnProviderType::Stake,
             })
             .collect())
     }
@@ -54,7 +55,7 @@ impl<C: Client + Clone> EthereumClient<C> {
         Ok(max_apr)
     }
 
-    pub async fn get_smartchain_delegations(&self, address: &str) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
+    pub async fn get_smartchain_delegations(&self, address: &str) -> Result<Vec<EarnPositionData>, Box<dyn Error + Sync + Send>> {
         let (delegations, undelegations) = self.fetch_smartchain_staking_state(address).await?;
 
         let mut result = Vec::new();
@@ -68,15 +69,15 @@ impl<C: Client + Clone> EthereumClient<C> {
             if let Ok(balance) = BigUint::from_str(&delegation.amount) {
                 let shares = BigUint::from_str(&delegation.shares).unwrap_or_else(|_| BigUint::from(0u32));
 
-                result.push(DelegationBase {
+                result.push(EarnPositionData {
                     asset_id: asset_id.clone(),
-                    delegation_id: delegation.delegator_address.clone(),
-                    validator_id: delegation.validator_address,
+                    position_id: delegation.delegator_address.clone(),
+                    provider_id: delegation.validator_address,
                     balance,
                     shares,
                     rewards: BigUint::from(0u32),
                     completion_date: None,
-                    state: DelegationState::Active,
+                    state: EarnPositionState::Active,
                 });
             }
         }
@@ -93,18 +94,18 @@ impl<C: Client + Clone> EthereumClient<C> {
 
                 let state = if let Some(ref completion_date) = completion_date {
                     if *completion_date > Utc::now() {
-                        DelegationState::Deactivating
+                        EarnPositionState::Deactivating
                     } else {
-                        DelegationState::AwaitingWithdrawal
+                        EarnPositionState::AwaitingWithdrawal
                     }
                 } else {
-                    DelegationState::Deactivating
+                    EarnPositionState::Deactivating
                 };
 
-                result.push(DelegationBase {
+                result.push(EarnPositionData {
                     asset_id: asset_id.clone(),
-                    delegation_id: undelegation.delegator_address.clone(),
-                    validator_id: undelegation.validator_address,
+                    position_id: undelegation.delegator_address.clone(),
+                    provider_id: undelegation.validator_address,
                     balance,
                     shares,
                     rewards: BigUint::from(0u32),

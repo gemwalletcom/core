@@ -6,7 +6,7 @@ use async_trait::async_trait;
 use chain_traits::ChainStaking;
 #[cfg(feature = "rpc")]
 use gem_client::Client;
-use primitives::{DelegationBase, DelegationValidator};
+use primitives::{EarnPositionData, EarnProvider};
 
 use crate::provider::staking_mapper;
 use crate::rpc::client::SuiClient;
@@ -20,14 +20,14 @@ impl<C: Client + Clone> ChainStaking for SuiClient<C> {
         Ok(Some(apy))
     }
 
-    async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
+    async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<EarnProvider>, Box<dyn Error + Sync + Send>> {
         let validators = self.get_validators().await?;
         let default_apy = apy.unwrap_or(0.0);
         let delegation_validators = staking_mapper::map_validators(validators, default_apy);
         Ok(delegation_validators)
     }
 
-    async fn get_staking_delegations(&self, address: String) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
+    async fn get_staking_delegations(&self, address: String) -> Result<Vec<EarnPositionData>, Box<dyn Error + Sync + Send>> {
         let delegations = self.get_stake_delegations(address).await?;
         let system_state = self.get_system_state().await?;
         let delegation_bases = staking_mapper::map_delegations(delegations, system_state);

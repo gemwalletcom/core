@@ -6,7 +6,7 @@ use chrono::{DateTime, Utc};
 use gem_client::Client;
 use num_bigint::BigUint;
 use num_traits::{ToPrimitive, Zero};
-use primitives::{AssetBalance, AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
+use primitives::{AssetBalance, AssetId, Chain, EarnPositionData, EarnPositionState, EarnProvider, EarnProviderType};
 
 use crate::monad::{
     IMonadStakingLens, MONAD_SCALE, MonadLensBalance, MonadLensDelegation, MonadLensValidatorInfo, STAKING_LENS_CONTRACT, decode_get_lens_apys, decode_get_lens_balance,
@@ -32,7 +32,7 @@ impl<C: Client + Clone> EthereumClient<C> {
         Ok(Some(apy_bps as f64 / 100.0))
     }
 
-    pub async fn get_monad_validators(&self) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
+    pub async fn get_monad_validators(&self) -> Result<Vec<EarnProvider>, Box<dyn Error + Sync + Send>> {
         let validator_names: HashMap<u64, &str> = MONAD_VALIDATOR_NAMES.iter().copied().collect();
         let validator_ids = Self::monad_curated_validator_ids();
         let data = encode_get_lens_validators(&validator_ids);
@@ -47,7 +47,7 @@ impl<C: Client + Clone> EthereumClient<C> {
             .collect())
     }
 
-    pub async fn get_monad_delegations(&self, address: &str) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
+    pub async fn get_monad_delegations(&self, address: &str) -> Result<Vec<EarnPositionData>, Box<dyn Error + Sync + Send>> {
         self.fetch_monad_delegations(address).await
     }
 
@@ -63,7 +63,7 @@ impl<C: Client + Clone> EthereumClient<C> {
         decode_get_lens_balance(&result)
     }
 
-    async fn fetch_monad_delegations(&self, address: &str) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
+    async fn fetch_monad_delegations(&self, address: &str) -> Result<Vec<EarnPositionData>, Box<dyn Error + Sync + Send>> {
         let data = encode_get_lens_delegations(address)?;
         let Some(result) = self.call_lens(data).await else {
             return Ok(Vec::new());
@@ -96,44 +96,45 @@ impl<C: Client + Clone> EthereumClient<C> {
                 DateTime::<Utc>::from_timestamp(position.completion_timestamp as i64, 0)
             };
 
-            delegations.push(DelegationBase {
+            delegations.push(EarnPositionData {
                 asset_id: AssetId::from_chain(Chain::Monad),
                 state,
                 balance: position.amount,
                 shares: BigUint::zero(),
                 rewards: position.rewards,
                 completion_date,
-                delegation_id: format!("{}:{}", base_delegation_id, position.withdraw_id),
-                validator_id: position.validator_id.to_string(),
+                position_id: format!("{}:{}", base_delegation_id, position.withdraw_id),
+                provider_id: position.validator_id.to_string(),
             });
         }
 
         Ok(delegations)
     }
 
-    fn map_lens_validator(&self, validator: &MonadLensValidatorInfo, validator_names: &HashMap<u64, &str>, network_apy: f64) -> DelegationValidator {
+    fn map_lens_validator(&self, validator: &MonadLensValidatorInfo, validator_names: &HashMap<u64, &str>, network_apy: f64) -> EarnProvider {
         let validator_name = validator_names
             .get(&validator.validator_id)
             .map(|name| (*name).to_string())
             .unwrap_or_else(|| validator.validator_id.to_string());
 
-        DelegationValidator {
+        EarnProvider {
             id: validator.validator_id.to_string(),
             chain: Chain::Monad,
             name: validator_name,
             is_active: validator.is_active,
             commission: Self::lens_commission_rate(&validator.commission),
             apr: if validator.apy_bps > 0 { validator.apy_bps as f64 / 100.0 } else { network_apy },
+            provider_type: EarnProviderType::Stake,
         }
     }
 
-    fn map_lens_state(position: &MonadLensDelegation) -> DelegationState {
+    fn map_lens_state(position: &MonadLensDelegation) -> EarnPositionState {
         match position.state {
-            IMonadStakingLens::DelegationState::Active => DelegationState::Active,
-            IMonadStakingLens::DelegationState::Activating => DelegationState::Activating,
-            IMonadStakingLens::DelegationState::Deactivating => DelegationState::Deactivating,
-            IMonadStakingLens::DelegationState::AwaitingWithdrawal => DelegationState::AwaitingWithdrawal,
-            IMonadStakingLens::DelegationState::__Invalid => DelegationState::Inactive,
+            IMonadStakingLens::DelegationState::Active => EarnPositionState::Active,
+            IMonadStakingLens::DelegationState::Activating => EarnPositionState::Activating,
+            IMonadStakingLens::DelegationState::Deactivating => EarnPositionState::Deactivating,
+            IMonadStakingLens::DelegationState::AwaitingWithdrawal => EarnPositionState::AwaitingWithdrawal,
+            IMonadStakingLens::DelegationState::__Invalid => EarnPositionState::Inactive,
         }
     }
 

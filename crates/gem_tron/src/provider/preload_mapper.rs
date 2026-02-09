@@ -109,7 +109,7 @@ impl TronAccountUsage {
 mod tests {
     use super::*;
     use primitives::Chain;
-    use primitives::delegation::DelegationValidator;
+    use primitives::{EarnProvider, EarnProviderType};
 
     fn chain_parameter(key: &str, value: i64) -> ChainParameter {
         ChainParameter {
@@ -244,13 +244,14 @@ mod tests {
     #[test]
     fn test_calculate_stake_fee_rate() {
         let params = vec![chain_parameter(GET_TRANSACTION_FEE, 1000)];
-        let stake_type = StakeType::Stake(DelegationValidator {
+        let stake_type = StakeType::Stake(EarnProvider {
             chain: Chain::Tron,
             id: "validator".to_string(),
             name: "validator".to_string(),
             is_active: true,
             commission: 0.0,
             apr: 0.0,
+            provider_type: EarnProviderType::Stake,
         });
 
         let with_bandwidth = account_usage(DEFAULT_BANDWIDTH_BYTES, 0, 0);

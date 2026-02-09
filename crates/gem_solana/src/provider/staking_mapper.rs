@@ -1,9 +1,9 @@
 use crate::models::{EpochInfo, TokenAccountInfo, VoteAccount};
 use chrono::Utc;
 use num_bigint::BigUint;
-use primitives::{AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
+use primitives::{AssetId, Chain, EarnPositionData, EarnPositionState, EarnProvider, EarnProviderType};
 
-pub fn map_staking_validators(vote_accounts: Vec<VoteAccount>, chain: Chain, network_apy: f64) -> Vec<DelegationValidator> {
+pub fn map_staking_validators(vote_accounts: Vec<VoteAccount>, chain: Chain, network_apy: f64) -> Vec<EarnProvider> {
     vote_accounts
         .into_iter()
         .map(|validator| {
@@ -11,25 +11,26 @@ pub fn map_staking_validators(vote_accounts: Vec<VoteAccount>, chain: Chain, net
             let is_active = true;
             let validator_apr = if is_active { network_apy - (network_apy * commission_rate) } else { 0.0 };
 
-            DelegationValidator {
+            EarnProvider {
                 chain,
                 id: validator.vote_pubkey,
                 name: String::new(),
                 is_active,
                 commission: validator.commission as f64,
                 apr: validator_apr,
+                provider_type: EarnProviderType::Stake,
             }
         })
         .collect()
 }
 
-pub fn map_staking_delegations(stake_accounts: Vec<TokenAccountInfo>, epoch: EpochInfo, asset_id: AssetId) -> Vec<DelegationBase> {
+pub fn map_staking_delegations(stake_accounts: Vec<TokenAccountInfo>, epoch: EpochInfo, asset_id: AssetId) -> Vec<EarnPositionData> {
     stake_accounts
         .into_iter()
         .filter_map(|account| {
             if let Some(stake_info) = &account.account.data.parsed.info.stake {
                 let balance = BigUint::from(account.account.lamports);
-                let validator_id = stake_info.delegation.voter.clone();
+                let provider_id = stake_info.delegation.voter.clone();
 
                 let activation_epoch = stake_info.delegation.activation_epoch;
                 let deactivation_epoch = stake_info.delegation.deactivation_epoch;
@@ -38,22 +39,22 @@ pub fn map_staking_delegations(stake_accounts: Vec<TokenAccountInfo>, epoch: Epo
 
                 let state = if !is_active {
                     if deactivation_epoch == epoch.epoch {
-                        DelegationState::Deactivating
+                        EarnPositionState::Deactivating
                     } else if deactivation_epoch < epoch.epoch {
-                        DelegationState::AwaitingWithdrawal
+                        EarnPositionState::AwaitingWithdrawal
                     } else {
-                        DelegationState::Active
+                        EarnPositionState::Active
                     }
                 } else if activation_epoch == epoch.epoch {
-                    DelegationState::Activating
+                    EarnPositionState::Activating
                 } else if activation_epoch <= epoch.epoch {
-                    DelegationState::Active
+                    EarnPositionState::Active
                 } else {
-                    DelegationState::Pending
+                    EarnPositionState::Pending
                 };
 
                 let completion_date = match state {
-                    DelegationState::Activating | DelegationState::Deactivating => {
+                    EarnPositionState::Activating | EarnPositionState::Deactivating => {
                         let remaining_slots = epoch.slots_in_epoch - (epoch.epoch % epoch.slots_in_epoch);
                         let completion_seconds = remaining_slots as f64 * 0.420;
                         let completion_time = Utc::now() + chrono::Duration::milliseconds(completion_seconds as i64 * 1000);
@@ -64,15 +65,15 @@ pub fn map_staking_delegations(stake_accounts: Vec<TokenAccountInfo>, epoch: Epo
 
                 let rewards = BigUint::from(0u32);
 
-                return Some(DelegationBase {
+                return Some(EarnPositionData {
                     asset_id: asset_id.clone(),
                     state,
                     balance,
                     shares: BigUint::from(0u32),
                     rewards,
                     completion_date,
-                    delegation_id: account.pubkey.clone(),
-                    validator_id,
+                    position_id: account.pubkey.clone(),
+                    provider_id,
                 });
             }
             None
@@ -84,7 +85,7 @@ pub fn map_staking_delegations(stake_accounts: Vec<TokenAccountInfo>, epoch: Epo
 mod tests {
     use super::*;
     use crate::models::{EpochInfo, TokenAccountData, TokenAccountInfo, VoteAccount};
-    use primitives::{AssetId, Chain, DelegationState};
+    use primitives::{AssetId, Chain, EarnPositionState};
 
     #[test]
     fn test_map_staking_validators() {
@@ -137,8 +138,8 @@ mod tests {
         let result = map_staking_delegations(stake_accounts, epoch, AssetId::from_chain(Chain::Solana));
 
         assert_eq!(result.len(), 1);
-        assert_eq!(result[0].validator_id, "validator1");
+        assert_eq!(result[0].provider_id, "validator1");
         assert_eq!(result[0].balance.to_string(), "1000000");
-        assert!(matches!(result[0].state, DelegationState::Active));
+        assert!(matches!(result[0].state, EarnPositionState::Active));
     }
 }

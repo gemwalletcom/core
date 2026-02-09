@@ -83,7 +83,7 @@ impl<C: Client + Clone> SuiClient<C> {
             TransactionInputType::Stake(_, stake_type) => match stake_type {
                 StakeType::Stake(_) => Ok((self.get_coins(address, SUI_COIN_TYPE).await?, Vec::new(), Vec::new())),
                 StakeType::Unstake(delegation) => {
-                    let (gas_coins, staked_object) = futures::try_join!(self.get_coins(address, SUI_COIN_TYPE), self.get_object(delegation.base.delegation_id.clone()))?;
+                    let (gas_coins, staked_object) = futures::try_join!(self.get_coins(address, SUI_COIN_TYPE), self.get_object(delegation.data.position_id.clone()))?;
                     Ok((gas_coins, Vec::new(), vec![staked_object]))
                 }
                 _ => Err("Unsupported stake type for Sui".into()),
@@ -148,7 +148,7 @@ mod chain_integration_tests {
         let delegation_id = "0x32c6c9d1de51d1df1d69687ee29c9759c06ae48e6dbb024e2cd81499b4058d51";
         let user_address = "0x93f65b8c16c263343bbf66cf9f8eef69cb1dbc92d13f0c331b0dcaeb76b4aab6";
 
-        let delegation = primitives::Delegation::mock_with_id(delegation_id.to_string());
+        let delegation = primitives::EarnPosition::mock_with_id(delegation_id.to_string());
         let stake_type = StakeType::Unstake(delegation);
 
         let input = TransactionLoadInput {

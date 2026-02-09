@@ -104,10 +104,10 @@ impl HyperCoreSigner {
                 Ok(vec![deposit_action, delegate_action])
             }
             StakeType::Unstake(delegation) => {
-                let balance = delegation.base.balance.to_string();
+                let balance = delegation.data.balance.to_string();
                 let wei = BigNumberFormatter::value_as_u64(&balance, 0).map_err(|err| SignerError::InvalidInput(err.to_string()))?;
 
-                let undelegate_request = TokenDelegate::new(delegation.validator.id.clone(), wei, true, nonce_incrementer.next_val());
+                let undelegate_request = TokenDelegate::new(delegation.provider.id.clone(), wei, true, nonce_incrementer.next_val());
                 let undelegate_action = self.sign_token_delegate(undelegate_request, private_key)?;
 
                 let withdraw_request = CWithdraw::new(wei, nonce_incrementer.next_val());
@@ -428,21 +428,22 @@ mod tests {
     use crate::core::actions::Grouping;
     use num_bigint::{BigInt, BigUint};
     use primitives::{
-        Asset, Chain, Delegation, DelegationBase, DelegationState, DelegationValidator, GasPriceType, StakeType, TransactionInputType, TransactionLoadInput,
-        TransactionLoadMetadata,
+        Asset, Chain, EarnPositionData, EarnPosition, EarnPositionState, EarnProvider, EarnProviderType, GasPriceType, StakeType, TransactionInputType,
+        TransactionLoadInput, TransactionLoadMetadata,
     };
 
     #[test]
     fn stake_actions_preserve_wei_and_nonces() {
         let signer = HyperCoreSigner;
         let asset = Asset::from_chain(Chain::HyperCore);
-        let validator = DelegationValidator {
+        let validator = EarnProvider {
             chain: Chain::HyperCore,
             id: "0x5ac99df645f3414876c816caa18b2d234024b487".into(),
             name: "Validator".into(),
             is_active: true,
             commission: 0.0,
             apr: 0.0,
+            provider_type: EarnProviderType::Stake,
         };
         let input = TransactionLoadInput {
             input_type: TransactionInputType::Stake(asset.clone(), StakeType::Stake(validator)),
@@ -479,24 +480,25 @@ mod tests {
     fn unstake_actions_have_unique_nonces() {
         let signer = HyperCoreSigner;
         let asset = Asset::from_chain(Chain::HyperCore);
-        let delegation = Delegation {
-            base: DelegationBase {
+        let delegation = EarnPosition {
+            position: EarnPositionData {
                 asset_id: asset.id.clone(),
-                state: DelegationState::Active,
+                state: EarnPositionState::Active,
                 balance: BigUint::from(150_000_000u64),
                 shares: BigUint::from(0u64),
                 rewards: BigUint::from(0u64),
                 completion_date: None,
-                delegation_id: "delegation".into(),
-                validator_id: "validator".into(),
+                position_id: "delegation".into(),
+                provider_id: "validator".into(),
             },
-            validator: DelegationValidator {
+            provider: EarnProvider {
                 chain: Chain::HyperCore,
                 id: "0x66be52ec79f829cc88e5778a255e2cb9492798fd".into(),
                 name: "Validator".into(),
                 is_active: true,
                 commission: 0.0,
                 apr: 0.0,
+                provider_type: EarnProviderType::Stake,
             },
             price: None,
         };

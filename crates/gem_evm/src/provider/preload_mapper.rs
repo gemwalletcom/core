@@ -8,7 +8,7 @@ use num_bigint::BigInt;
 use num_traits::Num;
 use primitives::swap::SwapQuoteDataType;
 use primitives::{
-    AssetSubtype, Chain, EVMChain, EarnAction, FeeRate, NFTType, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, fee::FeePriority,
+    AssetSubtype, Chain, EVMChain, FeeRate, NFTType, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, YieldType, fee::FeePriority,
     fee::GasPriceType,
 };
 
@@ -142,16 +142,16 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
             }
             _ => Err("Unsupported chain for staking".into()),
         },
-        TransactionInputType::Earn(_, action, earn_data) => {
+        TransactionInputType::Earn(_, yield_type, earn_data) => {
             if let Some(approval) = &earn_data.approval {
                 Ok(TransactionParams::new(approval.token.clone(), encode_erc20_approve(&approval.spender)?, BigInt::from(0)))
             } else {
                 let call_data = earn_data.call_data.as_ref().ok_or("Missing call_data")?;
                 let contract_address = earn_data.contract_address.as_ref().ok_or("Missing contract_address")?;
                 let decoded_data = hex::decode(call_data)?;
-                let tx_value = match action {
-                    EarnAction::Deposit => BigInt::from(0),
-                    EarnAction::Withdraw => BigInt::from(0),
+                let tx_value = match yield_type {
+                    YieldType::Deposit => BigInt::from(0),
+                    YieldType::Withdraw => BigInt::from(0),
                 };
                 Ok(TransactionParams::new(contract_address.clone(), decoded_data, tx_value))
             }
@@ -274,18 +274,18 @@ fn encode_stake_hub(stake_type: &StakeType, amount: &BigInt) -> Result<Vec<u8>, 
         StakeType::Unstake(delegation) => {
             // Calculate shares based on amount and delegation balance/shares ratio
             let amount_uint = amount.magnitude().clone();
-            let amount_shares = amount_uint * &delegation.base.shares / &delegation.base.balance;
+            let amount_shares = amount_uint * &delegation.data.shares / &delegation.data.balance;
 
-            gem_bsc::stake_hub::encode_undelegate_call(&delegation.validator.id, &amount_shares.to_string()).map_err(|e| e.to_string().into())
+            gem_bsc::stake_hub::encode_undelegate_call(&delegation.provider.id, &amount_shares.to_string()).map_err(|e| e.to_string().into())
         }
         StakeType::Redelegate(redelegate_data) => {
             // Calculate shares based on amount and delegation balance/shares ratio
             let amount_uint = amount.magnitude().clone();
-            let amount_shares = amount_uint * &redelegate_data.delegation.base.shares / &redelegate_data.delegation.base.balance;
+            let amount_shares = amount_uint * &redelegate_data.position.data.shares / &redelegate_data.position.data.balance;
 
             gem_bsc::stake_hub::encode_redelegate_call(
-                &redelegate_data.delegation.validator.id,
-                &redelegate_data.to_validator.id,
+                &redelegate_data.position.provider.id,
+                &redelegate_data.to_provider.id,
                 &amount_shares.to_string(),
                 false,
             )
@@ -293,7 +293,7 @@ fn encode_stake_hub(stake_type: &StakeType, amount: &BigInt) -> Result<Vec<u8>, 
         }
         StakeType::Withdraw(delegation) => {
             // Request number 0 means claim all
-            gem_bsc::stake_hub::encode_claim_call(&delegation.validator.id, 0).map_err(|e| e.to_string().into())
+            gem_bsc::stake_hub::encode_claim_call(&delegation.provider.id, 0).map_err(|e| e.to_string().into())
         }
         _ => Err("Unsupported stake type for StakeHub".into()),
     }
@@ -304,16 +304,17 @@ mod tests {
     use super::*;
     use crate::everstake::{EVERSTAKE_POOL_ADDRESS, IAccounting};
     use num_bigint::BigUint;
-    use primitives::{Delegation, DelegationBase, DelegationState, DelegationValidator, RedelegateData};
+    use primitives::{EarnPositionData, EarnPosition, EarnPositionState, EarnProvider, EarnProviderType, RedelegateData};
 
-    fn everstake_validator() -> DelegationValidator {
-        DelegationValidator {
+    fn everstake_validator() -> EarnProvider {
+        EarnProvider {
             chain: Chain::Ethereum,
             id: EVERSTAKE_POOL_ADDRESS.to_string(),
             name: "Everstake Pool".to_string(),
             is_active: true,
             commission: 10.0,
             apr: 4.2,
+            provider_type: EarnProviderType::Stake,
         }
     }
 
@@ -399,6 +400,7 @@ mod tests {
         let result = map_transaction_fee_rates(EVMChain::SmartChain, &fee_history)?;
 
         assert_eq!(result.len(), 3);
+
         assert_eq!(result[0].gas_price_type.gas_price(), BigInt::ZERO);
         assert!(result[0].gas_price_type.priority_fee() != BigInt::ZERO);
 
@@ -440,13 +442,14 @@ mod tests {
 
     #[test]
     fn test_encode_stake_hub_delegate() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let validator = DelegationValidator {
+        let validator = EarnProvider {
             chain: Chain::SmartChain,
             id: "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(),
             name: "Test Validator".to_string(),
             is_active: true,
             commission: 5.0,
             apr: 10.0,
+            provider_type: EarnProviderType::Stake,
         };
 
         let stake_type = StakeType::Stake(validator);
@@ -465,24 +468,25 @@ mod tests {
 
     #[test]
     fn test_encode_stake_hub_unstake() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let delegation = Delegation {
-            base: DelegationBase {
+        let delegation = EarnPosition {
+            data: EarnPositionData {
                 asset_id: primitives::AssetId::from_chain(Chain::SmartChain),
-                state: DelegationState::Active,
+                state: EarnPositionState::Active,
                 balance: BigUint::from(2_000_000_000_000_000_000u64), // 2 BNB
                 shares: BigUint::from(1_900_000_000_000_000_000u64),  // Slightly less shares
                 rewards: BigUint::from(0u32),
                 completion_date: None,
-                delegation_id: "test".to_string(),
-                validator_id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
+                position_id: "test".to_string(),
+                provider_id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
             },
-            validator: DelegationValidator {
+            provider: EarnProvider {
                 chain: Chain::SmartChain,
                 id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
                 name: "Test Validator".to_string(),
                 is_active: true,
                 commission: 5.0,
                 apr: 10.0,
+                provider_type: EarnProviderType::Stake,
             },
             price: None,
         };
@@ -502,38 +506,43 @@ mod tests {
 
     #[test]
     fn test_encode_stake_hub_redelegate() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let delegation = Delegation {
-            base: DelegationBase {
+        let delegation = EarnPosition {
+            data: EarnPositionData {
                 asset_id: primitives::AssetId::from_chain(Chain::SmartChain),
-                state: DelegationState::Active,
+                state: EarnPositionState::Active,
                 balance: BigUint::from(2_000_000_000_000_000_000u64), // 2 BNB
                 shares: BigUint::from(1_900_000_000_000_000_000u64),  // Slightly less shares
                 rewards: BigUint::from(0u32),
                 completion_date: None,
-                delegation_id: "test".to_string(),
-                validator_id: "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(),
+                position_id: "test".to_string(),
+                provider_id: "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(),
             },
-            validator: DelegationValidator {
+            provider: EarnProvider {
                 chain: Chain::SmartChain,
                 id: "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(),
                 name: "Source Validator".to_string(),
                 is_active: true,
                 commission: 5.0,
                 apr: 10.0,
+                provider_type: EarnProviderType::Stake,
             },
             price: None,
         };
 
-        let to_validator = DelegationValidator {
+        let to_validator = EarnProvider {
             chain: Chain::SmartChain,
             id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
             name: "Target Validator".to_string(),
             is_active: true,
             commission: 3.0,
             apr: 12.0,
+            provider_type: EarnProviderType::Stake,
         };
 
-        let redelegate_data = RedelegateData { delegation, to_validator };
+        let redelegate_data = RedelegateData {
+            position: delegation,
+            to_provider: to_validator,
+        };
 
         let stake_type = StakeType::Redelegate(redelegate_data);
         let amount = BigInt::from(1_000_000_000_000_000_000u64); // Redelegate 1 BNB
@@ -550,24 +559,25 @@ mod tests {
 
     #[test]
     fn test_encode_stake_hub_withdraw() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let delegation = Delegation {
-            base: DelegationBase {
+        let delegation = EarnPosition {
+            data: EarnPositionData {
                 asset_id: primitives::AssetId::from_chain(Chain::SmartChain),
-                state: DelegationState::AwaitingWithdrawal,
+                state: EarnPositionState::AwaitingWithdrawal,
                 balance: BigUint::from(1_000_000_000_000_000_000u64),
                 shares: BigUint::from(1_000_000_000_000_000_000u64),
                 rewards: BigUint::from(0u32),
                 completion_date: None,
-                delegation_id: "test".to_string(),
-                validator_id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
+                position_id: "test".to_string(),
+                provider_id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
             },
-            validator: DelegationValidator {
+            provider: EarnProvider {
                 chain: Chain::SmartChain,
                 id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
                 name: "Test Validator".to_string(),
                 is_active: true,
                 commission: 5.0,
                 apr: 10.0,
+                provider_type: EarnProviderType::Stake,
             },
             price: None,
         };
@@ -601,18 +611,18 @@ mod tests {
     #[test]
     fn test_encode_everstake_unstake() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let validator = everstake_validator();
-        let delegation = Delegation {
-            base: DelegationBase {
+        let delegation = EarnPosition {
+            data: EarnPositionData {
                 asset_id: primitives::AssetId::from_chain(Chain::Ethereum),
-                state: DelegationState::Active,
+                state: EarnPositionState::Active,
                 balance: BigUint::from(2_000_000_000_000_000_000u64),
                 shares: BigUint::from(0u32),
                 rewards: BigUint::from(0u32),
                 completion_date: None,
-                delegation_id: "eth-delegation".to_string(),
-                validator_id: EVERSTAKE_POOL_ADDRESS.to_string(),
+                position_id: "eth-delegation".to_string(),
+                provider_id: EVERSTAKE_POOL_ADDRESS.to_string(),
             },
-            validator: validator.clone(),
+            provider: validator.clone(),
             price: None,
         };
 
@@ -630,18 +640,18 @@ mod tests {
     #[test]
     fn test_encode_everstake_withdraw() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let validator = everstake_validator();
-        let delegation = Delegation {
-            base: DelegationBase {
+        let delegation = EarnPosition {
+            data: EarnPositionData {
                 asset_id: primitives::AssetId::from_chain(Chain::Ethereum),
-                state: DelegationState::AwaitingWithdrawal,
+                state: EarnPositionState::AwaitingWithdrawal,
                 balance: BigUint::from(750_000_000_000_000_000u64),
                 shares: BigUint::from(0u32),
                 rewards: BigUint::from(0u32),
                 completion_date: None,
-                delegation_id: "eth-withdraw".to_string(),
-                validator_id: EVERSTAKE_POOL_ADDRESS.to_string(),
+                position_id: "eth-withdraw".to_string(),
+                provider_id: EVERSTAKE_POOL_ADDRESS.to_string(),
             },
-            validator,
+            provider: validator,
             price: None,
         };
 

@@ -135,15 +135,15 @@ impl<C: Client> TronClient<C> {
                         *current_votes.entry(validator.id.clone()).or_insert(0) += vote_amount;
                     }
                     StakeType::Unstake(delegation) => {
-                        if let Some(votes) = current_votes.get_mut(&delegation.base.validator_id) {
+                        if let Some(votes) = current_votes.get_mut(&delegation.data.provider_id) {
                             *votes = votes.saturating_sub(vote_amount);
                         }
                     }
                     StakeType::Redelegate(redelegate_data) => {
-                        if let Some(votes) = current_votes.get_mut(&redelegate_data.delegation.base.validator_id) {
+                        if let Some(votes) = current_votes.get_mut(&redelegate_data.position.data.provider_id) {
                             *votes = votes.saturating_sub(vote_amount);
                         }
-                        *current_votes.entry(redelegate_data.to_validator.id.clone()).or_insert(0) += vote_amount;
+                        *current_votes.entry(redelegate_data.to_provider.id.clone()).or_insert(0) += vote_amount;
                     }
                     StakeType::Rewards(_) | StakeType::Withdraw(_) | StakeType::Freeze(_) => {}
                 }

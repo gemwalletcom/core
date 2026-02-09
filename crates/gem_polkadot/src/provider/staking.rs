@@ -3,7 +3,7 @@ use chain_traits::ChainStaking;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{DelegationBase, DelegationValidator};
+use primitives::{EarnPositionData, EarnProvider};
 
 use crate::rpc::client::PolkadotClient;
 
@@ -13,11 +13,11 @@ impl<C: Client> ChainStaking for PolkadotClient<C> {
         Ok(Some(10.0)) // Default APY for Polkadot
     }
 
-    async fn get_staking_validators(&self, _apy: Option<f64>) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
+    async fn get_staking_validators(&self, _apy: Option<f64>) -> Result<Vec<EarnProvider>, Box<dyn Error + Sync + Send>> {
         Ok(vec![])
     }
 
-    async fn get_staking_delegations(&self, _address: String) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
+    async fn get_staking_delegations(&self, _address: String) -> Result<Vec<EarnPositionData>, Box<dyn Error + Sync + Send>> {
         Ok(vec![])
     }
 }

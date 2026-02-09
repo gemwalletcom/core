@@ -3,7 +3,7 @@ use chain_traits::ChainStaking;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{DelegationBase, DelegationValidator};
+use primitives::{EarnPositionData, EarnProvider};
 
 use crate::{
     provider::staking_mapper::{map_staking_delegations, map_staking_validators},
@@ -16,12 +16,12 @@ impl<C: Client + Clone> ChainStaking for SolanaClient<C> {
         Ok(Some(self.get_inflation_rate().await?.validator * 100.0))
     }
 
-    async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
+    async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<EarnProvider>, Box<dyn Error + Sync + Send>> {
         let (accounts, inflation_rate) = futures::try_join!(self.get_vote_accounts(false), self.get_inflation_rate())?;
         Ok(map_staking_validators(accounts.current, self.get_chain(), apy.unwrap_or(inflation_rate.validator * 100.0)))
     }
 
-    async fn get_staking_delegations(&self, address: String) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
+    async fn get_staking_delegations(&self, address: String) -> Result<Vec<EarnPositionData>, Box<dyn Error + Sync + Send>> {
         let (epoch, accounts) = futures::try_join!(self.get_epoch_info(), self.get_staking_balance(&address))?;
         Ok(map_staking_delegations(accounts, epoch, self.get_chain().as_asset_id()))
     }

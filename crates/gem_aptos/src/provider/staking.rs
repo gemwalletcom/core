@@ -4,7 +4,7 @@ use futures::try_join;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{DelegationBase, DelegationValidator};
+use primitives::{EarnPositionData, EarnProvider};
 
 use super::staking_mapper;
 use crate::{
@@ -20,13 +20,13 @@ impl<C: Client> ChainStaking for AptosClient<C> {
         Ok(Some(calculate_apy(&staking_config)))
     }
 
-    async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
+    async fn get_staking_validators(&self, apy: Option<f64>) -> Result<Vec<EarnProvider>, Box<dyn Error + Sync + Send>> {
         let (validator_set, commission) = try_join!(self.get_validator_set(), self.get_operator_commission_percentage(KNOWN_VALIDATOR_POOL))?;
 
         Ok(map_validators(validator_set, apy.unwrap_or(0.0), KNOWN_VALIDATOR_POOL, commission))
     }
 
-    async fn get_staking_delegations(&self, address: String) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
+    async fn get_staking_delegations(&self, address: String) -> Result<Vec<EarnPositionData>, Box<dyn Error + Sync + Send>> {
         let (delegation, lockup_secs) = try_join!(
             self.get_delegation_for_pool(&address, KNOWN_VALIDATOR_POOL),
             self.get_stake_lockup_secs(KNOWN_VALIDATOR_POOL)
@@ -79,7 +79,7 @@ mod chain_integration_tests {
         assert!(!delegations.is_empty(), "Expected at least one delegation");
 
         for delegation in &delegations {
-            println!("State: {:?}, Balance: {}, Validator: {}", delegation.state, delegation.balance, delegation.validator_id);
+            println!("State: {:?}, Balance: {}, Provider: {}", delegation.state, delegation.balance, delegation.provider_id);
             if let Some(date) = delegation.completion_date {
                 println!("Completion date: {}", date);
             }

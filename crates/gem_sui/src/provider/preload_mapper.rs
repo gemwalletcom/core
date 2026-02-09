@@ -127,7 +127,7 @@ pub fn map_transaction_data(input: TransactionLoadInput, gas_coins: Vec<SuiCoin>
                 let gas_coin = gas_coins.first().ok_or("No gas coins available for unstake")?.clone().into();
                 let staked_object = objects
                     .iter()
-                    .find(|obj| obj.object_id == delegation.base.delegation_id)
+                    .find(|obj| obj.object_id == delegation.data.position_id)
                     .ok_or("Staked SUI object not found in provided objects")?;
 
                 let staked_sui = crate::models::Object {
@@ -174,12 +174,12 @@ pub fn map_transaction_data(input: TransactionLoadInput, gas_coins: Vec<SuiCoin>
 mod tests {
     use super::*;
     use crate::models::SuiObject;
-    use primitives::{Asset, Chain, Delegation, StakeType, TransactionInputType, TransactionLoadInput};
+    use primitives::{Asset, Chain, EarnPosition, StakeType, TransactionInputType, TransactionLoadInput};
 
     #[test]
     fn test_unstake_uses_object_reference() {
         let delegation_id = "0x1234567890abcdef1234567890abcdef12345678";
-        let delegation = Delegation::mock_with_id(delegation_id.to_string());
+        let delegation = EarnPosition::mock_with_id(delegation_id.to_string());
         let input_type = TransactionInputType::Stake(Asset::from_chain(Chain::Sui), StakeType::Unstake(delegation));
         let input = TransactionLoadInput::mock_with_input_type(input_type);
 
