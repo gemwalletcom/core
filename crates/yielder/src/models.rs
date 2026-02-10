@@ -1,6 +1,6 @@
 use primitives::{AssetId, YieldProvider};
 
-pub use primitives::YieldTransaction;
+pub use primitives::EarnTransaction;
 
 #[derive(Debug, Clone)]
 pub struct Yield {

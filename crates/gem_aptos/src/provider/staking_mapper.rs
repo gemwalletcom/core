@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use num_bigint::BigUint;
-use primitives::{Chain, DelegationBase, DelegationState, DelegationValidator, EarnProviderType};
+use primitives::{Chain, DelegationBase, DelegationState, DelegationValidator, GrowthProviderType};
 
 use crate::models::{DelegationPoolStake, StakingConfig, ValidatorInfo, ValidatorSet};
 
@@ -21,7 +21,7 @@ pub fn map_validator(validator: &ValidatorInfo, apy: f64, commission: f64, is_ac
         is_active,
         commission,
         apr: apy,
-        provider_type: EarnProviderType::Stake,
+        provider_type: GrowthProviderType::Stake,
     }
 }
 

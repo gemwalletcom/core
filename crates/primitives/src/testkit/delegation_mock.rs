@@ -1,4 +1,4 @@
-use crate::{AssetId, Chain, Delegation, DelegationBase, DelegationState, DelegationValidator, EarnProviderType};
+use crate::{AssetId, Chain, Delegation, DelegationBase, DelegationState, DelegationValidator, GrowthProviderType};
 use num_bigint::BigUint;
 
 impl Delegation {
@@ -56,7 +56,7 @@ impl DelegationValidator {
             is_active: true,
             commission: 0.05,
             apr: 0.08,
-            provider_type: EarnProviderType::Stake,
+            provider_type: GrowthProviderType::Stake,
         }
     }
 }

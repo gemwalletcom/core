@@ -1,7 +1,7 @@
 use crate::models::balance::{DelegationBalance, Validator};
 use num_bigint::BigUint;
 use number_formatter::BigNumberFormatter;
-use primitives::{Asset, Chain, DelegationBase, DelegationState, DelegationValidator, EarnProviderType};
+use primitives::{Asset, Chain, DelegationBase, DelegationState, DelegationValidator, GrowthProviderType};
 use std::str::FromStr;
 
 pub fn map_staking_validators(validators: Vec<Validator>, chain: Chain, apy: Option<f64>) -> Vec<DelegationValidator> {
@@ -15,7 +15,7 @@ pub fn map_staking_validators(validators: Vec<Validator>, chain: Chain, apy: Opt
             is_active: x.is_active,
             commission: x.commission,
             apr: calculated_apy,
-            provider_type: EarnProviderType::Stake,
+            provider_type: GrowthProviderType::Stake,
         })
         .collect()
 }

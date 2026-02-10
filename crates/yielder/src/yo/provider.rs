@@ -6,7 +6,7 @@ use gem_evm::jsonrpc::TransactionObject;
 use num_bigint::BigUint;
 use primitives::{AssetId, Chain, DelegationBase, DelegationState, YieldProvider, swap::ApprovalData};
 
-use crate::models::{Yield, YieldDetailsRequest, YieldTransaction};
+use crate::models::{Yield, YieldDetailsRequest, EarnTransaction};
 use crate::provider::YieldProviderClient;
 
 use super::{YO_PARTNER_ID_GEM, YoVault, client::YoProvider, error::YieldError, vaults};
@@ -75,7 +75,7 @@ impl YieldProviderClient for YoYieldProvider {
         Ok(results)
     }
 
-    async fn deposit(&self, asset_id: &AssetId, wallet_address: &str, value: &str) -> Result<YieldTransaction, YieldError> {
+    async fn deposit(&self, asset_id: &AssetId, wallet_address: &str, value: &str) -> Result<EarnTransaction, YieldError> {
         let vault = self.get_vault(asset_id)?;
         let gateway = self.gateway_for_chain(vault.chain)?;
         let wallet = Address::from_str(wallet_address).map_err(|e| format!("invalid address {wallet_address}: {e}"))?;
@@ -86,7 +86,7 @@ impl YieldProviderClient for YoYieldProvider {
         Ok(convert_transaction(vault, tx, approval))
     }
 
-    async fn withdraw(&self, asset_id: &AssetId, wallet_address: &str, value: &str) -> Result<YieldTransaction, YieldError> {
+    async fn withdraw(&self, asset_id: &AssetId, wallet_address: &str, value: &str) -> Result<EarnTransaction, YieldError> {
         let vault = self.get_vault(asset_id)?;
         let gateway = self.gateway_for_chain(vault.chain)?;
         let wallet = Address::from_str(wallet_address).map_err(|e| format!("invalid address {wallet_address}: {e}"))?;
@@ -124,8 +124,8 @@ impl YieldProviderClient for YoYieldProvider {
     }
 }
 
-fn convert_transaction(vault: YoVault, tx: TransactionObject, approval: Option<ApprovalData>) -> YieldTransaction {
-    YieldTransaction {
+fn convert_transaction(vault: YoVault, tx: TransactionObject, approval: Option<ApprovalData>) -> EarnTransaction {
+    EarnTransaction {
         chain: vault.chain,
         from: tx.from.unwrap_or_default(),
         to: tx.to,

@@ -116,16 +116,12 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                 async move { updater.update_assets_images().await }
             }
         })
-        .jobs(
-            WorkerJob::UpdateStakingApy,
-            Chain::stakeable(),
-            |chain| chain.as_ref().to_string(),
-            |chain, _| {
+        .jobs(WorkerJob::UpdateStakingApy, Chain::stakeable(), |chain, _| {
+            let settings = settings.clone();
+            let database = database.clone();
+            move || {
                 let settings = settings.clone();
                 let database = database.clone();
-                move || {
-                    let settings = settings.clone();
-                    let database = database.clone();
                 async move {
                     let providers = ChainProviders::from_settings(&settings, &service_user_agent("daemon", Some("staking_apy")));
                     let updater = StakeApyUpdater::new(providers, database.clone());

@@ -7,7 +7,7 @@ use gem_bsc::stake_hub::{
 };
 use gem_client::Client;
 use num_bigint::BigUint;
-use primitives::{AssetId, Chain, DelegationBase, DelegationState, DelegationValidator, EarnProviderType};
+use primitives::{AssetId, Chain, DelegationBase, DelegationState, DelegationValidator, GrowthProviderType};
 use std::{error::Error, str::FromStr};
 
 #[cfg(feature = "rpc")]
@@ -37,7 +37,7 @@ impl<C: Client + Clone> EthereumClient<C> {
                 is_active: !v.jailed,
                 commission: v.commission as f64 / 10000.0,
                 apr: v.apy as f64 / 100.0,
-                provider_type: EarnProviderType::Stake,
+                provider_type: GrowthProviderType::Stake,
             })
             .collect())
     }

@@ -6,9 +6,9 @@ use typeshare::typeshare;
 #[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
-pub enum EarnProviderType {
+pub enum GrowthProviderType {
     Stake,
-    Yield,
+    Earn,
 }
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, Display, AsRefStr, EnumString, PartialEq, Eq)]

@@ -15,7 +15,7 @@ use gem_client::Client;
 use num_bigint::BigInt;
 use primitives::GasPriceType;
 #[cfg(feature = "rpc")]
-use primitives::{YieldData, FeeRate, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
+use primitives::{EarnData, FeeRate, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
 #[cfg(feature = "rpc")]
 use serde_serializers::bigint::bigint_from_hex_str;
 use std::collections::HashMap;
@@ -66,18 +66,11 @@ impl<C: Client + Clone> EthereumClient<C> {
                 TransactionLoadMetadata::Evm { nonce, chain_id, .. } => TransactionLoadMetadata::Evm {
                     nonce,
                     chain_id,
-                    yield_data: Some(YieldData::stake(params.to, &params.data)),
+                    earn_data: Some(EarnData::stake(params.to, &params.data)),
                 },
                 _ => input.metadata,
             },
-            TransactionInputType::Yield(_, _, earn_input) => match input.metadata {
-                TransactionLoadMetadata::Evm { nonce, chain_id, .. } => TransactionLoadMetadata::Evm {
-                    nonce,
-                    chain_id,
-                    yield_data: Some(earn_input.clone()),
-                },
-                _ => input.metadata,
-            },
+            TransactionInputType::Earn(_, _) => input.metadata,
             _ => input.metadata,
         };
 

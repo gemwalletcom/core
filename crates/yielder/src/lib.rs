@@ -2,7 +2,7 @@ mod models;
 mod provider;
 pub mod yo;
 
-pub use models::{Yield, YieldDetailsRequest, YieldTransaction};
+pub use models::{Yield, YieldDetailsRequest, EarnTransaction};
 pub use primitives::YieldProvider;
 pub use provider::{YieldProviderClient, Yielder};
 pub use yo::{
