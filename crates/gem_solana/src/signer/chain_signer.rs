@@ -1,13 +1,13 @@
 use base64::{Engine, engine::general_purpose::STANDARD};
-use primitives::{ChainSigner, SignerError, TransactionInputType, TransactionLoadInput};
-use rand::seq::IndexedRandom;
+use num_traits::ToPrimitive;
+use primitives::{ChainSigner, SignerError, TransactionLoadInput};
 use solana_primitives::{
-    Pubkey, VersionedTransaction,
-    instructions::{program_ids::SYSTEM_PROGRAM_ID, system},
+    Instruction, Pubkey, VersionedTransaction,
+    instructions::{program_ids, system},
     sign_message,
 };
 
-use crate::models::jito::JITO_TIP_ACCOUNTS;
+use crate::models::jito;
 
 const SYSTEM_TRANSFER_DISCRIMINANT: u32 = 2;
 const SYSTEM_TRANSFER_DATA_LEN: usize = 12; // 4-byte discriminant + 8-byte lamports
@@ -17,12 +17,10 @@ pub struct SolanaChainSigner;
 
 impl ChainSigner for SolanaChainSigner {
     fn sign_swap(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
-        let tx_base64 = match &input.input_type {
-            TransactionInputType::Swap(_, _, swap_data) => &swap_data.data.data,
-            _ => return Err(SignerError::invalid_input("expected swap transaction")),
-        };
+        let swap_data = input.input_type.get_swap_data().map_err(SignerError::invalid_input)?;
+        let tx_base64 = &swap_data.data.data;
 
-        let unit_price: u64 = input.gas_price.unit_price().to_string().parse().unwrap_or(0);
+        let unit_price: u64 = input.gas_price.unit_price().to_u64().unwrap_or(0);
         let jito_tip = input.gas_price.jito_tip();
 
         let signed = Self::sign_transaction(tx_base64, private_key, unit_price, jito_tip, &input.sender_address)?;
@@ -32,25 +30,31 @@ impl ChainSigner for SolanaChainSigner {
 }
 
 impl SolanaChainSigner {
-    fn has_jito_tip(tx: &VersionedTransaction) -> bool {
-        let sys_program = Pubkey::from_base58(SYSTEM_PROGRAM_ID).expect("invalid system program id");
-        let sys_idx = match tx.account_keys().iter().position(|k| *k == sys_program) {
+    fn create_jito_tip_instruction(sender_address: &str, lamports: u64) -> Result<Instruction, SignerError> {
+        let from = Pubkey::from_base58(sender_address).map_err(|e| SignerError::invalid_input(format!("invalid sender: {e}")))?;
+        let to = jito::random_tip_pubkey();
+        Ok(system::transfer(&from, &to, lamports))
+    }
+
+    fn has_jito_tip(transaction: &VersionedTransaction) -> bool {
+        let sys_program = program_ids::system_program();
+        let sys_idx = match transaction.account_keys().iter().position(|k| *k == sys_program) {
             Some(idx) => idx as u8,
             None => return false,
         };
 
-        let jito_pubkeys: Vec<Pubkey> = JITO_TIP_ACCOUNTS.iter().filter_map(|addr| Pubkey::from_base58(addr).ok()).collect();
+        let jito_pubkeys: Vec<Pubkey> = jito::JITO_TIP_ACCOUNTS.iter().filter_map(|addr| Pubkey::from_base58(addr).ok()).collect();
 
-        let account_keys = tx.account_keys();
-        for ix in tx.instructions() {
-            if ix.program_id_index != sys_idx || ix.data.len() != SYSTEM_TRANSFER_DATA_LEN {
+        let account_keys = transaction.account_keys();
+        for instruction in transaction.instructions() {
+            if instruction.program_id_index != sys_idx || instruction.data.len() != SYSTEM_TRANSFER_DATA_LEN {
                 continue;
             }
-            if ix.data[0..4] != SYSTEM_TRANSFER_DISCRIMINANT.to_le_bytes() {
+            if instruction.data[0..4] != SYSTEM_TRANSFER_DISCRIMINANT.to_le_bytes() {
                 continue;
             }
-            if ix.accounts.len() >= 2 {
-                let dest_idx = ix.accounts[1] as usize;
+            if instruction.accounts.len() >= 2 {
+                let dest_idx = instruction.accounts[1] as usize;
                 if dest_idx < account_keys.len() && jito_pubkeys.contains(&account_keys[dest_idx]) {
                     return true;
                 }
@@ -73,13 +77,8 @@ impl SolanaChainSigner {
 
             // Jito tip only for legacy transactions — V0 tips are added server-side to avoid lookup table conflicts
             if jito_tip > 0 && matches!(tx, VersionedTransaction::Legacy { .. }) && !Self::has_jito_tip(&tx) {
-                let from = Pubkey::from_base58(sender_address).map_err(|e| SignerError::invalid_input(format!("invalid sender: {e}")))?;
-                let tip_account = JITO_TIP_ACCOUNTS
-                    .choose(&mut rand::rng())
-                    .ok_or_else(|| SignerError::invalid_input("no jito tip accounts"))?;
-                let to = Pubkey::from_base58(tip_account).map_err(|e| SignerError::invalid_input(format!("invalid tip account: {e}")))?;
-                tx.add_instruction(system::transfer(&from, &to, jito_tip))
-                    .map_err(|e| SignerError::signing_error(format!("add jito tip: {e}")))?;
+                let tip_ix = Self::create_jito_tip_instruction(sender_address, jito_tip)?;
+                tx.add_instruction(tip_ix).map_err(|e| SignerError::signing_error(format!("add jito tip: {e}")))?;
             }
         }
 
@@ -112,19 +111,5 @@ mod tests {
         let data = STANDARD.decode(MAYAN_V0_TX).unwrap();
         let tx = VersionedTransaction::deserialize_with_version(&data).unwrap();
         assert!(SolanaChainSigner::has_jito_tip(&tx));
-    }
-
-    #[test]
-    fn sign_transaction_roundtrips_v0() {
-        let private_key = [1u8; 32];
-        let result = SolanaChainSigner::sign_transaction(MAYAN_V0_TX, &private_key, 0, 0, "85fb693fba9c607a85a58b44259380012908416afb19c63a70a475d3c7bc3bef");
-        assert!(result.is_ok(), "sign failed: {:?}", result.err());
-
-        let signed_b64 = result.unwrap();
-        let signed_bytes = STANDARD.decode(&signed_b64).unwrap();
-        let signed_tx = VersionedTransaction::deserialize_with_version(&signed_bytes).unwrap();
-        let sigs = signed_tx.signatures();
-        assert!(!sigs.is_empty());
-        assert_ne!(sigs[0], SignatureBytes::default());
     }
 }

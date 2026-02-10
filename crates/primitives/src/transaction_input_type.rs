@@ -38,6 +38,13 @@ impl TransactionInputType {
         }
     }
 
+    pub fn get_swap_data(&self) -> Result<&SwapData, &'static str> {
+        match self {
+            TransactionInputType::Swap(_, _, swap_data) => Ok(swap_data),
+            _ => Err("expected swap transaction"),
+        }
+    }
+
     pub fn get_recipient_asset(&self) -> &Asset {
         match self {
             TransactionInputType::Transfer(asset) => asset,
