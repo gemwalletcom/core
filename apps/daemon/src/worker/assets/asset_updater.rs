@@ -30,7 +30,7 @@ impl AssetProcessor {
         let links = Self::map_links(&coin_info);
 
         self.store_prices(coin_id, &assets)?;
-        self.store_assets(&assets, &links, coin_id);
+        self.store_assets(&assets, &links, coin_id)?;
 
         Ok(1)
     }
@@ -60,16 +60,17 @@ impl AssetProcessor {
         Ok(())
     }
 
-    fn store_assets(&self, assets: &[(Asset, AssetScore)], links: &[AssetLink], coin_id: &str) {
+    fn store_assets(&self, assets: &[(Asset, AssetScore)], links: &[AssetLink], coin_id: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
         if assets.is_empty() {
             if let Some(chain) = COINGECKO_CHAIN_MAP.get(coin_id) {
-                let _ = self.store_links(&chain.as_asset_id().to_string(), links);
+                self.store_links(&chain.as_asset_id().to_string(), links)?;
             }
         } else {
             for (asset, score) in assets {
-                let _ = self.store_asset(asset, score, links);
+                self.store_asset(asset, score, links)?;
             }
         }
+        Ok(())
     }
 
     fn store_asset(&self, asset: &Asset, score: &AssetScore, links: &[AssetLink]) -> Result<(), Box<dyn Error + Send + Sync>> {
