@@ -3464,6 +3464,8 @@ dependencies = [
  "serde_serializers",
  "settings",
  "sha2",
+ "signer",
+ "solana-primitives",
  "tokio",
 ]
 
@@ -7322,9 +7324,9 @@ dependencies = [
 
 [[package]]
 name = "solana-primitives"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f6f6b2e2e424ca9a2b7b46a9438c8c53925c3ad20d0fb4c62fc17b6c50e7667"
+checksum = "6c7d5eefe4fca855a9bb398325b33c6eada8d05da93f419b2df5759a3653bc61"
 dependencies = [
  "base64",
  "borsh",

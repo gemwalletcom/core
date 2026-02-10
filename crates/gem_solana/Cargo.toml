@@ -12,6 +12,7 @@ rpc = [
     "dep:chain_traits",
     "dep:futures",
 ]
+signer = ["dep:signer", "dep:solana-primitives"]
 reqwest = ["gem_jsonrpc/reqwest"]
 chain_integration_tests = [
     "rpc",
@@ -40,6 +41,8 @@ gem_client = { path = "../gem_client", optional = true }
 chain_traits = { path = "../chain_traits", optional = true }
 futures = { workspace = true, optional = true }
 settings = { path = "../settings", features = ["testkit"], optional = true }
+signer = { path = "../signer", optional = true }
+solana-primitives = { version = "0.2.3", optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }
