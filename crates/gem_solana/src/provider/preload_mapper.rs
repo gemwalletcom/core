@@ -42,7 +42,7 @@ fn get_gas_limit(input_type: &TransactionInputType) -> BigInt {
         | TransactionInputType::TokenApprove(_, _)
         | TransactionInputType::Generic(_, _, _)
         | TransactionInputType::Perpetual(_, _)
-        | TransactionInputType::Earn(_, _, _) => BigInt::from(100_000),
+        | TransactionInputType::Yield(_, _, _) => BigInt::from(100_000),
         TransactionInputType::Swap(_, _, _) => BigInt::from(420_000),
         TransactionInputType::Stake(_, _) => BigInt::from(100_000),
     }
@@ -57,7 +57,7 @@ fn get_multiple_of(input_type: &TransactionInputType) -> i64 {
         | TransactionInputType::TokenApprove(asset, _)
         | TransactionInputType::Generic(asset, _, _)
         | TransactionInputType::Perpetual(asset, _)
-        | TransactionInputType::Earn(asset, _, _) => match &asset.id.token_subtype() {
+        | TransactionInputType::Yield(asset, _, _) => match &asset.id.token_subtype() {
             AssetSubtype::NATIVE => 25_000,
             AssetSubtype::TOKEN => 50_000,
         },

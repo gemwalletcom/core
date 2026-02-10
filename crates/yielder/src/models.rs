@@ -1,7 +1,6 @@
-use primitives::{AssetId, Chain, EarnPosition, EarnProvider, swap::ApprovalData};
+use primitives::{AssetId, YieldProvider};
 
-pub type YieldProvider = EarnProvider;
-pub type YieldPosition = EarnPosition;
+pub use primitives::YieldTransaction;
 
 #[derive(Debug, Clone)]
 pub struct Yield {
@@ -20,16 +19,6 @@ impl Yield {
             apy,
         }
     }
-}
-
-#[derive(Debug, Clone)]
-pub struct YieldTransaction {
-    pub chain: Chain,
-    pub from: String,
-    pub to: String,
-    pub data: String,
-    pub value: Option<String>,
-    pub approval: Option<ApprovalData>,
 }
 
 #[derive(Debug, Clone)]

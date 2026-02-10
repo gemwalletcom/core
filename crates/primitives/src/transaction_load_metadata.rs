@@ -1,11 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    UTXO,
-    earn_data::EarnData,
-    solana_token_program::SolanaTokenProgramId,
-    stake_type::TronStakeData,
-};
+use crate::{UTXO, yield_data::YieldData, solana_token_program::SolanaTokenProgramId, stake_type::TronStakeData};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HyperliquidOrder {
@@ -49,7 +44,7 @@ pub enum TransactionLoadMetadata {
     Evm {
         nonce: u64,
         chain_id: u64,
-        earn_data: Option<EarnData>,
+        yield_data: Option<YieldData>,
     },
     Near {
         sequence: u64,

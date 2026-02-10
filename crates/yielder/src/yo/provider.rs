@@ -3,10 +3,10 @@ use std::{collections::HashMap, str::FromStr, sync::Arc};
 use alloy_primitives::{Address, U256};
 use async_trait::async_trait;
 use gem_evm::jsonrpc::TransactionObject;
-use num_bigint::BigInt;
-use primitives::{AssetId, Chain, swap::ApprovalData};
+use num_bigint::BigUint;
+use primitives::{AssetId, Chain, DelegationBase, DelegationState, YieldProvider, swap::ApprovalData};
 
-use crate::models::{Yield, YieldDetailsRequest, YieldPosition, YieldProvider, YieldTransaction};
+use crate::models::{Yield, YieldDetailsRequest, YieldTransaction};
 use crate::provider::YieldProviderClient;
 
 use super::{YO_PARTNER_ID_GEM, YoVault, client::YoProvider, error::YieldError, vaults};
@@ -98,7 +98,7 @@ impl YieldProviderClient for YoYieldProvider {
         Ok(convert_transaction(vault, tx, approval))
     }
 
-    async fn positions(&self, request: &YieldDetailsRequest) -> Result<YieldPosition, YieldError> {
+    async fn positions(&self, request: &YieldDetailsRequest) -> Result<DelegationBase, YieldError> {
         let vault = self.get_vault(&request.asset_id)?;
         let gateway = self.gateway_for_chain(vault.chain)?;
         let owner = Address::from_str(&request.wallet_address).map_err(|e| format!("invalid address {}: {e}", request.wallet_address))?;
@@ -107,19 +107,19 @@ impl YieldProviderClient for YoYieldProvider {
         let one_share = U256::from(10u64).pow(U256::from(vault.asset_decimals));
         let asset_value = data.share_balance.saturating_mul(data.latest_price) / one_share;
 
-        let asset_value_string = asset_value.to_string();
-        let asset_value_value = BigInt::from_str(&asset_value_string).map_err(|e| format!("invalid asset value {asset_value_string}: {e}"))?;
-        let share_balance_value = BigInt::from_str(&data.share_balance.to_string()).map_err(|e| format!("invalid share balance {}: {e}", data.share_balance))?;
-        Ok(YieldPosition {
+        let balance = BigUint::from_str(&asset_value.to_string()).unwrap_or_default();
+        let shares = BigUint::from_str(&data.share_balance.to_string()).unwrap_or_default();
+        let provider_id = self.provider().to_string();
+
+        Ok(DelegationBase {
             asset_id: request.asset_id.clone(),
-            provider: self.provider(),
-            vault_token_address: vault.yo_token.to_string(),
-            asset_token_address: vault.asset_token.to_string(),
-            vault_balance_value: share_balance_value,
-            asset_balance_value: asset_value_value,
-            balance: asset_value_string,
-            apy: None,
-            rewards: None,
+            state: DelegationState::Active,
+            balance,
+            shares,
+            rewards: BigUint::ZERO,
+            completion_date: None,
+            delegation_id: format!("{}-{}", provider_id, request.asset_id),
+            validator_id: provider_id,
         })
     }
 }

@@ -428,8 +428,8 @@ mod tests {
     use crate::core::actions::Grouping;
     use num_bigint::{BigInt, BigUint};
     use primitives::{
-        Asset, Chain, Delegation, DelegationBase, DelegationState, DelegationValidator, GasPriceType, StakeType, TransactionInputType, TransactionLoadInput,
-        TransactionLoadMetadata,
+        Asset, Chain, Delegation, DelegationBase, DelegationState, DelegationValidator, EarnProviderType, GasPriceType, StakeType, TransactionInputType,
+        TransactionLoadInput, TransactionLoadMetadata,
     };
 
     #[test]
@@ -443,6 +443,7 @@ mod tests {
             is_active: true,
             commission: 0.0,
             apr: 0.0,
+            provider_type: EarnProviderType::Stake,
         };
         let input = TransactionLoadInput {
             input_type: TransactionInputType::Stake(asset.clone(), StakeType::Stake(validator)),
@@ -497,6 +498,7 @@ mod tests {
                 is_active: true,
                 commission: 0.0,
                 apr: 0.0,
+                provider_type: EarnProviderType::Stake,
             },
             price: None,
         };

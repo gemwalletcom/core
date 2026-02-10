@@ -6,7 +6,7 @@ use std::{collections::HashMap, sync::Arc};
 use crate::{
     GemstoneError,
     alien::{AlienProvider, AlienProviderWrapper},
-    models::{GemEarnData, GemTransactionInputType, GemTransactionLoadInput},
+    models::{GemDelegationBase, GemYieldData, GemTransactionInputType, GemTransactionLoadInput},
 };
 use gem_evm::rpc::EthereumClient;
 use gem_jsonrpc::client::JsonRpcClient;
@@ -31,23 +31,23 @@ impl GemYielder {
         self.yielder.yields_for_asset_with_apy(asset_id).await.map_err(Into::into)
     }
 
-    pub async fn deposit(&self, provider: GemEarnProvider, asset: AssetId, wallet_address: String, value: String) -> Result<GemYieldTransaction, GemstoneError> {
+    pub async fn deposit(&self, provider: GemYieldProvider, asset: AssetId, wallet_address: String, value: String) -> Result<GemYieldTransaction, GemstoneError> {
         self.yielder.deposit(provider, &asset, &wallet_address, &value).await.map_err(Into::into)
     }
 
-    pub async fn withdraw(&self, provider: GemEarnProvider, asset: AssetId, wallet_address: String, value: String) -> Result<GemYieldTransaction, GemstoneError> {
+    pub async fn withdraw(&self, provider: GemYieldProvider, asset: AssetId, wallet_address: String, value: String) -> Result<GemYieldTransaction, GemstoneError> {
         self.yielder.withdraw(provider, &asset, &wallet_address, &value).await.map_err(Into::into)
     }
 
-    pub async fn positions(&self, provider: GemEarnProvider, asset: AssetId, wallet_address: String) -> Result<GemEarnPosition, GemstoneError> {
+    pub async fn positions(&self, provider: GemYieldProvider, asset: AssetId, wallet_address: String) -> Result<GemDelegationBase, GemstoneError> {
         let request = YieldDetailsRequest { asset_id: asset, wallet_address };
         self.yielder.positions(provider, &request).await.map_err(Into::into)
     }
 
     pub async fn build_transaction(
         &self,
-        action: GemEarnAction,
-        provider: GemEarnProvider,
+        action: GemYieldType,
+        provider: GemYieldProvider,
         asset: AssetId,
         wallet_address: String,
         value: String,
@@ -86,15 +86,15 @@ pub(crate) fn build_yielder(rpc_provider: Arc<dyn AlienProvider>) -> Result<Yiel
 
 pub(crate) async fn prepare_yield_input(yielder: &Yielder, input: GemTransactionLoadInput) -> Result<GemTransactionLoadInput, GemstoneError> {
     match &input.input_type {
-        GemTransactionInputType::Earn { asset, action, data } => {
+        GemTransactionInputType::Yield { asset, action, data } => {
             if data.contract_address.is_none() || data.call_data.is_none() {
                 let transaction = build_yield_transaction(yielder, action, YieldProvider::Yo, &asset.id, &input.sender_address, &input.value).await?;
 
                 Ok(GemTransactionLoadInput {
-                    input_type: GemTransactionInputType::Earn {
+                    input_type: GemTransactionInputType::Yield {
                         asset: asset.clone(),
                         action: action.clone(),
-                        data: GemEarnData {
+                        data: GemYieldData {
                             provider: data.provider.clone(),
                             contract_address: Some(transaction.to),
                             call_data: Some(transaction.data),
@@ -120,14 +120,14 @@ pub(crate) async fn prepare_yield_input(yielder: &Yielder, input: GemTransaction
 
 async fn build_yield_transaction(
     yielder: &Yielder,
-    action: &GemEarnAction,
+    action: &GemYieldType,
     provider: YieldProvider,
     asset: &AssetId,
     wallet_address: &str,
     value: &str,
 ) -> Result<YieldTransaction, GemstoneError> {
     match action {
-        GemEarnAction::Deposit => Ok(yielder.deposit(provider, asset, wallet_address, value).await?),
-        GemEarnAction::Withdraw => Ok(yielder.withdraw(provider, asset, wallet_address, value).await?),
+        GemYieldType::Deposit => Ok(yielder.deposit(provider, asset, wallet_address, value).await?),
+        GemYieldType::Withdraw => Ok(yielder.withdraw(provider, asset, wallet_address, value).await?),
     }
 }
