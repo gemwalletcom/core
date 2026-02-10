@@ -115,7 +115,11 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let rewards_client = referral::RewardsClient::new(database.clone(), stream_producer.clone(), ip_security_client, pusher_client.clone());
     let redemption_client = referral::RewardsRedemptionClient::new(database.clone(), stream_producer.clone());
     let notifications_client = NotificationsClient::new(database.clone());
-    let auth_config = devices::auth_config::AuthConfig::new(settings.api.auth.enabled, settings.api.auth.tolerance);
+    let jwt_config = devices::auth_config::JwtConfig {
+        secret: settings.api.auth.jwt.secret.clone(),
+        expiry: settings.api.auth.jwt.expiry,
+    };
+    let auth_config = devices::auth_config::AuthConfig::new(settings.api.auth.enabled, settings.api.auth.tolerance, jwt_config);
 
     rocket::build()
         .manage(auth_config)
@@ -242,6 +246,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 devices::add_device_price_alerts_v2,
                 devices::delete_device_price_alerts_v2,
                 devices::get_auth_nonce_v2,
+                devices::get_device_token_v2,
                 wallets::get_subscriptions,
                 wallets::add_subscriptions,
                 wallets::delete_subscriptions,
@@ -275,7 +280,11 @@ async fn rocket_ws_stream(settings: Settings) -> Rocket<Build> {
         redis_url: settings.redis.url.clone(),
     };
 
-    let auth_config = devices::auth_config::AuthConfig::new(settings.api.auth.enabled, settings.api.auth.tolerance);
+    let jwt_config = devices::auth_config::JwtConfig {
+        secret: settings.api.auth.jwt.secret.clone(),
+        expiry: settings.api.auth.jwt.expiry,
+    };
+    let auth_config = devices::auth_config::AuthConfig::new(settings.api.auth.enabled, settings.api.auth.tolerance, jwt_config);
 
     rocket::build()
         .manage(auth_config)

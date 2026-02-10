@@ -7,6 +7,8 @@ pub use self::localize::Localize;
 
 pub mod auth;
 pub use self::auth::{AuthMessage, AuthNonce, AuthPayload, AuthenticatedRequest};
+pub mod auth_status;
+pub use self::auth_status::{AuthStatus, X_AUTH_STATUS};
 pub mod chain;
 pub use self::chain::Chain;
 pub mod chain_config;
@@ -88,6 +90,8 @@ pub mod payment_type;
 pub use self::payment_type::PaymentType;
 pub mod device;
 pub use self::device::{Device, MigrateDeviceIdRequest};
+pub mod device_token;
+pub use self::device_token::DeviceToken;
 pub mod transaction;
 pub use self::transaction::{Transaction, TransactionsResponse};
 pub mod transaction_type;

@@ -131,6 +131,11 @@ impl HeadersConfig {
 }
 
 #[derive(Debug, Deserialize, Clone)]
+pub struct JwtConfig {
+    pub secret: String,
+}
+
+#[derive(Debug, Deserialize, Clone)]
 pub struct NodeConfig {
     pub port: u16,
     pub address: String,
@@ -142,6 +147,7 @@ pub struct NodeConfig {
     pub retry: RetryConfig,
     pub request: RequestConfig,
     pub headers: HeadersConfig,
+    pub jwt: JwtConfig,
 }
 
 #[derive(Debug, Deserialize)]

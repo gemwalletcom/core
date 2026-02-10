@@ -13,6 +13,9 @@ metrics:
         - "Gem/Android.*"
         - "Gem/Android"
 
+jwt:
+  secret: ""
+
 monitoring:
   enabled: false
   poll_interval_seconds: 600

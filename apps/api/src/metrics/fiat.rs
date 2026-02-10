@@ -98,10 +98,7 @@ pub fn metrics_fiat_quotes(quotes: &FiatQuotes) {
                 errors.get_or_create(&labels).inc();
             }
 
-            let now = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .map(|d| d.as_secs() as i64)
-                .unwrap_or(0);
+            let now = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs() as i64).unwrap_or(0);
 
             if let Some(last_error_at) = FIAT_QUOTE_LAST_ERROR_AT.get() {
                 last_error_at.get_or_create(&labels).set(now);

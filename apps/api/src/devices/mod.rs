@@ -12,11 +12,13 @@ use crate::responders::{ApiError, ApiResponse};
 use crate::scan::ScanClient;
 use crate::transactions::TransactionsClient;
 use crate::wallets::WalletsClient;
+use auth_config::AuthConfig;
 pub use cacher::DeviceCacher;
 pub use client::DevicesClient;
 use gem_auth::AuthClient;
 use guard::{AuthenticatedDevice, AuthenticatedDeviceWallet, VerifiedDeviceId};
 use nft::NFTClient;
+use primitives::DeviceToken;
 use primitives::device::Device;
 use primitives::rewards::{RedemptionRequest, RedemptionResult};
 use primitives::{
@@ -249,6 +251,11 @@ pub async fn delete_device_subscriptions_v2(
 #[get("/devices/auth/nonce")]
 pub async fn get_auth_nonce_v2(device: AuthenticatedDevice, client: &State<Arc<AuthClient>>) -> Result<ApiResponse<AuthNonce>, ApiError> {
     Ok(client.get_nonce(&device.device_row.device_id).await?.into())
+}
+
+#[get("/devices/token")]
+pub async fn get_device_token_v2(device: AuthenticatedDevice, config: &State<AuthConfig>, client: &State<Arc<AuthClient>>) -> Result<ApiResponse<DeviceToken>, ApiError> {
+    Ok(client.create_device_token(&device.device_row.device_id, &config.jwt.secret, config.jwt.expiry)?.into())
 }
 
 #[get("/devices/price_alerts?<asset_id>")]

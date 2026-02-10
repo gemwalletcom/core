@@ -20,3 +20,4 @@ settings_chain = { path = "../../crates/settings_chain" }
 
 regex = { workspace = true }
 url = { workspace = true }
+gem_auth = { path = "../../crates/gem_auth", features = ["client"] }

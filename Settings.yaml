@@ -253,6 +253,9 @@ api:
   auth:
     enabled: true
     tolerance: 5m
+    jwt:
+      secret: ""
+      expiry: 1h
 
 ankr:
   key:
