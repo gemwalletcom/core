@@ -2,10 +2,10 @@ use crate::models::*;
 use num_bigint::BigInt;
 use primitives::stake_type::FreezeData;
 use primitives::{
-    AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, Resource, StakeType, YieldData,
+    AccountDataType, Asset, EarnData, EarnType, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, Resource, StakeType,
     TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata, TransactionState,
     TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, TronStakeData, TronUnfreeze, TronVote,
-    UInt64, WalletConnectionSessionAppMetadata, YieldType,
+    UInt64, WalletConnectionSessionAppMetadata,
     perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualReduceData, TPSLOrderData},
 };
 use std::collections::HashMap;
@@ -257,23 +257,23 @@ pub enum PerpetualType {
     Reduce(PerpetualReduceData),
 }
 
-pub type GemYieldType = YieldType;
-
-#[uniffi::remote(Enum)]
-pub enum YieldType {
-    Deposit,
-    Withdraw,
-}
-
-pub type GemYieldData = YieldData;
+pub type GemEarnData = EarnData;
 
 #[uniffi::remote(Record)]
-pub struct YieldData {
+pub struct EarnData {
     pub provider: Option<String>,
     pub contract_address: Option<String>,
     pub call_data: Option<String>,
     pub approval: Option<GemApprovalData>,
     pub gas_limit: Option<String>,
+}
+
+pub type GemEarnType = EarnType;
+
+#[uniffi::remote(Enum)]
+pub enum EarnType {
+    Deposit(GemDelegationValidator),
+    Withdraw(GemDelegation),
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -315,10 +315,9 @@ pub enum GemTransactionInputType {
         asset: GemAsset,
         perpetual_type: GemPerpetualType,
     },
-    Yield {
+    Earn {
         asset: GemAsset,
-        action: GemYieldType,
-        data: GemYieldData,
+        earn_type: GemEarnType,
     },
 }
 
@@ -333,7 +332,7 @@ impl GemTransactionInputType {
             | Self::TransferNft { asset, .. }
             | Self::Account { asset, .. }
             | Self::Perpetual { asset, .. }
-            | Self::Yield { asset, .. } => asset,
+            | Self::Earn { asset, .. } => asset,
             Self::Swap { from_asset, .. } => from_asset,
         }
     }
@@ -423,7 +422,7 @@ pub enum GemTransactionLoadMetadata {
     Evm {
         nonce: u64,
         chain_id: u64,
-        yield_data: Option<GemYieldData>,
+        earn_data: Option<GemEarnData>,
     },
     Near {
         sequence: u64,
@@ -508,7 +507,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
             TransactionLoadMetadata::Bitcoin { utxos } => GemTransactionLoadMetadata::Bitcoin { utxos },
             TransactionLoadMetadata::Zcash { utxos, branch_id } => GemTransactionLoadMetadata::Zcash { utxos, branch_id },
             TransactionLoadMetadata::Cardano { utxos } => GemTransactionLoadMetadata::Cardano { utxos },
-            TransactionLoadMetadata::Evm { nonce, chain_id, yield_data } => GemTransactionLoadMetadata::Evm { nonce, chain_id, yield_data },
+            TransactionLoadMetadata::Evm { nonce, chain_id, earn_data } => GemTransactionLoadMetadata::Evm { nonce, chain_id, earn_data },
             TransactionLoadMetadata::Near { sequence, block_hash } => GemTransactionLoadMetadata::Near { sequence, block_hash },
             TransactionLoadMetadata::Stellar {
                 sequence,
@@ -596,7 +595,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
             GemTransactionLoadMetadata::Bitcoin { utxos } => TransactionLoadMetadata::Bitcoin { utxos },
             GemTransactionLoadMetadata::Zcash { utxos, branch_id } => TransactionLoadMetadata::Zcash { utxos, branch_id },
             GemTransactionLoadMetadata::Cardano { utxos } => TransactionLoadMetadata::Cardano { utxos },
-            GemTransactionLoadMetadata::Evm { nonce, chain_id, yield_data } => TransactionLoadMetadata::Evm { nonce, chain_id, yield_data },
+            GemTransactionLoadMetadata::Evm { nonce, chain_id, earn_data } => TransactionLoadMetadata::Evm { nonce, chain_id, earn_data },
             GemTransactionLoadMetadata::Near { sequence, block_hash } => TransactionLoadMetadata::Near { sequence, block_hash },
             GemTransactionLoadMetadata::Stellar {
                 sequence,
@@ -699,7 +698,7 @@ impl From<TransactionInputType> for GemTransactionInputType {
             TransactionInputType::TransferNft(asset, nft_asset) => GemTransactionInputType::TransferNft { asset, nft_asset },
             TransactionInputType::Account(asset, account_type) => GemTransactionInputType::Account { asset, account_type },
             TransactionInputType::Perpetual(asset, perpetual_type) => GemTransactionInputType::Perpetual { asset, perpetual_type },
-            TransactionInputType::Yield(asset, action, data) => GemTransactionInputType::Yield { asset, action, data },
+            TransactionInputType::Earn(asset, earn_type) => GemTransactionInputType::Earn { asset, earn_type },
         }
     }
 }
@@ -853,7 +852,7 @@ impl From<GemTransactionInputType> for TransactionInputType {
             GemTransactionInputType::TransferNft { asset, nft_asset } => TransactionInputType::TransferNft(asset, nft_asset),
             GemTransactionInputType::Account { asset, account_type } => TransactionInputType::Account(asset, account_type),
             GemTransactionInputType::Perpetual { asset, perpetual_type } => TransactionInputType::Perpetual(asset, perpetual_type),
-            GemTransactionInputType::Yield { asset, action, data } => TransactionInputType::Yield(asset, action, data),
+            GemTransactionInputType::Earn { asset, earn_type } => TransactionInputType::Earn(asset, earn_type),
         }
     }
 }

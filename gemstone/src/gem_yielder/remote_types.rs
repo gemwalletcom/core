@@ -1,8 +1,7 @@
 use primitives::{AssetId, YieldProvider};
-use yielder::{Yield, YieldTransaction};
+use yielder::{Yield, EarnTransaction};
 
 use crate::models::swap::GemApprovalData;
-pub use crate::models::transaction::GemYieldType;
 
 pub type GemYieldProvider = YieldProvider;
 
@@ -12,8 +11,8 @@ pub enum GemYieldProvider {
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
-pub struct GemYieldTransactionData {
-    pub transaction: GemYieldTransaction,
+pub struct GemEarnTransactionData {
+    pub transaction: GemEarnTransaction,
     pub nonce: u64,
     pub chain_id: u64,
     pub gas_limit: String,
@@ -29,10 +28,10 @@ pub struct GemYield {
     pub apy: Option<f64>,
 }
 
-pub type GemYieldTransaction = YieldTransaction;
+pub type GemEarnTransaction = EarnTransaction;
 
 #[uniffi::remote(Record)]
-pub struct GemYieldTransaction {
+pub struct GemEarnTransaction {
     pub chain: primitives::Chain,
     pub from: String,
     pub to: String,
