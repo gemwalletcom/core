@@ -11,9 +11,9 @@ use std::{
     time::{Duration, Instant},
 };
 
+use crate::reporters::parser::ParserReporter;
 use cacher::CacherClient;
 use chain_traits::ChainTraits;
-use crate::reporters::parser::ParserReporter;
 use gem_tracing::{DurationMs, error_with_fields, info_with_fields};
 use primitives::Chain;
 use settings::Settings;

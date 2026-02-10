@@ -11,8 +11,8 @@ mod worker;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
-use crate::reporters::consumer::ConsumerReporter;
 use crate::model::{ConsumerService, DaemonService, WorkerService};
+use crate::reporters::consumer::ConsumerReporter;
 use crate::shutdown::ShutdownReceiver;
 use crate::worker::context::WorkerContext;
 use crate::worker::job_schedule::CacherJobTracker;
@@ -233,6 +233,7 @@ async fn run_consumer(
         ConsumerService::Rewards => consumers::run_consumer_rewards(settings, shutdown_rx, reporter).await,
         ConsumerService::Support => consumers::run_consumer_support(settings, shutdown_rx, reporter).await,
         ConsumerService::Fiat => consumers::run_consumer_fiat(settings, shutdown_rx, reporter).await,
-        ConsumerService::FetchPrices => consumers::run_consumer_fetch_prices(settings, shutdown_rx, reporter).await,
+        ConsumerService::Prices => consumers::run_consumer_prices(settings, shutdown_rx, reporter).await,
+        ConsumerService::Assets => consumers::run_consumer_assets(settings, shutdown_rx, reporter).await,
     }
 }

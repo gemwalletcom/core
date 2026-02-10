@@ -13,7 +13,7 @@ use streamer::{ConsumerStatusReporter, FetchPricesPayload, QueueName, ShutdownRe
 use crate::consumers::{consumer_config, producer_for_queue, reader_for_queue};
 use crate::worker::prices::price_updater::PriceUpdater;
 
-pub async fn run_consumer_fetch_prices(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn run_consumer_prices(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let queue = QueueName::FetchPrices;
     let (name, stream_reader) = reader_for_queue(&settings, &queue).await?;

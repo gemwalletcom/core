@@ -11,17 +11,18 @@ use std::sync::Arc;
 
 use api_connector::StaticAssetsClient;
 use asset_rank_updater::AssetRankUpdater;
-use asset_updater::AssetUpdater;
+use asset_updater::{AssetUpdater, AssetUpdaterConfig};
 use assets_images_updater::AssetsImagesUpdater;
 use cacher::CacherClient;
 use coingecko::CoinGeckoClient;
 use job_runner::{JobHandle, ShutdownReceiver};
 use perpetual_updater::PerpetualUpdater;
-use primitives::Chain;
+use primitives::{Chain, ConfigKey};
 use settings::service_user_agent;
 use settings_chain::ChainProviders;
 use staking_apy_updater::StakeApyUpdater;
 use storage::ConfigCacher;
+use streamer::{StreamProducer, StreamProducerConfig};
 use usage_rank_updater::UsageRankUpdater;
 use validator_scanner::ValidatorScanner;
 
@@ -38,11 +39,19 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
     let cacher_client = CacherClient::new(&settings.redis.url).await;
     let config = ConfigCacher::new(database.clone());
 
+    let updater_config = AssetUpdaterConfig {
+        new_interval: config.get_duration(ConfigKey::AssetsUpdateNewCoinInfoInterval)?,
+        existing_interval: config.get_duration(ConfigKey::AssetsUpdateExistingCoinInfoInterval)?,
+    };
+    let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
+    let stream_producer = StreamProducer::new(&rabbitmq_config, "assets_worker").await?;
+
     let asset_updater = {
         let coingecko_client = coingecko_client.clone();
         let database = database.clone();
         let cacher_client = cacher_client.clone();
-        move || AssetUpdater::new(coingecko_client.clone(), database.clone(), cacher_client.clone())
+        move || AssetUpdater::new(coingecko_client.clone(), database.clone(), cacher_client.clone(), stream_producer.clone(), updater_config)
     };
 
     JobPlanBuilder::with_config(WorkerService::Assets, runtime.plan(shutdown_rx), &config)
