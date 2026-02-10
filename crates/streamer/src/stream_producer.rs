@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use lapin::{BasicProperties, Channel, Connection, ConnectionProperties, ExchangeKind, options::*, publisher_confirm::Confirmation, types::FieldTable};
+use lapin::{BasicProperties, Channel, Confirmation, Connection, ConnectionProperties, ExchangeKind, options::*, types::FieldTable};
 
 use crate::{ExchangeName, QueueName, Retry, StreamConnection, with_retry};
 
@@ -53,7 +53,7 @@ impl StreamProducer {
     pub async fn declare_queue(&self, name: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
         self.channel
             .queue_declare(
-                name,
+                name.into(),
                 QueueDeclareOptions {
                     durable: true,
                     ..Default::default()
@@ -72,17 +72,19 @@ impl StreamProducer {
     }
 
     pub async fn delete_queue(&self, queue: &str) -> Result<u32, Box<dyn Error + Send + Sync>> {
-        Ok(self.channel.queue_delete(queue, QueueDeleteOptions::default()).await?)
+        Ok(self.channel.queue_delete(queue.into(), QueueDeleteOptions::default()).await?)
     }
 
     pub async fn clear_queue(&self, queue: QueueName) -> Result<u32, Box<dyn Error + Send + Sync>> {
-        Ok(self.channel.queue_purge(&queue.to_string(), QueuePurgeOptions::default()).await?)
+        Ok(self.channel.queue_purge(queue.to_string().into(), QueuePurgeOptions::default()).await?)
     }
 
     // Exchange methods
 
     pub async fn declare_exchange(&self, name: &str, kind: ExchangeKind) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.channel.exchange_declare(name, kind, ExchangeDeclareOptions::default(), FieldTable::default()).await?;
+        self.channel
+            .exchange_declare(name.into(), kind, ExchangeDeclareOptions::default(), FieldTable::default())
+            .await?;
         Ok(())
     }
 
@@ -97,7 +99,7 @@ impl StreamProducer {
 
     pub async fn bind_queue(&self, queue: &str, exchange: &str, routing_key: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
         self.channel
-            .queue_bind(queue, exchange, routing_key, QueueBindOptions::default(), FieldTable::default())
+            .queue_bind(queue.into(), exchange.into(), routing_key.into(), QueueBindOptions::default(), FieldTable::default())
             .await?;
         Ok(())
     }
@@ -126,8 +128,8 @@ impl StreamProducer {
         let confirm = self
             .channel
             .basic_publish(
-                exchange,
-                routing_key,
+                exchange.into(),
+                routing_key.into(),
                 BasicPublishOptions::default(),
                 &data,
                 BasicProperties::default().with_delivery_mode(2).with_content_type("application/json".into()),
