@@ -129,7 +129,6 @@ mod tests {
             destination_address: "test".to_string(),
             value: "1000".to_string(),
             gas_price: GasPriceType::regular(BigInt::from(10_000_000u64)),
-            gas_limit: 0,
             memo,
             is_max_value: false,
             metadata: TransactionLoadMetadata::Ton {
