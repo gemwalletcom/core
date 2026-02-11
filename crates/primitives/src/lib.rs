@@ -189,7 +189,7 @@ pub use self::websocket::{WebSocketPriceAction, WebSocketPriceActionType, WebSoc
 pub mod stream;
 pub use self::stream::{StreamBalanceUpdate, StreamEvent, StreamMessage, StreamMessagePrices, StreamTransactionsUpdate};
 pub mod asset_balance;
-pub use self::asset_balance::{AssetBalance, Balance};
+pub use self::asset_balance::{AddressBalances, AssetBalance, Balance};
 pub mod chain_address;
 pub use self::chain_address::ChainAddress;
 pub mod json_rpc;

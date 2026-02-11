@@ -71,7 +71,12 @@ pub async fn get_fiat_quotes_by_type(
 }
 
 #[post("/fiat/quotes/url", data = "<request>")]
-pub async fn get_fiat_quote_url(request: Json<FiatQuoteUrlRequest>, ip: std::net::IpAddr, client: &State<Mutex<FiatQuotesClient>>, metrics: &State<Mutex<MetricsClient>>) -> Result<ApiResponse<FiatQuoteUrl>, ApiError> {
+pub async fn get_fiat_quote_url(
+    request: Json<FiatQuoteUrlRequest>,
+    ip: std::net::IpAddr,
+    client: &State<Mutex<FiatQuotesClient>>,
+    metrics: &State<Mutex<MetricsClient>>,
+) -> Result<ApiResponse<FiatQuoteUrl>, ApiError> {
     let ip_address = if cfg!(debug_assertions) { DEBUG_FIAT_IP } else { &ip.to_string() };
 
     let (url, quote) = client
