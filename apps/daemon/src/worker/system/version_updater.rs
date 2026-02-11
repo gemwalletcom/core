@@ -57,7 +57,14 @@ impl VersionUpdater {
 
     async fn get_github_version(&self) -> Result<String, Box<dyn Error + Send + Sync>> {
         let url = "https://api.github.com/repos/gemwalletcom/gem-android/releases";
-        let response = reqwest::Client::new().get(url).send().await?.json::<Vec<GitHubRepository>>().await?;
+        let response = reqwest::Client::builder()
+            .user_agent("gem-daemon")
+            .build()?
+            .get(url)
+            .send()
+            .await?
+            .json::<Vec<GitHubRepository>>()
+            .await?;
         response
             .into_iter()
             .find(|x| !x.draft && !x.prerelease && x.assets.iter().any(|a| a.name.contains("gem_wallet_universal_")))
@@ -68,6 +75,9 @@ impl VersionUpdater {
     async fn get_samsung_version(&self) -> Result<String, Box<dyn Error + Send + Sync>> {
         let url = "https://galaxystore.samsung.com/api/detail/com.gemwallet.android";
         let response = reqwest::get(url).await?.json::<SamsungStoreDetail>().await?;
-        Ok(response.details.version)
+        match response.details {
+            Some(details) => Ok(details.version),
+            None => Err(response.error_message.unwrap_or_else(|| "no version found".to_string()).into()),
+        }
     }
 }

@@ -15,6 +15,8 @@ strum = { workspace = true }
 async-trait = { workspace = true }
 num-bigint = { workspace = true }
 
+prometheus-client = { workspace = true }
+metrics = { path = "../../crates/metrics" }
 gem_tracing = { path = "../../crates/tracing", features = ["sentry"] }
 settings = { path = "../../crates/settings" }
 storage = { path = "../../crates/storage" }

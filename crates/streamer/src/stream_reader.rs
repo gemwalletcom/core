@@ -54,7 +54,7 @@ impl StreamReader {
     }
 
     pub async fn close(self) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.channel.close(0, "Normal shutdown").await?;
+        self.channel.close(0, "Normal shutdown".into()).await?;
         Ok(())
     }
 
@@ -108,7 +108,12 @@ impl StreamReader {
 
             let consumer_result = self
                 .channel
-                .basic_consume(queue_name.as_str(), consumer_tag.as_str(), BasicConsumeOptions::default(), FieldTable::default())
+                .basic_consume(
+                    queue_name.as_str().into(),
+                    consumer_tag.as_str().into(),
+                    BasicConsumeOptions::default(),
+                    FieldTable::default(),
+                )
                 .await;
 
             let mut consumer = match consumer_result {

@@ -328,6 +328,23 @@ impl fmt::Display for InAppNotificationPayload {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateCoinInfoPayload {
+    pub coin_id: String,
+}
+
+impl UpdateCoinInfoPayload {
+    pub fn new(coin_id: String) -> Self {
+        Self { coin_id }
+    }
+}
+
+impl fmt::Display for UpdateCoinInfoPayload {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "coin_id: {}", self.coin_id)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FetchPricesPayload {
     pub price_ids: Vec<String>,
 }

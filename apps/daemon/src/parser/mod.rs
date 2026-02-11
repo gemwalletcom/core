@@ -11,9 +11,10 @@ use std::{
     time::{Duration, Instant},
 };
 
-use cacher::CacherClient;
-use chain_traits::ChainTraits;
+use crate::health::HealthState;
+use crate::metrics::parser::ParserMetrics;
 use crate::reporters::parser::ParserReporter;
+use chain_traits::ChainTraits;
 use gem_tracing::{DurationMs, error_with_fields, info_with_fields};
 use primitives::Chain;
 use settings::Settings;
@@ -39,13 +40,13 @@ impl Parser {
         provider: Box<dyn ChainTraits>,
         stream_producer: StreamProducer,
         database: Database,
-        cacher: CacherClient,
+        parser_metrics: Arc<ParserMetrics>,
         options: ParserOptions,
         shutdown_rx: ShutdownReceiver,
     ) -> Self {
         let chain = provider.get_chain();
         let state_service = ParserStateService::new(chain, database);
-        let reporter = ParserReporter::new(chain, cacher);
+        let reporter = ParserReporter::new(chain, parser_metrics);
         Self {
             chain,
             provider,
@@ -121,7 +122,7 @@ impl Parser {
             }
             Err(err) => {
                 error_with_fields!("parser parse_block", &*err, chain = self.chain.as_ref(), blocks = blocks_desc);
-                self.reporter.error(&format!("block: {:?}", err)).await;
+                self.reporter.error(&format!("block: {}", err));
                 self.sleep_or_shutdown(timeout).await;
                 return Ok(false);
             }
@@ -165,6 +166,7 @@ impl Parser {
             }
 
             let state = self.state_service.get_state()?;
+            self.reporter.update_state(state.current_block, state.latest_block, state.is_enabled);
             let timeout = timeout_for_state(&state, self.options.min_check, self.options.max_check);
 
             if !self.wait_if_disabled(&state, timeout).await {
@@ -175,7 +177,7 @@ impl Parser {
                 Ok(block) => block,
                 Err(err) => {
                     error_with_fields!("parser latest_block", &*err, chain = self.chain.as_ref());
-                    self.reporter.error(&format!("latest_block: {:?}", err)).await;
+                    self.reporter.error(&format!("latest_block: {}", err));
                     self.sleep_or_shutdown(self.options.error_interval).await;
                     continue;
                 }
@@ -214,9 +216,13 @@ impl Parser {
     }
 }
 
-pub async fn run(settings: Settings, chain: Option<Chain>, health_state: Arc<crate::health::HealthState>) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn run(
+    settings: Settings,
+    chain: Option<Chain>,
+    health_state: Arc<HealthState>,
+    parser_metrics: Arc<ParserMetrics>,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
-    let cacher = CacherClient::new(&settings.redis.url).await;
 
     let config = storage::ConfigCacher::new(database.clone());
     let catchup_reload_interval = config.get_i64(primitives::ConfigKey::ParserCatchupReloadInterval)?;
@@ -246,7 +252,7 @@ pub async fn run(settings: Settings, chain: Option<Chain>, health_state: Arc<cra
 
     for chain in chains {
         let database = database.clone();
-        let cacher = cacher.clone();
+        let parser_metrics = parser_metrics.clone();
         let shutdown_rx = shutdown_rx.clone();
         let settings = settings.clone();
 
@@ -265,7 +271,7 @@ pub async fn run(settings: Settings, chain: Option<Chain>, health_state: Arc<cra
         };
 
         handles.push(tokio::spawn(async move {
-            run_parser(database, cacher, stream_producer, provider, options, shutdown_rx).await;
+            run_parser(database, parser_metrics, stream_producer, provider, options, shutdown_rx).await;
         }));
     }
 
@@ -282,7 +288,7 @@ pub async fn run(settings: Settings, chain: Option<Chain>, health_state: Arc<cra
 
 async fn run_parser(
     database: Database,
-    cacher: CacherClient,
+    parser_metrics: Arc<ParserMetrics>,
     stream_producer: StreamProducer,
     provider: Box<dyn ChainTraits>,
     options: ParserOptions,
@@ -291,7 +297,7 @@ async fn run_parser(
     let chain = provider.get_chain();
     let timeout = options.timeout;
 
-    let parser = Parser::new(provider, stream_producer, database, cacher, options, shutdown_rx.clone());
+    let parser = Parser::new(provider, stream_producer, database, parser_metrics, options, shutdown_rx.clone());
 
     loop {
         if *shutdown_rx.borrow() {
@@ -299,9 +305,8 @@ async fn run_parser(
         }
 
         if let Err(e) = parser.start().await {
-            let error_msg = format!("{:?}", e);
             error_with_fields!("parser error", &*e, chain = chain.as_ref());
-            parser.reporter.error(&error_msg).await;
+            parser.reporter.error(&e.to_string());
 
             if shutdown::sleep_or_shutdown(timeout, &shutdown_rx).await {
                 break;
