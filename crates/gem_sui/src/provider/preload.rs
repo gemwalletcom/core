@@ -157,7 +157,6 @@ mod chain_integration_tests {
             value: "1000000000".to_string(),
             input_type: TransactionInputType::Stake(Asset::from_chain(Chain::Sui), stake_type),
             gas_price: primitives::GasPriceType::regular(BigInt::from(1000)),
-            gas_limit: 0,
             memo: None,
             is_max_value: false,
             metadata: TransactionLoadMetadata::None,

@@ -34,6 +34,10 @@ pub struct SwapQuoteData {
 }
 
 impl SwapQuoteData {
+    pub fn gas_limit_as_u32(&self) -> Result<u32, &'static str> {
+        self.gas_limit.as_ref().ok_or("gas_limit is required")?.parse().map_err(|_| "invalid gas_limit")
+    }
+
     pub fn new_contract(to: String, value: String, data: String, approval: Option<ApprovalData>, gas_limit: Option<String>) -> Self {
         Self {
             to,

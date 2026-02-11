@@ -13,6 +13,13 @@ pub struct TransferDataExtra {
     pub output_action: TransferDataOutputAction,
 }
 
+impl TransferDataExtra {
+    pub fn data_as_str(&self) -> Result<&str, &'static str> {
+        let bytes = self.data.as_ref().ok_or("missing data")?;
+        std::str::from_utf8(bytes).map_err(|_| "data is not valid utf8")
+    }
+}
+
 impl Default for TransferDataExtra {
     fn default() -> Self {
         Self {
