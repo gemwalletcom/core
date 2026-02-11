@@ -245,6 +245,7 @@ pub enum ReportReason {
 #[serde(rename_all = "camelCase")]
 #[typeshare(swift = "Sendable")]
 pub struct ReportNft {
+    #[typeshare(skip)]
     pub device_id: String,
     pub collection_id: String,
     pub asset_id: Option<String>,

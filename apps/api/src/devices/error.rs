@@ -9,6 +9,7 @@ pub enum DeviceError {
     DeviceNotFound,
     WalletNotFound,
     DatabaseUnavailable,
+    InvalidAuthorizationFormat,
     DatabaseError,
 }
 
@@ -23,6 +24,7 @@ impl fmt::Display for DeviceError {
             Self::DeviceNotFound => write!(f, "Device not found"),
             Self::WalletNotFound => write!(f, "Wallet not found"),
             Self::DatabaseUnavailable => write!(f, "Database not available"),
+            Self::InvalidAuthorizationFormat => write!(f, "Invalid authorization format"),
             Self::DatabaseError => write!(f, "Database error"),
         }
     }
