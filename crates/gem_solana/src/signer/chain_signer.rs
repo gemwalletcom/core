@@ -21,8 +21,9 @@ impl ChainSigner for SolanaChainSigner {
 
     fn sign_data(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
         let extra = input.input_type.get_generic_data().map_err(SignerError::invalid_input)?;
-        let tx_base64 = extra.data_as_str().map_err(SignerError::invalid_input)?;
-        let tx_bytes = STANDARD.decode(tx_base64).map_err(|e| SignerError::invalid_input(format!("base64 decode: {e}")))?;
+        let tx_bytes = STANDARD
+            .decode(extra.data_as_str().map_err(SignerError::invalid_input)?)
+            .map_err(|e| SignerError::invalid_input(format!("base64 decode: {e}")))?;
 
         let mut transaction = VersionedTransaction::deserialize_with_version(&tx_bytes).map_err(|e| SignerError::invalid_input(format!("parse transaction: {e}")))?;
 
