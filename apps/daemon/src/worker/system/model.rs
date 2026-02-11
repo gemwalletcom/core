@@ -26,7 +26,9 @@ pub struct GitHubRepositoryAsset {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SamsungStoreDetail {
     #[serde(rename = "DetailMain")]
-    pub details: SamsungStoreDetails,
+    pub details: Option<SamsungStoreDetails>,
+    #[serde(rename = "errMsg")]
+    pub error_message: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

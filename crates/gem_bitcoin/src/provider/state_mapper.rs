@@ -2,14 +2,14 @@ use crate::models::block::BitcoinNodeInfo;
 use primitives::NodeSyncStatus;
 
 pub fn map_node_status(node_info: &BitcoinNodeInfo) -> NodeSyncStatus {
-    let latest_block_number = node_info.backend.as_ref().map(|backend| backend.blocks);
+    let latest_block_number = node_info.backend.blocks;
     let current_block_number = Some(node_info.blockbook.best_height);
 
-    NodeSyncStatus::new(node_info.blockbook.in_sync, latest_block_number, current_block_number)
+    NodeSyncStatus::new(node_info.blockbook.in_sync, Some(latest_block_number), current_block_number)
 }
 
 pub fn map_latest_block_number(node_info: &BitcoinNodeInfo) -> u64 {
-    node_info.backend.as_ref().map(|backend| backend.blocks).unwrap_or(node_info.blockbook.best_height)
+    node_info.blockbook.best_height
 }
 
 #[cfg(test)]
@@ -25,11 +25,11 @@ mod tests {
                 last_block_time: "2024-01-01T00:00:00Z".to_string(),
                 best_height: 123,
             },
-            backend: Some(BitcoinBackend {
+            backend: BitcoinBackend {
                 blocks: 456,
                 chain: Some("main".to_string()),
                 consensus: None,
-            }),
+            },
         };
 
         let status = map_node_status(&node_info);
@@ -47,13 +47,13 @@ mod tests {
                 last_block_time: "2024-01-01T00:00:00Z".to_string(),
                 best_height: 1_000,
             },
-            backend: Some(BitcoinBackend {
+            backend: BitcoinBackend {
                 blocks: 2_000,
                 chain: Some("main".to_string()),
                 consensus: None,
-            }),
+            },
         };
 
-        assert_eq!(map_latest_block_number(&node_info), 2_000);
+        assert_eq!(map_latest_block_number(&node_info), 1_000);
     }
 }

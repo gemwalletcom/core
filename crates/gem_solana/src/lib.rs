@@ -13,6 +13,9 @@ pub mod provider;
 
 pub mod models;
 
+#[cfg(feature = "signer")]
+pub mod signer;
+
 pub use jsonrpc::SolanaRpc;
 
 #[cfg(all(feature = "reqwest", not(feature = "rpc")))]

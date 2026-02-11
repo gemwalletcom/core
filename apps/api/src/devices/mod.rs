@@ -6,17 +6,20 @@ pub mod error;
 pub mod guard;
 pub mod signature;
 use crate::assets::AssetsClient;
+use crate::metrics::MetricsClient;
 use crate::notifications::NotificationsClient;
 use crate::params::{AssetIdParam, CurrencyParam, DeviceIdParam, DeviceParam, FiatQuoteTypeParam};
 use crate::responders::{ApiError, ApiResponse};
 use crate::scan::ScanClient;
 use crate::transactions::TransactionsClient;
 use crate::wallets::WalletsClient;
+use auth_config::AuthConfig;
 pub use cacher::DeviceCacher;
 pub use client::DevicesClient;
 use gem_auth::AuthClient;
 use guard::{AuthenticatedDevice, AuthenticatedDeviceWallet, VerifiedDeviceId};
 use nft::NFTClient;
+use primitives::DeviceToken;
 use primitives::device::Device;
 use primitives::rewards::{RedemptionRequest, RedemptionResult};
 use primitives::{
@@ -251,6 +254,11 @@ pub async fn get_auth_nonce_v2(device: AuthenticatedDevice, client: &State<Arc<A
     Ok(client.get_nonce(&device.device_row.device_id).await?.into())
 }
 
+#[get("/devices/token")]
+pub async fn get_device_token_v2(device: AuthenticatedDevice, config: &State<AuthConfig>, client: &State<Arc<AuthClient>>) -> Result<ApiResponse<DeviceToken>, ApiError> {
+    Ok(client.create_device_token(&device.device_row.device_id, &config.jwt.secret, config.jwt.expiry)?.into())
+}
+
 #[get("/devices/price_alerts?<asset_id>")]
 pub async fn get_device_price_alerts_v2(
     device: AuthenticatedDevice,
@@ -288,6 +296,7 @@ pub async fn get_fiat_quotes_v2(
     provider: Option<&str>,
     ip: std::net::IpAddr,
     client: &State<Mutex<crate::fiat::FiatQuotesClient>>,
+    metrics: &State<Mutex<MetricsClient>>,
 ) -> Result<ApiResponse<FiatQuotes>, ApiError> {
     let ip_address = if cfg!(debug_assertions) { crate::fiat::DEBUG_FIAT_IP } else { &ip.to_string() };
     let quote_request = FiatQuoteRequest {
@@ -299,7 +308,7 @@ pub async fn get_fiat_quotes_v2(
         ip_address: ip_address.to_string(),
     };
     let quotes = client.lock().await.get_quotes(quote_request).await?;
-    crate::metrics::metrics_fiat_quotes(&quotes);
+    metrics.lock().await.fiat.record_quotes(&quotes);
     Ok(quotes.into())
 }
 
@@ -309,6 +318,7 @@ pub async fn get_fiat_quote_url_v2(
     quote_id: &str,
     ip: std::net::IpAddr,
     client: &State<Mutex<crate::fiat::FiatQuotesClient>>,
+    metrics: &State<Mutex<MetricsClient>>,
 ) -> Result<ApiResponse<FiatQuoteUrl>, ApiError> {
     let ip_address = if cfg!(debug_assertions) { crate::fiat::DEBUG_FIAT_IP } else { &ip.to_string() };
     let locale = device.device_row.locale.as_str();
@@ -317,6 +327,6 @@ pub async fn get_fiat_quote_url_v2(
         .await
         .get_quote_url(quote_id, device.wallet_id, device.device_row.id, ip_address, locale)
         .await?;
-    crate::fiat::metrics_fiat_quote_url(&quote);
+    metrics.lock().await.fiat.record_quote_url(&quote);
     Ok(url.into())
 }

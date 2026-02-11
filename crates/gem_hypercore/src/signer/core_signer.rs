@@ -114,7 +114,7 @@ impl HyperCoreSigner {
                 let withdraw_action = self.sign_c_withdraw(withdraw_request, private_key)?;
                 Ok(vec![undelegate_action, withdraw_action])
             }
-            _ => Err(SignerError::UnsupportedOperation("Stake type not supported".to_string())),
+            _ => Err(SignerError::SigningError("Stake type not supported".to_string())),
         }
     }
 
@@ -339,7 +339,7 @@ impl ChainSigner for HyperCoreSigner {
     }
 
     fn sign_nft_transfer(&self, _input: &TransactionLoadInput, _private_key: &[u8]) -> Result<String, SignerError> {
-        Err(SignerError::UnsupportedOperation("NFT transfer not supported".to_string()))
+        Err(SignerError::SigningError("NFT transfer not supported".to_string()))
     }
 
     fn sign_swap(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
@@ -347,7 +347,7 @@ impl ChainSigner for HyperCoreSigner {
     }
 
     fn sign_token_approval(&self, _input: &TransactionLoadInput, _private_key: &[u8]) -> Result<String, SignerError> {
-        Err(SignerError::UnsupportedOperation("Token approval not supported".to_string()))
+        Err(SignerError::SigningError("Token approval not supported".to_string()))
     }
 
     fn sign_stake(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
@@ -355,7 +355,7 @@ impl ChainSigner for HyperCoreSigner {
     }
 
     fn sign_account_action(&self, _input: &TransactionLoadInput, _private_key: &[u8]) -> Result<String, SignerError> {
-        Err(SignerError::UnsupportedOperation("Account action not supported".to_string()))
+        Err(SignerError::SigningError("Account action not supported".to_string()))
     }
 
     fn sign_perpetual(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
@@ -372,7 +372,7 @@ impl ChainSigner for HyperCoreSigner {
     }
 
     fn sign_data(&self, _input: &TransactionLoadInput, _private_key: &[u8]) -> Result<String, SignerError> {
-        Err(SignerError::UnsupportedOperation("Data signing not supported".to_string()))
+        Err(SignerError::SigningError("Data signing not supported".to_string()))
     }
 }
 

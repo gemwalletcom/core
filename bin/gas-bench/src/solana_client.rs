@@ -2,7 +2,7 @@ use std::error::Error;
 use std::sync::Arc;
 
 use gem_jsonrpc::{NativeProvider, client::JsonRpcClient};
-use gem_solana::models::jito::{FeeStats, JitoTipEstimates, calculate_fee_stats, estimate_jito_tips};
+use gem_solana::models::jito::{FeeStats, calculate_fee_stats};
 use gem_solana::models::prioritization_fee::SolanaPrioritizationFee;
 use gemstone::alien::{AlienProvider, new_alien_client};
 use primitives::Chain;
@@ -15,6 +15,15 @@ pub const ORCA_WHIRLPOOL: &str = "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc";
 const MIN_SLOW_FEE: u64 = 1_000;
 const MIN_NORMAL_FEE: u64 = 10_000;
 const MIN_FAST_FEE: u64 = 100_000;
+
+const JITO_TIP_MIN_LAMPORTS: u64 = 10_000;
+
+#[derive(Debug, Clone)]
+pub struct JitoTipEstimates {
+    pub slow: u64,
+    pub normal: u64,
+    pub fast: u64,
+}
 
 #[derive(Debug)]
 pub struct SolanaFeeData {
@@ -107,5 +116,25 @@ fn calculate_priority_fees(stats: &FeeStats) -> PriorityFees {
         slow: (stats.median as u64).max(MIN_SLOW_FEE),
         normal: (stats.p75 as u64).max(MIN_NORMAL_FEE),
         fast: (stats.p90 as u64).max(MIN_FAST_FEE),
+    }
+}
+
+fn estimate_jito_tips(stats: &FeeStats) -> JitoTipEstimates {
+    const BASE_SLOW: u64 = 1_000;
+    const BASE_NORMAL: u64 = 3_000;
+    const BASE_FAST: u64 = 10_000;
+    const REFERENCE_FEE: f64 = 10_000.0;
+
+    let congestion_multiplier = if stats.avg > 0 {
+        let raw_multiplier = stats.avg as f64 / REFERENCE_FEE;
+        (1.0 + raw_multiplier.sqrt()).clamp(1.0, 10.0)
+    } else {
+        1.0
+    };
+
+    JitoTipEstimates {
+        slow: ((BASE_SLOW as f64 * congestion_multiplier) as u64).max(JITO_TIP_MIN_LAMPORTS),
+        normal: ((BASE_NORMAL as f64 * congestion_multiplier) as u64).max(JITO_TIP_MIN_LAMPORTS),
+        fast: ((BASE_FAST as f64 * congestion_multiplier) as u64).max(JITO_TIP_MIN_LAMPORTS),
     }
 }

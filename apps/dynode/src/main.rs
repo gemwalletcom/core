@@ -2,6 +2,7 @@ use std::net::IpAddr;
 use std::str::FromStr;
 use std::sync::Arc;
 
+use dynode::auth::auth_endpoint;
 use dynode::config::load_config;
 use dynode::metrics::Metrics;
 use dynode::monitoring::{NodeMonitor, NodeService};
@@ -172,8 +173,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     let proxy_server = rocket::custom(Config::figment().merge(("address", node_address)).merge(("port", config.port)))
         .manage(node_service)
+        .manage(metrics.clone())
+        .manage(config.jwt)
         .mount("/", proxy_routes())
-        .mount("/", rocket::routes![health_endpoint, root_endpoint]);
+        .mount("/", rocket::routes![health_endpoint, root_endpoint, auth_endpoint]);
 
     let metrics_server = rocket::custom(Config::figment().merge(("address", metrics_address)).merge(("port", config.metrics.port)))
         .manage(metrics)

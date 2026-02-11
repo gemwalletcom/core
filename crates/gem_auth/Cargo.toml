@@ -5,7 +5,7 @@ version = { workspace = true }
 
 [features]
 default = []
-client = ["dep:cacher", "dep:chrono", "dep:uuid"]
+client = ["dep:cacher", "dep:chrono", "dep:uuid", "dep:jsonwebtoken"]
 
 [dependencies]
 primitives = { path = "../primitives" }
@@ -19,6 +19,7 @@ ed25519-dalek = { workspace = true }
 cacher = { path = "../cacher", optional = true }
 chrono = { workspace = true, optional = true }
 uuid = { workspace = true, optional = true }
+jsonwebtoken = { workspace = true, optional = true }
 
 [dev-dependencies]
 alloy-signer = { workspace = true }

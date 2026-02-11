@@ -23,6 +23,7 @@ pub enum CacheKey<'a> {
     // Asset keys
     FetchAssets(&'a str),
     PricerCoinInfo(&'a str),
+    CoinInfoUpdate(&'a str),
 
     // Fiat keys
     FiatQuote(&'a str),
@@ -55,6 +56,7 @@ impl CacheKey<'_> {
             Self::FetchAddressTransactions(chain, address) => format!("fetch:address_transactions:{}:{}", chain, address),
             Self::FetchAssets(asset_id) => format!("fetch:assets:{}", asset_id),
             Self::PricerCoinInfo(coin_id) => format!("pricer:coin_info:{}", coin_id),
+            Self::CoinInfoUpdate(coin_id) => format!("coin_info:update:{}", coin_id),
             Self::FiatQuote(quote_id) => format!("fiat:quote:{}", quote_id),
             Self::FiatIpCheck(ip_address) => format!("fiat:ip_check:{}", ip_address),
             Self::AuthNonce(device_id, nonce) => format!("auth:nonce:{}:{}", device_id, nonce),
@@ -79,6 +81,7 @@ impl CacheKey<'_> {
             Self::FetchAddressTransactions(_, _) => 30 * SECONDS_PER_DAY,
             Self::FetchAssets(_) => 30 * SECONDS_PER_DAY,
             Self::PricerCoinInfo(_) => SECONDS_PER_DAY,
+            Self::CoinInfoUpdate(_) => 90 * SECONDS_PER_DAY,
             Self::FiatQuote(_) => 15 * SECONDS_PER_MINUTE,
             Self::FiatIpCheck(_) => SECONDS_PER_DAY,
             Self::AuthNonce(_, _) => 5 * SECONDS_PER_MINUTE,

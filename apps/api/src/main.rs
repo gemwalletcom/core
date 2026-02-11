@@ -83,8 +83,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let stream_producer = StreamProducer::new(&rabbitmq_config, "api").await.unwrap();
     let device_cacher = DeviceCacher::new(database.clone(), cacher_client.clone());
     let wallets_client = WalletsClient::new(database.clone(), device_cacher, stream_producer.clone());
-    let metrics_cacher = CacherClient::new(&settings.metrics.redis.url).await;
-    let metrics_client = MetricsClient::new(database.clone(), metrics_cacher);
+    let metrics_client = MetricsClient::new();
 
     let security_providers = ScanProviderFactory::create_providers(&settings_clone);
     let scan_client = ScanClient::new(database.clone(), security_providers);
@@ -115,7 +114,11 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let rewards_client = referral::RewardsClient::new(database.clone(), stream_producer.clone(), ip_security_client, pusher_client.clone());
     let redemption_client = referral::RewardsRedemptionClient::new(database.clone(), stream_producer.clone());
     let notifications_client = NotificationsClient::new(database.clone());
-    let auth_config = devices::auth_config::AuthConfig::new(settings.api.auth.enabled, settings.api.auth.tolerance);
+    let jwt_config = devices::auth_config::JwtConfig {
+        secret: settings.api.auth.jwt.secret.clone(),
+        expiry: settings.api.auth.jwt.expiry,
+    };
+    let auth_config = devices::auth_config::AuthConfig::new(settings.api.auth.enabled, settings.api.auth.tolerance, jwt_config);
 
     rocket::build()
         .manage(auth_config)
@@ -193,9 +196,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 chain::staking::get_validators,
                 chain::staking::get_staking_apy,
                 chain::token::get_token,
-                chain::balance::get_balances_coin,
-                chain::balance::get_balances_assets,
-                chain::balance::get_balances_staking,
+                chain::balance::get_balances,
                 chain::transaction::get_transactions,
                 webhooks::create_support_webhook,
                 fiat::get_ip_address,
@@ -242,6 +243,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 devices::add_device_price_alerts_v2,
                 devices::delete_device_price_alerts_v2,
                 devices::get_auth_nonce_v2,
+                devices::get_device_token_v2,
                 wallets::get_subscriptions,
                 wallets::add_subscriptions,
                 wallets::delete_subscriptions,
@@ -275,7 +277,11 @@ async fn rocket_ws_stream(settings: Settings) -> Rocket<Build> {
         redis_url: settings.redis.url.clone(),
     };
 
-    let auth_config = devices::auth_config::AuthConfig::new(settings.api.auth.enabled, settings.api.auth.tolerance);
+    let jwt_config = devices::auth_config::JwtConfig {
+        secret: settings.api.auth.jwt.secret.clone(),
+        expiry: settings.api.auth.jwt.expiry,
+    };
+    let auth_config = devices::auth_config::AuthConfig::new(settings.api.auth.enabled, settings.api.auth.tolerance, jwt_config);
 
     rocket::build()
         .manage(auth_config)

@@ -65,7 +65,7 @@ pub fn plan_next_block(state: &ParserStateRow, current_block: i64, latest_block:
 #[cfg(test)]
 mod tests {
     use super::{BlockPlanKind, plan_next_block, should_reload_catchup, timeout_for_state};
-    use chrono::{NaiveDateTime, Utc};
+    use chrono::Utc;
     use std::time::Duration;
     use storage::models::ParserStateRow;
 
@@ -79,7 +79,7 @@ mod tests {
             timeout_latest_block,
             parallel_blocks,
             is_enabled: true,
-            updated_at: NaiveDateTime::from_timestamp_opt(0, 0).unwrap(),
+            updated_at: chrono::DateTime::from_timestamp(0, 0).unwrap().naive_utc(),
             queue_behind_blocks,
             block_time: 0,
         }

@@ -2,7 +2,6 @@ use num_bigint::BigInt;
 use primitives::{AssetSubtype, Chain, FeeOption, FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType};
 use std::collections::HashMap;
 
-use crate::models::jito::JITO_TIP_MIN_LAMPORTS;
 use crate::{constants::STATIC_BASE_FEE, models::prioritization_fee::SolanaPrioritizationFee};
 
 pub fn calculate_transaction_fee(input_type: &TransactionInputType, gas_price_type: &GasPriceType, recipient_token_address: Option<String>) -> TransactionFee {
@@ -101,14 +100,10 @@ pub fn calculate_fee_rates(input_type: &TransactionInputType, prioritization_fee
                 FeePriority::Fast => &total_priority_base * 3,
             };
 
-            // 70% priority fee, 30% jito tip https://docs.jito.wtf/lowlatencytxnsend/#id18
-            let scaled_total = (total_priority.clone() * gas_limit.clone()) / BigInt::from(1_000_000);
-            let priority_fee = (&scaled_total * 70) / 100;
-            let jito_tip_calculated: BigInt = (&scaled_total * 30) / 100;
-            let unit_price = (&total_priority * 70) / 100;
-            let jito_tip = jito_tip_calculated.to_u64_digits().1.first().copied().unwrap_or(0).max(JITO_TIP_MIN_LAMPORTS);
+            let priority_fee = (total_priority.clone() * gas_limit.clone()) / BigInt::from(1_000_000);
+            let unit_price = total_priority;
 
-            FeeRate::new(*priority, GasPriceType::solana(static_base_fee.clone(), priority_fee, unit_price, jito_tip))
+            FeeRate::new(*priority, GasPriceType::solana(static_base_fee.clone(), priority_fee, unit_price))
         })
         .collect()
 }
@@ -223,19 +218,16 @@ mod tests {
         }
 
         assert_eq!(rates[0].priority, FeePriority::Slow);
-        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(875));
-        assert_eq!(rates[0].gas_price_type.unit_price(), BigInt::from(8_750));
-        assert_eq!(rates[0].gas_price_type.jito_tip(), 10_000); // min jito tip
+        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(1_250));
+        assert_eq!(rates[0].gas_price_type.unit_price(), BigInt::from(12_500));
 
         assert_eq!(rates[1].priority, FeePriority::Normal);
-        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(1_750));
-        assert_eq!(rates[1].gas_price_type.unit_price(), BigInt::from(17_500));
-        assert_eq!(rates[1].gas_price_type.jito_tip(), 10_000); // min jito tip
+        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(2_500));
+        assert_eq!(rates[1].gas_price_type.unit_price(), BigInt::from(25_000));
 
         assert_eq!(rates[2].priority, FeePriority::Fast);
-        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(5_250));
-        assert_eq!(rates[2].gas_price_type.unit_price(), BigInt::from(52_500));
-        assert_eq!(rates[2].gas_price_type.jito_tip(), 10_000); // min jito tip
+        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(7_500));
+        assert_eq!(rates[2].gas_price_type.unit_price(), BigInt::from(75_000));
     }
 
     #[test]
@@ -254,9 +246,9 @@ mod tests {
         let rates = calculate_fee_rates(&input_type, &fees);
 
         assert_eq!(rates.len(), 3);
-        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(875u64));
-        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(1_750u64));
-        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(5_250u64));
+        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(1_250u64));
+        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(2_500u64));
+        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(7_500u64));
     }
 
     #[test]
@@ -275,9 +267,9 @@ mod tests {
         let rates = calculate_fee_rates(&input_type, &fees);
         assert_eq!(rates.len(), 3);
 
-        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(3_500u64));
-        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(7_000u64));
-        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(21_000u64));
+        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(5_000u64));
+        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(10_000u64));
+        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(30_000u64));
     }
 
     #[test]
@@ -308,9 +300,9 @@ mod tests {
         let rates = calculate_fee_rates(&input_type, &fees);
         assert_eq!(rates.len(), 3);
 
-        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(29_400u64));
-        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(58_800u64));
-        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(176_400u64));
+        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(42_000u64));
+        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(84_000u64));
+        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(252_000u64));
     }
 
     #[test]
@@ -336,9 +328,9 @@ mod tests {
         let rates = calculate_fee_rates(&input_type, &fees);
         assert_eq!(rates.len(), 3);
 
-        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(6_125u64));
-        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(12_250u64));
-        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(36_750u64));
+        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(8_750u64));
+        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(17_500u64));
+        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(52_500u64));
     }
 
     #[test]
@@ -356,9 +348,9 @@ mod tests {
 
         let rates = calculate_fee_rates(&input_type, &fees);
 
-        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(5_250));
-        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(10_500));
-        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(31_500));
+        assert_eq!(rates[0].gas_price_type.priority_fee(), BigInt::from(7_500));
+        assert_eq!(rates[1].gas_price_type.priority_fee(), BigInt::from(15_000));
+        assert_eq!(rates[2].gas_price_type.priority_fee(), BigInt::from(45_000));
     }
 
     #[test]
