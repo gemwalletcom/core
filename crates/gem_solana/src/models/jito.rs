@@ -1,5 +1,8 @@
+use primitives::{SolanaAccountMeta, SolanaInstruction};
 use rand::seq::IndexedRandom;
 use solana_primitives::Pubkey;
+
+use crate::SYSTEM_PROGRAM_ID;
 
 pub const JITO_TIP_MIN_LAMPORTS: u64 = 10_000; // 0.00001 SOL
 
@@ -78,7 +81,70 @@ pub fn calculate_fee_stats(fees: &[i64]) -> FeeStats {
     }
 }
 
+fn random_tip_account() -> &'static str {
+    JITO_TIP_ACCOUNTS.choose(&mut rand::rng()).unwrap()
+}
+
 #[cfg(feature = "signer")]
 pub fn random_tip_pubkey() -> solana_primitives::Pubkey {
-    Pubkey::from_base58(JITO_TIP_ACCOUNTS.choose(&mut rand::rng()).unwrap()).unwrap()
+    Pubkey::from_base58(random_tip_account()).unwrap()
+}
+
+pub fn create_jito_tip_instruction_json(from: &str, lamports: u64) -> String {
+    let tip_account = random_tip_account();
+
+    let mut data = Vec::with_capacity(12);
+    data.extend_from_slice(&2u32.to_le_bytes());
+    data.extend_from_slice(&lamports.to_le_bytes());
+
+    let instruction = SolanaInstruction {
+        program_id: SYSTEM_PROGRAM_ID.to_string(),
+        accounts: vec![
+            SolanaAccountMeta {
+                pubkey: from.to_string(),
+                is_signer: true,
+                is_writable: true,
+            },
+            SolanaAccountMeta {
+                pubkey: tip_account.to_string(),
+                is_signer: false,
+                is_writable: true,
+            },
+        ],
+        data: bs58::encode(&data).into_string(),
+    };
+
+    serde_json::to_string(&instruction).unwrap_or_default()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_create_jito_tip_instruction_json() {
+        let from = "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy";
+        let lamports = 10_000u64;
+
+        let json = create_jito_tip_instruction_json(from, lamports);
+        let instruction: SolanaInstruction = serde_json::from_str(&json).unwrap();
+
+        assert_eq!(instruction.program_id, SYSTEM_PROGRAM_ID);
+        assert_eq!(instruction.accounts.len(), 2);
+        assert_eq!(instruction.accounts[0].pubkey, from);
+        assert!(instruction.accounts[0].is_signer);
+        assert!(instruction.accounts[0].is_writable);
+        assert!(JITO_TIP_ACCOUNTS.contains(&instruction.accounts[1].pubkey.as_str()));
+        assert!(!instruction.accounts[1].is_signer);
+        assert!(instruction.accounts[1].is_writable);
+
+        let data = bs58::decode(&instruction.data).into_vec().unwrap();
+        assert_eq!(data.len(), 12);
+
+        let instruction_index = u32::from_le_bytes(data[0..4].try_into().unwrap());
+        assert_eq!(instruction_index, 2);
+
+        let decoded_lamports = u64::from_le_bytes(data[4..12].try_into().unwrap());
+        assert_eq!(decoded_lamports, lamports);
+    }
 }
