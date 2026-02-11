@@ -14,7 +14,7 @@ pub struct BitcoinBlock {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BitcoinNodeInfo {
     pub blockbook: BitcoinBlockbook,
-    pub backend: Option<BitcoinBackend>,
+    pub backend: BitcoinBackend,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
