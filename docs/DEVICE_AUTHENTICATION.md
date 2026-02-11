@@ -53,7 +53,7 @@ Note: `walletId` is **not** included in the legacy signed message.
 
 ### Gem (wallet-scoped)
 ```http
-GET /v2/devices/assets?walletId=multicoin_0x742d...f0bEb&from_timestamp=1234567890
+GET /v2/devices/assets?from_timestamp=1234567890
 Authorization: Gem base64(abc123...def456.1706000000000.multicoin_0x742d...f0bEb.e3b0c44...b855.aabb11...)
 ```
 
