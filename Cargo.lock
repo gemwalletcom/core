@@ -9519,6 +9519,7 @@ dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
  "async-trait",
+ "futures",
  "gem_client",
  "gem_evm",
  "gem_jsonrpc",

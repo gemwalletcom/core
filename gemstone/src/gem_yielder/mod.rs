@@ -6,96 +6,40 @@ use std::{collections::HashMap, sync::Arc};
 use crate::{
     GemstoneError,
     alien::{AlienProvider, AlienProviderWrapper},
-    models::{GemDelegationBase, GemEarnData, GemEarnType, GemTransactionInputType, GemTransactionLoadInput, GemTransactionLoadMetadata},
+    models::{GemEarnData, GemEarnType, GemTransactionInputType, GemTransactionLoadInput, GemTransactionLoadMetadata},
 };
 use gem_evm::rpc::EthereumClient;
 use gem_jsonrpc::client::JsonRpcClient;
 use gem_jsonrpc::rpc::RpcClient;
-use primitives::{AssetId, Chain, EVMChain};
-use yielder::{GAS_LIMIT, YO_GATEWAY, YieldDetailsRequest, YieldProvider, YieldProviderClient, Yielder, YoGatewayClient, YoProvider, YoYieldProvider};
+use primitives::{Chain, EVMChain};
+use yielder::{GAS_LIMIT, YO_GATEWAY, YieldProvider, YieldProviderClient, Yielder, YoGatewayClient, YoProvider, YoYieldProvider};
 
-#[derive(uniffi::Object)]
-pub struct GemYielder {
-    yielder: Yielder,
-}
-
-#[uniffi::export]
-impl GemYielder {
-    #[uniffi::constructor]
-    pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Result<Self, GemstoneError> {
-        let yielder = build_yielder(rpc_provider)?;
-        Ok(Self { yielder })
-    }
-
-    pub async fn yields_for_asset(&self, asset_id: &AssetId) -> Result<Vec<GemYield>, GemstoneError> {
-        self.yielder.yields_for_asset_with_apy(asset_id).await.map_err(Into::into)
-    }
-
-    pub async fn deposit(&self, provider: GemYieldProvider, asset: AssetId, wallet_address: String, value: String) -> Result<GemEarnTransaction, GemstoneError> {
-        self.yielder.deposit(provider, &asset, &wallet_address, &value).await.map_err(Into::into)
-    }
-
-    pub async fn withdraw(&self, provider: GemYieldProvider, asset: AssetId, wallet_address: String, value: String) -> Result<GemEarnTransaction, GemstoneError> {
-        self.yielder.withdraw(provider, &asset, &wallet_address, &value).await.map_err(Into::into)
-    }
-
-    pub async fn positions(&self, provider: GemYieldProvider, asset: AssetId, wallet_address: String) -> Result<GemDelegationBase, GemstoneError> {
-        let request = YieldDetailsRequest { asset_id: asset, wallet_address };
-        self.yielder.positions(provider, &request).await.map_err(Into::into)
-    }
-
-    pub async fn build_transaction(
-        &self,
-        action: GemEarnType,
-        provider: GemYieldProvider,
-        asset: AssetId,
-        wallet_address: String,
-        value: String,
-        nonce: u64,
-        chain_id: u64,
-    ) -> Result<GemEarnTransactionData, GemstoneError> {
-        let transaction = match action {
-            GemEarnType::Deposit(_) => self.yielder.deposit(provider, &asset, &wallet_address, &value).await?,
-            GemEarnType::Withdraw(_) => self.yielder.withdraw(provider, &asset, &wallet_address, &value).await?,
-        };
-
-        Ok(GemEarnTransactionData {
-            transaction,
-            nonce,
-            chain_id,
-            gas_limit: GAS_LIMIT.to_string(),
-        })
-    }
-}
-
-pub(crate) fn build_yielder(rpc_provider: Arc<dyn AlienProvider>) -> Result<Yielder, GemstoneError> {
+pub(crate) fn build_yielder(rpc_provider: Arc<dyn AlienProvider>) -> Yielder {
     let wrapper = Arc::new(AlienProviderWrapper { provider: rpc_provider.clone() });
 
-    let build_gateway = |chain: Chain, evm_chain: EVMChain| -> Result<Arc<dyn YoProvider>, GemstoneError> {
-        let endpoint = rpc_provider.get_endpoint(chain)?;
+    let build_gateway = |chain: Chain, evm_chain: EVMChain| -> Option<(Chain, Arc<dyn YoProvider>)> {
+        let endpoint = rpc_provider.get_endpoint(chain).ok()?;
         let rpc_client = RpcClient::new(endpoint, wrapper.clone());
         let ethereum_client = EthereumClient::new(JsonRpcClient::new(rpc_client), evm_chain);
-        Ok(Arc::new(YoGatewayClient::new(ethereum_client, YO_GATEWAY)))
+        Some((chain, Arc::new(YoGatewayClient::new(ethereum_client, YO_GATEWAY)) as Arc<dyn YoProvider>))
     };
 
-    let gateways: HashMap<Chain, Arc<dyn YoProvider>> = HashMap::from([
-        (Chain::Base, build_gateway(Chain::Base, EVMChain::Base)?),
-        (Chain::Ethereum, build_gateway(Chain::Ethereum, EVMChain::Ethereum)?),
-    ]);
+    let gateways: HashMap<Chain, Arc<dyn YoProvider>> = [build_gateway(Chain::Base, EVMChain::Base), build_gateway(Chain::Ethereum, EVMChain::Ethereum)]
+        .into_iter()
+        .flatten()
+        .collect();
 
     let yo_provider: Arc<dyn YieldProviderClient> = Arc::new(YoYieldProvider::new(gateways));
-    Ok(Yielder::new(vec![yo_provider]))
+    Yielder::new(vec![yo_provider])
 }
 
 pub(crate) async fn prepare_yield_input(yielder: &Yielder, input: GemTransactionLoadInput) -> Result<GemTransactionLoadInput, GemstoneError> {
     match (&input.input_type, &input.metadata) {
-        (
-            GemTransactionInputType::Earn { asset, earn_type },
-            GemTransactionLoadMetadata::Evm { nonce, chain_id, earn_data: None },
-        ) => {
+        (GemTransactionInputType::Earn { asset, earn_type }, GemTransactionLoadMetadata::Evm { nonce, chain_id, earn_data: None }) => {
+            let provider = earn_type.provider_id().parse::<YieldProvider>().map_err(|e| GemstoneError::from(e.to_string()))?;
             let transaction = match earn_type {
-                GemEarnType::Deposit(_) => yielder.deposit(YieldProvider::Yo, &asset.id, &input.sender_address, &input.value).await?,
-                GemEarnType::Withdraw(_) => yielder.withdraw(YieldProvider::Yo, &asset.id, &input.sender_address, &input.value).await?,
+                GemEarnType::Deposit(_) => yielder.deposit(provider, &asset.id, &input.sender_address, &input.value).await?,
+                GemEarnType::Withdraw(_) => yielder.withdraw(provider, &asset.id, &input.sender_address, &input.value).await?,
             };
 
             Ok(GemTransactionLoadInput {

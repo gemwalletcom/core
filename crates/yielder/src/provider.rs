@@ -1,15 +1,19 @@
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use primitives::{AssetId, DelegationBase, YieldProvider};
+use primitives::{AssetId, Chain, DelegationBase, YieldProvider};
 
-use crate::models::{Yield, YieldDetailsRequest, EarnTransaction};
+use crate::models::{EarnTransaction, Yield, YieldDetailsRequest};
 use crate::yo::YieldError;
 
 #[async_trait]
 pub trait YieldProviderClient: Send + Sync {
     fn provider(&self) -> YieldProvider;
     fn yields(&self, asset_id: &AssetId) -> Vec<Yield>;
+    fn yields_for_chain(&self, _chain: Chain) -> Vec<Yield> {
+        vec![]
+    }
+
     async fn deposit(&self, asset_id: &AssetId, wallet_address: &str, value: &str) -> Result<EarnTransaction, YieldError>;
     async fn withdraw(&self, asset_id: &AssetId, wallet_address: &str, value: &str) -> Result<EarnTransaction, YieldError>;
     async fn positions(&self, request: &YieldDetailsRequest) -> Result<DelegationBase, YieldError>;
@@ -25,10 +29,6 @@ pub struct Yielder {
 impl Yielder {
     pub fn new(providers: Vec<Arc<dyn YieldProviderClient>>) -> Self {
         Self { providers }
-    }
-
-    pub fn yields_for_asset(&self, asset_id: &AssetId) -> Vec<Yield> {
-        self.providers.iter().flat_map(|provider| provider.yields(asset_id)).collect()
     }
 
     pub async fn yields_for_asset_with_apy(&self, asset_id: &AssetId) -> Result<Vec<Yield>, YieldError> {
@@ -56,6 +56,28 @@ impl Yielder {
     pub async fn positions(&self, provider: YieldProvider, request: &YieldDetailsRequest) -> Result<DelegationBase, YieldError> {
         let provider = self.get_provider(provider)?;
         provider.positions(request).await
+    }
+
+    pub fn yields_for_chain(&self, chain: Chain) -> Vec<Yield> {
+        self.providers.iter().flat_map(|p| p.yields_for_chain(chain)).collect()
+    }
+
+    pub async fn positions_for_chain(&self, chain: Chain, address: &str) -> Vec<(Yield, DelegationBase)> {
+        let futures: Vec<_> = self
+            .yields_for_chain(chain)
+            .into_iter()
+            .map(|y| {
+                let address = address.to_string();
+                async move {
+                    let request = YieldDetailsRequest {
+                        asset_id: y.asset_id.clone(),
+                        wallet_address: address,
+                    };
+                    self.positions(y.provider, &request).await.ok().map(|d| (y, d))
+                }
+            })
+            .collect();
+        futures::future::join_all(futures).await.into_iter().flatten().collect()
     }
 
     fn get_provider(&self, provider: YieldProvider) -> Result<Arc<dyn YieldProviderClient>, YieldError> {

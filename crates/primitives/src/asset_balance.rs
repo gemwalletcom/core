@@ -58,6 +58,14 @@ impl AssetBalance {
             is_active: true,
         }
     }
+
+    pub fn new_earn(asset_id: AssetId, earn: BigUint) -> Self {
+        Self {
+            asset_id,
+            balance: Balance::earn_balance(earn),
+            is_active: true,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -71,6 +79,7 @@ pub struct Balance {
     pub pending_unconfirmed: BigUint,
     pub rewards: BigUint,
     pub reserved: BigUint,
+    pub earn: BigUint,
     pub withdrawable: BigUint,
     pub metadata: Option<BalanceMetadata>,
 }
@@ -97,6 +106,7 @@ impl Balance {
             pending_unconfirmed: BigUint::from(0u32),
             rewards: BigUint::from(0u32),
             reserved: BigUint::from(0u32),
+            earn: BigUint::from(0u32),
             withdrawable: BigUint::from(0u32),
             metadata: None,
         }
@@ -112,6 +122,7 @@ impl Balance {
             pending: BigUint::from(0u32),
             rewards: BigUint::from(0u32),
             reserved: BigUint::from(0u32),
+            earn: BigUint::from(0u32),
             withdrawable: BigUint::from(0u32),
             metadata: None,
         }
@@ -127,6 +138,7 @@ impl Balance {
             pending: BigUint::from(0u32),
             pending_unconfirmed: BigUint::from(0u32),
             rewards: BigUint::from(0u32),
+            earn: BigUint::from(0u32),
             withdrawable: BigUint::from(0u32),
             metadata: None,
         }
@@ -146,8 +158,16 @@ impl Balance {
             pending_unconfirmed: BigUint::from(0u32),
             rewards: rewards.unwrap_or(BigUint::from(0u32)),
             reserved: BigUint::from(0u32),
+            earn: BigUint::from(0u32),
             withdrawable: BigUint::from(0u32),
             metadata,
+        }
+    }
+
+    pub fn earn_balance(earn: BigUint) -> Self {
+        Self {
+            earn,
+            ..Self::coin_balance(BigUint::from(0u32))
         }
     }
 }

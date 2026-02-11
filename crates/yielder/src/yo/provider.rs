@@ -6,7 +6,7 @@ use gem_evm::jsonrpc::TransactionObject;
 use num_bigint::BigUint;
 use primitives::{AssetId, Chain, DelegationBase, DelegationState, YieldProvider, swap::ApprovalData};
 
-use crate::models::{Yield, YieldDetailsRequest, EarnTransaction};
+use crate::models::{EarnTransaction, Yield, YieldDetailsRequest};
 use crate::provider::YieldProviderClient;
 
 use super::{YO_PARTNER_ID_GEM, YoVault, client::YoProvider, error::YieldError, vaults};
@@ -62,6 +62,14 @@ impl YieldProviderClient for YoYieldProvider {
 
     fn yields(&self, asset_id: &AssetId) -> Vec<Yield> {
         self.vaults_for_asset(asset_id)
+            .map(|vault| Yield::new(vault.name, vault.asset_id(), self.provider(), None))
+            .collect()
+    }
+
+    fn yields_for_chain(&self, chain: Chain) -> Vec<Yield> {
+        self.vaults
+            .iter()
+            .filter(|vault| vault.chain == chain)
             .map(|vault| Yield::new(vault.name, vault.asset_id(), self.provider(), None))
             .collect()
     }
