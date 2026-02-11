@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use cacher::{CacheKey, CacherClient};
-use job_runner::{JobError, JobSchedule, JobStatusReporter, RunDecision};
+use cacher::CacherClient;
+use job_runner::{JobError, JobSchedule, RunDecision};
 use primitives::JobStatus;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -22,36 +22,13 @@ impl CacherJobTracker {
     }
 
     async fn load_status(&self, job_name: &str) -> Option<JobStatus> {
-        let cache_key = CacheKey::JobStatus(&self.job_key(job_name));
+        let cache_key = cacher::CacheKey::JobStatus(&self.job_key(job_name));
         self.cacher.get_value(&cache_key.key()).await.ok()
     }
 
     async fn persist_status(&self, job_name: &str, status: &JobStatus) -> Result<(), JobError> {
-        let cache_key = CacheKey::JobStatus(&self.job_key(job_name));
+        let cache_key = cacher::CacheKey::JobStatus(&self.job_key(job_name));
         self.cacher.set_cached(cache_key, status).await
-    }
-}
-
-#[async_trait]
-impl JobStatusReporter for CacherJobTracker {
-    async fn report(&self, name: &str, interval: u64, duration: u64, success: bool, error: Option<String>) {
-        let Some(mut status) = self.load_status(name).await else {
-            return;
-        };
-        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs();
-
-        status.interval = interval;
-        status.duration = duration;
-
-        if success {
-            status.last_success = Some(timestamp);
-        } else if let Some(msg) = error {
-            status.last_error = Some(msg);
-            status.last_error_at = Some(timestamp);
-            status.error_count += 1;
-        }
-
-        let _ = self.persist_status(name, &status).await;
     }
 }
 

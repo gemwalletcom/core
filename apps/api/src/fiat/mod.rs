@@ -1,7 +1,6 @@
 mod client;
 
-pub use crate::metrics::metrics_fiat_quote_url;
-use crate::metrics::metrics_fiat_quotes;
+use crate::metrics::MetricsClient;
 use crate::params::{AddressParam, AssetIdParam, CurrencyParam, FiatQuoteTypeParam};
 use crate::responders::{ApiError, ApiResponse};
 pub use client::FiatQuotesClient;
@@ -55,6 +54,7 @@ pub async fn get_fiat_quotes_by_type(
     provider: Option<&str>,
     ip: std::net::IpAddr,
     client: &State<Mutex<FiatQuotesClient>>,
+    metrics: &State<Mutex<MetricsClient>>,
 ) -> Result<ApiResponse<FiatQuotes>, ApiError> {
     let ip_addr = ip_address.unwrap_or(&ip.to_string()).to_string();
     let request = FiatQuoteRequest {
@@ -66,12 +66,12 @@ pub async fn get_fiat_quotes_by_type(
         ip_address: ip_addr,
     };
     let quotes = client.lock().await.get_quotes(request).await?;
-    metrics_fiat_quotes(&quotes);
+    metrics.lock().await.fiat.record_quotes(&quotes);
     Ok(quotes.into())
 }
 
 #[post("/fiat/quotes/url", data = "<request>")]
-pub async fn get_fiat_quote_url(request: Json<FiatQuoteUrlRequest>, ip: std::net::IpAddr, client: &State<Mutex<FiatQuotesClient>>) -> Result<ApiResponse<FiatQuoteUrl>, ApiError> {
+pub async fn get_fiat_quote_url(request: Json<FiatQuoteUrlRequest>, ip: std::net::IpAddr, client: &State<Mutex<FiatQuotesClient>>, metrics: &State<Mutex<MetricsClient>>) -> Result<ApiResponse<FiatQuoteUrl>, ApiError> {
     let ip_address = if cfg!(debug_assertions) { DEBUG_FIAT_IP } else { &ip.to_string() };
 
     let (url, quote) = client
@@ -79,7 +79,7 @@ pub async fn get_fiat_quote_url(request: Json<FiatQuoteUrlRequest>, ip: std::net
         .await
         .get_quote_url_legacy(&request.quote_id, &request.wallet_address, ip_address, &request.device_id)
         .await?;
-    metrics_fiat_quote_url(&quote);
+    metrics.lock().await.fiat.record_quote_url(&quote);
     Ok(url.into())
 }
 

@@ -1,5 +1,6 @@
 mod consumers;
 mod health;
+mod metrics;
 mod model;
 mod parser;
 mod pusher;
@@ -13,13 +14,14 @@ use std::sync::{Arc, Mutex};
 
 use crate::model::{ConsumerService, DaemonService, WorkerService};
 use crate::reporters::consumer::ConsumerReporter;
+use crate::reporters::job::JobReporter;
 use crate::shutdown::ShutdownReceiver;
 use crate::worker::context::WorkerContext;
 use crate::worker::job_schedule::CacherJobTracker;
 use crate::worker::runtime::WorkerRuntime;
 use cacher::CacherClient;
 use gem_tracing::{SentryConfig, SentryTracing, error_with_fields, info_with_fields};
-use job_runner::{JobHandle, JobSchedule, JobStatusReporter};
+use job_runner::{JobHandle, JobSchedule};
 use std::sync::atomic::{AtomicBool, Ordering};
 use streamer::ConsumerStatusReporter;
 
@@ -59,8 +61,9 @@ pub async fn main() {
             run_worker_services(settings, &services).await;
         }
         DaemonService::Parser(chain) => {
-            let health_state = health::spawn_server();
-            parser::run(settings, chain, health_state).await.expect("Parser failed");
+            let parser_metrics = Arc::new(metrics::parser::ParserMetrics::new());
+            let health_state = health::spawn_server(parser_metrics.clone());
+            parser::run(settings, chain, health_state, parser_metrics).await.expect("Parser failed");
         }
         DaemonService::Consumer(service) => {
             let services = match service {
@@ -82,17 +85,19 @@ async fn run_worker_services(settings: settings::Settings, services: &[WorkerSer
     let (shutdown_tx, shutdown_rx) = shutdown::channel();
     let shutdown_timeout = settings.daemon.shutdown.timeout;
 
-    let metrics_cacher = CacherClient::new(&settings.metrics.redis.url).await;
+    let scheduler_cacher = CacherClient::new(&settings.metrics.redis.url).await;
     let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
 
-    let health_state = health::spawn_server();
+    let service_name = services.first().map(|s| s.as_ref()).unwrap_or("worker");
+    let job_metrics = Arc::new(metrics::job::JobMetrics::new(service_name));
+    let health_state = health::spawn_server(job_metrics.clone());
 
     let signal_handle = shutdown::spawn_signal_handler(shutdown_tx);
 
     let worker_jobs: Vec<_> = futures::future::join_all(services.iter().map(|service| {
         let svc = *service;
-        let tracker = Arc::new(CacherJobTracker::new(metrics_cacher.clone(), service.as_ref()));
-        let reporter: Arc<dyn JobStatusReporter> = tracker.clone();
+        let tracker = Arc::new(CacherJobTracker::new(scheduler_cacher.clone(), service.as_ref()));
+        let reporter = Arc::new(JobReporter::new(job_metrics.clone()));
         let schedule: Arc<dyn JobSchedule> = tracker;
         let runtime = WorkerRuntime::new(reporter, schedule);
         let context = WorkerContext::new(settings.clone(), database.clone(), runtime);
@@ -175,10 +180,9 @@ async fn run_consumer_services(settings: settings::Settings, services: &[Consume
     let (shutdown_tx, shutdown_rx) = shutdown::channel();
     let signal_handle = shutdown::spawn_signal_handler(shutdown_tx);
 
-    let metrics_cacher = CacherClient::new(&settings.metrics.redis.url).await;
-
-    let health_state = health::spawn_server();
-    let reporter: Arc<dyn ConsumerStatusReporter> = Arc::new(ConsumerReporter::new(metrics_cacher));
+    let consumer_metrics = Arc::new(metrics::consumer::ConsumerMetrics::new());
+    let health_state = health::spawn_server(consumer_metrics.clone());
+    let reporter: Arc<dyn ConsumerStatusReporter> = Arc::new(ConsumerReporter::new(consumer_metrics));
     let failures = Arc::new(Mutex::new(Vec::new()));
 
     let handles: Vec<_> = services
