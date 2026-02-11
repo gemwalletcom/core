@@ -12,23 +12,30 @@ impl ChainSigner for SolanaChainSigner {
         let tx_base64 = &swap_data.data.data;
 
         let unit_price: u64 = input.gas_price.unit_price().to_u64().unwrap_or(0);
+        let gas_limit = input.gas_limit;
 
-        let signed = Self::sign_transaction(tx_base64, private_key, unit_price)?;
+        let signed = Self::sign_transaction(tx_base64, private_key, unit_price, gas_limit)?;
 
         Ok(vec![signed])
     }
 }
 
 impl SolanaChainSigner {
-    fn sign_transaction(tx_base64: &str, private_key: &[u8], unit_price: u64) -> Result<String, SignerError> {
+    fn sign_transaction(tx_base64: &str, private_key: &[u8], unit_price: u64, gas_limit: u32) -> Result<String, SignerError> {
         let data = STANDARD.decode(tx_base64).map_err(|e| SignerError::invalid_input(format!("base64 decode: {e}")))?;
 
         let mut tx = VersionedTransaction::deserialize_with_version(&data).map_err(|e| SignerError::invalid_input(format!("parse transaction: {e}")))?;
 
         // Skip message modifications if co-signers present — changing the message would invalidate their signatures
-        if tx.signatures().len() <= 1 && unit_price > 0 && tx.get_compute_unit_price().unwrap_or(0) < unit_price {
-            tx.set_compute_unit_price(unit_price)
-                .map_err(|e| SignerError::invalid_input(format!("set compute unit price: {e}")))?;
+        if tx.signatures().len() <= 1 {
+            if unit_price > 0 {
+                tx.set_compute_unit_price(unit_price)
+                    .map_err(|e| SignerError::invalid_input(format!("set compute unit price: {e}")))?;
+            }
+            if gas_limit > 0 {
+                tx.set_compute_unit_limit(gas_limit)
+                    .map_err(|e| SignerError::invalid_input(format!("set compute unit limit: {e}")))?;
+            }
         }
 
         let message_bytes = tx.serialize_message().map_err(|e| SignerError::signing_error(format!("serialize message: {e}")))?;

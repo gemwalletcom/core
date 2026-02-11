@@ -91,6 +91,7 @@ pub struct TransactionLoadInput {
     pub destination_address: String,
     pub value: String,
     pub gas_price: GasPriceType,
+    pub gas_limit: u32,
     pub memo: Option<String>,
     pub is_max_value: bool,
     pub metadata: TransactionLoadMetadata,
