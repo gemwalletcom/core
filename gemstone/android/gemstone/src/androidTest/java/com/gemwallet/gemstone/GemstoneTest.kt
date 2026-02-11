@@ -131,6 +131,7 @@ class GemstoneTest {
             destinationAddress = "0x5678",
             value = "1000000000000000000",
             gasPrice = GemGasPriceType.Regular("20000000000"),
+            gasLimit = 0u,
             memo = null,
             isMaxValue = false,
             metadata = GemTransactionLoadMetadata.None

@@ -73,6 +73,7 @@ impl EvmTransferProvider {
             destination_address: request.recipient_address.clone(),
             value: value.clone(),
             gas_price: fee_rate.gas_price_type.clone(),
+            gas_limit: 0,
             memo: None,
             is_max_value: false,
             metadata: metadata.clone(),
