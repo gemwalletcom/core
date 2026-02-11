@@ -1,20 +1,18 @@
-use primitives::{AssetId, EarnPosition, EarnProvider};
-use yielder::{Yield, YieldTransaction};
+use primitives::{AssetId, YieldProvider};
+use yielder::{Yield, EarnTransaction};
 
-use crate::models::GemBigInt;
 use crate::models::swap::GemApprovalData;
-pub use crate::models::transaction::GemEarnAction;
 
-pub type GemEarnProvider = EarnProvider;
+pub type GemYieldProvider = YieldProvider;
 
 #[uniffi::remote(Enum)]
-pub enum GemEarnProvider {
+pub enum GemYieldProvider {
     Yo,
 }
 
 #[derive(Debug, Clone, uniffi::Record)]
-pub struct GemYieldTransactionData {
-    pub transaction: GemYieldTransaction,
+pub struct GemEarnTransactionData {
+    pub transaction: GemEarnTransaction,
     pub nonce: u64,
     pub chain_id: u64,
     pub gas_limit: String,
@@ -26,33 +24,18 @@ pub type GemYield = Yield;
 pub struct GemYield {
     pub name: String,
     pub asset_id: AssetId,
-    pub provider: GemEarnProvider,
+    pub provider: GemYieldProvider,
     pub apy: Option<f64>,
 }
 
-pub type GemYieldTransaction = YieldTransaction;
+pub type GemEarnTransaction = EarnTransaction;
 
 #[uniffi::remote(Record)]
-pub struct GemYieldTransaction {
+pub struct GemEarnTransaction {
     pub chain: primitives::Chain,
     pub from: String,
     pub to: String,
     pub data: String,
     pub value: Option<String>,
     pub approval: Option<GemApprovalData>,
-}
-
-pub type GemEarnPosition = EarnPosition;
-
-#[uniffi::remote(Record)]
-pub struct GemEarnPosition {
-    pub asset_id: AssetId,
-    pub provider: GemEarnProvider,
-    pub vault_token_address: String,
-    pub asset_token_address: String,
-    pub vault_balance_value: GemBigInt,
-    pub asset_balance_value: GemBigInt,
-    pub balance: String,
-    pub apy: Option<f64>,
-    pub rewards: Option<String>,
 }

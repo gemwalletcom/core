@@ -1,5 +1,5 @@
 use crate::model::WorkerService;
-use crate::worker::jobs::{JobInstance, WorkerJob};
+use crate::worker::jobs::{JobLabel, JobVariant, WorkerJob};
 use job_runner::{JobError, JobHandle, JobPlan};
 use std::error::Error;
 use std::fmt::Debug;
@@ -15,14 +15,6 @@ pub struct JobPlanBuilder<'a> {
 }
 
 impl<'a> JobPlanBuilder<'a> {
-    pub fn new(worker: WorkerService, plan: JobPlan) -> Self {
-        Self {
-            worker,
-            plan: Ok(plan),
-            config: None,
-        }
-    }
-
     pub fn with_config(worker: WorkerService, plan: JobPlan, config: &'a ConfigCacher) -> Self {
         Self {
             worker,
@@ -33,19 +25,19 @@ impl<'a> JobPlanBuilder<'a> {
 
     pub fn job<J, F, Fut, R>(self, job: J, job_fn: F) -> Self
     where
-        J: Into<JobInstance>,
+        J: Into<JobVariant>,
         F: Fn() -> Fut + Send + Sync + 'static,
         Fut: Future<Output = Result<R, JobError>> + Send + 'static,
         R: Debug + Send + Sync + 'static,
     {
         let config = self.config;
         let plan = self.plan.and_then(|plan| {
-            let instance: JobInstance = job.into();
-            if instance.worker() != self.worker {
-                return Err(format!("job {} belongs to {:?} worker but builder is {:?}", instance.name(), instance.worker(), self.worker).into());
+            let variant: JobVariant = job.into();
+            if variant.worker() != self.worker {
+                return Err(format!("job {} belongs to {:?} worker but builder is {:?}", variant.name(), variant.worker(), self.worker).into());
             }
-            let interval = instance.resolve_interval(config)?;
-            Ok(plan.job(instance.name().to_string(), interval, job_fn))
+            let interval = variant.resolve_interval(config)?;
+            Ok(plan.job(variant.name(), interval, job_fn))
         });
         Self {
             worker: self.worker,
@@ -54,12 +46,11 @@ impl<'a> JobPlanBuilder<'a> {
         }
     }
 
-    pub fn jobs<T, Item, Labeler, Build, F, Fut, R>(self, job: WorkerJob, items: T, labeler: Labeler, build_job: Build) -> Self
+    pub fn jobs<Items, Item, Builder, F, Fut, R>(self, job: WorkerJob, items: Items, build_job: Builder) -> Self
     where
-        T: IntoIterator<Item = Item>,
-        Item: Clone + Send + Sync + 'static,
-        Labeler: Fn(&Item) -> String,
-        Build: Fn(Item, JobInstance) -> F,
+        Items: IntoIterator<Item = Item>,
+        Item: JobLabel + Clone + Send + Sync + 'static,
+        Builder: Fn(Item, JobVariant) -> F,
         F: Fn() -> Fut + Send + Sync + 'static,
         Fut: Future<Output = Result<R, JobError>> + Send + 'static,
         R: Debug + Send + Sync + 'static,
@@ -70,11 +61,10 @@ impl<'a> JobPlanBuilder<'a> {
                 return Err(format!("job {} belongs to {:?} worker but builder is {:?}", job.as_ref(), job.worker(), self.worker).into());
             }
             items.into_iter().try_fold(plan, |current, item| {
-                let label = labeler(&item);
-                let instance = JobInstance::labeled(job, label);
-                let interval = instance.resolve_interval(config)?;
-                let job_fn = build_job(item.clone(), instance.clone());
-                Ok(current.job(instance.name().to_string(), interval, job_fn))
+                let variant = JobVariant::labeled(job, item.job_label());
+                let interval = variant.resolve_interval(config)?;
+                let job_fn = build_job(item.clone(), variant.clone());
+                Ok(current.job(variant.name(), interval, job_fn))
             })
         });
         Self {

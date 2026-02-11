@@ -6,15 +6,16 @@ use chain_traits::ChainTransactionLoad;
 use num_bigint::BigInt;
 
 use gem_client::Client;
+use number_formatter::BigNumberFormatter;
 use primitives::{
     AssetSubtype, FeePriority, FeeRate, GasPriceType, StakeType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
-    TransactionPreloadInput,
+    TransactionPreloadInput, TronStakeData, TronVote,
 };
 
 use crate::{
     provider::{
         balances_mapper::format_address_parameter,
-        preload_mapper::{calculate_stake_fee_rate, calculate_transfer_fee_rate, calculate_transfer_token_fee_rate},
+        preload_mapper::{calculate_stake_fee_rate, calculate_transfer_fee_rate, calculate_transfer_token_fee_rate, calculate_unfreeze_amounts},
     },
     rpc::client::TronClient,
 };
@@ -26,12 +27,12 @@ impl<C: Client> ChainTransactionLoad for TronClient<C> {
     }
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
-        let (block, chain_parameters, account_usage, is_new_account, votes) = futures::try_join!(
+        let (block, chain_parameters, account_usage, is_new_account, stake_data) = futures::try_join!(
             self.get_tron_block(),
             self.get_chain_parameters(),
             self.get_account_usage(&input.sender_address),
             self.get_is_new_account_for_input_type(&input.destination_address, input.input_type.clone()),
-            self.get_votes_for_transaction_input(&input)
+            self.get_stake_data(&input)
         )?;
 
         let block = block.block_header.raw_data;
@@ -42,7 +43,7 @@ impl<C: Client> ChainTransactionLoad for TronClient<C> {
             transaction_tree_root: block.tx_trie_root.clone(),
             parent_hash: block.parent_hash.clone(),
             witness_address: block.witness_address.clone(),
-            votes,
+            stake_data,
         };
 
         let fee = match &input.input_type {
@@ -122,36 +123,44 @@ impl<C: Client> TronClient<C> {
         }
     }
 
-    async fn get_votes_for_transaction_input(&self, input: &TransactionLoadInput) -> Result<HashMap<String, u64>, Box<dyn Error + Send + Sync>> {
+    async fn get_stake_data(&self, input: &TransactionLoadInput) -> Result<TronStakeData, Box<dyn Error + Send + Sync>> {
         match &input.input_type {
             TransactionInputType::Stake(asset, stake_type) => {
                 let account = self.get_account(&input.sender_address).await?;
-                let mut current_votes: HashMap<String, u64> = account.votes.unwrap_or_default().into_iter().map(|v| (v.vote_address, v.vote_count)).collect();
-
-                let vote_amount = input.value.parse::<u64>().unwrap_or(0) / 10_u64.pow(asset.decimals as u32);
+                let amount = BigNumberFormatter::value_as_u64(&input.value, asset.decimals as u32)?;
+                let mut votes: HashMap<String, u64> = account
+                    .votes
+                    .as_ref()
+                    .map(|v| v.iter().map(|v| (v.vote_address.clone(), v.vote_count)).collect())
+                    .unwrap_or_default();
 
                 match stake_type {
-                    StakeType::Stake(validator) => {
-                        *current_votes.entry(validator.id.clone()).or_insert(0) += vote_amount;
-                    }
-                    StakeType::Unstake(delegation) => {
-                        if let Some(votes) = current_votes.get_mut(&delegation.base.validator_id) {
-                            *votes = votes.saturating_sub(vote_amount);
+                    StakeType::Stake(v) => *votes.entry(v.id.clone()).or_default() += amount,
+                    StakeType::Unstake(d) => {
+                        votes.entry(d.base.validator_id.clone()).and_modify(|v| *v = v.saturating_sub(amount));
+                        votes.retain(|_, v| *v > 0);
+                        if votes.is_empty() {
+                            return Ok(TronStakeData::Unfreeze(calculate_unfreeze_amounts(
+                                account.frozen_v2.as_ref(),
+                                BigNumberFormatter::value_as_u64(&input.value, 0)?,
+                            )));
                         }
                     }
-                    StakeType::Redelegate(redelegate_data) => {
-                        if let Some(votes) = current_votes.get_mut(&redelegate_data.delegation.base.validator_id) {
-                            *votes = votes.saturating_sub(vote_amount);
-                        }
-                        *current_votes.entry(redelegate_data.to_validator.id.clone()).or_insert(0) += vote_amount;
+                    StakeType::Redelegate(r) => {
+                        votes.entry(r.delegation.base.validator_id.clone()).and_modify(|v| *v = v.saturating_sub(amount));
+                        *votes.entry(r.to_validator.id.clone()).or_default() += amount;
                     }
                     StakeType::Rewards(_) | StakeType::Withdraw(_) | StakeType::Freeze(_) => {}
                 }
 
-                current_votes.retain(|_, &mut v| v > 0);
-                Ok(current_votes)
+                let votes = votes
+                    .into_iter()
+                    .filter(|(_, count)| *count > 0)
+                    .map(|(validator, count)| TronVote { validator, count })
+                    .collect();
+                Ok(TronStakeData::Votes(votes))
             }
-            _ => Ok(HashMap::new()),
+            _ => Ok(TronStakeData::Votes(vec![])),
         }
     }
 }

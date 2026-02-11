@@ -1,5 +1,3 @@
-use std::future::Future;
-use std::pin::Pin;
 use std::sync::Arc;
 use std::{
     error::Error,
@@ -26,9 +24,10 @@ enum ProcessResult<R> {
     Error(Box<dyn Error + Send + Sync>),
 }
 
+#[async_trait]
 pub trait ConsumerStatusReporter: Send + Sync {
-    fn report_success(&self, name: &str, duration: u64, result: &str) -> Pin<Box<dyn Future<Output = ()> + Send + '_>>;
-    fn report_error(&self, name: &str, error: &str) -> Pin<Box<dyn Future<Output = ()> + Send + '_>>;
+    async fn report_success(&self, name: &str, duration: u64, result: &str);
+    async fn report_error(&self, name: &str, error: &str);
 }
 
 #[async_trait]
@@ -53,7 +52,9 @@ where
     R: std::fmt::Debug,
     for<'a> P: Deserialize<'a> + std::fmt::Debug,
 {
-    info_with_fields!("running consumer", consumer = name, queue = queue_name.to_string(), routing_key = routing_key.unwrap_or(""));
+    if routing_key.is_none() {
+        info_with_fields!("running consumer", consumer = queue_name.to_string());
+    }
     stream_reader
         .read::<P, _>(
             queue_name,

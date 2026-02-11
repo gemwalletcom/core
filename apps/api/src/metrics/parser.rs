@@ -13,6 +13,7 @@ static PARSER_IS_ENABLED: OnceLock<Family<ParserStateLabels, Gauge>> = OnceLock:
 static PARSER_UPDATED_AT: OnceLock<Family<ParserStateLabels, Gauge>> = OnceLock::new();
 static PARSER_ERRORS: OnceLock<Family<ParserStateLabels, Gauge>> = OnceLock::new();
 static PARSER_ERROR_DETAIL: OnceLock<Family<ParserErrorLabels, Gauge>> = OnceLock::new();
+static PARSER_LAST_ERROR_AT: OnceLock<Family<ParserErrorLabels, Gauge>> = OnceLock::new();
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
 struct ParserStateLabels {
@@ -32,6 +33,7 @@ pub fn init_parser_metrics(registry: &mut Registry) {
     let updated_at = Family::<ParserStateLabels, Gauge>::default();
     let errors = Family::<ParserStateLabels, Gauge>::default();
     let error_detail = Family::<ParserErrorLabels, Gauge>::default();
+    let last_error_at = Family::<ParserErrorLabels, Gauge>::default();
 
     registry.register("parser_state_latest_block", "Parser latest block", latest_block.clone());
     registry.register("parser_state_current_block", "Parser current block", current_block.clone());
@@ -39,6 +41,7 @@ pub fn init_parser_metrics(registry: &mut Registry) {
     registry.register("parser_state_updated_at", "Parser updated at", updated_at.clone());
     registry.register("parser_errors", "Parser errors encountered", errors.clone());
     registry.register("parser_error_detail", "Parser error details by chain and message", error_detail.clone());
+    registry.register("parser_last_error_at", "Parser last error timestamp (unix)", last_error_at.clone());
 
     PARSER_LATEST_BLOCK.set(latest_block).ok();
     PARSER_CURRENT_BLOCK.set(current_block).ok();
@@ -46,6 +49,7 @@ pub fn init_parser_metrics(registry: &mut Registry) {
     PARSER_UPDATED_AT.set(updated_at).ok();
     PARSER_ERRORS.set(errors).ok();
     PARSER_ERROR_DETAIL.set(error_detail).ok();
+    PARSER_LAST_ERROR_AT.set(last_error_at).ok();
 }
 
 pub async fn update_parser_metrics(database: &Database, cacher: &CacherClient) {
@@ -79,13 +83,15 @@ pub async fn update_parser_metrics(database: &Database, cacher: &CacherClient) {
             }
 
             if let Some(error_detail) = PARSER_ERROR_DETAIL.get() {
-                for error in status.errors {
-                    error_detail
-                        .get_or_create(&ParserErrorLabels {
-                            chain: chain.clone(),
-                            error: error.message,
-                        })
-                        .set(error.count as i64);
+                for error in &status.errors {
+                    let labels = ParserErrorLabels {
+                        chain: chain.clone(),
+                        error: error.message.clone(),
+                    };
+                    error_detail.get_or_create(&labels).set(error.count as i64);
+                    if let Some(last_error_at) = PARSER_LAST_ERROR_AT.get() {
+                        last_error_at.get_or_create(&labels).set(error.timestamp as i64);
+                    }
                 }
             }
         } else if let Some(errors) = PARSER_ERRORS.get() {

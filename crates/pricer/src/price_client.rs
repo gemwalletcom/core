@@ -1,6 +1,6 @@
 use cacher::{CacheKey, CacherClient};
 use chrono::NaiveDateTime;
-use primitives::{AssetMarketPrice, AssetPriceInfo, AssetPrices, FiatRate};
+use primitives::{AssetMarketPrice, AssetPriceInfo, AssetPrices, ChartTimeframe, FiatRate};
 use std::error::Error;
 use storage::{
     ChartsRepository, Database, PricesRepository,
@@ -135,16 +135,12 @@ impl PriceClient {
         Ok(self.database.prices()?.delete_prices_updated_at_before(time)?)
     }
 
-    pub async fn aggregate_hourly_charts(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.charts()?.aggregate_hourly_charts()?)
+    pub async fn aggregate_charts(&self, timeframe: ChartTimeframe) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.charts()?.aggregate_charts(timeframe)?)
     }
 
-    pub async fn aggregate_daily_charts(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.charts()?.aggregate_daily_charts()?)
-    }
-
-    pub async fn cleanup_charts_data(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.charts()?.cleanup_charts_data()?)
+    pub async fn cleanup_charts(&self, timeframe: ChartTimeframe) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.charts()?.cleanup_charts(timeframe)?)
     }
 
     pub async fn track_observed_assets(&self, asset_ids: &[String]) -> Result<(), Box<dyn Error + Send + Sync>> {

@@ -3,62 +3,71 @@ use std::error::Error;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use primitives::{Chain, NFTAsset, NFTAssetId, NFTCollection, NFTCollectionId};
+use primitives::{Chain, NFTAsset, NFTAssetId, NFTChain, NFTCollection, NFTCollectionId};
 
 #[async_trait]
 pub trait NFTProvider: Send + Sync {
     fn name(&self) -> &'static str;
-    fn get_chains(&self) -> Vec<Chain>;
+    fn chains(&self) -> &'static [NFTChain];
     async fn get_assets(&self, chain: Chain, address: String) -> Result<Vec<NFTAssetId>, Box<dyn Error + Send + Sync>>;
     async fn get_collection(&self, collection: NFTCollectionId) -> Result<NFTCollection, Box<dyn Error + Send + Sync>>;
     async fn get_asset(&self, asset_id: NFTAssetId) -> Result<NFTAsset, Box<dyn Error + Send + Sync>>;
 }
 
-#[allow(unused)]
-pub struct NFTProviderClient {
+pub struct NFTProviders {
     providers: Vec<Arc<dyn NFTProvider>>,
 }
 
-impl NFTProviderClient {
+impl NFTProviders {
     pub fn new(providers: Vec<Arc<dyn NFTProvider>>) -> Self {
         Self { providers }
     }
 
-    pub fn get_provider_for_chain(&self, chain: Chain) -> Result<Arc<dyn NFTProvider>, Box<dyn Error + Send + Sync>> {
+    fn providers_for_chain(&self, chain: Chain) -> impl Iterator<Item = &Arc<dyn NFTProvider>> {
         self.providers
             .iter()
-            .find(|provider| provider.get_chains().contains(&chain))
-            .cloned()
-            .ok_or_else(|| format!("No provider available for chain: {:?}", chain).into())
+            .filter(move |provider| provider.chains().iter().any(|nft_chain| Chain::from(*nft_chain) == chain))
     }
 
-    pub async fn get_assets(&self, addresses: HashMap<Chain, String>) -> Result<Vec<NFTAssetId>, Box<dyn Error + Send + Sync>> {
-        let futures: Vec<_> = addresses
-            .into_iter()
-            .map(|(chain, address)| {
-                let address = address.clone();
-                async move { self.get_asset_ids(chain, address.as_str()).await }
-            })
-            .collect();
-
-        Ok(futures::future::try_join_all(futures).await?.into_iter().flatten().collect::<Vec<NFTAssetId>>())
-    }
-
-    pub async fn get_asset_ids(&self, chain: Chain, address: &str) -> Result<Vec<NFTAssetId>, Box<dyn Error + Send + Sync>> {
-        match self.get_provider_for_chain(chain) {
-            Ok(provider) => provider.get_assets(chain, address.to_string()).await,
-            Err(_) => Ok(vec![]), // Return empty vector for unsupported chains
+    async fn fetch_assets(chain: Chain, address: String, providers: impl Iterator<Item = &Arc<dyn NFTProvider>>) -> Vec<NFTAssetId> {
+        for provider in providers {
+            if let Ok(ids) = provider.get_assets(chain, address.clone()).await {
+                return ids;
+            }
         }
+        vec![]
     }
 
-    pub async fn get_collection(&self, collection_id: NFTCollectionId) -> Result<NFTCollection, Box<dyn Error + Send + Sync>> {
-        let provider = self.get_provider_for_chain(collection_id.chain)?;
-        provider.get_collection(collection_id).await
+    pub async fn get_assets(&self, addresses: HashMap<Chain, String>) -> Vec<NFTAssetId> {
+        let futures = addresses.into_iter().map(|(chain, address)| {
+            let providers = self.providers_for_chain(chain);
+            async move { Self::fetch_assets(chain, address, providers).await }
+        });
+
+        futures::future::join_all(futures).await.into_iter().flatten().collect()
     }
 
-    pub async fn get_asset(&self, asset_id: NFTAssetId) -> Result<NFTAsset, Box<dyn Error + Send + Sync>> {
-        let provider = self.get_provider_for_chain(asset_id.chain)?;
-        provider.get_asset(asset_id).await
+    pub async fn get_asset_ids(&self, chain: Chain, address: &str) -> Vec<NFTAssetId> {
+        let providers = self.providers_for_chain(chain);
+        Self::fetch_assets(chain, address.to_string(), providers).await
+    }
+
+    pub async fn get_collection(&self, collection_id: NFTCollectionId) -> Option<NFTCollection> {
+        for provider in self.providers_for_chain(collection_id.chain) {
+            if let Ok(collection) = provider.get_collection(collection_id.clone()).await {
+                return Some(collection);
+            }
+        }
+        None
+    }
+
+    pub async fn get_asset(&self, asset_id: NFTAssetId) -> Option<NFTAsset> {
+        for provider in self.providers_for_chain(asset_id.chain) {
+            if let Ok(asset) = provider.get_asset(asset_id.clone()).await {
+                return Some(asset);
+            }
+        }
+        None
     }
 }
 

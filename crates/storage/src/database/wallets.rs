@@ -1,7 +1,8 @@
-use crate::models::{DeviceRow, NewWalletAddressRow, NewWalletRow, NewWalletSubscriptionRow, WalletAddressRow, WalletRow, WalletSubscriptionRow};
-use crate::schema::{devices, wallets, wallets_addresses, wallets_subscriptions};
+use crate::models::{DeviceRow, NewWalletAddressRow, NewWalletRow, NewWalletSubscriptionRow, SubscriptionAddressExcludeRow, WalletAddressRow, WalletRow, WalletSubscriptionRow};
+use crate::schema::{devices, subscriptions_addresses_exclude, wallets, wallets_addresses, wallets_subscriptions};
 use crate::sql_types::ChainRow;
 use crate::{DatabaseClient, DatabaseError};
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use primitives::Chain;
 
@@ -23,6 +24,18 @@ pub trait WalletsStore {
     fn delete_subscriptions(&mut self, device_id: i32, wallet_id: i32, chain: ChainRow, address_ids: Vec<i32>) -> Result<usize, DatabaseError>;
     fn delete_wallet_subscriptions(&mut self, device_id: i32, wallet_ids: Vec<i32>) -> Result<usize, DatabaseError>;
     fn delete_wallet_chains(&mut self, device_id: i32, wallet_id: i32, chains: Vec<Chain>) -> Result<usize, DatabaseError>;
+    fn delete_subscriptions_for_device_ids(&mut self, device_ids: Vec<i32>) -> Result<usize, DatabaseError>;
+
+    fn get_subscriptions_by_chain_addresses(
+        &mut self,
+        chain: Chain,
+        addresses: Vec<String>,
+    ) -> Result<Vec<(WalletRow, WalletSubscriptionRow, WalletAddressRow, DeviceRow)>, DatabaseError>;
+    fn get_subscription_address_exists(&mut self, chain: Chain, address: &str) -> Result<bool, DatabaseError>;
+    fn add_subscriptions_exclude_addresses(&mut self, values: Vec<SubscriptionAddressExcludeRow>) -> Result<usize, DatabaseError>;
+    fn get_subscriptions_exclude_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<String>, DatabaseError>;
+    fn get_device_addresses(&mut self, device_id: i32, chain: ChainRow) -> Result<Vec<String>, DatabaseError>;
+    fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, DatabaseError>;
 }
 
 impl WalletsStore for DatabaseClient {
@@ -178,5 +191,95 @@ impl WalletsStore for DatabaseClient {
             .execute(&mut self.connection)?;
 
         Ok(count)
+    }
+
+    fn delete_subscriptions_for_device_ids(&mut self, device_ids: Vec<i32>) -> Result<usize, DatabaseError> {
+        let count = diesel::delete(wallets_subscriptions::table)
+            .filter(wallets_subscriptions::device_id.eq_any(device_ids))
+            .execute(&mut self.connection)?;
+
+        Ok(count)
+    }
+
+    fn get_subscriptions_by_chain_addresses(
+        &mut self,
+        chain: Chain,
+        addresses: Vec<String>,
+    ) -> Result<Vec<(WalletRow, WalletSubscriptionRow, WalletAddressRow, DeviceRow)>, DatabaseError> {
+        let chain_row = ChainRow::from(chain);
+
+        let results = wallets_subscriptions::table
+            .inner_join(wallets::table)
+            .inner_join(wallets_addresses::table)
+            .inner_join(devices::table)
+            .filter(wallets_subscriptions::chain.eq(chain_row))
+            .filter(wallets_addresses::address.eq_any(&addresses))
+            .filter(diesel::dsl::not(diesel::dsl::exists(
+                subscriptions_addresses_exclude::table.filter(subscriptions_addresses_exclude::address.eq(wallets_addresses::address)),
+            )))
+            .select((
+                WalletRow::as_select(),
+                WalletSubscriptionRow::as_select(),
+                WalletAddressRow::as_select(),
+                DeviceRow::as_select(),
+            ))
+            .load(&mut self.connection)?;
+
+        Ok(results)
+    }
+
+    fn get_subscription_address_exists(&mut self, chain: Chain, address: &str) -> Result<bool, DatabaseError> {
+        let chain_row = ChainRow::from(chain);
+
+        let exists = diesel::select(diesel::dsl::exists(
+            wallets_subscriptions::table
+                .inner_join(wallets_addresses::table)
+                .filter(wallets_subscriptions::chain.eq(chain_row))
+                .filter(wallets_addresses::address.eq(address)),
+        ))
+        .get_result(&mut self.connection)?;
+
+        Ok(exists)
+    }
+
+    fn add_subscriptions_exclude_addresses(&mut self, values: Vec<SubscriptionAddressExcludeRow>) -> Result<usize, DatabaseError> {
+        let count = diesel::insert_into(subscriptions_addresses_exclude::table)
+            .values(values)
+            .on_conflict_do_nothing()
+            .execute(&mut self.connection)?;
+
+        Ok(count)
+    }
+
+    fn get_subscriptions_exclude_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<String>, DatabaseError> {
+        let results = subscriptions_addresses_exclude::table
+            .filter(subscriptions_addresses_exclude::address.eq_any(addresses))
+            .select(subscriptions_addresses_exclude::address)
+            .load(&mut self.connection)?;
+
+        Ok(results)
+    }
+
+    fn get_device_addresses(&mut self, device_id: i32, chain: ChainRow) -> Result<Vec<String>, DatabaseError> {
+        let results = wallets_subscriptions::table
+            .inner_join(wallets_addresses::table)
+            .filter(wallets_subscriptions::device_id.eq(device_id))
+            .filter(wallets_subscriptions::chain.eq(chain))
+            .select(wallets_addresses::address)
+            .load(&mut self.connection)?;
+
+        Ok(results)
+    }
+
+    fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, DatabaseError> {
+        let result = wallets_subscriptions::table
+            .inner_join(wallets_addresses::table)
+            .filter(wallets_addresses::address.eq_any(addresses))
+            .select(wallets_subscriptions::created_at)
+            .order(wallets_subscriptions::created_at.asc())
+            .first(&mut self.connection)
+            .optional()?;
+
+        Ok(result)
     }
 }

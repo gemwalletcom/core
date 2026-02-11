@@ -23,7 +23,7 @@ impl MetricsClient {
 
     pub async fn get(&self) -> String {
         super::parser::update_parser_metrics(&self.database, &self.cacher).await;
-        super::price::update_price_metrics(&self.database);
+        super::price::update_price_metrics(&self.database, &self.cacher).await;
         super::job::update_job_metrics(&self.cacher).await;
         super::consumer::update_consumer_metrics(&self.cacher).await;
 

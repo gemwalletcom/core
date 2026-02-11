@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, Display, EnumString};
 use typeshare::typeshare;
 
+use crate::growth_provider::GrowthProviderType;
 use crate::{AssetId, Chain, Price, StakeValidator};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -45,6 +46,7 @@ pub struct DelegationValidator {
     pub is_active: bool,
     pub commission: f64,
     pub apr: f64,
+    pub provider_type: GrowthProviderType,
 }
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, Display, AsRefStr, EnumString, PartialEq)]

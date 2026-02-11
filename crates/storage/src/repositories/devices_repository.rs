@@ -1,4 +1,5 @@
 use crate::database::devices::{DeviceFieldUpdate, DeviceFilter, DevicesStore};
+use crate::database::wallets::WalletsStore;
 use crate::{DatabaseClient, DatabaseError};
 use primitives::Device;
 
@@ -58,7 +59,8 @@ impl DevicesRepository for DatabaseClient {
     }
 
     fn delete_devices_subscriptions_after_days(&mut self, days: i64) -> Result<usize, DatabaseError> {
-        Ok(DevicesStore::delete_devices_subscriptions_after_days(self, days)?)
+        let device_ids = DevicesStore::get_stale_device_ids(self, days)?;
+        WalletsStore::delete_subscriptions_for_device_ids(self, device_ids)
     }
 
     fn devices_inactive_days(&mut self, min_days: i64, max_days: i64, push_enabled: Option<bool>) -> Result<Vec<Device>, DatabaseError> {

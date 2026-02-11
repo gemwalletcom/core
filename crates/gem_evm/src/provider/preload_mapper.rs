@@ -8,8 +8,7 @@ use num_bigint::BigInt;
 use num_traits::Num;
 use primitives::swap::SwapQuoteDataType;
 use primitives::{
-    AssetSubtype, Chain, EVMChain, EarnAction, FeeRate, NFTType, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, fee::FeePriority,
-    fee::GasPriceType,
+    AssetSubtype, Chain, EVMChain, FeeRate, NFTType, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, fee::FeePriority, fee::GasPriceType,
 };
 
 use crate::contracts::{IERC20, IERC721, IERC1155};
@@ -142,18 +141,18 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
             }
             _ => Err("Unsupported chain for staking".into()),
         },
-        TransactionInputType::Earn(_, action, earn_data) => {
+        TransactionInputType::Earn(_, _) => {
+            let earn_data = match &input.metadata {
+                TransactionLoadMetadata::Evm { earn_data, .. } => earn_data.as_ref().ok_or("Missing earn_data in metadata")?,
+                _ => return Err("EVM metadata required for earn transactions".into()),
+            };
             if let Some(approval) = &earn_data.approval {
                 Ok(TransactionParams::new(approval.token.clone(), encode_erc20_approve(&approval.spender)?, BigInt::from(0)))
             } else {
                 let call_data = earn_data.call_data.as_ref().ok_or("Missing call_data")?;
                 let contract_address = earn_data.contract_address.as_ref().ok_or("Missing contract_address")?;
                 let decoded_data = hex::decode(call_data)?;
-                let tx_value = match action {
-                    EarnAction::Deposit => BigInt::from(0),
-                    EarnAction::Withdraw => BigInt::from(0),
-                };
-                Ok(TransactionParams::new(contract_address.clone(), decoded_data, tx_value))
+                Ok(TransactionParams::new(contract_address.clone(), decoded_data, BigInt::from(0)))
             }
         }
         _ => Err("Unsupported transfer type".into()),
@@ -194,9 +193,14 @@ pub fn get_extra_fee_gas_limit(input: &TransactionLoadInput) -> Result<BigInt, B
                 Ok(BigInt::from(0))
             }
         }
-        TransactionInputType::Earn(_, _, earn_data) => {
-            if let Some(gas_limit) = earn_data.gas_limit.as_ref()
-                && earn_data.approval.is_some()
+        TransactionInputType::Earn(_, _) => {
+            let earn_data = match &input.metadata {
+                TransactionLoadMetadata::Evm { earn_data, .. } => earn_data.as_ref(),
+                _ => None,
+            };
+            if let Some(data) = earn_data
+                && let Some(gas_limit) = data.gas_limit.as_ref()
+                && data.approval.is_some()
             {
                 Ok(BigInt::from_str_radix(gas_limit, 10)?)
             } else {
@@ -304,7 +308,7 @@ mod tests {
     use super::*;
     use crate::everstake::{EVERSTAKE_POOL_ADDRESS, IAccounting};
     use num_bigint::BigUint;
-    use primitives::{Delegation, DelegationBase, DelegationState, DelegationValidator, RedelegateData};
+    use primitives::{Delegation, DelegationBase, DelegationState, DelegationValidator, GrowthProviderType, RedelegateData};
 
     fn everstake_validator() -> DelegationValidator {
         DelegationValidator {
@@ -314,6 +318,7 @@ mod tests {
             is_active: true,
             commission: 10.0,
             apr: 4.2,
+            provider_type: GrowthProviderType::Stake,
         }
     }
 
@@ -447,6 +452,7 @@ mod tests {
             is_active: true,
             commission: 5.0,
             apr: 10.0,
+            provider_type: GrowthProviderType::Stake,
         };
 
         let stake_type = StakeType::Stake(validator);
@@ -483,6 +489,7 @@ mod tests {
                 is_active: true,
                 commission: 5.0,
                 apr: 10.0,
+                provider_type: GrowthProviderType::Stake,
             },
             price: None,
         };
@@ -520,6 +527,7 @@ mod tests {
                 is_active: true,
                 commission: 5.0,
                 apr: 10.0,
+                provider_type: GrowthProviderType::Stake,
             },
             price: None,
         };
@@ -531,6 +539,7 @@ mod tests {
             is_active: true,
             commission: 3.0,
             apr: 12.0,
+            provider_type: GrowthProviderType::Stake,
         };
 
         let redelegate_data = RedelegateData { delegation, to_validator };
@@ -568,6 +577,7 @@ mod tests {
                 is_active: true,
                 commission: 5.0,
                 apr: 10.0,
+                provider_type: GrowthProviderType::Stake,
             },
             price: None,
         };

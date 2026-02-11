@@ -4,8 +4,9 @@ use num_bigint::BigInt;
 
 use crate::models::ChainParameter;
 use crate::models::TronAccountUsage;
+use crate::models::account::TronFrozen;
 use crate::rpc::constants::{DEFAULT_BANDWIDTH_BYTES, GET_CREATE_ACCOUNT_FEE, GET_CREATE_NEW_ACCOUNT_FEE_IN_SYSTEM_CONTRACT, GET_ENERGY_FEE, GET_TRANSACTION_FEE};
-use primitives::StakeType;
+use primitives::{Resource, StakeType, TronUnfreeze};
 
 const FEE_LIMIT_BUFFER_PERCENT: u64 = 20;
 
@@ -85,6 +86,30 @@ fn get_chain_parameter_value(parameters: &[ChainParameter], key: &str) -> Result
         .ok_or_else(|| format!("Missing chain parameter: {}", key).into())
 }
 
+pub fn calculate_unfreeze_amounts(frozen: Option<&Vec<TronFrozen>>, total: u64) -> Vec<TronUnfreeze> {
+    frozen
+        .map(|frozen| {
+            frozen
+                .iter()
+                .filter(|f| f.amount > 0)
+                .scan(total, |remaining, f| {
+                    (*remaining > 0).then(|| {
+                        let take = (*remaining).min(f.amount);
+                        *remaining -= take;
+                        TronUnfreeze {
+                            resource: match f.frozen_type.as_deref() {
+                                Some("ENERGY") => Resource::Energy,
+                                _ => Resource::Bandwidth,
+                            },
+                            amount: take,
+                        }
+                    })
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
 impl TronAccountUsage {
     pub fn available_bandwidth(&self) -> u64 {
         let free = self.free_net_limit.saturating_sub(self.free_net_used);
@@ -108,7 +133,9 @@ impl TronAccountUsage {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::account::TronFrozen;
     use primitives::Chain;
+    use primitives::GrowthProviderType;
     use primitives::delegation::DelegationValidator;
 
     fn chain_parameter(key: &str, value: i64) -> ChainParameter {
@@ -251,6 +278,7 @@ mod tests {
             is_active: true,
             commission: 0.0,
             apr: 0.0,
+            provider_type: GrowthProviderType::Stake,
         });
 
         let with_bandwidth = account_usage(DEFAULT_BANDWIDTH_BYTES, 0, 0);
@@ -284,5 +312,42 @@ mod tests {
 
         assert_eq!(fee.fee, 77142 * 420 + DEFAULT_BANDWIDTH_BYTES * 1000);
         assert_eq!(fee.fee_limit, 77142 * 420);
+    }
+
+    #[test]
+    fn test_calculate_unfreeze_amounts() {
+        let frozen = vec![
+            TronFrozen {
+                frozen_type: Some("ENERGY".to_string()),
+                amount: 100,
+            },
+            TronFrozen {
+                frozen_type: Some("BANDWIDTH".to_string()),
+                amount: 50,
+            },
+        ];
+
+        assert_eq!(
+            calculate_unfreeze_amounts(Some(&frozen), 120),
+            vec![
+                TronUnfreeze {
+                    resource: Resource::Energy,
+                    amount: 100
+                },
+                TronUnfreeze {
+                    resource: Resource::Bandwidth,
+                    amount: 20
+                },
+            ]
+        );
+        assert_eq!(
+            calculate_unfreeze_amounts(Some(&frozen), 50),
+            vec![TronUnfreeze {
+                resource: Resource::Energy,
+                amount: 50
+            },]
+        );
+        assert!(calculate_unfreeze_amounts(None, 100).is_empty());
+        assert!(calculate_unfreeze_amounts(Some(&frozen), 0).is_empty());
     }
 }

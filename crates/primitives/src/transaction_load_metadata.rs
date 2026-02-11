@@ -1,8 +1,6 @@
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
 
-use crate::{UTXO, earn_data::EarnData, solana_token_program::SolanaTokenProgramId};
+use crate::{UTXO, earn_data::EarnData, solana_token_program::SolanaTokenProgramId, stake_type::TronStakeData};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HyperliquidOrder {
@@ -85,7 +83,7 @@ pub enum TransactionLoadMetadata {
         transaction_tree_root: String,
         parent_hash: String,
         witness_address: String,
-        votes: HashMap<String, u64>,
+        stake_data: TronStakeData,
     },
     Sui {
         message_bytes: String,

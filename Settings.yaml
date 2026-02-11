@@ -9,8 +9,9 @@ meilisearch:
 rabbitmq:
   url: "amqp://username:password@localhost:5672"
   prefetch: 50
-  retry_delay: 1s
-  retry_max_delay: 30s
+  retry:
+    delay: 1s
+    timeout: 30s
 coingecko:
   key:
     secret: ""

@@ -2,9 +2,10 @@ use crate::models::*;
 use num_bigint::BigInt;
 use primitives::stake_type::FreezeData;
 use primitives::{
-    AccountDataType, Asset, EarnAction, EarnData, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, StakeType,
+    AccountDataType, Asset, EarnData, EarnType, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, Resource, StakeType,
     TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata, TransactionState,
-    TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, UInt64, WalletConnectionSessionAppMetadata,
+    TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, TronStakeData, TronUnfreeze, TronVote,
+    UInt64, WalletConnectionSessionAppMetadata,
     perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualReduceData, TPSLOrderData},
 };
 use std::collections::HashMap;
@@ -23,6 +24,27 @@ pub type GemTransactionState = TransactionState;
 pub type GemTransactionChange = TransactionChange;
 pub type GemTransactionUpdate = TransactionUpdate;
 pub type GemTransactionType = TransactionType;
+pub type GemTronVote = TronVote;
+pub type GemTronUnfreeze = TronUnfreeze;
+pub type GemTronStakeData = TronStakeData;
+
+#[uniffi::remote(Record)]
+pub struct TronVote {
+    pub validator: String,
+    pub count: u64,
+}
+
+#[uniffi::remote(Record)]
+pub struct TronUnfreeze {
+    pub resource: Resource,
+    pub amount: u64,
+}
+
+#[uniffi::remote(Enum)]
+pub enum TronStakeData {
+    Votes(Vec<TronVote>),
+    Unfreeze(Vec<TronUnfreeze>),
+}
 
 #[uniffi::remote(Enum)]
 pub enum PerpetualDirection {
@@ -235,14 +257,6 @@ pub enum PerpetualType {
     Reduce(PerpetualReduceData),
 }
 
-pub type GemEarnAction = EarnAction;
-
-#[uniffi::remote(Enum)]
-pub enum EarnAction {
-    Deposit,
-    Withdraw,
-}
-
 pub type GemEarnData = EarnData;
 
 #[uniffi::remote(Record)]
@@ -252,6 +266,14 @@ pub struct EarnData {
     pub call_data: Option<String>,
     pub approval: Option<GemApprovalData>,
     pub gas_limit: Option<String>,
+}
+
+pub type GemEarnType = EarnType;
+
+#[uniffi::remote(Enum)]
+pub enum EarnType {
+    Deposit(GemDelegationValidator),
+    Withdraw(GemDelegation),
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -295,8 +317,7 @@ pub enum GemTransactionInputType {
     },
     Earn {
         asset: GemAsset,
-        action: GemEarnAction,
-        data: GemEarnData,
+        earn_type: GemEarnType,
     },
 }
 
@@ -440,7 +461,7 @@ pub enum GemTransactionLoadMetadata {
         transaction_tree_root: String,
         parent_hash: String,
         witness_address: String,
-        votes: HashMap<String, u64>,
+        stake_data: GemTronStakeData,
     },
     Sui {
         message_bytes: String,
@@ -522,7 +543,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 transaction_tree_root,
                 parent_hash,
                 witness_address,
-                votes,
+                stake_data,
             } => GemTransactionLoadMetadata::Tron {
                 block_number,
                 block_version,
@@ -530,7 +551,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 transaction_tree_root,
                 parent_hash,
                 witness_address,
-                votes,
+                stake_data,
             },
             TransactionLoadMetadata::Sui { message_bytes } => GemTransactionLoadMetadata::Sui { message_bytes },
             TransactionLoadMetadata::Hyperliquid { order } => GemTransactionLoadMetadata::Hyperliquid { order },
@@ -610,7 +631,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 transaction_tree_root,
                 parent_hash,
                 witness_address,
-                votes,
+                stake_data,
             } => TransactionLoadMetadata::Tron {
                 block_number,
                 block_version,
@@ -618,7 +639,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 transaction_tree_root,
                 parent_hash,
                 witness_address,
-                votes,
+                stake_data,
             },
             GemTransactionLoadMetadata::Sui { message_bytes } => TransactionLoadMetadata::Sui { message_bytes },
             GemTransactionLoadMetadata::Hyperliquid { order } => TransactionLoadMetadata::Hyperliquid { order },
@@ -677,7 +698,7 @@ impl From<TransactionInputType> for GemTransactionInputType {
             TransactionInputType::TransferNft(asset, nft_asset) => GemTransactionInputType::TransferNft { asset, nft_asset },
             TransactionInputType::Account(asset, account_type) => GemTransactionInputType::Account { asset, account_type },
             TransactionInputType::Perpetual(asset, perpetual_type) => GemTransactionInputType::Perpetual { asset, perpetual_type },
-            TransactionInputType::Earn(asset, action, data) => GemTransactionInputType::Earn { asset, action, data },
+            TransactionInputType::Earn(asset, earn_type) => GemTransactionInputType::Earn { asset, earn_type },
         }
     }
 }
@@ -831,7 +852,7 @@ impl From<GemTransactionInputType> for TransactionInputType {
             GemTransactionInputType::TransferNft { asset, nft_asset } => TransactionInputType::TransferNft(asset, nft_asset),
             GemTransactionInputType::Account { asset, account_type } => TransactionInputType::Account(asset, account_type),
             GemTransactionInputType::Perpetual { asset, perpetual_type } => TransactionInputType::Perpetual(asset, perpetual_type),
-            GemTransactionInputType::Earn { asset, action, data } => TransactionInputType::Earn(asset, action, data),
+            GemTransactionInputType::Earn { asset, earn_type } => TransactionInputType::Earn(asset, earn_type),
         }
     }
 }

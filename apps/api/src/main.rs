@@ -18,8 +18,6 @@ mod referral;
 mod responders;
 mod scan;
 mod status;
-mod subscriptions;
-mod support;
 mod swap;
 mod transactions;
 mod wallets;
@@ -54,8 +52,6 @@ use settings::Settings;
 use settings_chain::{ChainProviders, ProviderFactory};
 use storage::Database;
 use streamer::{StreamProducer, StreamProducerConfig};
-use subscriptions::SubscriptionsClient;
-use support::SupportClient;
 use swap::SwapClient;
 use transactions::TransactionsClient;
 use wallets::WalletsClient;
@@ -79,12 +75,12 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
 
     let chain_client = chain::ChainClient::new(ChainProviders::new(ProviderFactory::new_providers(&settings)));
 
-    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+    let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
     let pusher_client = PusherClient::new(settings.pusher.url, settings.pusher.ios.topic);
     let devices_client = DevicesClient::new(database.clone(), pusher_client.clone());
     let transactions_client = TransactionsClient::new(database.clone());
     let stream_producer = StreamProducer::new(&rabbitmq_config, "api").await.unwrap();
-    let subscriptions_client = SubscriptionsClient::new(database.clone(), stream_producer.clone());
     let device_cacher = DeviceCacher::new(database.clone(), cacher_client.clone());
     let wallets_client = WalletsClient::new(database.clone(), device_cacher, stream_producer.clone());
     let metrics_cacher = CacherClient::new(&settings.metrics.redis.url).await;
@@ -111,7 +107,6 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let auth_client = Arc::new(AuthClient::new(cacher_client.clone()));
     let markets_client = MarketsClient::new(database.clone(), cacher_client.clone());
     let webhooks_client = WebhooksClient::new(stream_producer.clone());
-    let support_client = SupportClient::new(database.clone());
     let ip_check_providers: Vec<Arc<dyn IpCheckProvider>> = vec![
         Arc::new(AbuseIPDBClient::new(settings.ip.abuseipdb.url.clone(), settings.ip.abuseipdb.key.secret.clone())),
         Arc::new(IpApiClient::new(settings.ip.ipapi.url.clone(), settings.ip.ipapi.key.secret.clone())),
@@ -133,7 +128,6 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(devices_client))
         .manage(Mutex::new(assets_client))
         .manage(Mutex::new(search_client))
-        .manage(Mutex::new(subscriptions_client))
         .manage(Mutex::new(transactions_client))
         .manage(Mutex::new(metrics_client))
         .manage(Mutex::new(scan_client))
@@ -143,7 +137,6 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(chain_client))
         .manage(Mutex::new(markets_client))
         .manage(Mutex::new(webhooks_client))
-        .manage(Mutex::new(support_client))
         .manage(Mutex::new(fiat_ip_check_client))
         .manage(Mutex::new(rewards_client))
         .manage(Mutex::new(redemption_client))
@@ -178,18 +171,12 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 assets::get_assets,
                 assets::add_asset,
                 assets::get_assets_search,
-                assets::get_assets_by_device_id,
                 assets::get_search,
-                subscriptions::add_subscriptions,
-                subscriptions::get_subscriptions,
-                subscriptions::delete_subscriptions,
-                transactions::get_transactions_by_device_id_v1,
                 transactions::get_transaction_by_id,
                 chain::transaction::get_latest_block_number,
                 chain::transaction::get_block_transactions,
                 chain::transaction::get_block_transactions_finalize,
                 swap::get_swap_assets,
-                nft::get_nft_assets_old,
                 nft::get_nft_assets_by_chain,
                 nft::get_nft_collection,
                 nft::get_nft_asset,
@@ -211,9 +198,6 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 chain::balance::get_balances_staking,
                 chain::transaction::get_transactions,
                 webhooks::create_support_webhook,
-                support::add_device_legacy,
-                support::add_device,
-                support::get_support_device,
                 fiat::get_ip_address,
                 referral::get_rewards_leaderboard,
                 referral::get_rewards_redemption_option,
@@ -231,8 +215,6 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
             routes![
                 devices::get_fiat_quotes_v2,
                 devices::get_fiat_quote_url_v2,
-                transactions::get_transactions_by_device_id_v2,
-                nft::get_nft_assets_v2,
                 scan::scan_transaction_v2,
                 devices::add_device_v2,
                 devices::get_device_v2,
@@ -253,7 +235,6 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
                 devices::redeem_device_rewards_v2,
                 devices::get_device_notifications_v2,
                 devices::mark_device_notifications_read_v2,
-                devices::add_device_support_v2,
                 devices::get_device_subscriptions_v2,
                 devices::add_device_subscriptions_v2,
                 devices::delete_device_subscriptions_v2,

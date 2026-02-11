@@ -70,14 +70,7 @@ impl<C: Client + Clone> EthereumClient<C> {
                 },
                 _ => input.metadata,
             },
-            TransactionInputType::Earn(_, _, earn_input) => match input.metadata {
-                TransactionLoadMetadata::Evm { nonce, chain_id, .. } => TransactionLoadMetadata::Evm {
-                    nonce,
-                    chain_id,
-                    earn_data: Some(earn_input.clone()),
-                },
-                _ => input.metadata,
-            },
+            TransactionInputType::Earn(_, _) => input.metadata,
             _ => input.metadata,
         };
 

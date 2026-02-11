@@ -55,14 +55,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION cleanup_all_charts_data() RETURNS VOID AS $$
-BEGIN
-    DELETE FROM charts WHERE created_at < NOW() - INTERVAL '8 days';
-    DELETE FROM charts_hourly WHERE created_at < NOW() - INTERVAL '31 days';
-    DELETE FROM charts_daily WHERE created_at < NOW() - INTERVAL '365 days';
-END;
-$$ LANGUAGE plpgsql;
-
 ALTER TABLE charts SET (autovacuum_vacuum_scale_factor = 0.02, autovacuum_vacuum_threshold = 1000);
 ALTER TABLE charts_hourly SET (autovacuum_vacuum_scale_factor = 0.02, autovacuum_vacuum_threshold = 500);
 ALTER TABLE charts_daily SET (autovacuum_vacuum_scale_factor = 0.02, autovacuum_vacuum_threshold = 500);

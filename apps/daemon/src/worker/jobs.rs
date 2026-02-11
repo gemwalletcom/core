@@ -1,5 +1,5 @@
 use crate::model::WorkerService;
-use primitives::ConfigKey;
+use primitives::{Chain, ConfigKey, FiatProviderName, PlatformStore};
 use std::error::Error;
 use std::time::Duration;
 use storage::ConfigCacher;
@@ -35,6 +35,56 @@ impl JobSpec {
     }
 }
 
+pub trait JobLabel {
+    fn job_label(&self) -> String;
+}
+
+impl JobLabel for str {
+    fn job_label(&self) -> String {
+        self.to_string()
+    }
+}
+
+impl JobLabel for String {
+    fn job_label(&self) -> String {
+        self.clone()
+    }
+}
+
+impl<T> JobLabel for &T
+where
+    T: JobLabel + ?Sized,
+{
+    fn job_label(&self) -> String {
+        (*self).job_label()
+    }
+}
+
+impl JobLabel for Chain {
+    fn job_label(&self) -> String {
+        self.as_ref().to_string()
+    }
+}
+
+impl JobLabel for FiatProviderName {
+    fn job_label(&self) -> String {
+        self.as_ref().to_string()
+    }
+}
+
+impl JobLabel for PlatformStore {
+    fn job_label(&self) -> String {
+        self.as_ref().to_string()
+    }
+}
+
+fn compose_job_name(base: &str, label: Option<&str>) -> String {
+    match label.map(str::trim).filter(|value| !value.is_empty()) {
+        Some(suffix) => format!("{base}.{suffix}"),
+        None => base.to_string(),
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, AsRefStr)]
 #[strum(serialize_all = "snake_case")]
 pub enum WorkerJob {
@@ -60,7 +110,7 @@ pub enum WorkerJob {
     UpdatePerpetualsIndex,
     UpdateNftsIndex,
     CleanupProcessedTransactions,
-    UpdateStoreVersions,
+    UpdateStoreVersion,
     UpdateChainValidators,
     UpdateValidatorsFromStaticAssets,
     CheckRewardsAbuse,
@@ -69,9 +119,11 @@ pub enum WorkerJob {
     UpdatePricesTopMarketCap,
     UpdatePricesHighMarketCap,
     UpdatePricesLowMarketCap,
+    UpdatePricesVeryLowMarketCap,
     AggregateHourlyCharts,
     AggregateDailyCharts,
-    CleanupChartsData,
+    CleanupChartsHourly,
+    CleanupChartsDaily,
     UpdateMarkets,
     UpdateObservedPrices,
     UpdateDexFeeds,
@@ -93,33 +145,35 @@ impl WorkerJob {
             UpdatePerpetuals => JobSpec::new(WorkerService::Assets, JobInterval::Config(ConfigKey::AssetsTimerUpdatePerpetuals)),
             UpdateUsageRanks => JobSpec::new(WorkerService::Assets, JobInterval::Config(ConfigKey::AssetsTimerUpdateUsageRank)),
             UpdateAssetsImages => JobSpec::new(WorkerService::Assets, JobInterval::Config(ConfigKey::AssetsTimerUpdateImages)),
-            CleanupStaleDeviceSubscriptions => JobSpec::new(WorkerService::Device, JobInterval::Config(ConfigKey::DeviceTimerUpdater)),
-            ObserveInactiveDevices => JobSpec::new(WorkerService::Device, JobInterval::Config(ConfigKey::DeviceTimerInactiveObserver)),
+            CleanupStaleDeviceSubscriptions => JobSpec::new(WorkerService::System, JobInterval::Config(ConfigKey::DeviceTimerUpdater)),
+            ObserveInactiveDevices => JobSpec::new(WorkerService::System, JobInterval::Config(ConfigKey::DeviceTimerInactiveObserver)),
             UpdateFiatAssets => JobSpec::new(WorkerService::Fiat, JobInterval::Config(ConfigKey::FiatTimerUpdateAssets)),
             UpdateFiatProviderCountries => JobSpec::new(WorkerService::Fiat, JobInterval::Config(ConfigKey::FiatTimerUpdateProviderCountries)),
             UpdateFiatBuyableAssets => JobSpec::new(WorkerService::Fiat, JobInterval::Config(ConfigKey::FiatTimerUpdateBuyableAssets)),
-            UpdateFiatSellableAssets => JobSpec::new(WorkerService::Fiat, JobInterval::Config(ConfigKey::FiatTimerUpdateBuyableAssets)),
+            UpdateFiatSellableAssets => JobSpec::new(WorkerService::Fiat, JobInterval::Config(ConfigKey::FiatTimerUpdateSellableAssets)),
             UpdateTrendingFiatAssets => JobSpec::new(WorkerService::Fiat, JobInterval::Config(ConfigKey::FiatTimerUpdateTrending)),
             UpdateAssetsIndex => JobSpec::new(WorkerService::Search, JobInterval::Config(ConfigKey::SearchAssetsUpdateInterval)),
             UpdatePerpetualsIndex => JobSpec::new(WorkerService::Search, JobInterval::Config(ConfigKey::SearchPerpetualsUpdateInterval)),
             UpdateNftsIndex => JobSpec::new(WorkerService::Search, JobInterval::Config(ConfigKey::SearchNftsUpdateInterval)),
-            CleanupProcessedTransactions => JobSpec::new(WorkerService::Transaction, JobInterval::Config(ConfigKey::TransactionTimerUpdater)),
-            UpdateStoreVersions => JobSpec::new(WorkerService::Version, JobInterval::Config(ConfigKey::VersionTimerUpdateStoreVersions)),
-            UpdateChainValidators => JobSpec::new(WorkerService::Scan, JobInterval::Config(ConfigKey::ScanTimerUpdateValidators)),
-            UpdateValidatorsFromStaticAssets => JobSpec::new(WorkerService::Scan, JobInterval::Config(ConfigKey::ScanTimerUpdateValidatorsStatic)),
+            CleanupProcessedTransactions => JobSpec::new(WorkerService::System, JobInterval::Config(ConfigKey::TransactionTimerUpdater)),
+            UpdateStoreVersion => JobSpec::new(WorkerService::System, JobInterval::Config(ConfigKey::VersionTimerUpdateStoreVersions)),
+            UpdateChainValidators => JobSpec::new(WorkerService::Assets, JobInterval::Config(ConfigKey::ScanTimerUpdateValidators)),
+            UpdateValidatorsFromStaticAssets => JobSpec::new(WorkerService::Assets, JobInterval::Config(ConfigKey::ScanTimerUpdateValidatorsStatic)),
             CheckRewardsAbuse => JobSpec::new(WorkerService::Rewards, JobInterval::Config(ConfigKey::RewardsTimerAbuseChecker)),
-            CleanupOutdatedAssets => JobSpec::new(WorkerService::Pricer, JobInterval::Config(ConfigKey::PriceTimerCleanOutdated)),
-            UpdateFiatRates => JobSpec::new(WorkerService::Pricer, JobInterval::Config(ConfigKey::PriceTimerFiatRates)),
-            UpdatePricesTopMarketCap => JobSpec::new(WorkerService::Pricer, JobInterval::Config(ConfigKey::PriceTimerTopMarketCap)),
-            UpdatePricesHighMarketCap => JobSpec::new(WorkerService::Pricer, JobInterval::Config(ConfigKey::PriceTimerHighMarketCap)),
-            UpdatePricesLowMarketCap => JobSpec::new(WorkerService::Pricer, JobInterval::Config(ConfigKey::PriceTimerLowMarketCap)),
-            AggregateHourlyCharts => JobSpec::new(WorkerService::Pricer, JobInterval::Config(ConfigKey::PriceTimerChartsHourly)),
-            AggregateDailyCharts => JobSpec::new(WorkerService::Pricer, JobInterval::Config(ConfigKey::PriceTimerChartsDaily)),
-            CleanupChartsData => JobSpec::new(WorkerService::Pricer, JobInterval::Config(ConfigKey::PriceTimerCleanupCharts)),
-            UpdateMarkets => JobSpec::new(WorkerService::Pricer, JobInterval::Config(ConfigKey::PriceTimerMarkets)),
-            UpdateObservedPrices => JobSpec::new(WorkerService::Pricer, JobInterval::Config(ConfigKey::PriceObservedFetchInterval)),
-            UpdateDexFeeds => JobSpec::new(WorkerService::PricesDex, JobInterval::Duration(Duration::from_secs(3600))),
-            UpdateDexPrices => JobSpec::new(WorkerService::PricesDex, JobInterval::Duration(Duration::from_secs(1800))),
+            CleanupOutdatedAssets => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerCleanOutdated)),
+            UpdateFiatRates => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerFiatRates)),
+            UpdatePricesTopMarketCap => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerTopMarketCap)),
+            UpdatePricesHighMarketCap => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerHighMarketCap)),
+            UpdatePricesLowMarketCap => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerLowMarketCap)),
+            UpdatePricesVeryLowMarketCap => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerVeryLowMarketCap)),
+            AggregateHourlyCharts => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerChartsHourly)),
+            AggregateDailyCharts => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerChartsDaily)),
+            CleanupChartsHourly => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerCleanupChartsHourly)),
+            CleanupChartsDaily => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerCleanupChartsDaily)),
+            UpdateMarkets => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerMarkets)),
+            UpdateObservedPrices => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceObservedFetchInterval)),
+            UpdateDexFeeds => JobSpec::new(WorkerService::Prices, JobInterval::Duration(Duration::from_secs(3600))),
+            UpdateDexPrices => JobSpec::new(WorkerService::Prices, JobInterval::Duration(Duration::from_secs(1800))),
         }
     }
 
@@ -133,32 +187,25 @@ impl WorkerJob {
 }
 
 #[derive(Clone, Debug)]
-pub struct JobInstance {
+pub struct JobVariant {
     job: WorkerJob,
-    name: String,
+    label: Option<String>,
     override_interval: Option<Duration>,
 }
 
-impl JobInstance {
+impl JobVariant {
     pub fn new(job: WorkerJob) -> Self {
         Self {
-            name: job.as_ref().to_string(),
             job,
+            label: None,
             override_interval: None,
         }
     }
 
     pub fn labeled(job: WorkerJob, label: impl Into<String>) -> Self {
-        let label = label.into();
-        let trimmed = label.trim();
-        let name = if trimmed.is_empty() {
-            job.as_ref().to_string()
-        } else {
-            format!("{}.{}", job.as_ref(), trimmed)
-        };
         Self {
             job,
-            name,
+            label: Some(label.into()),
             override_interval: None,
         }
     }
@@ -168,8 +215,8 @@ impl JobInstance {
         self
     }
 
-    pub fn name(&self) -> &str {
-        &self.name
+    pub fn name(&self) -> String {
+        job_name(self.job, self.label.as_deref())
     }
 
     pub fn worker(&self) -> WorkerService {
@@ -185,8 +232,12 @@ impl JobInstance {
     }
 }
 
-impl From<WorkerJob> for JobInstance {
+impl From<WorkerJob> for JobVariant {
     fn from(job: WorkerJob) -> Self {
-        JobInstance::new(job)
+        JobVariant::new(job)
     }
+}
+
+pub fn job_name(job: WorkerJob, label: Option<&str>) -> String {
+    compose_job_name(job.as_ref(), label)
 }

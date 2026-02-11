@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use primitives::{Chain, NFTAsset, NFTAssetId, NFTCollection, NFTCollectionId};
+use primitives::{Chain, NFTAsset, NFTAssetId, NFTChain, NFTCollection, NFTCollectionId};
 
 use super::mapper::{map_asset, map_assets, map_collection};
 use crate::provider::NFTProvider;
@@ -12,8 +12,8 @@ impl NFTProvider for OpenSeaClient {
         "OpenSea"
     }
 
-    fn get_chains(&self) -> Vec<Chain> {
-        vec![Chain::Ethereum, Chain::Polygon]
+    fn chains(&self) -> &'static [NFTChain] {
+        &[NFTChain::Ethereum, NFTChain::Polygon]
     }
 
     async fn get_assets(&self, chain: Chain, address: String) -> Result<Vec<NFTAssetId>, Box<dyn Error + Send + Sync>> {

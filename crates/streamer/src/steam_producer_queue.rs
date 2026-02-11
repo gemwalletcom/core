@@ -3,8 +3,8 @@ use std::error::Error;
 use primitives::{AssetId, Chain};
 
 use crate::{
-    AssetsAddressPayload, ChainAddressPayload, ChartsPayload, ExchangeName, FetchAssetsPayload, FetchBlocksPayload, FetchPricesPayload, InAppNotificationPayload,
-    NotificationsFailedPayload, NotificationsPayload, PricesPayload, QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, StreamProducer, TransactionsPayload,
+    ChainAddressPayload, ChartsPayload, ExchangeName, FetchAssetsPayload, FetchBlocksPayload, FetchPricesPayload, InAppNotificationPayload, NotificationsFailedPayload,
+    NotificationsPayload, PricesPayload, QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, StreamProducer, TransactionsPayload,
 };
 
 #[async_trait::async_trait]
@@ -19,7 +19,6 @@ pub trait StreamProducerQueue {
     async fn publish_rewards_events(&self, payload: Vec<RewardsNotificationPayload>) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_rewards_redemption(&self, payload: RewardsRedemptionPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_notifications_failed(&self, payload: NotificationsFailedPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
-    async fn publish_store_assets_addresses_associations(&self, payload: AssetsAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_prices(&self, payload: PricesPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_charts(&self, payload: ChartsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_blocks(&self, chain: Chain, blocks: &[u64]) -> Result<(), Box<dyn Error + Send + Sync>>;
@@ -97,13 +96,6 @@ impl StreamProducerQueue for StreamProducer {
             return Ok(true);
         }
         self.publish(QueueName::NotificationsFailed, &payload).await
-    }
-
-    async fn publish_store_assets_addresses_associations(&self, payload: AssetsAddressPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        if payload.values.is_empty() {
-            return Ok(true);
-        }
-        self.publish(QueueName::StoreAssetsAssociations, &payload).await
     }
 
     async fn publish_prices(&self, payload: PricesPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {

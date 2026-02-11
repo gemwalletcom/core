@@ -15,7 +15,8 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
     let database = ctx.database();
     let settings = ctx.settings();
     let config = ConfigCacher::new(database.clone());
-    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+    let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
     let stream_producer = StreamProducer::new(&rabbitmq_config, "check_rewards_abuse").await?;
 
     JobPlanBuilder::with_config(WorkerService::Rewards, runtime.plan(shutdown_rx), &config)

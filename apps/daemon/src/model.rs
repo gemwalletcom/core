@@ -1,44 +1,41 @@
 use primitives::Chain;
 use std::str::FromStr;
-use strum::{AsRefStr, EnumString};
+use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 
-#[derive(Debug, Clone, PartialEq, AsRefStr, EnumString)]
+#[derive(Debug, Clone, PartialEq, AsRefStr, EnumString, EnumIter)]
 #[strum(serialize_all = "snake_case")]
 pub enum ConsumerService {
-    FetchAddressTransactions,
-    StoreTransactions,
-    FetchBlocks,
-    FetchAssets,
-    FetchTokenAssociations,
-    FetchCoinAssociations,
-    StoreAssetsAssociations,
-    FetchNftAssociations,
+    Store,
+    Indexer,
     Notifications,
-    InAppNotifications,
     Rewards,
-    RewardsRedemptions,
     Support,
     Fiat,
-    StorePrices,
-    StoreCharts,
     FetchPrices,
-    Nft,
 }
 
-#[derive(Debug, Clone, Copy, AsRefStr, EnumString, PartialEq, Eq)]
+impl ConsumerService {
+    pub fn all() -> Vec<Self> {
+        Self::iter().collect()
+    }
+}
+
+#[derive(Debug, Clone, Copy, AsRefStr, EnumString, EnumIter, PartialEq, Eq)]
 #[strum(serialize_all = "snake_case")]
 pub enum WorkerService {
     Alerter,
-    Pricer,
-    PricesDex,
+    Prices,
     Fiat,
     Assets,
-    Version,
-    Transaction,
-    Device,
+    System,
     Search,
-    Scan,
     Rewards,
+}
+
+impl WorkerService {
+    pub fn all() -> Vec<Self> {
+        Self::iter().collect()
+    }
 }
 
 #[derive(Debug, Clone, AsRefStr)]
@@ -47,11 +44,11 @@ pub enum DaemonService {
     Setup,
     SetupDev,
     #[strum(serialize = "worker")]
-    Worker(WorkerService),
+    Worker(Option<WorkerService>),
     #[strum(serialize = "parser")]
     Parser(Option<Chain>),
     #[strum(serialize = "consumer")]
-    Consumer(ConsumerService),
+    Consumer(Option<ConsumerService>),
 }
 
 impl DaemonService {
@@ -59,7 +56,8 @@ impl DaemonService {
         match self {
             DaemonService::Setup => "setup".to_owned(),
             DaemonService::SetupDev => "setup_dev".to_owned(),
-            DaemonService::Worker(name) => format!("worker {}", name.as_ref()),
+            DaemonService::Worker(Some(name)) => format!("worker {}", name.as_ref()),
+            DaemonService::Worker(None) => "worker all".to_owned(),
             DaemonService::Parser(chain) => {
                 if let Some(chain) = chain {
                     format!("parser {}", chain.as_ref())
@@ -67,7 +65,8 @@ impl DaemonService {
                     "parser".to_owned()
                 }
             }
-            DaemonService::Consumer(consumer) => format!("consumer {}", consumer.as_ref()),
+            DaemonService::Consumer(Some(consumer)) => format!("consumer {}", consumer.as_ref()),
+            DaemonService::Consumer(None) => "consumer all".to_owned(),
         }
     }
 }
@@ -91,8 +90,11 @@ impl FromStr for DaemonService {
             Self::SETUP => Ok(DaemonService::Setup),
             Self::SETUP_DEV => Ok(DaemonService::SetupDev),
             Self::WORKER => {
-                let worker_str = parts.get(1).ok_or_else(|| "Worker service must be specified".to_string())?;
-                let worker = WorkerService::from_str(worker_str).map_err(|_| format!("Invalid worker: {}", worker_str))?;
+                let worker = if let Some(worker_str) = parts.get(1) {
+                    Some(WorkerService::from_str(worker_str).map_err(|_| format!("Invalid worker: {}", worker_str))?)
+                } else {
+                    None
+                };
                 Ok(DaemonService::Worker(worker))
             }
             Self::PARSER => {
@@ -104,8 +106,11 @@ impl FromStr for DaemonService {
                 Ok(DaemonService::Parser(chain))
             }
             Self::CONSUMER => {
-                let consumer_str = parts.get(1).ok_or_else(|| "Consumer service must be specified".to_string())?;
-                let consumer = ConsumerService::from_str(consumer_str).map_err(|_| format!("Invalid consumer: {}", consumer_str))?;
+                let consumer = if let Some(consumer_str) = parts.get(1) {
+                    Some(ConsumerService::from_str(consumer_str).map_err(|_| format!("Invalid consumer: {}", consumer_str))?)
+                } else {
+                    None
+                };
                 Ok(DaemonService::Consumer(consumer))
             }
             _ => Err(format!("Unknown service: {}", name)),

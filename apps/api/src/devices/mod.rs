@@ -10,7 +10,6 @@ use crate::notifications::NotificationsClient;
 use crate::params::{AssetIdParam, CurrencyParam, DeviceIdParam, DeviceParam, FiatQuoteTypeParam};
 use crate::responders::{ApiError, ApiResponse};
 use crate::scan::ScanClient;
-use crate::support::SupportClient;
 use crate::transactions::TransactionsClient;
 use crate::wallets::WalletsClient;
 pub use cacher::DeviceCacher;
@@ -22,7 +21,7 @@ use primitives::device::Device;
 use primitives::rewards::{RedemptionRequest, RedemptionResult};
 use primitives::{
     AssetId, AuthNonce, FiatQuoteRequest, FiatQuoteUrl, FiatQuotes, InAppNotification, MigrateDeviceIdRequest, NFTData, PriceAlerts, ReportNft, RewardEvent, Rewards,
-    ScanTransaction, ScanTransactionPayload, SupportDevice, SupportDeviceRequest, TransactionsResponse, WalletSubscription, WalletSubscriptionChains,
+    ScanTransaction, ScanTransactionPayload, TransactionsResponse, WalletSubscription, WalletSubscriptionChains,
 };
 use rocket::{State, delete, get, post, put, serde::json::Json, tokio::sync::Mutex};
 use std::sync::Arc;
@@ -222,15 +221,6 @@ pub async fn get_device_notifications_v2(
 #[post("/devices/notifications/read")]
 pub async fn mark_device_notifications_read_v2(device: AuthenticatedDevice, client: &State<Mutex<NotificationsClient>>) -> Result<ApiResponse<usize>, ApiError> {
     Ok(client.lock().await.mark_all_as_read(&device.device_row.device_id)?.into())
-}
-
-#[post("/devices/support", format = "json", data = "<request>")]
-pub async fn add_device_support_v2(
-    device: AuthenticatedDevice,
-    request: Json<SupportDeviceRequest>,
-    client: &State<Mutex<SupportClient>>,
-) -> Result<ApiResponse<SupportDevice>, ApiError> {
-    Ok(client.lock().await.add_support_device(&request.support_device_id, &device.device_row.device_id)?.into())
 }
 
 #[get("/devices/subscriptions")]
