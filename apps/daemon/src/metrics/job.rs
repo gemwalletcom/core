@@ -27,9 +27,8 @@ struct JobState {
     interval: u64,
     duration: u64,
     last_success: Option<u64>,
-    last_error: Option<String>,
-    last_error_at: Option<u64>,
     error_count: u64,
+    errors: HashMap<String, u64>,
 }
 
 pub struct JobMetrics {
@@ -56,9 +55,9 @@ impl JobMetrics {
         if success {
             state.last_success = Some(timestamp);
         } else if let Some(msg) = error {
-            state.last_error = Some(msg);
-            state.last_error_at = Some(timestamp);
             state.error_count += 1;
+            let message = if msg.len() > 200 { &msg[..200] } else { &msg };
+            *state.errors.entry(message.to_string()).or_default() += 1;
         }
     }
 }
@@ -67,10 +66,9 @@ impl MetricsProvider for JobMetrics {
     fn register(&self, registry: &mut Registry) {
         let last_success_at = Family::<JobLabels, Gauge>::default();
         let interval = Family::<JobLabels, Gauge>::default();
-        let last_error_at = Family::<JobLabels, Gauge>::default();
         let duration = Family::<JobLabels, Gauge>::default();
-        let error_detail = Family::<JobErrorLabels, Gauge>::default();
         let errors = Family::<JobLabels, Gauge>::default();
+        let error_detail = Family::<JobErrorLabels, Gauge>::default();
 
         let jobs = self.jobs.lock().unwrap();
         for (name, state) in jobs.iter() {
@@ -86,24 +84,21 @@ impl MetricsProvider for JobMetrics {
             if let Some(ts) = state.last_success {
                 last_success_at.get_or_create(&labels).set(ts as i64);
             }
-            if let Some(ts) = state.last_error_at {
-                last_error_at.get_or_create(&labels).set(ts as i64);
-            }
-            if let (Some(msg), Some(ts)) = (&state.last_error, state.last_error_at) {
+
+            for (error, count) in &state.errors {
                 let error_labels = JobErrorLabels {
                     service: self.service.clone(),
                     job_name: name.clone(),
-                    error: msg.clone(),
+                    error: error.clone(),
                 };
-                error_detail.get_or_create(&error_labels).set(ts as i64);
+                error_detail.get_or_create(&error_labels).set(*count as i64);
             }
         }
 
         registry.register("job_last_success_at", "Last successful job run (unix timestamp)", last_success_at);
         registry.register("job_interval_seconds", "Job interval in seconds", interval);
-        registry.register("job_last_error_at", "Last job error (unix timestamp)", last_error_at);
         registry.register("job_duration_milliseconds", "Last job duration in milliseconds", duration);
-        registry.register("job_error_detail", "Job error details by service and message", error_detail);
         registry.register("job_errors", "Total error count", errors);
+        registry.register("job_error_detail", "Job error count by message", error_detail);
     }
 }
