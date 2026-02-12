@@ -85,7 +85,7 @@ impl<C: Client + Clone> EthereumClient<C> {
         let mut delegations = Vec::new();
 
         for position in positions {
-            if position.amount.is_zero() {
+            if position.amount.is_zero() && position.rewards.is_zero() {
                 continue;
             }
 
