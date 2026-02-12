@@ -12,6 +12,7 @@ rpc = [
     "dep:chain_traits",
     "dep:futures",
 ]
+signer = ["dep:signer", "dep:solana-primitives", "dep:num-traits"]
 reqwest = ["gem_jsonrpc/reqwest"]
 chain_integration_tests = [
     "rpc",
@@ -25,7 +26,6 @@ integration = []
 curve25519-dalek = { workspace = true }
 sha2 = { workspace = true }
 bs58 = { workspace = true }
-rand = { workspace = true }
 borsh = { workspace = true }
 base64 = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
@@ -40,6 +40,9 @@ gem_client = { path = "../gem_client", optional = true }
 chain_traits = { path = "../chain_traits", optional = true }
 futures = { workspace = true, optional = true }
 settings = { path = "../settings", features = ["testkit"], optional = true }
+signer = { path = "../signer", optional = true }
+solana-primitives = { version = "0.2.3", optional = true }
+num-traits = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }

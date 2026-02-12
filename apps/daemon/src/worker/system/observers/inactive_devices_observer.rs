@@ -1,0 +1,45 @@
+use cacher::{CacheKey, CacherClient};
+use localizer::LanguageLocalizer;
+use primitives::{Asset, Chain, GorushNotification, PushNotification};
+use std::error::Error;
+use storage::{Database, DevicesRepository, WalletsRepository};
+use streamer::{NotificationsPayload, StreamProducer, StreamProducerQueue};
+
+pub struct InactiveDevicesObserver {
+    database: Database,
+    cacher: CacherClient,
+    stream_producer: StreamProducer,
+}
+
+impl InactiveDevicesObserver {
+    pub fn new(database: Database, cacher: CacherClient, stream_producer: StreamProducer) -> Self {
+        Self {
+            database,
+            cacher,
+            stream_producer,
+        }
+    }
+
+    pub async fn observe(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        // 7 days to 14 days
+        let devices = self.database.devices()?.devices_inactive_days(10, 14, Some(true))?;
+        for device in &devices {
+            let device_row_id = self.database.devices()?.get_device_row_id(&device.id)?;
+            let subscriptions = self.database.wallets()?.get_subscriptions(device_row_id)?;
+            if subscriptions.is_empty() {
+                continue;
+            }
+            if !self.cacher.can_process_cached(CacheKey::InactiveDeviceObserver(&device.id)).await? {
+                continue;
+            }
+            let language_localizer = LanguageLocalizer::new_with_language(device.locale.as_str());
+            let asset = Asset::from_chain(Chain::Bitcoin);
+            let (title, description) = language_localizer.notification_onboarding_buy_asset(&asset.name);
+            let notification = GorushNotification::from_device(device.clone(), title, description, PushNotification::new_buy_asset(asset.id));
+            let payload = NotificationsPayload::new(vec![notification]);
+            self.stream_producer.publish_notifications_observers(payload).await?;
+        }
+
+        Ok(devices.len())
+    }
+}

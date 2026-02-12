@@ -4,7 +4,7 @@ use primitives::{AssetId, Chain};
 
 use crate::{
     ChainAddressPayload, ChartsPayload, ExchangeName, FetchAssetsPayload, FetchBlocksPayload, FetchPricesPayload, InAppNotificationPayload, NotificationsFailedPayload,
-    NotificationsPayload, PricesPayload, QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, StreamProducer, TransactionsPayload,
+    NotificationsPayload, PricesPayload, QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, StreamProducer, TransactionsPayload, UpdateCoinInfoPayload,
 };
 
 #[async_trait::async_trait]
@@ -25,6 +25,7 @@ pub trait StreamProducerQueue {
     async fn publish_new_addresses(&self, payload: Vec<ChainAddressPayload>) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_in_app_notifications(&self, payload: Vec<InAppNotificationPayload>) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_fetch_prices(&self, payload: FetchPricesPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
+    async fn publish_update_coin_info(&self, coin_ids: Vec<String>) -> Result<usize, Box<dyn Error + Send + Sync>>;
 }
 
 #[async_trait::async_trait]
@@ -140,5 +141,14 @@ impl StreamProducerQueue for StreamProducer {
             return Ok(true);
         }
         self.publish(QueueName::FetchPrices, &payload).await
+    }
+
+    async fn publish_update_coin_info(&self, coin_ids: Vec<String>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        let count = coin_ids.len();
+        for coin_id in coin_ids {
+            let payload = UpdateCoinInfoPayload::new(coin_id);
+            self.publish(QueueName::UpdateCoinInfo, &payload).await?;
+        }
+        Ok(count)
     }
 }

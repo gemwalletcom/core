@@ -5,7 +5,7 @@ use gem_hypercore::models::order::OpenOrder;
 use gem_hypercore::models::websocket::{HyperliquidSocketMessage, PositionsDiff};
 use primitives::{
     Asset, AssetId, PerpetualDirection, PerpetualMarginType, PerpetualOrderType, PerpetualPosition, PerpetualProvider, PerpetualTriggerOrder,
-    chart::{ChartCandleStick, ChartDateValue},
+    chart::{ChartCandleStick, ChartCandleUpdate, ChartDateValue},
     perpetual::{Perpetual, PerpetualBalance, PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
 };
 
@@ -19,6 +19,7 @@ pub type GemPerpetualPosition = PerpetualPosition;
 pub type GemPerpetual = Perpetual;
 pub type GemPerpetualMetadata = PerpetualMetadata;
 pub type GemChartCandleStick = ChartCandleStick;
+pub type GemChartCandleUpdate = ChartCandleUpdate;
 pub type GemChartDateValue = ChartDateValue;
 pub type GemPerpetualData = PerpetualData;
 
@@ -105,12 +106,18 @@ pub struct GemPerpetualMetadata {
 #[uniffi::remote(Record)]
 pub struct GemChartCandleStick {
     pub date: DateTime<Utc>,
-    pub interval: String,
     pub open: f64,
     pub high: f64,
     pub low: f64,
     pub close: f64,
     pub volume: f64,
+}
+
+#[uniffi::remote(Record)]
+pub struct GemChartCandleUpdate {
+    pub coin: String,
+    pub interval: String,
+    pub candle: ChartCandleStick,
 }
 
 #[uniffi::remote(Record)]
@@ -141,7 +148,7 @@ pub type GemHyperliquidSocketMessage = HyperliquidSocketMessage;
 pub enum GemHyperliquidSocketMessage {
     ClearinghouseState { balance: PerpetualBalance, positions: Vec<PerpetualPosition> },
     OpenOrders { orders: Vec<GemHyperliquidOpenOrder> },
-    Candle { candle: ChartCandleStick },
+    Candle { candle: ChartCandleUpdate },
     AllMids { prices: HashMap<String, f64> },
     SubscriptionResponse { subscription_type: String },
     Unknown,

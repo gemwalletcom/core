@@ -16,37 +16,33 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
     let database = ctx.database();
     let settings = ctx.settings();
     let config = ConfigCacher::new(database.clone());
-    let provider_names: Vec<FiatProviderName> = FiatProviderFactory::new_providers((*settings).clone())
-        .into_iter()
-        .map(|provider| provider.name())
-        .collect();
 
     JobPlanBuilder::with_config(WorkerService::Fiat, runtime.plan(shutdown_rx), &config)
-        .jobs(WorkerJob::UpdateFiatAssets, provider_names.clone(), |provider_name, _| {
+        .jobs(WorkerJob::UpdateFiatAssets, FiatProviderName::all(), |provider, _| {
             let settings = settings.clone();
             let database = database.clone();
             move || {
                 let settings = settings.clone();
                 let database = database.clone();
-                let provider_name = provider_name.clone();
+                let provider = provider.clone();
                 async move {
                     let providers = FiatProviderFactory::new_providers((*settings).clone());
                     let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
-                    fiat_assets_updater.update_fiat_assets_for(provider_name).await
+                    fiat_assets_updater.update_fiat_assets_for(provider).await
                 }
             }
         })
-        .jobs(WorkerJob::UpdateFiatProviderCountries, provider_names.clone(), |provider_name, _| {
+        .jobs(WorkerJob::UpdateFiatProviderCountries, FiatProviderName::all(), |provider, _| {
             let settings = settings.clone();
             let database = database.clone();
             move || {
                 let settings = settings.clone();
                 let database = database.clone();
-                let provider_name = provider_name.clone();
+                let provider = provider.clone();
                 async move {
                     let providers = FiatProviderFactory::new_providers((*settings).clone());
                     let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
-                    fiat_assets_updater.update_fiat_countries_for(provider_name).await
+                    fiat_assets_updater.update_fiat_countries_for(provider).await
                 }
             }
         })

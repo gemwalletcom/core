@@ -67,11 +67,34 @@ pub struct JsonRpcErrorResponse {
     pub error: JsonRpcError,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(untagged)]
 pub enum JsonRpcResult<T> {
     Value(JsonRpcResponse<T>),
     Error(JsonRpcErrorResponse),
+}
+
+impl<'de, T: Deserialize<'de>> Deserialize<'de> for JsonRpcResult<T> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let raw = Value::deserialize(deserializer)?;
+        let id = raw.get("id").and_then(|v| v.as_u64());
+
+        if let Some(error) = raw.get("error") {
+            let error: JsonRpcError = serde_json::from_value(error.clone()).map_err(serde::de::Error::custom)?;
+            return Ok(JsonRpcResult::Error(JsonRpcErrorResponse { id, error }));
+        }
+
+        let Some(result) = raw.get("result") else {
+            return Err(serde::de::Error::custom(format!("missing result and error fields, raw: {raw}")));
+        };
+
+        let result =
+            T::deserialize(result.clone()).map_err(|e| serde::de::Error::custom(format!("failed to deserialize result: {e}, raw: {result}")))?;
+        Ok(JsonRpcResult::Value(JsonRpcResponse { id, result }))
+    }
 }
 
 impl<T> JsonRpcResult<T> {
@@ -145,5 +168,52 @@ mod tests {
         };
 
         assert_eq!(format!("{error}"), "Method not found (-32601)");
+    }
+
+    #[derive(Debug, Deserialize, PartialEq)]
+    struct Block {
+        number: String,
+    }
+
+    #[test]
+    fn test_deserialize_success() {
+        let json = r#"{"id": 1, "result": {"number": "0x10"}}"#;
+        let result: JsonRpcResult<Block> = serde_json::from_str(json).unwrap();
+        assert!(matches!(result, JsonRpcResult::Value(r) if r.result.number == "0x10"));
+    }
+
+    #[test]
+    fn test_deserialize_error_response() {
+        let json = r#"{"id": 1, "error": {"code": -32601, "message": "Method not found"}}"#;
+        let result: JsonRpcResult<Block> = serde_json::from_str(json).unwrap();
+        assert!(matches!(result, JsonRpcResult::Error(e) if e.error.code == -32601));
+    }
+
+    #[test]
+    fn test_deserialize_null_result_fails_with_detail() {
+        let json = r#"{"id": 1, "result": null}"#;
+        let err = serde_json::from_str::<JsonRpcResult<Block>>(json).unwrap_err();
+        assert!(
+            err.to_string()
+                .contains("failed to deserialize result: invalid type: null, expected struct Block, raw: null")
+        );
+    }
+
+    #[test]
+    fn test_deserialize_null_result_ok_for_option() {
+        let json = r#"{"id": 1, "result": null}"#;
+        let result: JsonRpcResult<Option<Block>> = serde_json::from_str(json).unwrap();
+        assert!(matches!(result, JsonRpcResult::Value(r) if r.result.is_none()));
+    }
+
+    #[test]
+    fn test_deserialize_batch_with_mixed_results() {
+        let json = r#"[
+            {"id": 1, "result": {"number": "0x10"}},
+            {"id": 2, "error": {"code": -32600, "message": "Invalid"}}
+        ]"#;
+        let results: Vec<JsonRpcResult<Block>> = serde_json::from_str(json).unwrap();
+        assert!(matches!(&results[0], JsonRpcResult::Value(_)));
+        assert!(matches!(&results[1], JsonRpcResult::Error(_)));
     }
 }

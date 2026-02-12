@@ -20,6 +20,18 @@ use streamer::{ConsumerStatusReporter, QueueName, RewardsNotificationPayload, Re
 use crate::consumers::{consumer_config, producer_for_queue, reader_for_queue};
 
 pub async fn run_consumer_rewards(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let settings = Arc::new(settings);
+
+    futures::future::try_join_all(vec![
+        tokio::spawn(run_rewards_events(settings.clone(), shutdown_rx.clone(), reporter.clone())),
+        tokio::spawn(run_rewards_redemptions(settings.clone(), shutdown_rx.clone(), reporter.clone())),
+    ])
+    .await?;
+
+    Ok(())
+}
+
+async fn run_rewards_events(settings: Arc<Settings>, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let queue = QueueName::RewardsEvents;
     let (name, stream_reader) = reader_for_queue(&settings, &queue).await?;
@@ -29,11 +41,7 @@ pub async fn run_consumer_rewards(settings: Settings, shutdown_rx: ShutdownRecei
     run_consumer::<RewardsNotificationPayload, rewards_consumer::RewardsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config, shutdown_rx, reporter).await
 }
 
-pub async fn run_rewards_redemption_consumer(
-    settings: Settings,
-    shutdown_rx: ShutdownReceiver,
-    reporter: Arc<dyn ConsumerStatusReporter>,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn run_rewards_redemptions(settings: Arc<Settings>, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let config = ConfigCacher::new(database.clone());
     let retry_config = rewards_redemption_consumer::RedemptionRetryConfig {
@@ -45,7 +53,7 @@ pub async fn run_rewards_redemption_consumer(
     let (name, stream_reader) = reader_for_queue(&settings, &queue).await?;
     let stream_producer = producer_for_queue(&settings, &name).await?;
     let wallets = parse_rewards_wallets(&settings)?;
-    let client_provider = create_evm_client_provider(settings.clone());
+    let client_provider = create_evm_client_provider((*settings).clone());
     let redemption_service = Arc::new(TransferRedemptionService::new(wallets, client_provider));
     let consumer = rewards_redemption_consumer::RewardsRedemptionConsumer::new(database, redemption_service, retry_config, stream_producer);
     let consumer_config = consumer_config(&settings.consumer);

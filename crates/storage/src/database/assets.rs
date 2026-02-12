@@ -21,6 +21,7 @@ pub enum AssetFilter {
     IsBuyable(bool),
     IsSellable(bool),
     HasImage(bool),
+    Chain(String),
 }
 
 pub(crate) trait AssetsStore {
@@ -100,6 +101,9 @@ impl AssetsStore for DatabaseClient {
                 }
                 AssetFilter::HasImage(value) => {
                     query = query.filter(has_image.eq(value));
+                }
+                AssetFilter::Chain(value) => {
+                    query = query.filter(chain.eq(value));
                 }
             }
         }

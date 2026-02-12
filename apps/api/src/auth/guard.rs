@@ -127,12 +127,6 @@ impl<'r, T: DeserializeOwned + Send> FromData<'r> for WalletSigned<T> {
             Err(outcome) => return outcome,
         };
 
-        if let Some(url_device_id) = req.routed_segment(1).map(|s: &str| s.to_string())
-            && url_device_id != verified.device_id
-        {
-            return error_outcome(req, Status::Unauthorized, "Device ID mismatch");
-        }
-
         Success(WalletSigned {
             address: verified.address,
             data: verified.data,

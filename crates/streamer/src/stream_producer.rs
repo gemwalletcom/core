@@ -1,10 +1,8 @@
 use std::error::Error;
-use std::time::Duration;
 
-use gem_tracing::info_with_fields;
-use lapin::{BasicProperties, Channel, Connection, ConnectionProperties, ExchangeKind, options::*, publisher_confirm::Confirmation, types::FieldTable};
+use lapin::{BasicProperties, Channel, Confirmation, Connection, ConnectionProperties, ExchangeKind, options::*, types::FieldTable};
 
-use crate::{ExchangeName, QueueName, StreamConnection};
+use crate::{ExchangeName, QueueName, Retry, StreamConnection, with_retry};
 
 const ROUTING_KEY_EXCHANGE_SUFFIX: &str = "_exchange";
 const MAX_QUEUE_BYTES: i64 = 1_000_000_000;
@@ -12,17 +10,12 @@ const MAX_QUEUE_BYTES: i64 = 1_000_000_000;
 #[derive(Clone)]
 pub struct StreamProducerConfig {
     pub url: String,
-    pub retry_delay: Duration,
-    pub retry_max_delay: Duration,
+    pub retry: Retry,
 }
 
 impl StreamProducerConfig {
-    pub fn new(url: String, retry_delay: Duration, retry_max_delay: Duration) -> Self {
-        Self {
-            url,
-            retry_delay,
-            retry_max_delay,
-        }
+    pub fn new(url: String, retry: Retry) -> Self {
+        Self { url, retry }
     }
 }
 
@@ -39,30 +32,8 @@ pub struct StreamProducer {
 
 impl StreamProducer {
     pub async fn new(config: &StreamProducerConfig, connection_name: &str) -> Result<Self, Box<dyn Error + Send + Sync>> {
-        let options = ConnectionProperties::default().with_connection_name(connection_name.into());
-        let mut delay = config.retry_delay;
-        let mut attempt: u32 = 0;
-
-        loop {
-            attempt += 1;
-            match Connection::connect(&config.url, options.clone()).await {
-                Ok(connection) => {
-                    let channel = connection.create_channel().await?;
-                    return Ok(Self { channel });
-                }
-                Err(err) => {
-                    info_with_fields!(
-                        "rabbitmq connect retry",
-                        connection = connection_name,
-                        attempt = attempt,
-                        delay_secs = delay.as_secs(),
-                        error = format!("{err}")
-                    );
-                    tokio::time::sleep(delay).await;
-                    delay = (delay * 2).min(config.retry_max_delay);
-                }
-            }
-        }
+        let channel = with_retry(&config.retry, connection_name, || Self::try_connect(&config.url, connection_name)).await?;
+        Ok(Self { channel })
     }
 
     pub async fn from_connection(connection: &StreamConnection) -> Result<Self, Box<dyn Error + Send + Sync>> {
@@ -70,12 +41,19 @@ impl StreamProducer {
         Ok(Self { channel })
     }
 
+    async fn try_connect(url: &str, name: &str) -> Result<Channel, Box<dyn Error + Send + Sync>> {
+        let options = ConnectionProperties::default().with_connection_name(name.to_string().into());
+        let connection = Connection::connect(url, options).await?;
+        let channel = connection.create_channel().await?;
+        Ok(channel)
+    }
+
     // Queue methods
 
     pub async fn declare_queue(&self, name: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
         self.channel
             .queue_declare(
-                name,
+                name.into(),
                 QueueDeclareOptions {
                     durable: true,
                     ..Default::default()
@@ -94,17 +72,19 @@ impl StreamProducer {
     }
 
     pub async fn delete_queue(&self, queue: &str) -> Result<u32, Box<dyn Error + Send + Sync>> {
-        Ok(self.channel.queue_delete(queue, QueueDeleteOptions::default()).await?)
+        Ok(self.channel.queue_delete(queue.into(), QueueDeleteOptions::default()).await?)
     }
 
     pub async fn clear_queue(&self, queue: QueueName) -> Result<u32, Box<dyn Error + Send + Sync>> {
-        Ok(self.channel.queue_purge(&queue.to_string(), QueuePurgeOptions::default()).await?)
+        Ok(self.channel.queue_purge(queue.to_string().into(), QueuePurgeOptions::default()).await?)
     }
 
     // Exchange methods
 
     pub async fn declare_exchange(&self, name: &str, kind: ExchangeKind) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.channel.exchange_declare(name, kind, ExchangeDeclareOptions::default(), FieldTable::default()).await?;
+        self.channel
+            .exchange_declare(name.into(), kind, ExchangeDeclareOptions::default(), FieldTable::default())
+            .await?;
         Ok(())
     }
 
@@ -119,7 +99,7 @@ impl StreamProducer {
 
     pub async fn bind_queue(&self, queue: &str, exchange: &str, routing_key: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
         self.channel
-            .queue_bind(queue, exchange, routing_key, QueueBindOptions::default(), FieldTable::default())
+            .queue_bind(queue.into(), exchange.into(), routing_key.into(), QueueBindOptions::default(), FieldTable::default())
             .await?;
         Ok(())
     }
@@ -148,8 +128,8 @@ impl StreamProducer {
         let confirm = self
             .channel
             .basic_publish(
-                exchange,
-                routing_key,
+                exchange.into(),
+                routing_key.into(),
                 BasicPublishOptions::default(),
                 &data,
                 BasicProperties::default().with_delivery_mode(2).with_content_type("application/json".into()),

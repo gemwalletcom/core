@@ -4,7 +4,7 @@ use support::ChatwootWebhookPayload;
 fn test_parse_conversation_updated_payload() {
     let payload: ChatwootWebhookPayload = serde_json::from_str(include_str!("testdata/chatwoot_conversation_updated.json")).unwrap();
     assert_eq!(payload.event, "conversation_updated");
-    assert_eq!(payload.get_support_device_id(), Some("test-device-id".to_string()));
+    assert_eq!(payload.get_device_id(), Some("test-device-id".to_string()));
     assert_eq!(payload.get_unread(), Some(1));
 
     let messages = payload.get_messages();
@@ -19,18 +19,10 @@ fn test_parse_conversation_updated_payload() {
 }
 
 #[test]
-fn test_parse_support_device_id_aliases() {
+fn test_parse_device_id() {
     let payload: ChatwootWebhookPayload =
-        serde_json::from_str(r#"{"event": "conversation_updated", "meta": {"sender": {"custom_attributes": {"supportDeviceId": "test-camel"}}}}"#).unwrap();
-    assert_eq!(payload.get_support_device_id(), Some("test-camel".to_string()));
-
-    let payload: ChatwootWebhookPayload =
-        serde_json::from_str(r#"{"event": "conversation_updated", "meta": {"sender": {"custom_attributes": {"support_device_id": "test-snake"}}}}"#).unwrap();
-    assert_eq!(payload.get_support_device_id(), Some("test-snake".to_string()));
-
-    let payload: ChatwootWebhookPayload =
-        serde_json::from_str(r#"{"event": "conversation_updated", "meta": {"sender": {"custom_attributes": {"supportdeviceid": "test-lower"}}}}"#).unwrap();
-    assert_eq!(payload.get_support_device_id(), Some("test-lower".to_string()));
+        serde_json::from_str(r#"{"event": "conversation_updated", "meta": {"sender": {"custom_attributes": {"device_id": "test-device"}}}}"#).unwrap();
+    assert_eq!(payload.get_device_id(), Some("test-device".to_string()));
 }
 
 #[test]
@@ -38,7 +30,7 @@ fn test_parse_message_created_payload() {
     let payload: ChatwootWebhookPayload = serde_json::from_str(include_str!("testdata/chatwoot_message_created.json")).unwrap();
     assert_eq!(payload.event, "message_created");
     assert_eq!(payload.content, Some("from agent".to_string()));
-    assert_eq!(payload.get_support_device_id(), Some("test-device-id".to_string()));
+    assert_eq!(payload.get_device_id(), Some("test-device-id".to_string()));
     assert_eq!(payload.get_unread(), Some(1));
     assert!(payload.is_outgoing_message());
 

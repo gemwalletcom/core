@@ -1,3 +1,4 @@
+pub mod auth;
 pub mod cache;
 pub mod config;
 pub mod jsonrpc_types;

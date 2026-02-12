@@ -5,19 +5,14 @@ use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 #[derive(Debug, Clone, PartialEq, AsRefStr, EnumString, EnumIter)]
 #[strum(serialize_all = "snake_case")]
 pub enum ConsumerService {
-    StoreTransactions,
-    FetchBlocks,
-    FetchAssets,
-    FetchAssociations,
+    Store,
+    Indexer,
     Notifications,
-    InAppNotifications,
     Rewards,
-    RewardsRedemptions,
     Support,
     Fiat,
-    StorePrices,
-    FetchPrices,
-    Nft,
+    Prices,
+    Assets,
 }
 
 impl ConsumerService {
@@ -33,13 +28,9 @@ pub enum WorkerService {
     Prices,
     Fiat,
     Assets,
-    Version,
-    Transaction,
-    Device,
+    System,
     Search,
-    Scan,
     Rewards,
-    Nft,
 }
 
 impl WorkerService {

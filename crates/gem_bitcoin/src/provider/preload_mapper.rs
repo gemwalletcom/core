@@ -27,13 +27,6 @@ pub fn map_transaction_preload_zcash(
     input: TransactionPreloadInput,
 ) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
     let utxos = map_utxos(utxos, input.sender_address.clone());
-    if let Some(backend) = node_info.backend
-        && let Some(consensus) = backend.consensus
-    {
-        return Ok(TransactionLoadMetadata::Zcash {
-            utxos,
-            branch_id: consensus.chaintip,
-        });
-    }
-    Err("Branch ID not found".into())
+    let branch_id = node_info.backend.consensus.ok_or("Branch ID not found")?.chaintip;
+    Ok(TransactionLoadMetadata::Zcash { utxos, branch_id })
 }

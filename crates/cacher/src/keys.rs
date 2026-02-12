@@ -2,9 +2,6 @@ const SECONDS_PER_MINUTE: u64 = 60;
 const SECONDS_PER_DAY: u64 = 24 * 60 * 60;
 
 pub enum CacheKey<'a> {
-    ParserCurrentBlock(&'a str),
-    ParserLatestBlock(&'a str),
-
     // Referral keys
     ReferralIpCheck(&'a str),
 
@@ -26,6 +23,7 @@ pub enum CacheKey<'a> {
     // Asset keys
     FetchAssets(&'a str),
     PricerCoinInfo(&'a str),
+    CoinInfoUpdate(&'a str),
 
     // Fiat keys
     FiatQuote(&'a str),
@@ -46,8 +44,6 @@ pub enum CacheKey<'a> {
 impl CacheKey<'_> {
     pub fn key(&self) -> String {
         match self {
-            Self::ParserCurrentBlock(chain) => format!("parser:state:{}:current_block", chain),
-            Self::ParserLatestBlock(chain) => format!("parser:state:{}:latest_block", chain),
             Self::ReferralIpCheck(ip_address) => format!("referral:ip_check:{}", ip_address),
             Self::UsernameCreationPerIp(ip_address) => format!("username:ip:{}", ip_address),
             Self::UsernameCreationPerDevice(device_id) => format!("username:device:{}", device_id),
@@ -60,6 +56,7 @@ impl CacheKey<'_> {
             Self::FetchAddressTransactions(chain, address) => format!("fetch:address_transactions:{}:{}", chain, address),
             Self::FetchAssets(asset_id) => format!("fetch:assets:{}", asset_id),
             Self::PricerCoinInfo(coin_id) => format!("pricer:coin_info:{}", coin_id),
+            Self::CoinInfoUpdate(coin_id) => format!("coin_info:update:{}", coin_id),
             Self::FiatQuote(quote_id) => format!("fiat:quote:{}", quote_id),
             Self::FiatIpCheck(ip_address) => format!("fiat:ip_check:{}", ip_address),
             Self::AuthNonce(device_id, nonce) => format!("auth:nonce:{}:{}", device_id, nonce),
@@ -72,8 +69,6 @@ impl CacheKey<'_> {
 
     pub fn ttl(&self) -> u64 {
         match self {
-            Self::ParserCurrentBlock(_) => 7 * SECONDS_PER_DAY,
-            Self::ParserLatestBlock(_) => 7 * SECONDS_PER_DAY,
             Self::ReferralIpCheck(_) => 30 * SECONDS_PER_DAY,
             Self::UsernameCreationPerIp(_) => 30 * SECONDS_PER_DAY,
             Self::UsernameCreationPerDevice(_) => 30 * SECONDS_PER_DAY,
@@ -86,6 +81,7 @@ impl CacheKey<'_> {
             Self::FetchAddressTransactions(_, _) => 30 * SECONDS_PER_DAY,
             Self::FetchAssets(_) => 30 * SECONDS_PER_DAY,
             Self::PricerCoinInfo(_) => SECONDS_PER_DAY,
+            Self::CoinInfoUpdate(_) => 90 * SECONDS_PER_DAY,
             Self::FiatQuote(_) => 15 * SECONDS_PER_MINUTE,
             Self::FiatIpCheck(_) => SECONDS_PER_DAY,
             Self::AuthNonce(_, _) => 5 * SECONDS_PER_MINUTE,

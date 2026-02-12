@@ -1,10 +1,10 @@
 use std::fmt::Debug;
 use std::future::Future;
-use std::pin::Pin;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::SystemTime;
 
+use async_trait::async_trait;
 use gem_tracing::{error_with_fields, info_with_fields};
 pub mod schedule;
 pub use schedule::{JobSchedule, RunAlways, RunDecision};
@@ -15,8 +15,9 @@ use tokio::time::{Duration, Instant};
 pub type ShutdownReceiver = watch::Receiver<bool>;
 pub type JobError = Box<dyn std::error::Error + Send + Sync>;
 
+#[async_trait]
 pub trait JobStatusReporter: Send + Sync {
-    fn report(&self, name: &str, interval: u64, duration: u64, success: bool, error: Option<String>) -> Pin<Box<dyn Future<Output = ()> + Send + '_>>;
+    async fn report(&self, name: &str, interval: u64, duration: u64, success: bool, error: Option<String>);
 }
 
 pub async fn sleep_or_shutdown(duration: Duration, shutdown_rx: &ShutdownReceiver) -> bool {

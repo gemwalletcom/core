@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use primitives::PerpetualPosition;
-use primitives::chart::ChartCandleStick;
+use primitives::chart::ChartCandleUpdate;
 use primitives::perpetual::PerpetualBalance;
 use serde::Deserialize;
 
@@ -70,7 +70,7 @@ pub struct PositionsDiff {
 pub enum HyperliquidSocketMessage {
     ClearinghouseState { balance: PerpetualBalance, positions: Vec<PerpetualPosition> },
     OpenOrders { orders: Vec<OpenOrder> },
-    Candle { candle: ChartCandleStick },
+    Candle { candle: ChartCandleUpdate },
     AllMids { prices: HashMap<String, f64> },
     SubscriptionResponse { subscription_type: String },
     Unknown,

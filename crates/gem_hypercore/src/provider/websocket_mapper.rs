@@ -98,16 +98,17 @@ mod tests {
     #[test]
     fn test_parse_candle() {
         let json = include_bytes!("../../testdata/ws_candle.json");
-        let HyperliquidSocketMessage::Candle { candle } = parse_websocket_data(json).unwrap() else {
+        let HyperliquidSocketMessage::Candle { candle: update } = parse_websocket_data(json).unwrap() else {
             panic!("expected Candle");
         };
 
-        assert_eq!(candle.interval, "1h");
-        assert_eq!(candle.open, 3300.5);
-        assert_eq!(candle.close, 3321.1);
-        assert_eq!(candle.high, 3345.0);
-        assert_eq!(candle.low, 3290.2);
-        assert_eq!(candle.volume, 12450.8);
+        assert_eq!(update.coin, "ETH");
+        assert_eq!(update.interval, "1h");
+        assert_eq!(update.candle.open, 3300.5);
+        assert_eq!(update.candle.close, 3321.1);
+        assert_eq!(update.candle.high, 3345.0);
+        assert_eq!(update.candle.low, 3290.2);
+        assert_eq!(update.candle.volume, 12450.8);
     }
 
     #[test]

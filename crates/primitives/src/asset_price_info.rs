@@ -15,11 +15,11 @@ pub struct AssetPriceInfo {
 
 impl AssetPriceInfo {
     pub fn as_price_primitive(&self) -> Price {
-        Price::new(self.price.price, self.price.price_change_percentage_24h, self.price.updated_at)
+        self.price
     }
 
     pub fn as_price_primitive_with_rate(&self, rate: f64) -> Price {
-        Price::new(self.price.price * rate, self.price.price_change_percentage_24h, self.price.updated_at)
+        self.price.with_rate(rate)
     }
 
     pub fn as_asset_price_primitive(&self) -> AssetPrice {
@@ -27,11 +27,12 @@ impl AssetPriceInfo {
     }
 
     pub fn as_asset_price_primitive_with_rate(&self, rate: f64) -> AssetPrice {
+        let price = self.price.with_rate(rate);
         AssetPrice {
             asset_id: self.asset_id.clone(),
-            price: self.price.price * rate,
-            price_change_percentage_24h: self.price.price_change_percentage_24h,
-            updated_at: self.price.updated_at,
+            price: price.price,
+            price_change_percentage_24h: price.price_change_percentage_24h,
+            updated_at: price.updated_at,
         }
     }
 

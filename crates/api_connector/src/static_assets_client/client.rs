@@ -1,5 +1,5 @@
 use super::models::Validator;
-use primitives::Chain;
+use primitives::{AssetId, Chain};
 
 #[derive(Clone)]
 pub struct StaticAssetsClient {
@@ -20,7 +20,7 @@ impl StaticAssetsClient {
         self.client.get(&url).send().await?.json().await
     }
 
-    pub async fn get_assets_list(&self, chain: Chain) -> Result<Vec<String>, reqwest::Error> {
+    pub async fn get_assets_list(&self, chain: Chain) -> Result<Vec<AssetId>, reqwest::Error> {
         let url = format!("{}/blockchains/{}/assets.json", self.url, chain.as_ref());
         let response = self.client.get(&url).send().await?;
 
@@ -28,6 +28,7 @@ impl StaticAssetsClient {
             return Ok(vec![]);
         }
 
-        response.json().await
+        let addresses: Vec<String> = response.json().await?;
+        Ok(addresses.into_iter().map(|x| AssetId::from(chain, Some(x))).collect())
     }
 }

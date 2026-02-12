@@ -1,5 +1,6 @@
 use coingecko::CoinGeckoClient;
 use pricer::PriceClient;
+use primitives::ChartTimeframe;
 use std::error::Error;
 use storage::models::ChartRow;
 use streamer::{ChartsPayload, StreamProducer, StreamProducerQueue};
@@ -54,15 +55,11 @@ impl ChartsUpdater {
         Ok(coin_list.len())
     }
 
-    pub async fn aggregate_hourly_charts(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        self.prices_client.aggregate_hourly_charts().await
+    pub async fn aggregate_charts(&self, timeframe: ChartTimeframe) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        self.prices_client.aggregate_charts(timeframe).await
     }
 
-    pub async fn aggregate_daily_charts(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        self.prices_client.aggregate_daily_charts().await
-    }
-
-    pub async fn cleanup_charts_data(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        self.prices_client.cleanup_charts_data().await
+    pub async fn cleanup_charts(&self, timeframe: ChartTimeframe) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        self.prices_client.cleanup_charts(timeframe).await
     }
 }

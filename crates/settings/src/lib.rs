@@ -65,13 +65,19 @@ pub struct Postgres {
 
 #[derive(Debug, Deserialize, Clone)]
 #[allow(unused)]
+pub struct Retry {
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub delay: Duration,
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub timeout: Duration,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
 pub struct RabbitMQ {
     pub url: String,
     pub prefetch: u16,
-    #[serde(deserialize_with = "duration::deserialize")]
-    pub retry_delay: Duration,
-    #[serde(deserialize_with = "duration::deserialize")]
-    pub retry_max_delay: Duration,
+    pub retry: Retry,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -330,6 +336,15 @@ pub struct Auth {
     pub enabled: bool,
     #[serde(deserialize_with = "duration::deserialize")]
     pub tolerance: Duration,
+    pub jwt: Jwt,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(unused)]
+pub struct Jwt {
+    pub secret: String,
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub expiry: Duration,
 }
 
 #[derive(Debug, Deserialize, Clone)]

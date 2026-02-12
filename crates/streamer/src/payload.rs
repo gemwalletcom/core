@@ -1,6 +1,5 @@
 use primitives::{
-    AssetAddress, AssetId, Chain, ChainAddress, ChartData, FailedNotification, FiatProviderName, FiatTransaction, GorushNotification, NotificationType, PriceData, Subscription,
-    Transaction,
+    AssetAddress, AssetId, Chain, ChainAddress, ChartData, FailedNotification, FiatProviderName, FiatTransaction, GorushNotification, NotificationType, PriceData, Transaction,
 };
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -167,12 +166,6 @@ impl fmt::Display for ChainAddressPayload {
     }
 }
 
-impl From<Subscription> for ChainAddressPayload {
-    fn from(subscription: Subscription) -> Self {
-        Self::new(ChainAddress::new(subscription.chain, subscription.address))
-    }
-}
-
 impl From<ChainAddress> for ChainAddressPayload {
     fn from(chain_address: ChainAddress) -> Self {
         Self::new(chain_address)
@@ -331,6 +324,23 @@ impl fmt::Display for InAppNotificationPayload {
             ),
             None => write!(f, "wallet_id: {}, notification_type: {}", self.wallet_id, self.notification_type.as_ref()),
         }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateCoinInfoPayload {
+    pub coin_id: String,
+}
+
+impl UpdateCoinInfoPayload {
+    pub fn new(coin_id: String) -> Self {
+        Self { coin_id }
+    }
+}
+
+impl fmt::Display for UpdateCoinInfoPayload {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "coin_id: {}", self.coin_id)
     }
 }
 

@@ -118,12 +118,14 @@ pub enum ConfigKey {
     PriceTimerTopMarketCap,
     PriceTimerHighMarketCap,
     PriceTimerLowMarketCap,
+    PriceTimerVeryLowMarketCap,
     PriceTimerFiatRates,
     PriceTimerChartsHourly,
     PriceTimerChartsDaily,
     PriceTimerMarkets,
     PriceTimerCleanOutdated,
-    PriceTimerCleanupCharts,
+    PriceTimerCleanupChartsHourly,
+    PriceTimerCleanupChartsDaily,
     PriceOutdated,
 
     // Assets
@@ -137,6 +139,8 @@ pub enum ConfigKey {
     AssetsTimerUpdatePerpetuals,
     AssetsTimerUpdateUsageRank,
     AssetsTimerUpdateImages,
+    AssetsUpdateNewCoinInfoInterval,
+    AssetsUpdateExistingCoinInfoInterval,
 
     // Fiat
     FiatTimerUpdateAssets,
@@ -172,7 +176,9 @@ pub enum ConfigKey {
 
     // Parser
     ParserCatchupReloadInterval,
-    ParserPersistInterval,
+    ParserMinCheckInterval,
+    ParserMaxCheckInterval,
+    ParserErrorInterval,
 
     // Price Observed (WebSocket)
     PriceObservedFetchInterval,
@@ -281,12 +287,14 @@ impl ConfigKey {
             Self::PriceTimerTopMarketCap => "60s",
             Self::PriceTimerHighMarketCap => "3m",
             Self::PriceTimerLowMarketCap => "10m",
+            Self::PriceTimerVeryLowMarketCap => "15m",
             Self::PriceTimerFiatRates => "6m",
             Self::PriceTimerChartsHourly => "60s",
             Self::PriceTimerChartsDaily => "6m",
             Self::PriceTimerMarkets => "1h",
             Self::PriceTimerCleanOutdated => "1d",
-            Self::PriceTimerCleanupCharts => "1d",
+            Self::PriceTimerCleanupChartsHourly => "1d",
+            Self::PriceTimerCleanupChartsDaily => "1d",
             Self::PriceOutdated => "7d",
             Self::AssetsTimerUpdateExisting => "1d",
             Self::AssetsTimerUpdateAll => "1d",
@@ -298,6 +306,8 @@ impl ConfigKey {
             Self::AssetsTimerUpdatePerpetuals => "1h",
             Self::AssetsTimerUpdateUsageRank => "1h",
             Self::AssetsTimerUpdateImages => "8h",
+            Self::AssetsUpdateNewCoinInfoInterval => "30d",
+            Self::AssetsUpdateExistingCoinInfoInterval => "90d",
             Self::FiatTimerUpdateAssets => "1h",
             Self::FiatTimerUpdateProviderCountries => "1h",
             Self::FiatTimerUpdateBuyableAssets => "1h",
@@ -317,7 +327,9 @@ impl ConfigKey {
             Self::SearchPerpetualsLastUpdatedAt => "0",
             Self::SearchNftsLastUpdatedAt => "0",
             Self::ParserCatchupReloadInterval => "50",
-            Self::ParserPersistInterval => "1s",
+            Self::ParserMinCheckInterval => "1s",
+            Self::ParserMaxCheckInterval => "8s",
+            Self::ParserErrorInterval => "30s",
             Self::PriceObservedFetchInterval => "30s",
             Self::PriceObservedMaxAssets => "100",
             Self::PriceObservedMinObservers => "2",

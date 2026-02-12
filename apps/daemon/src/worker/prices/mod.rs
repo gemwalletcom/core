@@ -22,7 +22,7 @@ use price_updater::{PriceUpdater, UpdatePrices};
 use pricer::{MarketsClient, PriceClient};
 use prices_dex::PriceFeedProvider;
 use prices_dex_updater::PricesDexUpdater;
-use primitives::ConfigKey;
+use primitives::{ChartTimeframe, ConfigKey};
 use settings::Settings;
 use storage::{ConfigCacher, Database};
 use streamer::{StreamProducer, StreamProducerConfig};
@@ -136,6 +136,22 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                 }
             }
         })
+        .job(WorkerJob::UpdatePricesVeryLowMarketCap, {
+            let settings = settings.clone();
+            let cacher_client = cacher_client.clone();
+            let database = database.clone();
+            move || {
+                let settings = settings.clone();
+                let cacher_client = cacher_client.clone();
+                let database = database.clone();
+                async move {
+                    price_updater_factory(&database, &cacher_client, &settings)
+                        .await?
+                        .update_prices_type(UpdatePrices::VeryLow)
+                        .await
+                }
+            }
+        })
         .job(WorkerJob::AggregateHourlyCharts, {
             let settings = settings.clone();
             let coingecko_client = coingecko_client.clone();
@@ -149,7 +165,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                 async move {
                     charts_updater_factory(&database, &cacher_client, &settings, coingecko_client)
                         .await?
-                        .aggregate_hourly_charts()
+                        .aggregate_charts(ChartTimeframe::Hourly)
                         .await
                 }
             }
@@ -167,12 +183,12 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                 async move {
                     charts_updater_factory(&database, &cacher_client, &settings, coingecko_client)
                         .await?
-                        .aggregate_daily_charts()
+                        .aggregate_charts(ChartTimeframe::Daily)
                         .await
                 }
             }
         })
-        .job(WorkerJob::CleanupChartsData, {
+        .job(WorkerJob::CleanupChartsHourly, {
             let settings = settings.clone();
             let coingecko_client = coingecko_client.clone();
             let cacher_client = cacher_client.clone();
@@ -185,7 +201,25 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                 async move {
                     charts_updater_factory(&database, &cacher_client, &settings, coingecko_client)
                         .await?
-                        .cleanup_charts_data()
+                        .cleanup_charts(ChartTimeframe::Hourly)
+                        .await
+                }
+            }
+        })
+        .job(WorkerJob::CleanupChartsDaily, {
+            let settings = settings.clone();
+            let coingecko_client = coingecko_client.clone();
+            let cacher_client = cacher_client.clone();
+            let database = database.clone();
+            move || {
+                let settings = settings.clone();
+                let coingecko_client = coingecko_client.clone();
+                let cacher_client = cacher_client.clone();
+                let database = database.clone();
+                async move {
+                    charts_updater_factory(&database, &cacher_client, &settings, coingecko_client)
+                        .await?
+                        .cleanup_charts(ChartTimeframe::Daily)
                         .await
                 }
             }
@@ -215,7 +249,8 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                     let max_observed_assets = config.get_usize(ConfigKey::PriceObservedMaxAssets)?;
                     let min_observers = config.get_usize(ConfigKey::PriceObservedMinObservers)?;
                     let price_client = PriceClient::new(database.clone(), cacher_client.clone());
-                    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+                    let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
+                    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
                     let stream_producer = StreamProducer::new(&rabbitmq_config, "observed_prices_worker").await?;
                     let updater = ObservedPricesUpdater::new(cacher_client, price_client, stream_producer, max_observed_assets, min_observers);
                     updater.update().await
@@ -257,7 +292,8 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
 async fn price_updater_factory(database: &Database, cacher: &CacherClient, settings: &Settings) -> Result<PriceUpdater, Box<dyn std::error::Error + Send + Sync>> {
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret.clone());
     let price_client = PriceClient::new(database.clone(), cacher.clone());
-    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+    let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
     let stream_producer = StreamProducer::new(&rabbitmq_config, "pricer_worker").await?;
     Ok(PriceUpdater::new(price_client, coingecko_client, stream_producer))
 }
@@ -269,7 +305,8 @@ async fn charts_updater_factory(
     coingecko_client: CoinGeckoClient,
 ) -> Result<ChartsUpdater, Box<dyn std::error::Error + Send + Sync>> {
     let price_client = PriceClient::new(database.clone(), cacher.clone());
-    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), settings.rabbitmq.retry_delay, settings.rabbitmq.retry_max_delay);
+    let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
     let stream_producer = StreamProducer::new(&rabbitmq_config, "charts_worker").await?;
     Ok(ChartsUpdater::new(price_client, coingecko_client, stream_producer))
 }

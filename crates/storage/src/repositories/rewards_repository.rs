@@ -1,9 +1,9 @@
 use crate::database::rewards::{ReferralUpdate, RewardsStore};
-use crate::database::subscriptions::SubscriptionsStore;
 use crate::database::usernames::{UsernameLookup, UsernamesStore};
 use crate::database::wallets::WalletsStore;
 use crate::models::{NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, NewUsernameRow, ReferralAttemptRow, RewardsRow};
 use crate::repositories::rewards_redemptions_repository::RewardsRedemptionsRepository;
+use crate::sql_types::ChainRow;
 use crate::sql_types::{RewardEventType, RewardRedemptionType, RewardStatus, UsernameStatus};
 use crate::{DatabaseClient, DatabaseError, ReferralValidationError};
 use chrono::Duration as ChronoDuration;
@@ -217,7 +217,7 @@ impl RewardsRepository for DatabaseClient {
             return Err(ReferralValidationError::RewardsNotEnabled(referrer_username.to_string()));
         }
 
-        let device_subscriptions = SubscriptionsStore::get_device_addresses(self, device_id, Chain::Ethereum.as_ref())?;
+        let device_subscriptions = WalletsStore::get_device_addresses(self, device_id, ChainRow::from(Chain::Ethereum))?;
 
         for address in &device_subscriptions {
             let wallet_identifier = WalletId::Multicoin(address.clone()).id();
@@ -257,7 +257,7 @@ impl RewardsRepository for DatabaseClient {
     }
 
     fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, DatabaseError> {
-        Ok(SubscriptionsStore::get_first_subscription_date(self, addresses)?)
+        WalletsStore::get_first_subscription_date(self, addresses)
     }
 
     fn get_wallet_id_by_username(&mut self, username: &str) -> Result<i32, DatabaseError> {

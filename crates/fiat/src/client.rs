@@ -17,7 +17,7 @@ use primitives::{
 };
 use reqwest::Client as RequestClient;
 use storage::{
-    AssetFilter, AssetsRepository, ConfigCacher, Database, SubscriptionsRepository, WalletsRepository,
+    AssetFilter, AssetsRepository, ConfigCacher, Database, WalletsRepository,
     database::devices::DevicesStore,
     models::{FiatQuoteRequestRow, FiatQuoteRow, NewFiatWebhookRow},
 };
@@ -416,7 +416,7 @@ impl FiatClient {
     }
 
     fn is_address_subscribed(&self, asset: &Asset, wallet_address: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.subscriptions()?.get_subscription_address_exists(asset.chain, wallet_address)?)
+        Ok(self.database.wallets()?.get_subscription_address_exists(asset.chain, wallet_address)?)
     }
 
     fn check_asset_limits_old(request: &FiatQuoteOldRequest, mapping: &FiatMapping) -> Result<(), FiatQuoteError> {

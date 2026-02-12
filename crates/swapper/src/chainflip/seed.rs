@@ -1,5 +1,4 @@
-use rand::Rng;
-use rand::RngCore;
+use rand::{Rng, RngExt};
 
 pub fn generate_random_seed(max_bytes: usize) -> Vec<u8> {
     if max_bytes == 0 || max_bytes > 32 {

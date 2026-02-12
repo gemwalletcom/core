@@ -22,15 +22,12 @@ impl Price {
         }
     }
 
-    pub fn new_with_rate(&self, base_rate: f64, rate: f64) -> Self {
-        let rate_multiplier = rate * base_rate;
-        let price_value = self.price * rate_multiplier;
+    pub fn with_rate(self, rate: f64) -> Self {
+        Price::new(self.price * rate, self.price_change_percentage_24h, self.updated_at)
+    }
 
-        Price {
-            price: price_value,
-            price_change_percentage_24h: self.price_change_percentage_24h,
-            updated_at: self.updated_at,
-        }
+    pub fn new_with_rate(&self, base_rate: f64, rate: f64) -> Self {
+        self.with_rate(rate * base_rate)
     }
 }
 

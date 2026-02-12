@@ -3,6 +3,14 @@ use num_bigint::BigUint;
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AddressBalances {
+    pub coin: AssetBalance,
+    pub staking: Option<AssetBalance>,
+    pub assets: Vec<AssetBalance>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AssetBalance {

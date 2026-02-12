@@ -1,19 +1,15 @@
 pub mod alerter;
 pub mod assets;
 pub mod context;
-pub mod device;
 pub mod fiat;
 pub mod job_schedule;
 pub mod jobs;
-pub mod nft;
 pub mod plan;
 pub mod prices;
 pub mod rewards;
 pub mod runtime;
-pub mod scan;
 pub mod search;
-pub mod transaction;
-pub mod version;
+pub mod system;
 
 use crate::model::WorkerService;
 use crate::shutdown::ShutdownReceiver;
@@ -28,13 +24,9 @@ impl WorkerService {
             WorkerService::Prices => prices::jobs(ctx, shutdown_rx).await,
             WorkerService::Fiat => fiat::jobs(ctx, shutdown_rx).await,
             WorkerService::Assets => assets::jobs(ctx, shutdown_rx).await,
-            WorkerService::Version => version::jobs(ctx, shutdown_rx).await,
-            WorkerService::Transaction => transaction::jobs(ctx, shutdown_rx).await,
-            WorkerService::Device => device::jobs(ctx, shutdown_rx).await,
+            WorkerService::System => system::jobs(ctx, shutdown_rx).await,
             WorkerService::Search => search::jobs(ctx, shutdown_rx).await,
-            WorkerService::Scan => scan::jobs(ctx, shutdown_rx).await,
             WorkerService::Rewards => rewards::jobs(ctx, shutdown_rx).await,
-            WorkerService::Nft => nft::jobs(ctx, shutdown_rx).await,
         }
     }
 }

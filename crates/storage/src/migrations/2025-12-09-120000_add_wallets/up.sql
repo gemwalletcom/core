@@ -28,3 +28,4 @@ CREATE INDEX wallets_subscriptions_wallet_id_idx ON wallets_subscriptions (walle
 CREATE INDEX wallets_subscriptions_device_id_idx ON wallets_subscriptions (device_id);
 CREATE INDEX wallets_subscriptions_address_id_idx ON wallets_subscriptions (address_id);
 CREATE INDEX wallets_subscriptions_chain_address_id_idx ON wallets_subscriptions (chain, address_id);
+CREATE INDEX wallets_subscriptions_device_chain_idx ON wallets_subscriptions (device_id, chain);

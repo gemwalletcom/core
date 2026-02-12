@@ -1,13 +1,8 @@
 mod client;
-mod consumer;
-mod fiat;
-mod job;
-mod parser;
-mod price;
+pub mod fiat;
 
 use crate::responders::ApiError;
 pub use client::MetricsClient;
-pub use fiat::{metrics_fiat_quote_url, metrics_fiat_quotes};
 use rocket::{State, get, response::content::RawText, tokio::sync::Mutex};
 
 #[get("/")]

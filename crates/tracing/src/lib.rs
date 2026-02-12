@@ -15,7 +15,12 @@ pub struct DurationMs(pub Duration);
 
 impl std::fmt::Display for DurationMs {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}ms", self.0.as_millis())
+        let ms = self.0.as_millis();
+        if ms >= 5000 && ms.is_multiple_of(1000) {
+            write!(f, "{}s", ms / 1000)
+        } else {
+            write!(f, "{}ms", ms)
+        }
     }
 }
 

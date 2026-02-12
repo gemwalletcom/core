@@ -21,6 +21,7 @@ pub struct Metrics {
     cache_hits: Family<CacheLabels, Counter>,
     cache_misses: Family<CacheLabels, Counter>,
     node_switches: Family<NodeSwitchLabels, Counter>,
+    auth_requests: Family<AuthLabels, Counter>,
     user_agent_matcher: UserAgentMatcher,
 }
 
@@ -69,6 +70,11 @@ pub struct NodeSwitchLabels {
     reason: String,
 }
 
+#[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
+pub struct AuthLabels {
+    auth_status: String,
+}
+
 impl Metrics {
     pub fn new(config: MetricsConfig) -> Self {
         let proxy_requests = Family::<ProxyRequestLabels, Counter>::default();
@@ -79,6 +85,7 @@ impl Metrics {
         let cache_hits = Family::<CacheLabels, Counter>::default();
         let cache_misses = Family::<CacheLabels, Counter>::default();
         let node_switches = Family::<NodeSwitchLabels, Counter>::default();
+        let auth_requests = Family::<AuthLabels, Counter>::default();
 
         let mut metrics_registry = MetricsRegistry::with_prefix(&config.prefix);
         let registry = metrics_registry.registry_mut();
@@ -102,6 +109,7 @@ impl Metrics {
         registry.register("cache_hits", "Cache hits by host and path", cache_hits.clone());
         registry.register("cache_misses", "Cache misses by host and path", cache_misses.clone());
         registry.register("node_switches", "Node switches by chain", node_switches.clone());
+        registry.register("auth_requests", "Auth requests by status", auth_requests.clone());
 
         Self {
             registry: Arc::new(metrics_registry),
@@ -113,6 +121,7 @@ impl Metrics {
             cache_hits,
             cache_misses,
             node_switches,
+            auth_requests,
             user_agent_matcher: UserAgentMatcher::new(&config.user_agent_patterns),
         }
     }
@@ -193,6 +202,14 @@ impl Metrics {
                 old_host: old_host.to_string(),
                 new_host: new_host.to_string(),
                 reason: reason.to_string(),
+            })
+            .inc();
+    }
+
+    pub fn add_auth_request(&self, auth_status: &str) {
+        self.auth_requests
+            .get_or_create(&AuthLabels {
+                auth_status: auth_status.to_string(),
             })
             .inc();
     }

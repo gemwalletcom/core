@@ -20,8 +20,7 @@ pub mod price_dex;
 pub mod release;
 pub mod reward;
 pub mod scan_addresses;
-pub mod subscription;
-pub mod support;
+pub mod subscription_address_exclude;
 pub mod tag;
 pub mod transaction;
 pub mod transaction_addresses;
@@ -55,8 +54,7 @@ pub use self::reward::{
     RewardRedemptionOptionRow, RewardRedemptionRow, RewardReferralRow, RewardsRow, RiskSignalRow,
 };
 pub use self::scan_addresses::{NewScanAddressRow, ScanAddressRow};
-pub use self::subscription::{SubscriptionAddressExcludeRow, SubscriptionRow};
-pub use self::support::SupportRow;
+pub use self::subscription_address_exclude::SubscriptionAddressExcludeRow;
 pub use self::tag::{AssetTagRow, TagRow};
 pub use self::transaction::{NewTransactionRow, TransactionRow};
 pub use self::transaction_addresses::{AddressChainIdResultRow, NewTransactionAddressesRow, TransactionAddressesRow};
