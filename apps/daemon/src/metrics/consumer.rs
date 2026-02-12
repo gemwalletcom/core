@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::SystemTime;
 
-use primitives::ReportedError;
 use prometheus_client::encoding::EncodeLabelSet;
 use prometheus_client::metrics::family::Family;
 use prometheus_client::metrics::gauge::Gauge;
@@ -27,7 +26,7 @@ struct ConsumerState {
     total_errors: u64,
     last_success: Option<u64>,
     avg_duration: u64,
-    errors: Vec<ReportedError>,
+    errors: HashMap<String, u64>,
 }
 
 pub struct ConsumerMetrics {
@@ -57,20 +56,11 @@ impl ConsumerMetrics {
         let mut consumers = self.consumers.lock().unwrap();
         let state = consumers.entry(name.to_string()).or_default();
         state.total_errors += 1;
-
-        let timestamp = SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
-        let message = if error.len() > 200 { &error[..200] } else { error };
-
-        if let Some(entry) = state.errors.iter_mut().find(|e| e.message == message) {
-            entry.count += 1;
-            entry.timestamp = timestamp;
-        } else {
-            state.errors.push(ReportedError {
-                message: message.to_string(),
-                count: 1,
-                timestamp,
-            });
-        }
+        let message = match error.char_indices().nth(200) {
+            Some((idx, _)) => &error[..idx],
+            None => error,
+        };
+        *state.errors.entry(message.to_string()).or_default() += 1;
     }
 }
 
@@ -81,7 +71,6 @@ impl MetricsProvider for ConsumerMetrics {
         let last_success_at = Family::<ConsumerLabels, Gauge>::default();
         let avg_duration = Family::<ConsumerLabels, Gauge>::default();
         let error_detail = Family::<ConsumerErrorLabels, Gauge>::default();
-        let last_error_at = Family::<ConsumerErrorLabels, Gauge>::default();
 
         let consumers = self.consumers.lock().unwrap();
         for (name, state) in consumers.iter() {
@@ -94,13 +83,12 @@ impl MetricsProvider for ConsumerMetrics {
             }
             avg_duration.get_or_create(&labels).set(state.avg_duration as i64);
 
-            for err in &state.errors {
+            for (error, count) in &state.errors {
                 let error_labels = ConsumerErrorLabels {
                     consumer: name.clone(),
-                    error: err.message.clone(),
+                    error: error.clone(),
                 };
-                error_detail.get_or_create(&error_labels).set(err.count as i64);
-                last_error_at.get_or_create(&error_labels).set(err.timestamp as i64);
+                error_detail.get_or_create(&error_labels).set(*count as i64);
             }
         }
 
@@ -108,7 +96,6 @@ impl MetricsProvider for ConsumerMetrics {
         registry.register("consumer_errors", "Errors encountered", errors);
         registry.register("consumer_last_success_at", "Last successful processing (unix timestamp)", last_success_at);
         registry.register("consumer_avg_duration_milliseconds", "Average processing duration in milliseconds", avg_duration);
-        registry.register("consumer_error_detail", "Error occurrence count per consumer and error message", error_detail);
-        registry.register("consumer_last_error_at", "Last error timestamp (unix)", last_error_at);
+        registry.register("consumer_error_detail", "Consumer error count by message", error_detail);
     }
 }

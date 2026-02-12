@@ -26,7 +26,7 @@ impl ChainResponseHandler for WalletConnectResponseHandler {
 impl WalletConnectResponseHandler {
     pub fn encode_sign_message(chain_type: ChainType, signature: String) -> WalletConnectResponseType {
         match chain_type {
-            ChainType::Solana | ChainType::Sui => {
+            ChainType::Solana | ChainType::Sui | ChainType::Tron => {
                 let result = serde_json::json!({
                     "signature": signature
                 });
@@ -59,6 +59,7 @@ impl WalletConnectResponseHandler {
                 };
                 WalletConnectResponseType::Object { json: result.to_string() }
             }
+            ChainType::Tron => WalletConnectResponseType::Object { json: transaction_id },
             _ => WalletConnectResponseType::String { value: transaction_id },
         }
     }
@@ -67,6 +68,9 @@ impl WalletConnectResponseHandler {
         match chain_type {
             ChainType::Sui => WalletConnectResponseType::Object {
                 json: serde_json::json!({ "digest": transaction_id }).to_string(),
+            },
+            ChainType::Tron => WalletConnectResponseType::Object {
+                json: serde_json::json!({ "result": true, "txid": transaction_id }).to_string(),
             },
             _ => WalletConnectResponseType::String { value: transaction_id },
         }
@@ -111,12 +115,32 @@ mod tests {
     }
 
     #[test]
+    fn test_encode_sign_message_tron() {
+        let result = WalletConnectResponseHandler::encode_sign_message(ChainType::Tron, "tronsig123".to_string());
+        let WalletConnectResponseType::Object { json } = result else {
+            panic!("Expected Object response for Tron")
+        };
+        let actual: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(actual, serde_json::json!({"signature": "tronsig123"}));
+    }
+
+    #[test]
     fn test_encode_sign_transaction_ethereum() {
         let result = WalletConnectResponseHandler::encode_sign_transaction(ChainType::Ethereum, "0xtxid".to_string());
         let WalletConnectResponseType::String { value } = result else {
             panic!("Expected String response for Ethereum")
         };
         assert_eq!(value, "0xtxid");
+    }
+
+    #[test]
+    fn test_encode_sign_transaction_tron() {
+        let json = r#"{"signature":["sig"]}"#.to_string();
+        let result = WalletConnectResponseHandler::encode_sign_transaction(ChainType::Tron, json.clone());
+        let WalletConnectResponseType::Object { json: result_json } = result else {
+            panic!("Expected Object response for Tron")
+        };
+        assert_eq!(result_json, json);
     }
 
     #[test]
@@ -164,6 +188,16 @@ mod tests {
             }
             _ => panic!("Expected Object response for Sui"),
         }
+    }
+
+    #[test]
+    fn test_encode_send_transaction_tron() {
+        let result = WalletConnectResponseHandler::encode_send_transaction(ChainType::Tron, "txid123".to_string());
+        let WalletConnectResponseType::Object { json } = result else {
+            panic!("Expected Object response for Tron")
+        };
+        let actual: serde_json::Value = serde_json::from_str(&json).unwrap();
+        assert_eq!(actual, serde_json::json!({"result": true, "txid": "txid123"}));
     }
 
     #[test]

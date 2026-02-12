@@ -1,5 +1,6 @@
 use crate::message::sign_type::SignDigestType;
 use crate::wallet_connect::actions::{WalletConnectAction, WalletConnectTransactionType};
+use crate::wallet_connect::error::{RequestError, ValueExt};
 use crate::wallet_connect::handler_traits::ChainRequestHandler;
 use primitives::{Chain, TransferDataOutputType};
 use serde_json::Value;
@@ -8,7 +9,7 @@ pub struct SolanaRequestHandler;
 
 impl ChainRequestHandler for SolanaRequestHandler {
     fn parse_sign_message(_chain: Chain, params: Value, _domain: &str) -> Result<WalletConnectAction, String> {
-        let message = params.get("message").and_then(|v| v.as_str()).ok_or("Missing message parameter")?.to_string();
+        let message = params.get_str("message")?.to_string();
 
         Ok(WalletConnectAction::SignMessage {
             chain: Chain::Solana,
@@ -18,7 +19,7 @@ impl ChainRequestHandler for SolanaRequestHandler {
     }
 
     fn parse_sign_transaction(_chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
-        params.get("transaction").and_then(|v| v.as_str()).ok_or("Missing transaction parameter")?;
+        params.get_str("transaction")?;
 
         Ok(WalletConnectAction::SignTransaction {
             chain: Chain::Solana,
@@ -30,7 +31,7 @@ impl ChainRequestHandler for SolanaRequestHandler {
     }
 
     fn parse_send_transaction(_chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
-        params.get("transaction").and_then(|v| v.as_str()).ok_or("Missing transaction parameter")?;
+        params.get_str("transaction")?;
 
         Ok(WalletConnectAction::SendTransaction {
             chain: Chain::Solana,
@@ -44,8 +45,15 @@ impl ChainRequestHandler for SolanaRequestHandler {
 
 impl SolanaRequestHandler {
     pub fn parse_sign_all_transactions(params: Value) -> Result<WalletConnectAction, String> {
-        let transactions = params.get("transactions").and_then(|v| v.as_array()).ok_or("Missing transactions parameter")?;
-        let transaction = transactions.first().and_then(|v| v.as_str()).ok_or("Empty transactions array")?.to_string();
+        let transactions = params
+            .get("transactions")
+            .and_then(|v| v.as_array())
+            .ok_or(RequestError::MissingParameter("transactions".into()))?;
+        let transaction = transactions
+            .first()
+            .and_then(|v| v.as_str())
+            .ok_or(RequestError::InvalidFormat("Empty transactions array".into()))?
+            .to_string();
 
         Ok(WalletConnectAction::SignTransaction {
             chain: Chain::Solana,

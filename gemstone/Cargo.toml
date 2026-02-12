@@ -21,7 +21,7 @@ swap_integration_tests = ["reqwest_provider"]
 swapper = { path = "../crates/swapper" }
 primitives = { path = "../crates/primitives" }
 gem_cosmos = { path = "../crates/gem_cosmos", features = ["rpc"] }
-gem_solana = { path = "../crates/gem_solana", features = ["rpc"] }
+gem_solana = { path = "../crates/gem_solana", features = ["rpc", "signer"] }
 gem_ton = { path = "../crates/gem_ton", features = ["rpc", "signer"] }
 gem_tron = { path = "../crates/gem_tron", features = ["rpc"] }
 gem_evm = { path = "../crates/gem_evm", features = ["rpc"] }
@@ -32,6 +32,7 @@ gem_jsonrpc = { path = "../crates/gem_jsonrpc" }
 gem_client = { path = "../crates/gem_client" }
 gem_hypercore = { path = "../crates/gem_hypercore", features = ["signer"] }
 gem_bitcoin = { path = "../crates/gem_bitcoin", features = ["rpc", "signer"] }
+gem_hash = { path = "../crates/gem_hash" }
 gem_cardano = { path = "../crates/gem_cardano", features = ["rpc"] }
 gem_algorand = { path = "../crates/gem_algorand", features = ["rpc"] }
 gem_stellar = { path = "../crates/gem_stellar", features = ["rpc"] }
@@ -67,3 +68,4 @@ uniffi = { workspace = true, features = ["build"] }
 
 [dev-dependencies]
 tokio.workspace = true
+primitives = { path = "../crates/primitives", features = ["testkit"] }

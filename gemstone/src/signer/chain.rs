@@ -1,7 +1,9 @@
 use crate::{GemstoneError, models::transaction::GemTransactionLoadInput};
 use gem_aptos::AptosChainSigner;
 use gem_hypercore::signer::HyperCoreSigner;
+use gem_solana::signer::SolanaChainSigner;
 use gem_sui::signer::SuiChainSigner;
+use gem_tron::TronChainSigner;
 use primitives::{Chain, ChainSigner, SignerError, TransactionLoadInput};
 
 #[derive(uniffi::Object)]
@@ -18,6 +20,8 @@ impl GemChainSigner {
             Chain::Aptos => Box::new(AptosChainSigner),
             Chain::HyperCore => Box::new(HyperCoreSigner),
             Chain::Sui => Box::new(SuiChainSigner),
+            Chain::Solana => Box::new(SolanaChainSigner),
+            Chain::Tron => Box::new(TronChainSigner),
             _ => todo!("Signer not implemented for chain {:?}", chain),
         };
 
@@ -78,7 +82,7 @@ impl GemChainSigner {
         let key = private_key;
 
         method(self.signer.as_ref(), &tx_input, key.as_slice()).map_err(|err| match err {
-            SignerError::UnsupportedOperation(_) => unsupported_error(self.chain, action),
+            SignerError::SigningError(_) => unsupported_error(self.chain, action),
             other => GemstoneError::from(other),
         })
     }
@@ -88,12 +92,12 @@ impl GemChainSigner {
         F: Fn(&dyn ChainSigner, &[u8], &[u8]) -> Result<T, SignerError>,
     {
         method(self.signer.as_ref(), &message, &private_key).map_err(|err| match err {
-            SignerError::UnsupportedOperation(_) => unsupported_error(self.chain, action),
+            SignerError::SigningError(_) => unsupported_error(self.chain, action),
             other => GemstoneError::from(other),
         })
     }
 }
 
 fn unsupported_error(chain: Chain, action: &str) -> GemstoneError {
-    SignerError::UnsupportedOperation(format!("{action} not supported for chain {:?}", chain)).into()
+    SignerError::SigningError(format!("{action} not supported for chain {:?}", chain)).into()
 }

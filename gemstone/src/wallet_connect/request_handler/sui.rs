@@ -1,5 +1,6 @@
 use crate::message::sign_type::SignDigestType;
 use crate::wallet_connect::actions::{WalletConnectAction, WalletConnectTransactionType};
+use crate::wallet_connect::error::ValueExt;
 use crate::wallet_connect::handler_traits::ChainRequestHandler;
 use primitives::{Chain, TransferDataOutputType};
 use serde_json::Value;
@@ -8,7 +9,7 @@ pub struct SuiRequestHandler;
 
 impl ChainRequestHandler for SuiRequestHandler {
     fn parse_sign_message(_chain: Chain, params: Value, _domain: &str) -> Result<WalletConnectAction, String> {
-        let message = params.get("message").and_then(|v| v.as_str()).ok_or("Missing message parameter")?;
+        let message = params.get_str("message")?;
 
         Ok(WalletConnectAction::SignMessage {
             chain: Chain::Sui,
@@ -18,7 +19,7 @@ impl ChainRequestHandler for SuiRequestHandler {
     }
 
     fn parse_sign_transaction(_chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
-        params.get("transaction").and_then(|v| v.as_str()).ok_or("Missing transaction parameter")?;
+        params.get_str("transaction")?;
 
         let data = serde_json::to_string(&params).map_err(|e| format!("Failed to serialize params: {}", e))?;
 
@@ -32,7 +33,7 @@ impl ChainRequestHandler for SuiRequestHandler {
     }
 
     fn parse_send_transaction(_chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
-        params.get("transaction").and_then(|v| v.as_str()).ok_or("Missing transaction parameter")?;
+        params.get_str("transaction")?;
 
         let data = serde_json::to_string(&params).map_err(|e| format!("Failed to serialize params: {}", e))?;
 

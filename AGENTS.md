@@ -174,7 +174,7 @@ Follow the existing code style patterns unless explicitly asked to change
 - Don't use `util`, `utils`, `normalize`, or any other similar names for modules or functions.
 - Avoid using `matches!` for pattern matching as much as possible, it's easy to missing a case later.
 - Avoid type suffixes like `_str`, `_int`, `_vec` in variable names; Rust's type system makes them redundant.
-- Don't add docstrings, comments, or type annotations unless explicitly asked to (including in mod.rs files).
+- Don't add docstrings, comments, type annotations, or inline code comments unless explicitly asked to (including in mod.rs files).
 
 ### Imports
 1. Standard library imports first
@@ -296,6 +296,7 @@ Direct repository access methods available on `DatabaseClient` include:
 - Configure integration tests with `test = false` and appropriate `required-features` for manual execution
 - Prefer real networks for RPC client tests (e.g., Ethereum mainnet)
 - Test data management: For long JSON test data (>20 lines), store in `testdata/` and load with `include_str!()`; per-crate layout is typically `src/`, `tests/`, `testdata/`
+- Never use `.expect()` in tests; use `.unwrap()` instead for brevity
 
 ### Integration Testing
 - Add integration tests for RPC functionality to verify real network compatibility

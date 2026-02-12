@@ -146,14 +146,6 @@ pub struct GemTransactionStateRequest {
 
 pub type GemHyperliquidOrder = HyperliquidOrder;
 
-pub type GemStakeData = StakeData;
-
-#[uniffi::remote(Record)]
-pub struct GemStakeData {
-    pub data: Option<String>,
-    pub to: Option<String>,
-}
-
 #[uniffi::remote(Record)]
 pub struct GemHyperliquidOrder {
     pub approve_agent_required: bool,
@@ -162,6 +154,14 @@ pub struct GemHyperliquidOrder {
     pub builder_fee_bps: u32,
     pub agent_address: String,
     pub agent_private_key: String,
+}
+
+pub type GemStakeData = StakeData;
+
+#[uniffi::remote(Record)]
+pub struct GemStakeData {
+    pub data: Option<String>,
+    pub to: Option<String>,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -753,12 +753,10 @@ impl From<GemGasPriceType> for GasPriceType {
                 gas_price,
                 priority_fee,
                 unit_price,
-                jito_tip,
             } => GasPriceType::Solana {
                 gas_price: gas_price.parse().unwrap_or_default(),
                 priority_fee: priority_fee.parse().unwrap_or_default(),
                 unit_price: unit_price.parse().unwrap_or_default(),
-                jito_tip,
             },
         }
     }

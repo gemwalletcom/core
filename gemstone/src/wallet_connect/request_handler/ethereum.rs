@@ -1,5 +1,6 @@
 use crate::message::sign_type::SignDigestType;
 use crate::wallet_connect::actions::{WalletConnectAction, WalletConnectTransactionType};
+use crate::wallet_connect::error::RequestError;
 use crate::wallet_connect::handler_traits::ChainRequestHandler;
 use primitives::Chain;
 use serde_json::Value;
@@ -8,8 +9,12 @@ pub struct EthereumRequestHandler;
 
 impl ChainRequestHandler for EthereumRequestHandler {
     fn parse_sign_message(chain: Chain, params: Value, _domain: &str) -> Result<WalletConnectAction, String> {
-        let params_array = params.as_array().ok_or("Invalid params format")?;
-        let data = params_array.first().and_then(|v| v.as_str()).ok_or("Missing data parameter")?.to_string();
+        let params_array = params.as_array().ok_or(RequestError::InvalidFormat("Invalid params format".into()))?;
+        let data = params_array
+            .first()
+            .and_then(|v| v.as_str())
+            .ok_or(RequestError::MissingParameter("data".into()))?
+            .to_string();
 
         Ok(WalletConnectAction::SignMessage {
             chain,
@@ -19,8 +24,8 @@ impl ChainRequestHandler for EthereumRequestHandler {
     }
 
     fn parse_sign_transaction(chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
-        let params_array = params.as_array().ok_or("Invalid params format")?;
-        let transaction = params_array.first().ok_or("Missing transaction parameter")?;
+        let params_array = params.as_array().ok_or(RequestError::InvalidFormat("Invalid params format".into()))?;
+        let transaction = params_array.first().ok_or(RequestError::MissingParameter("transaction".into()))?;
         let data = serde_json::to_string(transaction).map_err(|e| format!("Failed to serialize transaction: {}", e))?;
 
         Ok(WalletConnectAction::SignTransaction {
@@ -31,8 +36,8 @@ impl ChainRequestHandler for EthereumRequestHandler {
     }
 
     fn parse_send_transaction(chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
-        let params_array = params.as_array().ok_or("Invalid params format")?;
-        let transaction = params_array.first().ok_or("Missing transaction parameter")?;
+        let params_array = params.as_array().ok_or(RequestError::InvalidFormat("Invalid params format".into()))?;
+        let transaction = params_array.first().ok_or(RequestError::MissingParameter("transaction".into()))?;
         let data = serde_json::to_string(transaction).map_err(|e| format!("Failed to serialize transaction: {}", e))?;
 
         Ok(WalletConnectAction::SendTransaction {
@@ -45,8 +50,8 @@ impl ChainRequestHandler for EthereumRequestHandler {
 
 impl EthereumRequestHandler {
     pub fn parse_sign_typed_data(chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
-        let params_array = params.as_array().ok_or("Invalid params format")?;
-        let typed_data = params_array.get(1).ok_or("Missing data parameter")?;
+        let params_array = params.as_array().ok_or(RequestError::InvalidFormat("Invalid params format".into()))?;
+        let typed_data = params_array.get(1).ok_or(RequestError::MissingParameter("data".into()))?;
         let data = if let Some(s) = typed_data.as_str() {
             s.to_string()
         } else {

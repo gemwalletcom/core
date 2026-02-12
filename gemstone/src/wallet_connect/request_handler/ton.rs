@@ -1,5 +1,6 @@
 use crate::message::sign_type::SignDigestType;
 use crate::wallet_connect::actions::{WalletConnectAction, WalletConnectTransactionType};
+use crate::wallet_connect::error::{RequestError, ValueExt};
 use crate::wallet_connect::handler_traits::ChainRequestHandler;
 use gem_ton::signer::TonSignMessageData;
 use primitives::{Chain, TransferDataOutputType};
@@ -13,8 +14,8 @@ fn extract_host(url: &str) -> String {
 
 impl ChainRequestHandler for TonRequestHandler {
     fn parse_sign_message(_chain: Chain, params: Value, domain: &str) -> Result<WalletConnectAction, String> {
-        let params_array = params.as_array().ok_or("Invalid params format")?;
-        let payload = params_array.first().ok_or("Missing payload parameter")?.clone();
+        let params_array = params.as_array().ok_or(RequestError::InvalidFormat("Invalid params format".into()))?;
+        let payload = params_array.first().ok_or(RequestError::MissingParameter("payload".into()))?.clone();
         let host = extract_host(domain);
         let ton_data = TonSignMessageData::from_value(payload, host).map_err(|e| e.to_string())?;
         let data = String::from_utf8(ton_data.to_bytes()).map_err(|e| format!("Failed to encode TonSignMessageData: {}", e))?;
@@ -26,7 +27,7 @@ impl ChainRequestHandler for TonRequestHandler {
     }
 
     fn parse_sign_transaction(_chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
-        params.get("messages").ok_or("Missing messages parameter")?;
+        params.get_param("messages")?;
         Ok(WalletConnectAction::SignTransaction {
             chain: Chain::Ton,
             transaction_type: WalletConnectTransactionType::Ton {
@@ -37,7 +38,7 @@ impl ChainRequestHandler for TonRequestHandler {
     }
 
     fn parse_send_transaction(_chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
-        params.get("messages").ok_or("Missing messages parameter")?;
+        params.get_param("messages")?;
         Ok(WalletConnectAction::SendTransaction {
             chain: Chain::Ton,
             transaction_type: WalletConnectTransactionType::Ton {
@@ -98,13 +99,8 @@ mod tests {
             panic!("Expected SendTransaction action")
         };
         assert_eq!(chain, Chain::Ton);
-        let WalletConnectTransactionType::Ton {
-            output_type: TransferDataOutputType::EncodedTransaction,
-        } = transaction_type
-        else {
-            panic!("Expected Ton transaction type with EncodedTransaction output")
-        };
-        let parsed_data: serde_json::Value = serde_json::from_str(&data).expect("Data should be valid JSON");
+        assert_eq!(transaction_type.get_output_type().unwrap(), TransferDataOutputType::EncodedTransaction);
+        let parsed_data: serde_json::Value = serde_json::from_str(&data).unwrap();
         assert_eq!(parsed_data["valid_until"], 1234567890);
         assert_eq!(parsed_data["messages"][0]["address"], "0:1234567890abcdef");
         assert_eq!(parsed_data["messages"][0]["amount"], "1000000000");

@@ -117,12 +117,12 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                 async move { updater.update_usage_ranks().await }
             }
         })
-        .job(WorkerJob::UpdateAssetsImages, {
+        .jobs(WorkerJob::UpdateAssetsImages, Chain::all(), |chain, _| {
             let static_assets_client = StaticAssetsClient::new(&settings.assets.url);
             let database = database.clone();
             move || {
                 let updater = AssetsImagesUpdater::new(static_assets_client.clone(), database.clone());
-                async move { updater.update_assets_images().await }
+                async move { updater.update_chain(chain).await }
             }
         })
         .jobs(WorkerJob::UpdateStakingApy, Chain::stakeable(), |chain, _| {

@@ -3,19 +3,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum GasPriceType {
-    Regular {
-        gas_price: BigInt,
-    },
-    Eip1559 {
-        gas_price: BigInt,
-        priority_fee: BigInt,
-    },
-    Solana {
-        gas_price: BigInt,
-        priority_fee: BigInt,
-        unit_price: BigInt,
-        jito_tip: u64,
-    },
+    Regular { gas_price: BigInt },
+    Eip1559 { gas_price: BigInt, priority_fee: BigInt },
+    Solana { gas_price: BigInt, priority_fee: BigInt, unit_price: BigInt },
 }
 
 impl GasPriceType {
@@ -30,12 +20,11 @@ impl GasPriceType {
         }
     }
 
-    pub fn solana<T: Into<BigInt>, U: Into<BigInt>, V: Into<BigInt>>(gas_price: T, priority_fee: U, unit_price: V, jito_tip: u64) -> Self {
+    pub fn solana<T: Into<BigInt>, U: Into<BigInt>, V: Into<BigInt>>(gas_price: T, priority_fee: U, unit_price: V) -> Self {
         Self::Solana {
             gas_price: gas_price.into(),
             priority_fee: priority_fee.into(),
             unit_price: unit_price.into(),
-            jito_tip,
         }
     }
 
@@ -63,16 +52,8 @@ impl GasPriceType {
         }
     }
 
-    pub fn jito_tip(&self) -> u64 {
-        match self {
-            GasPriceType::Regular { .. } => 0,
-            GasPriceType::Eip1559 { .. } => 0,
-            GasPriceType::Solana { jito_tip, .. } => *jito_tip,
-        }
-    }
-
     pub fn total_fee(&self) -> BigInt {
-        self.gas_price() + self.priority_fee() + BigInt::from(self.jito_tip())
+        self.gas_price() + self.priority_fee()
     }
 }
 
@@ -106,7 +87,7 @@ mod tests {
         let eip1559 = GasPriceType::eip1559(BigInt::from(2000u64), BigInt::from(500u64));
         assert_eq!(eip1559.unit_price(), BigInt::from(0));
 
-        let solana = GasPriceType::solana(BigInt::from(5000u64), BigInt::from(1000u64), BigInt::from(200u64), 0);
+        let solana = GasPriceType::solana(BigInt::from(5000u64), BigInt::from(1000u64), BigInt::from(200u64));
         assert_eq!(solana.unit_price(), BigInt::from(200u64));
     }
 
@@ -118,7 +99,7 @@ mod tests {
         let eip1559 = GasPriceType::eip1559(BigInt::from(2000u64), BigInt::from(500u64));
         assert_eq!(eip1559.total_fee(), BigInt::from(2500u64));
 
-        let solana = GasPriceType::solana(BigInt::from(5000u64), BigInt::from(1000u64), BigInt::from(200u64), 3000);
-        assert_eq!(solana.total_fee(), BigInt::from(9000u64)); // 5000 + 1000 + 3000 (jito_tip)
+        let solana = GasPriceType::solana(BigInt::from(5000u64), BigInt::from(1000u64), BigInt::from(200u64));
+        assert_eq!(solana.total_fee(), BigInt::from(6000u64)); // 5000 + 1000
     }
 }
