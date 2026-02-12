@@ -155,7 +155,7 @@ impl WorkerJob {
             UpdateAssetsIndex => JobSpec::new(WorkerService::Search, JobInterval::Config(ConfigKey::SearchAssetsUpdateInterval)),
             UpdatePerpetualsIndex => JobSpec::new(WorkerService::Search, JobInterval::Config(ConfigKey::SearchPerpetualsUpdateInterval)),
             UpdateNftsIndex => JobSpec::new(WorkerService::Search, JobInterval::Config(ConfigKey::SearchNftsUpdateInterval)),
-            CleanupProcessedTransactions => JobSpec::new(WorkerService::System, JobInterval::Config(ConfigKey::TransactionTimerUpdater)),
+            CleanupProcessedTransactions => JobSpec::new(WorkerService::System, JobInterval::Config(ConfigKey::TransactionTimerCleanup)),
             UpdateStoreVersion => JobSpec::new(WorkerService::System, JobInterval::Config(ConfigKey::VersionTimerUpdateStoreVersions)),
             UpdateChainValidators => JobSpec::new(WorkerService::Assets, JobInterval::Config(ConfigKey::ScanTimerUpdateValidators)),
             UpdateValidatorsFromStaticAssets => JobSpec::new(WorkerService::Assets, JobInterval::Config(ConfigKey::ScanTimerUpdateValidatorsStatic)),

@@ -16,10 +16,9 @@ pub(crate) trait TransactionsStore {
         asset_id: Option<String>,
         from_datetime: Option<NaiveDateTime>,
     ) -> Result<Vec<TransactionRow>, diesel::result::Error>;
-    fn get_transactions_addresses(&mut self, min_count: i64, limit: i64) -> Result<Vec<AddressChainIdResultRow>, diesel::result::Error>;
-    fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<usize, diesel::result::Error>;
-    fn get_transactions_without_addresses(&mut self, limit: i64) -> Result<Vec<i64>, diesel::result::Error>;
-    fn delete_transactions_by_ids(&mut self, ids: Vec<i64>) -> Result<usize, diesel::result::Error>;
+    fn get_transactions_addresses(&mut self, min_count: i64, limit: i64, since: NaiveDateTime) -> Result<Vec<AddressChainIdResultRow>, diesel::result::Error>;
+    fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<i64>, diesel::result::Error>;
+    fn delete_orphaned_transactions(&mut self, candidate_ids: Vec<i64>) -> Result<usize, diesel::result::Error>;
     fn get_asset_usage_counts(&mut self, since: NaiveDateTime) -> Result<Vec<(String, i64)>, diesel::result::Error>;
 }
 
@@ -108,12 +107,13 @@ impl TransactionsStore for DatabaseClient {
         query.order(created_at.desc()).select(TransactionRow::as_select()).distinct().load(&mut self.connection)
     }
 
-    fn get_transactions_addresses(&mut self, min_count: i64, limit: i64) -> Result<Vec<AddressChainIdResultRow>, diesel::result::Error> {
+    fn get_transactions_addresses(&mut self, min_count: i64, limit: i64, since: NaiveDateTime) -> Result<Vec<AddressChainIdResultRow>, diesel::result::Error> {
         use crate::schema::transactions::dsl as tx_dsl;
         use crate::schema::transactions_addresses::dsl::*;
 
         transactions_addresses
             .inner_join(tx_dsl::transactions)
+            .filter(tx_dsl::created_at.ge(since))
             .select((address, tx_dsl::chain))
             .group_by((address, tx_dsl::chain))
             .having(count(address).gt(min_count))
@@ -122,25 +122,33 @@ impl TransactionsStore for DatabaseClient {
             .load::<AddressChainIdResultRow>(&mut self.connection)
     }
 
-    fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<usize, diesel::result::Error> {
+    fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<i64>, diesel::result::Error> {
         use crate::schema::transactions_addresses::dsl::*;
-        diesel::delete(transactions_addresses).filter(address.eq_any(addresses)).execute(&mut self.connection)
-    }
-
-    fn get_transactions_without_addresses(&mut self, limit: i64) -> Result<Vec<i64>, diesel::result::Error> {
-        use crate::schema::transactions::dsl::*;
-        use crate::schema::transactions_addresses::dsl as addr;
-
-        transactions
-            .left_outer_join(addr::transactions_addresses.on(id.eq(addr::transaction_id)))
-            .filter(addr::transaction_id.is_null())
-            .select(id)
-            .limit(limit)
+        diesel::delete(transactions_addresses)
+            .filter(address.eq_any(addresses))
+            .returning(transaction_id)
             .load(&mut self.connection)
     }
 
-    fn delete_transactions_by_ids(&mut self, ids: Vec<i64>) -> Result<usize, diesel::result::Error> {
+    fn delete_orphaned_transactions(&mut self, candidate_ids: Vec<i64>) -> Result<usize, diesel::result::Error> {
         use crate::schema::transactions::dsl::*;
+        use crate::schema::transactions_addresses::dsl as addr;
+
+        if candidate_ids.is_empty() {
+            return Ok(0);
+        }
+
+        let ids: Vec<i64> = transactions
+            .filter(id.eq_any(&candidate_ids))
+            .left_outer_join(addr::transactions_addresses.on(id.eq(addr::transaction_id)))
+            .filter(addr::transaction_id.is_null())
+            .select(id)
+            .load(&mut self.connection)?;
+
+        if ids.is_empty() {
+            return Ok(0);
+        }
+
         diesel::delete(transactions.filter(id.eq_any(ids))).execute(&mut self.connection)
     }
 
