@@ -2,7 +2,7 @@ use crate::models::RpcSuiSystemState;
 use crate::models::staking::{SuiStakeDelegation, SuiSystemState, SuiValidators};
 use chrono::{DateTime, Utc};
 use num_bigint::BigUint;
-use primitives::{Chain, DelegationBase, DelegationState, DelegationValidator, GrowthProviderType, StakeValidator};
+use primitives::{Chain, DelegationBase, DelegationState, DelegationValidator, EarnProviderType, StakeValidator};
 
 pub fn map_validators(validators: SuiValidators, default_apy: f64) -> Vec<DelegationValidator> {
     validators
@@ -15,7 +15,7 @@ pub fn map_validators(validators: SuiValidators, default_apy: f64) -> Vec<Delega
             is_active: true,
             commission: 0.0,
             apr: default_apy,
-            provider_type: GrowthProviderType::Stake,
+            provider_type: EarnProviderType::Stake,
         })
         .collect()
 }

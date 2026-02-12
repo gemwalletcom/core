@@ -1,6 +1,6 @@
 use crate::models::custom_types::{DateTimeUtc, GemBigUint};
 use primitives::stake_type::{FreezeType, Resource};
-use primitives::{AssetId, Chain, Delegation, DelegationBase, DelegationState, DelegationValidator, GrowthProviderType, Price, StakeChain};
+use primitives::{AssetId, Chain, Delegation, DelegationBase, DelegationState, DelegationValidator, EarnProviderType, Price, StakeChain};
 
 pub type GemFreezeType = FreezeType;
 pub type GemResource = Resource;
@@ -8,7 +8,7 @@ pub type GemDelegation = Delegation;
 pub type GemDelegationBase = DelegationBase;
 pub type GemDelegationValidator = DelegationValidator;
 pub type GemDelegationState = DelegationState;
-pub type GemGrowthProviderType = GrowthProviderType;
+pub type GemEarnProviderType = EarnProviderType;
 pub type GemPrice = Price;
 pub type GemStakeChain = StakeChain;
 
@@ -52,7 +52,7 @@ pub enum GemDelegationState {
 }
 
 #[uniffi::remote(Enum)]
-pub enum GemGrowthProviderType {
+pub enum GemEarnProviderType {
     Stake,
     Earn,
 }
@@ -65,7 +65,7 @@ pub struct GemDelegationValidator {
     pub is_active: bool,
     pub commission: f64,
     pub apr: f64,
-    pub provider_type: GemGrowthProviderType,
+    pub provider_type: GemEarnProviderType,
 }
 
 #[uniffi::remote(Record)]

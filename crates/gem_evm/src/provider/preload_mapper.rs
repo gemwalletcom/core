@@ -308,7 +308,7 @@ mod tests {
     use super::*;
     use crate::everstake::{EVERSTAKE_POOL_ADDRESS, IAccounting};
     use num_bigint::BigUint;
-    use primitives::{Delegation, DelegationBase, DelegationState, DelegationValidator, GrowthProviderType, RedelegateData};
+    use primitives::{Delegation, DelegationBase, DelegationState, DelegationValidator, EarnProviderType, RedelegateData};
 
     fn everstake_validator() -> DelegationValidator {
         DelegationValidator {
@@ -318,7 +318,7 @@ mod tests {
             is_active: true,
             commission: 10.0,
             apr: 4.2,
-            provider_type: GrowthProviderType::Stake,
+            provider_type: EarnProviderType::Stake,
         }
     }
 
@@ -452,7 +452,7 @@ mod tests {
             is_active: true,
             commission: 5.0,
             apr: 10.0,
-            provider_type: GrowthProviderType::Stake,
+            provider_type: EarnProviderType::Stake,
         };
 
         let stake_type = StakeType::Stake(validator);
@@ -489,7 +489,7 @@ mod tests {
                 is_active: true,
                 commission: 5.0,
                 apr: 10.0,
-                provider_type: GrowthProviderType::Stake,
+                provider_type: EarnProviderType::Stake,
             },
             price: None,
         };
@@ -527,7 +527,7 @@ mod tests {
                 is_active: true,
                 commission: 5.0,
                 apr: 10.0,
-                provider_type: GrowthProviderType::Stake,
+                provider_type: EarnProviderType::Stake,
             },
             price: None,
         };
@@ -539,7 +539,7 @@ mod tests {
             is_active: true,
             commission: 3.0,
             apr: 12.0,
-            provider_type: GrowthProviderType::Stake,
+            provider_type: EarnProviderType::Stake,
         };
 
         let redelegate_data = RedelegateData { delegation, to_validator };
@@ -577,7 +577,7 @@ mod tests {
                 is_active: true,
                 commission: 5.0,
                 apr: 10.0,
-                provider_type: GrowthProviderType::Stake,
+                provider_type: EarnProviderType::Stake,
             },
             price: None,
         };

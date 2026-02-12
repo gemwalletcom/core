@@ -135,7 +135,7 @@ mod tests {
     use super::*;
     use crate::models::account::TronFrozen;
     use primitives::Chain;
-    use primitives::GrowthProviderType;
+    use primitives::EarnProviderType;
     use primitives::delegation::DelegationValidator;
 
     fn chain_parameter(key: &str, value: i64) -> ChainParameter {
@@ -278,7 +278,7 @@ mod tests {
             is_active: true,
             commission: 0.0,
             apr: 0.0,
-            provider_type: GrowthProviderType::Stake,
+            provider_type: EarnProviderType::Stake,
         });
 
         let with_bandwidth = account_usage(DEFAULT_BANDWIDTH_BYTES, 0, 0);
