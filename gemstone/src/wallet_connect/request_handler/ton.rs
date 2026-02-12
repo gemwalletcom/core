@@ -1,9 +1,8 @@
 use crate::message::sign_type::SignDigestType;
 use crate::wallet_connect::actions::{WalletConnectAction, WalletConnectTransactionType};
-use crate::wallet_connect::error::{RequestError, ValueExt};
 use crate::wallet_connect::handler_traits::ChainRequestHandler;
 use gem_ton::signer::TonSignMessageData;
-use primitives::{Chain, TransferDataOutputType};
+use primitives::{Chain, TransferDataOutputType, ValueAccess};
 use serde_json::Value;
 
 pub struct TonRequestHandler;
@@ -14,8 +13,7 @@ fn extract_host(url: &str) -> String {
 
 impl ChainRequestHandler for TonRequestHandler {
     fn parse_sign_message(_chain: Chain, params: Value, domain: &str) -> Result<WalletConnectAction, String> {
-        let params_array = params.as_array().ok_or(RequestError::InvalidFormat("Invalid params format".into()))?;
-        let payload = params_array.first().ok_or(RequestError::MissingParameter("payload".into()))?.clone();
+        let payload = params.at(0)?.clone();
         let host = extract_host(domain);
         let ton_data = TonSignMessageData::from_value(payload, host).map_err(|e| e.to_string())?;
         let data = String::from_utf8(ton_data.to_bytes()).map_err(|e| format!("Failed to encode TonSignMessageData: {}", e))?;
@@ -27,7 +25,7 @@ impl ChainRequestHandler for TonRequestHandler {
     }
 
     fn parse_sign_transaction(_chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
-        params.get_param("messages")?;
+        params.get_value("messages")?;
         Ok(WalletConnectAction::SignTransaction {
             chain: Chain::Ton,
             transaction_type: WalletConnectTransactionType::Ton {
@@ -38,7 +36,7 @@ impl ChainRequestHandler for TonRequestHandler {
     }
 
     fn parse_send_transaction(_chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
-        params.get_param("messages")?;
+        params.get_value("messages")?;
         Ok(WalletConnectAction::SendTransaction {
             chain: Chain::Ton,
             transaction_type: WalletConnectTransactionType::Ton {

@@ -93,13 +93,11 @@ mod tests {
     #[test]
     fn test_chain_operation_add_chain() {
         let request = WalletConnectRequest::mock("wallet_addEthereumChain", "{}", None);
-
-        let action = WalletConnectRequestHandler::parse_request(request).unwrap();
-        match action {
-            WalletConnectAction::ChainOperation { operation } => {
-                assert!(matches!(operation, WalletConnectChainOperation::AddChain));
+        assert_eq!(
+            WalletConnectRequestHandler::parse_request(request).unwrap(),
+            WalletConnectAction::ChainOperation {
+                operation: WalletConnectChainOperation::AddChain,
             }
-            _ => panic!("Expected ChainOperation action"),
-        }
+        );
     }
 }

@@ -1,6 +1,6 @@
 use super::transaction::{TronPayload, TronTransaction};
 use gem_hash::sha2::sha256;
-use primitives::{ChainSigner, SignerError, TransactionInputType, TransactionLoadInput, TransferDataOutputAction, TransferDataOutputType, hex::decode_hex};
+use primitives::{ChainSigner, SignerError, TransactionLoadInput, TransferDataOutputAction, TransferDataOutputType, hex::decode_hex};
 use serde_json::Value;
 use signer::{SignatureScheme, Signer};
 
@@ -19,14 +19,14 @@ impl ChainSigner for TronChainSigner {
 }
 
 fn sign_data(input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
-    let (transaction, metadata) = extract_transaction(input)?;
+    let (transaction, metadata) = get_transaction(input)?;
     let raw_data_hex = transaction
         .raw_data_hex
         .as_deref()
         .ok_or_else(|| SignerError::invalid_input("Missing raw_data_hex in Tron transaction payload"))?;
     let raw_bytes = decode_hex(raw_data_hex)?;
     let digest = sha256(&raw_bytes);
-    let signature = sign_digest(&digest, private_key)?;
+    let signature = Signer::sign_digest(SignatureScheme::Secp256k1, digest.to_vec(), private_key.to_vec()).map_err(|e| SignerError::signing_error(e.to_string()))?;
     let signature_hex = hex::encode(signature);
 
     match metadata.output_type {
@@ -46,10 +46,8 @@ fn sign_data(input: &TransactionLoadInput, private_key: &[u8]) -> Result<String,
     }
 }
 
-fn extract_transaction(input: &TransactionLoadInput) -> Result<(TronTransaction, PayloadMetadata), SignerError> {
-    let TransactionInputType::Generic(_, _, extra) = &input.input_type else {
-        return Err(SignerError::invalid_input("Expected generic transaction input"));
-    };
+fn get_transaction(input: &TransactionLoadInput) -> Result<(TronTransaction, PayloadMetadata), SignerError> {
+    let extra = input.get_data_extra().map_err(SignerError::invalid_input)?;
     let data = extra.data.as_ref().ok_or_else(|| SignerError::invalid_input("Missing transaction data"))?;
 
     let payload: TronPayload = serde_json::from_slice(data).map_err(|_| SignerError::invalid_input("Invalid Tron transaction payload"))?;
@@ -61,10 +59,6 @@ fn extract_transaction(input: &TransactionLoadInput) -> Result<(TronTransaction,
         output_action: extra.output_action.clone(),
     };
     Ok((transaction, metadata))
-}
-
-fn sign_digest(digest: &[u8], private_key: &[u8]) -> Result<Vec<u8>, SignerError> {
-    Signer::sign_digest(SignatureScheme::Secp256k1, digest.to_vec(), private_key.to_vec()).map_err(|err| SignerError::invalid_input(err.to_string()))
 }
 
 fn apply_signature(payload: Value, signature_hex: &str) -> Result<Value, SignerError> {

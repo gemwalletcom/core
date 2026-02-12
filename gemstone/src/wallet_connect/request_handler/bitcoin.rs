@@ -1,18 +1,17 @@
 use crate::message::sign_type::SignDigestType;
 use crate::wallet_connect::actions::{WalletConnectAction, WalletConnectTransactionType};
-use crate::wallet_connect::error::ValueExt;
 use crate::wallet_connect::handler_traits::ChainRequestHandler;
 use gem_bitcoin::signer::BitcoinSignMessageData;
 use primitives::wallet_connect::WCBitcoinTransfer;
-use primitives::{Chain, TransferDataOutputType};
+use primitives::{Chain, TransferDataOutputType, ValueAccess};
 use serde_json::Value;
 
 pub struct BitcoinRequestHandler;
 
 impl ChainRequestHandler for BitcoinRequestHandler {
     fn parse_sign_message(chain: Chain, params: Value, _domain: &str) -> Result<WalletConnectAction, String> {
-        let message = params.get_str("message")?;
-        let address = params.get_str("address")?;
+        let message = params.get_value("message")?.string()?;
+        let address = params.get_value("address")?.string()?;
 
         let btc_data = BitcoinSignMessageData::new(message.to_string(), address.to_string());
         let data = serde_json::to_string(&btc_data).map_err(|e| e.to_string())?;

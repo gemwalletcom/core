@@ -16,7 +16,6 @@ use crate::{
 };
 
 pub mod actions;
-pub mod error;
 pub mod handler_traits;
 pub mod request_handler;
 pub mod response_handler;
@@ -49,11 +48,18 @@ mod tests {
     use crate::message::signer::MessageSigner;
     use gem_tron::TronChainSigner;
     use primitives::{
-        Asset, ChainSigner, GasPriceType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType,
-        TronStakeData, WalletConnectionSessionAppMetadata,
+        Asset, ChainSigner, GasPriceType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransferDataExtra, TransferDataOutputType,
+        WalletConnectionSessionAppMetadata,
     };
 
     const TEST_PRIVATE_KEY: [u8; 32] = [1u8; 32];
+
+    fn response_json(response: &WalletConnectResponseType) -> serde_json::Value {
+        match response {
+            WalletConnectResponseType::Object { json } => serde_json::from_str(json).unwrap(),
+            WalletConnectResponseType::String { value } => serde_json::Value::String(value.clone()),
+        }
+    }
 
     fn sample_siwe_message() -> String {
         [
@@ -149,16 +155,18 @@ mod tests {
         let raw_params = serde_json::to_string(&params.trim()).unwrap();
         let request = WalletConnectRequest::mock("tron_signMessage", &raw_params, Some("tron:0x2b6653dc"));
 
+        let data = "This is a message to be signed for Tron".to_string();
         let action = WalletConnectRequestHandler::parse_request(request).unwrap();
-        let WalletConnectAction::SignMessage { chain, sign_type, data } = action else {
-            panic!("Expected SignMessage action");
-        };
+        assert_eq!(
+            action,
+            WalletConnectAction::SignMessage {
+                chain: Chain::Tron,
+                sign_type: SignDigestType::TronPersonal,
+                data: data.clone(),
+            }
+        );
 
-        assert_eq!(chain, Chain::Tron);
-        assert_eq!(sign_type, SignDigestType::TronPersonal);
-        assert_eq!(data, "This is a message to be signed for Tron");
-
-        let sign_message = wallet_connect.decode_sign_message(chain, sign_type, data);
+        let sign_message = wallet_connect.decode_sign_message(Chain::Tron, SignDigestType::TronPersonal, data);
         let signer = MessageSigner::new(sign_message);
         let signature = signer.sign(TEST_PRIVATE_KEY.to_vec()).unwrap();
 
@@ -167,48 +175,36 @@ mod tests {
             "0xa0cbc20e8f0a9c19dd3d97e15fd99eee49edb8c0bcca52b684bbf13e1344b99670201d57633881cb20b0c00b626397530e3165049044b2fa4089840cf41a0a761b"
         );
 
-        let response = wallet_connect.encode_sign_message(chain, signature.clone());
-        match response {
-            WalletConnectResponseType::Object { json } => {
-                let actual: serde_json::Value = serde_json::from_str(&json).unwrap();
-                let expected: serde_json::Value = serde_json::from_str(include_str!("./test/tron_sign_message_response.json")).unwrap();
-                assert_eq!(actual, expected);
-            }
-            _ => panic!("Expected Object response for Tron"),
-        }
+        let response = wallet_connect.encode_sign_message(Chain::Tron, signature.clone());
+        let expected: serde_json::Value = serde_json::from_str(include_str!("./test/tron_sign_message_response.json")).unwrap();
+        assert_eq!(response_json(&response), expected);
     }
 
     #[test]
     fn parse_tron_sign_transaction_and_sign() {
         let wallet_connect = WalletConnect::new();
         let params = include_str!("./test/tron_sign_transaction.json");
+        let expected_data: serde_json::Value = serde_json::from_str(params.trim()).unwrap();
+        let expected_data = expected_data.to_string();
         let request = WalletConnectRequest::mock("tron_signTransaction", &serde_json::to_string(&params.trim()).unwrap(), Some("tron:0x2b6653dc"));
 
         let action = WalletConnectRequestHandler::parse_request(request).unwrap();
-        let WalletConnectAction::SignTransaction { chain, transaction_type, data } = action else {
-            panic!("Expected SignTransaction action");
-        };
-
-        assert_eq!(chain, Chain::Tron);
-        assert_eq!(transaction_type.get_output_type().unwrap(), TransferDataOutputType::EncodedTransaction);
+        assert_eq!(
+            action,
+            WalletConnectAction::SignTransaction {
+                chain: Chain::Tron,
+                transaction_type: WalletConnectTransactionType::Tron {
+                    output_type: TransferDataOutputType::EncodedTransaction,
+                },
+                data: expected_data.clone(),
+            }
+        );
 
         let input = TransactionLoadInput {
             input_type: TransactionInputType::Generic(
                 Asset::from_chain(Chain::Tron),
-                WalletConnectionSessionAppMetadata {
-                    name: "Test Dapp".to_string(),
-                    description: "Test Dapp".to_string(),
-                    url: "https://example.com".to_string(),
-                    icon: "https://example.com/icon.png".to_string(),
-                },
-                TransferDataExtra {
-                    to: "".to_string(),
-                    gas_limit: None,
-                    gas_price: None,
-                    data: Some(data.as_bytes().to_vec()),
-                    output_type: TransferDataOutputType::EncodedTransaction,
-                    output_action: TransferDataOutputAction::Sign,
-                },
+                WalletConnectionSessionAppMetadata::mock(),
+                TransferDataExtra::mock_encoded_transaction(expected_data.as_bytes().to_vec()),
             ),
             sender_address: "TJoSEwEqt7cT3TUwmEoUYnYs5cZR3xSukM".to_string(),
             destination_address: "".to_string(),
@@ -216,15 +212,7 @@ mod tests {
             gas_price: GasPriceType::regular(0),
             memo: None,
             is_max_value: false,
-            metadata: TransactionLoadMetadata::Tron {
-                block_number: 0,
-                block_version: 0,
-                block_timestamp: 0,
-                transaction_tree_root: "".to_string(),
-                parent_hash: "".to_string(),
-                witness_address: "".to_string(),
-                stake_data: TronStakeData::Votes(vec![]),
-            },
+            metadata: TransactionLoadMetadata::mock_tron(),
         };
 
         let signature_payload = TronChainSigner.sign_data(&input, &TEST_PRIVATE_KEY).unwrap();
@@ -242,32 +230,29 @@ mod tests {
             "943d286dfd1fb6a2cd31c9af7a6cfd23ee062ec2e0abcf82c7daa0c7bb43ab04458e0e88ebe3a94060122cccc8fb4395e5eb922720327df04ae840139c729a1f00"
         );
 
-        let response = wallet_connect.encode_sign_transaction(chain, signature_payload.clone());
-        match response {
-            WalletConnectResponseType::Object { json } => {
-                let actual: serde_json::Value = serde_json::from_str(&json).unwrap();
-                let expected: serde_json::Value = serde_json::from_str(include_str!("./test/tron_sign_transaction_response.json")).unwrap();
-                assert_eq!(actual, expected);
-            }
-            _ => panic!("Expected Object response for Tron"),
-        }
+        let response = wallet_connect.encode_sign_transaction(Chain::Tron, signature_payload.clone());
+        let expected: serde_json::Value = serde_json::from_str(include_str!("./test/tron_sign_transaction_response.json")).unwrap();
+        assert_eq!(response_json(&response), expected);
     }
 
     #[test]
     fn parse_tron_send_transaction() {
         let params = include_str!("./test/tron_send_transaction.json");
+        let expected_data: serde_json::Value = serde_json::from_str(params.trim()).unwrap();
+        let expected_data = expected_data.to_string();
         let request = WalletConnectRequest::mock("tron_sendTransaction", &serde_json::to_string(&params.trim()).unwrap(), Some("tron:0x2b6653dc"));
 
         let action = WalletConnectRequestHandler::parse_request(request).unwrap();
-        let WalletConnectAction::SendTransaction { chain, transaction_type, data } = action else {
-            panic!("Expected SendTransaction action");
-        };
-
-        assert_eq!(chain, Chain::Tron);
-        assert_eq!(transaction_type.get_output_type().unwrap(), TransferDataOutputType::EncodedTransaction);
-
-        let parsed_data: serde_json::Value = serde_json::from_str(&data).unwrap();
-        assert!(parsed_data.get("transaction").is_some());
+        assert_eq!(
+            action,
+            WalletConnectAction::SendTransaction {
+                chain: Chain::Tron,
+                transaction_type: WalletConnectTransactionType::Tron {
+                    output_type: TransferDataOutputType::EncodedTransaction,
+                },
+                data: expected_data,
+            }
+        );
     }
 
     #[test]

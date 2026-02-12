@@ -1,15 +1,14 @@
 use crate::message::sign_type::SignDigestType;
 use crate::wallet_connect::actions::{WalletConnectAction, WalletConnectTransactionType};
-use crate::wallet_connect::error::{RequestError, ValueExt};
 use crate::wallet_connect::handler_traits::ChainRequestHandler;
-use primitives::{Chain, TransferDataOutputType};
+use primitives::{Chain, TransferDataOutputType, ValueAccess};
 use serde_json::Value;
 
 pub struct SolanaRequestHandler;
 
 impl ChainRequestHandler for SolanaRequestHandler {
     fn parse_sign_message(_chain: Chain, params: Value, _domain: &str) -> Result<WalletConnectAction, String> {
-        let message = params.get_str("message")?.to_string();
+        let message = params.get_value("message")?.string()?.to_string();
 
         Ok(WalletConnectAction::SignMessage {
             chain: Chain::Solana,
@@ -19,7 +18,7 @@ impl ChainRequestHandler for SolanaRequestHandler {
     }
 
     fn parse_sign_transaction(_chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
-        params.get_str("transaction")?;
+        params.get_value("transaction")?.string()?;
 
         Ok(WalletConnectAction::SignTransaction {
             chain: Chain::Solana,
@@ -31,7 +30,7 @@ impl ChainRequestHandler for SolanaRequestHandler {
     }
 
     fn parse_send_transaction(_chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
-        params.get_str("transaction")?;
+        params.get_value("transaction")?.string()?;
 
         Ok(WalletConnectAction::SendTransaction {
             chain: Chain::Solana,
@@ -45,15 +44,7 @@ impl ChainRequestHandler for SolanaRequestHandler {
 
 impl SolanaRequestHandler {
     pub fn parse_sign_all_transactions(params: Value) -> Result<WalletConnectAction, String> {
-        let transactions = params
-            .get("transactions")
-            .and_then(|v| v.as_array())
-            .ok_or(RequestError::MissingParameter("transactions".into()))?;
-        let transaction = transactions
-            .first()
-            .and_then(|v| v.as_str())
-            .ok_or(RequestError::InvalidFormat("Empty transactions array".into()))?
-            .to_string();
+        let transaction = params.get_value("transactions")?.at(0)?.string()?.to_string();
 
         Ok(WalletConnectAction::SignTransaction {
             chain: Chain::Solana,
@@ -72,15 +63,14 @@ mod tests {
     #[test]
     fn test_parse_sign_message() {
         let params = serde_json::from_str(r#"{"message":"Hello"}"#).unwrap();
-        let action = SolanaRequestHandler::parse_sign_message(Chain::Solana, params, "example.com").unwrap();
-        match action {
-            WalletConnectAction::SignMessage { chain, sign_type, data } => {
-                assert_eq!(chain, Chain::Solana);
-                assert!(matches!(sign_type, SignDigestType::Base58));
-                assert_eq!(data, "Hello");
+        assert_eq!(
+            SolanaRequestHandler::parse_sign_message(Chain::Solana, params, "example.com").unwrap(),
+            WalletConnectAction::SignMessage {
+                chain: Chain::Solana,
+                sign_type: SignDigestType::Base58,
+                data: "Hello".to_string(),
             }
-            _ => panic!("Expected SignMessage action"),
-        }
+        );
     }
 
     #[test]
@@ -100,29 +90,17 @@ mod tests {
             "transaction":"AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDXSrcUs6yh6vSKrAi1IfpC6eB2ZwoCahNCXdBfn76Kfg35ZkUm4Dl6OeRysXE26nNgky3Ei9W8GElwuKbUNB9CQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAX1eEJ5Ueb/dix/IMPlhpv/ubGMU7MhDs5fLp4r4KwFQBAgIAAQwCAAAAAQAAAAAAAAA="
         }"#;
 
-        let params = serde_json::from_str(params_json).unwrap();
-        let action = SolanaRequestHandler::parse_sign_transaction(Chain::Solana, params).unwrap();
-
-        match action {
-            WalletConnectAction::SignTransaction { chain, transaction_type, data } => {
-                assert_eq!(chain, Chain::Solana);
-                assert!(matches!(
-                    transaction_type,
-                    WalletConnectTransactionType::Solana {
-                        output_type: TransferDataOutputType::Signature
-                    }
-                ));
-
-                let parsed_data: serde_json::Value = serde_json::from_str(&data).expect("Data should be valid JSON");
-                assert_eq!(
-                    parsed_data.get("transaction").and_then(|v| v.as_str()),
-                    Some(
-                        "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAEDXSrcUs6yh6vSKrAi1IfpC6eB2ZwoCahNCXdBfn76Kfg35ZkUm4Dl6OeRysXE26nNgky3Ei9W8GElwuKbUNB9CQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAX1eEJ5Ueb/dix/IMPlhpv/ubGMU7MhDs5fLp4r4KwFQBAgIAAQwCAAAAAQAAAAAAAAA="
-                    )
-                );
-                assert_eq!(parsed_data.get("feePayer").and_then(|v| v.as_str()), Some("7GgpgQLnhfBw9ukjQuTNhbrEJMmPNV5c9iaPUpXm1dKM"));
+        let params: serde_json::Value = serde_json::from_str(params_json).unwrap();
+        let expected_data = params.to_string();
+        assert_eq!(
+            SolanaRequestHandler::parse_sign_transaction(Chain::Solana, params).unwrap(),
+            WalletConnectAction::SignTransaction {
+                chain: Chain::Solana,
+                transaction_type: WalletConnectTransactionType::Solana {
+                    output_type: TransferDataOutputType::Signature,
+                },
+                data: expected_data,
             }
-            _ => panic!("Expected SignTransaction action"),
-        }
+        );
     }
 }

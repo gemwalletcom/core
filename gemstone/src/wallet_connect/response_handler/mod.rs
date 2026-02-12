@@ -1,7 +1,7 @@
 use crate::wallet_connect::handler_traits::ChainResponseHandler;
 use primitives::ChainType;
 
-#[derive(Debug, Clone, uniffi::Enum)]
+#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
 pub enum WalletConnectResponseType {
     String { value: String },
     Object { json: String },
@@ -81,152 +81,121 @@ impl WalletConnectResponseHandler {
 mod tests {
     use super::*;
 
+    fn object(json: &str) -> WalletConnectResponseType {
+        WalletConnectResponseType::Object { json: json.to_string() }
+    }
+
+    fn string(value: &str) -> WalletConnectResponseType {
+        WalletConnectResponseType::String { value: value.to_string() }
+    }
+
     #[test]
     fn test_encode_sign_message_ethereum() {
-        let result = WalletConnectResponseHandler::encode_sign_message(ChainType::Ethereum, "0xsignature".to_string());
-        let WalletConnectResponseType::String { value } = result else {
-            panic!("Expected String response for Ethereum")
-        };
-        assert_eq!(value, "0xsignature");
+        assert_eq!(
+            WalletConnectResponseHandler::encode_sign_message(ChainType::Ethereum, "0xsignature".to_string()),
+            string("0xsignature")
+        );
     }
 
     #[test]
     fn test_encode_sign_message_solana() {
-        let result = WalletConnectResponseHandler::encode_sign_message(ChainType::Solana, "signature123".to_string());
-        match result {
-            WalletConnectResponseType::Object { json } => {
-                assert!(json.contains("\"signature\""));
-                assert!(json.contains("signature123"));
-            }
-            _ => panic!("Expected Object response for Solana"),
-        }
+        assert_eq!(
+            WalletConnectResponseHandler::encode_sign_message(ChainType::Solana, "signature123".to_string()),
+            object(r#"{"signature":"signature123"}"#)
+        );
     }
 
     #[test]
     fn test_encode_sign_message_sui() {
-        let result = WalletConnectResponseHandler::encode_sign_message(ChainType::Sui, "suisig123".to_string());
-        match result {
-            WalletConnectResponseType::Object { json } => {
-                assert!(json.contains("\"signature\""));
-                assert!(json.contains("suisig123"));
-            }
-            _ => panic!("Expected Object response for Sui"),
-        }
+        assert_eq!(
+            WalletConnectResponseHandler::encode_sign_message(ChainType::Sui, "suisig123".to_string()),
+            object(r#"{"signature":"suisig123"}"#)
+        );
     }
 
     #[test]
     fn test_encode_sign_message_tron() {
-        let result = WalletConnectResponseHandler::encode_sign_message(ChainType::Tron, "tronsig123".to_string());
-        let WalletConnectResponseType::Object { json } = result else {
-            panic!("Expected Object response for Tron")
-        };
-        let actual: serde_json::Value = serde_json::from_str(&json).unwrap();
-        assert_eq!(actual, serde_json::json!({"signature": "tronsig123"}));
+        assert_eq!(
+            WalletConnectResponseHandler::encode_sign_message(ChainType::Tron, "tronsig123".to_string()),
+            object(r#"{"signature":"tronsig123"}"#)
+        );
     }
 
     #[test]
     fn test_encode_sign_transaction_ethereum() {
-        let result = WalletConnectResponseHandler::encode_sign_transaction(ChainType::Ethereum, "0xtxid".to_string());
-        let WalletConnectResponseType::String { value } = result else {
-            panic!("Expected String response for Ethereum")
-        };
-        assert_eq!(value, "0xtxid");
+        assert_eq!(
+            WalletConnectResponseHandler::encode_sign_transaction(ChainType::Ethereum, "0xtxid".to_string()),
+            string("0xtxid")
+        );
     }
 
     #[test]
     fn test_encode_sign_transaction_tron() {
-        let json = r#"{"signature":["sig"]}"#.to_string();
-        let result = WalletConnectResponseHandler::encode_sign_transaction(ChainType::Tron, json.clone());
-        let WalletConnectResponseType::Object { json: result_json } = result else {
-            panic!("Expected Object response for Tron")
-        };
-        assert_eq!(result_json, json);
+        assert_eq!(
+            WalletConnectResponseHandler::encode_sign_transaction(ChainType::Tron, r#"{"signature":["sig"]}"#.to_string()),
+            object(r#"{"signature":["sig"]}"#)
+        );
     }
 
     #[test]
     fn test_encode_sign_transaction_solana() {
-        let result = WalletConnectResponseHandler::encode_sign_transaction(ChainType::Solana, "txid123".to_string());
-        match result {
-            WalletConnectResponseType::Object { json } => {
-                assert!(json.contains("\"signature\""));
-                assert!(json.contains("txid123"));
-            }
-            _ => panic!("Expected Object response for Solana"),
-        }
+        assert_eq!(
+            WalletConnectResponseHandler::encode_sign_transaction(ChainType::Solana, "txid123".to_string()),
+            object(r#"{"signature":"txid123"}"#)
+        );
     }
 
     #[test]
     fn test_encode_sign_transaction_sui() {
-        let result = WalletConnectResponseHandler::encode_sign_transaction(ChainType::Sui, "txbytes_sig123".to_string());
-        match result {
-            WalletConnectResponseType::Object { json } => {
-                assert!(json.contains("\"signature\""));
-                assert!(json.contains("\"transactionBytes\""));
-                assert!(json.contains("sig123"));
-                assert!(json.contains("txbytes"));
-            }
-            _ => panic!("Expected Object response for Sui"),
-        }
+        assert_eq!(
+            WalletConnectResponseHandler::encode_sign_transaction(ChainType::Sui, "txbytes_sig123".to_string()),
+            object(r#"{"signature":"sig123","transactionBytes":"txbytes"}"#)
+        );
     }
 
     #[test]
     fn test_encode_send_transaction_ethereum() {
-        let result = WalletConnectResponseHandler::encode_send_transaction(ChainType::Ethereum, "0xhash".to_string());
-        let WalletConnectResponseType::String { value } = result else {
-            panic!("Expected String response for Ethereum")
-        };
-        assert_eq!(value, "0xhash");
+        assert_eq!(
+            WalletConnectResponseHandler::encode_send_transaction(ChainType::Ethereum, "0xhash".to_string()),
+            string("0xhash")
+        );
     }
 
     #[test]
     fn test_encode_send_transaction_sui() {
-        let result = WalletConnectResponseHandler::encode_send_transaction(ChainType::Sui, "digest123".to_string());
-        match result {
-            WalletConnectResponseType::Object { json } => {
-                assert!(json.contains("\"digest\""));
-                assert!(json.contains("digest123"));
-            }
-            _ => panic!("Expected Object response for Sui"),
-        }
+        assert_eq!(
+            WalletConnectResponseHandler::encode_send_transaction(ChainType::Sui, "digest123".to_string()),
+            object(r#"{"digest":"digest123"}"#)
+        );
     }
 
     #[test]
     fn test_encode_send_transaction_tron() {
-        let result = WalletConnectResponseHandler::encode_send_transaction(ChainType::Tron, "txid123".to_string());
-        let WalletConnectResponseType::Object { json } = result else {
-            panic!("Expected Object response for Tron")
-        };
-        let actual: serde_json::Value = serde_json::from_str(&json).unwrap();
-        assert_eq!(actual, serde_json::json!({"result": true, "txid": "txid123"}));
+        assert_eq!(
+            WalletConnectResponseHandler::encode_send_transaction(ChainType::Tron, "txid123".to_string()),
+            object(r#"{"result":true,"txid":"txid123"}"#)
+        );
     }
 
     #[test]
     fn test_encode_sign_message_ton() {
-        let payload_json = r#"{"signature":"tonsig123","timestamp":1700000000}"#.to_string();
-        let result = WalletConnectResponseHandler::encode_sign_message(ChainType::Ton, payload_json.clone());
-        match result {
-            WalletConnectResponseType::Object { json } => {
-                assert_eq!(json, payload_json);
-            }
-            _ => panic!("Expected Object response for Ton"),
-        }
+        let payload = r#"{"signature":"tonsig123","timestamp":1700000000}"#;
+        assert_eq!(WalletConnectResponseHandler::encode_sign_message(ChainType::Ton, payload.to_string()), object(payload));
     }
 
     #[test]
     fn test_encode_sign_transaction_ton() {
-        let result = WalletConnectResponseHandler::encode_sign_transaction(ChainType::Ton, "tontxsig".to_string());
-        let WalletConnectResponseType::Object { json } = result else {
-            panic!("Expected Object response for Ton")
-        };
-        assert_eq!(json, r#"{"signature":"tontxsig"}"#);
+        assert_eq!(
+            WalletConnectResponseHandler::encode_sign_transaction(ChainType::Ton, "tontxsig".to_string()),
+            object(r#"{"signature":"tontxsig"}"#)
+        );
     }
 
     #[test]
     fn test_encode_send_transaction_ton() {
-        let result = WalletConnectResponseHandler::encode_send_transaction(ChainType::Ton, "tonhash123".to_string());
-        let WalletConnectResponseType::String { value } = result else {
-            panic!("Expected String response for Ton")
-        };
-        assert_eq!(value, "tonhash123");
+        assert_eq!(
+            WalletConnectResponseHandler::encode_send_transaction(ChainType::Ton, "tonhash123".to_string()),
+            string("tonhash123")
+        );
     }
 }

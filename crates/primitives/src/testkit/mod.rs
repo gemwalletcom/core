@@ -7,5 +7,8 @@ pub mod json_rpc;
 pub mod perpetual_mock;
 pub mod swap_mock;
 pub mod transaction_load_input_mock;
+pub mod transaction_load_metadata_mock;
 pub mod transaction_mock;
+pub mod transfer_data_extra_mock;
 pub mod wallet_connect_mock;
+pub mod wallet_connection_session_mock;

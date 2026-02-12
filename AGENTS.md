@@ -190,6 +190,13 @@ IMPORTANT: Always import models and types at the top of the file. Never use inli
 - Use consistent `Result<T, Error>` return types
 - Propagate errors with the `?` operator
 - Add smart `From` conversions (e.g., `From<serde_json::Error> for SignerError`) so callers can prefer `?` over manual `map_err`.
+- Use constructor methods on error types (e.g., `SignerError::invalid_input("msg")`) instead of verbose enum construction (e.g., `SignerError::InvalidInput("msg".into())`)
+
+### JSON Parameter Extraction
+- Use `primitives::ValueAccess` trait methods for `serde_json::Value` access instead of manual `.get().ok_or()` chains
+- Available methods: `get_value(key)` → `&Value`, `at(index)` → `&Value`, `string()` → `&str`
+- Chain methods for compound access: `params.get_value("transactions")?.at(0)?.string()?`
+- Add accessor methods on parent types (e.g., `TransactionLoadInput::get_data_extra()`) to avoid pattern-matching boilerplate at call sites
 
 ### Database Patterns
 - Separate database models from domain primitives
@@ -297,6 +304,9 @@ Direct repository access methods available on `DatabaseClient` include:
 - Prefer real networks for RPC client tests (e.g., Ethereum mainnet)
 - Test data management: For long JSON test data (>20 lines), store in `testdata/` and load with `include_str!()`; per-crate layout is typically `src/`, `tests/`, `testdata/`
 - Never use `.expect()` in tests; use `.unwrap()` instead for brevity
+- Mock methods: add `mock()` constructors in `testkit/` modules (e.g., `WalletConnectRequest::mock(...)`, `TransferDataExtra::mock()`) instead of building structs inline in tests
+- Direct `assert_eq!`: derive `PartialEq` on test-relevant enums and use `assert_eq!` with constructed expected values instead of destructuring with `let ... else { panic! }` or `match ... { _ => panic! }`
+- Test helpers: create concise constructor functions (e.g., `fn object(json: &str) -> EnumType`, `fn sign_message(chain, sign_type, data) -> Action`) for frequently constructed enum variants in test modules
 
 ### Integration Testing
 - Add integration tests for RPC functionality to verify real network compatibility
