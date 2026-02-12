@@ -52,11 +52,7 @@ impl ParserMetrics {
     pub fn record_error(&self, chain: &str, error: &str) {
         let mut chains = self.chains.lock().unwrap();
         let state = chains.entry(chain.to_string()).or_default();
-        let message = match error.char_indices().nth(200) {
-            Some((idx, _)) => &error[..idx],
-            None => error,
-        };
-        *state.errors.entry(message.to_string()).or_default() += 1;
+        *state.errors.entry(super::sanitize_error_message(error)).or_default() += 1;
     }
 }
 

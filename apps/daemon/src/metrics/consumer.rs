@@ -56,11 +56,7 @@ impl ConsumerMetrics {
         let mut consumers = self.consumers.lock().unwrap();
         let state = consumers.entry(name.to_string()).or_default();
         state.total_errors += 1;
-        let message = match error.char_indices().nth(200) {
-            Some((idx, _)) => &error[..idx],
-            None => error,
-        };
-        *state.errors.entry(message.to_string()).or_default() += 1;
+        *state.errors.entry(super::sanitize_error_message(error)).or_default() += 1;
     }
 }
 

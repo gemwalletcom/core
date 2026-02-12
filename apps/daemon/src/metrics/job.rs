@@ -54,10 +54,9 @@ impl JobMetrics {
 
         if success {
             state.last_success = Some(timestamp);
-        } else if let Some(msg) = error {
+        } else if let Some(error) = error {
             state.error_count += 1;
-            let message = if msg.len() > 200 { &msg[..200] } else { &msg };
-            *state.errors.entry(message.to_string()).or_default() += 1;
+            *state.errors.entry(super::sanitize_error_message(&error)).or_default() += 1;
         }
     }
 }
