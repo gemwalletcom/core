@@ -62,8 +62,7 @@ impl MetricsProvider for ParserMetrics {
         let current_block = Family::<ParserLabels, Gauge>::default();
         let is_enabled = Family::<ParserLabels, Gauge>::default();
         let updated_at = Family::<ParserLabels, Gauge>::default();
-        let errors = Family::<ParserLabels, Gauge>::default();
-        let error_detail = Family::<ParserErrorLabels, Gauge>::default();
+        let errors = Family::<ParserErrorLabels, Gauge>::default();
 
         let chains = self.chains.lock().unwrap();
         for (chain, state) in chains.iter() {
@@ -74,15 +73,12 @@ impl MetricsProvider for ParserMetrics {
             is_enabled.get_or_create(&labels).set(state.is_enabled as i64);
             updated_at.get_or_create(&labels).set(state.updated_at);
 
-            let total_errors: u64 = state.errors.values().sum();
-            errors.get_or_create(&labels).set(total_errors as i64);
-
             for (error, count) in &state.errors {
                 let error_labels = ParserErrorLabels {
                     chain: chain.clone(),
                     error: error.clone(),
                 };
-                error_detail.get_or_create(&error_labels).set(*count as i64);
+                errors.get_or_create(&error_labels).set(*count as i64);
             }
         }
 
@@ -90,7 +86,6 @@ impl MetricsProvider for ParserMetrics {
         registry.register("parser_state_current_block", "Parser current block", current_block);
         registry.register("parser_state_is_enabled", "Parser is enabled", is_enabled);
         registry.register("parser_state_updated_at", "Parser updated at", updated_at);
-        registry.register("parser_errors", "Parser errors encountered", errors);
-        registry.register("parser_error_detail", "Parser error count by message", error_detail);
+        registry.register("parser_errors", "Parser error count by message", errors);
     }
 }
