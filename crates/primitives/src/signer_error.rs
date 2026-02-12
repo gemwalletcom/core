@@ -6,12 +6,6 @@ pub enum SignerError {
     SigningError(String),
 }
 
-impl SignerError {
-    pub fn invalid_input(message: impl Into<String>) -> Self {
-        Self::InvalidInput(message.into())
-    }
-}
-
 impl std::fmt::Display for SignerError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
