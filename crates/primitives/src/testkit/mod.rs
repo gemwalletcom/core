@@ -8,3 +8,4 @@ pub mod perpetual_mock;
 pub mod swap_mock;
 pub mod transaction_load_input_mock;
 pub mod transaction_mock;
+pub mod wallet_connector_mock;

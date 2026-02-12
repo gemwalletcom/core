@@ -50,7 +50,7 @@ impl ChainSigner for SolanaChainSigner {
 mod tests {
     use super::*;
     use crate::signer::testkit::*;
-    use primitives::TransferDataOutputType;
+    use primitives::{Chain, TransactionLoadInput, TransferDataOutputType};
 
     #[test]
     fn test_deserialize_single_signature_transaction() {
@@ -75,7 +75,7 @@ mod tests {
     #[test]
     fn test_sign_data_encoded_transaction() {
         let signer = SolanaChainSigner;
-        let input = mock_sign_data_input(SINGLE_SIG_TX, TransferDataOutputType::EncodedTransaction);
+        let input = TransactionLoadInput::mock_sign_data(Chain::Solana, SINGLE_SIG_TX, TransferDataOutputType::EncodedTransaction);
 
         let result = signer.sign_data(&input, &TEST_PRIVATE_KEY).unwrap();
 
@@ -88,7 +88,7 @@ mod tests {
     #[test]
     fn test_sign_data_signature_output() {
         let signer = SolanaChainSigner;
-        let input = mock_sign_data_input(SINGLE_SIG_TX, TransferDataOutputType::Signature);
+        let input = TransactionLoadInput::mock_sign_data(Chain::Solana, SINGLE_SIG_TX, TransferDataOutputType::Signature);
 
         let result = signer.sign_data(&input, &TEST_PRIVATE_KEY).unwrap();
 
