@@ -70,6 +70,7 @@ pub struct NodeSwitchLabels {
     old_host: String,
     new_host: String,
     reason: String,
+    detail: String,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
@@ -213,13 +214,14 @@ impl Metrics {
         self.inflight_misses.get_or_create(&CacheLabels { chain: chain.to_string(), path }).inc();
     }
 
-    pub fn add_node_switch(&self, chain: &str, old_host: &str, new_host: &str, reason: &str) {
+    pub fn add_node_switch(&self, chain: &str, old_host: &str, new_host: &str, reason: &str, detail: &str) {
         self.node_switches
             .get_or_create(&NodeSwitchLabels {
                 chain: chain.to_string(),
                 old_host: old_host.to_string(),
                 new_host: new_host.to_string(),
                 reason: reason.to_string(),
+                detail: detail.to_string(),
             })
             .inc();
     }
