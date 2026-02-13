@@ -6,12 +6,12 @@ use primitives::Transaction;
 
 use super::ChainClient;
 
-#[get("/chain/<chain>/blocks/latest")]
+#[get("/chain/blocks/<chain>/latest")]
 pub async fn get_latest_block_number(chain: ChainParam, client: &State<Mutex<ChainClient>>) -> Result<ApiResponse<i64>, ApiError> {
     Ok(client.lock().await.get_latest_block(chain.0).await?.into())
 }
 
-#[get("/chain/<chain>/blocks/<block_number>?<transaction_type>")]
+#[get("/chain/blocks/<chain>/<block_number>?<transaction_type>")]
 pub async fn get_block_transactions(
     chain: ChainParam,
     block_number: i64,
@@ -21,7 +21,7 @@ pub async fn get_block_transactions(
     Ok(client.lock().await.get_block_transactions(chain.0, block_number, transaction_type).await?.into())
 }
 
-#[get("/chain/<chain>/blocks/<block_number>/finalize?<address>&<transaction_type>")]
+#[get("/chain/blocks/<chain>/<block_number>/finalize?<address>&<transaction_type>")]
 pub async fn get_block_transactions_finalize(
     chain: ChainParam,
     block_number: i64,

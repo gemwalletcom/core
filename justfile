@@ -37,7 +37,7 @@ test-workspace:
 
 test-all:
     @echo "Running unit tests only (excluding integration tests)..."
-    cargo test --lib --all
+    cargo test --lib --bins --all
 
 test CRATE:
     cargo test --all-features --package {{CRATE}}
