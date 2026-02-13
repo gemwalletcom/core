@@ -58,8 +58,8 @@ fun fetchData() {
     runBlocking {
         val target = AlienTarget(
             url = "https://httpbin.org/get?foo=bar",
-            method = "GET",
-            headers = hashMapOf(
+            method = AlienHttpMethod.GET,
+            headers = mapOf(
                 "X-Header" to "X-Value"
             ),
             body = null
