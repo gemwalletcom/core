@@ -21,7 +21,7 @@ gem_hash = { path = "../gem_hash" }
 gem_jsonrpc = { path = "../gem_jsonrpc" }
 gem_client = { path = "../gem_client" }
 gem_hypercore = { path = "../gem_hypercore" }
-serde_serializers = { path = "../serde_serializers" }
+serde_serializers = { path = "../serde_serializers", features = ["bigint"] }
 number_formatter = { path = "../number_formatter" }
 
 reqwest = { workspace = true, optional = true }

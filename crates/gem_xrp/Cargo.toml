@@ -23,7 +23,7 @@ gem_client = { path = "../gem_client", optional = true }
 gem_jsonrpc = { path = "../gem_jsonrpc" }
 
 chrono = { workspace = true, features = ["serde"], optional = true }
-serde_serializers = { path = "../serde_serializers", optional = true }
+serde_serializers = { path = "../serde_serializers", features = ["bigint"], optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }

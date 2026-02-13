@@ -4,6 +4,7 @@ use crate::proxy::CachedResponse;
 use primitives::Chain;
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::sync::RwLock;
 
 use super::CacheProvider;
@@ -61,6 +62,14 @@ impl MemoryCache {
         static EMPTY: &[CacheRule] = &[];
         self.config.rules.get(chain.as_ref()).map(|v| v.as_slice()).unwrap_or(EMPTY)
     }
+
+    fn rule_for_request<'a>(&'a self, chain: &Chain, request_type: &RequestType) -> Option<&'a CacheRule> {
+        self.get_cache_rules(chain).iter().find(|rule| match request_type {
+            RequestType::Regular { path, method, body } => rule.matches_path_request(path, method, Some(body.as_slice())),
+            RequestType::JsonRpc(JsonRpcRequest::Single(call)) => rule.matches_rpc(&call.method),
+            RequestType::JsonRpc(JsonRpcRequest::Batch(_)) => false,
+        })
+    }
 }
 
 impl CacheProvider for MemoryCache {
@@ -76,43 +85,33 @@ impl CacheProvider for MemoryCache {
         Some(entry.response.clone())
     }
 
-    async fn set(&self, chain: &Chain, key: String, response: CachedResponse, ttl_seconds: u64) {
+    async fn set(&self, chain: &Chain, key: String, response: CachedResponse, ttl: Duration) {
         if let Some(cache) = self.caches.get(chain.as_ref()) {
-            let entry = CacheEntry::new(response, ttl_seconds);
+            let entry = CacheEntry::new(response, ttl);
             let mut guard = cache.write().await;
             guard.insert(key, entry);
             Self::evict_if_needed(&mut guard, self.max_size_per_chain());
         }
     }
 
-    fn should_cache(&self, chain: &Chain, path: &str, method: &str, body: Option<&[u8]>) -> Option<u64> {
+    fn should_cache(&self, chain: &Chain, path: &str, method: &str, body: Option<&[u8]>) -> Option<Duration> {
         self.get_cache_rules(chain).iter().find_map(|rule| rule.matches_path(path, method, body))
     }
 
-    fn should_cache_request(&self, chain: &Chain, request_type: &RequestType) -> Option<u64> {
-        for rule in self.get_cache_rules(chain) {
-            match request_type {
-                RequestType::Regular { path, method, body } => {
-                    if let Some(ttl) = rule.matches_path(path, method, Some(body.as_slice())) {
-                        return Some(ttl);
-                    }
-                }
-                RequestType::JsonRpc(JsonRpcRequest::Single(call)) => {
-                    if let Some(ttl) = rule.matches_rpc_method(&call.method) {
-                        return Some(ttl);
-                    }
-                }
-                RequestType::JsonRpc(JsonRpcRequest::Batch(_)) => {
-                    return None;
-                }
-            }
-        }
-
-        None
+    fn should_cache_request(&self, chain: &Chain, request_type: &RequestType) -> Option<Duration> {
+        self.rule_for_request(chain, request_type).and_then(|rule| rule.ttl)
     }
 
-    fn should_cache_call(&self, chain: &Chain, call: &JsonRpcCall) -> Option<u64> {
+    fn should_cache_call(&self, chain: &Chain, call: &JsonRpcCall) -> Option<Duration> {
         self.get_cache_rules(chain).iter().find_map(|rule| rule.matches_rpc_method(&call.method))
+    }
+
+    fn should_inflight_request(&self, chain: &Chain, request_type: &RequestType) -> bool {
+        self.rule_for_request(chain, request_type).is_some_and(|rule| match request_type {
+            RequestType::Regular { path, method, body } => rule.matches_path_inflight(path, method, Some(body.as_slice())),
+            RequestType::JsonRpc(JsonRpcRequest::Single(_)) => false,
+            RequestType::JsonRpc(JsonRpcRequest::Batch(_)) => false,
+        })
     }
 }
 
@@ -132,14 +131,16 @@ mod tests {
                     path: Some("/api/v1/data".to_string()),
                     method: Some("GET".to_string()),
                     rpc_method: None,
-                    ttl_seconds: 300,
+                    ttl: Some(Duration::from_secs(300)),
+                    inflight: false,
                     params: HashMap::new(),
                 },
                 CacheRule {
                     path: None,
                     method: None,
                     rpc_method: Some("eth_blockNumber".to_string()),
-                    ttl_seconds: 60,
+                    ttl: Some(Duration::from_secs(60)),
+                    inflight: false,
                     params: HashMap::new(),
                 },
             ],
@@ -154,8 +155,8 @@ mod tests {
         let cache = MemoryCache::new(config);
         let chain = Chain::Ethereum;
 
-        let response = CachedResponse::new(b"test".to_vec(), StatusCode::OK.as_u16(), JSON_CONTENT_TYPE.to_string(), 60);
-        cache.set(&chain, "test_key".to_string(), response.clone(), 60).await;
+        let response = CachedResponse::new(b"test".to_vec(), StatusCode::OK.as_u16(), JSON_CONTENT_TYPE.to_string(), Duration::from_secs(60));
+        cache.set(&chain, "test_key".to_string(), response.clone(), Duration::from_secs(60)).await;
 
         let cached = cache.get(&chain, "test_key").await.unwrap();
         assert_eq!(cached.body, response.body);
@@ -169,7 +170,7 @@ mod tests {
         let chain = Chain::Ethereum;
 
         let ttl = cache.should_cache(&chain, "/api/v1/data", "GET", None);
-        assert_eq!(ttl, Some(300));
+        assert_eq!(ttl, Some(Duration::from_secs(300)));
 
         let ttl = cache.should_cache(&chain, "/api/v1/data", "POST", None);
         assert_eq!(ttl, None);
@@ -186,7 +187,8 @@ mod tests {
                 path: Some("/info".to_string()),
                 method: Some("POST".to_string()),
                 rpc_method: None,
-                ttl_seconds: 200,
+                ttl: Some(Duration::from_secs(200)),
+                inflight: false,
                 params,
             });
         }
@@ -196,7 +198,7 @@ mod tests {
 
         let matching_body = r#"{"type":"metaAndAssetCtxs"}"#.as_bytes().to_vec();
         let ttl = cache.should_cache(&chain, "/info", "POST", Some(matching_body.as_slice()));
-        assert_eq!(ttl, Some(200));
+        assert_eq!(ttl, Some(Duration::from_secs(200)));
 
         let non_matching_body = r#"{"type":"other"}"#.as_bytes().to_vec();
         let ttl = cache.should_cache(&chain, "/info", "POST", Some(non_matching_body.as_slice()));
@@ -220,7 +222,7 @@ mod tests {
         }));
 
         let ttl = cache.should_cache_request(&chain, &request);
-        assert_eq!(ttl, Some(60));
+        assert_eq!(ttl, Some(Duration::from_secs(60)));
     }
 
     #[test]
@@ -237,7 +239,7 @@ mod tests {
         };
 
         let ttl = cache.should_cache_call(&chain, &call);
-        assert_eq!(ttl, Some(60));
+        assert_eq!(ttl, Some(Duration::from_secs(60)));
     }
 
     #[test]
@@ -251,7 +253,8 @@ mod tests {
             path: Some("/v1/view".to_string()),
             method: Some("POST".to_string()),
             rpc_method: None,
-            ttl_seconds: 3600,
+            ttl: Some(Duration::from_secs(3600)),
+            inflight: false,
             params,
         });
 
@@ -268,7 +271,7 @@ mod tests {
         .to_vec();
 
         let ttl = cache.should_cache(&chain, "/v1/view", "POST", Some(body1.as_slice()));
-        assert_eq!(ttl, Some(3600));
+        assert_eq!(ttl, Some(Duration::from_secs(3600)));
 
         let body2 = r#"{
             "function": "0x1::delegation_pool::operator_commission_percentage",
@@ -279,7 +282,7 @@ mod tests {
         .to_vec();
 
         let ttl = cache.should_cache(&chain, "/v1/view", "POST", Some(body2.as_slice()));
-        assert_eq!(ttl, Some(3600));
+        assert_eq!(ttl, Some(Duration::from_secs(3600)));
 
         let body3 = r#"{
             "function": "0x1::other_module::other_function",
@@ -306,15 +309,41 @@ mod tests {
         let chain = Chain::Ethereum;
 
         // Insert first entry
-        let response1 = CachedResponse::new(b"first".to_vec(), StatusCode::OK.as_u16(), JSON_CONTENT_TYPE.to_string(), 60);
-        cache.set(&chain, "key1".to_string(), response1, 60).await;
+        let response1 = CachedResponse::new(b"first".to_vec(), StatusCode::OK.as_u16(), JSON_CONTENT_TYPE.to_string(), Duration::from_secs(60));
+        cache.set(&chain, "key1".to_string(), response1, Duration::from_secs(60)).await;
 
         // Insert second entry - should evict first due to max_memory_mb = 0
-        let response2 = CachedResponse::new(b"second".to_vec(), StatusCode::OK.as_u16(), JSON_CONTENT_TYPE.to_string(), 60);
-        cache.set(&chain, "key2".to_string(), response2, 60).await;
+        let response2 = CachedResponse::new(b"second".to_vec(), StatusCode::OK.as_u16(), JSON_CONTENT_TYPE.to_string(), Duration::from_secs(60));
+        cache.set(&chain, "key2".to_string(), response2, Duration::from_secs(60)).await;
 
         // First key should be evicted
         assert!(cache.get(&chain, "key1").await.is_none());
         // Second key might also be evicted depending on size, but let's just verify eviction happened
+    }
+
+    #[test]
+    fn test_should_inflight_request() {
+        let mut config = create_test_config();
+        config.rules.insert(
+            "tron".to_string(),
+            vec![CacheRule {
+                path: Some("/wallet/getaccount".to_string()),
+                method: Some("POST".to_string()),
+                rpc_method: None,
+                ttl: None,
+                inflight: true,
+                params: HashMap::new(),
+            }],
+        );
+        let cache = MemoryCache::new(config);
+        let chain = Chain::Tron;
+        let request_type = RequestType::Regular {
+            path: "/wallet/getaccount".to_string(),
+            method: "POST".to_string(),
+            body: br#"{"address":"T...","visible":true}"#.to_vec(),
+        };
+
+        assert!(cache.should_inflight_request(&chain, &request_type));
+        assert_eq!(cache.should_cache_request(&chain, &request_type), None);
     }
 }

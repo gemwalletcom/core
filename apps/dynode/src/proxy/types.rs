@@ -1,22 +1,18 @@
 use crate::jsonrpc_types::JsonRpcCall;
 use std::str::from_utf8;
+use std::time::Duration;
 
 #[derive(Debug, Clone)]
 pub struct CachedResponse {
     pub body: Vec<u8>,
     pub status: u16,
     pub content_type: String,
-    pub ttl_seconds: u64,
+    pub ttl: Duration,
 }
 
 impl CachedResponse {
-    pub fn new(body: Vec<u8>, status: u16, content_type: String, ttl_seconds: u64) -> Self {
-        Self {
-            body,
-            status,
-            content_type,
-            ttl_seconds,
-        }
+    pub fn new(body: Vec<u8>, status: u16, content_type: String, ttl: Duration) -> Self {
+        Self { body, status, content_type, ttl }
     }
 
     pub fn to_jsonrpc_response(&self, original_call: &JsonRpcCall) -> Vec<u8> {
@@ -33,7 +29,12 @@ mod tests {
 
     #[test]
     fn test_to_jsonrpc_response() {
-        let response = CachedResponse::new(br#"{"value":123}"#.to_vec(), StatusCode::OK.as_u16(), JSON_CONTENT_TYPE.to_string(), 60);
+        let response = CachedResponse::new(
+            br#"{"value":123}"#.to_vec(),
+            StatusCode::OK.as_u16(),
+            JSON_CONTENT_TYPE.to_string(),
+            Duration::from_secs(60),
+        );
         let call = JsonRpcCall {
             jsonrpc: "2.0".to_string(),
             method: "eth_blockNumber".to_string(),
@@ -49,7 +50,7 @@ mod tests {
 
     #[test]
     fn test_to_jsonrpc_response_invalid_utf8() {
-        let response = CachedResponse::new(vec![0xff, 0xfe], StatusCode::OK.as_u16(), JSON_CONTENT_TYPE.to_string(), 60);
+        let response = CachedResponse::new(vec![0xff, 0xfe], StatusCode::OK.as_u16(), JSON_CONTENT_TYPE.to_string(), Duration::from_secs(60));
         let call = JsonRpcCall {
             jsonrpc: "2.0".to_string(),
             method: "test".to_string(),

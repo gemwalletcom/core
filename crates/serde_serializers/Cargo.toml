@@ -3,7 +3,11 @@ name = "serde_serializers"
 version = { workspace = true }
 edition = { workspace = true }
 
+[features]
+default = []
+bigint = ["dep:num-bigint"]
+
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
-num-bigint = { workspace = true }
+num-bigint = { workspace = true, optional = true }

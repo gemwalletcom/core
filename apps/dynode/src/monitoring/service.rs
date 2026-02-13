@@ -15,7 +15,6 @@ use crate::proxy::response_builder::ResponseBuilder;
 use crate::proxy::{NodeDomain, ProxyResponse};
 use gem_tracing::{DurationMs, info_with_fields};
 use primitives::{Chain, ResponseError, response::ErrorDetail};
-use std::time::Duration;
 
 #[derive(Debug, Clone)]
 pub struct NodeService {
@@ -39,7 +38,7 @@ impl NodeService {
     ) -> Self {
         let nodes = chains.values().map(|c| (c.chain, NodeDomain::new(c.urls.first().unwrap().clone(), c.clone()))).collect();
 
-        let http_client = gem_client::builder().timeout(Duration::from_millis(request_config.timeout)).build().unwrap();
+        let http_client = gem_client::builder().timeout(request_config.timeout).build().unwrap();
         let cache = RequestCache::new(cache_config);
         let proxy_builder = ProxyBuilder::new(metrics.clone(), cache, http_client, headers_config);
 
@@ -199,7 +198,9 @@ mod tests {
                 status_codes: vec![],
                 error_messages: vec![],
             },
-            RequestConfig { timeout: 30000 },
+            RequestConfig {
+                timeout: std::time::Duration::from_millis(30000),
+            },
             HeadersConfig {
                 forward: vec![header::CONTENT_TYPE.to_string()],
                 domains: HashMap::new(),

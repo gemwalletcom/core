@@ -1,11 +1,17 @@
+#[cfg(feature = "bigint")]
 pub mod bigint;
 mod visitors;
+#[cfg(feature = "bigint")]
 pub use bigint::{bigint_from_hex_str, deserialize_bigint_from_str, deserialize_bigint_vec_from_hex_str, deserialize_option_bigint_from_str, serialize_bigint};
+#[cfg(feature = "bigint")]
 pub mod biguint;
+#[cfg(feature = "bigint")]
 pub use biguint::{
     biguint_from_hex_str, deserialize_biguint_from_hex_str, deserialize_biguint_from_option_hex_str, deserialize_biguint_from_str, deserialize_option_biguint_from_str,
     serialize_biguint, serialize_biguint_to_hex_str,
 };
+pub mod duration;
+pub use duration::{deserialize as deserialize_duration, deserialize_option as deserialize_option_duration, parse_duration};
 pub mod f64;
 pub use f64::{deserialize_f64_from_str, deserialize_option_f64_from_str, serialize_f64};
 pub mod string;

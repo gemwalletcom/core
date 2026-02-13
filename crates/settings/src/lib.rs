@@ -1,8 +1,7 @@
 #![allow(unused)]
 
-mod duration;
-
 use serde::Deserialize;
+use serde_serializers::duration;
 use std::{env, path::PathBuf, time::Duration};
 
 use config::{Config, ConfigError, Environment, File};

@@ -32,7 +32,7 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 num-bigint = { workspace = true }
 chrono = { workspace = true }
-serde_serializers = { path = "../serde_serializers" }
+serde_serializers = { path = "../serde_serializers", features = ["bigint"] }
 primitives = { path = "../primitives" }
 gem_jsonrpc = { path = "../gem_jsonrpc" }
 async-trait = { workspace = true, optional = true }

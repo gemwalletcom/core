@@ -22,7 +22,7 @@ async-trait = { workspace = true }
 futures = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 num-bigint = { workspace = true }
-serde_serializers = { path = "../serde_serializers" }
+serde_serializers = { path = "../serde_serializers", features = ["bigint"] }
 
 # Optional signer dependencies
 signer = { path = "../signer", optional = true }

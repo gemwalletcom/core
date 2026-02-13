@@ -1,7 +1,9 @@
 use std::collections::HashMap;
+use std::time::Duration;
 
 use serde::Deserialize;
 use serde_json::Value;
+use serde_serializers::duration;
 
 #[derive(Debug, Default, Clone, Deserialize)]
 pub struct CacheConfig {
@@ -16,34 +18,48 @@ pub struct CacheRule {
     pub path: Option<String>,
     pub method: Option<String>,
     pub rpc_method: Option<String>,
-    pub ttl_seconds: u64,
+    #[serde(default, alias = "ttl_seconds", deserialize_with = "duration::deserialize_option")]
+    pub ttl: Option<Duration>,
+    #[serde(default)]
+    pub inflight: bool,
     #[serde(default)]
     pub params: HashMap<String, Value>,
 }
 
 impl CacheRule {
-    pub fn matches_path(&self, path: &str, method: &str, body: Option<&[u8]>) -> Option<u64> {
-        let rule_method = self.method.as_ref()?;
-        if !method.eq_ignore_ascii_case(rule_method) {
-            return None;
-        }
-
-        let rule_path = self.path.as_ref()?;
-        let path_without_query = path.split('?').next().unwrap_or(path);
-
-        if path_without_query == rule_path && self.matches_body(body) {
-            Some(self.ttl_seconds)
-        } else {
-            None
-        }
+    pub fn matches_path(&self, path: &str, method: &str, body: Option<&[u8]>) -> Option<Duration> {
+        self.matches_path_request(path, method, body).then_some(self.ttl).flatten()
     }
 
-    pub fn matches_rpc_method(&self, rpc_method: &str) -> Option<u64> {
-        if self.rpc_method.as_ref().is_some_and(|m| m == rpc_method) {
-            Some(self.ttl_seconds)
-        } else {
-            None
+    pub fn matches_rpc_method(&self, rpc_method: &str) -> Option<Duration> {
+        self.matches_rpc(rpc_method).then_some(self.ttl).flatten()
+    }
+
+    pub fn matches_path_inflight(&self, path: &str, method: &str, body: Option<&[u8]>) -> bool {
+        self.inflight && self.matches_path_request(path, method, body)
+    }
+
+    pub fn matches_rpc_method_inflight(&self, rpc_method: &str) -> bool {
+        self.inflight && self.matches_rpc(rpc_method)
+    }
+
+    pub(crate) fn matches_path_request(&self, path: &str, method: &str, body: Option<&[u8]>) -> bool {
+        let Some(rule_method) = self.method.as_ref() else {
+            return false;
+        };
+        if !method.eq_ignore_ascii_case(rule_method) {
+            return false;
         }
+
+        let Some(rule_path) = self.path.as_ref() else {
+            return false;
+        };
+        let path_without_query = path.split('?').next().unwrap_or(path);
+        path_without_query == rule_path && self.matches_body(body)
+    }
+
+    pub(crate) fn matches_rpc(&self, rpc_method: &str) -> bool {
+        self.rpc_method.as_ref().is_some_and(|m| m == rpc_method)
     }
 
     fn matches_body(&self, body: Option<&[u8]>) -> bool {
@@ -77,13 +93,14 @@ mod tests {
             path: Some("/api/data".to_string()),
             method: Some("GET".to_string()),
             rpc_method: None,
-            ttl_seconds: 60,
+            ttl: Some(Duration::from_secs(60)),
+            inflight: false,
             params: HashMap::new(),
         };
 
-        assert_eq!(rule.matches_path("/api/data", "GET", None), Some(60));
-        assert_eq!(rule.matches_path("/api/data", "get", None), Some(60)); // case insensitive
-        assert_eq!(rule.matches_path("/api/data?q=1", "GET", None), Some(60)); // strips query
+        assert_eq!(rule.matches_path("/api/data", "GET", None), Some(Duration::from_secs(60)));
+        assert_eq!(rule.matches_path("/api/data", "get", None), Some(Duration::from_secs(60))); // case insensitive
+        assert_eq!(rule.matches_path("/api/data?q=1", "GET", None), Some(Duration::from_secs(60))); // strips query
         assert_eq!(rule.matches_path("/api/data", "POST", None), None);
         assert_eq!(rule.matches_path("/other", "GET", None), None);
     }
@@ -94,11 +111,52 @@ mod tests {
             path: None,
             method: None,
             rpc_method: Some("eth_blockNumber".to_string()),
-            ttl_seconds: 30,
+            ttl: Some(Duration::from_secs(30)),
+            inflight: false,
             params: HashMap::new(),
         };
 
-        assert_eq!(rule.matches_rpc_method("eth_blockNumber"), Some(30));
+        assert_eq!(rule.matches_rpc_method("eth_blockNumber"), Some(Duration::from_secs(30)));
         assert_eq!(rule.matches_rpc_method("eth_getBalance"), None);
+    }
+
+    #[test]
+    fn test_matches_path_inflight() {
+        let rule = CacheRule {
+            path: Some("/wallet/getaccount".to_string()),
+            method: Some("POST".to_string()),
+            rpc_method: None,
+            ttl: None,
+            inflight: true,
+            params: HashMap::new(),
+        };
+
+        assert!(rule.matches_path_inflight("/wallet/getaccount", "POST", Some(br#"{"address":"abc"}"#)));
+        assert_eq!(rule.matches_path("/wallet/getaccount", "POST", Some(br#"{"address":"abc"}"#)), None);
+    }
+
+    #[test]
+    fn test_ttl_default_none() {
+        let rule: CacheRule = serde_json::from_value(serde_json::json!({
+            "path": "/wallet/getaccount",
+            "method": "POST",
+            "inflight": true
+        }))
+        .unwrap();
+
+        assert!(rule.inflight);
+        assert_eq!(rule.ttl, None);
+    }
+
+    #[test]
+    fn test_ttl_duration_string() {
+        let rule: CacheRule = serde_json::from_value(serde_json::json!({
+            "path": "/api/data",
+            "method": "GET",
+            "ttl": "1m"
+        }))
+        .unwrap();
+
+        assert_eq!(rule.ttl, Some(Duration::from_secs(60)));
     }
 }
