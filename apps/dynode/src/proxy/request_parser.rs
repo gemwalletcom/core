@@ -1,11 +1,8 @@
 use serde::Deserialize;
-use serde_json::Value;
 
 #[derive(Debug, Deserialize)]
 struct JsonRpcRequest {
     method: String,
-    #[allow(dead_code)]
-    params: Value,
 }
 
 #[derive(Debug, Deserialize)]
@@ -16,12 +13,7 @@ enum RpcRequestType {
 }
 
 pub fn extract_rpc_methods(body: &[u8]) -> Vec<String> {
-    let body_str = match std::str::from_utf8(body) {
-        Ok(s) => s,
-        Err(_) => return vec![],
-    };
-
-    match serde_json::from_str::<RpcRequestType>(body_str) {
+    match serde_json::from_slice::<RpcRequestType>(body) {
         Ok(RpcRequestType::Single(req)) => vec![req.method],
         Ok(RpcRequestType::Batch(reqs)) => reqs.into_iter().map(|req| req.method).collect(),
         Err(_) => vec![],

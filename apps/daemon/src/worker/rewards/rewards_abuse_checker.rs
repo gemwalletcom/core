@@ -34,11 +34,33 @@ struct AbuseEvaluation {
     attempts: i64,
     risk_score: i64,
     patterns: AbusePatterns,
-    pattern_penalty: f64,
+    score: AbuseScoreBreakdown,
+    pattern_penalty: PatternPenaltyBreakdown,
     referrer_disabled: bool,
+    disabled_referrer_penalty: f64,
     threshold: f64,
     abuse_score: f64,
     abuse_percent: f64,
+}
+
+struct AbuseScoreBreakdown {
+    base_score: f64,
+    risk_score_per_referral: f64,
+    attempts_per_referral: f64,
+    attempt_penalty_score: f64,
+}
+
+struct PatternPenaltyBreakdown {
+    country_rotation_penalty: f64,
+    ring_penalty: f64,
+    device_farming_penalty: f64,
+    velocity_penalty: f64,
+}
+
+impl PatternPenaltyBreakdown {
+    fn total(&self) -> f64 {
+        self.country_rotation_penalty + self.ring_penalty + self.device_farming_penalty + self.velocity_penalty
+    }
 }
 
 pub struct RewardsAbuseChecker {
@@ -104,7 +126,8 @@ impl RewardsAbuseChecker {
         let risk_score_sum = client.sum_risk_scores_for_referrer(username, since)?;
 
         let patterns = client.get_abuse_patterns_for_referrer(username, since, velocity_window_secs)?;
-        let pattern_penalty = calculate_pattern_penalty(&patterns, config, &status);
+        let score = calculate_abuse_score_breakdown(risk_score_sum, attempt_count, referral_count, config);
+        let pattern_penalty = calculate_pattern_penalty_breakdown(&patterns, config, &status);
 
         let referrer_disabled = client
             .rewards()
@@ -115,7 +138,7 @@ impl RewardsAbuseChecker {
             .is_some_and(|s| s == RewardStatus::Disabled);
         let disabled_referrer_penalty = if referrer_disabled { config.disabled_referrer_penalty as f64 } else { 0.0 };
 
-        let abuse_score = calculate_abuse_score(risk_score_sum, attempt_count, referral_count, config) + pattern_penalty + disabled_referrer_penalty;
+        let abuse_score = score.base_score + pattern_penalty.total() + disabled_referrer_penalty;
         let threshold = calculate_abuse_threshold(config, &status);
         let abuse_percent = (abuse_score / threshold * 100.0).min(100.0);
 
@@ -126,8 +149,10 @@ impl RewardsAbuseChecker {
             attempts: attempt_count,
             risk_score: risk_score_sum,
             patterns,
+            score,
             pattern_penalty,
             referrer_disabled,
+            disabled_referrer_penalty,
             threshold,
             abuse_score,
             abuse_percent,
@@ -148,7 +173,16 @@ impl RewardsAbuseChecker {
             devices_per_ip = eval.patterns.max_devices_per_ip.to_string(),
             velocity_burst = eval.patterns.signals_in_velocity_window.to_string(),
             referrer_disabled = eval.referrer_disabled.to_string(),
-            pattern_penalty = format!("{:.0}", eval.pattern_penalty),
+            base_score = format!("{:.2}", eval.score.base_score),
+            risk_score_per_referral = format!("{:.2}", eval.score.risk_score_per_referral),
+            attempts_per_referral = format!("{:.2}", eval.score.attempts_per_referral),
+            attempt_penalty_score = format!("{:.2}", eval.score.attempt_penalty_score),
+            country_rotation_penalty = format!("{:.0}", eval.pattern_penalty.country_rotation_penalty),
+            ring_penalty = format!("{:.0}", eval.pattern_penalty.ring_penalty),
+            device_farming_penalty = format!("{:.0}", eval.pattern_penalty.device_farming_penalty),
+            velocity_penalty = format!("{:.0}", eval.pattern_penalty.velocity_penalty),
+            pattern_penalty = format!("{:.0}", eval.pattern_penalty.total()),
+            disabled_referrer_penalty = format!("{:.0}", eval.disabled_referrer_penalty),
             abuse_threshold = format!("{:.0}", eval.threshold),
             abuse_score = format!("{:.0}", eval.abuse_score),
             abuse_percent = format!("{:.0}%", eval.abuse_percent)
@@ -167,12 +201,22 @@ impl RewardsAbuseChecker {
 
         let reason = "Auto-disabled due to abuse detection";
         let comment = format!(
-            "abuse_score={:.0}, threshold={:.0}, risk_scores={}, attempts={}, referrals={}, countries/device={}, referrers/device={}, referrers/fingerprint={}, devices/ip={}, velocity_burst={}, referrer_disabled={}",
+            "abuse_score={:.0}, threshold={:.0}, base_score={:.2}, risk_scores={}, attempts={}, referrals={}, risk_score/referral={:.2}, attempts/referral={:.2}, attempt_penalty_score={:.2}, pattern_penalty={:.0}, country_rotation_penalty={:.0}, ring_penalty={:.0}, device_farming_penalty={:.0}, velocity_penalty={:.0}, disabled_referrer_penalty={:.0}, countries/device={}, referrers/device={}, referrers/fingerprint={}, devices/ip={}, velocity_burst={}, referrer_disabled={}",
             eval.abuse_score,
             eval.threshold,
+            eval.score.base_score,
             eval.risk_score,
             eval.attempts,
             eval.referrals,
+            eval.score.risk_score_per_referral,
+            eval.score.attempts_per_referral,
+            eval.score.attempt_penalty_score,
+            eval.pattern_penalty.total(),
+            eval.pattern_penalty.country_rotation_penalty,
+            eval.pattern_penalty.ring_penalty,
+            eval.pattern_penalty.device_farming_penalty,
+            eval.pattern_penalty.velocity_penalty,
+            eval.disabled_referrer_penalty,
             eval.patterns.max_countries_per_device,
             eval.patterns.max_referrers_per_device,
             eval.patterns.max_referrers_per_fingerprint,
@@ -210,11 +254,22 @@ impl RewardsAbuseChecker {
     }
 }
 
+#[cfg(test)]
 fn calculate_abuse_score(risk_score_sum: i64, attempt_count: i64, referral_count: i64, config: &AbuseDetectionConfig) -> f64 {
+    calculate_abuse_score_breakdown(risk_score_sum, attempt_count, referral_count, config).base_score
+}
+
+fn calculate_abuse_score_breakdown(risk_score_sum: i64, attempt_count: i64, referral_count: i64, config: &AbuseDetectionConfig) -> AbuseScoreBreakdown {
     let referrals = referral_count.max(1) as f64;
     let risk_score_per_referral = risk_score_sum as f64 / referrals;
     let attempts_per_referral = attempt_count as f64 / referrals;
-    risk_score_per_referral + (attempts_per_referral * config.attempt_penalty as f64)
+    let attempt_penalty_score = attempts_per_referral * config.attempt_penalty as f64;
+    AbuseScoreBreakdown {
+        base_score: risk_score_per_referral + attempt_penalty_score,
+        risk_score_per_referral,
+        attempts_per_referral,
+        attempt_penalty_score,
+    }
 }
 
 fn calculate_abuse_threshold(config: &AbuseDetectionConfig, status: &RewardStatus) -> f64 {
@@ -228,22 +283,33 @@ fn calculate_abuse_threshold(config: &AbuseDetectionConfig, status: &RewardStatu
     config.disable_threshold as f64 * multiplier
 }
 
+#[cfg(test)]
 fn calculate_pattern_penalty(patterns: &AbusePatterns, config: &AbuseDetectionConfig, status: &RewardStatus) -> f64 {
-    let mut penalty = 0.0;
+    calculate_pattern_penalty_breakdown(patterns, config, status).total()
+}
 
-    if patterns.max_countries_per_device >= config.country_rotation_threshold {
-        penalty += config.country_rotation_penalty as f64;
-    }
+fn calculate_pattern_penalty_breakdown(patterns: &AbusePatterns, config: &AbuseDetectionConfig, status: &RewardStatus) -> PatternPenaltyBreakdown {
+    let country_rotation_penalty = if patterns.max_countries_per_device >= config.country_rotation_threshold {
+        config.country_rotation_penalty as f64
+    } else {
+        0.0
+    };
 
-    if patterns.max_referrers_per_device >= config.ring_referrers_per_device_threshold || patterns.max_referrers_per_fingerprint >= config.ring_referrers_per_fingerprint_threshold
+    let ring_penalty = if patterns.max_referrers_per_device >= config.ring_referrers_per_device_threshold
+        || patterns.max_referrers_per_fingerprint >= config.ring_referrers_per_fingerprint_threshold
     {
-        penalty += config.ring_penalty as f64;
-    }
+        config.ring_penalty as f64
+    } else {
+        0.0
+    };
 
-    if patterns.max_devices_per_ip >= config.device_farming_threshold {
-        penalty += config.device_farming_penalty as f64;
-    }
+    let device_farming_penalty = if patterns.max_devices_per_ip >= config.device_farming_threshold {
+        config.device_farming_penalty as f64
+    } else {
+        0.0
+    };
 
+    let mut velocity_penalty = 0.0;
     let multiplier = if *status == RewardStatus::Trusted {
         config.trusted_multiplier
     } else if status.is_verified() {
@@ -255,10 +321,15 @@ fn calculate_pattern_penalty(patterns: &AbusePatterns, config: &AbuseDetectionCo
     let velocity_threshold = daily_limit / config.velocity_divisor.max(1);
     if patterns.signals_in_velocity_window >= velocity_threshold {
         let over_threshold = patterns.signals_in_velocity_window - velocity_threshold + 1;
-        penalty += (over_threshold * config.velocity_penalty) as f64;
+        velocity_penalty = (over_threshold * config.velocity_penalty) as f64;
     }
 
-    penalty
+    PatternPenaltyBreakdown {
+        country_rotation_penalty,
+        ring_penalty,
+        device_farming_penalty,
+        velocity_penalty,
+    }
 }
 
 #[cfg(test)]
@@ -297,6 +368,15 @@ mod tests {
         assert_eq!(calculate_abuse_score(100, 5, 10, &config()), 17.5);
         assert_eq!(calculate_abuse_score(0, 10, 10, &config()), 15.0);
         assert_eq!(calculate_abuse_score(200, 0, 10, &config()), 20.0);
+    }
+
+    #[test]
+    fn test_abuse_score_breakdown() {
+        let score = calculate_abuse_score_breakdown(44, 0, 2, &config());
+        assert_eq!(score.risk_score_per_referral, 22.0);
+        assert_eq!(score.attempts_per_referral, 0.0);
+        assert_eq!(score.attempt_penalty_score, 0.0);
+        assert_eq!(score.base_score, 22.0);
     }
 
     #[test]
@@ -446,5 +526,25 @@ mod tests {
             ),
             540.0
         );
+    }
+
+    #[test]
+    fn test_pattern_penalty_breakdown() {
+        let penalties = calculate_pattern_penalty_breakdown(
+            &AbusePatterns {
+                max_countries_per_device: 2,
+                max_referrers_per_device: 2,
+                max_referrers_per_fingerprint: 1,
+                max_devices_per_ip: 5,
+                signals_in_velocity_window: 2,
+            },
+            &config(),
+            &RewardStatus::Unverified,
+        );
+        assert_eq!(penalties.country_rotation_penalty, 50.0);
+        assert_eq!(penalties.ring_penalty, 80.0);
+        assert_eq!(penalties.device_farming_penalty, 10.0);
+        assert_eq!(penalties.velocity_penalty, 100.0);
+        assert_eq!(penalties.total(), 240.0);
     }
 }

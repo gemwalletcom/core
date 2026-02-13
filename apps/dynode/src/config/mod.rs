@@ -2,11 +2,13 @@ use std::{
     collections::HashMap,
     env, fs,
     path::{Path, PathBuf},
+    time::Duration,
 };
 
 use config::{Config, ConfigError, Environment, File};
 use primitives::Chain;
 use serde::Deserialize;
+use serde_serializers::duration;
 
 mod cache;
 mod domain;
@@ -21,7 +23,8 @@ pub use url::{NodeResult, Override, Url};
 #[derive(Debug, Deserialize, Clone)]
 pub struct NodeMonitoringConfig {
     pub enabled: bool,
-    pub poll_interval_seconds: u64,
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub poll_interval_seconds: Duration,
     pub block_delay: u64,
 }
 
@@ -29,7 +32,7 @@ impl Default for NodeMonitoringConfig {
     fn default() -> Self {
         Self {
             enabled: true,
-            poll_interval_seconds: 60 * 15,
+            poll_interval_seconds: Duration::from_secs(60 * 15),
             block_delay: 100,
         }
     }
@@ -37,7 +40,7 @@ impl Default for NodeMonitoringConfig {
 
 impl NodeMonitoringConfig {
     pub fn get_poll_interval_seconds(&self) -> u64 {
-        self.poll_interval_seconds
+        self.poll_interval_seconds.as_secs()
     }
 }
 
@@ -62,6 +65,7 @@ impl RetryConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::Duration;
 
     #[test]
     fn test_should_retry_on_error_message() {
@@ -110,11 +114,35 @@ mod tests {
         assert_eq!(config_limited.effective_max_attempts(5), 3);
         assert_eq!(config_limited.effective_max_attempts(2), 3);
     }
+
+    #[test]
+    fn test_monitoring_duration_deserialize() {
+        let config: NodeMonitoringConfig = serde_json::from_value(serde_json::json!({
+            "enabled": true,
+            "poll_interval_seconds": "10m",
+            "block_delay": 100
+        }))
+        .unwrap();
+
+        assert_eq!(config.get_poll_interval_seconds(), 600);
+        assert_eq!(config.poll_interval_seconds, Duration::from_secs(600));
+    }
+
+    #[test]
+    fn test_request_timeout_duration_deserialize() {
+        let config: RequestConfig = serde_json::from_value(serde_json::json!({
+            "timeout": "3s"
+        }))
+        .unwrap();
+
+        assert_eq!(config.timeout, Duration::from_secs(3));
+    }
 }
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct RequestConfig {
-    pub timeout: u64,
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub timeout: Duration,
 }
 
 #[derive(Debug, Deserialize, Clone)]

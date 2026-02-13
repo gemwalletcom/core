@@ -2595,6 +2595,7 @@ dependencies = [
  "rocket",
  "serde",
  "serde_json",
+ "serde_serializers",
  "settings_chain",
  "tokio",
  "url",
@@ -7272,6 +7273,7 @@ version = "1.0.0"
 dependencies = [
  "config",
  "serde",
+ "serde_serializers",
 ]
 
 [[package]]

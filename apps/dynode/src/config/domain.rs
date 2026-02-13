@@ -2,7 +2,7 @@ use primitives::Chain;
 use serde::Deserialize;
 
 use super::NodeMonitoringConfig;
-use super::url::{NodeResult, Override, Url};
+use super::url::{Override, Url};
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct ChainConfig {
@@ -15,7 +15,7 @@ pub struct ChainConfig {
 
 impl ChainConfig {
     pub fn get_poll_interval_seconds(&self, monitoring_config: &NodeMonitoringConfig) -> u64 {
-        self.poll_interval_seconds.unwrap_or(monitoring_config.poll_interval_seconds)
+        self.poll_interval_seconds.unwrap_or(monitoring_config.get_poll_interval_seconds())
     }
 
     pub fn get_block_delay(&self, monitoring_config: &NodeMonitoringConfig) -> u64 {
@@ -45,27 +45,12 @@ impl ChainConfig {
 
         base_url.clone()
     }
-
-    pub fn is_url_behind(&self, url: Url, results: Vec<NodeResult>, monitoring_config: &NodeMonitoringConfig) -> bool {
-        if let Some(index) = results.iter().position(|r| r.url == url) {
-            let node = results[index].clone();
-            if let Some(max_block_number) = Self::find_highest_block_number(results)
-                && node.block_number + self.get_block_delay(monitoring_config) >= max_block_number.block_number
-            {
-                return false;
-            }
-        }
-        true
-    }
-
-    pub fn find_highest_block_number(results: Vec<NodeResult>) -> Option<NodeResult> {
-        results.into_iter().max_by(|x, y| x.block_number.cmp(&y.block_number))
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::Duration;
 
     fn make_chain_config(poll_interval: Option<u64>, block_delay: Option<u64>) -> ChainConfig {
         ChainConfig {
@@ -97,7 +82,7 @@ mod tests {
     fn make_monitoring_config(poll_interval: u64, block_delay: u64) -> NodeMonitoringConfig {
         NodeMonitoringConfig {
             enabled: true,
-            poll_interval_seconds: poll_interval,
+            poll_interval_seconds: Duration::from_secs(poll_interval),
             block_delay,
         }
     }

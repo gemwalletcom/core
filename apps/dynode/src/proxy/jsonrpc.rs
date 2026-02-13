@@ -210,7 +210,7 @@ impl JsonRpcHandler {
                 chain = request.chain.as_ref(),
                 host = request.host.as_str(),
                 method = call.method.as_str(),
-                ttl_seconds = ttl,
+                ttl_ms = ttl.as_millis(),
                 size_bytes = size_bytes,
                 latency = DurationMs(request.elapsed()),
             );

@@ -18,11 +18,11 @@ jwt:
 
 monitoring:
   enabled: false
-  poll_interval_seconds: 600
+  poll_interval_seconds: 10m
   block_delay: 100
 
 request:
-  timeout: 3000
+  timeout: 3s
 
 headers:
   forward:
@@ -47,39 +47,48 @@ cache:
   rules:
     ethereum:
       - rpc_method: eth_chainId
-        ttl_seconds: 3600  # 1 hour
+        ttl: 1h
     tron:
       - path: /wallet/getchainparameters
         method: GET
-        ttl_seconds: 86400  # 1 day
+        ttl: 1d
       - path: /wallet/listwitnesses
         method: GET
-        ttl_seconds: 86400  # 1 day
+        ttl: 1d
+      - path: /wallet/getaccount
+        method: POST
+        inflight: true
+      - path: /wallet/getaccountresource
+        method: POST
+        inflight: true
+      - path: /wallet/getReward
+        method: POST
+        inflight: true
     solana:
       - rpc_method: getVoteAccounts
-        ttl_seconds: 3600  # 1 hour
+        ttl: 1h
     sui:
       - rpc_method: suix_getValidatorsApy
-        ttl_seconds: 3600  # 1 hour
+        ttl: 1h
       - rpc_method: suix_getLatestSuiSystemState
-        ttl_seconds: 60  # 1 minute
+        ttl: 1m
     cosmos:
       - path: /cosmos/staking/v1beta1/validators
         method: GET
-        ttl_seconds: 86400  # 1 day
+        ttl: 1d
     bitcoin:
       - path: /api/v2/block/**
         method: GET
-        ttl_seconds: 0  # never expires
+        ttl: 0s
     hypercore:
       - path: /info
         method: POST
-        ttl_seconds: 3600  # 1 hour
+        ttl: 1h
         params:
           type: metaAndAssetCtxs
     aptos:
       - path: /v1/view
         method: POST
-        ttl_seconds: 3600  # 1 hour
+        ttl: 1h
         params:
           function: "0x1::delegation_pool::operator_commission_percentage"

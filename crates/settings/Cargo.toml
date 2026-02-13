@@ -6,6 +6,7 @@ edition = { workspace = true }
 [dependencies]
 serde = { workspace = true }
 config = { workspace = true }
+serde_serializers = { path = "../serde_serializers" }
 
 [features]
 testkit = []

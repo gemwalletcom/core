@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use primitives::{ConfigKey, parse_duration};
+use primitives::ConfigKey;
 
 use crate::DatabaseClient;
 use crate::DatabaseError;
@@ -38,7 +38,7 @@ impl ConfigRepository for DatabaseClient {
 
     fn get_config_duration(&mut self, key: ConfigKey) -> Result<Duration, DatabaseError> {
         let value = self.get_config(key)?;
-        parse_duration(&value).ok_or_else(|| DatabaseError::Error(format!("Failed to parse duration: {}", value)))
+        primitives::parse_duration(&value).ok_or_else(|| DatabaseError::Error(format!("Failed to parse duration: {}", value)))
     }
 
     fn get_config_vec_string(&mut self, key: ConfigKey) -> Result<Vec<String>, DatabaseError> {

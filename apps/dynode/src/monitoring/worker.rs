@@ -108,7 +108,7 @@ impl NodeMonitor {
                 if new_url.url != current_node.url.url {
                     NodeService::update_node_domain(nodes, chain_config.chain, NodeDomain::new(new_url.clone(), chain_config.clone())).await;
                     metrics.set_node_host_current(chain_config.chain.as_ref(), &new_url.host());
-                    metrics.add_node_switch(chain_config.chain.as_ref(), &current_node.url.host(), &new_url.host(), switch.reason.as_str());
+                    metrics.add_node_switch(chain_config.chain.as_ref(), &current_node.url.host(), &new_url.host(), switch.reason.as_str(), &switch.reason.to_string());
 
                     NodeTelemetry::log_node_switch(chain_config, &current_node.url, &switch);
                 }
