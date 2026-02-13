@@ -108,22 +108,24 @@ impl JsonRpcRequest {
     }
 
     pub fn get_methods_list(&self) -> String {
+        self.get_methods_for_metrics().join(",")
+    }
+
+    pub fn get_methods_for_metrics(&self) -> Vec<String> {
         match self {
-            Self::Single(call) => call.method.clone(),
-            Self::Batch(calls) => calls.iter().map(|c| c.method.as_str()).collect::<Vec<_>>().join(","),
+            Self::Single(call) => vec![call.method.clone()],
+            Self::Batch(calls) => calls.iter().map(|call| call.method.clone()).collect(),
         }
     }
 }
 
 impl RequestType {
     pub fn from_request(method: &str, path: String, body: Vec<u8>) -> Self {
-        if method == "POST"
-            && let Ok(body_str) = std::str::from_utf8(&body)
-        {
-            if let Ok(call) = serde_json::from_str::<JsonRpcCall>(body_str) {
+        if method == "POST" {
+            if let Ok(call) = serde_json::from_slice::<JsonRpcCall>(&body) {
                 return RequestType::JsonRpc(JsonRpcRequest::Single(call));
             }
-            if let Ok(calls) = serde_json::from_str::<Vec<JsonRpcCall>>(body_str)
+            if let Ok(calls) = serde_json::from_slice::<Vec<JsonRpcCall>>(&body)
                 && !calls.is_empty()
             {
                 return RequestType::JsonRpc(JsonRpcRequest::Batch(calls));
@@ -138,8 +140,7 @@ impl RequestType {
 
     pub fn get_methods_for_metrics(&self) -> Vec<String> {
         match self {
-            Self::JsonRpc(JsonRpcRequest::Single(call)) => vec![call.method.clone()],
-            Self::JsonRpc(JsonRpcRequest::Batch(calls)) => calls.iter().map(|call| call.method.clone()).collect(),
+            Self::JsonRpc(json_rpc) => json_rpc.get_methods_for_metrics(),
             Self::Regular { path, .. } => vec![path.clone()],
         }
     }

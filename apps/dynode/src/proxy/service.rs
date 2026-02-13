@@ -78,6 +78,37 @@ impl ProxyRequestService {
         headers
     }
 
+    fn log_incoming_request(request: &ProxyRequest, request_type: &RequestType) {
+        let request_id = request.id.as_str();
+        let chain = request.chain.as_ref();
+        let method = request.method.as_str();
+        let uri = request.path.as_str();
+        let user_agent = request.user_agent.as_str();
+
+        match request_type {
+            RequestType::JsonRpc(_) => {
+                info_with_fields!(
+                    "Incoming request",
+                    id = request_id,
+                    chain = chain,
+                    method = method,
+                    uri = uri,
+                    rpc_method = &request_type.get_methods_list(),
+                    user_agent = user_agent,
+                );
+            }
+            RequestType::Regular { .. } => {
+                info_with_fields!("Incoming request", id = request_id, chain = chain, method = method, uri = uri, user_agent = user_agent,);
+            }
+        }
+    }
+
+    fn add_proxy_response_metrics(metrics: &Metrics, request: &ProxyRequest, methods_for_metrics: &[String], host: &str, status: u16) {
+        for method_name in methods_for_metrics {
+            metrics.add_proxy_response(request.chain.as_ref(), method_name, host, status, request.elapsed().as_millis());
+        }
+    }
+
     pub async fn handle_request(&self, request: ProxyRequest, node_domain: &NodeDomain) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
         let chain = request.chain;
         let request_type = request.request_type();
@@ -93,30 +124,7 @@ impl ProxyRequestService {
 
         self.metrics.add_proxy_request(request.chain.as_ref(), &request.user_agent);
 
-        let request_id = request.id.as_str();
-        match request_type {
-            RequestType::JsonRpc(_) => {
-                info_with_fields!(
-                    "Incoming request",
-                    id = request_id,
-                    chain = request.chain.as_ref(),
-                    method = request.method.as_str(),
-                    uri = request.path.as_str(),
-                    rpc_method = &request_type.get_methods_list(),
-                    user_agent = &request.user_agent,
-                );
-            }
-            RequestType::Regular { .. } => {
-                info_with_fields!(
-                    "Incoming request",
-                    id = request_id,
-                    chain = request.chain.as_ref(),
-                    method = request.method.as_str(),
-                    uri = request.path.as_str(),
-                    user_agent = &request.user_agent,
-                );
-            }
-        }
+        Self::log_incoming_request(&request, request_type);
 
         let cache_ttl = self.cache.should_cache_request(&chain, request_type);
         let cache_key = cache_ttl.and_then(|_| request_type.cache_key(&request.host, &request.path_with_query));
@@ -125,7 +133,7 @@ impl ProxyRequestService {
         self.metrics.add_proxy_request_batch(request.chain.as_ref(), &request.user_agent, &methods_for_metrics);
 
         if let Some(key) = &cache_key
-            && let Some(result) = Self::try_cache_hit(&self.cache, key, &request, &url, &self.metrics).await
+            && let Some(result) = Self::try_cache_hit(&self.cache, key, &request, &url, &self.metrics, request_type, &methods_for_metrics).await
         {
             return result;
         }
@@ -140,21 +148,14 @@ impl ProxyRequestService {
         let upstream_headers = ResponseBuilder::create_upstream_headers(url.url.host_str(), request.elapsed());
         let (processed_response, body_bytes) = Self::proxy_pass_response(response, &self.forward_headers, upstream_headers).await?;
 
-        for method_name in &methods_for_metrics {
-            self.metrics.add_proxy_response(
-                request.chain.as_ref(),
-                method_name,
-                url.url.host_str().unwrap_or_default(),
-                status,
-                request.elapsed().as_millis(),
-            );
-        }
+        let remote_host = url.url.host_str().unwrap_or_default();
+        Self::add_proxy_response_metrics(&self.metrics, &request, &methods_for_metrics, remote_host, status);
 
         info_with_fields!(
             "Proxy response",
-            id = request_id,
+            id = request.id.as_str(),
             chain = request.chain.as_ref(),
-            remote_host = url.url.host_str().unwrap_or_default(),
+            remote_host = remote_host,
             method = request.method.as_str(),
             uri = request.path.as_str(),
             status = status,
@@ -190,11 +191,11 @@ impl ProxyRequestService {
         request: &ProxyRequest,
         url: &RequestUrl,
         metrics: &Metrics,
+        request_type: &RequestType,
+        methods_for_metrics: &[String],
     ) -> Option<Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>>> {
         if let Some(cached) = cache.get(&request.chain, cache_key).await {
-            let request_type = request.request_type();
-            let methods_for_metrics = request_type.get_methods_for_metrics();
-            for method_name in &methods_for_metrics {
+            for method_name in methods_for_metrics {
                 metrics.add_cache_hit(request.chain.as_ref(), method_name);
             }
 
@@ -218,21 +219,11 @@ impl ProxyRequestService {
                 RequestType::JsonRpc(JsonRpcRequest::Batch(_)) => return None,
             };
 
-            for method_name in &methods_for_metrics {
-                metrics.add_proxy_response(
-                    request.chain.as_ref(),
-                    method_name,
-                    url.url.host_str().unwrap_or_default(),
-                    status,
-                    request.elapsed().as_millis(),
-                );
-            }
+            Self::add_proxy_response_metrics(metrics, request, methods_for_metrics, url.url.host_str().unwrap_or_default(), status);
 
             Some(response)
         } else {
-            let request_type = request.request_type();
-            let methods_for_metrics = request_type.get_methods_for_metrics();
-            for method_name in &methods_for_metrics {
+            for method_name in methods_for_metrics {
                 metrics.add_cache_miss(request.chain.as_ref(), method_name);
             }
             None
