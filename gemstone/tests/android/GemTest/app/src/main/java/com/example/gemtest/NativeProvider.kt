@@ -24,7 +24,7 @@ class NativeProvider: AlienProvider {
         val parsedUrl = try {
             Url(target.url)
         } catch (e: Throwable) {
-            throw AlienError.RequestError("invalid url: ${target.url}")
+            throw AlienError.Network("invalid url: ${target.url}")
         }
 
         val response = client.request {

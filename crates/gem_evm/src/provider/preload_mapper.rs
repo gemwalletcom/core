@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::str::FromStr;
 
-use alloy_primitives::{Address, U256};
+use alloy_primitives::{Address, U256, hex};
 use alloy_sol_types::SolCall;
 use gem_bsc::stake_hub::STAKE_HUB_ADDRESS;
 use num_bigint::BigInt;
@@ -37,7 +37,7 @@ pub fn bigint_to_hex_string(value: &BigInt) -> String {
 }
 
 pub fn bytes_to_hex_string(data: &[u8]) -> String {
-    format!("0x{}", alloy_primitives::hex::encode(data))
+    format!("0x{}", hex::encode(data))
 }
 
 pub fn map_transaction_preload(nonce_hex: String, chain_id: String) -> Result<TransactionLoadMetadata, Box<dyn std::error::Error + Send + Sync>> {
@@ -45,7 +45,7 @@ pub fn map_transaction_preload(nonce_hex: String, chain_id: String) -> Result<Tr
     Ok(TransactionLoadMetadata::Evm {
         nonce,
         chain_id: chain_id.parse::<u64>()?,
-        stake_data: None,
+        earn_data: None,
     })
 }
 
@@ -92,15 +92,11 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
                 match from_asset.id.token_subtype() {
                     AssetSubtype::NATIVE => Ok(TransactionParams::new(
                         swap_data.data.to.clone(),
-                        alloy_primitives::hex::decode(swap_data.data.data.clone())?,
+                        hex::decode(swap_data.data.data.clone())?,
                         BigInt::from_str_radix(&swap_data.data.value, 10)?,
                     )),
                     AssetSubtype::TOKEN => match swap_data.data.data_type {
-                        SwapQuoteDataType::Contract => Ok(TransactionParams::new(
-                            swap_data.data.to.clone(),
-                            alloy_primitives::hex::decode(swap_data.data.data.clone())?,
-                            BigInt::ZERO,
-                        )),
+                        SwapQuoteDataType::Contract => Ok(TransactionParams::new(swap_data.data.to.clone(), hex::decode(swap_data.data.data.clone())?, BigInt::ZERO)),
                         SwapQuoteDataType::Transfer => {
                             let to = from_asset.token_id.clone().ok_or("Missing token ID")?.clone();
                             let data = encode_erc20_transfer(&swap_data.data.to.clone(), &BigInt::from_str_radix(&input.value, 10)?)?;
@@ -145,6 +141,20 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
             }
             _ => Err("Unsupported chain for staking".into()),
         },
+        TransactionInputType::Earn(_, _) => {
+            let earn_data = match &input.metadata {
+                TransactionLoadMetadata::Evm { earn_data, .. } => earn_data.as_ref().ok_or("Missing earn_data in metadata")?,
+                _ => return Err("EVM metadata required for earn transactions".into()),
+            };
+            if let Some(approval) = &earn_data.approval {
+                Ok(TransactionParams::new(approval.token.clone(), encode_erc20_approve(&approval.spender)?, BigInt::from(0)))
+            } else {
+                let call_data = earn_data.call_data.as_ref().ok_or("Missing call_data")?;
+                let contract_address = earn_data.contract_address.as_ref().ok_or("Missing contract_address")?;
+                let decoded_data = hex::decode(call_data)?;
+                Ok(TransactionParams::new(contract_address.clone(), decoded_data, BigInt::from(0)))
+            }
+        }
         _ => Err("Unsupported transfer type".into()),
     }
 }
@@ -179,6 +189,20 @@ pub fn get_extra_fee_gas_limit(input: &TransactionLoadInput) -> Result<BigInt, B
                 } else {
                     Ok(BigInt::from(0))
                 }
+            } else {
+                Ok(BigInt::from(0))
+            }
+        }
+        TransactionInputType::Earn(_, _) => {
+            let earn_data = match &input.metadata {
+                TransactionLoadMetadata::Evm { earn_data, .. } => earn_data.as_ref(),
+                _ => None,
+            };
+            if let Some(data) = earn_data
+                && let Some(gas_limit) = data.gas_limit.as_ref()
+                && data.approval.is_some()
+            {
+                Ok(BigInt::from_str_radix(gas_limit, 10)?)
             } else {
                 Ok(BigInt::from(0))
             }
@@ -284,7 +308,7 @@ mod tests {
     use super::*;
     use crate::everstake::{EVERSTAKE_POOL_ADDRESS, IAccounting};
     use num_bigint::BigUint;
-    use primitives::{Delegation, DelegationBase, DelegationState, DelegationValidator, RedelegateData};
+    use primitives::{Delegation, DelegationBase, DelegationState, DelegationValidator, EarnProviderType, RedelegateData};
 
     fn everstake_validator() -> DelegationValidator {
         DelegationValidator {
@@ -294,6 +318,7 @@ mod tests {
             is_active: true,
             commission: 10.0,
             apr: 4.2,
+            provider_type: EarnProviderType::Stake,
         }
     }
 
@@ -305,10 +330,10 @@ mod tests {
         let result = map_transaction_preload(nonce_hex, chain_id)?;
 
         match result {
-            TransactionLoadMetadata::Evm { nonce, chain_id, stake_data } => {
+            TransactionLoadMetadata::Evm { nonce, chain_id, earn_data } => {
                 assert_eq!(nonce, 10);
                 assert_eq!(chain_id, 1);
-                assert!(stake_data.is_none());
+                assert!(earn_data.is_none());
             }
             _ => panic!("Expected Evm variant"),
         }
@@ -379,7 +404,6 @@ mod tests {
         let result = map_transaction_fee_rates(EVMChain::SmartChain, &fee_history)?;
 
         assert_eq!(result.len(), 3);
-
         assert_eq!(result[0].gas_price_type.gas_price(), BigInt::ZERO);
         assert!(result[0].gas_price_type.priority_fee() != BigInt::ZERO);
 
@@ -428,6 +452,7 @@ mod tests {
             is_active: true,
             commission: 5.0,
             apr: 10.0,
+            provider_type: EarnProviderType::Stake,
         };
 
         let stake_type = StakeType::Stake(validator);
@@ -464,6 +489,7 @@ mod tests {
                 is_active: true,
                 commission: 5.0,
                 apr: 10.0,
+                provider_type: EarnProviderType::Stake,
             },
             price: None,
         };
@@ -501,6 +527,7 @@ mod tests {
                 is_active: true,
                 commission: 5.0,
                 apr: 10.0,
+                provider_type: EarnProviderType::Stake,
             },
             price: None,
         };
@@ -512,6 +539,7 @@ mod tests {
             is_active: true,
             commission: 3.0,
             apr: 12.0,
+            provider_type: EarnProviderType::Stake,
         };
 
         let redelegate_data = RedelegateData { delegation, to_validator };
@@ -549,6 +577,7 @@ mod tests {
                 is_active: true,
                 commission: 5.0,
                 apr: 10.0,
+                provider_type: EarnProviderType::Stake,
             },
             price: None,
         };

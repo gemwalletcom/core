@@ -22,6 +22,7 @@ pub struct GemBalance {
     pub pending_unconfirmed: GemBigUint,
     pub rewards: GemBigUint,
     pub reserved: GemBigUint,
+    pub earn: GemBigUint,
     pub withdrawable: GemBigUint,
     pub metadata: Option<GemBalanceMetadata>,
 }

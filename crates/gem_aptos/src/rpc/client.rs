@@ -107,7 +107,11 @@ impl<C: Client> AptosClient<C> {
                     AssetSubtype::TOKEN => Ok(1500),
                 }
             }
-            TransactionInputType::Swap(_, _, _) | TransactionInputType::Stake(_, _) | TransactionInputType::TokenApprove(_, _) | TransactionInputType::Generic(_, _, _) => Ok(1500),
+            TransactionInputType::Swap(_, _, _)
+            | TransactionInputType::Stake(_, _)
+            | TransactionInputType::TokenApprove(_, _)
+            | TransactionInputType::Generic(_, _, _)
+            | TransactionInputType::Earn(_, _) => Ok(1500),
             TransactionInputType::Perpetual(_, _) => unimplemented!(),
         }
     }

@@ -1,7 +1,7 @@
 use gem_client::Client;
 use num_bigint::BigUint;
 use num_traits::Zero;
-use primitives::{AssetBalance, AssetId, Balance, Chain, DelegationBase, DelegationState, DelegationValidator};
+use primitives::{AssetBalance, AssetId, Balance, Chain, DelegationBase, DelegationState, DelegationValidator, EarnProviderType};
 use std::error::Error;
 
 use crate::everstake::{EVERSTAKE_POOL_ADDRESS, get_everstake_account_state, map_balance_to_delegation, map_withdraw_request_to_delegations};
@@ -32,6 +32,7 @@ impl<C: Client + Clone> EthereumClient<C> {
             is_active: true,
             commission: 0.1,
             apr: apy,
+            provider_type: EarnProviderType::Stake,
         }])
     }
 

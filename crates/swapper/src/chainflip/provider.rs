@@ -387,7 +387,7 @@ mod tests {
     #[tokio::test]
     #[cfg(feature = "swap_integration_tests")]
     async fn test_get_swap_result() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        use crate::alien::reqwest_provider::NativeProvider;
+        use gem_jsonrpc::native_provider::NativeProvider;
         use primitives::swap::SwapStatus;
 
         let network_provider = Arc::new(NativeProvider::default());

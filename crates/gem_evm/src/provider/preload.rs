@@ -15,9 +15,7 @@ use gem_client::Client;
 use num_bigint::BigInt;
 use primitives::GasPriceType;
 #[cfg(feature = "rpc")]
-use primitives::stake_type::StakeData;
-#[cfg(feature = "rpc")]
-use primitives::{FeeRate, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
+use primitives::{EarnData, FeeRate, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
 #[cfg(feature = "rpc")]
 use serde_serializers::bigint::bigint_from_hex_str;
 use std::collections::HashMap;
@@ -63,20 +61,17 @@ impl<C: Client + Clone> EthereumClient<C> {
         let gas_limit = calculate_gas_limit_with_increase(gas_estimate);
         let fee = self.calculate_fee(&input, &gas_limit).await?;
 
-        let metadata = if let TransactionInputType::Stake(_, _) = &input.input_type {
-            match input.metadata {
+        let metadata = match &input.input_type {
+            TransactionInputType::Stake(_, _) => match input.metadata {
                 TransactionLoadMetadata::Evm { nonce, chain_id, .. } => TransactionLoadMetadata::Evm {
                     nonce,
                     chain_id,
-                    stake_data: Some(StakeData {
-                        data: if params.data.is_empty() { None } else { Some(hex::encode(&params.data)) },
-                        to: Some(params.to),
-                    }),
+                    earn_data: Some(EarnData::stake(params.to, &params.data)),
                 },
                 _ => input.metadata,
-            }
-        } else {
-            input.metadata
+            },
+            TransactionInputType::Earn(_, _) => input.metadata,
+            _ => input.metadata,
         };
 
         Ok(TransactionLoadData { fee, metadata })
