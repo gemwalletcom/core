@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 mod duration;
 
 use serde::Deserialize;
@@ -7,7 +9,6 @@ use config::{Config, ConfigError, Environment, File};
 use std::collections::HashMap;
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Settings {
     pub redis: Redis,
     pub postgres: Postgres,
@@ -44,27 +45,23 @@ pub struct Settings {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Fiat {
     #[serde(deserialize_with = "duration::deserialize")]
     pub timeout: Duration,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Redis {
     pub url: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Postgres {
     pub url: String,
     pub pool: u32,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Retry {
     #[serde(deserialize_with = "duration::deserialize")]
     pub delay: Duration,
@@ -73,7 +70,6 @@ pub struct Retry {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct RabbitMQ {
     pub url: String,
     pub prefetch: u16,
@@ -81,52 +77,46 @@ pub struct RabbitMQ {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct MeiliSearch {
     pub url: String,
     pub key: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct KeyPublic {
     pub public: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct KeySecret {
     pub secret: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Key {
     pub secret: String,
     pub public: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct MoonPay {
+pub struct KeySettings {
     pub key: Key,
 }
+pub type MoonPay = KeySettings;
+pub type Paybis = KeySettings;
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Transak {
     pub key: Key,
     pub referrer_domain: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Mercuryo {
     pub key: MercuryoKey,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct MercuryoKey {
     pub secret: String,
     pub public: String,
@@ -134,46 +124,37 @@ pub struct MercuryoKey {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct Banxa {
-    pub url: String,
-    pub key: Key,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct Paybis {
-    pub key: Key,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct CoinGecko {
+pub struct SecretKeySettings {
     pub key: KeySecret,
 }
+pub type CoinGecko = SecretKeySettings;
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
+pub struct UrlSecretKeySettings {
+    pub url: String,
+    pub key: KeySecret,
+}
+pub type UD = UrlSecretKeySettings;
+pub type Banxa = ScanProvider;
+
+#[derive(Debug, Deserialize, Clone)]
 pub struct Prices {
     pub pyth: PriceProvider,
     pub jupiter: PriceProvider,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct PriceProvider {
     pub url: String,
     pub timer: u64,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Charter {
     pub timer: u64,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Name {
     pub ens: URL,
     pub ud: UD,
@@ -193,27 +174,17 @@ pub struct Name {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct URL {
     pub url: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct UD {
-    pub url: String,
-    pub key: KeySecret,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Metrics {
     pub path: String,
     pub redis: Redis,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Chains {
     pub solana: Chain,
     pub ethereum: Chain,
@@ -270,7 +241,6 @@ pub struct Chains {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Chain {
     pub url: String,
     #[serde(default)]
@@ -285,14 +255,12 @@ pub enum ChainURLType {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Shutdown {
     #[serde(deserialize_with = "duration::deserialize")]
     pub timeout: Duration,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Parser {
     #[serde(deserialize_with = "duration::deserialize")]
     pub timeout: Duration,
@@ -300,14 +268,12 @@ pub struct Parser {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Daemon {
     pub service: String,
     pub shutdown: Shutdown,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Consumer {
     pub error: ConsumerError,
     #[serde(default, deserialize_with = "duration::deserialize")]
@@ -316,7 +282,6 @@ pub struct Consumer {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct ConsumerError {
     #[serde(deserialize_with = "duration::deserialize")]
     pub timeout: Duration,
@@ -324,14 +289,12 @@ pub struct ConsumerError {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct API {
     pub service: String,
     pub auth: Auth,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Auth {
     pub enabled: bool,
     #[serde(deserialize_with = "duration::deserialize")]
@@ -340,7 +303,6 @@ pub struct Auth {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Jwt {
     pub secret: String,
     #[serde(deserialize_with = "duration::deserialize")]
@@ -348,20 +310,17 @@ pub struct Jwt {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Pusher {
     pub url: String,
     pub ios: PusherIOS,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct PusherIOS {
     pub topic: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Scan {
     #[serde(deserialize_with = "duration::deserialize")]
     pub timeout: Duration,
@@ -370,7 +329,6 @@ pub struct Scan {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct ScanProvider {
     pub url: String,
     pub key: Key,
@@ -392,46 +350,19 @@ impl Settings {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct NFT {
     pub nftscan: NFTScan,
     pub opensea: OpenSea,
     pub magiceden: MagicEden,
     pub bucket: BucketConfiguration,
 }
+pub type Ankr = SecretKeySettings;
+pub type Trongrid = SecretKeySettings;
+pub type NFTScan = SecretKeySettings;
+pub type OpenSea = SecretKeySettings;
+pub type MagicEden = SecretKeySettings;
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct Ankr {
-    pub key: KeySecret,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct Trongrid {
-    pub key: KeySecret,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct NFTScan {
-    pub key: KeySecret,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct OpenSea {
-    pub key: KeySecret,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct MagicEden {
-    pub key: KeySecret,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct BucketConfiguration {
     pub endpoint: String,
     pub region: String,
@@ -440,53 +371,33 @@ pub struct BucketConfiguration {
     pub url: String,
 }
 
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct Assets {
-    pub url: String,
-}
+pub type Assets = URL;
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Sentry {
     pub dsn: String,
     pub sample_rate: f32,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Rewards {
     #[serde(default)]
     pub wallets: HashMap<String, RewardsWallet>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct RewardsWallet {
     pub key: String,
     pub address: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
 pub struct Ip {
     pub abuseipdb: AbuseIPDB,
     pub ipapi: IpApi,
 }
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct AbuseIPDB {
-    pub url: String,
-    pub key: KeySecret,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-#[allow(unused)]
-pub struct IpApi {
-    pub url: String,
-    pub key: KeySecret,
-}
+pub type AbuseIPDB = UrlSecretKeySettings;
+pub type IpApi = UrlSecretKeySettings;
 
 #[cfg(feature = "testkit")]
 pub mod testkit;
