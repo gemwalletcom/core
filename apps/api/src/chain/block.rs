@@ -2,22 +2,16 @@ use rocket::{State, get, tokio::sync::Mutex};
 
 use crate::params::{AddressParam, ChainParam};
 use crate::responders::{ApiError, ApiResponse};
-use primitives::{ChainAddress, Transaction};
+use primitives::Transaction;
 
 use super::ChainClient;
 
-#[get("/chain/transactions/<chain>/<address>")]
-pub async fn get_transactions(chain: ChainParam, address: AddressParam, client: &State<Mutex<ChainClient>>) -> Result<ApiResponse<Vec<Transaction>>, ApiError> {
-    let request = ChainAddress::new(chain.0, address.0);
-    Ok(client.lock().await.get_transactions(request).await?.into())
-}
-
-#[get("/chain/blocks/<chain>/latest")]
+#[get("/chain/<chain>/blocks/latest")]
 pub async fn get_latest_block_number(chain: ChainParam, client: &State<Mutex<ChainClient>>) -> Result<ApiResponse<i64>, ApiError> {
     Ok(client.lock().await.get_latest_block(chain.0).await?.into())
 }
 
-#[get("/chain/blocks/<chain>/<block_number>?<transaction_type>")]
+#[get("/chain/<chain>/blocks/<block_number>?<transaction_type>")]
 pub async fn get_block_transactions(
     chain: ChainParam,
     block_number: i64,
@@ -27,7 +21,7 @@ pub async fn get_block_transactions(
     Ok(client.lock().await.get_block_transactions(chain.0, block_number, transaction_type).await?.into())
 }
 
-#[get("/chain/blocks/<chain>/<block_number>/finalize?<address>&<transaction_type>")]
+#[get("/chain/<chain>/blocks/<block_number>/finalize?<address>&<transaction_type>")]
 pub async fn get_block_transactions_finalize(
     chain: ChainParam,
     block_number: i64,

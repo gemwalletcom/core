@@ -27,7 +27,6 @@ struct JobState {
     interval: u64,
     duration: u64,
     last_success: Option<u64>,
-    error_count: u64,
     errors: HashMap<String, u64>,
 }
 
@@ -54,10 +53,8 @@ impl JobMetrics {
 
         if success {
             state.last_success = Some(timestamp);
-        } else if let Some(msg) = error {
-            state.error_count += 1;
-            let message = if msg.len() > 200 { &msg[..200] } else { &msg };
-            *state.errors.entry(message.to_string()).or_default() += 1;
+        } else if let Some(error) = error {
+            *state.errors.entry(super::sanitize_error_message(&error)).or_default() += 1;
         }
     }
 }
@@ -67,8 +64,7 @@ impl MetricsProvider for JobMetrics {
         let last_success_at = Family::<JobLabels, Gauge>::default();
         let interval = Family::<JobLabels, Gauge>::default();
         let duration = Family::<JobLabels, Gauge>::default();
-        let errors = Family::<JobLabels, Gauge>::default();
-        let error_detail = Family::<JobErrorLabels, Gauge>::default();
+        let errors = Family::<JobErrorLabels, Gauge>::default();
 
         let jobs = self.jobs.lock().unwrap();
         for (name, state) in jobs.iter() {
@@ -79,7 +75,6 @@ impl MetricsProvider for JobMetrics {
 
             interval.get_or_create(&labels).set(state.interval as i64);
             duration.get_or_create(&labels).set(state.duration as i64);
-            errors.get_or_create(&labels).set(state.error_count as i64);
 
             if let Some(ts) = state.last_success {
                 last_success_at.get_or_create(&labels).set(ts as i64);
@@ -91,14 +86,13 @@ impl MetricsProvider for JobMetrics {
                     job_name: name.clone(),
                     error: error.clone(),
                 };
-                error_detail.get_or_create(&error_labels).set(*count as i64);
+                errors.get_or_create(&error_labels).set(*count as i64);
             }
         }
 
         registry.register("job_last_success_at", "Last successful job run (unix timestamp)", last_success_at);
         registry.register("job_interval_seconds", "Job interval in seconds", interval);
         registry.register("job_duration_milliseconds", "Last job duration in milliseconds", duration);
-        registry.register("job_errors", "Total error count", errors);
-        registry.register("job_error_detail", "Job error count by message", error_detail);
+        registry.register("job_errors", "Job error count by message", errors);
     }
 }

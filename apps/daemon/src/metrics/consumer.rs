@@ -23,7 +23,6 @@ struct ConsumerErrorLabels {
 #[derive(Default)]
 struct ConsumerState {
     total_processed: u64,
-    total_errors: u64,
     last_success: Option<u64>,
     avg_duration: u64,
     errors: HashMap<String, u64>,
@@ -55,29 +54,22 @@ impl ConsumerMetrics {
     pub fn record_error(&self, name: &str, error: &str) {
         let mut consumers = self.consumers.lock().unwrap();
         let state = consumers.entry(name.to_string()).or_default();
-        state.total_errors += 1;
-        let message = match error.char_indices().nth(200) {
-            Some((idx, _)) => &error[..idx],
-            None => error,
-        };
-        *state.errors.entry(message.to_string()).or_default() += 1;
+        *state.errors.entry(super::sanitize_error_message(error)).or_default() += 1;
     }
 }
 
 impl MetricsProvider for ConsumerMetrics {
     fn register(&self, registry: &mut Registry) {
         let processed = Family::<ConsumerLabels, Gauge>::default();
-        let errors = Family::<ConsumerLabels, Gauge>::default();
         let last_success_at = Family::<ConsumerLabels, Gauge>::default();
         let avg_duration = Family::<ConsumerLabels, Gauge>::default();
-        let error_detail = Family::<ConsumerErrorLabels, Gauge>::default();
+        let errors = Family::<ConsumerErrorLabels, Gauge>::default();
 
         let consumers = self.consumers.lock().unwrap();
         for (name, state) in consumers.iter() {
             let labels = ConsumerLabels { consumer: name.clone() };
 
             processed.get_or_create(&labels).set(state.total_processed as i64);
-            errors.get_or_create(&labels).set(state.total_errors as i64);
             if let Some(ts) = state.last_success {
                 last_success_at.get_or_create(&labels).set(ts as i64);
             }
@@ -88,14 +80,13 @@ impl MetricsProvider for ConsumerMetrics {
                     consumer: name.clone(),
                     error: error.clone(),
                 };
-                error_detail.get_or_create(&error_labels).set(*count as i64);
+                errors.get_or_create(&error_labels).set(*count as i64);
             }
         }
 
         registry.register("consumer_processed", "Messages processed", processed);
-        registry.register("consumer_errors", "Errors encountered", errors);
         registry.register("consumer_last_success_at", "Last successful processing (unix timestamp)", last_success_at);
         registry.register("consumer_avg_duration_milliseconds", "Average processing duration in milliseconds", avg_duration);
-        registry.register("consumer_error_detail", "Consumer error count by message", error_detail);
+        registry.register("consumer_errors", "Consumer error count by message", errors);
     }
 }

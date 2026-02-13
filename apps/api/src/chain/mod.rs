@@ -1,7 +1,7 @@
-pub mod balance;
+pub mod address;
+pub mod block;
 pub mod client;
 pub mod staking;
 pub mod token;
-pub mod transaction;
 
 pub use client::ChainClient;
