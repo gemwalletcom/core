@@ -10,6 +10,7 @@ pub struct ReleaseRow {
     pub platform_store: PlatformStore,
     pub version: String,
     pub upgrade_required: bool,
+    pub update_enabled: bool,
 }
 
 impl ReleaseRow {
@@ -26,6 +27,7 @@ impl ReleaseRow {
             platform_store: release.store.into(),
             version: release.version,
             upgrade_required: release.upgrade_required,
+            update_enabled: true,
         }
     }
 }

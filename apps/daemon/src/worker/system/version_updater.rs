@@ -1,6 +1,6 @@
 use primitives::{PlatformStore, config::Release};
 use std::error::Error;
-use storage::{Database, ReleasesRepository};
+use storage::{Database, ReleasesRepository, models::ReleaseRow};
 
 use super::model::{GitHubRepository, ITunesLookupResponse, SamsungStoreDetail};
 
@@ -19,8 +19,12 @@ impl VersionUpdater {
 
     pub async fn update_store(&self, store: PlatformStore) -> Result<String, Box<dyn Error + Send + Sync>> {
         let version = self.get_store_version(store).await?;
-        let current = self.get_current_version(store)?;
 
+        if !self.database.releases()?.is_update_enabled(store)? {
+            return Ok(version);
+        }
+
+        let current = self.get_current_version(store)?;
         if current.as_ref() != Some(&version) {
             self.set_release(Release::new(store, version.clone(), false))?;
         }
@@ -44,7 +48,7 @@ impl VersionUpdater {
     }
 
     fn set_release(&self, release: Release) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let row = storage::models::ReleaseRow::from_primitive(release);
+        let row = ReleaseRow::from_primitive(release);
         self.database.releases()?.update_release(row)?;
         Ok(())
     }

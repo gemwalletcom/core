@@ -60,6 +60,7 @@ fn setup_database(database: &Database) -> Result<(), Box<dyn std::error::Error +
             platform_store: x.into(),
             version: "1.0.0".to_string(),
             upgrade_required: false,
+            update_enabled: true,
         })
         .collect::<Vec<_>>();
     let _ = database.releases()?.add_releases(releases);

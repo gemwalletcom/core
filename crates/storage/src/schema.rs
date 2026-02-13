@@ -641,6 +641,7 @@ diesel::table! {
         upgrade_required -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
+        update_enabled -> Bool,
     }
 }
 
