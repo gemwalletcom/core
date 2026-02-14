@@ -30,7 +30,7 @@ jobs:
       - name: Check for dynode changes
         id: changes
         run: |
-          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q '^apps/dynode/'; then
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -qE '^(apps/dynode/|Cargo\.lock|Dockerfile)'; then
             echo "dynode=true" >> $GITHUB_OUTPUT
           else
             echo "dynode=false" >> $GITHUB_OUTPUT
