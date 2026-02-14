@@ -1,18 +1,10 @@
-use std::collections::HashMap;
 use std::sync::atomic::AtomicI64;
 use std::sync::Mutex;
 
-use prometheus_client::encoding::EncodeLabelSet;
-use prometheus_client::metrics::family::Family;
 use prometheus_client::metrics::gauge::Gauge;
 use prometheus_client::registry::Registry;
 
 use super::MetricsProvider;
-
-#[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
-struct PriceErrorLabels {
-    error: String,
-}
 
 #[derive(Default)]
 struct PriceState {
@@ -21,7 +13,6 @@ struct PriceState {
     prices_last_updated_at: Option<u64>,
     fiat_rates_updated: u64,
     fiat_rates_last_updated_at: Option<u64>,
-    errors: HashMap<String, u64>,
 }
 
 pub struct PriceMetrics {
@@ -49,11 +40,6 @@ impl PriceMetrics {
         state.fiat_rates_updated += count;
         state.fiat_rates_last_updated_at = Some(timestamp);
     }
-
-    pub fn record_error(&self, error: &str) {
-        let mut state = self.state.lock().unwrap();
-        *state.errors.entry(super::sanitize_error_message(error)).or_default() += 1;
-    }
 }
 
 impl MetricsProvider for PriceMetrics {
@@ -79,17 +65,10 @@ impl MetricsProvider for PriceMetrics {
             fiat_rates_last_updated_at.set(ts as i64);
         }
 
-        let errors = Family::<PriceErrorLabels, Gauge>::default();
-        for (error, count) in &state.errors {
-            let labels = PriceErrorLabels { error: error.clone() };
-            errors.get_or_create(&labels).set(*count as i64);
-        }
-
         registry.register("price_updates", "Total price update operations", price_updates);
         registry.register("prices_updated_count", "Total individual prices updated", prices_updated);
         registry.register("prices_last_updated_at", "Last price update timestamp", prices_last_updated_at);
         registry.register("fiat_rates_updated_count", "Total fiat rates updated", fiat_rates_updated);
         registry.register("fiat_rates_last_updated_at", "Last fiat rates update timestamp", fiat_rates_last_updated_at);
-        registry.register("price_errors", "Price error count by message", errors);
     }
 }
