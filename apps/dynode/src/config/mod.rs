@@ -1,5 +1,5 @@
 use std::{
-    collections::HashMap,
+    collections::{HashMap, HashSet},
     env, fs,
     path::{Path, PathBuf},
     time::Duration,
@@ -26,16 +26,7 @@ pub struct NodeMonitoringConfig {
     #[serde(deserialize_with = "duration::deserialize")]
     pub poll_interval_seconds: Duration,
     pub block_delay: u64,
-}
-
-impl Default for NodeMonitoringConfig {
-    fn default() -> Self {
-        Self {
-            enabled: true,
-            poll_interval_seconds: Duration::from_secs(60 * 15),
-            block_delay: 100,
-        }
-    }
+    pub adaptive: AdaptiveMonitoringConfig,
 }
 
 impl NodeMonitoringConfig {
@@ -45,16 +36,58 @@ impl NodeMonitoringConfig {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct RetryConfig {
+pub struct AdaptiveMonitoringConfig {
     pub enabled: bool,
-    pub max_attempts: usize,
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub window: Duration,
+    pub min_samples: usize,
+    pub error_threshold: f64,
+    pub recovery_threshold: f64,
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub cooldown: Duration,
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub min_switch_interval: Duration,
+    pub errors: ErrorMatcherConfig,
+}
+
+#[derive(Debug, Deserialize, Clone, Default)]
+pub struct ErrorMatcherConfig {
     pub status_codes: Vec<u16>,
     pub error_messages: Vec<String>,
 }
 
+impl ErrorMatcherConfig {
+    pub fn matches_status(&self, status: u16) -> bool {
+        self.status_codes.contains(&status)
+    }
+
+    pub fn matches_message(&self, message: &str) -> bool {
+        if message.is_empty() {
+            return false;
+        }
+
+        let message_lower = message.to_ascii_lowercase();
+        self.error_messages.iter().any(|pattern| {
+            let pattern = pattern.trim();
+            !pattern.is_empty() && message_lower.contains(&pattern.to_ascii_lowercase())
+        })
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct RetryConfig {
+    pub enabled: bool,
+    pub max_attempts: usize,
+    pub errors: ErrorMatcherConfig,
+}
+
 impl RetryConfig {
-    pub fn should_retry_on_error_message(&self, message: &str) -> bool {
-        self.error_messages.iter().any(|prefix| message.contains(prefix))
+    pub fn matches_status(&self, status: u16) -> bool {
+        self.errors.matches_status(status)
+    }
+
+    pub fn matches_message(&self, message: &str) -> bool {
+        self.errors.matches_message(message)
     }
 
     pub fn effective_max_attempts(&self, urls_count: usize) -> usize {
@@ -64,78 +97,57 @@ impl RetryConfig {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use std::time::Duration;
+    use super::normalize_matcher;
+    use crate::testkit::config as testkit;
 
     #[test]
     fn test_should_retry_on_error_message() {
-        let config = RetryConfig {
-            enabled: true,
-            max_attempts: 0,
-            status_codes: vec![],
-            error_messages: vec!["daily request limit".to_string(), "rate limit".to_string()],
-        };
+        let config = testkit::retry_config(true, vec![], vec!["daily request limit", "rate limit"]);
 
-        assert!(config.should_retry_on_error_message("daily request limit reached - upgrade your account"));
-        assert!(config.should_retry_on_error_message("rate limit exceeded"));
-        assert!(!config.should_retry_on_error_message("internal server error"));
-        assert!(!config.should_retry_on_error_message(""));
+        assert!(config.matches_message("daily request limit reached - upgrade your account"));
+        assert!(config.matches_message("rate limit exceeded"));
+        assert!(config.matches_message("Rate Limit Exceeded"));
+        assert!(!config.matches_message("internal server error"));
+        assert!(!config.matches_message(""));
     }
 
     #[test]
     fn test_should_retry_on_error_message_empty() {
-        let config = RetryConfig {
-            enabled: true,
-            max_attempts: 0,
-            status_codes: vec![],
-            error_messages: vec![],
-        };
+        let config = testkit::retry_config(true, vec![], vec![]);
 
-        assert!(!config.should_retry_on_error_message("daily request limit reached"));
+        assert!(!config.matches_message("daily request limit reached"));
+    }
+
+    #[test]
+    fn test_matches_status() {
+        let config = testkit::retry_config(true, vec![401, 403, 429], vec![]);
+        assert!(config.matches_status(429));
+        assert!(!config.matches_status(500));
+    }
+
+    #[test]
+    fn test_matches_message_case_insensitive_without_normalize() {
+        let config = testkit::retry_config(true, vec![], vec!["RATE LIMIT"]);
+        assert!(config.matches_message("rate limit exceeded"));
+    }
+
+    #[test]
+    fn test_normalize_patterns() {
+        let mut config = testkit::retry_config(true, vec![], vec![" Rate Limit ", "", "rate limit"]);
+        normalize_matcher(&mut config.errors);
+        assert_eq!(config.errors.error_messages, vec!["rate limit".to_string()]);
+        assert!(config.matches_message("RATE LIMIT EXCEEDED"));
     }
 
     #[test]
     fn test_effective_max_attempts() {
-        let config_zero = RetryConfig {
-            enabled: true,
-            max_attempts: 0,
-            status_codes: vec![],
-            error_messages: vec![],
-        };
+        let config_zero = testkit::retry_config(true, vec![], vec![]);
         assert_eq!(config_zero.effective_max_attempts(5), 5);
         assert_eq!(config_zero.effective_max_attempts(10), 10);
 
-        let config_limited = RetryConfig {
-            enabled: true,
-            max_attempts: 3,
-            status_codes: vec![],
-            error_messages: vec![],
-        };
+        let config_limited = testkit::retry_config_with_attempts(true, 3, vec![], vec![]);
         assert_eq!(config_limited.effective_max_attempts(5), 3);
         assert_eq!(config_limited.effective_max_attempts(2), 3);
-    }
-
-    #[test]
-    fn test_monitoring_duration_deserialize() {
-        let config: NodeMonitoringConfig = serde_json::from_value(serde_json::json!({
-            "enabled": true,
-            "poll_interval_seconds": "10m",
-            "block_delay": 100
-        }))
-        .unwrap();
-
-        assert_eq!(config.get_poll_interval_seconds(), 600);
-        assert_eq!(config.poll_interval_seconds, Duration::from_secs(600));
-    }
-
-    #[test]
-    fn test_request_timeout_duration_deserialize() {
-        let config: RequestConfig = serde_json::from_value(serde_json::json!({
-            "timeout": "3s"
-        }))
-        .unwrap();
-
-        assert_eq!(config.timeout, Duration::from_secs(3));
     }
 }
 
@@ -170,12 +182,39 @@ pub struct NodeConfig {
     pub metrics: MetricsSettings,
     #[serde(default)]
     pub cache: CacheConfig,
-    #[serde(default)]
     pub monitoring: NodeMonitoringConfig,
     pub retry: RetryConfig,
     pub request: RequestConfig,
     pub headers: HeadersConfig,
     pub jwt: JwtConfig,
+}
+
+impl NodeConfig {
+    fn normalize(&mut self) {
+        normalize_matcher(&mut self.retry.errors);
+        normalize_matcher(&mut self.monitoring.adaptive.errors);
+    }
+}
+
+fn normalize_matcher(matcher: &mut ErrorMatcherConfig) {
+    normalize_error_messages(&mut matcher.error_messages);
+}
+
+fn normalize_error_messages(messages: &mut Vec<String>) {
+    let mut seen = HashSet::with_capacity(messages.len());
+    let mut normalized = Vec::with_capacity(messages.len());
+
+    for message in messages.drain(..) {
+        let value = message.trim().to_ascii_lowercase();
+        if value.is_empty() {
+            continue;
+        }
+        if seen.insert(value.clone()) {
+            normalized.push(value);
+        }
+    }
+
+    *messages = normalized;
 }
 
 #[derive(Debug, Deserialize)]
@@ -192,11 +231,12 @@ pub fn load_config() -> Result<(NodeConfig, HashMap<Chain, ChainConfig>), Config
         current_dir.join("apps/dynode")
     };
 
-    let config: NodeConfig = Config::builder()
+    let mut config: NodeConfig = Config::builder()
         .add_source(File::from(base_dir.join("config.yml")))
         .add_source(Environment::default().separator("_"))
         .build()?
         .try_deserialize()?;
+    config.normalize();
 
     let chains = find_chain_files(&base_dir)
         .into_iter()

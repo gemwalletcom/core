@@ -32,15 +32,12 @@ impl NodeMonitor {
 
     pub async fn start_monitoring(&self) {
         for (index, chain_config) in self.chains.values().cloned().enumerate() {
-            if chain_config.urls.len() <= 1 {
-                if let Some(url) = chain_config.urls.first() {
-                    self.metrics.set_node_host_current(chain_config.chain.as_ref(), &url.host());
-                }
-                continue;
+            if let Some(url) = chain_config.urls.first() {
+                NodeService::sync_current_node_metric(&self.metrics, chain_config.chain, url);
             }
 
-            if let Some(url) = chain_config.urls.first() {
-                self.metrics.set_node_host_current(chain_config.chain.as_ref(), &url.host());
+            if chain_config.urls.len() <= 1 {
+                continue;
             }
 
             let nodes = Arc::clone(&self.nodes);
@@ -105,11 +102,10 @@ impl NodeMonitor {
         match NodeSyncAnalyzer::select_best_node(&current_node.url, &all_observations) {
             Some(switch) => {
                 let new_url = &switch.observation.url;
-                if new_url.url != current_node.url.url {
-                    NodeService::update_node_domain(nodes, chain_config.chain, NodeDomain::new(new_url.clone(), chain_config.clone())).await;
-                    metrics.set_node_host_current(chain_config.chain.as_ref(), &new_url.host());
-                    metrics.add_node_switch(chain_config.chain.as_ref(), &current_node.url.host(), &new_url.host(), switch.reason.as_str(), &switch.reason.to_string());
-
+                if NodeService::switch_node_if_current(nodes, metrics, chain_config, &current_node.url, new_url, &switch.reason)
+                    .await
+                    .is_some()
+                {
                     NodeTelemetry::log_node_switch(chain_config, &current_node.url, &switch);
                 }
             }

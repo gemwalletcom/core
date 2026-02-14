@@ -193,7 +193,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let stream_producer = StreamProducer::new(&rabbitmq_config, "api").await.unwrap();
     let device_cacher = DeviceCacher::new(database.clone(), cacher_client.clone());
     let wallets_client = WalletsClient::new(database.clone(), device_cacher, stream_producer.clone());
-    let metrics_client = MetricsClient::new();
+    let metrics_client = MetricsClient::new(database.clone(), cacher_client.clone());
 
     let security_providers = ScanProviderFactory::create_providers(&settings_clone);
     let scan_client = ScanClient::new(database.clone(), security_providers);

@@ -50,6 +50,7 @@ impl ChainConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::testkit::config as testkit;
     use std::time::Duration;
 
     fn make_chain_config(poll_interval: Option<u64>, block_delay: Option<u64>) -> ChainConfig {
@@ -81,9 +82,9 @@ mod tests {
 
     fn make_monitoring_config(poll_interval: u64, block_delay: u64) -> NodeMonitoringConfig {
         NodeMonitoringConfig {
-            enabled: true,
             poll_interval_seconds: Duration::from_secs(poll_interval),
             block_delay,
+            ..testkit::monitoring_config()
         }
     }
 

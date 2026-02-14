@@ -14,11 +14,7 @@ impl<'r> FromRequest<'r> for BearerToken {
     type Error = ();
 
     async fn from_request(request: &'r Request<'_>) -> rocket::request::Outcome<Self, ()> {
-        let token = request
-            .headers()
-            .get_one("Authorization")
-            .and_then(|h| h.strip_prefix("Bearer "))
-            .map(|t| t.to_string());
+        let token = request.headers().get_one("Authorization").and_then(|h| h.strip_prefix("Bearer ")).map(|t| t.to_string());
         rocket::request::Outcome::Success(BearerToken(token))
     }
 }

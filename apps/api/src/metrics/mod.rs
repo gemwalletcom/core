@@ -1,5 +1,6 @@
 mod client;
 pub mod fiat;
+mod price;
 
 use crate::responders::ApiError;
 pub use client::MetricsClient;

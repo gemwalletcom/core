@@ -3,6 +3,9 @@ name = "dynode"
 version = { workspace = true }
 edition = { workspace = true }
 
+[features]
+testkit = []
+
 [dependencies]
 config = { workspace = true }
 serde = { workspace = true }
