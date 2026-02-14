@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
-use std::time::SystemTime;
 
 use prometheus_client::encoding::EncodeLabelSet;
 use prometheus_client::metrics::family::Family;
@@ -46,7 +45,7 @@ impl JobMetrics {
     pub fn report(&self, name: &str, interval: u64, duration: u64, success: bool, error: Option<String>) {
         let mut jobs = self.jobs.lock().unwrap();
         let state = jobs.entry(name.to_string()).or_default();
-        let timestamp = SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
+        let timestamp = super::now_unix();
 
         state.interval = interval;
         state.duration = duration;
