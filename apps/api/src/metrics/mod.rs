@@ -8,5 +8,5 @@ use rocket::{State, get, response::content::RawText, tokio::sync::Mutex};
 
 #[get("/")]
 pub async fn get_metrics(client: &State<Mutex<MetricsClient>>) -> Result<RawText<String>, ApiError> {
-    Ok(RawText(client.lock().await.get().await))
+    Ok(RawText(client.lock().await.get()))
 }

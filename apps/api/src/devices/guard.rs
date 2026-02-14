@@ -129,10 +129,7 @@ impl<'r> FromRequest<'r> for AuthenticatedDeviceWallet {
             Err(error) => return error,
         };
 
-        let wallet_id_str = components
-            .wallet_id
-            .as_deref()
-            .or_else(|| req.headers().get_one(HEADER_WALLET_ID));
+        let wallet_id_str = components.wallet_id.as_deref().or_else(|| req.headers().get_one(HEADER_WALLET_ID));
 
         let Some(wallet_id_str) = wallet_id_str else {
             return auth_error_outcome(req, DeviceError::MissingHeader(HEADER_WALLET_ID));
