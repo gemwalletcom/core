@@ -18,14 +18,6 @@ impl NodeSwitchReason {
         }
     }
 
-    pub fn metric_detail(&self) -> &'static str {
-        match self {
-            Self::BlockHeight { .. } => "higher_block",
-            Self::Latency { .. } => "lower_latency",
-            Self::CurrentNodeError { .. } => "error",
-            Self::AdaptiveError { .. } => "error_ratio_threshold",
-        }
-    }
 }
 
 impl fmt::Display for NodeSwitchReason {
