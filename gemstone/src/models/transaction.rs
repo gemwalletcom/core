@@ -146,14 +146,6 @@ pub struct GemTransactionStateRequest {
 
 pub type GemHyperliquidOrder = HyperliquidOrder;
 
-pub type GemStakeData = StakeData;
-
-#[uniffi::remote(Record)]
-pub struct GemStakeData {
-    pub data: Option<String>,
-    pub to: Option<String>,
-}
-
 #[uniffi::remote(Record)]
 pub struct GemHyperliquidOrder {
     pub approve_agent_required: bool,
@@ -162,6 +154,14 @@ pub struct GemHyperliquidOrder {
     pub builder_fee_bps: u32,
     pub agent_address: String,
     pub agent_private_key: String,
+}
+
+pub type GemStakeData = StakeData;
+
+#[uniffi::remote(Record)]
+pub struct GemStakeData {
+    pub data: Option<String>,
+    pub to: Option<String>,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]

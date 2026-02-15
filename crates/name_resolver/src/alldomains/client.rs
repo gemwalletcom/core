@@ -2,8 +2,8 @@ use std::{error::Error, str::FromStr};
 
 use async_trait::async_trait;
 use base64::Engine;
+use gem_hash::sha2::sha256;
 use serde_json::{self, json};
-use sha2::{Digest, Sha256};
 
 use gem_client::ReqwestClient;
 use gem_jsonrpc::JsonRpcClient;
@@ -36,10 +36,7 @@ impl AllDomainsClient {
     }
 
     async fn get_hashed_name(&self, name: &str) -> Result<[u8; 32], Box<dyn Error + Send + Sync>> {
-        let mut hasher = Sha256::new();
-        hasher.update(HASH_PREFIX.as_bytes());
-        hasher.update(name.as_bytes());
-        Ok(hasher.finalize().into())
+        Ok(sha256(&[HASH_PREFIX.as_bytes(), name.as_bytes()].concat()))
     }
 
     fn get_name_account_key_with_bump(

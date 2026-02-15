@@ -9,14 +9,15 @@ use crate::models::{
     Block, BlockTransactions, BlockTransactionsInfo, ChainParameter, ChainParametersResponse, Transaction, TransactionReceiptData, TriggerConstantContractRequest,
     TriggerConstantContractResponse, TronTransactionBroadcast, WitnessesList,
 };
-use crate::models::{TronAccount, TronAccountRequest, TronAccountUsage, TronBlock, TronEmptyAccount, TronReward, TronSmartContractCall, TronSmartContractResult};
+use crate::models::{
+    TriggerSmartContractData, TronAccount, TronAccountRequest, TronAccountUsage, TronBlock, TronEmptyAccount, TronReward, TronSmartContractCall, TronSmartContractResult,
+};
 use crate::rpc::constants::{DECIMALS_SELECTOR, DEFAULT_OWNER_ADDRESS, NAME_SELECTOR, SYMBOL_SELECTOR};
 use crate::rpc::trongrid::client::TronGridClient;
 use alloy_primitives::Address as AlloyAddress;
 use alloy_sol_types::SolCall;
 use gem_client::Client;
 use gem_evm::contracts::erc20::{decode_abi_string, decode_abi_uint8};
-use serde_json::Value;
 
 #[derive(Clone)]
 pub struct TronClient<C: Client> {
@@ -80,7 +81,7 @@ impl<C: Client> TronClient<C> {
         Ok(response.constant_result[0].clone())
     }
 
-    async fn trigger_constant_contract_request(&self, request: &TriggerConstantContractRequest) -> Result<TriggerConstantContractResponse, Box<dyn Error + Send + Sync>> {
+    async fn trigger_constant_contract_request(&self, request: &(impl serde::Serialize + Send + Sync)) -> Result<TriggerConstantContractResponse, Box<dyn Error + Send + Sync>> {
         Ok(self.client.post("/wallet/triggerconstantcontract", request, None).await?)
     }
 
@@ -127,25 +128,22 @@ impl<C: Client> TronClient<C> {
             visible: true,
         };
 
-        let response: Value = self.client.post("/wallet/triggerconstantcontract", &request_payload, None).await?;
+        let response = self.trigger_constant_contract_request(&request_payload).await?;
+        Ok(response.get_energy()?)
+    }
 
-        if let Some(result_obj) = response.get("result") {
-            let is_success = result_obj.get("result").and_then(|value| value.as_bool()).unwrap_or(false);
-            if !is_success {
-                let code = result_obj.get("code").and_then(|v| v.as_str()).unwrap_or_default();
-                let message_hex = result_obj.get("message").and_then(|v| v.as_str()).unwrap_or_default();
-                let message = hex::decode(message_hex)
-                    .ok()
-                    .and_then(|bytes| String::from_utf8(bytes).ok())
-                    .unwrap_or_else(|| message_hex.to_string());
-                return Err(format!("Estimate energy failed. Code: {}, Message: {}", code, message).into());
-            }
-        }
+    pub async fn estimate_energy_with_data(&self, contract_data: &TriggerSmartContractData) -> Result<u64, Box<dyn Error + Send + Sync>> {
+        let request_payload = serde_json::json!({
+            "owner_address": contract_data.owner_address,
+            "contract_address": contract_data.contract_address,
+            "data": contract_data.data,
+            "fee_limit": contract_data.fee_limit,
+            "call_value": contract_data.call_value,
+            "visible": true,
+        });
 
-        let energy_used = response.get("energy_used").and_then(|value| value.as_u64()).unwrap_or_default();
-        let energy_penalty = response.get("energy_penalty").and_then(|value| value.as_u64()).unwrap_or_default();
-
-        Ok(energy_used + energy_penalty)
+        let response = self.trigger_constant_contract_request(&request_payload).await?;
+        Ok(response.get_energy()?)
     }
 }
 

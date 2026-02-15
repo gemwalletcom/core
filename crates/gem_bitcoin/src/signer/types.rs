@@ -1,6 +1,6 @@
+use gem_hash::sha2::sha256;
 use primitives::SignerError;
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 
 use super::encoding::encode_varint;
 
@@ -34,8 +34,7 @@ impl BitcoinSignMessageData {
         data.extend_from_slice(&varint);
         data.extend_from_slice(message);
 
-        let hash = Sha256::digest(&data);
-        Sha256::digest(hash).to_vec()
+        sha256(&sha256(&data)).to_vec()
     }
 }
 

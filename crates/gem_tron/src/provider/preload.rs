@@ -9,10 +9,11 @@ use gem_client::Client;
 use number_formatter::BigNumberFormatter;
 use primitives::{
     AssetSubtype, FeePriority, FeeRate, GasPriceType, StakeType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
-    TransactionPreloadInput, TronStakeData, TronVote,
+    TransactionPreloadInput, TransferDataOutputAction, TronStakeData, TronVote,
 };
 
 use crate::{
+    models::{ChainParameter, TriggerSmartContractData, account::TronAccountUsage},
     provider::{
         balances_mapper::format_address_parameter,
         preload_mapper::{calculate_stake_fee_rate, calculate_transfer_fee_rate, calculate_transfer_token_fee_rate, calculate_unfreeze_amounts},
@@ -61,6 +62,16 @@ impl<C: Client> ChainTransactionLoad for TronClient<C> {
                     .await?
                 }
             },
+            TransactionInputType::Generic(_, _, extra) => match extra.output_action {
+                TransferDataOutputAction::Send => match self
+                    .estimate_fee_with_data(&input.sender_address, extra.data.as_deref(), &chain_parameters, &account_usage)
+                    .await?
+                {
+                    Some(fee) => fee,
+                    None => TransactionFee::new_from_fee(calculate_transfer_fee_rate(&chain_parameters, &account_usage, is_new_account)?),
+                },
+                TransferDataOutputAction::Sign => TransactionFee::new_from_fee(calculate_transfer_fee_rate(&chain_parameters, &account_usage, is_new_account)?),
+            },
             TransactionInputType::Stake(_asset, stake_type) => TransactionFee::new_from_fee(calculate_stake_fee_rate(&chain_parameters, &account_usage, stake_type)?),
             TransactionInputType::Swap(from_asset, _, swap_data) => match &from_asset.id.token_id {
                 None => TransactionFee::new_from_fee(calculate_transfer_fee_rate(&chain_parameters, &account_usage, is_new_account)?),
@@ -108,6 +119,28 @@ impl<C: Client> TronClient<C> {
             BigInt::from(token_fee.fee_limit),
             HashMap::new(),
         ))
+    }
+
+    async fn estimate_fee_with_data(
+        &self,
+        sender_address: &str,
+        data: Option<&[u8]>,
+        chain_parameters: &[ChainParameter],
+        account_usage: &TronAccountUsage,
+    ) -> Result<Option<TransactionFee>, Box<dyn Error + Send + Sync>> {
+        let Some(parsed) = TriggerSmartContractData::from_payload(data, sender_address)? else {
+            return Ok(None);
+        };
+
+        let estimated_energy = self.estimate_energy_with_data(&parsed).await?;
+        let token_fee = calculate_transfer_token_fee_rate(chain_parameters, account_usage, estimated_energy)?;
+
+        Ok(Some(TransactionFee::new_gas_price_type(
+            GasPriceType::regular(BigInt::from(token_fee.energy_price)),
+            BigInt::from(token_fee.fee),
+            BigInt::from(token_fee.fee_limit),
+            HashMap::new(),
+        )))
     }
 
     async fn get_is_new_account_for_input_type(&self, address: &str, input_type: TransactionInputType) -> Result<bool, Box<dyn Error + Send + Sync>> {

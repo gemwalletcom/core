@@ -1,15 +1,14 @@
 use crate::message::sign_type::SignDigestType;
 use crate::wallet_connect::actions::{WalletConnectAction, WalletConnectTransactionType};
 use crate::wallet_connect::handler_traits::ChainRequestHandler;
-use primitives::Chain;
+use primitives::{Chain, ValueAccess};
 use serde_json::Value;
 
 pub struct EthereumRequestHandler;
 
 impl ChainRequestHandler for EthereumRequestHandler {
     fn parse_sign_message(chain: Chain, params: Value, _domain: &str) -> Result<WalletConnectAction, String> {
-        let params_array = params.as_array().ok_or("Invalid params format")?;
-        let data = params_array.first().and_then(|v| v.as_str()).ok_or("Missing data parameter")?.to_string();
+        let data = params.at(0)?.string()?.to_string();
 
         Ok(WalletConnectAction::SignMessage {
             chain,
@@ -19,8 +18,7 @@ impl ChainRequestHandler for EthereumRequestHandler {
     }
 
     fn parse_sign_transaction(chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
-        let params_array = params.as_array().ok_or("Invalid params format")?;
-        let transaction = params_array.first().ok_or("Missing transaction parameter")?;
+        let transaction = params.at(0)?;
         let data = serde_json::to_string(transaction).map_err(|e| format!("Failed to serialize transaction: {}", e))?;
 
         Ok(WalletConnectAction::SignTransaction {
@@ -31,8 +29,7 @@ impl ChainRequestHandler for EthereumRequestHandler {
     }
 
     fn parse_send_transaction(chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
-        let params_array = params.as_array().ok_or("Invalid params format")?;
-        let transaction = params_array.first().ok_or("Missing transaction parameter")?;
+        let transaction = params.at(0)?;
         let data = serde_json::to_string(transaction).map_err(|e| format!("Failed to serialize transaction: {}", e))?;
 
         Ok(WalletConnectAction::SendTransaction {
@@ -45,8 +42,7 @@ impl ChainRequestHandler for EthereumRequestHandler {
 
 impl EthereumRequestHandler {
     pub fn parse_sign_typed_data(chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
-        let params_array = params.as_array().ok_or("Invalid params format")?;
-        let typed_data = params_array.get(1).ok_or("Missing data parameter")?;
+        let typed_data = params.at(1)?;
         let data = if let Some(s) = typed_data.as_str() {
             s.to_string()
         } else {
@@ -64,78 +60,67 @@ impl EthereumRequestHandler {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::wallet_connect::handler_traits::ChainRequestHandler;
+
+    fn sign_message(chain: Chain, sign_type: SignDigestType, data: &str) -> WalletConnectAction {
+        WalletConnectAction::SignMessage {
+            chain,
+            sign_type,
+            data: data.to_string(),
+        }
+    }
 
     #[test]
     fn test_parse_personal_sign() {
-        use crate::wallet_connect::handler_traits::ChainRequestHandler;
         let params = serde_json::from_str(r#"["0x48656c6c6f"]"#).unwrap();
-        let action = EthereumRequestHandler::parse_sign_message(Chain::Ethereum, params, "example.com").unwrap();
-        match action {
-            WalletConnectAction::SignMessage { chain, sign_type, data } => {
-                assert_eq!(chain, Chain::Ethereum);
-                assert!(matches!(sign_type, SignDigestType::Eip191));
-                assert_eq!(data, "0x48656c6c6f");
-            }
-            _ => panic!("Expected SignMessage action"),
-        }
+        assert_eq!(
+            EthereumRequestHandler::parse_sign_message(Chain::Ethereum, params, "example.com").unwrap(),
+            sign_message(Chain::Ethereum, SignDigestType::Eip191, "0x48656c6c6f")
+        );
     }
 
     #[test]
     fn test_parse_sign_typed_data() {
         let params = serde_json::from_str(r#"["0x123", "{\"types\":{}}"]"#).unwrap();
-        let action = EthereumRequestHandler::parse_sign_typed_data(Chain::Ethereum, params).unwrap();
-        match action {
-            WalletConnectAction::SignMessage { chain, sign_type, .. } => {
-                assert_eq!(chain, Chain::Ethereum);
-                assert!(matches!(sign_type, SignDigestType::Eip712));
-            }
-            _ => panic!("Expected SignMessage action"),
-        }
+        assert_eq!(
+            EthereumRequestHandler::parse_sign_typed_data(Chain::Ethereum, params).unwrap(),
+            sign_message(Chain::Ethereum, SignDigestType::Eip712, r#"{"types":{}}"#)
+        );
     }
 
     #[test]
     fn test_parse_sign_typed_data_hyperliquid() {
         let params = serde_json::from_str(r#"["0x123", {"types":{}}]"#).unwrap();
-        let action = EthereumRequestHandler::parse_sign_typed_data(Chain::Arbitrum, params).unwrap();
-        match action {
-            WalletConnectAction::SignMessage { chain, sign_type, .. } => {
-                assert_eq!(chain, Chain::Arbitrum);
-                assert!(matches!(sign_type, SignDigestType::Eip712));
-            }
-            _ => panic!("Expected SignMessage action"),
-        }
+        assert_eq!(
+            EthereumRequestHandler::parse_sign_typed_data(Chain::Arbitrum, params).unwrap(),
+            sign_message(Chain::Arbitrum, SignDigestType::Eip712, r#"{"types":{}}"#)
+        );
     }
 
     #[test]
     fn test_parse_send_transaction() {
         let params = serde_json::from_str(r#"[{"to":"0x123","value":"0x0"}]"#).unwrap();
-        let action = EthereumRequestHandler::parse_send_transaction(Chain::Ethereum, params).unwrap();
-        match action {
-            WalletConnectAction::SendTransaction { chain, transaction_type, .. } => {
-                assert_eq!(chain, Chain::Ethereum);
-                assert!(matches!(transaction_type, WalletConnectTransactionType::Ethereum));
+        assert_eq!(
+            EthereumRequestHandler::parse_send_transaction(Chain::Ethereum, params).unwrap(),
+            WalletConnectAction::SendTransaction {
+                chain: Chain::Ethereum,
+                transaction_type: WalletConnectTransactionType::Ethereum,
+                data: r#"{"to":"0x123","value":"0x0"}"#.to_string(),
             }
-            _ => panic!("Expected SendTransaction action"),
-        }
+        );
     }
 
     #[test]
     fn test_parse_sign_typed_data_full() {
         let params = serde_json::from_str(r#"["0x1234567890abcdef1234567890abcdef12345678", "{\"types\":{\"EIP712Domain\":[]}}"]"#).unwrap();
-        let action = EthereumRequestHandler::parse_sign_typed_data(Chain::Ethereum, params).unwrap();
-        match action {
-            WalletConnectAction::SignMessage { chain, sign_type, data } => {
-                assert_eq!(chain, Chain::Ethereum);
-                assert!(matches!(sign_type, SignDigestType::Eip712));
-                assert_eq!(data, r#"{"types":{"EIP712Domain":[]}}"#);
-            }
-            _ => panic!("Expected SignMessage action"),
-        }
+        assert_eq!(
+            EthereumRequestHandler::parse_sign_typed_data(Chain::Ethereum, params).unwrap(),
+            sign_message(Chain::Ethereum, SignDigestType::Eip712, r#"{"types":{"EIP712Domain":[]}}"#)
+        );
     }
 
     #[test]
     fn test_parse_personal_sign_ignores_siwe_detection() {
-        use crate::wallet_connect::handler_traits::ChainRequestHandler;
         let message = [
             "login.xyz wants you to sign in with your Ethereum account:",
             "0x6dD7802E6d44bE89a789C4bD60bD511B68F41c7c",
@@ -150,13 +135,9 @@ mod tests {
         ]
         .join("\n");
         let params = serde_json::json!([message.clone()]);
-        let action = EthereumRequestHandler::parse_sign_message(Chain::Ethereum, params, "example.com").unwrap();
-        match action {
-            WalletConnectAction::SignMessage { sign_type, data, .. } => {
-                assert!(matches!(sign_type, SignDigestType::Eip191));
-                assert_eq!(data, message);
-            }
-            _ => panic!("Expected SignMessage action"),
-        }
+        assert_eq!(
+            EthereumRequestHandler::parse_sign_message(Chain::Ethereum, params, "example.com").unwrap(),
+            sign_message(Chain::Ethereum, SignDigestType::Eip191, &message)
+        );
     }
 }

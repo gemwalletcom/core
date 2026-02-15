@@ -1,5 +1,12 @@
+pub mod serializer;
+
 use alloy_primitives::Address;
-pub struct TronAddress {}
+
+const ADDRESS_PREFIX: u8 = 0x41;
+const ADDRESS_LEN: usize = 20;
+const PREFIXED_ADDRESS_LEN: usize = ADDRESS_LEN + 1;
+
+pub struct TronAddress;
 
 impl TronAddress {
     pub fn from_hex(hex_value: &str) -> Option<String> {
@@ -7,7 +14,6 @@ impl TronAddress {
         Some(bs58::encode(decoded).with_check().into_string())
     }
 
-    #[allow(dead_code)]
     pub fn to_hex(address: &str) -> Option<String> {
         let decoded = bs58::decode(address).with_check(None).into_vec().ok()?;
         Some(hex::encode(decoded))
@@ -16,14 +22,14 @@ impl TronAddress {
     pub fn to_addr(address: &str) -> Option<Address> {
         let decoded = bs58::decode(address).with_check(None).into_vec().ok()?;
         match decoded.len() {
-            21 if decoded[0] == 0x41 => {
-                let mut addr = [0u8; 20];
-                addr.copy_from_slice(&decoded[1..21]);
+            PREFIXED_ADDRESS_LEN if decoded[0] == ADDRESS_PREFIX => {
+                let mut addr = [0u8; ADDRESS_LEN];
+                addr.copy_from_slice(&decoded[1..PREFIXED_ADDRESS_LEN]);
                 Some(Address::from(addr))
             }
-            20 => {
-                let mut addr = [0u8; 20];
-                addr.copy_from_slice(&decoded[..20]);
+            ADDRESS_LEN => {
+                let mut addr = [0u8; ADDRESS_LEN];
+                addr.copy_from_slice(&decoded[..ADDRESS_LEN]);
                 Some(Address::from(addr))
             }
             _ => None,

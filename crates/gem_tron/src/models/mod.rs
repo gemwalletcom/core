@@ -1,4 +1,6 @@
+use crate::address::serializer::deserialize as tron_address_deserialize;
 use serde::{Deserialize, Serialize};
+use std::{error::Error, fmt};
 
 pub mod account;
 pub mod block;
@@ -51,6 +53,7 @@ pub struct ContractRet {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct TransactionData {
     pub contract: Vec<Contract>,
+    pub fee_limit: Option<u64>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -69,8 +72,11 @@ pub struct ContractParameter {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ContractParameterValue {
     pub amount: Option<i64>,
+    #[serde(default, deserialize_with = "tron_address_deserialize")]
     pub owner_address: Option<String>,
+    #[serde(default, deserialize_with = "tron_address_deserialize")]
     pub to_address: Option<String>,
+    #[serde(default, deserialize_with = "tron_address_deserialize")]
     pub contract_address: Option<String>,
     pub data: Option<String>,
     pub frozen_balance: Option<i64>,
@@ -78,6 +84,7 @@ pub struct ContractParameterValue {
     pub resource: Option<String>,
     pub votes: Option<Vec<VoteInfo>>,
     pub support: Option<bool>,
+    pub call_value: Option<u64>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -134,11 +141,52 @@ pub struct TriggerConstantContractResponse {
     pub energy_penalty: Option<u64>,
 }
 
+impl TriggerConstantContractResponse {
+    pub fn get_energy(&self) -> Result<u64, TronRpcError> {
+        if let Some(error) = self.result.as_ref().and_then(|r| r.check_error()) {
+            return Err(error);
+        }
+        Ok(self.energy_used + self.energy_penalty.unwrap_or_default())
+    }
+}
+
 #[derive(Deserialize, Debug)]
 pub struct TriggerContractResult {
+    pub result: Option<bool>,
     pub code: Option<String>,
     pub message: Option<String>,
 }
+
+impl TriggerContractResult {
+    pub fn check_error(&self) -> Option<TronRpcError> {
+        if self.result.unwrap_or(false) {
+            return None;
+        }
+
+        let message = self.message.as_deref().map(|message_hex| {
+            hex::decode(message_hex)
+                .ok()
+                .and_then(|bytes| String::from_utf8(bytes).ok())
+                .unwrap_or_else(|| message_hex.to_string())
+        });
+
+        Some(TronRpcError { code: self.code.clone(), message })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct TronRpcError {
+    pub code: Option<String>,
+    pub message: Option<String>,
+}
+
+impl fmt::Display for TronRpcError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Tron RPC Error {} {}", self.code.as_deref().unwrap_or(""), self.message.as_deref().unwrap_or(""))
+    }
+}
+
+impl Error for TronRpcError {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WitnessesList {

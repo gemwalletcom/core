@@ -6,7 +6,7 @@ edition = { workspace = true }
 [dependencies]
 bech32 = { workspace = true }
 hex = { workspace = true }
-sha2 = { workspace = true }
+gem_hash = { path = "../gem_hash" }
 base64 = { workspace = true }
 primitives = { path = "../primitives" }
 serde = { workspace = true, features = ["derive"] }

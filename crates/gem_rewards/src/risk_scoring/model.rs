@@ -1,6 +1,6 @@
+use gem_hash::sha2::sha256;
 use primitives::rewards::RewardStatus;
 use primitives::{IpUsageType, Platform, PlatformStore};
-use sha2::{Digest, Sha256};
 use std::time::Duration;
 
 #[derive(Debug, Clone)]
@@ -126,12 +126,14 @@ pub struct RiskSignalInput {
 
 impl RiskSignalInput {
     pub fn generate_fingerprint(&self) -> String {
-        let mut hasher = Sha256::new();
-        hasher.update(&self.device_model);
-        hasher.update(&self.device_locale);
-        hasher.update(&self.ip_isp);
-        hasher.update(&self.ip_country_code);
-        format!("{:x}", hasher.finalize())
+        let data = [
+            self.device_model.as_bytes(),
+            self.device_locale.as_bytes(),
+            self.ip_isp.as_bytes(),
+            self.ip_country_code.as_bytes(),
+        ]
+        .concat();
+        hex::encode(sha256(&data))
     }
 }
 
