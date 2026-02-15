@@ -90,7 +90,9 @@ async fn run_worker_services(settings: settings::Settings, services: &[WorkerSer
 
     let service_name = services.first().map(|s| s.as_ref()).unwrap_or("worker");
     let job_metrics = Arc::new(metrics::job::JobMetrics::new(service_name));
-    let health_state = health::spawn_server(job_metrics.clone());
+    let price_metrics = Arc::new(metrics::price::PriceMetrics::new());
+    let composite = Arc::new(metrics::Metrics::new(vec![job_metrics.clone(), price_metrics.clone()]));
+    let health_state = health::spawn_server(composite);
 
     let signal_handle = shutdown::spawn_signal_handler(shutdown_tx);
 
@@ -102,8 +104,9 @@ async fn run_worker_services(settings: settings::Settings, services: &[WorkerSer
         let runtime = WorkerRuntime::new(reporter, schedule);
         let context = WorkerContext::new(settings.clone(), database.clone(), runtime);
         let shutdown_rx = shutdown_rx.clone();
+        let price_metrics = price_metrics.clone();
         async move {
-            match svc.run_jobs(context, shutdown_rx).await {
+            match svc.run_jobs(context, shutdown_rx, price_metrics).await {
                 Ok(handles) => Some((svc, handles)),
                 Err(err) => {
                     error_with_fields!("worker init failed", &*err, worker = svc.as_ref());
@@ -181,7 +184,9 @@ async fn run_consumer_services(settings: settings::Settings, services: &[Consume
     let signal_handle = shutdown::spawn_signal_handler(shutdown_tx);
 
     let consumer_metrics = Arc::new(metrics::consumer::ConsumerMetrics::new());
-    let health_state = health::spawn_server(consumer_metrics.clone());
+    let price_metrics = Arc::new(metrics::price::PriceMetrics::new());
+    let composite = Arc::new(metrics::Metrics::new(vec![consumer_metrics.clone(), price_metrics.clone()]));
+    let health_state = health::spawn_server(composite);
     let reporter: Arc<dyn ConsumerStatusReporter> = Arc::new(ConsumerReporter::new(consumer_metrics));
     let failures = Arc::new(Mutex::new(Vec::new()));
 
@@ -194,8 +199,9 @@ async fn run_consumer_services(settings: settings::Settings, services: &[Consume
             let reporter = reporter.clone();
             let shutdown_rx = shutdown_rx.clone();
             let failures = failures.clone();
+            let price_metrics = price_metrics.clone();
             tokio::spawn(async move {
-                match run_consumer((*settings.as_ref()).clone(), svc, shutdown_rx, reporter).await {
+                match run_consumer((*settings.as_ref()).clone(), svc, shutdown_rx, reporter, price_metrics).await {
                     Ok(_) => info_with_fields!("consumer stopped", consumer = svc_name.as_str(), status = "ok"),
                     Err(err) => {
                         let message = err.to_string();
@@ -229,6 +235,7 @@ async fn run_consumer(
     service: ConsumerService,
     shutdown_rx: ShutdownReceiver,
     reporter: Arc<dyn ConsumerStatusReporter>,
+    price_metrics: Arc<metrics::price::PriceMetrics>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     match service {
         ConsumerService::Store => consumers::run_consumer_store(settings, shutdown_rx, reporter).await,
@@ -237,7 +244,7 @@ async fn run_consumer(
         ConsumerService::Rewards => consumers::run_consumer_rewards(settings, shutdown_rx, reporter).await,
         ConsumerService::Support => consumers::run_consumer_support(settings, shutdown_rx, reporter).await,
         ConsumerService::Fiat => consumers::run_consumer_fiat(settings, shutdown_rx, reporter).await,
-        ConsumerService::Prices => consumers::run_consumer_prices(settings, shutdown_rx, reporter).await,
+        ConsumerService::Prices => consumers::run_consumer_prices(settings, shutdown_rx, reporter, price_metrics).await,
         ConsumerService::Assets => consumers::run_consumer_assets(settings, shutdown_rx, reporter).await,
     }
 }

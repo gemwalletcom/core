@@ -18,8 +18,21 @@ jwt:
 
 monitoring:
   enabled: false
-  poll_interval_seconds: 10m
-  block_delay: 100
+  poll_interval: 10m
+  max_sync_delay: 24s
+  max_sync_blocks: 20
+  adaptive:
+    enabled: true
+    window: 30s
+    min_samples: 20
+    error_threshold: 0.5
+    recovery_threshold: 0.2
+    cooldown: 45s
+    min_switch_interval: 15s
+    errors:
+      status_codes: [429]
+      error_messages:
+        - "rate limit"
 
 request:
   timeout: 3s
@@ -36,11 +49,12 @@ headers:
 retry:
   enabled: true
   max_attempts: 3
-  status_codes: [403, 429, 502, 503, 504]
-  error_messages:
-    - "daily request limit"
-    - "rate limit"
-    - "Unauthorized"
+  errors:
+    status_codes: [403, 429, 502, 503, 504]
+    error_messages:
+      - "daily request limit"
+      - "rate limit"
+      - "Unauthorized"
 
 cache:
   max_memory_mb: 1024

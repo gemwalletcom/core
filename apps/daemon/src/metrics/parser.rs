@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
-use std::time::SystemTime;
 
 use prometheus_client::encoding::EncodeLabelSet;
 use prometheus_client::metrics::family::Family;
@@ -46,7 +45,7 @@ impl ParserMetrics {
         state.current_block = current_block;
         state.latest_block = latest_block;
         state.is_enabled = is_enabled;
-        state.updated_at = SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs() as i64;
+        state.updated_at = super::now_unix() as i64;
     }
 
     pub fn record_error(&self, chain: &str, error: &str) {

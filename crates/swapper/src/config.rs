@@ -138,7 +138,7 @@ pub fn get_default_slippage(chain: &Chain) -> SwapperSlippage {
     match chain {
         Chain::Solana => SwapperSlippage {
             bps: DEFAULT_SLIPPAGE_BPS * 3,
-            mode: SwapperSlippageMode::Auto,
+            mode: SwapperSlippageMode::Exact,
         },
         _ => SwapperSlippage {
             bps: DEFAULT_SLIPPAGE_BPS,

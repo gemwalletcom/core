@@ -1,15 +1,20 @@
+use std::collections::HashSet;
+use std::error::Error;
+use std::sync::Arc;
+
 use chrono::{DateTime, Duration, Utc};
 use coingecko::{CoinGeckoClient, CoinMarket};
 use pricer::PriceClient;
-use std::collections::HashSet;
-use std::error::Error;
 use storage::models::{ChartRow, PriceRow};
 use streamer::{ChartsPayload, PricesPayload, StreamProducer, StreamProducerQueue};
+
+use crate::metrics::price::PriceMetrics;
 
 pub struct PriceUpdater {
     coin_gecko_client: CoinGeckoClient,
     price_client: PriceClient,
     stream_producer: StreamProducer,
+    price_metrics: Arc<PriceMetrics>,
 }
 
 pub enum UpdatePrices {
@@ -22,11 +27,12 @@ pub enum UpdatePrices {
 const MAX_MARKETS_PER_PAGE: usize = 250;
 
 impl PriceUpdater {
-    pub fn new(price_client: PriceClient, coin_gecko_client: CoinGeckoClient, stream_producer: StreamProducer) -> Self {
+    pub fn new(price_client: PriceClient, coin_gecko_client: CoinGeckoClient, stream_producer: StreamProducer, price_metrics: Arc<PriceMetrics>) -> Self {
         Self {
             coin_gecko_client,
             price_client,
             stream_producer,
+            price_metrics,
         }
     }
 
@@ -38,7 +44,9 @@ impl PriceUpdater {
             UpdatePrices::Low => ids.into_iter().take(5000).skip(2500).collect::<Vec<_>>(),
             UpdatePrices::VeryLow => ids.into_iter().skip(5000).collect::<Vec<_>>(),
         };
-        self.update_prices(asset_ids).await
+        let total = self.update_prices(asset_ids).await?;
+        self.price_metrics.record_prices_update(total as u64);
+        Ok(total)
     }
 
     fn map_coin_markets(coin_markets: Vec<CoinMarket>) -> Vec<PriceRow> {
@@ -51,6 +59,7 @@ impl PriceUpdater {
     }
 
     pub async fn update_prices(&self, ids: Vec<String>) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+        let total = ids.len();
         let ids_chunks = ids.chunks(MAX_MARKETS_PER_PAGE);
         for ids in ids_chunks {
             let coin_markets = self.coin_gecko_client.get_coin_markets_ids(ids.to_vec(), MAX_MARKETS_PER_PAGE).await?;
@@ -62,12 +71,14 @@ impl PriceUpdater {
             self.stream_producer.publish_prices(PricesPayload::new(prices_data)).await?;
             self.stream_producer.publish_charts(ChartsPayload::new(charts_data)).await?;
         }
-        Ok(ids.len())
+        Ok(total)
     }
 
     pub async fn update_fiat_rates(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let rates = self.coin_gecko_client.get_fiat_rates().await?;
-        self.price_client.set_fiat_rates(rates).await
+        let total = self.price_client.set_fiat_rates(rates).await?;
+        self.price_metrics.record_fiat_rates_update(total as u64);
+        Ok(total)
     }
 
     pub async fn clean_outdated_assets(&self, seconds: u64) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {

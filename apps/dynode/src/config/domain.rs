@@ -7,7 +7,6 @@ use super::url::{Override, Url};
 #[derive(Debug, Clone, Deserialize)]
 pub struct ChainConfig {
     pub chain: Chain,
-    pub block_delay: Option<u64>,
     pub poll_interval_seconds: Option<u64>,
     pub overrides: Option<Vec<Override>>,
     pub urls: Vec<Url>,
@@ -16,10 +15,6 @@ pub struct ChainConfig {
 impl ChainConfig {
     pub fn get_poll_interval_seconds(&self, monitoring_config: &NodeMonitoringConfig) -> u64 {
         self.poll_interval_seconds.unwrap_or(monitoring_config.get_poll_interval_seconds())
-    }
-
-    pub fn get_block_delay(&self, monitoring_config: &NodeMonitoringConfig) -> u64 {
-        self.block_delay.unwrap_or(monitoring_config.block_delay)
     }
 
     pub fn resolve_url(&self, base_url: &Url, rpc_method: Option<&str>, request_path: Option<&str>) -> Url {
@@ -50,12 +45,12 @@ impl ChainConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::testkit::config as testkit;
     use std::time::Duration;
 
-    fn make_chain_config(poll_interval: Option<u64>, block_delay: Option<u64>) -> ChainConfig {
+    fn make_chain_config(poll_interval: Option<u64>) -> ChainConfig {
         ChainConfig {
             chain: primitives::Chain::Ethereum,
-            block_delay,
             poll_interval_seconds: poll_interval,
             overrides: None,
             urls: vec![],
@@ -72,52 +67,36 @@ mod tests {
     fn make_chain_config_with_overrides(overrides: Vec<Override>) -> ChainConfig {
         ChainConfig {
             chain: primitives::Chain::Ethereum,
-            block_delay: None,
             poll_interval_seconds: None,
             overrides: Some(overrides),
             urls: vec![make_url("https://example.com")],
         }
     }
 
-    fn make_monitoring_config(poll_interval: u64, block_delay: u64) -> NodeMonitoringConfig {
+    fn make_monitoring_config(poll_interval: u64) -> NodeMonitoringConfig {
         NodeMonitoringConfig {
-            enabled: true,
-            poll_interval_seconds: Duration::from_secs(poll_interval),
-            block_delay,
+            poll_interval: Duration::from_secs(poll_interval),
+            ..testkit::monitoring_config()
         }
     }
 
     #[test]
     fn get_poll_interval_seconds_uses_chain_override() {
-        let chain_config = make_chain_config(Some(20), None);
-        let config = make_monitoring_config(45, 100);
+        let chain_config = make_chain_config(Some(20));
+        let config = make_monitoring_config(45);
         assert_eq!(chain_config.get_poll_interval_seconds(&config), 20);
     }
 
     #[test]
     fn get_poll_interval_seconds_uses_global_fallback() {
-        let chain_config = make_chain_config(None, None);
-        let config = make_monitoring_config(45, 100);
+        let chain_config = make_chain_config(None);
+        let config = make_monitoring_config(45);
         assert_eq!(chain_config.get_poll_interval_seconds(&config), 45);
     }
 
     #[test]
-    fn get_block_delay_uses_chain_override() {
-        let chain_config = make_chain_config(None, Some(50));
-        let config = make_monitoring_config(900, 200);
-        assert_eq!(chain_config.get_block_delay(&config), 50);
-    }
-
-    #[test]
-    fn get_block_delay_uses_global_fallback() {
-        let chain_config = make_chain_config(None, None);
-        let config = make_monitoring_config(900, 200);
-        assert_eq!(chain_config.get_block_delay(&config), 200);
-    }
-
-    #[test]
     fn resolve_url_without_override() {
-        let chain_config = make_chain_config(None, None);
+        let chain_config = make_chain_config(None);
         let base_url = make_url("https://example.com/rpc");
         assert_eq!(chain_config.resolve_url(&base_url, Some("eth_sendTransaction"), None).url, "https://example.com/rpc");
     }

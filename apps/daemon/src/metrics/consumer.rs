@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
-use std::time::SystemTime;
 
 use prometheus_client::encoding::EncodeLabelSet;
 use prometheus_client::metrics::family::Family;
@@ -42,7 +41,7 @@ impl ConsumerMetrics {
     pub fn record_success(&self, name: &str, duration: u64, _result: &str) {
         let mut consumers = self.consumers.lock().unwrap();
         let state = consumers.entry(name.to_string()).or_default();
-        let timestamp = SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs();
+        let timestamp = super::now_unix();
 
         state.total_processed += 1;
         state.last_success = Some(timestamp);

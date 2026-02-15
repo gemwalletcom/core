@@ -1,13 +1,15 @@
 mod client;
 
-use crate::metrics::MetricsClient;
+use std::str::FromStr;
+use std::sync::Arc;
+
+use crate::metrics::fiat::FiatMetrics;
 use crate::params::{AddressParam, AssetIdParam, CurrencyParam, FiatQuoteTypeParam};
 use crate::responders::{ApiError, ApiResponse};
 pub use client::FiatQuotesClient;
 pub use fiat::{FiatProviderFactory, IPAddressInfo, IPCheckClient};
 use primitives::{FiatAssets, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlRequest, FiatQuotes, FiatQuotesOld};
 use rocket::{State, get, post, serde::json::Json, tokio::sync::Mutex};
-use std::str::FromStr;
 use streamer::FiatWebhook;
 
 pub const DEBUG_FIAT_IP: &str = "210.138.184.59";
@@ -54,7 +56,7 @@ pub async fn get_fiat_quotes_by_type(
     provider: Option<&str>,
     ip: std::net::IpAddr,
     client: &State<Mutex<FiatQuotesClient>>,
-    metrics: &State<Mutex<MetricsClient>>,
+    fiat_metrics: &State<Arc<FiatMetrics>>,
 ) -> Result<ApiResponse<FiatQuotes>, ApiError> {
     let ip_addr = ip_address.unwrap_or(&ip.to_string()).to_string();
     let request = FiatQuoteRequest {
@@ -66,7 +68,7 @@ pub async fn get_fiat_quotes_by_type(
         ip_address: ip_addr,
     };
     let quotes = client.lock().await.get_quotes(request).await?;
-    metrics.lock().await.fiat.record_quotes(&quotes);
+    fiat_metrics.record_quotes(&quotes);
     Ok(quotes.into())
 }
 
@@ -75,7 +77,7 @@ pub async fn get_fiat_quote_url(
     request: Json<FiatQuoteUrlRequest>,
     ip: std::net::IpAddr,
     client: &State<Mutex<FiatQuotesClient>>,
-    metrics: &State<Mutex<MetricsClient>>,
+    fiat_metrics: &State<Arc<FiatMetrics>>,
 ) -> Result<ApiResponse<FiatQuoteUrl>, ApiError> {
     let ip_address = if cfg!(debug_assertions) { DEBUG_FIAT_IP } else { &ip.to_string() };
 
@@ -84,7 +86,7 @@ pub async fn get_fiat_quote_url(
         .await
         .get_quote_url_legacy(&request.quote_id, &request.wallet_address, ip_address, &request.device_id)
         .await?;
-    metrics.lock().await.fiat.record_quote_url(&quote);
+    fiat_metrics.record_quote_url(&quote);
     Ok(url.into())
 }
 

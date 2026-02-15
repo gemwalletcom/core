@@ -6,3 +6,5 @@ pub mod metrics;
 pub mod monitoring;
 pub mod proxy;
 pub mod response;
+#[cfg(any(test, feature = "testkit"))]
+pub mod testkit;

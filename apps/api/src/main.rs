@@ -38,7 +38,7 @@ use fiat::FiatProviderFactory;
 use gem_auth::AuthClient;
 use gem_rewards::{AbuseIPDBClient, IpApiClient, IpCheckProvider, IpSecurityClient};
 use gem_tracing::{SentryConfig, SentryTracing};
-use metrics::MetricsClient;
+use metrics::fiat::FiatMetrics;
 use model::APIService;
 use name_resolver::NameProviderFactory;
 use name_resolver::client::Client as NameClient;
@@ -193,7 +193,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let stream_producer = StreamProducer::new(&rabbitmq_config, "api").await.unwrap();
     let device_cacher = DeviceCacher::new(database.clone(), cacher_client.clone());
     let wallets_client = WalletsClient::new(database.clone(), device_cacher, stream_producer.clone());
-    let metrics_client = MetricsClient::new();
+    let fiat_metrics = Arc::new(FiatMetrics::new());
 
     let security_providers = ScanProviderFactory::create_providers(&settings_clone);
     let scan_client = ScanClient::new(database.clone(), security_providers);
@@ -242,7 +242,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(assets_client))
         .manage(Mutex::new(search_client))
         .manage(Mutex::new(transactions_client))
-        .manage(Mutex::new(metrics_client))
+        .manage(fiat_metrics)
         .manage(Mutex::new(scan_client))
         .manage(Mutex::new(swap_client))
         .manage(Mutex::new(nft_client))
@@ -267,7 +267,6 @@ async fn rocket_ws_prices(settings: Settings) -> Rocket<Build> {
     let price_observer_config = PriceObserverConfig {
         redis_url: settings.redis.url.clone(),
     };
-
     rocket::build()
         .manage(Arc::new(Mutex::new(price_client)))
         .manage(Arc::new(Mutex::new(price_observer_config)))

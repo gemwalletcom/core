@@ -5,15 +5,17 @@ use crate::constants::{TRANSACTION_TYPE_TRANSFER_ALLOW_DEATH, TRANSACTION_TYPE_T
 use crate::models::rpc::{Block, Extrinsic, ExtrinsicArguments};
 
 pub fn map_transactions(chain: Chain, block: Block) -> Vec<Transaction> {
-    let first = block.extrinsics.first();
-    let created_at = match first {
-        Some(Extrinsic {
-            args: ExtrinsicArguments::Timestamp(timestamp),
-            ..
-        }) => DateTime::from_timestamp_millis(timestamp.now as i64),
-        _ => None,
-    }
-    .expect("Timestamp not found");
+    let created_at = block
+        .extrinsics
+        .iter()
+        .find_map(|ext| match &ext.args {
+            ExtrinsicArguments::Timestamp(timestamp) => DateTime::from_timestamp_millis(timestamp.now as i64),
+            _ => None,
+        });
+
+    let Some(created_at) = created_at else {
+        return vec![];
+    };
 
     block.extrinsics.iter().flat_map(|x| map_transaction(chain, x.clone(), created_at)).flatten().collect()
 }
@@ -71,4 +73,49 @@ fn map_transfer(chain: Chain, transaction: Extrinsic, method: String, to_address
         None,
         created_at,
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::models::rpc::{ExtrinsicInfo, ExtrinsicMethod, ExtrinsicTimestamp};
+    use primitives::Chain;
+
+    fn make_extrinsic(args: ExtrinsicArguments) -> Extrinsic {
+        Extrinsic {
+            hash: String::new(),
+            method: ExtrinsicMethod { pallet: String::new(), method: String::new() },
+            info: ExtrinsicInfo { partial_fee: None },
+            success: true,
+            args,
+            signature: None,
+        }
+    }
+
+    #[test]
+    fn map_transactions_finds_timestamp_at_any_index() {
+        let block = Block {
+            number: 12147467,
+            extrinsics: vec![
+                make_extrinsic(ExtrinsicArguments::Other(serde_json::json!({"data": {}}))),
+                make_extrinsic(ExtrinsicArguments::Timestamp(ExtrinsicTimestamp { now: 1771126812000 })),
+            ],
+        };
+
+        let result = map_transactions(Chain::Polkadot, block);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn map_transactions_returns_empty_without_timestamp() {
+        let block = Block {
+            number: 1,
+            extrinsics: vec![
+                make_extrinsic(ExtrinsicArguments::Other(serde_json::json!({"data": {}}))),
+            ],
+        };
+
+        let result = map_transactions(Chain::Polkadot, block);
+        assert!(result.is_empty());
+    }
 }
