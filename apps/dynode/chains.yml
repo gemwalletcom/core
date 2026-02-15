@@ -28,7 +28,6 @@ chains:
 
   # Solana
   - chain: solana
-    block_delay: 5
     urls:
       - url: https://api.mainnet-beta.solana.com
       - url: https://api.tatum.io/v3/blockchain/node/solana-mainnet
@@ -72,7 +71,6 @@ chains:
   # NEAR
   - chain: near
     poll_interval_seconds: 60
-    block_delay: 5
     urls:
       - url: https://rpc.mainnet.near.org
       - url: https://free.rpc.fastnear.com

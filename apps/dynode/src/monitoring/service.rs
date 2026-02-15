@@ -366,7 +366,6 @@ mod tests {
     fn create_chain_config(chain: Chain, url: &str) -> ChainConfig {
         ChainConfig {
             chain,
-            block_delay: None,
             poll_interval_seconds: None,
             overrides: None,
             urls: vec![Url {

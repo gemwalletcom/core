@@ -43,13 +43,14 @@ impl NodeMonitor {
             let nodes = Arc::clone(&self.nodes);
             let metrics = Arc::clone(&self.metrics);
             let monitoring_config = self.monitoring_config.clone();
+            let block_delay_threshold = monitoring_config.block_delay_threshold(chain_config.chain);
             let initial_delay = Duration::from_millis(((index as u64) + 1) * 250);
 
             tokio::task::spawn(async move {
                 sleep(initial_delay).await;
 
                 loop {
-                    if let Err(err) = Self::evaluate_chain(&chain_config, &nodes, &metrics).await {
+                    if let Err(err) = Self::evaluate_chain(&chain_config, &nodes, &metrics, block_delay_threshold).await {
                         NodeTelemetry::log_monitor_error(&chain_config, err.as_ref());
                     }
 
@@ -63,6 +64,7 @@ impl NodeMonitor {
         chain_config: &ChainConfig,
         nodes: &Arc<RwLock<HashMap<Chain, NodeDomain>>>,
         metrics: &Arc<Metrics>,
+        block_delay_threshold: u64,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         if chain_config.urls.len() <= 1 {
             return Ok(());
@@ -99,7 +101,7 @@ impl NodeMonitor {
         let mut all_observations = vec![current_observation];
         all_observations.extend(fallback_statuses);
 
-        match NodeSyncAnalyzer::select_best_node(&current_node.url, &all_observations) {
+        match NodeSyncAnalyzer::select_best_node(&current_node.url, &all_observations, block_delay_threshold) {
             Some(switch) => {
                 let new_url = &switch.observation.url;
                 if NodeService::switch_node_if_current(nodes, metrics, chain_config, &current_node.url, new_url, &switch.reason)

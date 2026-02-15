@@ -18,8 +18,9 @@ jwt:
 
 monitoring:
   enabled: false
-  poll_interval_seconds: 10m
-  block_delay: 100
+  poll_interval: 10m
+  max_sync_delay: 24s
+  max_sync_blocks: 20
   adaptive:
     enabled: true
     window: 30s

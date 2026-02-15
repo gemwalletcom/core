@@ -24,14 +24,25 @@ pub use url::{NodeResult, Override, Url};
 pub struct NodeMonitoringConfig {
     pub enabled: bool,
     #[serde(deserialize_with = "duration::deserialize")]
-    pub poll_interval_seconds: Duration,
-    pub block_delay: u64,
+    pub poll_interval: Duration,
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub max_sync_delay: Duration,
+    pub max_sync_blocks: u64,
     pub adaptive: AdaptiveMonitoringConfig,
 }
 
 impl NodeMonitoringConfig {
     pub fn get_poll_interval_seconds(&self) -> u64 {
-        self.poll_interval_seconds.as_secs()
+        self.poll_interval.as_secs()
+    }
+
+    pub fn block_delay_threshold(&self, chain: Chain) -> u64 {
+        let block_time_ms = chain.block_time() as u64;
+        if block_time_ms == 0 {
+            return 1;
+        }
+        let computed = self.max_sync_delay.as_millis() as u64 / block_time_ms;
+        computed.clamp(1, self.max_sync_blocks)
     }
 }
 
@@ -148,6 +159,18 @@ mod tests {
         let config_limited = testkit::retry_config_with_attempts(true, 3, vec![], vec![]);
         assert_eq!(config_limited.effective_max_attempts(5), 3);
         assert_eq!(config_limited.effective_max_attempts(2), 3);
+    }
+
+    #[test]
+    fn test_block_delay_threshold() {
+        use primitives::Chain;
+
+        let config = testkit::monitoring_config();
+
+        assert_eq!(config.block_delay_threshold(Chain::Ethereum), 2);
+        assert_eq!(config.block_delay_threshold(Chain::Bitcoin), 1);
+        assert_eq!(config.block_delay_threshold(Chain::Solana), 20);
+        assert_eq!(config.block_delay_threshold(Chain::SmartChain), 20);
     }
 }
 
