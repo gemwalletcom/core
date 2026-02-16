@@ -88,6 +88,8 @@ pub mod platform_store;
 pub use self::platform_store::PlatformStore;
 pub mod payment_type;
 pub use self::payment_type::PaymentType;
+pub mod contact;
+pub use self::contact::Contact;
 pub mod device;
 pub use self::device::{Device, MigrateDeviceIdRequest};
 pub mod device_token;
