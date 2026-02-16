@@ -65,13 +65,14 @@ impl<C: Client + Clone> EthereumClient<C> {
 
         let metadata = if let TransactionInputType::Stake(_, _) = &input.input_type {
             match input.metadata {
-                TransactionLoadMetadata::Evm { nonce, chain_id, .. } => TransactionLoadMetadata::Evm {
+                TransactionLoadMetadata::Evm { nonce, chain_id, earn_data, .. } => TransactionLoadMetadata::Evm {
                     nonce,
                     chain_id,
                     stake_data: Some(StakeData {
                         data: if params.data.is_empty() { None } else { Some(hex::encode(&params.data)) },
                         to: Some(params.to),
                     }),
+                    earn_data,
                 },
                 _ => input.metadata,
             }

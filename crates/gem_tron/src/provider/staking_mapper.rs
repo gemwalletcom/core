@@ -1,6 +1,6 @@
 use crate::address::TronAddress;
 use crate::models::WitnessesList;
-use primitives::{Chain, DelegationValidator, StakeValidator};
+use primitives::{Chain, DelegationValidator, EarnProviderType, StakeValidator};
 
 const SYSTEM_UNSTAKING_VALIDATOR_ID: &str = "system";
 const SYSTEM_UNSTAKING_VALIDATOR_NAME: &str = "Unstaking";
@@ -22,6 +22,7 @@ pub fn map_staking_validators(witnesses: WitnessesList, apy: Option<f64>) -> Vec
                 is_active: witness.is_jobs.unwrap_or(false),
                 commission: 0.0,
                 apr: default_apy,
+                provider_type: EarnProviderType::Stake,
             })
         })
         .collect();
@@ -33,6 +34,7 @@ pub fn map_staking_validators(witnesses: WitnessesList, apy: Option<f64>) -> Vec
         is_active: true,
         commission: 0.0,
         apr: default_apy,
+        provider_type: EarnProviderType::Stake,
     });
 
     validators

@@ -11,7 +11,8 @@ fn get_fee(chain: CosmosChain, input_type: &TransactionInputType) -> BigInt {
             | TransactionInputType::Account(_, _)
             | TransactionInputType::TokenApprove(_, _)
             | TransactionInputType::Generic(_, _, _)
-            | TransactionInputType::Perpetual(_, _) => BigInt::from(3_000u64),
+            | TransactionInputType::Perpetual(_, _)
+            | TransactionInputType::Earn(_, _) => BigInt::from(3_000u64),
             TransactionInputType::Swap(_, _, _) => BigInt::from(3_000u64),
             TransactionInputType::Stake(_, _) => BigInt::from(25_000u64),
         },
@@ -22,7 +23,8 @@ fn get_fee(chain: CosmosChain, input_type: &TransactionInputType) -> BigInt {
             | TransactionInputType::Account(_, _)
             | TransactionInputType::TokenApprove(_, _)
             | TransactionInputType::Generic(_, _, _)
-            | TransactionInputType::Perpetual(_, _) => BigInt::from(10_000u64),
+            | TransactionInputType::Perpetual(_, _)
+            | TransactionInputType::Earn(_, _) => BigInt::from(10_000u64),
             TransactionInputType::Swap(_, _, _) => BigInt::from(10_000u64),
             TransactionInputType::Stake(_, _) => BigInt::from(100_000u64),
         },
@@ -33,7 +35,8 @@ fn get_fee(chain: CosmosChain, input_type: &TransactionInputType) -> BigInt {
             | TransactionInputType::Account(_, _)
             | TransactionInputType::TokenApprove(_, _)
             | TransactionInputType::Generic(_, _, _)
-            | TransactionInputType::Perpetual(_, _) => BigInt::from(3_000u64),
+            | TransactionInputType::Perpetual(_, _)
+            | TransactionInputType::Earn(_, _) => BigInt::from(3_000u64),
             TransactionInputType::Swap(_, _, _) => BigInt::from(3_000u64),
             TransactionInputType::Stake(_, _) => BigInt::from(10_000u64),
         },
@@ -44,7 +47,8 @@ fn get_fee(chain: CosmosChain, input_type: &TransactionInputType) -> BigInt {
             | TransactionInputType::Account(_, _)
             | TransactionInputType::TokenApprove(_, _)
             | TransactionInputType::Generic(_, _, _)
-            | TransactionInputType::Perpetual(_, _) => BigInt::from(100_000u64),
+            | TransactionInputType::Perpetual(_, _)
+            | TransactionInputType::Earn(_, _) => BigInt::from(100_000u64),
             TransactionInputType::Swap(_, _, _) => BigInt::from(100_000u64),
             TransactionInputType::Stake(_, _) => BigInt::from(200_000u64),
         },
@@ -55,7 +59,8 @@ fn get_fee(chain: CosmosChain, input_type: &TransactionInputType) -> BigInt {
             | TransactionInputType::Account(_, _)
             | TransactionInputType::TokenApprove(_, _)
             | TransactionInputType::Generic(_, _, _)
-            | TransactionInputType::Perpetual(_, _) => BigInt::from(100_000_000_000_000u64),
+            | TransactionInputType::Perpetual(_, _)
+            | TransactionInputType::Earn(_, _) => BigInt::from(100_000_000_000_000u64),
             TransactionInputType::Swap(_, _, _) => BigInt::from(100_000_000_000_000u64),
             TransactionInputType::Stake(_, _) => BigInt::from(1_000_000_000_000_000u64),
         },
@@ -71,7 +76,8 @@ fn get_gas_limit(input_type: &TransactionInputType, _chain: CosmosChain) -> u64 
         | TransactionInputType::Account(_, _)
         | TransactionInputType::TokenApprove(_, _)
         | TransactionInputType::Generic(_, _, _)
-        | TransactionInputType::Perpetual(_, _) => 200_000,
+        | TransactionInputType::Perpetual(_, _)
+        | TransactionInputType::Earn(_, _) => 200_000,
         TransactionInputType::Swap(_, _, _) => 200_000,
         TransactionInputType::Stake(_, operation) => match operation {
             StakeType::Stake(_) | StakeType::Unstake(_) => 1_000_000,
