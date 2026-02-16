@@ -35,10 +35,6 @@ pub fn decode_hex(value: &str) -> Result<Vec<u8>, HexError> {
     Ok(hex::decode(&*normalized)?)
 }
 
-pub fn encode_with_0x(data: &[u8]) -> String {
-    format!("0x{}", hex::encode(data))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
