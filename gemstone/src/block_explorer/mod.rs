@@ -61,7 +61,8 @@ impl Explorer {
             | SwapperProvider::StonfiV2
             | SwapperProvider::Aerodrome
             | SwapperProvider::Hyperliquid
-            | SwapperProvider::Orca => get_block_explorer(self.chain, explorer_name),
+            | SwapperProvider::Orca
+            | SwapperProvider::Okx => get_block_explorer(self.chain, explorer_name),
         };
         Some(ExplorerURL::new(&explorer.name(), &explorer.get_tx_url(transaction_id)))
     }

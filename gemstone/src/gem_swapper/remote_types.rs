@@ -111,6 +111,7 @@ pub enum SwapperProvider {
     Panora,
     Thorchain,
     Jupiter,
+    Okx,
     Across,
     Oku,
     Wagmi,
