@@ -20,7 +20,7 @@ chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 primitives = { path = "../primitives" }
 serde = { workspace = true }
 serde_json = { workspace = true }
-serde_serializers = { path = "../serde_serializers" }
+serde_serializers = { path = "../serde_serializers", features = ["bigint"] }
 num-bigint = { workspace = true }
 bcs = { workspace = true }
 hex = { workspace = true }

@@ -8,7 +8,7 @@ pub use self::localize::Localize;
 pub mod auth;
 pub use self::auth::{AuthMessage, AuthNonce, AuthPayload, AuthenticatedRequest};
 pub mod auth_status;
-pub use self::auth_status::{AuthStatus, X_AUTH_STATUS};
+pub use self::auth_status::AuthStatus;
 pub mod chain;
 pub use self::chain::Chain;
 pub mod chain_config;
@@ -271,6 +271,8 @@ pub mod ip_usage_type;
 pub use self::ip_usage_type::IpUsageType;
 pub mod metrics;
 pub use self::metrics::{ConsumerStatus, JobStatus, ParserStatus, ReportedError};
+pub mod value_access;
+pub use self::value_access::ValueAccess;
 
 #[cfg(any(test, feature = "testkit"))]
 pub mod testkit;

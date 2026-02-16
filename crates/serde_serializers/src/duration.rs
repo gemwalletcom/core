@@ -9,7 +9,15 @@ where
     parse_duration(&s).map_err(serde::de::Error::custom)
 }
 
-fn parse_duration(s: &str) -> Result<Duration, String> {
+pub fn deserialize_option<'de, D>(deserializer: D) -> Result<Option<Duration>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = Option::<String>::deserialize(deserializer)?;
+    value.map(|raw| parse_duration(&raw)).transpose().map_err(serde::de::Error::custom)
+}
+
+pub fn parse_duration(s: &str) -> Result<Duration, String> {
     let s = s.trim();
 
     if s.is_empty() {
@@ -60,5 +68,20 @@ mod tests {
         assert_eq!(parse_duration("1h").unwrap(), Duration::from_secs(3600));
         assert_eq!(parse_duration("1.5s").unwrap(), Duration::from_millis(1500));
         assert_eq!(parse_duration("3000").unwrap(), Duration::from_millis(3000));
+    }
+
+    #[test]
+    fn test_deserialize_option() {
+        #[derive(Deserialize)]
+        struct Value {
+            #[serde(default, deserialize_with = "deserialize_option")]
+            ttl: Option<Duration>,
+        }
+
+        let value: Value = serde_json::from_str(r#"{"ttl":"1m"}"#).unwrap();
+        assert_eq!(value.ttl, Some(Duration::from_secs(60)));
+
+        let value: Value = serde_json::from_str(r#"{}"#).unwrap();
+        assert_eq!(value.ttl, None);
     }
 }

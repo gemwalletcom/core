@@ -1,11 +1,11 @@
 use super::{
     PROGRAM_ADDRESS,
     client::JupiterClient,
-    model::{DynamicSlippage, QuoteDataRequest, QuoteRequest as JupiterRequest, QuoteResponse},
+    model::{QuoteDataRequest, QuoteRequest as JupiterRequest, QuoteResponse},
 };
 use crate::{
     FetchQuoteData, Options, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperMode, SwapperProvider, SwapperQuoteData,
-    SwapperSlippageMode, error::INVALID_ADDRESS,
+    error::INVALID_ADDRESS,
 };
 use alloy_primitives::U256;
 use async_trait::async_trait;
@@ -18,6 +18,8 @@ use gem_solana::{
 };
 use primitives::{AssetId, Chain};
 use std::collections::HashSet;
+
+const INSTRUCTION_VERSION: &str = "V2";
 
 #[derive(Debug)]
 pub struct Jupiter<C, R>
@@ -127,22 +129,15 @@ where
         let slippage_bps = swap_options.slippage.bps;
         let platform_fee_bps = swap_options.fee.unwrap_or_default().solana.bps;
 
-        let auto_slippage = match swap_options.slippage.mode {
-            SwapperSlippageMode::Auto => true,
-            SwapperSlippageMode::Exact => false,
-        };
-
         let quote_request = JupiterRequest {
             input_mint: input_mint.clone(),
             output_mint: output_mint.clone(),
             amount: request.value.clone(),
             platform_fee_bps,
             slippage_bps,
-            auto_slippage,
-            max_auto_slippage_bps: slippage_bps,
+            instruction_version: INSTRUCTION_VERSION.to_string(),
         };
         let swap_quote = self.http_client.get_swap_quote(quote_request).await?;
-        let computed_auto_slippage = swap_quote.computed_auto_slippage.unwrap_or(swap_quote.slippage_bps);
 
         // Updated docs: https://dev.jup.ag/docs/api/swap-api/quote
         // The value includes platform fees and DEX fees, excluding slippage.
@@ -159,7 +154,7 @@ where
                     route_data: serde_json::to_string(&swap_quote).unwrap_or_default(),
                     gas_limit: None,
                 }],
-                slippage_bps: computed_auto_slippage,
+                slippage_bps: swap_quote.slippage_bps,
             },
             request: request.clone(),
             eta_in_seconds: None,
@@ -178,19 +173,11 @@ where
         let quote_response: QuoteResponse = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let fee_account = self.fetch_fee_account(&quote.request.mode, &quote.request.options, &input_mint, &output_mint).await?;
 
-        let dynamic_slippage = match quote.request.options.slippage.mode {
-            SwapperSlippageMode::Auto => Some(DynamicSlippage {
-                max_bps: quote.request.options.slippage.bps,
-            }),
-            SwapperSlippageMode::Exact => None,
-        };
-
         let request = QuoteDataRequest {
             user_public_key: quote.request.wallet_address.clone(),
             fee_account,
             quote_response,
             prioritization_fee_lamports: 500_000,
-            dynamic_slippage,
         };
 
         let quote_data = self.http_client.get_swap_quote_data(&request).await?;

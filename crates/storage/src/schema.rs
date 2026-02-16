@@ -639,6 +639,7 @@ diesel::table! {
         #[max_length = 32]
         version -> Varchar,
         upgrade_required -> Bool,
+        update_enabled -> Bool,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }

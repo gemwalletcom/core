@@ -97,7 +97,7 @@ impl NodeTelemetry {
             [
                 ("new_host", observation.url.host()),
                 ("old_host", previous.host()),
-                ("reason", switch.reason.as_str().to_string()),
+                ("reason", switch.reason.to_string()),
             ],
             &latency,
             latest,

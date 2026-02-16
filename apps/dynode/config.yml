@@ -18,11 +18,24 @@ jwt:
 
 monitoring:
   enabled: false
-  poll_interval_seconds: 600
-  block_delay: 100
+  poll_interval: 10m
+  max_sync_delay: 24s
+  max_sync_blocks: 20
+  adaptive:
+    enabled: true
+    window: 30s
+    min_samples: 20
+    error_threshold: 0.5
+    recovery_threshold: 0.2
+    cooldown: 45s
+    min_switch_interval: 15s
+    errors:
+      status_codes: [429]
+      error_messages:
+        - "rate limit"
 
 request:
-  timeout: 3000
+  timeout: 3s
 
 headers:
   forward:
@@ -36,50 +49,60 @@ headers:
 retry:
   enabled: true
   max_attempts: 3
-  status_codes: [403, 429, 502, 503, 504]
-  error_messages:
-    - "daily request limit"
-    - "rate limit"
-    - "Unauthorized"
+  errors:
+    status_codes: [403, 429, 502, 503, 504]
+    error_messages:
+      - "daily request limit"
+      - "rate limit"
+      - "Unauthorized"
 
 cache:
   max_memory_mb: 1024
   rules:
     ethereum:
       - rpc_method: eth_chainId
-        ttl_seconds: 3600  # 1 hour
+        ttl: 1h
     tron:
       - path: /wallet/getchainparameters
         method: GET
-        ttl_seconds: 86400  # 1 day
+        ttl: 1d
       - path: /wallet/listwitnesses
         method: GET
-        ttl_seconds: 86400  # 1 day
+        ttl: 1d
+      - path: /wallet/getaccount
+        method: POST
+        inflight: true
+      - path: /wallet/getaccountresource
+        method: POST
+        inflight: true
+      - path: /wallet/getReward
+        method: POST
+        inflight: true
     solana:
       - rpc_method: getVoteAccounts
-        ttl_seconds: 3600  # 1 hour
+        ttl: 1h
     sui:
       - rpc_method: suix_getValidatorsApy
-        ttl_seconds: 3600  # 1 hour
+        ttl: 1h
       - rpc_method: suix_getLatestSuiSystemState
-        ttl_seconds: 60  # 1 minute
+        ttl: 1m
     cosmos:
       - path: /cosmos/staking/v1beta1/validators
         method: GET
-        ttl_seconds: 86400  # 1 day
+        ttl: 1d
     bitcoin:
       - path: /api/v2/block/**
         method: GET
-        ttl_seconds: 0  # never expires
+        ttl: 0s
     hypercore:
       - path: /info
         method: POST
-        ttl_seconds: 3600  # 1 hour
+        ttl: 1h
         params:
           type: metaAndAssetCtxs
     aptos:
       - path: /v1/view
         method: POST
-        ttl_seconds: 3600  # 1 hour
+        ttl: 1h
         params:
           function: "0x1::delegation_pool::operator_commission_percentage"

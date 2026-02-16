@@ -34,7 +34,7 @@ struct DexProviderConfig {
     timer: u64,
 }
 
-pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
+pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver, price_metrics: Arc<crate::metrics::price::PriceMetrics>) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
     let runtime = ctx.runtime();
     let database = ctx.database();
     let settings = ctx.settings();
@@ -63,14 +63,16 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
             let cacher_client = cacher_client.clone();
             let database = database.clone();
             let config = config.clone();
+            let price_metrics = price_metrics.clone();
             move || {
                 let settings = settings.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
                 let config = config.clone();
+                let price_metrics = price_metrics.clone();
                 async move {
                     let price_outdated = config.get_duration(ConfigKey::PriceOutdated)?.as_secs();
-                    price_updater_factory(&database, &cacher_client, &settings)
+                    price_updater_factory(&database, &cacher_client, &settings, price_metrics)
                         .await?
                         .clean_outdated_assets(price_outdated)
                         .await
@@ -81,23 +83,27 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
             let settings = settings.clone();
             let cacher_client = cacher_client.clone();
             let database = database.clone();
+            let price_metrics = price_metrics.clone();
             move || {
                 let settings = settings.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
-                async move { price_updater_factory(&database, &cacher_client, &settings).await?.update_fiat_rates().await }
+                let price_metrics = price_metrics.clone();
+                async move { price_updater_factory(&database, &cacher_client, &settings, price_metrics).await?.update_fiat_rates().await }
             }
         })
         .job(WorkerJob::UpdatePricesTopMarketCap, {
             let settings = settings.clone();
             let cacher_client = cacher_client.clone();
             let database = database.clone();
+            let price_metrics = price_metrics.clone();
             move || {
                 let settings = settings.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
+                let price_metrics = price_metrics.clone();
                 async move {
-                    price_updater_factory(&database, &cacher_client, &settings)
+                    price_updater_factory(&database, &cacher_client, &settings, price_metrics)
                         .await?
                         .update_prices_type(UpdatePrices::Top)
                         .await
@@ -108,12 +114,14 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
             let settings = settings.clone();
             let cacher_client = cacher_client.clone();
             let database = database.clone();
+            let price_metrics = price_metrics.clone();
             move || {
                 let settings = settings.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
+                let price_metrics = price_metrics.clone();
                 async move {
-                    price_updater_factory(&database, &cacher_client, &settings)
+                    price_updater_factory(&database, &cacher_client, &settings, price_metrics)
                         .await?
                         .update_prices_type(UpdatePrices::High)
                         .await
@@ -124,12 +132,14 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
             let settings = settings.clone();
             let cacher_client = cacher_client.clone();
             let database = database.clone();
+            let price_metrics = price_metrics.clone();
             move || {
                 let settings = settings.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
+                let price_metrics = price_metrics.clone();
                 async move {
-                    price_updater_factory(&database, &cacher_client, &settings)
+                    price_updater_factory(&database, &cacher_client, &settings, price_metrics)
                         .await?
                         .update_prices_type(UpdatePrices::Low)
                         .await
@@ -140,12 +150,14 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
             let settings = settings.clone();
             let cacher_client = cacher_client.clone();
             let database = database.clone();
+            let price_metrics = price_metrics.clone();
             move || {
                 let settings = settings.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
+                let price_metrics = price_metrics.clone();
                 async move {
-                    price_updater_factory(&database, &cacher_client, &settings)
+                    price_updater_factory(&database, &cacher_client, &settings, price_metrics)
                         .await?
                         .update_prices_type(UpdatePrices::VeryLow)
                         .await
@@ -289,13 +301,18 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
         .finish()
 }
 
-async fn price_updater_factory(database: &Database, cacher: &CacherClient, settings: &Settings) -> Result<PriceUpdater, Box<dyn std::error::Error + Send + Sync>> {
+async fn price_updater_factory(
+    database: &Database,
+    cacher: &CacherClient,
+    settings: &Settings,
+    price_metrics: Arc<crate::metrics::price::PriceMetrics>,
+) -> Result<PriceUpdater, Box<dyn std::error::Error + Send + Sync>> {
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret.clone());
     let price_client = PriceClient::new(database.clone(), cacher.clone());
     let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
     let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
     let stream_producer = StreamProducer::new(&rabbitmq_config, "pricer_worker").await?;
-    Ok(PriceUpdater::new(price_client, coingecko_client, stream_producer))
+    Ok(PriceUpdater::new(price_client, coingecko_client, stream_producer, price_metrics))
 }
 
 async fn charts_updater_factory(

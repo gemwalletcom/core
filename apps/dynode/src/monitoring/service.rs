@@ -1,11 +1,17 @@
 use std::error::Error;
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::{HashMap, hash_map::DefaultHasher},
+    hash::{Hash, Hasher},
+    sync::Arc,
+};
 
 use reqwest::StatusCode;
 use tokio::sync::RwLock;
 
+use super::request_health::RequestAdaptiveMonitor;
+use super::switch_reason::NodeSwitchReason;
 use crate::cache::RequestCache;
-use crate::config::{CacheConfig, ChainConfig, HeadersConfig, NodeMonitoringConfig, RequestConfig, RetryConfig};
+use crate::config::{CacheConfig, ChainConfig, ErrorMatcherConfig, HeadersConfig, NodeMonitoringConfig, RequestConfig, RetryConfig, Url};
 use crate::jsonrpc_types::{JsonRpcErrorResponse, RequestType};
 use crate::metrics::Metrics;
 use crate::proxy::constants::JSON_CONTENT_TYPE;
@@ -15,7 +21,8 @@ use crate::proxy::response_builder::ResponseBuilder;
 use crate::proxy::{NodeDomain, ProxyResponse};
 use gem_tracing::{DurationMs, info_with_fields};
 use primitives::{Chain, ResponseError, response::ErrorDetail};
-use std::time::Duration;
+
+const NODE_NOT_FOUND: &str = "Node not found";
 
 #[derive(Debug, Clone)]
 pub struct NodeService {
@@ -24,6 +31,7 @@ pub struct NodeService {
     pub metrics: Arc<Metrics>,
     pub monitoring_config: NodeMonitoringConfig,
     pub retry_config: RetryConfig,
+    request_adaptive_monitor: Arc<RequestAdaptiveMonitor>,
     proxy_builder: ProxyBuilder,
 }
 
@@ -39,9 +47,10 @@ impl NodeService {
     ) -> Self {
         let nodes = chains.values().map(|c| (c.chain, NodeDomain::new(c.urls.first().unwrap().clone(), c.clone()))).collect();
 
-        let http_client = gem_client::builder().timeout(Duration::from_millis(request_config.timeout)).build().unwrap();
+        let http_client = gem_client::builder().timeout(request_config.timeout).build().unwrap();
         let cache = RequestCache::new(cache_config);
         let proxy_builder = ProxyBuilder::new(metrics.clone(), cache, http_client, headers_config);
+        let request_adaptive_monitor = Arc::new(RequestAdaptiveMonitor::new(monitoring_config.adaptive.clone()));
 
         Self {
             chains,
@@ -49,6 +58,7 @@ impl NodeService {
             metrics: Arc::new(metrics),
             monitoring_config,
             retry_config,
+            request_adaptive_monitor,
             proxy_builder,
         }
     }
@@ -57,54 +67,84 @@ impl NodeService {
         nodes.read().await.get(&chain).cloned()
     }
 
-    pub async fn update_node_domain(nodes: &Arc<RwLock<HashMap<Chain, NodeDomain>>>, chain: Chain, node_domain: NodeDomain) {
-        nodes.write().await.insert(chain, node_domain);
+    pub fn sync_current_node_metric(metrics: &Arc<Metrics>, chain: Chain, url: &Url) {
+        metrics.set_node_host_current(chain.as_ref(), &url.host());
+    }
+
+    pub async fn switch_node_if_current(
+        nodes: &Arc<RwLock<HashMap<Chain, NodeDomain>>>,
+        metrics: &Arc<Metrics>,
+        chain_config: &ChainConfig,
+        expected_current: &Url,
+        selected: &Url,
+        reason: &NodeSwitchReason,
+    ) -> Option<(String, String)> {
+        let (old_host, new_host) = {
+            let mut nodes_write = nodes.write().await;
+            let active_node = nodes_write.get(&chain_config.chain)?;
+            if active_node.url.url != expected_current.url || active_node.url.url == selected.url {
+                return None;
+            }
+
+            let old_host = active_node.url.host();
+            let new_host = selected.host();
+            nodes_write.insert(chain_config.chain, NodeDomain::new(selected.clone(), chain_config.clone()));
+            (old_host, new_host)
+        };
+
+        Self::sync_current_node_metric(metrics, chain_config.chain, selected);
+        metrics.add_node_switch(chain_config.chain.as_ref(), &old_host, &new_host, reason.as_str(), &reason.to_string());
+        Some((old_host, new_host))
     }
 
     pub async fn handle_request(&self, request: ProxyRequest) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {
         let chain_config = self.get_chain_config(&request)?;
-        let urls = &chain_config.urls;
-
-        if !self.retry_config.enabled || urls.len() <= 1 {
-            let Some(node_domain) = NodeService::get_node_domain(&self.nodes, chain_config.chain).await else {
-                return self.log_and_create_error_response(&request, None, "Node not found");
-            };
-            let active_node = if let Some(url) = urls.first() {
-                NodeDomain::new(url.clone(), chain_config.clone())
-            } else {
-                node_domain
-            };
-            match self.proxy_builder.handle_request(request.clone(), &active_node).await {
-                Ok(response) if self.should_retry_response(&request, &response) => {
-                    return self.log_and_create_error_response(&request, Some(&active_node.url.host()), &format!("Upstream status code: {}", response.status));
-                }
-                result => return result,
-            }
+        let Some(urls) = self.resolve_request_urls(chain_config, &request).await else {
+            return self.node_not_found_response(&request);
+        };
+        if urls.len() == 1 {
+            let primary = NodeDomain::new(urls[0].clone(), chain_config.clone());
+            return self.proxy_builder.handle_request(request, &primary).await;
         }
 
+        let retry_enabled = self.retry_config.enabled && urls.len() > 1;
         let mut last_error: Option<String> = None;
-        let max_attempts = self.retry_config.effective_max_attempts(urls.len());
+        let max_attempts = if retry_enabled { self.retry_config.effective_max_attempts(urls.len()) } else { 1 };
+
         for url in urls.iter().take(max_attempts) {
             let node_domain = NodeDomain::new(url.clone(), chain_config.clone());
+            let remote_host = url.host();
             match self.proxy_builder.handle_request(request.clone(), &node_domain).await {
-                Ok(response) if !self.should_retry_response(&request, &response) => {
-                    return Ok(response);
-                }
                 Ok(response) => {
+                    let retry_error = self.matches_response_error_signal(&request, &response, &self.retry_config.errors);
+                    let adaptive_error = self.matches_response_error_signal(&request, &response, &self.monitoring_config.adaptive.errors);
+                    self.record_attempt(chain_config.chain, remote_host.as_str(), adaptive_error).await;
+                    if !retry_error {
+                        self.switch_after_success_if_allowed(chain_config, url).await;
+                        return Ok(response);
+                    }
+
+                    if !retry_enabled {
+                        return self.log_and_create_error_response(&request, Some(remote_host.as_str()), &format!("Upstream status code: {}", response.status));
+                    }
                     last_error = Some(format!("status={}", response.status));
                 }
                 Err(e) => {
+                    self.record_attempt(chain_config.chain, remote_host.as_str(), true).await;
+                    if !retry_enabled {
+                        return Err(e);
+                    }
+
                     let error = e.to_string();
                     let request_id = request.id.as_str();
                     let chain = request.chain.as_ref();
-                    let remote_host = url.host();
                     let user_agent = request.user_agent.as_str();
                     let latency = DurationMs(request.elapsed());
                     info_with_fields!(
                         "Upstream error",
                         id = request_id,
                         chain = chain,
-                        remote_host = remote_host,
+                        remote_host = remote_host.as_str(),
                         error = error.as_str(),
                         user_agent = user_agent,
                         latency = latency,
@@ -124,15 +164,125 @@ impl NodeService {
         self.chains.get(&request.chain).ok_or_else(|| format!("Chain {} not configured", request.chain).into())
     }
 
-    fn should_retry_response(&self, request: &ProxyRequest, response: &ProxyResponse) -> bool {
-        if self.retry_config.status_codes.contains(&response.status) {
+    async fn resolve_request_urls(&self, chain_config: &ChainConfig, request: &ProxyRequest) -> Option<Vec<Url>> {
+        if chain_config.urls.is_empty() {
+            return None;
+        }
+        if chain_config.urls.len() == 1 {
+            return Some(vec![chain_config.urls[0].clone()]);
+        }
+
+        let current_node = NodeService::get_node_domain(&self.nodes, chain_config.chain).await?;
+        let urls = self.get_ordered_urls(chain_config.chain, &chain_config.urls, &current_node.url, request.id.as_str()).await;
+        if urls.is_empty() {
+            return None;
+        }
+
+        Some(urls)
+    }
+
+    fn node_not_found_response(&self, request: &ProxyRequest) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {
+        self.log_and_create_error_response(request, None, NODE_NOT_FOUND)
+    }
+
+    async fn get_ordered_urls(&self, chain: Chain, urls: &[Url], current: &Url, request_id: &str) -> Vec<Url> {
+        let mut ordered_urls = urls.to_vec();
+        if let Some(current_index) = ordered_urls.iter().position(|url| *url == *current) {
+            ordered_urls.swap(0, current_index);
+        }
+
+        Self::rotate_fallback_urls(&mut ordered_urls, request_id);
+
+        if ordered_urls.len() <= 1 || !self.request_adaptive_monitor.is_enabled() {
+            return ordered_urls;
+        }
+
+        self.request_adaptive_monitor.reorder_urls(chain, &ordered_urls).await
+    }
+
+    fn rotate_fallback_urls(urls: &mut [Url], request_id: &str) {
+        if urls.len() <= 2 {
+            return;
+        }
+
+        let mut hasher = DefaultHasher::new();
+        request_id.hash(&mut hasher);
+        let tail_len = urls.len() - 1;
+        let offset = (hasher.finish() as usize) % tail_len;
+        if offset > 0 {
+            urls[1..].rotate_left(offset);
+        }
+    }
+
+    async fn record_attempt(&self, chain: Chain, host: &str, has_error_signal: bool) {
+        let snapshot = self.request_adaptive_monitor.record_attempt(chain, host, has_error_signal).await;
+        let Some(snapshot) = snapshot else {
+            return;
+        };
+
+        if !snapshot.blocked_now {
+            return;
+        }
+
+        let ratio = format!("{:.3}", snapshot.ratio);
+        info_with_fields!(
+            "Node host blocked",
+            chain = chain.as_ref(),
+            host = host,
+            error_ratio = ratio.as_str(),
+            samples = snapshot.total,
+            errors = snapshot.errors,
+        );
+    }
+
+    async fn switch_after_success_if_allowed(&self, chain_config: &ChainConfig, selected_url: &Url) {
+        let Some(current_node) = NodeService::get_node_domain(&self.nodes, chain_config.chain).await else {
+            return;
+        };
+        if current_node.url.url == selected_url.url {
+            return;
+        }
+
+        let old_host = current_node.url.host();
+        let new_host = selected_url.host();
+        let snapshot = self
+            .request_adaptive_monitor
+            .allow_switch_after_success(chain_config.chain, old_host.as_str(), new_host.as_str())
+            .await;
+        let Some(snapshot) = snapshot else {
+            return;
+        };
+
+        let ratio = if snapshot.ratio.is_finite() { snapshot.ratio.clamp(0.0, 1.0) } else { 1.0 };
+        let reason = NodeSwitchReason::AdaptiveError {
+            error_ratio: ratio,
+            samples: snapshot.total,
+        };
+        let detail = reason.to_string();
+        let Some((old_host, new_host)) = NodeService::switch_node_if_current(&self.nodes, &self.metrics, chain_config, &current_node.url, selected_url, &reason).await else {
+            return;
+        };
+        self.request_adaptive_monitor.mark_switch(chain_config.chain).await;
+
+        info_with_fields!(
+            "Node switch",
+            chain = chain_config.chain.as_ref(),
+            old_host = old_host.as_str(),
+            new_host = new_host.as_str(),
+            reason = reason.as_str(),
+            detail = detail.as_str(),
+        );
+    }
+
+    fn matches_response_error_signal(&self, request: &ProxyRequest, response: &ProxyResponse, matcher: &ErrorMatcherConfig) -> bool {
+        if matcher.matches_status(response.status) {
             return true;
         }
 
         match request.request_type() {
-            RequestType::JsonRpc(_) if response.status == StatusCode::OK.as_u16() && !self.retry_config.error_messages.is_empty() => {
+            RequestType::JsonRpc(_) if response.status == StatusCode::OK.as_u16() => {
                 if let Ok(error_response) = serde_json::from_slice::<JsonRpcErrorResponse>(&response.body) {
-                    return self.retry_config.should_retry_on_error_message(&error_response.error.message);
+                    return matcher.matches_message(&error_response.error.message);
                 }
                 false
             }
@@ -184,22 +334,24 @@ impl NodeService {
 mod tests {
     use super::*;
     use crate::config::{CacheConfig, MetricsConfig, Url};
+    use crate::testkit::config as testkit;
     use primitives::Chain;
     use reqwest::{Method, header, header::HeaderMap};
 
     fn create_service(chains: HashMap<Chain, ChainConfig>) -> NodeService {
+        create_service_with_retry(chains, create_retry_config(false, vec![], vec![]))
+    }
+
+    fn create_service_with_retry(chains: HashMap<Chain, ChainConfig>, retry_config: RetryConfig) -> NodeService {
         NodeService::new(
             chains,
             Metrics::new(MetricsConfig::default()),
             CacheConfig::default(),
-            NodeMonitoringConfig::default(),
-            RetryConfig {
-                enabled: false,
-                max_attempts: 0,
-                status_codes: vec![],
-                error_messages: vec![],
+            testkit::monitoring_config(),
+            retry_config,
+            RequestConfig {
+                timeout: std::time::Duration::from_millis(30000),
             },
-            RequestConfig { timeout: 30000 },
             HeadersConfig {
                 forward: vec![header::CONTENT_TYPE.to_string()],
                 domains: HashMap::new(),
@@ -207,10 +359,13 @@ mod tests {
         )
     }
 
+    fn create_retry_config(enabled: bool, status_codes: Vec<u16>, error_messages: Vec<&str>) -> RetryConfig {
+        testkit::retry_config(enabled, status_codes, error_messages)
+    }
+
     fn create_chain_config(chain: Chain, url: &str) -> ChainConfig {
         ChainConfig {
             chain,
-            block_delay: None,
             poll_interval_seconds: None,
             overrides: None,
             urls: vec![Url {
@@ -253,5 +408,40 @@ mod tests {
         let result = service.get_chain_config(&request);
         assert!(result.is_err());
         assert!(result.unwrap_err().to_string().contains("Chain ethereum not configured"));
+    }
+
+    #[test]
+    fn test_adaptive_uses_retry_status_codes() {
+        let chains = HashMap::from([(Chain::Ethereum, create_chain_config(Chain::Ethereum, "https://ethereum.example.com"))]);
+        let service = create_service_with_retry(chains, create_retry_config(true, vec![429], vec![]));
+
+        let request = create_request("ethereum.example.com", Chain::Ethereum);
+        let response = ProxyResponse::new(429, HeaderMap::new(), vec![]);
+
+        assert!(service.matches_response_error_signal(&request, &response, &service.retry_config.errors));
+    }
+
+    #[test]
+    fn test_adaptive_uses_retry_jsonrpc_messages() {
+        let chains = HashMap::from([(Chain::Ethereum, create_chain_config(Chain::Ethereum, "https://ethereum.example.com"))]);
+        let service = create_service_with_retry(chains, create_retry_config(true, vec![], vec!["Exceeded the quota usage"]));
+
+        let request = ProxyRequest::new(
+            Method::POST,
+            HeaderMap::new(),
+            br#"{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}"#.to_vec(),
+            "/".to_string(),
+            "/".to_string(),
+            "ethereum.example.com".to_string(),
+            "test".to_string(),
+            Chain::Ethereum,
+        );
+        let response = ProxyResponse::new(
+            200,
+            HeaderMap::new(),
+            br#"{"jsonrpc":"2.0","error":{"code":-32000,"message":"Exceeded the quota usage"},"id":1}"#.to_vec(),
+        );
+
+        assert!(service.matches_response_error_signal(&request, &response, &service.retry_config.errors));
     }
 }

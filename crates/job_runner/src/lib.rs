@@ -108,10 +108,7 @@ pub async fn run_job<Name, F, Fut, R>(
                 reporter.report(&job_name, interval_duration.as_secs(), duration_ms, true, None).await;
             }
             Err(err) => {
-                let mut msg = format!("{:?}", err);
-                if msg.len() > 200 {
-                    msg.truncate(200);
-                }
+                let msg = err.to_string();
                 error_with_fields!("job failed", &*err, job = job_name.as_str(), duration = duration_display.as_str());
                 reporter.report(&job_name, interval_duration.as_secs(), duration_ms, false, Some(msg)).await;
             }

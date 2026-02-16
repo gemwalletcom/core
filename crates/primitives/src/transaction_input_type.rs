@@ -118,6 +118,10 @@ impl TransactionLoadInput {
 }
 
 impl TransactionLoadInput {
+    pub fn get_data_extra(&self) -> Result<&TransferDataExtra, &'static str> {
+        self.input_type.get_generic_data()
+    }
+
     pub fn to_preload_input(&self) -> TransactionPreloadInput {
         TransactionPreloadInput {
             input_type: self.input_type.clone(),

@@ -27,7 +27,7 @@ pub struct WCSuiTransactionData {
     pub wallet_address: String,
 }
 
-#[derive(Debug, Clone, uniffi::Enum)]
+#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
 pub enum WalletConnectAction {
     SignMessage {
         chain: Chain,
@@ -52,13 +52,25 @@ pub enum WalletConnectAction {
     },
 }
 
-#[derive(Debug, Clone, uniffi::Enum)]
+#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
 pub enum WalletConnectTransactionType {
     Ethereum,
     Solana { output_type: TransferDataOutputType },
     Sui { output_type: TransferDataOutputType },
     Ton { output_type: TransferDataOutputType },
     Bitcoin { output_type: TransferDataOutputType },
+    Tron { output_type: TransferDataOutputType },
+}
+
+impl WalletConnectTransactionType {
+    pub fn get_output_type(&self) -> Option<TransferDataOutputType> {
+        match self {
+            Self::Ethereum => None,
+            Self::Solana { output_type } | Self::Sui { output_type } | Self::Ton { output_type } | Self::Bitcoin { output_type } | Self::Tron { output_type } => {
+                Some(output_type.clone())
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -83,9 +95,13 @@ pub enum WalletConnectTransaction {
         data: String,
         output_type: TransferDataOutputType,
     },
+    Tron {
+        data: String,
+        output_type: TransferDataOutputType,
+    },
 }
 
-#[derive(Debug, Clone, uniffi::Enum)]
+#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
 pub enum WalletConnectChainOperation {
     AddChain,
     SwitchChain,

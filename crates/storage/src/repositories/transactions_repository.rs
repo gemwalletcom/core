@@ -16,10 +16,9 @@ pub trait TransactionsRepository {
         asset_id: Option<String>,
         from_datetime: Option<NaiveDateTime>,
     ) -> Result<Vec<TransactionRow>, DatabaseError>;
-    fn get_transactions_addresses(&mut self, min_count: i64, limit: i64) -> Result<Vec<AddressChainIdResultRow>, DatabaseError>;
-    fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<usize, DatabaseError>;
-    fn get_transactions_without_addresses(&mut self, limit: i64) -> Result<Vec<i64>, DatabaseError>;
-    fn delete_transactions_by_ids(&mut self, ids: Vec<i64>) -> Result<usize, DatabaseError>;
+    fn get_transactions_addresses(&mut self, min_count: i64, limit: i64, since: NaiveDateTime) -> Result<Vec<AddressChainIdResultRow>, DatabaseError>;
+    fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<i64>, DatabaseError>;
+    fn delete_orphaned_transactions(&mut self, candidate_ids: Vec<i64>) -> Result<usize, DatabaseError>;
     fn get_asset_usage_counts(&mut self, since: NaiveDateTime) -> Result<Vec<(String, i64)>, DatabaseError>;
 }
 
@@ -50,20 +49,16 @@ impl TransactionsRepository for DatabaseClient {
         )?)
     }
 
-    fn get_transactions_addresses(&mut self, min_count: i64, limit: i64) -> Result<Vec<AddressChainIdResultRow>, DatabaseError> {
-        Ok(TransactionsStore::get_transactions_addresses(self, min_count, limit)?)
+    fn get_transactions_addresses(&mut self, min_count: i64, limit: i64, since: NaiveDateTime) -> Result<Vec<AddressChainIdResultRow>, DatabaseError> {
+        Ok(TransactionsStore::get_transactions_addresses(self, min_count, limit, since)?)
     }
 
-    fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<usize, DatabaseError> {
+    fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<i64>, DatabaseError> {
         Ok(TransactionsStore::delete_transactions_addresses(self, addresses)?)
     }
 
-    fn get_transactions_without_addresses(&mut self, limit: i64) -> Result<Vec<i64>, DatabaseError> {
-        Ok(TransactionsStore::get_transactions_without_addresses(self, limit)?)
-    }
-
-    fn delete_transactions_by_ids(&mut self, ids: Vec<i64>) -> Result<usize, DatabaseError> {
-        Ok(TransactionsStore::delete_transactions_by_ids(self, ids)?)
+    fn delete_orphaned_transactions(&mut self, candidate_ids: Vec<i64>) -> Result<usize, DatabaseError> {
+        Ok(TransactionsStore::delete_orphaned_transactions(self, candidate_ids)?)
     }
 
     fn get_asset_usage_counts(&mut self, since: NaiveDateTime) -> Result<Vec<(String, i64)>, DatabaseError> {

@@ -1,37 +1,32 @@
 use std::time::Duration;
 
-pub fn parse_duration(s: &str) -> Option<Duration> {
-    let s = s.trim();
-    if s.is_empty() {
+pub fn parse_duration(raw: &str) -> Option<Duration> {
+    let value = raw.trim();
+    if value.is_empty() {
         return None;
     }
 
-    let mut num_str = String::new();
-    let mut unit = String::new();
-
-    for c in s.chars() {
-        if c.is_ascii_digit() || c == '.' {
-            num_str.push(c);
-        } else if c.is_ascii_alphabetic() {
-            unit.push(c);
-        }
+    if let Ok(seconds) = value.parse::<f64>() {
+        return Some(Duration::from_secs_f64(seconds));
     }
 
-    let value: f64 = num_str.parse().ok()?;
+    let split_index = value.find(|c: char| !c.is_ascii_digit() && c != '.')?;
+    let (number, unit) = value.split_at(split_index);
+    if number.is_empty() || unit.is_empty() || !unit.chars().all(|c| c.is_ascii_alphabetic()) {
+        return None;
+    }
 
-    let duration = match unit.as_str() {
-        "ns" => Duration::from_nanos(value as u64),
-        "us" => Duration::from_micros(value as u64),
-        "ms" => Duration::from_millis(value as u64),
-        "s" => Duration::from_secs_f64(value),
-        "m" => Duration::from_secs_f64(value * 60.0),
-        "h" => Duration::from_secs_f64(value * 3600.0),
-        "d" => Duration::from_secs_f64(value * 86400.0),
-        "" => Duration::from_secs(value as u64),
-        _ => return None,
-    };
-
-    Some(duration)
+    let amount = number.parse::<f64>().ok()?;
+    match unit {
+        "ns" => Some(Duration::from_nanos(amount as u64)),
+        "us" => Some(Duration::from_micros(amount as u64)),
+        "ms" => Some(Duration::from_millis(amount as u64)),
+        "s" => Some(Duration::from_secs_f64(amount)),
+        "m" => Some(Duration::from_secs_f64(amount * 60.0)),
+        "h" => Some(Duration::from_secs_f64(amount * 3_600.0)),
+        "d" => Some(Duration::from_secs_f64(amount * 86_400.0)),
+        _ => None,
+    }
 }
 
 #[cfg(test)]
@@ -39,45 +34,25 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_parse_duration_seconds() {
+    fn parse_seconds() {
+        assert_eq!(parse_duration("3"), Some(Duration::from_secs(3)));
+        assert_eq!(parse_duration("1.5"), Some(Duration::from_millis(1500)));
         assert_eq!(parse_duration("3s"), Some(Duration::from_secs(3)));
-        assert_eq!(parse_duration("60s"), Some(Duration::from_secs(60)));
-        assert_eq!(parse_duration("1.5s"), Some(Duration::from_millis(1500)));
     }
 
     #[test]
-    fn test_parse_duration_minutes() {
+    fn parse_units() {
         assert_eq!(parse_duration("1m"), Some(Duration::from_secs(60)));
-        assert_eq!(parse_duration("30m"), Some(Duration::from_secs(1800)));
-    }
-
-    #[test]
-    fn test_parse_duration_hours() {
         assert_eq!(parse_duration("1h"), Some(Duration::from_secs(3600)));
-        assert_eq!(parse_duration("24h"), Some(Duration::from_secs(86400)));
-    }
-
-    #[test]
-    fn test_parse_duration_days() {
         assert_eq!(parse_duration("1d"), Some(Duration::from_secs(86400)));
-        assert_eq!(parse_duration("7d"), Some(Duration::from_secs(604800)));
-    }
-
-    #[test]
-    fn test_parse_duration_milliseconds() {
-        assert_eq!(parse_duration("1000ms"), Some(Duration::from_millis(1000)));
         assert_eq!(parse_duration("500ms"), Some(Duration::from_millis(500)));
     }
 
     #[test]
-    fn test_parse_duration_no_unit() {
-        assert_eq!(parse_duration("60"), Some(Duration::from_secs(60)));
-    }
-
-    #[test]
-    fn test_parse_duration_invalid() {
+    fn parse_invalid() {
         assert_eq!(parse_duration(""), None);
         assert_eq!(parse_duration("abc"), None);
         assert_eq!(parse_duration("1x"), None);
+        assert_eq!(parse_duration("1s!"), None);
     }
 }

@@ -164,7 +164,10 @@ pub enum ConfigKey {
     VersionTimerUpdateStoreVersions,
 
     // Transaction
-    TransactionTimerUpdater,
+    TransactionTimerCleanup,
+    TransactionCleanupAddressMaxCount,
+    TransactionCleanupAddressLimit,
+    TransactionCleanupLookback,
 
     // Search
     SearchAssetsUpdateInterval,
@@ -319,7 +322,10 @@ impl ConfigKey {
             Self::DeviceTimerUpdater => "1d",
             Self::DeviceTimerInactiveObserver => "1d",
             Self::VersionTimerUpdateStoreVersions => "1h",
-            Self::TransactionTimerUpdater => "1d",
+            Self::TransactionTimerCleanup => "1d",
+            Self::TransactionCleanupAddressMaxCount => "5000",
+            Self::TransactionCleanupAddressLimit => "200",
+            Self::TransactionCleanupLookback => "90d",
             Self::SearchAssetsUpdateInterval => "30m",
             Self::SearchPerpetualsUpdateInterval => "30m",
             Self::SearchNftsUpdateInterval => "30m",

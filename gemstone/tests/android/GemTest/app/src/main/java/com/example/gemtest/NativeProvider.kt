@@ -24,11 +24,11 @@ class NativeProvider: AlienProvider {
         val parsedUrl = try {
             Url(target.url)
         } catch (e: Throwable) {
-            throw AlienError.Network("invalid url: ${target.url}")
+            throw AlienException.RequestException("invalid url: ${target.url}")
         }
 
         val response = client.request {
-            method = HttpMethod(target.method)
+            method = HttpMethod(alienMethodToString(target.method))
             url.takeFrom(parsedUrl)
             headers {
                 target.headers?.forEach { (key, value) -> append(key, value) }

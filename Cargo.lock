@@ -765,8 +765,10 @@ dependencies = [
  "fiat",
  "gem_auth",
  "gem_client",
+ "gem_hash",
  "gem_rewards",
  "gem_tracing",
+ "hex",
  "in_app_notifications",
  "localizer",
  "metrics",
@@ -784,7 +786,6 @@ dependencies = [
  "serde_json",
  "settings",
  "settings_chain",
- "sha2",
  "storage",
  "streamer",
  "strum",
@@ -2594,6 +2595,7 @@ dependencies = [
  "rocket",
  "serde",
  "serde_json",
+ "serde_serializers",
  "settings_chain",
  "tokio",
  "url",
@@ -3237,6 +3239,7 @@ dependencies = [
  "chrono",
  "futures",
  "gem_client",
+ "gem_hash",
  "hex",
  "num-bigint",
  "number_formatter",
@@ -3246,7 +3249,6 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "settings",
- "sha2",
  "signer",
  "tokio",
 ]
@@ -3301,6 +3303,7 @@ dependencies = [
  "chrono",
  "futures",
  "gem_client",
+ "gem_hash",
  "hex",
  "num-bigint",
  "number_formatter",
@@ -3310,7 +3313,6 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "settings",
- "sha2",
  "tokio",
 ]
 
@@ -3334,6 +3336,7 @@ dependencies = [
  "chrono",
  "gem_bsc",
  "gem_client",
+ "gem_hash",
  "gem_jsonrpc",
  "hex",
  "num-bigint",
@@ -3353,6 +3356,7 @@ dependencies = [
 name = "gem_hash"
 version = "1.0.0"
 dependencies = [
+ "sha2",
  "sha3",
  "tiny-keccak",
 ]
@@ -3447,6 +3451,8 @@ dependencies = [
  "chrono",
  "gem_client",
  "gem_evm",
+ "gem_hash",
+ "hex",
  "localizer",
  "num-traits",
  "primitives",
@@ -3454,7 +3460,6 @@ dependencies = [
  "reqwest 0.13.1",
  "serde",
  "serde_json",
- "sha2",
  "storage",
 ]
 
@@ -3579,6 +3584,7 @@ dependencies = [
  "futures",
  "gem_client",
  "gem_evm",
+ "gem_hash",
  "hex",
  "num-bigint",
  "num-traits",
@@ -3588,6 +3594,7 @@ dependencies = [
  "serde",
  "serde_json",
  "settings",
+ "signer",
  "tokio",
 ]
 
@@ -3631,6 +3638,7 @@ dependencies = [
  "gem_client",
  "gem_cosmos",
  "gem_evm",
+ "gem_hash",
  "gem_hypercore",
  "gem_jsonrpc",
  "gem_near",
@@ -4959,6 +4967,7 @@ dependencies = [
  "borsh",
  "gem_client",
  "gem_evm",
+ "gem_hash",
  "gem_jsonrpc",
  "gem_solana",
  "gem_ton",
@@ -4969,7 +4978,6 @@ dependencies = [
  "serde",
  "serde_json",
  "settings",
- "sha2",
  "tokio",
 ]
 
@@ -7267,6 +7275,7 @@ version = "1.0.0"
 dependencies = [
  "config",
  "serde",
+ "serde_serializers",
 ]
 
 [[package]]
@@ -8683,11 +8692,11 @@ checksum = "06abde3611657adf66d383f00b093d7faecc7fa57071cce2578660c9f1010821"
 
 [[package]]
 name = "uuid"
-version = "1.20.0"
+version = "1.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ee48d38b119b0cd71fe4141b30f5ba9c7c5d9f4e7a3a8b4a674e4b6ef789976f"
+checksum = "b672338555252d43fd2240c714dc444b8c6fb0a5c5335e65a07bba7742735ddb"
 dependencies = [
- "getrandom 0.3.4",
+ "getrandom 0.4.1",
  "js-sys",
  "serde_core",
  "wasm-bindgen",

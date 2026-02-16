@@ -1,11 +1,15 @@
-mod client;
 pub mod fiat;
 
+use std::sync::Arc;
+
 use crate::responders::ApiError;
-pub use client::MetricsClient;
-use rocket::{State, get, response::content::RawText, tokio::sync::Mutex};
+use fiat::FiatMetrics;
+use metrics::MetricsRegistry;
+use rocket::{State, get, response::content::RawText};
 
 #[get("/")]
-pub async fn get_metrics(client: &State<Mutex<MetricsClient>>) -> Result<RawText<String>, ApiError> {
-    Ok(RawText(client.lock().await.get().await))
+pub fn get_metrics(fiat: &State<Arc<FiatMetrics>>) -> Result<RawText<String>, ApiError> {
+    let mut registry = MetricsRegistry::new();
+    fiat.register(registry.registry_mut());
+    Ok(RawText(registry.encode()))
 }

@@ -97,7 +97,7 @@ chains:
   smartchain:
     url: https://bsc-dataseed1.bnbchain.org
   polygon:
-    url: https://polygon.llamarpc.com
+    url: https://polygon.publicnode.com
   optimism:
     url: https://mainnet.optimism.io
   arbitrum:

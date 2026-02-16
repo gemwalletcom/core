@@ -1,7 +1,7 @@
 mod device_updater;
 mod model;
 mod observers;
-mod transaction_updater;
+mod transaction_cleanup;
 mod version_updater;
 
 use crate::model::WorkerService;
@@ -12,10 +12,11 @@ use cacher::CacherClient;
 use device_updater::DeviceUpdater;
 use job_runner::{JobHandle, ShutdownReceiver};
 use observers::InactiveDevicesObserver;
+use primitives::ConfigKey;
 use std::error::Error;
 use storage::ConfigCacher;
 use streamer::{StreamProducer, StreamProducerConfig};
-use transaction_updater::TransactionUpdater;
+use transaction_cleanup::{TransactionCleanup, TransactionCleanupConfig};
 use version_updater::VersionUpdater;
 
 pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
@@ -27,11 +28,15 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
 
     JobPlanBuilder::with_config(WorkerService::System, runtime.plan(shutdown_rx), &config)
         .job(WorkerJob::CleanupProcessedTransactions, {
-            let database = database.clone();
+            let cleanup_config = TransactionCleanupConfig {
+                address_max_count: config.get_i64(ConfigKey::TransactionCleanupAddressMaxCount)?,
+                address_limit: config.get_usize(ConfigKey::TransactionCleanupAddressLimit)?,
+                lookback: config.get_duration(ConfigKey::TransactionCleanupLookback)?,
+            };
+            let transaction_cleanup = TransactionCleanup::new(database.clone(), cleanup_config);
             move || {
-                let database = database.clone();
-                let transaction_updater = TransactionUpdater::new(database);
-                async move { transaction_updater.update().await }
+                let transaction_cleanup = transaction_cleanup.clone();
+                async move { transaction_cleanup.cleanup().await }
             }
         })
         .job(WorkerJob::CleanupStaleDeviceSubscriptions, {

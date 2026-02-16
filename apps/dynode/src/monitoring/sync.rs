@@ -1,24 +1,8 @@
 use std::time::Duration;
 
+use super::switch_reason::NodeSwitchReason;
 use crate::config::Url;
 use primitives::{NodeStatusState, NodeSyncStatus};
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum NodeSwitchReason {
-    BlockHeight,
-    Latency,
-    CurrentNodeError { message: String },
-}
-
-impl NodeSwitchReason {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::BlockHeight => "block_height",
-            Self::Latency => "latency",
-            Self::CurrentNodeError { .. } => "current_node_error",
-        }
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct NodeStatusObservation {
@@ -46,7 +30,7 @@ impl NodeSyncAnalyzer {
         observation.state.is_healthy()
     }
 
-    pub fn select_best_node(current: &Url, observations: &[NodeStatusObservation]) -> Option<NodeSwitchResult> {
+    pub fn select_best_node(current: &Url, observations: &[NodeStatusObservation], block_delay_threshold: u64) -> Option<NodeSwitchResult> {
         let current_observation = observations.iter().find(|o| o.url == *current)?;
 
         let switch_reason = match &current_observation.state {
@@ -72,18 +56,23 @@ impl NodeSyncAnalyzer {
                 let current_status = current_observation.state.as_status()?;
                 Some(NodeSwitchResult {
                     observation: observation.clone(),
-                    reason: Self::switch_reason(current_status, new_status),
+                    reason: Self::switch_reason(current_status, new_status, current_observation.latency, observation.latency, block_delay_threshold),
                 })
             }
             _ => None,
         }
     }
 
-    fn switch_reason(current: &NodeSyncStatus, new: &NodeSyncStatus) -> NodeSwitchReason {
-        if Self::status_height(new) > Self::status_height(current) {
-            NodeSwitchReason::BlockHeight
+    fn switch_reason(current: &NodeSyncStatus, new: &NodeSyncStatus, current_latency: Duration, new_latency: Duration, block_delay_threshold: u64) -> NodeSwitchReason {
+        let old_block = Self::status_height(current);
+        let new_block = Self::status_height(new);
+        if new_block > old_block + block_delay_threshold {
+            NodeSwitchReason::BlockHeight { old_block, new_block }
         } else {
-            NodeSwitchReason::Latency
+            NodeSwitchReason::Latency {
+                old_latency_ms: current_latency.as_millis() as u64,
+                new_latency_ms: new_latency.as_millis() as u64,
+            }
         }
     }
 
@@ -154,9 +143,9 @@ mod tests {
             healthy_observation("https://c", Some(110), Some(110), 5),
         ];
 
-        let result = NodeSyncAnalyzer::select_best_node(&current, &observations).unwrap();
+        let result = NodeSyncAnalyzer::select_best_node(&current, &observations, 1).unwrap();
         assert_eq!(result.observation.url.url, "https://b");
-        assert_eq!(result.reason, NodeSwitchReason::BlockHeight);
+        assert!(matches!(result.reason, NodeSwitchReason::BlockHeight { old_block: 100, new_block: 120 }));
     }
 
     #[test]
@@ -168,9 +157,15 @@ mod tests {
             healthy_observation("https://c", Some(120), Some(120), 10),
         ];
 
-        let result = NodeSyncAnalyzer::select_best_node(&current, &observations).unwrap();
+        let result = NodeSyncAnalyzer::select_best_node(&current, &observations, 1).unwrap();
         assert_eq!(result.observation.url.url, "https://c");
-        assert_eq!(result.reason, NodeSwitchReason::Latency);
+        assert!(matches!(
+            result.reason,
+            NodeSwitchReason::Latency {
+                old_latency_ms: 50,
+                new_latency_ms: 10
+            }
+        ));
     }
 
     #[test]
@@ -182,7 +177,7 @@ mod tests {
             NodeStatusObservation::new(url("https://c"), NodeStatusState::error("rpc error"), Duration::from_millis(5)),
         ];
 
-        let result = NodeSyncAnalyzer::select_best_node(&current, &observations).unwrap();
+        let result = NodeSyncAnalyzer::select_best_node(&current, &observations, 1).unwrap();
         assert_eq!(result.observation.url.url, "https://b");
     }
 
@@ -194,7 +189,7 @@ mod tests {
             NodeStatusObservation::new(url("https://b"), NodeStatusState::error("rpc"), Duration::from_millis(5)),
         ];
 
-        assert!(NodeSyncAnalyzer::select_best_node(&current, &observations).is_none());
+        assert!(NodeSyncAnalyzer::select_best_node(&current, &observations, 1).is_none());
     }
 
     #[test]
@@ -205,7 +200,7 @@ mod tests {
             healthy_observation("https://b", Some(120), Some(120), 40),
         ];
 
-        let result = NodeSyncAnalyzer::select_best_node(&current, &observations).unwrap();
+        let result = NodeSyncAnalyzer::select_best_node(&current, &observations, 1).unwrap();
         assert_eq!(result.observation.url.url, "https://b");
         assert!(matches!(result.reason, NodeSwitchReason::CurrentNodeError { .. }));
     }
@@ -215,7 +210,7 @@ mod tests {
         let current = url("https://a");
         let observations = vec![healthy_observation("https://b", Some(120), Some(120), 40)];
 
-        assert!(NodeSyncAnalyzer::select_best_node(&current, &observations).is_none());
+        assert!(NodeSyncAnalyzer::select_best_node(&current, &observations, 1).is_none());
     }
 
     #[test]
@@ -226,6 +221,36 @@ mod tests {
             NodeStatusObservation::new(url("https://b"), NodeStatusState::error("also failed"), Duration::from_millis(20)),
         ];
 
-        assert!(NodeSyncAnalyzer::select_best_node(&current, &observations).is_none());
+        assert!(NodeSyncAnalyzer::select_best_node(&current, &observations, 1).is_none());
+    }
+
+    #[test]
+    fn block_height_within_threshold_returns_latency() {
+        let current = url("https://a");
+        let observations = vec![
+            healthy_observation("https://a", Some(100), Some(100), 50),
+            healthy_observation("https://b", Some(105), Some(105), 10),
+        ];
+
+        let result = NodeSyncAnalyzer::select_best_node(&current, &observations, 10).unwrap();
+        assert!(matches!(
+            result.reason,
+            NodeSwitchReason::Latency {
+                old_latency_ms: 50,
+                new_latency_ms: 10
+            }
+        ));
+    }
+
+    #[test]
+    fn block_height_exceeds_threshold_returns_block_height() {
+        let current = url("https://a");
+        let observations = vec![
+            healthy_observation("https://a", Some(100), Some(100), 10),
+            healthy_observation("https://b", Some(115), Some(115), 30),
+        ];
+
+        let result = NodeSyncAnalyzer::select_best_node(&current, &observations, 10).unwrap();
+        assert!(matches!(result.reason, NodeSwitchReason::BlockHeight { old_block: 100, new_block: 115 }));
     }
 }

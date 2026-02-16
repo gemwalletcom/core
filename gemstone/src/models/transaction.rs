@@ -158,6 +158,14 @@ pub struct GemHyperliquidOrder {
     pub agent_private_key: String,
 }
 
+pub type GemStakeData = StakeData;
+
+#[uniffi::remote(Record)]
+pub struct GemStakeData {
+    pub data: Option<String>,
+    pub to: Option<String>,
+}
+
 #[derive(Debug, Clone, uniffi::Enum)]
 pub enum GemStakeType {
     Delegate { validator: GemDelegationValidator },

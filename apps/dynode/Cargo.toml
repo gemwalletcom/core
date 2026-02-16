@@ -3,6 +3,9 @@ name = "dynode"
 version = { workspace = true }
 edition = { workspace = true }
 
+[features]
+testkit = []
+
 [dependencies]
 config = { workspace = true }
 serde = { workspace = true }
@@ -17,6 +20,7 @@ gem_tracing = { path = "../../crates/tracing" }
 gem_client = { path = "../../crates/gem_client" }
 metrics = { path = "../../crates/metrics" }
 settings_chain = { path = "../../crates/settings_chain" }
+serde_serializers = { path = "../../crates/serde_serializers" }
 
 regex = { workspace = true }
 url = { workspace = true }

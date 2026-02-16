@@ -1,9 +1,10 @@
-use crate::{DatabaseClient, models::*};
+use crate::{DatabaseClient, models::*, sql_types::PlatformStore};
 
 use diesel::{prelude::*, upsert::excluded};
 
 pub(crate) trait ReleasesStore {
     fn get_releases(&mut self) -> Result<Vec<ReleaseRow>, diesel::result::Error>;
+    fn get_release(&mut self, store: &PlatformStore) -> Result<Option<ReleaseRow>, diesel::result::Error>;
     fn add_releases(&mut self, values: Vec<ReleaseRow>) -> Result<usize, diesel::result::Error>;
     fn update_release(&mut self, release: ReleaseRow) -> Result<usize, diesel::result::Error>;
 }
@@ -12,6 +13,15 @@ impl ReleasesStore for DatabaseClient {
     fn get_releases(&mut self) -> Result<Vec<ReleaseRow>, diesel::result::Error> {
         use crate::schema::releases::dsl::*;
         releases.order(updated_at.desc()).select(ReleaseRow::as_select()).load(&mut self.connection)
+    }
+
+    fn get_release(&mut self, store: &PlatformStore) -> Result<Option<ReleaseRow>, diesel::result::Error> {
+        use crate::schema::releases::dsl::*;
+        releases
+            .filter(platform_store.eq(store))
+            .select(ReleaseRow::as_select())
+            .first(&mut self.connection)
+            .optional()
     }
 
     fn add_releases(&mut self, values: Vec<ReleaseRow>) -> Result<usize, diesel::result::Error> {

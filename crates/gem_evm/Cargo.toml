@@ -14,9 +14,10 @@ testkit = []
 [dependencies]
 primitives = { path = "../primitives" }
 chain_primitives = { path = "../chain_primitives" }
-serde_serializers = { path = "../serde_serializers" }
+serde_serializers = { path = "../serde_serializers", features = ["bigint"] }
 gem_jsonrpc = { path = "../gem_jsonrpc" }
 gem_client = { path = "../gem_client" }
+gem_hash = { path = "../gem_hash" }
 gem_bsc = { path = "../gem_bsc" }
 signer = { path = "../signer" }
 

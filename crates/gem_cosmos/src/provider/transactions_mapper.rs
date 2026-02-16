@@ -1,8 +1,8 @@
 use base64::{Engine as _, engine::general_purpose};
 use chrono::DateTime;
+use gem_hash::sha2::sha256;
 use primitives::chain_cosmos::CosmosChain;
 use primitives::{AssetId, StakeValidator, Transaction, TransactionState, TransactionType};
-use sha2::{Digest, Sha256};
 use std::error::Error;
 
 use crate::constants::get_base_fee;
@@ -31,7 +31,7 @@ pub fn map_transaction_decode(body: String) -> Option<String> {
 }
 
 pub fn get_hash(bytes: Vec<u8>) -> String {
-    hex::encode(Sha256::digest(bytes.clone())).to_uppercase()
+    hex::encode(sha256(&bytes)).to_uppercase()
 }
 
 pub fn map_transactions(chain: CosmosChain, transactions: Vec<TransactionResponse>) -> Vec<primitives::Transaction> {

@@ -3,6 +3,7 @@ use gem_aptos::AptosChainSigner;
 use gem_hypercore::signer::HyperCoreSigner;
 use gem_solana::signer::SolanaChainSigner;
 use gem_sui::signer::SuiChainSigner;
+use gem_tron::TronChainSigner;
 use primitives::{Chain, ChainSigner, SignerError, TransactionLoadInput};
 
 #[derive(uniffi::Object)]
@@ -20,6 +21,7 @@ impl GemChainSigner {
             Chain::HyperCore => Box::new(HyperCoreSigner),
             Chain::Sui => Box::new(SuiChainSigner),
             Chain::Solana => Box::new(SolanaChainSigner),
+            Chain::Tron => Box::new(TronChainSigner),
             _ => todo!("Signer not implemented for chain {:?}", chain),
         };
 

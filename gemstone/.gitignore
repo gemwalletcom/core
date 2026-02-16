@@ -4,3 +4,4 @@ generated/
 xcuserdata/
 jniLibs/
 .kotlin/
+gradle-daemon-jvm.properties
