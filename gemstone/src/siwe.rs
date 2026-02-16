@@ -1,4 +1,5 @@
 pub use gem_evm::siwe::SiweMessage;
+use crate::GemstoneError;
 use primitives::Chain;
 
 #[uniffi::remote(Record)]
@@ -19,5 +20,5 @@ pub fn siwe_try_parse(raw: String) -> Option<SiweMessage> {
 
 #[uniffi::export]
 pub fn siwe_validate(message: SiweMessage, chain: Chain) -> Result<(), crate::GemstoneError> {
-    message.validate(chain).map_err(|e| crate::GemstoneError::AnyError { msg: e })
+    message.validate(chain).map_err(|e| GemstoneError::AnyError { msg: e })
 }

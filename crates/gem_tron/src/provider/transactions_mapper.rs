@@ -67,27 +67,28 @@ pub fn map_transaction(chain: Chain, transaction: TronTransaction, receipt: Tran
         let fee = receipt.fee.unwrap_or_default().to_string();
         let created_at = DateTime::from_timestamp_millis(receipt.block_time_stamp)?;
 
-        let from = TronAddress::from_hex(value.parameter.value.owner_address.unwrap_or_default().as_str()).unwrap_or_default();
+        let contract_value = value.parameter.value;
+        let from = contract_value.owner_address.unwrap_or_default();
 
         if let Some((transaction_type, to, amount, metadata)) = match value.contract_type.as_str() {
             TRANSFER_CONTRACT if !transaction.ret.is_empty() => {
-                let to = TronAddress::from_hex(value.parameter.value.to_address.unwrap_or_default().as_str()).unwrap_or_default();
-                Some((TransactionType::Transfer, to, value.parameter.value.amount.unwrap_or_default().to_string(), None))
+                let to = contract_value.to_address.unwrap_or_default();
+                Some((TransactionType::Transfer, to, contract_value.amount.unwrap_or_default().to_string(), None))
             }
             FREEZE_BALANCE_V2_CONTRACT => Some((
                 TransactionType::StakeFreeze,
                 from.clone(),
-                value.parameter.value.frozen_balance.unwrap_or_default().to_string(),
-                resource_type_metadata(value.parameter.value.resource.clone()),
+                contract_value.frozen_balance.unwrap_or_default().to_string(),
+                resource_type_metadata(contract_value.resource.clone()),
             )),
             UNFREEZE_BALANCE_V2_CONTRACT => Some((
                 TransactionType::StakeUnfreeze,
                 from.clone(),
-                value.parameter.value.unfreeze_balance.unwrap_or_default().to_string(),
-                resource_type_metadata(value.parameter.value.resource.clone()),
+                contract_value.unfreeze_balance.unwrap_or_default().to_string(),
+                resource_type_metadata(contract_value.resource.clone()),
             )),
             VOTE_WITNESS_CONTRACT => {
-                let votes = value.parameter.value.votes.as_ref()?;
+                let votes = contract_value.votes.as_ref()?;
                 let vote = votes.first()?;
                 let to = TronAddress::from_hex(vote.vote_address.as_str()).unwrap_or_default();
                 let amount = vote.vote_count * 1_000_000;
@@ -121,7 +122,7 @@ pub fn map_transaction(chain: Chain, transaction: TronTransaction, receipt: Tran
             let log = logs.first()?;
             let from_string = format!("41{}", log.topics.clone().unwrap_or_default()[1].clone().chars().skip(24).collect::<String>());
             let to_string = format!("41{}", log.topics.clone().unwrap_or_default()[2].clone().chars().skip(24).collect::<String>());
-            let token_id = TronAddress::from_hex(value.parameter.value.contract_address?.as_str()).unwrap_or_default();
+            let token_id = contract_value.contract_address?;
             let from = TronAddress::from_hex(from_string.as_str()).unwrap_or_default();
             let to = TronAddress::from_hex(to_string.as_str()).unwrap_or_default();
             let value = BigUint::from_str_radix(&log.data.clone().unwrap_or_default(), 16).unwrap();

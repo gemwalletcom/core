@@ -263,6 +263,8 @@ pub mod ip_usage_type;
 pub use self::ip_usage_type::IpUsageType;
 pub mod metrics;
 pub use self::metrics::{ConsumerStatus, JobStatus, ParserStatus, ReportedError};
+pub mod value_access;
+pub use self::value_access::ValueAccess;
 
 #[cfg(any(test, feature = "testkit"))]
 pub mod testkit;

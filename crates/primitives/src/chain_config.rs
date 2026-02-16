@@ -330,7 +330,7 @@ static CHAIN_CONFIGS: &[ChainConfig] = &[
     },
     ChainConfig {
         chain: Chain::Tron,
-        network_id: "",
+        network_id: "0x2b6653dc",
         denom: None,
         slip44: 195,
         chain_type: ChainType::Tron,

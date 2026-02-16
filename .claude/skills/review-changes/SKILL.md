@@ -50,6 +50,11 @@ Analyze the diff above and check for the following issues:
 - [ ] **Implement `From` traits**: For error conversion between types
 - [ ] **Propagate with `?`**: Prefer `?` operator over manual `map_err` where possible
 - [ ] **Consistent `Result<T, Error>`**: Use consistent return types
+- [ ] **Constructor methods on errors**: Use `ErrorType::constructor(msg)` instead of verbose `ErrorType::Variant("redundant context".into())`
+
+### 3b. JSON Parameter Extraction
+- [ ] **Use `primitives::ValueAccess`**: For `serde_json::Value` access, use composable trait methods (`get_value(key)`, `at(index)`, `string()`) instead of manual `.get().ok_or()` chains. Chain for compound access: `params.get_value("key")?.at(0)?.string()?`
+- [ ] **Accessor methods on parent types**: Add accessor methods (e.g., `TransactionLoadInput::get_data_extra()`) to avoid pattern-matching boilerplate at call sites
 
 ### 4. Code Style
 - [ ] **Line length**: Maximum 180 characters
@@ -107,6 +112,10 @@ Analyze the diff above and check for the following issues:
 - [ ] **Test naming**: Prefix with `test_` descriptively
 - [ ] **Error handling**: Use `Result<(), Box<dyn std::error::Error + Send + Sync>>`
 - [ ] **Test data**: For long JSON (>20 lines), store in `testdata/` and use `include_str!()`
+- [ ] **`.unwrap()` not `.expect()`**: Never use `.expect()` in tests; use `.unwrap()` for brevity
+- [ ] **Mock methods in testkit**: Use `Type::mock()` constructors in `testkit/` modules instead of inline struct construction in tests
+- [ ] **`PartialEq` + `assert_eq!`**: Derive `PartialEq` on test-relevant enums and use direct `assert_eq!` with constructed expected values instead of destructuring with `let ... else { panic! }` or `match ... { _ => panic! }`
+- [ ] **Test helpers**: Create concise constructor functions (e.g., `fn object(json: &str) -> EnumType`, `fn sign_message(chain, sign_type, data) -> Action`) for frequently constructed enum variants in test modules
 
 ### 10. Security
 - [ ] **No hardcoded secrets**: Check for API keys, passwords, credentials

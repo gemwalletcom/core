@@ -1,12 +1,12 @@
 use crate::responders::cache_error;
 use gem_auth::{AuthClient, verify_auth_signature};
+use gem_hash::sha2::sha256;
 use primitives::{AuthMessage, AuthenticatedRequest};
 use rocket::data::{FromData, Outcome, ToByteUnit};
 use rocket::http::Status;
 use rocket::outcome::Outcome::{Error, Success};
 use rocket::{Data, Request, State};
 use serde::de::DeserializeOwned;
-use sha2::{Digest, Sha256};
 use std::sync::Arc;
 use storage::Database;
 use storage::database::devices::DevicesStore;
@@ -38,7 +38,7 @@ async fn verify_wallet_signature<'r, T: DeserializeOwned + Send, O>(req: &'r Req
     let raw_body = bytes.into_inner();
 
     if let Some(expected_hash) = req.headers().get_one("x-device-body-hash") {
-        let actual_hash = format!("{:x}", Sha256::digest(&raw_body));
+        let actual_hash = hex::encode(sha256(&raw_body));
         if actual_hash != expected_hash {
             return Err(error_outcome(req, Status::BadRequest, "Body hash mismatch"));
         }
