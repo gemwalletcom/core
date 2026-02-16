@@ -1,7 +1,7 @@
 use crate::models::{EpochInfo, TokenAccountInfo, VoteAccount};
 use chrono::Utc;
 use num_bigint::BigUint;
-use primitives::{AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
+use primitives::{AssetId, Chain, DelegationBase, DelegationState, DelegationValidator, EarnProviderType};
 
 pub fn map_staking_validators(vote_accounts: Vec<VoteAccount>, chain: Chain, network_apy: f64) -> Vec<DelegationValidator> {
     vote_accounts
@@ -18,6 +18,7 @@ pub fn map_staking_validators(vote_accounts: Vec<VoteAccount>, chain: Chain, net
                 is_active,
                 commission: validator.commission as f64,
                 apr: validator_apr,
+                provider_type: EarnProviderType::Stake,
             }
         })
         .collect()
