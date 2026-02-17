@@ -2,9 +2,6 @@ use std::sync::{Arc, OnceLock};
 use std::time::Duration;
 use tracing_subscriber::FmtSubscriber;
 
-mod sentry;
-pub use sentry::*;
-
 static TRACING_SUBSCRIBER: OnceLock<Arc<FmtSubscriber>> = OnceLock::new();
 
 pub fn get_subscriber() -> Arc<FmtSubscriber> {
@@ -54,13 +51,6 @@ pub fn error_with_fields_impl<E: std::error::Error + ?Sized>(message: &str, erro
             tracing::error!("{}: {} {}", message, field_pairs.join(" "), error);
         }
     });
-
-    configure_scope(|scope| {
-        for (key, value) in fields {
-            scope.set_tag(key, value.to_string());
-        }
-    });
-    capture_message(message, Level::Error);
 }
 
 #[macro_export]
@@ -92,5 +82,4 @@ pub fn error<E: std::error::Error + ?Sized>(message: &str, error: &E) {
     tracing::subscriber::with_default(subscriber, || {
         tracing::error!("{}: {}", message, error);
     });
-    capture_error(error);
 }

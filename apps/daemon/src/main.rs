@@ -20,7 +20,7 @@ use crate::worker::context::WorkerContext;
 use crate::worker::job_schedule::CacherJobTracker;
 use crate::worker::runtime::WorkerRuntime;
 use cacher::CacherClient;
-use gem_tracing::{SentryConfig, SentryTracing, error_with_fields, info_with_fields};
+use gem_tracing::{error_with_fields, info_with_fields};
 use job_runner::{JobHandle, JobSchedule};
 use std::sync::atomic::{AtomicBool, Ordering};
 use streamer::ConsumerStatusReporter;
@@ -38,11 +38,6 @@ pub async fn main() {
     });
 
     let settings = settings::Settings::new().unwrap();
-    let sentry_config = settings.sentry.as_ref().map(|s| SentryConfig {
-        dsn: s.dsn.clone(),
-        sample_rate: s.sample_rate,
-    });
-    let _tracing = SentryTracing::init(sentry_config.as_ref(), service.as_ref());
 
     info_with_fields!("daemon start", service = service.name());
 

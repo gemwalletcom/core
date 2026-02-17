@@ -17,7 +17,7 @@ num-bigint = { workspace = true }
 
 prometheus-client = { workspace = true }
 metrics = { path = "../../crates/metrics" }
-gem_tracing = { path = "../../crates/tracing", features = ["sentry"] }
+gem_tracing = { path = "../../crates/tracing" }
 settings = { path = "../../crates/settings" }
 storage = { path = "../../crates/storage" }
 api_connector = { path = "../../crates/api_connector" }

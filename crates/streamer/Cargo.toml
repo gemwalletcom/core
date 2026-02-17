@@ -13,5 +13,5 @@ strum = { workspace = true }
 
 lapin = { version = "4.0.0" }
 
-gem_tracing = { path = "../tracing", features = ["sentry"] }
+gem_tracing = { path = "../tracing" }
 primitives = { path = "../primitives" }

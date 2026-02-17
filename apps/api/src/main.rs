@@ -37,7 +37,6 @@ use devices::{DeviceCacher, DevicesClient};
 use fiat::FiatProviderFactory;
 use gem_auth::AuthClient;
 use gem_rewards::{AbuseIPDBClient, IpApiClient, IpCheckProvider, IpSecurityClient};
-use gem_tracing::{SentryConfig, SentryTracing};
 use metrics::fiat::FiatMetrics;
 use model::APIService;
 use name_resolver::NameProviderFactory;
@@ -303,11 +302,6 @@ async fn rocket_ws_stream(settings: Settings) -> Rocket<Build> {
 async fn main() {
     let settings = Settings::new().unwrap();
 
-    let sentry_config = settings.sentry.as_ref().map(|s| SentryConfig {
-        dsn: s.dsn.clone(),
-        sample_rate: s.sample_rate,
-    });
-    let _tracing = SentryTracing::init(sentry_config.as_ref(), "api");
     let service = std::env::args().nth(1).unwrap_or_default();
     let service = APIService::from_str(service.as_str()).ok().unwrap_or(APIService::Api);
 

@@ -4,10 +4,5 @@ version = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
-sentry = { version = "0.46.1", default-features = false, features = ["tracing", "reqwest", "rustls", "backtrace", "contexts", "debug-images", "panic", "release-health"], optional = true }
 tracing = { version = "0.1.44" }
 tracing-subscriber = { version = "0.3.22" }
-
-[features]
-default = []
-sentry = ["dep:sentry"]

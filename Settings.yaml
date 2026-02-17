@@ -287,10 +287,6 @@ nft:
       public: ""
       secret: ""
 
-sentry:
-  dsn: ""
-  sample_rate: 1.0
-
 rewards:
   wallets: {}
 

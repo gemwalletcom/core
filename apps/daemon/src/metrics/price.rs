@@ -1,5 +1,5 @@
-use std::sync::atomic::AtomicI64;
 use std::sync::Mutex;
+use std::sync::atomic::AtomicI64;
 
 use prometheus_client::metrics::gauge::Gauge;
 use prometheus_client::registry::Registry;

@@ -23,11 +23,7 @@ use crate::pusher::Pusher;
 use store_charts_consumer::StoreChartsConsumer;
 use store_prices_consumer::StorePricesConsumer;
 
-pub async fn run_consumer_store(
-    settings: Settings,
-    shutdown_rx: ShutdownReceiver,
-    reporter: Arc<dyn ConsumerStatusReporter>,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn run_consumer_store(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let settings = Arc::new(settings);
 
     futures::future::try_join_all(vec![
@@ -71,11 +67,7 @@ async fn run_store_transactions(settings: Arc<Settings>, shutdown_rx: ShutdownRe
         .await
 }
 
-async fn run_store_prices(
-    settings: Arc<Settings>,
-    shutdown_rx: ShutdownReceiver,
-    reporter: Arc<dyn ConsumerStatusReporter>,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn run_store_prices(settings: Arc<Settings>, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let queue = QueueName::StorePrices;
     let (name, stream_reader) = reader_for_queue(&settings, &queue).await?;

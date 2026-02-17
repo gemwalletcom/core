@@ -38,7 +38,6 @@ pub struct Settings {
     pub ankr: Ankr,
     pub trongrid: Trongrid,
     pub assets: Assets,
-    pub sentry: Option<Sentry>,
     pub rewards: Rewards,
     pub ip: Ip,
 }
@@ -371,12 +370,6 @@ pub struct BucketConfiguration {
 }
 
 pub type Assets = URL;
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct Sentry {
-    pub dsn: String,
-    pub sample_rate: f32,
-}
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Rewards {

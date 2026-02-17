@@ -20,7 +20,7 @@ chrono = { workspace = true }
 gem_hash = { path = "../../crates/gem_hash" }
 hex = { workspace = true }
 
-gem_tracing = { path = "../../crates/tracing", features = ["sentry"] }
+gem_tracing = { path = "../../crates/tracing" }
 storage = { path = "../../crates/storage" }
 pricer = { path = "../../crates/pricer" }
 fiat = { path = "../../crates/fiat" }

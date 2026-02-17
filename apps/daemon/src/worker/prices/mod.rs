@@ -34,7 +34,11 @@ struct DexProviderConfig {
     timer: u64,
 }
 
-pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver, price_metrics: Arc<crate::metrics::price::PriceMetrics>) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
+pub async fn jobs(
+    ctx: WorkerContext,
+    shutdown_rx: ShutdownReceiver,
+    price_metrics: Arc<crate::metrics::price::PriceMetrics>,
+) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
     let runtime = ctx.runtime();
     let database = ctx.database();
     let settings = ctx.settings();
