@@ -14,6 +14,7 @@ pub enum SwapProvider {
     Panora,
     Thorchain,
     Jupiter,
+    Okx,
     Across,
     Oku,
     Wagmi,
@@ -45,6 +46,7 @@ impl SwapProvider {
             Self::Panora => "Panora",
             Self::Thorchain => "THORChain",
             Self::Jupiter => "Jupiter",
+            Self::Okx => "OKX",
             Self::Across => "Across",
             Self::Oku => "Oku",
             Self::Wagmi => "Wagmi",
@@ -70,6 +72,7 @@ impl SwapProvider {
             Self::StonfiV2 => "STON.fi v2",
             Self::Thorchain
             | Self::Jupiter
+            | Self::Okx
             | Self::Wagmi
             | Self::Cetus
             | Self::Mayan
