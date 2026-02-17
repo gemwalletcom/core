@@ -47,7 +47,7 @@ impl ProviderType {
             | SwapperProvider::Okx => SwapProviderMode::OnChain,
             SwapperProvider::Mayan | SwapperProvider::Chainflip | SwapperProvider::NearIntents => SwapProviderMode::CrossChain,
             SwapperProvider::Thorchain => SwapProviderMode::OmniChain(vec![Chain::Thorchain, Chain::Tron]),
-            SwapperProvider::Relay => SwapProviderMode::OmniChain(vec![Chain::Hyperliquid, Chain::Manta, Chain::Berachain]),
+            SwapperProvider::Relay => SwapProviderMode::OmniChain(vec![Chain::Bitcoin, Chain::Solana, Chain::Hyperliquid, Chain::Berachain]),
             SwapperProvider::Across => SwapProviderMode::Bridge,
             SwapperProvider::Hyperliquid => SwapProviderMode::OmniChain(vec![Chain::HyperCore, Chain::Hyperliquid]),
         }
