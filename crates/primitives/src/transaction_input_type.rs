@@ -1,3 +1,4 @@
+use crate::earn_type::EarnType;
 use crate::stake_type::StakeType;
 use crate::swap::{ApprovalData, SwapData};
 use crate::transaction_fee::TransactionFee;
@@ -21,6 +22,7 @@ pub enum TransactionInputType {
     TransferNft(Asset, NFTAsset),
     Account(Asset, AccountDataType),
     Perpetual(Asset, PerpetualType),
+    Earn(Asset, EarnType),
 }
 
 impl TransactionInputType {
@@ -35,6 +37,7 @@ impl TransactionInputType {
             TransactionInputType::TransferNft(asset, _) => asset,
             TransactionInputType::Account(asset, _) => asset,
             TransactionInputType::Perpetual(asset, _) => asset,
+            TransactionInputType::Earn(asset, _) => asset,
         }
     }
 
@@ -63,6 +66,7 @@ impl TransactionInputType {
             TransactionInputType::TransferNft(asset, _) => asset,
             TransactionInputType::Account(asset, _) => asset,
             TransactionInputType::Perpetual(asset, _) => asset,
+            TransactionInputType::Earn(asset, _) => asset,
         }
     }
 
@@ -86,6 +90,10 @@ impl TransactionInputType {
                 PerpetualType::Open(_) | PerpetualType::Increase(_) => TransactionType::PerpetualOpenPosition,
                 PerpetualType::Close(_) | PerpetualType::Reduce(_) => TransactionType::PerpetualClosePosition,
                 PerpetualType::Modify(_) => TransactionType::PerpetualModifyPosition,
+            },
+            TransactionInputType::Earn(_, earn_type) => match earn_type {
+                EarnType::Deposit(_) => TransactionType::EarnDeposit,
+                EarnType::Withdraw(_) => TransactionType::EarnWithdraw,
             },
         }
     }

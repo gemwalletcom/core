@@ -27,6 +27,8 @@ pub enum TransactionType {
     PerpetualOpenPosition,
     PerpetualClosePosition,
     PerpetualModifyPosition,
+    EarnDeposit,
+    EarnWithdraw,
 }
 
 impl TransactionType {

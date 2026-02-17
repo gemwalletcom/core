@@ -84,14 +84,11 @@ Individual `gem_*` crates for each blockchain with unified RPC client patterns:
 
 ## Technology Stack
 
-- Framework: Rust workspace with Rocket web framework
-- Database: PostgreSQL (primary), Redis (caching)
-- Message Queue: RabbitMQ with Lapin
-- RPC: Custom `gem_jsonrpc` client library for blockchain interactions
-- Mobile: UniFFI for iOS/Android bindings
-- Serialization: Serde with custom serializers
-- Async: Tokio runtime
-- Testing: Built-in Rust testing with integration tests
+- **Framework**: Rust workspace with Rocket, Tokio async runtime
+- **Database**: PostgreSQL with Diesel ORM, Redis caching
+- **Message Queue**: RabbitMQ with Lapin
+- **Mobile**: UniFFI for iOS/Android bindings
+- **Serialization**: Serde with custom serializers
 
 ## Development Workflow
 
@@ -164,6 +161,11 @@ Follow the existing code style patterns unless explicitly asked to change
 ### Commit Messages
 - Write descriptive messages following conventional commit format
 
+### Code Style
+- **Prefer immutability**: Avoid `mut` when possible. Use functional patterns like `map()`, `filter()`, `fold()`, and method chaining instead of mutable accumulators
+- **Minimal comments**: Do not add comments unless absolutely necessary. Code should be self-documenting through clear naming and structure. Comments are acceptable only for non-obvious business logic or external API quirks
+- **No dead code**: Remove unused functions, variables, and imports immediately. Don't comment out code "for later"
+
 ### Naming and Conventions
 - Files/modules: `snake_case` (e.g., `asset_id.rs`, `chain_address.rs`)
 - Crates: Prefixed naming (`gem_*` for blockchains, `security_*` for security)
@@ -201,24 +203,18 @@ IMPORTANT: Always import models and types at the top of the file. Never use inli
 ### Database Patterns
 - Separate database models from domain primitives
 - Use `as_primitive()` methods for conversion
-- Diesel ORM with PostgreSQL backend
 - Support transactions and upserts
 
 ### Async Patterns
-- Tokio runtime throughout
 - Async client structs returning `Result<T, Error>`
 - Use `Arc<tokio::sync::Mutex<T>>` for shared async state
 
 ## Architecture & Patterns
 
 ### Key Development Patterns
-- One crate per blockchain using unified RPC client patterns
-- UniFFI bindings require careful Rust API design for mobile compatibility
 - Use `BigDecimal` for financial precision
-- Use async/await with Tokio across services
-- Database models use Diesel ORM with automatic migrations
-- Consider cross-platform performance constraints for mobile
-- Shared U256 conversions: prefer `u256_to_biguint` and `biguint_to_u256` from `crates/gem_evm/src/u256.rs` for Alloy `U256` <-> `BigUint` conversions.
+- Consider cross-platform performance constraints for mobile (UniFFI bindings require careful Rust API design)
+- Shared U256 conversions: prefer `u256_to_biguint` and `biguint_to_u256` from `crates/gem_evm/src/u256.rs` for Alloy `U256` <-> `BigUint` conversions
 
 ### Code Organization
 - **Modular structure**: Break down long files into smaller, focused modules by logical responsibility
@@ -284,7 +280,6 @@ Direct repository access methods available on `DatabaseClient` include:
 - **Use `primitives::hex`** for hex encoding/decoding (not `alloy_primitives::hex`)
 - RPC calls expect hex strings directly; avoid double encoding
 - Use `JsonRpcClient::batch_call()` for batch operations
-- Propagate errors via `JsonRpcError`
 
 ### Blockchain Provider Patterns
 - Each blockchain crate has a `provider/` directory with trait implementations
@@ -295,8 +290,7 @@ Direct repository access methods available on `DatabaseClient` include:
 
 ## Testing
 
-### Conventions
-- Place integration tests in `tests/` directories
+- Place integration tests in `tests/` directories with layout: `src/`, `tests/`, `testdata/`
 - Use `#[tokio::test]` for async tests
 - Prefix test names descriptively with `test_`
 - Use `Result<(), Box<dyn std::error::Error + Send + Sync>>` for test error handling

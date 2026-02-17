@@ -466,10 +466,11 @@ mod tests {
     }
 }
 
-#[cfg(all(test, feature = "swap_integration_tests", feature = "reqwest_provider"))]
+#[cfg(all(test, feature = "swap_integration_tests"))]
 mod swap_integration_tests {
     use super::*;
-    use crate::{FetchQuoteData, SwapperMode, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode, alien::reqwest_provider::NativeProvider, models::Options};
+    use crate::{FetchQuoteData, SwapperMode, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode, models::Options};
+    use gem_jsonrpc::native_provider::NativeProvider;
     use primitives::{AssetId, Chain, swap::SwapStatus};
     use std::sync::Arc;
 
@@ -525,7 +526,7 @@ mod swap_integration_tests {
             to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Near)),
             wallet_address: "GBZXN7PIRZGNMHGA3RSSOEV56YXG54FSNTJDGQI3GHDVBKSXRZ5B6KJT".to_string(),
             destination_address: "test.near".to_string(),
-            value: "1000000".to_string(),
+            value: "12000000".to_string(),
             mode: SwapperMode::ExactIn,
             options,
         };
@@ -541,7 +542,10 @@ mod swap_integration_tests {
             Err(error) => return Err(error),
         };
 
-        assert!(!quote_data.data.is_empty(), "expected deposit memo for Stellar swaps via Near Intents");
+        assert!(
+            quote_data.memo.as_ref().is_some_and(|memo| !memo.is_empty()),
+            "expected deposit memo for Stellar swaps via Near Intents"
+        );
 
         Ok(())
     }

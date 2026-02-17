@@ -20,8 +20,8 @@ use crate::{
     jito::{JitoClient, JitoTipFloor},
     solana_client::{JUPITER_PROGRAM, SolanaFeeData, SolanaGasClient},
 };
+use gem_jsonrpc::native_provider::NativeProvider;
 use gem_evm::ether_conv::EtherConv;
-use gemstone::alien::reqwest_provider::NativeProvider;
 use primitives::fee::FeePriority;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]

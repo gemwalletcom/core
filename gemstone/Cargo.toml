@@ -14,11 +14,12 @@ name = "gemstone"
 
 [features]
 default = []
-reqwest_provider = ["dep:reqwest", "swapper/reqwest_provider"]
+reqwest_provider = ["dep:reqwest", "gem_jsonrpc/reqwest"]
 swap_integration_tests = ["reqwest_provider"]
 
 [dependencies]
 swapper = { path = "../crates/swapper" }
+yielder = { path = "../crates/yielder" }
 primitives = { path = "../crates/primitives" }
 gem_cosmos = { path = "../crates/gem_cosmos", features = ["rpc"] }
 gem_solana = { path = "../crates/gem_solana", features = ["rpc", "signer"] }
@@ -62,6 +63,7 @@ futures.workspace = true
 bs58 = { workspace = true }
 url = { workspace = true }
 zeroize = { workspace = true }
+strum = { workspace = true }
 
 [build-dependencies]
 uniffi = { workspace = true, features = ["build"] }

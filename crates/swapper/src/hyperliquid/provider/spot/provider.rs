@@ -252,10 +252,11 @@ impl Swapper for HyperCoreSpot {
     }
 }
 
-#[cfg(all(test, feature = "swap_integration_tests", feature = "reqwest_provider"))]
+#[cfg(all(test, feature = "swap_integration_tests"))]
 mod tests {
     use super::*;
     use crate::{hyperliquid::provider::spot::math::SPOT_ASSET_OFFSET, testkit::mock_quote};
+    use gem_jsonrpc::native_provider::NativeProvider;
     use primitives::swap::SwapQuoteDataType;
     use std::str::FromStr;
 
@@ -268,7 +269,7 @@ mod tests {
     }
 
     async fn assert_spot_quote(from_asset: SwapperQuoteAsset, to_asset: SwapperQuoteAsset) {
-        let spot = HyperCoreSpot::new(Arc::new(crate::NativeProvider::new()));
+        let spot = HyperCoreSpot::new(Arc::new(NativeProvider::new()));
 
         let mut request = mock_quote(from_asset, to_asset);
         request.options.preferred_providers = vec![SwapperProvider::Hyperliquid];

@@ -221,7 +221,7 @@ mod tests {
                 ApprovalType::Approve(ApprovalData {
                     token: token.clone(),
                     spender: permit2_contract.clone(),
-                    value: amount.to_string()
+                    value: amount.to_string(),
                 }),
                 ApprovalType::Permit2(Permit2ApprovalData {
                     token: token.clone(),

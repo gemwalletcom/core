@@ -50,4 +50,10 @@ mod tests {
         let bytes = decode_hex("0xa").expect("decode");
         assert_eq!(bytes, vec![0x0a]);
     }
+
+    #[test]
+    fn encode_with_0x_adds_prefix() {
+        assert_eq!(encode_with_0x(&[0x0a, 0x0b]), "0x0a0b");
+        assert_eq!(encode_with_0x(&[]), "0x");
+    }
 }

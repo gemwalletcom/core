@@ -231,7 +231,7 @@ impl GemSwapper {
     }
 }
 
-#[cfg(all(test, feature = "reqwest_provider"))]
+#[cfg(test)]
 mod tests {
 
     use std::{borrow::Cow, collections::BTreeSet, sync::Arc, vec};
@@ -241,11 +241,11 @@ mod tests {
     use super::*;
     use crate::{
         Options, SwapperChainAsset, SwapperMode, SwapperProvider, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode,
-        alien::reqwest_provider::NativeProvider,
         config::{DEFAULT_STABLE_SWAP_REFERRAL_BPS, DEFAULT_SWAP_FEE_BPS, ReferralFees},
         testkit::{MockSwapper, mock_quote},
         uniswap::default::{new_pancakeswap, new_uniswap_v3},
     };
+    use gem_jsonrpc::native_provider::NativeProvider;
 
     fn build_request(from_symbol: &str, to_symbol: &str, fee: Option<ReferralFees>) -> QuoteRequest {
         QuoteRequest {

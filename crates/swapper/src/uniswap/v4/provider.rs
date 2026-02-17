@@ -295,14 +295,15 @@ mod tests {
         assert_eq!(swapper.provider.id, SwapperProvider::UniswapV4);
     }
 
-    #[cfg(all(test, feature = "swap_integration_tests", feature = "reqwest_provider"))]
+    #[cfg(all(test, feature = "swap_integration_tests"))]
     mod swap_integration_tests {
         use super::*;
         use crate::{
-            FetchQuoteData, NativeProvider, Options, QuoteRequest, SwapperError, SwapperMode, SwapperProvider,
+            FetchQuoteData, Options, QuoteRequest, SwapperError, SwapperMode, SwapperProvider,
             config::{ReferralFee, ReferralFees},
             uniswap,
         };
+        use gem_jsonrpc::native_provider::NativeProvider;
         use primitives::{AssetId, Chain};
         use std::{sync::Arc, time::SystemTime};
 

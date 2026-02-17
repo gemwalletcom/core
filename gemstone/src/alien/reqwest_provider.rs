@@ -1,9 +1,7 @@
 use super::{AlienError, AlienProvider, AlienTarget};
 use async_trait::async_trait;
-use gem_jsonrpc::{RpcProvider as GenericRpcProvider, RpcResponse};
+use gem_jsonrpc::{NativeProvider, RpcProvider as GenericRpcProvider, RpcResponse};
 use primitives::Chain;
-
-pub use swapper::NativeProvider;
 
 #[async_trait]
 impl AlienProvider for NativeProvider {

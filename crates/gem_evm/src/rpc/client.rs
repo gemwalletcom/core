@@ -2,28 +2,19 @@ use alloy_primitives::{Address, Bytes, hex};
 use gem_client::Client;
 use gem_jsonrpc::client::JsonRpcClient as GenericJsonRpcClient;
 use gem_jsonrpc::types::{ERROR_INTERNAL_ERROR, JsonRpcError, JsonRpcResult};
-
 use num_bigint::{BigInt, Sign};
+use primitives::{Chain, EVMChain, NodeType};
 use serde::de::DeserializeOwned;
 use serde_json::json;
 use serde_serializers::biguint_from_hex_str;
 use std::any::TypeId;
 use std::str::FromStr;
 
-use super::{
-    ankr::AnkrClient,
-    model::{Block, BlockTransactionsIds, EthSyncingStatus, Transaction, TransactionReciept, TransactionReplayTrace},
-};
+use super::ankr::AnkrClient;
+use super::model::{Block, BlockTransactionsIds, EthSyncingStatus, Transaction, TransactionReciept, TransactionReplayTrace};
 use crate::models::fee::EthereumFeeHistory;
 #[cfg(feature = "rpc")]
-use crate::multicall3::{
-    IMulticall3,
-    IMulticall3::{Call3, Result as MulticallResult},
-    deployment_by_chain,
-};
-#[cfg(feature = "rpc")]
-use alloy_sol_types::SolCall;
-use primitives::{Chain, EVMChain, NodeType};
+use crate::multicall3::{IMulticall3, Multicall3Builder, deployment_by_chain_stack};
 
 pub const FUNCTION_ERC20_NAME: &str = "0x06fdde03";
 pub const FUNCTION_ERC20_SYMBOL: &str = "0x95d89b41";
@@ -254,22 +245,30 @@ impl<C: Client + Clone> EthereumClient<C> {
     }
 
     #[cfg(feature = "rpc")]
-    pub async fn multicall3(&self, calls: Vec<Call3>) -> Result<Vec<MulticallResult>, Box<dyn std::error::Error + Sync + Send>> {
-        let multicall_address = deployment_by_chain(&self.chain);
+    pub fn multicall(&self) -> Multicall3Builder<'_, C> {
+        Multicall3Builder::new(self)
+    }
+
+    #[cfg(feature = "rpc")]
+    pub async fn multicall3(&self, calls: Vec<IMulticall3::Call3>) -> Result<Vec<IMulticall3::Result>, Box<dyn std::error::Error + Sync + Send>> {
+        use alloy_sol_types::SolCall;
+
+        let multicall_address = deployment_by_chain_stack(self.chain.chain_stack());
         let multicall_data = IMulticall3::aggregate3Call { calls }.abi_encode();
 
-        let call = (
-            "eth_call".to_string(),
-            json!([{
-                "to": multicall_address,
-                "data": hex::encode_prefixed(&multicall_data)
-            }, "latest"]),
-        );
+        let result: String = self
+            .client
+            .call(
+                "eth_call",
+                json!([{
+                    "to": multicall_address,
+                    "data": hex::encode_prefixed(&multicall_data)
+                }, "latest"]),
+            )
+            .await?;
 
-        let result: String = self.call(call.0, call.1).await?;
         let result_data = hex::decode(&result)?;
-        let multicall_results = IMulticall3::aggregate3Call::abi_decode_returns(&result_data).map_err(|e| Box::new(e) as Box<dyn std::error::Error + Sync + Send>)?;
-
-        Ok(multicall_results)
+        let results = IMulticall3::aggregate3Call::abi_decode_returns(&result_data)?;
+        Ok(results)
     }
 }

@@ -3442,11 +3442,13 @@ dependencies = [
  "serde",
  "serde_json",
  "signer",
+ "strum",
  "sui-sdk-types",
  "swapper",
  "tokio",
  "uniffi",
  "url",
+ "yielder",
  "zeroize",
 ]
 
@@ -6062,9 +6064,9 @@ dependencies = [
 
 [[package]]
 name = "ruint"
-version = "1.17.0"
+version = "1.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a68df0380e5c9d20ce49534f292a36a7514ae21350726efe1865bdb1fa91d278"
+checksum = "7f5befb5191be3584a4edaf63435e8ff92ffff622e711ca7e77f8f8f365a9df8"
 dependencies = [
  "alloy-rlp",
  "ark-ff 0.3.0",
@@ -8897,6 +8899,27 @@ dependencies = [
  "form_urlencoded",
  "serde",
  "thiserror 1.0.69",
+]
+
+[[package]]
+name = "yielder"
+version = "1.0.0"
+dependencies = [
+ "alloy-primitives",
+ "alloy-sol-types",
+ "async-trait",
+ "futures",
+ "gem_client",
+ "gem_evm",
+ "gem_jsonrpc",
+ "num-bigint",
+ "primitives",
+ "reqwest 0.13.1",
+ "serde",
+ "serde_json",
+ "serde_serializers",
+ "strum",
+ "tokio",
 ]
 
 [[package]]

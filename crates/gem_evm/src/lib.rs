@@ -15,6 +15,7 @@ pub mod fee_calculator;
 pub mod jsonrpc;
 pub mod message;
 pub mod monad;
+#[cfg(feature = "rpc")]
 pub mod multicall3;
 pub mod permit2;
 #[cfg(feature = "rpc")]

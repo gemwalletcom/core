@@ -1,10 +1,10 @@
 use std::error::Error;
 use std::sync::Arc;
 
-use gem_jsonrpc::client::JsonRpcClient;
+use gem_jsonrpc::{NativeProvider, client::JsonRpcClient};
 use gem_solana::models::jito::{FeeStats, calculate_fee_stats};
 use gem_solana::models::prioritization_fee::SolanaPrioritizationFee;
-use gemstone::alien::{AlienProvider, new_alien_client, reqwest_provider::NativeProvider};
+use gemstone::alien::{AlienProvider, new_alien_client};
 use primitives::Chain;
 use serde_json::json;
 

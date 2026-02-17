@@ -8,4 +8,5 @@ pub enum BalanceType {
     pendingUnconfirmed,
     rewards,
     reserved,
+    earn,
 }

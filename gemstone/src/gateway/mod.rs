@@ -10,6 +10,7 @@ use preferences::PreferencesWrapper;
 
 use crate::alien::{AlienProvider, new_alien_client};
 use crate::api_client::GemApiClient;
+use crate::gem_yielder::{GemYield, build_yielder, prepare_yield_input};
 use crate::models::*;
 use crate::network::JsonRpcClient;
 use chain_traits::ChainTraits;
@@ -32,7 +33,11 @@ use gem_xrp::rpc::client::XRPClient;
 use std::future::Future;
 use std::sync::Arc;
 
-use primitives::{BitcoinChain, Chain, ChartPeriod, EVMChain, ScanAddressTarget, ScanTransactionPayload, TransactionPreloadInput, chain_cosmos::CosmosChain};
+use num_bigint::BigUint;
+use primitives::{
+    AssetBalance, AssetId, BitcoinChain, Chain, ChartPeriod, EVMChain, ScanAddressTarget, ScanTransactionPayload, TransactionPreloadInput, chain_cosmos::CosmosChain,
+};
+use yielder::Yielder;
 
 #[uniffi::export(with_foreign)]
 #[async_trait::async_trait]
@@ -47,6 +52,7 @@ pub struct GemGateway {
     pub preferences: Arc<dyn GemPreferences>,
     pub secure_preferences: Arc<dyn GemPreferences>,
     pub api_client: GemApiClient,
+    yielder: Yielder,
 }
 
 impl std::fmt::Debug for GemGateway {
@@ -151,11 +157,13 @@ impl GemGateway {
     #[uniffi::constructor]
     pub fn new(provider: Arc<dyn AlienProvider>, preferences: Arc<dyn GemPreferences>, secure_preferences: Arc<dyn GemPreferences>, api_url: String) -> Self {
         let api_client = GemApiClient::new(api_url, provider.clone());
+        let yielder = build_yielder(provider.clone());
         Self {
             provider,
             preferences,
             secure_preferences,
             api_client,
+            yielder,
         }
     }
 
@@ -170,6 +178,30 @@ impl GemGateway {
 
     pub async fn get_balance_staking(&self, chain: Chain, address: String) -> Result<Option<GemAssetBalance>, GatewayError> {
         self.with_provider(chain, |provider| async move { provider.get_balance_staking(address).await }).await
+    }
+
+    pub async fn get_balance_earn(&self, chain: Chain, address: String) -> Result<Vec<GemAssetBalance>, GatewayError> {
+        let positions = self.yielder.positions_for_chain(chain, &address).await;
+        Ok(positions
+            .into_iter()
+            .filter(|(_, d)| d.balance > BigUint::ZERO)
+            .map(|(y, d)| AssetBalance::new_earn(y.asset_id, d.balance))
+            .collect())
+    }
+
+    pub async fn get_earn_providers(&self, asset_id: String) -> Result<Vec<GemYield>, GatewayError> {
+        let asset_id = AssetId::new(&asset_id).ok_or_else(|| GatewayError::NetworkError {
+            msg: format!("invalid asset_id: {asset_id}"),
+        })?;
+        self.yielder
+            .yields_for_asset_with_apy(&asset_id)
+            .await
+            .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })
+    }
+
+    pub async fn get_earn_positions(&self, chain: Chain, address: String) -> Result<Vec<GemDelegationBase>, GatewayError> {
+        let positions = self.yielder.positions_for_chain(chain, &address).await;
+        Ok(positions.into_iter().map(|(_, d)| d).collect())
     }
 
     pub async fn get_staking_validators(&self, chain: Chain, apy: Option<f64>) -> Result<Vec<GemDelegationValidator>, GatewayError> {
@@ -259,6 +291,10 @@ impl GemGateway {
     }
 
     pub async fn get_transaction_load(&self, chain: Chain, input: GemTransactionLoadInput, provider: Arc<dyn GemGatewayEstimateFee>) -> Result<GemTransactionData, GatewayError> {
+        let input = prepare_yield_input(&self.yielder, input)
+            .await
+            .map_err(|e| GatewayError::NetworkError { msg: e.to_string() })?;
+
         let fee = self.get_fee(chain, input.clone(), provider.clone()).await?;
 
         let load_data = self
@@ -318,7 +354,7 @@ impl GemGateway {
 #[cfg(all(test, feature = "reqwest_provider"))]
 mod tests {
     use super::*;
-    use crate::alien::reqwest_provider::NativeProvider;
+    use gem_jsonrpc::native_provider::NativeProvider;
 
     #[tokio::test]
     async fn test_get_node_status_http_404_error() {
