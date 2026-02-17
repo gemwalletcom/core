@@ -128,7 +128,7 @@ impl ProxyRequestService {
         let url = RequestUrl::from_parts(resolved_url, &request.path_with_query);
         let headers = self.build_headers(url.url.host_str().unwrap_or_default(), &request.headers);
 
-        self.metrics.add_proxy_request(request.chain.as_ref(), &request.user_agent);
+        self.metrics.add_proxy_request(request.chain.as_ref());
 
         Self::log_incoming_request(&request, request_type);
 
@@ -141,7 +141,7 @@ impl ProxyRequestService {
             .flatten();
 
         let methods_for_metrics = request_type.get_methods_for_metrics();
-        self.metrics.add_proxy_request_batch(request.chain.as_ref(), &request.user_agent, &methods_for_metrics);
+        self.metrics.add_proxy_request_batch(request.chain.as_ref(), &methods_for_metrics);
 
         if let Some(key) = &cache_key
             && let Some(result) = Self::try_cache_hit(&self.cache, key, &request, &url, &self.metrics, request_type, &methods_for_metrics).await

@@ -24,7 +24,6 @@ Uses `config.yml` to define:
 - Blockchain domains and their RPC endpoints
 - Node health check intervals and block delay thresholds
 - Custom headers and URL overrides per endpoint
-- User agent pattern matching for metrics
 
 ## Commands
 
@@ -38,7 +37,7 @@ cargo clippy     # Code quality checks
 ## Metrics
 
 Exposes metrics on `/metrics` endpoint including:
-- Request counts by host and user agent
+- Request counts by host and method
 - Response latency histograms  
 - Current active node per domain
 - Block height tracking

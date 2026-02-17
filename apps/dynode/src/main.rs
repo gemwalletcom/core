@@ -140,7 +140,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     let metrics_config = dynode::config::MetricsConfig {
         prefix: config.metrics.prefix.clone(),
-        user_agent_patterns: config.metrics.user_agent_patterns.clone(),
     };
     let metrics = Metrics::new(metrics_config);
     let node_service = NodeService::new(

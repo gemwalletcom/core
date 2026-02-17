@@ -2590,7 +2590,6 @@ dependencies = [
  "metrics",
  "primitives",
  "prometheus-client",
- "regex",
  "reqwest 0.13.1",
  "rocket",
  "serde",

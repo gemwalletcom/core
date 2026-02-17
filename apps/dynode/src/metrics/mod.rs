@@ -1,5 +1,3 @@
-mod user_agent;
-
 use crate::config::MetricsConfig;
 use metrics::MetricsRegistry;
 use prometheus_client::encoding::EncodeLabelSet;
@@ -8,13 +6,11 @@ use prometheus_client::metrics::family::Family;
 use prometheus_client::metrics::gauge::Gauge;
 use prometheus_client::metrics::histogram::{Histogram, exponential_buckets};
 use std::sync::Arc;
-use user_agent::UserAgentMatcher;
 
 #[derive(Debug, Clone)]
 pub struct Metrics {
     registry: Arc<MetricsRegistry>,
     proxy_requests: Family<ProxyRequestLabels, Counter>,
-    proxy_requests_by_user_agent: Family<ProxyRequestByAgentLabels, Gauge>,
     proxy_requests_by_method: Family<ProxyRequestByMethodLabels, Counter>,
     proxy_response_latency: Family<ResponseLabels, Histogram>,
     node_host_current: Family<HostCurrentStateLabels, Gauge>,
@@ -24,18 +20,11 @@ pub struct Metrics {
     inflight_misses: Family<CacheLabels, Counter>,
     node_switches: Family<NodeSwitchLabels, Counter>,
     auth_requests: Family<AuthLabels, Counter>,
-    user_agent_matcher: UserAgentMatcher,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
 pub struct ProxyRequestLabels {
     chain: String,
-}
-
-#[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
-pub struct ProxyRequestByAgentLabels {
-    chain: String,
-    user_agent: String,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
@@ -81,7 +70,6 @@ pub struct AuthLabels {
 impl Metrics {
     pub fn new(config: MetricsConfig) -> Self {
         let proxy_requests = Family::<ProxyRequestLabels, Counter>::default();
-        let proxy_requests_by_user_agent = Family::<ProxyRequestByAgentLabels, Gauge>::default();
         let proxy_requests_by_method = Family::<ProxyRequestByMethodLabels, Counter>::default();
         let proxy_response_latency = Family::<ResponseLabels, Histogram>::new_with_constructor(|| Histogram::new(exponential_buckets(50.0, 2.0, 6)));
         let node_host_current = Family::<HostCurrentStateLabels, Gauge>::default();
@@ -95,11 +83,6 @@ impl Metrics {
         let mut metrics_registry = MetricsRegistry::with_prefix(&config.prefix);
         let registry = metrics_registry.registry_mut();
         registry.register("proxy_requests", "Proxy requests by host", proxy_requests.clone());
-        registry.register(
-            "proxy_requests_by_user_agent_total",
-            "Proxy requests by host and user agent",
-            proxy_requests_by_user_agent.clone(),
-        );
         registry.register(
             "proxy_requests_by_method",
             "Proxy requests by host and method (HTTP path or RPC method)",
@@ -121,7 +104,6 @@ impl Metrics {
         Self {
             registry: Arc::new(metrics_registry),
             proxy_requests,
-            proxy_requests_by_user_agent,
             proxy_requests_by_method,
             proxy_response_latency,
             node_host_current,
@@ -131,20 +113,11 @@ impl Metrics {
             inflight_misses,
             node_switches,
             auth_requests,
-            user_agent_matcher: UserAgentMatcher::new(&config.user_agent_patterns),
         }
     }
 
-    pub fn add_proxy_request(&self, chain: &str, user_agent: &str) {
+    pub fn add_proxy_request(&self, chain: &str) {
         self.proxy_requests.get_or_create(&ProxyRequestLabels { chain: chain.to_string() }).inc();
-
-        let user_agent = self.categorize_user_agent(user_agent).to_string();
-        self.proxy_requests_by_user_agent
-            .get_or_create(&ProxyRequestByAgentLabels {
-                chain: chain.to_string(),
-                user_agent,
-            })
-            .inc();
     }
 
     pub fn add_proxy_request_by_method(&self, chain: &str, method: &str) {
@@ -154,16 +127,8 @@ impl Metrics {
             .inc();
     }
 
-    pub fn add_proxy_request_batch(&self, chain: &str, user_agent: &str, methods: &[String]) {
+    pub fn add_proxy_request_batch(&self, chain: &str, methods: &[String]) {
         self.proxy_requests.get_or_create(&ProxyRequestLabels { chain: chain.to_string() }).inc();
-
-        let user_agent = self.categorize_user_agent(user_agent).to_string();
-        self.proxy_requests_by_user_agent
-            .get_or_create(&ProxyRequestByAgentLabels {
-                chain: chain.to_string(),
-                user_agent,
-            })
-            .inc();
 
         for method in methods {
             let method = self.truncate_method(method);
@@ -261,23 +226,15 @@ impl Metrics {
             .collect::<Vec<String>>()
             .join("/")
     }
-
-    fn categorize_user_agent(&self, user_agent: &str) -> &str {
-        self.user_agent_matcher.categorize(user_agent)
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::{MetricsConfig, UserAgentPatterns};
-    use std::collections::HashMap;
+    use crate::config::MetricsConfig;
 
     fn create_test_metrics() -> Metrics {
-        let config = MetricsConfig {
-            prefix: "test".to_string(),
-            user_agent_patterns: UserAgentPatterns { patterns: HashMap::new() },
-        };
+        let config = MetricsConfig { prefix: "test".to_string() };
         Metrics::new(config)
     }
 

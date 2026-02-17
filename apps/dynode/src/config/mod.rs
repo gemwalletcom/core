@@ -17,7 +17,7 @@ mod url;
 
 pub use cache::{CacheConfig, CacheRule};
 pub use domain::ChainConfig;
-pub use metrics::{MetricsConfig, UserAgentPatterns};
+pub use metrics::MetricsConfig;
 pub use url::{NodeResult, Override, Url};
 
 #[derive(Debug, Deserialize, Clone)]
@@ -295,6 +295,4 @@ pub struct MetricsSettings {
     pub port: u16,
     pub address: String,
     pub prefix: String,
-    #[serde(default)]
-    pub user_agent_patterns: UserAgentPatterns,
 }

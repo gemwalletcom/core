@@ -138,7 +138,6 @@ impl NodeService {
                     let error = e.to_string();
                     let request_id = request.id.as_str();
                     let chain = request.chain.as_ref();
-                    let user_agent = request.user_agent.as_str();
                     let latency = DurationMs(request.elapsed());
                     info_with_fields!(
                         "Upstream error",
@@ -146,7 +145,6 @@ impl NodeService {
                         chain = chain,
                         remote_host = remote_host.as_str(),
                         error = error.as_str(),
-                        user_agent = user_agent,
                         latency = latency,
                     );
                     last_error = Some(error);
@@ -296,7 +294,6 @@ impl NodeService {
         let uri = request.path.as_str();
         let method = request.method.as_str();
         let remote_host = host.unwrap_or("none");
-        let user_agent = request.user_agent.as_str();
         let latency = DurationMs(request.elapsed());
         let status: u16 = 500;
         info_with_fields!(
@@ -308,7 +305,6 @@ impl NodeService {
             uri = uri,
             status = status,
             error = error_message,
-            user_agent = user_agent,
             latency = latency,
         );
 
