@@ -1,11 +1,70 @@
 use crate::{
-    FetchQuoteData, ProviderType, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, SwapperSlippage, SwapperSlippageMode,
+    FetchQuoteData, ProviderData, ProviderType, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, SwapperSlippage, SwapperSlippageMode,
     config::get_swap_config,
 };
 use async_trait::async_trait;
-use primitives::Chain;
+use gem_client::Client;
+use primitives::{AssetId, Chain};
+use serde::{Serialize, de::DeserializeOwned};
+use std::collections::HashMap;
 
 use super::{Options, Quote, QuoteRequest, SwapperMode};
+
+#[derive(Debug, Clone)]
+pub struct MockClient;
+
+#[async_trait]
+impl Client for MockClient {
+    async fn get<R>(&self, _path: &str) -> Result<R, gem_client::ClientError>
+    where
+        R: DeserializeOwned,
+    {
+        unimplemented!()
+    }
+    async fn post<T, R>(&self, _path: &str, _body: &T, _headers: Option<HashMap<String, String>>) -> Result<R, gem_client::ClientError>
+    where
+        T: Serialize + Send + Sync,
+        R: DeserializeOwned,
+    {
+        unimplemented!()
+    }
+}
+
+impl ProviderData {
+    pub fn mock() -> Self {
+        ProviderData {
+            provider: ProviderType::new(SwapperProvider::Okx),
+            routes: vec![],
+            slippage_bps: 50,
+        }
+    }
+}
+
+impl QuoteRequest {
+    pub fn mock(chain: Chain, token_id: Option<&str>) -> Self {
+        QuoteRequest {
+            from_asset: SwapperQuoteAsset::from(AssetId::from(chain, token_id.map(|s| s.to_string()))),
+            to_asset: SwapperQuoteAsset::from(AssetId::from_chain(chain)),
+            wallet_address: "address".to_string(),
+            destination_address: "address".to_string(),
+            value: "1000000".to_string(),
+            mode: SwapperMode::ExactIn,
+            options: Options::default(),
+        }
+    }
+}
+
+impl Quote {
+    pub fn mock(chain: Chain, token_id: Option<&str>) -> Self {
+        Quote {
+            from_value: "1000000".to_string(),
+            to_value: "1000000".to_string(),
+            data: ProviderData::mock(),
+            request: QuoteRequest::mock(chain, token_id),
+            eta_in_seconds: None,
+        }
+    }
+}
 
 pub fn mock_quote(from_asset: SwapperQuoteAsset, to_asset: SwapperQuoteAsset) -> QuoteRequest {
     let config = get_swap_config();

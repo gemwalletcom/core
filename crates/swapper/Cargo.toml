@@ -50,3 +50,4 @@ tracing = "0.1.44"
 
 [dev-dependencies]
 tokio.workspace = true
+primitives = { path = "../primitives", features = ["testkit"], default-features = false }
