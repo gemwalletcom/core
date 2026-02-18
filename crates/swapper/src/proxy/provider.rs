@@ -46,7 +46,7 @@ where
         }
     }
 
-    pub async fn check_approval(&self, quote: &Quote, quote_data: &SwapQuoteData) -> Result<(Option<ApprovalData>, Option<String>), SwapperError> {
+    pub async fn check_approval_and_limit(&self, quote: &Quote, quote_data: &SwapQuoteData) -> Result<(Option<ApprovalData>, Option<String>), SwapperError> {
         let request = &quote.request;
         let from_asset = request.from_asset.asset_id();
 
@@ -66,8 +66,7 @@ where
                     .await
                 }
             }
-            ChainType::Tron => Ok((None, None)),
-            _ => Ok((None, None)),
+            _ => Ok((None, quote_data.gas_limit.clone())),
         }
     }
 
@@ -222,7 +221,7 @@ where
         let route_data: ProxyQuote = serde_json::from_str(&routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
 
         let data = self.client.get_quote_data(route_data).await?;
-        let (approval, gas_limit) = self.check_approval(quote, &data).await?;
+        let (approval, gas_limit) = self.check_approval_and_limit(quote, &data).await?;
 
         Ok(SwapperQuoteData::new_contract(data.to, data.value, data.data, approval, gas_limit))
     }
@@ -258,6 +257,51 @@ where
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::client::ProxyClient;
+    use super::*;
+    use crate::alien::mock::ProviderMock;
+    use gem_client::testkit::MockClient;
+    use primitives::swap::SwapQuoteData;
+
+    fn mock_provider(provider: SwapperProvider) -> ProxyProvider<MockClient> {
+        let rpc_provider = Arc::new(ProviderMock::new("{}".to_string()));
+        ProxyProvider::new_with_client(provider, ProxyClient::new(MockClient::new()), vec![], rpc_provider)
+    }
+
+    #[tokio::test]
+    async fn test_solana_preserves_provider_gas_limit() {
+        let provider = mock_provider(SwapperProvider::Okx);
+        let quote = Quote::mock(Chain::Solana, None);
+        let data = SwapQuoteData::mock_with_gas_limit(Some("550000".to_string()));
+
+        let (approval, gas_limit) = provider.check_approval_and_limit(&quote, &data).await.unwrap();
+
+        assert!(approval.is_none());
+        assert_eq!(gas_limit, Some("550000".to_string()));
+
+        let data = SwapQuoteData::mock_with_gas_limit(None);
+
+        let (approval, gas_limit) = provider.check_approval_and_limit(&quote, &data).await.unwrap();
+
+        assert!(approval.is_none());
+        assert!(gas_limit.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_evm_native_ignores_provider_gas_limit() {
+        let provider = mock_provider(SwapperProvider::Mayan);
+        let quote = Quote::mock(Chain::Ethereum, None);
+        let data = SwapQuoteData::mock_with_gas_limit(Some("550000".to_string()));
+
+        let (approval, gas_limit) = provider.check_approval_and_limit(&quote, &data).await.unwrap();
+
+        assert!(approval.is_none());
+        assert!(gas_limit.is_none());
     }
 }
 
