@@ -16,7 +16,7 @@ use crate::devices::error::DeviceError;
 use crate::devices::signature::{parse_auth_components, verify_request_signature};
 use crate::responders::cache_error;
 
-fn auth_error_outcome<T>(req: &Request<'_>, error: DeviceError) -> Outcome<T, String> {
+fn auth_error_outcome<T>(req: &Request<'_>, error: DeviceError, device_id: Option<&str>) -> Outcome<T, String> {
     let status = match error {
         DeviceError::MissingHeader(_)
         | DeviceError::InvalidDeviceId
@@ -27,16 +27,19 @@ fn auth_error_outcome<T>(req: &Request<'_>, error: DeviceError) -> Outcome<T, St
         DeviceError::DeviceNotFound | DeviceError::WalletNotFound => Status::NotFound,
         DeviceError::DatabaseUnavailable | DeviceError::DatabaseError => Status::InternalServerError,
     };
-    let message = error.to_string();
+    let message = match device_id {
+        Some(id) => format!("{} device_id={}", error, id),
+        None => error.to_string(),
+    };
     cache_error(req, &message);
     Error((status, message))
 }
 
 fn get_validated_auth<T>(req: &Request<'_>) -> Result<DeviceAuthPayload, Outcome<T, String>> {
-    let components = parse_auth_components(req).map_err(|e| auth_error_outcome(req, e))?;
+    let components = parse_auth_components(req).map_err(|e| auth_error_outcome(req, e, None))?;
 
     if components.device_id.len() != DEVICE_ID_LENGTH {
-        return Err(auth_error_outcome(req, DeviceError::InvalidDeviceId));
+        return Err(auth_error_outcome(req, DeviceError::InvalidDeviceId, Some(&components.device_id)));
     }
 
     Ok(components)
@@ -73,19 +76,19 @@ impl<'r> FromRequest<'r> for AuthenticatedDevice {
         }
 
         let Success(database) = req.guard::<&rocket::State<Database>>().await else {
-            return auth_error_outcome(req, DeviceError::DatabaseUnavailable);
+            return auth_error_outcome(req, DeviceError::DatabaseUnavailable, Some(&components.device_id));
         };
 
         let Ok(mut db_client) = database.client() else {
-            return auth_error_outcome(req, DeviceError::DatabaseError);
+            return auth_error_outcome(req, DeviceError::DatabaseError, Some(&components.device_id));
         };
 
         let Ok(device_row) = DevicesStore::get_device(&mut db_client, &components.device_id) else {
-            return auth_error_outcome(req, DeviceError::DeviceNotFound);
+            return auth_error_outcome(req, DeviceError::DeviceNotFound, Some(&components.device_id));
         };
 
         if DeviceSessionsStore::add_device_session(&mut db_client, device_row.id).is_err() {
-            return auth_error_outcome(req, DeviceError::DatabaseError);
+            return auth_error_outcome(req, DeviceError::DatabaseError, Some(&components.device_id));
         }
 
         Success(AuthenticatedDevice { device_row })
@@ -132,7 +135,7 @@ impl<'r> FromRequest<'r> for AuthenticatedDeviceWallet {
         let wallet_id_str = components.wallet_id.as_deref().or_else(|| req.headers().get_one(HEADER_WALLET_ID));
 
         let Some(wallet_id_str) = wallet_id_str else {
-            return auth_error_outcome(req, DeviceError::MissingHeader(HEADER_WALLET_ID));
+            return auth_error_outcome(req, DeviceError::MissingHeader(HEADER_WALLET_ID), Some(&components.device_id));
         };
 
         if let Err((status, msg)) = verify_signature(req, &components).await {
@@ -141,23 +144,23 @@ impl<'r> FromRequest<'r> for AuthenticatedDeviceWallet {
         }
 
         let Success(database) = req.guard::<&rocket::State<Database>>().await else {
-            return auth_error_outcome(req, DeviceError::DatabaseUnavailable);
+            return auth_error_outcome(req, DeviceError::DatabaseUnavailable, Some(&components.device_id));
         };
 
         let Ok(mut db_client) = database.client() else {
-            return auth_error_outcome(req, DeviceError::DatabaseError);
+            return auth_error_outcome(req, DeviceError::DatabaseError, Some(&components.device_id));
         };
 
         let Ok(device_row) = DevicesStore::get_device(&mut db_client, &components.device_id) else {
-            return auth_error_outcome(req, DeviceError::DeviceNotFound);
+            return auth_error_outcome(req, DeviceError::DeviceNotFound, Some(&components.device_id));
         };
 
         let Ok(wallet_row) = WalletsStore::get_wallet(&mut db_client, wallet_id_str) else {
-            return auth_error_outcome(req, DeviceError::WalletNotFound);
+            return auth_error_outcome(req, DeviceError::WalletNotFound, Some(&components.device_id));
         };
 
         if DeviceSessionsStore::add_device_session(&mut db_client, device_row.id).is_err() {
-            return auth_error_outcome(req, DeviceError::DatabaseError);
+            return auth_error_outcome(req, DeviceError::DatabaseError, Some(&components.device_id));
         }
 
         Success(AuthenticatedDeviceWallet {
