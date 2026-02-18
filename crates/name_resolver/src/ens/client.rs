@@ -31,7 +31,7 @@ impl NameClient for ENSClient {
     }
 
     fn domains(&self) -> Vec<&'static str> {
-        vec!["eth"]
+        vec!["eth", "com", "xyz", "dev"]
     }
 
     fn chains(&self) -> Vec<Chain> {
