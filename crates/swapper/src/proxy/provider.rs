@@ -262,13 +262,15 @@ where
 
 #[cfg(test)]
 mod tests {
+    use super::super::client::ProxyClient;
     use super::*;
+    use crate::alien::mock::ProviderMock;
     use crate::testkit::MockClient;
     use primitives::swap::SwapQuoteData;
 
     fn mock_provider(provider: SwapperProvider) -> ProxyProvider<MockClient> {
-        let rpc_provider = Arc::new(crate::alien::mock::ProviderMock::new("{}".to_string()));
-        ProxyProvider::new_with_client(provider, super::super::client::ProxyClient::new(MockClient), vec![], rpc_provider)
+        let rpc_provider = Arc::new(ProviderMock::new("{}".to_string()));
+        ProxyProvider::new_with_client(provider, ProxyClient::new(MockClient), vec![], rpc_provider)
     }
 
     #[tokio::test]

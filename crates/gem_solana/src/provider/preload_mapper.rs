@@ -151,7 +151,7 @@ mod tests {
         let gas_price_type = GasPriceType::solana(5000u64, 30000u64, 100u64);
         let input_type = TransactionInputType::Swap(Asset::mock_sol(), Asset::mock_spl_token(), mock_swap_data_with_gas_limit(SwapProvider::Jupiter, None));
 
-        let fee = calculate_transaction_fee(&input_type, &gas_price_type, Some("existing_account".to_string()));
+        let fee = calculate_transaction_fee(&input_type, &gas_price_type, Some("recipient_token_address".to_string()));
 
         assert_eq!(fee.fee, BigInt::from(35_000u64));
         assert_eq!(fee.gas_limit, BigInt::from(420_000u64));
@@ -162,7 +162,7 @@ mod tests {
         let gas_price_type = GasPriceType::solana(5000u64, 30000u64, 100u64);
         let input_type = TransactionInputType::Swap(Asset::mock_sol(), Asset::mock_spl_token(), mock_swap_data_with_gas_limit(SwapProvider::Okx, Some("550000")));
 
-        let fee = calculate_transaction_fee(&input_type, &gas_price_type, Some("existing_account".to_string()));
+        let fee = calculate_transaction_fee(&input_type, &gas_price_type, Some("recipient_token_address".to_string()));
 
         assert_eq!(fee.gas_limit, BigInt::from(550_000u64));
     }
@@ -345,7 +345,7 @@ mod tests {
         };
         let input_type = TransactionInputType::Transfer(asset);
 
-        let fee = calculate_transaction_fee(&input_type, &gas_price_type, Some("existing_account".to_string()));
+        let fee = calculate_transaction_fee(&input_type, &gas_price_type, Some("recipient_token_address".to_string()));
 
         assert_eq!(fee.fee, BigInt::from(20_000u64));
         assert!(fee.options.is_empty());
