@@ -146,6 +146,20 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
             }
             _ => Err("Unsupported chain for staking".into()),
         },
+        TransactionInputType::Earn(_, _) => {
+            let earn_data = match &input.metadata {
+                TransactionLoadMetadata::Evm { earn_data: Some(ed), .. } => ed,
+                _ => return Err("Missing earn data in EVM metadata".into()),
+            };
+            let contract_address = earn_data.contract_address.as_ref().ok_or("Missing earn contract address")?;
+            let call_data_hex = earn_data.call_data.as_ref().ok_or("Missing earn call data")?;
+
+            if let Some(approval) = &earn_data.approval {
+                Ok(TransactionParams::new(approval.token.clone(), encode_erc20_approve(&approval.spender)?, BigInt::from(0)))
+            } else {
+                Ok(TransactionParams::new(contract_address.clone(), hex::decode(call_data_hex)?, value))
+            }
+        }
         _ => Err("Unsupported transfer type".into()),
     }
 }
@@ -183,6 +197,15 @@ pub fn get_extra_fee_gas_limit(input: &TransactionLoadInput) -> Result<BigInt, B
             } else {
                 Ok(BigInt::from(0))
             }
+        }
+        TransactionInputType::Earn(_, _) => {
+            if let TransactionLoadMetadata::Evm { earn_data: Some(ref ed), .. } = input.metadata
+                && ed.approval.is_some()
+                && let Some(ref gas_limit) = ed.gas_limit
+            {
+                return Ok(BigInt::from_str_radix(gas_limit, 10)?);
+            }
+            Ok(BigInt::from(0))
         }
         _ => Ok(BigInt::from(0)),
     }
