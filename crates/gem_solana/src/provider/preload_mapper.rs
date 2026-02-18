@@ -41,12 +41,13 @@ fn get_gas_limit(input_type: &TransactionInputType) -> BigInt {
         | TransactionInputType::TokenApprove(_, _)
         | TransactionInputType::Generic(_, _, _)
         | TransactionInputType::Perpetual(_, _) => BigInt::from(100_000),
-        TransactionInputType::Swap(_, _, swap_data) => {
-            swap_data.data.gas_limit.as_ref()
-                .and_then(|gl| gl.parse::<u64>().ok())
-                .map(BigInt::from)
-                .unwrap_or(BigInt::from(420_000))
-        }
+        TransactionInputType::Swap(_, _, swap_data) => swap_data
+            .data
+            .gas_limit
+            .as_ref()
+            .and_then(|x| x.parse::<u64>().ok())
+            .map(BigInt::from)
+            .unwrap_or(BigInt::from(420_000)),
         TransactionInputType::Stake(_, _) => BigInt::from(100_000),
     }
 }
@@ -148,11 +149,7 @@ mod tests {
     #[test]
     fn test_calculate_transaction_fee_swap() {
         let gas_price_type = GasPriceType::solana(5000u64, 30000u64, 100u64);
-        let input_type = TransactionInputType::Swap(
-            Asset::mock_sol(),
-            Asset::mock_spl_token(),
-            mock_swap_data_with_gas_limit(SwapProvider::Jupiter, None),
-        );
+        let input_type = TransactionInputType::Swap(Asset::mock_sol(), Asset::mock_spl_token(), mock_swap_data_with_gas_limit(SwapProvider::Jupiter, None));
 
         let fee = calculate_transaction_fee(&input_type, &gas_price_type, Some("existing_account".to_string()));
 
@@ -163,11 +160,7 @@ mod tests {
     #[test]
     fn test_calculate_transaction_fee_swap_with_provider_gas_limit() {
         let gas_price_type = GasPriceType::solana(5000u64, 30000u64, 100u64);
-        let input_type = TransactionInputType::Swap(
-            Asset::mock_sol(),
-            Asset::mock_spl_token(),
-            mock_swap_data_with_gas_limit(SwapProvider::Okx, Some("550000")),
-        );
+        let input_type = TransactionInputType::Swap(Asset::mock_sol(), Asset::mock_spl_token(), mock_swap_data_with_gas_limit(SwapProvider::Okx, Some("550000")));
 
         let fee = calculate_transaction_fee(&input_type, &gas_price_type, Some("existing_account".to_string()));
 
@@ -280,11 +273,7 @@ mod tests {
     #[test]
     fn test_calculate_fee_rates_swap() {
         let fees = vec![SolanaPrioritizationFee { prioritization_fee: 150_000 }];
-        let input_type = TransactionInputType::Swap(
-            Asset::mock_sol(),
-            Asset::mock_spl_token(),
-            mock_swap_data_with_gas_limit(SwapProvider::Jupiter, None),
-        );
+        let input_type = TransactionInputType::Swap(Asset::mock_sol(), Asset::mock_spl_token(), mock_swap_data_with_gas_limit(SwapProvider::Jupiter, None));
 
         let rates = calculate_fee_rates(&input_type, &fees);
         assert_eq!(rates.len(), 3);

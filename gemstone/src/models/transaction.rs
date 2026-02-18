@@ -730,8 +730,8 @@ impl From<TransferDataExtra> for GemTransferDataExtra {
     fn from(value: TransferDataExtra) -> Self {
         GemTransferDataExtra {
             to: value.to,
-            gas_limit: value.gas_limit.map(|gl| gl.to_string()),
-            gas_price: value.gas_price.map(|gp| gp.into()),
+            gas_limit: value.gas_limit.map(|x| x.to_string()),
+            gas_price: value.gas_price.map(|x| x.into()),
             data: value.data,
             output_type: value.output_type,
             output_action: value.output_action,
