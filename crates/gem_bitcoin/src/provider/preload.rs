@@ -43,11 +43,7 @@ impl<C: Client> ChainTransactionLoad for BitcoinClient<C> {
             BitcoinChain::Bitcoin | BitcoinChain::Litecoin | BitcoinChain::BitcoinCash | BitcoinChain::Doge => {
                 let priority = self.chain.get_blocks_fee_priority();
                 let (slow, normal, fast) = futures::try_join!(self.get_fee(priority.slow), self.get_fee(priority.normal), self.get_fee(priority.fast))?;
-                Ok(vec![
-                    FeeRate::new(FeePriority::Slow, GasPriceType::regular(slow)),
-                    FeeRate::new(FeePriority::Normal, GasPriceType::regular(normal)),
-                    FeeRate::new(FeePriority::Fast, GasPriceType::regular(fast)),
-                ])
+                Ok(map_fee_rates(slow, normal, fast, self.chain))
             }
             BitcoinChain::Zcash => {
                 return Ok(vec![FeeRate::new(FeePriority::Normal, GasPriceType::regular(BigInt::from(1_000).clone()))]);
@@ -83,6 +79,18 @@ fn calculate_fee_rate(fee_sat_per_kb: &str, minimum_byte_fee: u32) -> Result<Big
     Ok(BigInt::from(rate.max(minimum_byte_fee) as i64))
 }
 
+fn map_fee_rates(slow: BigInt, normal: BigInt, fast: BigInt, chain: BitcoinChain) -> Vec<FeeRate> {
+    let min_fee = BigInt::from(chain.minimum_byte_fee());
+    let normal = normal.max(&slow + &min_fee);
+    let third: BigInt = &normal / 3;
+    let fast = fast.max(&slow + &min_fee * 2).max(&normal + third);
+    vec![
+        FeeRate::new(FeePriority::Slow, GasPriceType::regular(slow)),
+        FeeRate::new(FeePriority::Normal, GasPriceType::regular(normal)),
+        FeeRate::new(FeePriority::Fast, GasPriceType::regular(fast)),
+    ]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -94,5 +102,31 @@ mod tests {
         assert_eq!(calculate_fee_rate("0.000001", 5).unwrap(), BigInt::from(5));
         assert_eq!(calculate_fee_rate("0", 1).unwrap(), BigInt::from(1));
         assert!(calculate_fee_rate("invalid", 1).is_err());
+    }
+
+
+    #[test]
+    fn test_map_fee_rates_bitcoin() {
+        // all 1 sat → normal=2 (slow+1), fast=3 (slow+2)
+        let rates = map_fee_rates(BigInt::from(1), BigInt::from(1), BigInt::from(1), BitcoinChain::Bitcoin);
+        assert_eq!(FeeRate::find(&rates, FeePriority::Normal).unwrap().gas_price_type.gas_price(), BigInt::from(2));
+        assert_eq!(FeeRate::find(&rates, FeePriority::Fast).unwrap().gas_price_type.gas_price(), BigInt::from(3));
+
+        // slow=1, normal=12, fast=12 → normal kept, fast=16 (12+12/3)
+        let rates = map_fee_rates(BigInt::from(1), BigInt::from(12), BigInt::from(12), BitcoinChain::Bitcoin);
+        assert_eq!(FeeRate::find(&rates, FeePriority::Normal).unwrap().gas_price_type.gas_price(), BigInt::from(12));
+        assert_eq!(FeeRate::find(&rates, FeePriority::Fast).unwrap().gas_price_type.gas_price(), BigInt::from(16));
+
+        // fast already higher → kept
+        let rates = map_fee_rates(BigInt::from(1), BigInt::from(12), BigInt::from(25), BitcoinChain::Bitcoin);
+        assert_eq!(FeeRate::find(&rates, FeePriority::Fast).unwrap().gas_price_type.gas_price(), BigInt::from(25));
+    }
+
+    #[test]
+    fn test_map_fee_rates_doge() {
+        // all 1000 → normal=2000 (1000+1000), fast=3000 (slow+2000)
+        let rates = map_fee_rates(BigInt::from(1000), BigInt::from(1000), BigInt::from(1000), BitcoinChain::Doge);
+        assert_eq!(FeeRate::find(&rates, FeePriority::Normal).unwrap().gas_price_type.gas_price(), BigInt::from(2000));
+        assert_eq!(FeeRate::find(&rates, FeePriority::Fast).unwrap().gas_price_type.gas_price(), BigInt::from(3000));
     }
 }

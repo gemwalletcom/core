@@ -34,4 +34,8 @@ impl FeeRate {
     pub fn new(priority: FeePriority, gas_price_type: GasPriceType) -> Self {
         Self { priority, gas_price_type }
     }
+
+    pub fn find(rates: &[FeeRate], priority: FeePriority) -> Option<&FeeRate> {
+        rates.iter().find(|r| r.priority == priority)
+    }
 }
