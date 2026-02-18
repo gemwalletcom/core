@@ -283,12 +283,7 @@ mod tests {
 
         assert!(approval.is_none());
         assert_eq!(gas_limit, Some("550000".to_string()));
-    }
 
-    #[tokio::test]
-    async fn test_solana_returns_none_when_no_provider_gas_limit() {
-        let provider = mock_provider(SwapperProvider::Okx);
-        let quote = Quote::mock(Chain::Solana, None);
         let data = SwapQuoteData::mock_with_gas_limit(None);
 
         let (approval, gas_limit) = provider.check_approval_and_limit(&quote, &data).await.unwrap();
