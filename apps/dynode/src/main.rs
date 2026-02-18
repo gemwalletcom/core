@@ -103,7 +103,7 @@ async fn process_proxy(chain: Chain, method: Method, request: &Request<'_>, data
 }
 
 async fn read_request_body(data: Data<'_>) -> Result<Vec<u8>, ErrorResponse> {
-    let mut stream = data.open(8.mebibytes());
+    let mut stream = data.open(32.mebibytes());
     let mut body = Vec::new();
     stream
         .read_to_end(&mut body)

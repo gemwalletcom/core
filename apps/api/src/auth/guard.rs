@@ -28,7 +28,7 @@ async fn verify_wallet_signature<'r, T: DeserializeOwned + Send, O>(req: &'r Req
         return Err(error_outcome(req, Status::InternalServerError, "Auth client not available"));
     };
 
-    let Ok(bytes) = data.open(8.mebibytes()).into_bytes().await else {
+    let Ok(bytes) = data.open(32.mebibytes()).into_bytes().await else {
         return Err(error_outcome(req, Status::BadRequest, "Failed to read body"));
     };
     if !bytes.is_complete() {
