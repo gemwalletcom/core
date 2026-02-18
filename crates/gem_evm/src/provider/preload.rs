@@ -76,6 +76,16 @@ impl<C: Client + Clone> EthereumClient<C> {
                 },
                 _ => input.metadata,
             }
+        } else if let TransactionInputType::Earn(_, _) = &input.input_type {
+            match input.metadata {
+                TransactionLoadMetadata::Evm { nonce, chain_id, earn_data, .. } => TransactionLoadMetadata::Evm {
+                    nonce,
+                    chain_id,
+                    stake_data: None,
+                    earn_data,
+                },
+                _ => input.metadata,
+            }
         } else {
             input.metadata
         };

@@ -299,6 +299,12 @@ impl GemGateway {
         Ok(self.provider(chain).await?.get_is_token_address(&token_id))
     }
 
+    pub async fn get_earn_data(&self, _chain: Chain, _asset_id: String, _address: String, _value: String, _earn_type: GemEarnType) -> Result<GemEarnData, GatewayError> {
+        Err(GatewayError::NetworkError {
+            msg: "Earn provider not available".to_string(),
+        })
+    }
+
     pub async fn get_node_status(&self, chain: Chain, url: &str) -> Result<GemNodeStatus, GatewayError> {
         let start_time = std::time::Instant::now();
         let provider = self.provider_with_url(chain, url.to_string()).await?;
