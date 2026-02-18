@@ -1,34 +1,11 @@
 use crate::{
-    FetchQuoteData, ProviderData, ProviderType, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, SwapperSlippage, SwapperSlippageMode,
-    config::get_swap_config,
+    FetchQuoteData, ProviderData, ProviderType, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, SwapperSlippage,
+    SwapperSlippageMode, config::get_swap_config,
 };
 use async_trait::async_trait;
-use gem_client::Client;
 use primitives::{AssetId, Chain};
-use serde::{Serialize, de::DeserializeOwned};
-use std::collections::HashMap;
 
 use super::{Options, Quote, QuoteRequest, SwapperMode};
-
-#[derive(Debug, Clone)]
-pub struct MockClient;
-
-#[async_trait]
-impl Client for MockClient {
-    async fn get<R>(&self, _path: &str) -> Result<R, gem_client::ClientError>
-    where
-        R: DeserializeOwned,
-    {
-        unimplemented!()
-    }
-    async fn post<T, R>(&self, _path: &str, _body: &T, _headers: Option<HashMap<String, String>>) -> Result<R, gem_client::ClientError>
-    where
-        T: Serialize + Send + Sync,
-        R: DeserializeOwned,
-    {
-        unimplemented!()
-    }
-}
 
 impl ProviderData {
     pub fn mock() -> Self {

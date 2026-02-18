@@ -1,8 +1,8 @@
-use crate::{deserialize_response, retry_policy, Client, ClientError, ContentType, Response, CONTENT_TYPE};
+use crate::{CONTENT_TYPE, Client, ClientError, ContentType, Response, deserialize_response, retry_policy};
 use async_trait::async_trait;
-use reqwest::header::USER_AGENT;
 use reqwest::RequestBuilder;
-use serde::{de::DeserializeOwned, Serialize};
+use reqwest::header::USER_AGENT;
+use serde::{Serialize, de::DeserializeOwned};
 use std::{collections::HashMap, str::FromStr, time::Duration};
 
 #[derive(Debug, Clone)]

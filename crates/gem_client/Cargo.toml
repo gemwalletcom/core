@@ -6,6 +6,7 @@ edition = "2021"
 [features]
 default = []
 reqwest = ["dep:reqwest", "dep:tokio"]
+testkit = []
 
 [dependencies]
 async-trait = { workspace = true }
