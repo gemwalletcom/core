@@ -1,7 +1,11 @@
 use crate::{Client, ClientError};
 use async_trait::async_trait;
-use serde::{Serialize, de::DeserializeOwned};
-use std::{collections::HashMap, sync::Arc};
+use serde::{de::DeserializeOwned, Serialize};
+use std::{
+    collections::HashMap,
+    fmt::{Debug, Formatter},
+    sync::Arc,
+};
 
 type GetHandler = Arc<dyn Fn(&str) -> Result<Vec<u8>, ClientError> + Send + Sync>;
 type PostHandler = Arc<dyn Fn(&str, &[u8]) -> Result<Vec<u8>, ClientError> + Send + Sync>;
@@ -34,8 +38,8 @@ impl MockClient {
     }
 }
 
-impl std::fmt::Debug for MockClient {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Debug for MockClient {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("MockClient").finish()
     }
 }
@@ -46,7 +50,7 @@ impl Client for MockClient {
     where
         R: DeserializeOwned,
     {
-        let handler = self.get_handler.as_ref().expect("MockClient: get handler not set");
+        let handler = self.get_handler.as_ref().ok_or(ClientError::Http { status: 404, body: vec![] })?;
         let bytes = handler(path)?;
         serde_json::from_slice(&bytes).map_err(|e| ClientError::Serialization(e.to_string()))
     }
@@ -56,7 +60,7 @@ impl Client for MockClient {
         T: Serialize + Send + Sync,
         R: DeserializeOwned,
     {
-        let handler = self.post_handler.as_ref().expect("MockClient: post handler not set");
+        let handler = self.post_handler.as_ref().ok_or(ClientError::Http { status: 404, body: vec![] })?;
         let body_bytes = serde_json::to_vec(body).map_err(|e| ClientError::Serialization(e.to_string()))?;
         let bytes = handler(path, &body_bytes)?;
         serde_json::from_slice(&bytes).map_err(|e| ClientError::Serialization(e.to_string()))
