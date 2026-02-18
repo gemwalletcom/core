@@ -122,6 +122,6 @@ alloy-json-abi = { version = "1.5.4" }
 alloy-signer = { version = "1.6.1" }
 alloy-signer-local = { version = "1.6.1" }
 alloy-network = { version = "1.6.1" }
-alloy-consensus = { version = "1.6.1" }
+alloy-consensus = { version = "1.7.3" }
 alloy-rlp = { version = "0.3.13" }
 jsonwebtoken = { version = "10.3.0" }
