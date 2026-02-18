@@ -8,6 +8,7 @@ pub mod client;
 pub mod codec;
 pub mod did;
 pub mod ens;
+pub mod error;
 pub mod eths;
 pub mod hyperliquid;
 pub mod icns;
@@ -16,6 +17,8 @@ pub mod lens;
 pub mod sns;
 pub mod spaceid;
 pub mod suins;
+#[cfg(test)]
+pub mod testkit;
 pub mod ton;
 pub mod ton_codec;
 pub mod ud;
