@@ -61,10 +61,7 @@ impl SwapQuoteData {
     }
 
     pub fn mock_with_gas_limit(gas_limit: Option<String>) -> Self {
-        SwapQuoteData {
-            gas_limit,
-            ..Self::mock()
-        }
+        SwapQuoteData { gas_limit, ..Self::mock() }
     }
 }
 

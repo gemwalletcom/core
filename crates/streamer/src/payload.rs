@@ -1,5 +1,6 @@
 use primitives::{
     AssetAddress, AssetId, Chain, ChainAddress, ChartData, FailedNotification, FiatProviderName, FiatTransaction, GorushNotification, NotificationType, PriceData, Transaction,
+    TransactionId, WalletId,
 };
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -358,5 +359,40 @@ impl FetchPricesPayload {
 impl fmt::Display for FetchPricesPayload {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "price_ids: {}", self.price_ids.len())
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeviceStreamPayload {
+    pub device_id: String,
+    pub event: DeviceStreamEvent,
+}
+
+impl fmt::Display for DeviceStreamPayload {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "device_id: {}, {}", self.device_id, self.event)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum DeviceStreamEvent {
+    Transactions {
+        wallet_id: WalletId,
+        transaction_ids: Vec<TransactionId>,
+        asset_ids: Vec<AssetId>,
+    },
+    Nft {
+        wallet_id: WalletId,
+    },
+}
+
+impl fmt::Display for DeviceStreamEvent {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            DeviceStreamEvent::Transactions { transaction_ids, asset_ids, .. } => {
+                write!(f, "transactions: {}, assets: {}", transaction_ids.len(), asset_ids.len())
+            }
+            DeviceStreamEvent::Nft { wallet_id } => write!(f, "nft: {}", wallet_id),
+        }
     }
 }

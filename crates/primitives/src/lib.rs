@@ -189,7 +189,7 @@ pub mod swap;
 pub mod websocket;
 pub use self::websocket::{WebSocketPriceAction, WebSocketPriceActionType, WebSocketPricePayload};
 pub mod stream;
-pub use self::stream::{StreamBalanceUpdate, StreamEvent, StreamMessage, StreamMessagePrices, StreamTransactionsUpdate};
+pub use self::stream::{StreamBalanceUpdate, StreamEvent, StreamMessage, StreamMessagePrices, StreamNftUpdate, StreamTransactionsUpdate, device_stream_channel};
 pub mod asset_balance;
 pub use self::asset_balance::{AddressBalances, AssetBalance, Balance};
 pub mod chain_address;

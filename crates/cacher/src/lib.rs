@@ -176,6 +176,12 @@ impl CacherClient {
         Ok(())
     }
 
+    pub async fn publish<T: serde::Serialize>(&self, channel: &str, value: &T) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let message = serde_json::to_string(value)?;
+        self.connection.clone().publish::<&str, &str, ()>(channel, &message).await?;
+        Ok(())
+    }
+
     pub async fn keys(&self, pattern: &str) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
         Ok(redis::cmd("KEYS").arg(pattern).query_async(&mut self.connection.clone()).await?)
     }

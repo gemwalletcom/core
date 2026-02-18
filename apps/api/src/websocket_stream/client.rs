@@ -1,89 +1,60 @@
-use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::sync::Arc;
 
 use gem_tracing::info_with_fields;
 use pricer::PriceClient;
-use primitives::{AssetId, AssetPrice, AssetPriceInfo, StreamEvent, StreamMessage, WebSocketPricePayload, asset::AssetHashSetExt};
+use primitives::{AssetPrice, StreamEvent, StreamMessage, device_stream_channel};
+use redis::PushInfo;
 use redis::aio::MultiplexedConnection;
-use redis::{PushInfo, PushKind};
 use rocket::futures::SinkExt;
 use rocket::serde::json::serde_json;
 use rocket::tokio::sync::Mutex;
 use rocket_ws::Message;
 use rocket_ws::stream::DuplexStream;
 
+use super::price_handler::PriceHandler;
+use crate::websocket::decode_push_message;
+
 pub struct StreamObserverConfig {
     pub redis_url: String,
 }
 
 pub struct StreamObserverClient {
-    pub price_client: Arc<Mutex<PriceClient>>,
-    pub assets: HashSet<AssetId>,
-    prices_to_publish: HashMap<String, AssetPrice>,
-    interval: rocket::tokio::time::Interval,
+    device_id: String,
+    device_channel: String,
+    price_handler: PriceHandler,
 }
 
 impl StreamObserverClient {
-    pub fn new(price_client: Arc<Mutex<PriceClient>>) -> Self {
-        StreamObserverClient {
-            price_client,
-            assets: HashSet::new(),
-            prices_to_publish: HashMap::new(),
-            interval: rocket::tokio::time::interval(std::time::Duration::from_secs(5)),
+    pub fn new(device_id: String, price_client: Arc<Mutex<PriceClient>>) -> Self {
+        let device_channel = device_stream_channel(&device_id);
+        Self {
+            device_id,
+            device_channel,
+            price_handler: PriceHandler::new(price_client),
         }
     }
 
-    pub async fn next_interval(&mut self) {
-        self.interval.tick().await;
+    pub fn device_id(&self) -> &str {
+        &self.device_id
     }
 
-    pub fn get_asset_ids(&self) -> Vec<String> {
-        self.assets.iter().map(|id| id.to_string()).collect()
+    pub async fn next_price_interval(&mut self) {
+        self.price_handler.next_interval().await;
     }
 
-    pub fn add_price_to_publish(&mut self, price: AssetPrice) {
-        self.prices_to_publish.insert(price.asset_id.to_string(), price);
+    pub fn take_prices(&mut self) -> Vec<AssetPrice> {
+        self.price_handler.take_prices()
     }
 
-    pub fn clear_prices_to_publish(&mut self) {
-        self.prices_to_publish.clear();
-    }
-
-    pub fn get_prices_to_publish(&self) -> Vec<AssetPrice> {
-        self.prices_to_publish.values().cloned().collect()
-    }
-
-    pub async fn fetch_payload_data(&mut self, fetch_rates: bool) -> Result<WebSocketPricePayload, Box<dyn Error + Send + Sync>> {
-        let price_client_clone_prices = Arc::clone(&self.price_client);
-        let assets_clone_prices = self.assets.clone();
-        let prices = price_client_clone_prices
-            .lock()
-            .await
-            .get_cache_prices(assets_clone_prices.ids())
-            .await?
-            .into_iter()
-            .map(|x| x.as_asset_price_primitive())
-            .collect();
-
-        if fetch_rates {
-            let rates = self.price_client.lock().await.get_cache_fiat_rates().await?;
-            Ok(WebSocketPricePayload { prices, rates })
-        } else {
-            Ok(WebSocketPricePayload { prices, rates: vec![] })
-        }
-    }
-
-    pub async fn build_and_send_payload(&mut self, stream: &mut DuplexStream, payload: WebSocketPricePayload) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let event = StreamEvent::Prices(payload);
-        let text = serde_json::to_string(&event)?;
-        let item = Message::Text(text);
-        Ok(stream.send(item).await?)
+    pub async fn subscribe_device_channel(&self, redis_connection: &mut MultiplexedConnection) -> Result<(), Box<dyn Error + Send + Sync>> {
+        redis_connection.subscribe(&self.device_channel).await?;
+        Ok(())
     }
 
     pub async fn handle_ws_message(
         &mut self,
-        message: rocket_ws::Message,
+        message: Message,
         redis_connection: &mut MultiplexedConnection,
         stream: &mut DuplexStream,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -99,58 +70,29 @@ impl StreamObserverClient {
         }
     }
 
-    pub async fn handle_message_payload(
-        &mut self,
-        data: Vec<u8>,
-        redis_connection: &mut MultiplexedConnection,
-        stream: &mut DuplexStream,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    async fn handle_message_payload(&mut self, data: Vec<u8>, redis_connection: &mut MultiplexedConnection, stream: &mut DuplexStream) -> Result<(), Box<dyn Error + Send + Sync>> {
         let message = serde_json::from_slice::<StreamMessage>(&data)?;
-
-        let (new_assets, needs_clear, needs_rates) = match &message {
-            StreamMessage::SubscribePrices(msg) => {
-                let assets_set: HashSet<AssetId> = msg.assets.iter().cloned().collect();
-                (assets_set, true, true)
-            }
-            StreamMessage::AddPrices(msg) => {
-                let assets_set: HashSet<AssetId> = msg.assets.iter().cloned().collect();
-                (assets_set, false, false)
-            }
-            StreamMessage::UnsubscribePrices(msg) => {
-                for asset in &msg.assets {
-                    self.assets.remove(asset);
-                }
-                let payload = self.fetch_payload_data(false).await?;
-                self.build_and_send_payload(stream, payload).await?;
-                return Ok(redis_connection.subscribe(self.get_asset_ids()).await?);
-            }
-            StreamMessage::SubscribeRealtimePrices(_) => return Ok(()),
-            StreamMessage::UnsubscribeRealtimePrices(_) => return Ok(()),
-        };
-
-        if needs_clear {
-            self.assets.clear();
+        if let Some(event) = self.price_handler.handle_stream_message(&message, redis_connection).await? {
+            self.send_event(stream, event).await?;
         }
-        self.assets.extend(new_assets);
-
-        let asset_ids = self.assets.ids();
-        let _ = self.price_client.lock().await.track_observed_assets(&asset_ids).await;
-
-        let payload = self.fetch_payload_data(needs_rates).await?;
-        self.build_and_send_payload(stream, payload).await?;
-
-        Ok(redis_connection.subscribe(self.get_asset_ids()).await?)
+        Ok(())
     }
 
-    pub fn handle_redis_message(&mut self, message: &PushInfo) -> Result<(), String> {
-        match (message.kind.clone(), message.data.last()) {
-            (PushKind::Message, Some(redis::Value::BulkString(value))) => {
-                let asset_price_info = serde_json::from_slice::<AssetPriceInfo>(value).map_err(|e| format!("Failed to deserialize AssetPrice: {e}"))?;
-                let asset_price = asset_price_info.as_asset_price_primitive();
-                self.add_price_to_publish(asset_price);
-                Ok(())
-            }
-            _ => Ok(()),
+    pub fn handle_redis_message(&mut self, message: &PushInfo) -> Result<Option<StreamEvent>, Box<dyn Error + Send + Sync>> {
+        let Some((channel, value)) = decode_push_message(message) else {
+            return Ok(None);
+        };
+
+        if channel == self.device_channel {
+            Ok(Some(serde_json::from_slice::<StreamEvent>(value)?))
+        } else {
+            self.price_handler.handle_price_message(value)?;
+            Ok(None)
         }
+    }
+
+    pub async fn send_event(&self, stream: &mut DuplexStream, event: StreamEvent) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let text = serde_json::to_string(&event)?;
+        Ok(stream.send(Message::Text(text)).await?)
     }
 }

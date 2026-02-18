@@ -9,18 +9,17 @@ use rocket_ws::{Channel, WebSocket};
 mod client;
 mod stream;
 
-pub use client::{PriceObserverClient, PriceObserverConfig};
-use stream::Stream;
+pub use client::PriceObserverConfig;
 
 #[rocket::get("/prices")]
-pub async fn ws_prices(ws: WebSocket, price_client: &State<Arc<Mutex<PriceClient>>>, config: &State<Arc<Mutex<PriceObserverConfig>>>) -> Channel<'static> {
+pub async fn ws_prices(ws: WebSocket, price_client: &State<Arc<Mutex<PriceClient>>>, config: &State<Arc<PriceObserverConfig>>) -> Channel<'static> {
     let price_client = price_client.inner().clone();
-    let redis_url = config.lock().await.redis_url.clone();
+    let redis_url = config.redis_url.clone();
 
-    ws.channel(move |stream| {
+    ws.channel(move |ws_stream| {
         Box::pin(async move {
-            let mut observer = PriceObserverClient::new(price_client.clone());
-            Stream::new_stream(&redis_url, &mut observer, stream).await;
+            let mut observer = client::PriceObserverClient::new(price_client);
+            stream::new_stream(&redis_url, &mut observer, ws_stream).await;
             Ok::<(), rocket_ws::result::Error>(())
         })
     })

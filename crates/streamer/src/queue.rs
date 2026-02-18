@@ -48,6 +48,7 @@ pub enum QueueName {
     NotificationsInApp,
     FetchPrices,
     UpdateCoinInfo,
+    DeviceStreamEvents,
 }
 
 impl QueueName {
@@ -94,6 +95,7 @@ impl fmt::Display for QueueName {
             QueueName::NotificationsInApp => write!(f, "notifications_in_app"),
             QueueName::FetchPrices => write!(f, "fetch_prices"),
             QueueName::UpdateCoinInfo => write!(f, "update_coin_info"),
+            QueueName::DeviceStreamEvents => write!(f, "device_stream_events"),
         }
     }
 }

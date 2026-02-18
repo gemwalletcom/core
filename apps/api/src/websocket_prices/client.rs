@@ -4,21 +4,23 @@ use std::sync::Arc;
 
 use pricer::PriceClient;
 use primitives::{AssetId, AssetPrice, AssetPriceInfo, WebSocketPriceAction, WebSocketPriceActionType, WebSocketPricePayload, asset::AssetHashSetExt};
+use redis::PushInfo;
 use redis::aio::MultiplexedConnection;
-use redis::{PushInfo, PushKind};
 use rocket::futures::SinkExt;
 use rocket::serde::json::serde_json;
 use rocket::tokio::sync::Mutex;
 use rocket_ws::Message;
 use rocket_ws::stream::DuplexStream;
 
+use crate::websocket::decode_push_message;
+
 pub struct PriceObserverConfig {
     pub redis_url: String,
 }
 
 pub struct PriceObserverClient {
-    pub price_client: Arc<Mutex<PriceClient>>,
-    pub assets: HashSet<AssetId>,
+    price_client: Arc<Mutex<PriceClient>>,
+    assets: HashSet<AssetId>,
     prices_to_publish: HashMap<String, AssetPrice>,
     interval: rocket::tokio::time::Interval,
 }
@@ -37,51 +39,29 @@ impl PriceObserverClient {
         self.interval.tick().await;
     }
 
-    pub fn get_asset_ids(&self) -> Vec<String> {
+    pub fn take_prices(&mut self) -> Vec<AssetPrice> {
+        self.prices_to_publish.drain().map(|(_, v)| v).collect()
+    }
+
+    fn get_channel_ids(&self) -> Vec<String> {
         self.assets.iter().map(|id| id.to_string()).collect()
     }
 
-    pub fn add_price_to_publish(&mut self, price: AssetPrice) {
-        self.prices_to_publish.insert(price.asset_id.to_string(), price);
-    }
-
-    pub fn clear_prices_to_publish(&mut self) {
-        self.prices_to_publish.clear();
-    }
-
-    pub fn get_prices_to_publish(&self) -> Vec<AssetPrice> {
-        self.prices_to_publish.values().cloned().collect()
-    }
-
-    pub async fn fetch_payload_data(&mut self, fetch_rates: bool) -> Result<WebSocketPricePayload, Box<dyn Error + Send + Sync>> {
-        let price_client_clone_prices = Arc::clone(&self.price_client);
-        let assets_clone_prices = self.assets.clone();
-        let prices = price_client_clone_prices
-            .lock()
-            .await
-            .get_cache_prices(assets_clone_prices.ids())
+    async fn fetch_payload(&self, fetch_rates: bool) -> Result<WebSocketPricePayload, Box<dyn Error + Send + Sync>> {
+        let client = self.price_client.lock().await;
+        let prices = client
+            .get_cache_prices(self.assets.ids())
             .await?
             .into_iter()
             .map(|x| x.as_asset_price_primitive())
             .collect();
-
-        if fetch_rates {
-            let rates = self.price_client.lock().await.get_cache_fiat_rates().await?;
-            Ok(WebSocketPricePayload { prices, rates })
-        } else {
-            Ok(WebSocketPricePayload { prices, rates: vec![] })
-        }
-    }
-
-    pub async fn build_and_send_payload(&mut self, stream: &mut DuplexStream, payload: WebSocketPricePayload) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let text = serde_json::to_string(&payload)?;
-        let item = Message::Text(text);
-        Ok(stream.send(item).await?)
+        let rates = if fetch_rates { client.get_cache_fiat_rates().await? } else { vec![] };
+        Ok(WebSocketPricePayload { prices, rates })
     }
 
     pub async fn handle_ws_message(
         &mut self,
-        message: rocket_ws::Message,
+        message: Message,
         redis_connection: &mut MultiplexedConnection,
         stream: &mut DuplexStream,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -89,53 +69,52 @@ impl PriceObserverClient {
             Message::Binary(data) => self.handle_message_payload(data, redis_connection, stream).await,
             Message::Text(text) => self.handle_message_payload(text.into_bytes(), redis_connection, stream).await.or(Ok(())),
             Message::Ping(data) => Ok(stream.send(Message::Pong(data)).await?),
-            Message::Close(_) => {
-                println!("Client closed connection gracefully");
-                Ok(())
-            }
+            Message::Close(_) => Ok(()),
             Message::Pong(_) | Message::Frame(_) => Ok(()),
         }
     }
 
-    pub async fn handle_message_payload(
-        &mut self,
-        data: Vec<u8>,
-        redis_connection: &mut MultiplexedConnection,
-        stream: &mut DuplexStream,
-    ) -> Result<(), Box<dyn Error + Send + Sync>> {
+    async fn handle_message_payload(&mut self, data: Vec<u8>, redis_connection: &mut MultiplexedConnection, stream: &mut DuplexStream) -> Result<(), Box<dyn Error + Send + Sync>> {
         let action = serde_json::from_slice::<WebSocketPriceAction>(&data)?;
         let new_assets: HashSet<AssetId> = action.assets.iter().cloned().collect();
 
-        match action.action {
+        let needs_rates = match action.action {
             WebSocketPriceActionType::Subscribe => {
+                let old_channels = self.get_channel_ids();
                 self.assets.clear();
+                self.prices_to_publish.clear();
+                if !old_channels.is_empty() {
+                    redis_connection.unsubscribe(old_channels).await?;
+                }
                 self.assets.extend(new_assets);
+                true
             }
             WebSocketPriceActionType::Add => {
                 self.assets.extend(new_assets);
+                false
             }
-        }
+        };
 
-        let asset_ids = self.assets.ids();
-        let _ = self.price_client.lock().await.track_observed_assets(&asset_ids).await;
+        let _ = self.price_client.lock().await.track_observed_assets(&self.assets.ids()).await;
 
-        let needs_rates = action.action == WebSocketPriceActionType::Subscribe;
-        let payload = self.fetch_payload_data(needs_rates).await?;
+        let payload = self.fetch_payload(needs_rates).await?;
+        self.send_payload(stream, payload).await?;
 
-        self.build_and_send_payload(stream, payload).await?;
-
-        Ok(redis_connection.subscribe(self.get_asset_ids()).await?)
+        redis_connection.subscribe(self.get_channel_ids()).await?;
+        Ok(())
     }
 
-    pub fn handle_redis_message(&mut self, message: &PushInfo) -> Result<(), String> {
-        match (message.kind.clone(), message.data.last()) {
-            (PushKind::Message, Some(redis::Value::BulkString(value))) => {
-                let asset_price_info = serde_json::from_slice::<AssetPriceInfo>(value).map_err(|e| format!("Failed to deserialize AssetPrice: {e}"))?;
-                let asset_price = asset_price_info.as_asset_price_primitive();
-                self.add_price_to_publish(asset_price);
-                Ok(())
-            }
-            _ => Ok(()),
-        }
+    pub async fn send_payload(&self, stream: &mut DuplexStream, payload: WebSocketPricePayload) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let text = serde_json::to_string(&payload)?;
+        Ok(stream.send(Message::Text(text)).await?)
+    }
+
+    pub fn handle_redis_message(&mut self, message: &PushInfo) -> Result<(), Box<dyn Error + Send + Sync>> {
+        let Some((_, value)) = decode_push_message(message) else {
+            return Ok(());
+        };
+        let info = serde_json::from_slice::<AssetPriceInfo>(value)?;
+        self.prices_to_publish.insert(info.asset_id.to_string(), info.as_asset_price_primitive());
+        Ok(())
     }
 }

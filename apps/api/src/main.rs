@@ -22,10 +22,12 @@ mod swap;
 mod transactions;
 mod wallets;
 mod webhooks;
+mod websocket;
 mod websocket_prices;
 mod websocket_stream;
 
 use std::{str::FromStr, sync::Arc};
+use strum::IntoEnumIterator;
 
 use ::fiat::FiatClient;
 use ::nft::{NFTClient, NFTProviderConfig};
@@ -268,7 +270,7 @@ async fn rocket_ws_prices(settings: Settings) -> Rocket<Build> {
     };
     rocket::build()
         .manage(Arc::new(Mutex::new(price_client)))
-        .manage(Arc::new(Mutex::new(price_observer_config)))
+        .manage(Arc::new(price_observer_config))
         .mount("/", routes![websocket_prices::ws_health])
         .mount("/v1/ws", routes![websocket_prices::ws_prices])
         .register("/", catchers![catchers::default_catcher])
@@ -292,7 +294,7 @@ async fn rocket_ws_stream(settings: Settings) -> Rocket<Build> {
         .manage(auth_config)
         .manage(database)
         .manage(Arc::new(Mutex::new(price_client)))
-        .manage(Arc::new(Mutex::new(stream_observer_config)))
+        .manage(Arc::new(stream_observer_config))
         .mount("/v2/devices", routes![websocket_stream::ws_stream])
         .mount("/", routes![websocket_stream::ws_health])
         .register("/", catchers![catchers::default_catcher])
@@ -302,25 +304,22 @@ async fn rocket_ws_stream(settings: Settings) -> Rocket<Build> {
 async fn main() {
     let settings = Settings::new().unwrap();
 
-    let service = std::env::args().nth(1).unwrap_or_default();
-    let service = APIService::from_str(service.as_str()).ok().unwrap_or(APIService::Api);
+    let service = match std::env::args().nth(1) {
+        Some(arg) => APIService::from_str(&arg).unwrap_or_else(|_| {
+            let services: Vec<_> = APIService::iter().map(|s| format!("api {}", s.as_ref())).collect();
+            panic!("unknown service: {arg}\nAvailable:\n {}", services.join("\n "))
+        }),
+        None => APIService::Api,
+    };
 
     println!("api start service: {}", service.as_ref());
 
-    match service {
-        APIService::WebsocketPrices => {
-            let rocket_api = rocket_ws_prices(settings.clone()).await;
-            rocket_api.launch().await.expect("Failed to launch Rocket");
-        }
-        APIService::WebsocketStream => {
-            let rocket_api = rocket_ws_stream(settings.clone()).await;
-            rocket_api.launch().await.expect("Failed to launch Rocket");
-        }
-        APIService::Api => {
-            let rocket_api = rocket_api(settings.clone()).await;
-            rocket_api.launch().await.expect("Failed to launch Rocket");
-        }
-    }
+    let rocket = match service {
+        APIService::Api => rocket_api(settings).await,
+        APIService::WebsocketPrices => rocket_ws_prices(settings).await,
+        APIService::WebsocketStream => rocket_ws_stream(settings).await,
+    };
+    rocket.launch().await.expect("Failed to launch Rocket");
 }
 
 #[cfg(test)]
