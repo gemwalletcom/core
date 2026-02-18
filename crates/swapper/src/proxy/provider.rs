@@ -222,7 +222,8 @@ where
         let route_data: ProxyQuote = serde_json::from_str(&routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
 
         let data = self.client.get_quote_data(route_data).await?;
-        let (approval, gas_limit) = self.check_approval(quote, &data).await?;
+        let (approval, approval_gas_limit) = self.check_approval(quote, &data).await?;
+        let gas_limit = approval_gas_limit.or(data.gas_limit);
 
         Ok(SwapperQuoteData::new_contract(data.to, data.value, data.data, approval, gas_limit))
     }
