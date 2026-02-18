@@ -88,16 +88,14 @@ impl StreamObserverClient {
         stream: &mut DuplexStream,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         match message {
-            Message::Binary(data) => Ok(self.handle_message_payload(data, redis_connection, stream).await?),
-            Message::Text(text) => Ok(self.handle_message_payload(text.into_bytes(), redis_connection, stream).await?),
+            Message::Binary(data) => self.handle_message_payload(data, redis_connection, stream).await,
+            Message::Text(text) => self.handle_message_payload(text.into_bytes(), redis_connection, stream).await.or(Ok(())),
+            Message::Ping(data) => Ok(stream.send(Message::Pong(data)).await?),
             Message::Close(_) => {
                 info_with_fields!("websocket client closed connection gracefully", status = "ok");
                 Ok(())
             }
-            Message::Frame(_) | Message::Ping(_) | Message::Pong(_) => {
-                info_with_fields!("websocket read error unsupported message type", status = "error");
-                Ok(())
-            }
+            Message::Pong(_) | Message::Frame(_) => Ok(()),
         }
     }
 

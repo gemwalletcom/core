@@ -86,16 +86,14 @@ impl PriceObserverClient {
         stream: &mut DuplexStream,
     ) -> Result<(), Box<dyn Error + Send + Sync>> {
         match message {
-            Message::Binary(data) => Ok(self.handle_message_payload(data, redis_connection, stream).await?),
-            Message::Text(text) => Ok(self.handle_message_payload(text.into_bytes(), redis_connection, stream).await?),
+            Message::Binary(data) => self.handle_message_payload(data, redis_connection, stream).await,
+            Message::Text(text) => self.handle_message_payload(text.into_bytes(), redis_connection, stream).await.or(Ok(())),
+            Message::Ping(data) => Ok(stream.send(Message::Pong(data)).await?),
             Message::Close(_) => {
                 println!("Client closed connection gracefully");
                 Ok(())
             }
-            Message::Frame(_) | Message::Ping(_) | Message::Pong(_) => {
-                eprintln!("WebSocket read error: Unsupported message type");
-                Ok(())
-            }
+            Message::Pong(_) | Message::Frame(_) => Ok(()),
         }
     }
 
