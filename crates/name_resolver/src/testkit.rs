@@ -40,7 +40,7 @@ impl NameClient for TestProvider {
     }
 
     fn provider(&self) -> NameProvider {
-        self.provider.as_ref().parse().unwrap()
+        self.provider.clone()
     }
 
     fn domains(&self) -> Vec<&'static str> {

@@ -81,11 +81,14 @@ fn domain_match_len(name: &str, domain: &str) -> Option<usize> {
         return Some(0);
     }
 
-    let name = name.to_ascii_lowercase();
-    let domain = domain.to_ascii_lowercase();
-
-    if name == domain || name.ends_with(&format!(".{domain}")) {
+    if name.eq_ignore_ascii_case(domain) {
         Some(domain.len())
+    } else if name.len() > domain.len() {
+        let offset = name.len() - domain.len();
+        let has_dot = name.as_bytes().get(offset - 1).is_some_and(|byte| *byte == b'.');
+        let is_suffix_match = name.get(offset..).is_some_and(|suffix| suffix.eq_ignore_ascii_case(domain));
+
+        if has_dot && is_suffix_match { Some(domain.len()) } else { None }
     } else {
         None
     }

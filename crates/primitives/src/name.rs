@@ -13,7 +13,7 @@ pub struct NameRecord {
     pub provider: String,
 }
 
-#[derive(Debug, Serialize, AsRefStr, EnumString)]
+#[derive(Clone, Debug, Serialize, AsRefStr, EnumString)]
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
