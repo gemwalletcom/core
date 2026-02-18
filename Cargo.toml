@@ -119,7 +119,7 @@ alloy-primitives = { version = "1.5.4", features = ["k256"] }
 alloy-sol-types = { version = "1.5.4", features = ["eip712-serde"] }
 alloy-dyn-abi = { version = "1.5.2", features = ["eip712"] }
 alloy-json-abi = { version = "1.5.4" }
-alloy-signer = { version = "1.6.1" }
+alloy-signer = { version = "1.7.3" }
 alloy-signer-local = { version = "1.6.1" }
 alloy-network = { version = "1.6.1" }
 alloy-consensus = { version = "1.6.1" }
