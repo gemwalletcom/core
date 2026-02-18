@@ -46,7 +46,7 @@ impl SwapProvider {
             Self::Panora => "Panora",
             Self::Thorchain => "THORChain",
             Self::Jupiter => "Jupiter",
-            Self::Okx => "OKX",
+            Self::Okx => "OKX (DEX)",
             Self::Across => "Across",
             Self::Oku => "Oku",
             Self::Wagmi => "Wagmi",
