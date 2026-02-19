@@ -104,7 +104,17 @@ impl ProxyProvider<RpcClient> {
     }
 
     pub fn new_okx(rpc_provider: Arc<dyn RpcProvider>) -> Self {
-        Self::new_with_path(SwapperProvider::Okx, "okx", vec![SwapperChainAsset::All(Chain::Solana)], rpc_provider)
+        Self::new_with_path(
+            SwapperProvider::Okx,
+            "okx",
+            vec![
+                SwapperChainAsset::All(Chain::Solana),
+                SwapperChainAsset::All(Chain::Manta),
+                SwapperChainAsset::All(Chain::Mantle),
+                SwapperChainAsset::All(Chain::XLayer),
+            ],
+            rpc_provider,
+        )
     }
 
     pub fn new_cetus_aggregator(rpc_provider: Arc<dyn RpcProvider>) -> Self {
