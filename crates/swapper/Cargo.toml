@@ -50,5 +50,5 @@ tracing = "0.1.44"
 
 [dev-dependencies]
 tokio.workspace = true
-primitives = { path = "../primitives", features = ["testkit"], default-features = false }
+primitives = { path = "../primitives", features = ["testkit"] }
 gem_client = { path = "../gem_client", features = ["testkit"] }
