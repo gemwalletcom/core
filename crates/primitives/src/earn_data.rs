@@ -7,9 +7,8 @@ use crate::swap::ApprovalData;
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct EarnData {
-    pub provider: Option<String>,
-    pub contract_address: Option<String>,
-    pub call_data: Option<String>,
+    pub contract_address: String,
+    pub call_data: String,
     pub approval: Option<ApprovalData>,
     pub gas_limit: Option<String>,
 }
