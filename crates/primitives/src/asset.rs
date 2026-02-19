@@ -113,7 +113,7 @@ impl Asset {
             Chain::Monad => chain.new_asset("Monad".to_string(), "MON".to_string(), 18, AssetType::NATIVE),
             Chain::XLayer => chain.new_asset("X Layer".to_string(), "OKB".to_string(), 18, AssetType::NATIVE),
             Chain::Stable => chain.new_asset("Stable".to_string(), "gUSDT".to_string(), 18, AssetType::NATIVE),
-            Chain::Rootstock => chain.new_asset("RBTC".to_string(), "rbtc".to_string(), 18, AssetType::NATIVE),
+            Chain::Rootstock => chain.new_asset("Rootstock".to_string(), "RBTC".to_string(), 18, AssetType::NATIVE),
         }
     }
 }
