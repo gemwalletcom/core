@@ -305,6 +305,14 @@ impl GemGateway {
         })
     }
 
+    pub async fn get_earn_providers(&self, _asset_id: String) -> Result<Vec<GemDelegationValidator>, GatewayError> {
+        Ok(vec![])
+    }
+
+    pub async fn get_earn_positions(&self, _chain: Chain, _address: String) -> Result<Vec<GemDelegationBase>, GatewayError> {
+        Ok(vec![])
+    }
+
     pub async fn get_node_status(&self, chain: Chain, url: &str) -> Result<GemNodeStatus, GatewayError> {
         let start_time = std::time::Instant::now();
         let provider = self.provider_with_url(chain, url.to_string()).await?;
