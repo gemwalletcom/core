@@ -1228,7 +1228,7 @@ static CHAIN_CONFIGS: &[ChainConfig] = &[
             min_priority_fee: 0,
             chain_stack: ChainStack::Native,
             is_ethereum_layer2: false,
-            weth_contract: Some("0x3b3dd26c5cd371c707cc64b864f11d44692c505d"),
+            weth_contract: Some("0x3B3dD26C5cD371c707ce64B864f11d44692c505d"),
         }),
         stake: None,
     },
