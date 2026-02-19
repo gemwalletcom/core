@@ -192,6 +192,8 @@ chains:
     url: https://rpc.xlayer.tech
   stable:
     url: https://rpc.stable.xyz
+  rootstock:
+    url: https://public-node.rsk.co  
 
 swap:
   jupiter:

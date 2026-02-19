@@ -25,6 +25,7 @@ pub fn get_uniswap_permit2_by_chain(chain: &Chain) -> Option<&'static str> {
         | Chain::Ink
         | Chain::Monad
         | Chain::Stable => Some("0x000000000022D473030F116dDEE9F6B43aC78BA3"),
+        | Chain::Rootstock => Some("0xfcf5986450e4a014ffe7ad4ae24921b589d039b5"),
         Chain::ZkSync | Chain::Abstract => Some("0x0000000000225e31d15943971f47ad3022f714fa"),
         _ => None,
     }

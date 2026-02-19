@@ -60,5 +60,6 @@ pub fn price_feed_id_for_chain(chain: Chain) -> &'static str {
         Chain::Monad => "ff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace",
         Chain::XLayer => "d6f83dfeaff95d596ddec26af2ee32f391c206a183b161b7980821860eeef2f5",
         Chain::Stable => "2b89b9dc8fdf9f34709a5b106b472f0f39bb6ca9ce04b0fd7f2e971688e2e53b",
+        Chain::Rootstock => "", // pyth not supported yet
     }
 }

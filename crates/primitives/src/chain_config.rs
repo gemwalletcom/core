@@ -1209,6 +1209,29 @@ static CHAIN_CONFIGS: &[ChainConfig] = &[
         }),
         stake: None,
     },
+    ChainConfig {
+        chain: Chain::Rootstock,
+        network_id: "30",
+        denom: None,
+        slip44: 137,
+        chain_type: ChainType::Ethereum,
+        default_asset_type: Some(AssetType::ERC20),
+        account_activation_fee: None,
+        token_activation_fee: None,
+        minimum_account_balance: None,
+        block_time: 25_000,
+        rank: 31,
+        is_swap_supported: false,
+        is_nft_supported: false,
+        is_utxo: false,
+        evm: Some(EvmChainConfig {
+            min_priority_fee: 0,
+            chain_stack: ChainStack::Native,
+            is_ethereum_layer2: false,
+            weth_contract: Some("0x3b3dd26c5cd371c707cc64b864f11d44692c505d"),
+        }),
+        stake: None,
+    },
 ];
 
 pub fn get_chain_config(chain: Chain) -> &'static ChainConfig {

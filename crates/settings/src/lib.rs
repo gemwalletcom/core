@@ -236,6 +236,7 @@ pub struct Chains {
     pub monad: Chain,
     pub xlayer: Chain,
     pub stable: Chain,
+    pub rootstock: Chain,
 }
 
 #[derive(Debug, Deserialize, Clone)]
