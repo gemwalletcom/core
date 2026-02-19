@@ -28,6 +28,10 @@ pub struct NodeMonitoringConfig {
     #[serde(deserialize_with = "duration::deserialize")]
     pub max_sync_delay: Duration,
     pub max_sync_blocks: u64,
+    #[serde(default, deserialize_with = "duration::deserialize_option")]
+    pub latency_threshold: Option<Duration>,
+    #[serde(default)]
+    pub latency_threshold_percent: Option<f64>,
     pub adaptive: AdaptiveMonitoringConfig,
 }
 
@@ -43,6 +47,24 @@ impl NodeMonitoringConfig {
         }
         let computed = self.max_sync_delay.as_millis() as u64 / block_time_ms;
         computed.clamp(1, self.max_sync_blocks)
+    }
+
+    pub fn is_latency_improvement_significant(&self, old: Duration, new: Duration) -> bool {
+        if new >= old {
+            return false;
+        }
+        let diff = old - new;
+        if let Some(threshold) = self.latency_threshold
+            && diff < threshold
+        {
+            return false;
+        }
+        if let Some(percent) = self.latency_threshold_percent
+            && (diff.as_millis() as f64 / old.as_millis() as f64) * 100.0 < percent
+        {
+            return false;
+        }
+        true
     }
 }
 

@@ -63,6 +63,10 @@ impl NodeService {
         }
     }
 
+    pub fn adaptive_monitor(&self) -> Arc<RequestAdaptiveMonitor> {
+        Arc::clone(&self.request_adaptive_monitor)
+    }
+
     pub async fn get_node_domain(nodes: &Arc<RwLock<HashMap<Chain, NodeDomain>>>, chain: Chain) -> Option<NodeDomain> {
         nodes.read().await.get(&chain).cloned()
     }

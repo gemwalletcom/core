@@ -1,5 +1,5 @@
 mod chain_client;
-mod request_health;
+pub(crate) mod request_health;
 mod service;
 mod switch_reason;
 mod sync;

@@ -154,6 +154,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             Arc::clone(&node_service.nodes),
             Arc::clone(&node_service.metrics),
             node_service.monitoring_config.clone(),
+            node_service.adaptive_monitor(),
         );
 
         rocket::tokio::spawn(async move {
