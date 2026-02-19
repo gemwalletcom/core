@@ -47,8 +47,10 @@ impl TronPayload {
         }
     }
 
-    fn raw_data_hex(&self) -> &str {
-        self.transaction()["raw_data_hex"].as_str().unwrap_or_default()
+    fn raw_data_hex(&self) -> Result<&str, SignerError> {
+        self.transaction()["raw_data_hex"]
+            .as_str()
+            .ok_or_else(|| SignerError::invalid_input("raw_data_hex must be a string"))
     }
 
     fn into_signed(self, signature_hex: &str) -> Result<String, SignerError> {
@@ -66,7 +68,7 @@ pub struct TronChainSigner;
 impl ChainSigner for TronChainSigner {
     fn sign_data(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
         let payload = TronPayload::parse(input)?;
-        let raw_bytes = decode_hex(payload.raw_data_hex())?;
+        let raw_bytes = decode_hex(payload.raw_data_hex()?)?;
         let digest = sha256(&raw_bytes);
         let signature = Signer::sign_digest(SignatureScheme::Secp256k1, digest.to_vec(), private_key.to_vec()).map_err(|e| SignerError::signing_error(e.to_string()))?;
         let signature_hex = hex::encode(signature);
