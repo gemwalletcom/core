@@ -263,6 +263,7 @@ impl RequestWindow {
 mod tests {
     use super::*;
     use crate::testkit::config as testkit;
+    use crate::testkit::sync::url;
     use std::time::Duration;
 
     fn config() -> AdaptiveMonitoringConfig {
@@ -271,13 +272,6 @@ mod tests {
             cooldown: Duration::from_secs(60),
             min_switch_interval: Duration::from_secs(30),
             ..testkit::adaptive_monitoring_config()
-        }
-    }
-
-    fn url(value: &str) -> Url {
-        Url {
-            url: value.to_string(),
-            headers: None,
         }
     }
 

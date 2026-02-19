@@ -8,6 +8,8 @@ pub fn monitoring_config() -> NodeMonitoringConfig {
         poll_interval: Duration::from_secs(600),
         max_sync_delay: Duration::from_secs(24),
         max_sync_blocks: 20,
+        latency_threshold: None,
+        latency_threshold_percent: None,
         adaptive: adaptive_monitoring_config(),
     }
 }

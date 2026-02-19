@@ -17,7 +17,7 @@ impl NodeTelemetry {
                 NodeStatusState::Healthy(sync_status) => {
                     let mut fields = vec![("host", observation.url.host())];
                     if !sync_status.in_sync {
-                        fields.push(("in_sync", sync_status.in_sync.to_string()));
+                        fields.push(("in_sync", "false".to_string()));
                     }
 
                     let latency = DurationMs(observation.latency);
@@ -39,7 +39,7 @@ impl NodeTelemetry {
         if let NodeStatusState::Healthy(status) = &observation.state {
             let mut fields = vec![("host", observation.url.host())];
             if !status.in_sync {
-                fields.push(("in_sync", status.in_sync.to_string()));
+                fields.push(("in_sync", "false".to_string()));
             }
 
             let latency = DurationMs(observation.latency);
@@ -56,7 +56,7 @@ impl NodeTelemetry {
             NodeStatusState::Healthy(status) => {
                 let mut fields = vec![("host", observation.url.host())];
                 if !status.in_sync {
-                    fields.push(("in_sync", status.in_sync.to_string()));
+                    fields.push(("in_sync", "false".to_string()));
                 }
 
                 let latency = DurationMs(observation.latency);
@@ -94,11 +94,7 @@ impl NodeTelemetry {
         log_info_event(
             "Node switch",
             chain,
-            [
-                ("new_host", observation.url.host()),
-                ("old_host", previous.host()),
-                ("reason", switch.reason.to_string()),
-            ],
+            [("new_host", observation.url.host()), ("old_host", previous.host()), ("reason", switch.reason.to_string())],
             &latency,
             latest,
             current,

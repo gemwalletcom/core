@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum NodeSwitchReason {
     BlockHeight { old_block: u64, new_block: u64 },
     Latency { old_latency_ms: u64, new_latency_ms: u64 },
@@ -17,7 +17,6 @@ impl NodeSwitchReason {
             Self::AdaptiveError { .. } => "adaptive_error",
         }
     }
-
 }
 
 impl fmt::Display for NodeSwitchReason {
