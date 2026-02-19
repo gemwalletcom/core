@@ -47,7 +47,12 @@ impl TriggerSmartContractData {
         let Ok(payload) = serde_json::from_slice::<TronPayload>(data) else {
             return Ok(None);
         };
-        let Some(raw_data_value) = payload.transaction.other.get("raw_data") else {
+        let raw_data_value = payload
+            .transaction
+            .other
+            .get("raw_data")
+            .or_else(|| payload.transaction.other.get("transaction").and_then(|t| t.get("raw_data")));
+        let Some(raw_data_value) = raw_data_value else {
             return Ok(None);
         };
         let Ok(raw_data) = serde_json::from_value::<TransactionData>(raw_data_value.clone()) else {

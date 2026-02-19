@@ -217,22 +217,51 @@ mod tests {
 
         let signature_payload = TronChainSigner.sign_data(&input, &TEST_PRIVATE_KEY).unwrap();
         let value: serde_json::Value = serde_json::from_str(&signature_payload).unwrap();
-        let signature = value
-            .get("transaction")
-            .and_then(|v| v.get("signature"))
-            .and_then(|v| v.get(0))
-            .and_then(|v| v.as_str())
-            .unwrap_or_default()
-            .to_string();
 
         assert_eq!(
-            signature,
+            value["signature"][0].as_str().unwrap(),
             "943d286dfd1fb6a2cd31c9af7a6cfd23ee062ec2e0abcf82c7daa0c7bb43ab04458e0e88ebe3a94060122cccc8fb4395e5eb922720327df04ae840139c729a1f00"
         );
+        assert!(value["txID"].as_str().is_some());
+        assert!(value["raw_data_hex"].as_str().is_some());
+        assert_eq!(value["visible"], serde_json::Value::Bool(false));
 
         let response = wallet_connect.encode_sign_transaction(Chain::Tron, signature_payload.clone());
         let expected: serde_json::Value = serde_json::from_str(include_str!("./test/tron_sign_transaction_response.json")).unwrap();
         assert_eq!(response_json(&response), expected);
+    }
+
+    #[test]
+    fn parse_tron_sign_transaction_nested_and_sign() {
+        let params = include_str!("./test/tron_sign_transaction_nested.json");
+        let expected_data: serde_json::Value = serde_json::from_str(params.trim()).unwrap();
+        let expected_data = expected_data.to_string();
+
+        let input = TransactionLoadInput {
+            input_type: TransactionInputType::Generic(
+                Asset::from_chain(Chain::Tron),
+                WalletConnectionSessionAppMetadata::mock(),
+                TransferDataExtra::mock_encoded_transaction(expected_data.as_bytes().to_vec()),
+            ),
+            sender_address: "TJoSEwEqt7cT3TUwmEoUYnYs5cZR3xSukM".to_string(),
+            destination_address: "".to_string(),
+            value: "0".to_string(),
+            gas_price: GasPriceType::regular(0),
+            memo: None,
+            is_max_value: false,
+            metadata: TransactionLoadMetadata::mock_tron(),
+        };
+
+        let signature_payload = TronChainSigner.sign_data(&input, &TEST_PRIVATE_KEY).unwrap();
+        let value: serde_json::Value = serde_json::from_str(&signature_payload).unwrap();
+
+        assert_eq!(
+            value["signature"][0].as_str().unwrap(),
+            "943d286dfd1fb6a2cd31c9af7a6cfd23ee062ec2e0abcf82c7daa0c7bb43ab04458e0e88ebe3a94060122cccc8fb4395e5eb922720327df04ae840139c729a1f00"
+        );
+        assert!(value["txID"].as_str().is_some());
+        assert!(value["raw_data_hex"].as_str().is_some());
+        assert_eq!(value["visible"], serde_json::Value::Bool(false));
     }
 
     #[test]
