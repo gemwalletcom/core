@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    EarnData, UTXO,
+    UTXO,
     solana_token_program::SolanaTokenProgramId,
     stake_type::{StakeData, TronStakeData},
 };
@@ -49,7 +49,6 @@ pub enum TransactionLoadMetadata {
         nonce: u64,
         chain_id: u64,
         stake_data: Option<StakeData>,
-        earn_data: Option<EarnData>,
     },
     Near {
         sequence: u64,
