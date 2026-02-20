@@ -1,12 +1,12 @@
 use super::{
     AppFee, DepositMode, ExecutionStatus, NearIntentsClient, QuoteRequest as NearQuoteRequest, QuoteResponse, QuoteResponseError, QuoteResponseResult, SwapType,
     asset_id_from_near_intents, auto_quote_time_chains, deposit_memo_chains, get_near_intents_asset_id,
-    model::{DEFAULT_REFERRAL, DEFAULT_WAIT_TIME_MS, DEPOSIT_TYPE_ORIGIN, RECIPIENT_TYPE_DESTINATION},
+    model::{DEFAULT_WAIT_TIME_MS, DEPOSIT_TYPE_ORIGIN, RECIPIENT_TYPE_DESTINATION},
     reserved_tx_fees, supported_assets,
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperMode,
-    SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, amount_to_value, client_factory::create_client_with_chain, near_intents::client::base_url,
+    SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, client_factory::create_client_with_chain, amount_to_value, near_intents::client::base_url, referrer::DEFAULT_REFERRER,
 };
 use alloy_primitives::U256;
 use async_trait::async_trait;
@@ -126,7 +126,7 @@ where
         let deposit_mode = Self::resolve_deposit_mode(&request.from_asset);
         let from_chain = request.from_asset.asset_id().chain;
         let to_chain = request.to_asset.asset_id().chain;
-        let quote_waiting_time_ms = Self::resolve_quote_waiting_time(from_chain, to_chain);
+        let quote_waiting_time_ms = Some(Self::resolve_quote_waiting_time(from_chain, to_chain));
 
         let deadline = (Utc::now() + Duration::minutes(DEFAULT_DEADLINE_MINUTES)).to_rfc3339();
 
@@ -134,7 +134,7 @@ where
             origin_asset,
             destination_asset,
             amount,
-            referral: DEFAULT_REFERRAL.to_string(),
+            referral: DEFAULT_REFERRER.to_string(),
             recipient: request.destination_address.clone(),
             swap_type: mode,
             slippage_tolerance: request.options.slippage.bps,
@@ -470,7 +470,11 @@ mod tests {
 mod swap_integration_tests {
     use super::*;
     use crate::{FetchQuoteData, SwapperMode, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode, alien::reqwest_provider::NativeProvider, models::Options};
-    use primitives::{AssetId, Chain, swap::SwapStatus};
+    use primitives::{
+        AssetId, Chain,
+        asset_constants::{USDC_ARB_ASSET_ID, USDC_BASE_ASSET_ID},
+        swap::SwapStatus,
+    };
     use std::sync::Arc;
 
     #[tokio::test]
@@ -492,10 +496,10 @@ mod swap_integration_tests {
         };
 
         let request = QuoteRequest {
-            from_asset: SwapperQuoteAsset::from(AssetId::new("arbitrum_0xaf88d065e77c8cc2239327c5edb3a432268e5831").unwrap()),
-            to_asset: SwapperQuoteAsset::from(AssetId::new("solana_epjfwdd5aufqssqem2qn1xzybapc8g4weggkzwytdt1v").unwrap()),
-            wallet_address: "0x2527D02599Ba641c19FEa793cD0F167589a0f10D".to_string(),
-            destination_address: "13QkxhNMrTPxoCkRdYdJ65tFuwXPhL5gLS2Z5Nr6gjRK".to_string(),
+            from_asset: SwapperQuoteAsset::from(AssetId::new(USDC_ARB_ASSET_ID).unwrap()),
+            to_asset: SwapperQuoteAsset::from(AssetId::new(USDC_BASE_ASSET_ID).unwrap()),
+            wallet_address: "0x514bcb1f9aabb904e6106bd1052b66d2706dbbb7".to_string(),
+            destination_address: "0x514bcb1f9aabb904e6106bd1052b66d2706dbbb7".to_string(),
             value: "500000".to_string(),
             mode: SwapperMode::ExactIn,
             options,
