@@ -21,6 +21,9 @@ impl CacherClient {
     }
 
     pub async fn set_values(&self, values: Vec<(String, String)>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        if values.is_empty() {
+            return Ok(0);
+        }
         self.connection.clone().mset::<String, String, ()>(values.as_slice()).await?;
         Ok(values.len())
     }
@@ -59,6 +62,9 @@ impl CacherClient {
         I: serde::de::DeserializeOwned,
         T: FromIterator<I>,
     {
+        if keys.is_empty() {
+            return Ok(std::iter::empty::<I>().collect());
+        }
         let result: Vec<Option<String>> = self.connection.clone().mget(keys).await?;
         let values: T = result.into_iter().flatten().filter_map(|value| serde_json::from_str::<I>(&value).ok()).collect();
         Ok(values)

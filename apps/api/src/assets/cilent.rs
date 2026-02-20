@@ -67,6 +67,10 @@ impl SearchClient {
             .search(ASSETS_INDEX_NAME, &request.query, &build_filter(filters), [].as_ref(), request.limit, request.offset)
             .await?;
 
+        if assets.is_empty() {
+            return Ok(vec![]);
+        }
+
         let asset_ids: Vec<String> = assets.iter().map(|x| x.asset.id.to_string()).collect();
         let prices: HashMap<String, _> = self
             .price_client
