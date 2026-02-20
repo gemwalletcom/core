@@ -75,6 +75,21 @@ pub fn get_uniswap_deployment_by_chain(chain: &Chain) -> Option<V4Deployment> {
             permit2,
             universal_router: "0xEf740bf23aCaE26f6492B10de645D6B98dC8Eaf3",
         }),
+        Chain::Celo => Some(V4Deployment {
+            quoter: "0x28566da1093609182dFf2cB2A91CFD72e61d66cd",
+            permit2,
+            universal_router: "0xcb695bc5D3Aa22cAD1E6DF07801b061a05A0233A",
+        }),
+        Chain::Monad => Some(V4Deployment {
+            quoter: "0xa222Dd357A9076d1091Ed6Aa2e16C9742dD26891",
+            permit2,
+            universal_router: "0x0D97Dc33264bfC1c226207428A79b26757fb9dc3",
+        }),
+        Chain::Ink => Some(V4Deployment {
+            quoter: "0x3972C00f7ed4885e145823eb7C655375d275A1C5",
+            permit2,
+            universal_router: "0x112908daC86e20e7241B0927479Ea3Bf935d1fa0",
+        }),
         _ => None,
     }
 }
