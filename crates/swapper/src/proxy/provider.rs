@@ -47,6 +47,10 @@ where
     }
 
     pub async fn check_approval_and_limit(&self, quote: &Quote, quote_data: &SwapQuoteData) -> Result<(Option<ApprovalData>, Option<String>), SwapperError> {
+        if let Some(ref approval) = quote_data.approval {
+            return Ok((Some(approval.clone()), quote_data.gas_limit.clone()));
+        }
+
         let request = &quote.request;
         let from_asset = request.from_asset.asset_id();
 
@@ -171,11 +175,7 @@ impl ProxyProvider<RpcClient> {
         Self::new_with_path(
             SwapperProvider::Relay,
             "relay",
-            vec![
-                SwapperChainAsset::All(Chain::Hyperliquid),
-                SwapperChainAsset::All(Chain::Manta),
-                SwapperChainAsset::All(Chain::Berachain),
-            ],
+            vec![SwapperChainAsset::All(Chain::Hyperliquid), SwapperChainAsset::All(Chain::Berachain)],
             rpc_provider,
         )
     }
