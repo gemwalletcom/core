@@ -1,6 +1,6 @@
 use crate::models::Transaction;
 use crate::rpc::trongrid::model::{Data, Trc20Transaction, TronGridAccount};
-use gem_client::Client;
+use gem_client::{Client, ClientExt};
 use std::collections::HashMap;
 use std::error::Error;
 use std::result::Result;
@@ -16,13 +16,13 @@ impl<C: Client> TronGridClient<C> {
         Self { client, api_key }
     }
 
-    fn headers(&self) -> Option<HashMap<String, String>> {
+    fn headers(&self) -> HashMap<String, String> {
         if self.api_key.is_empty() {
-            None
+            HashMap::new()
         } else {
             let mut headers = HashMap::new();
             headers.insert("TRON-PRO-API-KEY".to_string(), self.api_key.clone());
-            Some(headers)
+            headers
         }
     }
 

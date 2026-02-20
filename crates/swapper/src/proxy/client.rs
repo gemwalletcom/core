@@ -1,5 +1,5 @@
 use crate::SwapperError;
-use gem_client::{Client, build_path_with_query};
+use gem_client::{Client, ClientExt, build_path_with_query};
 use primitives::swap::{ProxyQuote, ProxyQuoteRequest, SwapQuoteData};
 use serde::Deserialize;
 use serde::Serialize;
@@ -42,7 +42,7 @@ where
 
     pub async fn get_quote(&self, request: ProxyQuoteRequest) -> Result<ProxyQuote, SwapperError> {
         let path = build_path_with_query("/quote", &VersionQuery { v: API_VERSION }).map_err(SwapperError::from)?;
-        let response: ProxyResponse<ProxyQuote> = self.client.post(&path, &request, None).await.map_err(SwapperError::from)?;
+        let response: ProxyResponse<ProxyQuote> = self.client.post(&path, &request).await.map_err(SwapperError::from)?;
         match response {
             ProxyResponse::Ok { ok } => Ok(ok),
             ProxyResponse::Err(e) => Err(e.err),
@@ -51,7 +51,7 @@ where
 
     pub async fn get_quote_data(&self, quote: ProxyQuote) -> Result<SwapQuoteData, SwapperError> {
         let path = build_path_with_query("/quote_data", &VersionQuery { v: API_VERSION }).map_err(SwapperError::from)?;
-        let response: ProxyResponse<SwapQuoteData> = self.client.post(&path, &quote, None).await.map_err(SwapperError::from)?;
+        let response: ProxyResponse<SwapQuoteData> = self.client.post(&path, &quote).await.map_err(SwapperError::from)?;
         match response {
             ProxyResponse::Ok { ok } => Ok(ok),
             ProxyResponse::Err(e) => Err(e.err),

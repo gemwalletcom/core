@@ -4,7 +4,7 @@ use primitives::{Asset, AssetId, AssetType, chain::Chain};
 use serde_json;
 
 use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainStaking, ChainTraits};
-use gem_client::Client;
+use gem_client::{Client, ClientExt};
 
 use crate::models::{ApiResult, BroadcastTransaction, Chainhead, JettonInfo, JettonWalletsResponse, MessageTransactions, SimpleJettonBalance, WalletInfo};
 
@@ -56,7 +56,7 @@ impl<C: Client> TonClient<C> {
 
     pub async fn broadcast_transaction(&self, data: String) -> Result<ApiResult<BroadcastTransaction>, Box<dyn Error + Send + Sync>> {
         let body = serde_json::json!({ "boc": data });
-        Ok(self.client.post("/api/v2/sendBocReturnHash", &body, None).await?)
+        Ok(self.client.post("/api/v2/sendBocReturnHash", &body).await?)
     }
 
     pub async fn get_transaction(&self, hash: String) -> Result<MessageTransactions, Box<dyn Error + Send + Sync>> {

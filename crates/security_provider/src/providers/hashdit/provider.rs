@@ -1,7 +1,7 @@
 use crate::providers::hashdit::models::DetectResponse;
 use crate::{AddressTarget, ScanProvider, ScanResult, TokenTarget, mapper};
 use async_trait::async_trait;
-use gem_client::{Client, ClientError, ReqwestClient};
+use gem_client::{ClientError, ClientExt, ReqwestClient};
 use hmac::{Hmac, Mac};
 use serde_json::{Value, json};
 use sha2::Sha256;
@@ -63,7 +63,7 @@ impl HashDitProvider {
         headers.insert("X-Signature-nonce".to_string(), nonce);
 
         let url = format!("{}?{}", path, query_str);
-        self.client.post(&url, body, Some(headers)).await
+        self.client.post_with_headers(&url, body, headers).await
     }
 
     fn parse_response(response: DetectResponse) -> Result<(bool, Option<String>), Box<dyn std::error::Error + Send + Sync>> {

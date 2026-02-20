@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::str::FromStr;
 
-use gem_client::{CONTENT_TYPE, Client, ContentType};
+use gem_client::{CONTENT_TYPE, Client, ClientExt, ContentType};
 use num_bigint::BigUint;
 use primitives::chain::Chain;
 use primitives::{AssetSubtype, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata};
@@ -42,7 +42,7 @@ impl<C: Client> AptosClient<C> {
         Ok(self.client.get(&url).await?)
     }
 
-    pub async fn get_account_resource<T: Serialize + DeserializeOwned>(&self, address: String, resource: &str) -> Result<Resource<T>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_account_resource<T: Serialize + DeserializeOwned + Send>(&self, address: String, resource: &str) -> Result<Resource<T>, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get(&format!("/v1/accounts/{}/resource/{}", address, resource)).await?)
     }
 
@@ -60,7 +60,10 @@ impl<C: Client> AptosClient<C> {
 
     pub async fn submit_transaction(&self, bcs_bytes: Vec<u8>) -> Result<TransactionResponse, Box<dyn Error + Send + Sync>> {
         let headers = HashMap::from([(CONTENT_TYPE.to_string(), ContentType::ApplicationAptosBcs.as_str().to_string())]);
-        let response = self.client.post::<Vec<u8>, TransactionResponse>("/v1/transactions", &bcs_bytes, Some(headers)).await?;
+        let response = self
+            .client
+            .post_with_headers::<Vec<u8>, TransactionResponse>("/v1/transactions", &bcs_bytes, headers)
+            .await?;
 
         if let Some(message) = &response.message {
             return Err(Box::new(std::io::Error::other(message.clone())));
@@ -144,7 +147,7 @@ impl<C: Client> AptosClient<C> {
             },
         };
 
-        let response: Vec<Transaction> = self.client.post("/v1/transactions/simulate", &simulation, None).await?;
+        let response: Vec<Transaction> = self.client.post("/v1/transactions/simulate", &simulation).await?;
         response.into_iter().next().ok_or_else(|| "No simulation result".into())
     }
 
@@ -166,7 +169,7 @@ impl<C: Client> AptosClient<C> {
             "arguments": [pool_address, delegator_address]
         });
 
-        let (active, inactive, pending_inactive): (String, String, String) = self.client.post("/v1/view", &view_request, None).await?;
+        let (active, inactive, pending_inactive): (String, String, String) = self.client.post("/v1/view", &view_request).await?;
 
         Ok(DelegationPoolStake {
             active: BigUint::from_str(&active).unwrap_or_else(|_| BigUint::from(0u32)),
@@ -187,7 +190,7 @@ impl<C: Client> AptosClient<C> {
             "arguments": [pool_address]
         });
 
-        let result: Vec<String> = self.client.post("/v1/view", &view_request, None).await?;
+        let result: Vec<String> = self.client.post("/v1/view", &view_request).await?;
         let commission_bps = result.first().and_then(|s| s.parse::<u64>().ok()).unwrap_or(0);
 
         Ok(commission_bps as f64 / 100.0)
@@ -207,7 +210,7 @@ impl<C: Client> AptosClient<C> {
             "arguments": [pool_address]
         });
 
-        let result: Vec<String> = self.client.post("/v1/view", &view_request, None).await?;
+        let result: Vec<String> = self.client.post("/v1/view", &view_request).await?;
         let lockup_secs = result.first().and_then(|s| s.parse::<u64>().ok()).ok_or("Failed to parse lockup_secs")?;
 
         Ok(lockup_secs)

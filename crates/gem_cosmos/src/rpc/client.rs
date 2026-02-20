@@ -8,7 +8,7 @@ use crate::models::{
     TransactionResponse, TransactionsResponse, ValidatorsResponse,
 };
 use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainTraits};
-use gem_client::Client;
+use gem_client::{Client, ClientExt};
 use primitives::chain_cosmos::CosmosChain;
 
 pub struct CosmosClient<C: Client> {
@@ -148,7 +148,7 @@ impl<C: Client> CosmosClient<C> {
 
     pub async fn broadcast_transaction(&self, data: &str) -> Result<BroadcastResponse, Box<dyn Error + Send + Sync>> {
         let request: BroadcastRequest = serde_json::from_str(data)?;
-        Ok(self.client.post("/cosmos/tx/v1beta1/txs", &request, None).await?)
+        Ok(self.client.post("/cosmos/tx/v1beta1/txs", &request).await?)
     }
 }
 

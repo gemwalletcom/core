@@ -8,7 +8,7 @@ use crate::models::transaction::{Payment, StellarTransactionBroadcast, StellarTr
 use crate::models::{AccountEmpty, AccountResult};
 
 use chain_traits::{ChainAddressStatus, ChainPerpetual, ChainProvider, ChainStaking, ChainTraits};
-use gem_client::{Client, ClientError, ContentType};
+use gem_client::{Client, ClientError, ClientExt, ContentType};
 use primitives::Chain;
 use std::collections::HashMap;
 
@@ -43,9 +43,9 @@ impl<C: Client> StellarClient<C> {
 
     pub async fn broadcast_transaction(&self, data: &str) -> Result<StellarTransactionBroadcast, Box<dyn Error + Send + Sync>> {
         let body = encode_transaction_data(data);
-        let headers = Some(HashMap::from([("Content-Type".to_string(), ContentType::ApplicationFormUrlEncoded.as_str().to_string())]));
+        let headers = HashMap::from([("Content-Type".to_string(), ContentType::ApplicationFormUrlEncoded.as_str().to_string())]);
 
-        Ok(self.client.post("/transactions_async", &body, headers).await?)
+        Ok(self.client.post_with_headers("/transactions_async", &body, headers).await?)
     }
 
     pub async fn get_assets_by_issuer(&self, issuer: &str) -> Result<StellarEmbedded<StellarAsset>, Box<dyn Error + Send + Sync>> {

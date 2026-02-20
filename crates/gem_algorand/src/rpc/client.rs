@@ -10,7 +10,7 @@ use gem_client::{CONTENT_TYPE, ContentType};
 #[cfg(feature = "rpc")]
 use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainProvider, ChainStaking, ChainTraits};
 #[cfg(feature = "rpc")]
-use gem_client::Client;
+use gem_client::{Client, ClientExt};
 #[cfg(feature = "rpc")]
 use primitives::Chain;
 
@@ -51,9 +51,9 @@ impl<C: Client> AlgorandClient<C> {
     }
 
     pub async fn broadcast_transaction(&self, data: &str) -> Result<TransactionBroadcast, Box<dyn Error + Send + Sync>> {
-        let headers = Some(HashMap::from([(CONTENT_TYPE.to_string(), ContentType::ApplicationXBinary.as_str().to_string())]));
+        let headers = HashMap::from([(CONTENT_TYPE.to_string(), ContentType::ApplicationXBinary.as_str().to_string())]);
 
-        Ok(self.client.post("/v2/transactions", &data, headers).await?)
+        Ok(self.client.post_with_headers("/v2/transactions", &data, headers).await?)
     }
 
     pub async fn get_transaction_status(&self, transaction_id: &str) -> Result<TransactionStatus, Box<dyn Error + Send + Sync>> {

@@ -2,19 +2,20 @@ use std::error::Error;
 
 use async_trait::async_trait;
 use chrono::Utc;
+use gem_client::ReqwestClient;
 
 use crate::{AssetPriceFeed, DexAssetPrice, PriceChainAssetsProvider, PriceFeedId, PriceFeedProvider};
 
 use super::{client::JupiterClient, mapper::map_id_to_asset_id};
 
 pub struct JupiterProvider {
-    pub jupiter_client: JupiterClient,
+    jupiter_client: JupiterClient,
 }
 
 impl JupiterProvider {
-    pub fn new(base_url: &str) -> Self {
+    pub fn new(client: ReqwestClient) -> Self {
         Self {
-            jupiter_client: JupiterClient::new(base_url),
+            jupiter_client: JupiterClient::new(client),
         }
     }
 }

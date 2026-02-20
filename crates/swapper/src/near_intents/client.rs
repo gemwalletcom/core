@@ -1,5 +1,5 @@
 use crate::{SwapperError, config::get_swap_api_url};
-use gem_client::{Client, ClientError};
+use gem_client::{Client, ClientError, ClientExt};
 use std::{collections::HashMap, fmt::Debug};
 
 use super::model::{ExecutionStatus, QuoteRequest, QuoteResponseResult};
@@ -25,14 +25,15 @@ where
         Self { client, api_token: api_key }
     }
 
-    fn build_headers(&self) -> Option<HashMap<String, String>> {
+    fn build_headers(&self) -> HashMap<String, String> {
         self.api_token
             .as_ref()
             .map(|token| HashMap::from([(String::from("Authorization"), format!("Bearer {token}"))]))
+            .unwrap_or_default()
     }
 
     pub async fn fetch_quote(&self, request: &QuoteRequest) -> Result<QuoteResponseResult, SwapperError> {
-        self.client.post("/v0/quote", request, self.build_headers()).await.map_err(SwapperError::from)
+        self.client.post_with_headers("/v0/quote", request, self.build_headers()).await.map_err(SwapperError::from)
     }
 
     pub async fn get_transaction_status(&self, deposit_address: &str) -> Result<ExecutionStatus, SwapperError> {

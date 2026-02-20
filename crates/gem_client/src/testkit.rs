@@ -1,6 +1,6 @@
 use crate::{Client, ClientError};
 use async_trait::async_trait;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 use std::{
     collections::HashMap,
     fmt::{Debug, Formatter},
@@ -46,7 +46,7 @@ impl Debug for MockClient {
 
 #[async_trait]
 impl Client for MockClient {
-    async fn get<R>(&self, path: &str) -> Result<R, ClientError>
+    async fn get_with<R>(&self, path: &str, _query: &[(String, String)], _headers: HashMap<String, String>) -> Result<R, ClientError>
     where
         R: DeserializeOwned,
     {
@@ -55,7 +55,7 @@ impl Client for MockClient {
         serde_json::from_slice(&bytes).map_err(|e| ClientError::Serialization(e.to_string()))
     }
 
-    async fn post<T, R>(&self, path: &str, body: &T, _headers: Option<HashMap<String, String>>) -> Result<R, ClientError>
+    async fn post_with<T, R>(&self, path: &str, body: &T, _headers: HashMap<String, String>) -> Result<R, ClientError>
     where
         T: Serialize + Send + Sync,
         R: DeserializeOwned,

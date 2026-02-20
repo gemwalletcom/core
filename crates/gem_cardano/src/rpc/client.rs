@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use chain_traits::{ChainAddressStatus, ChainPerpetual, ChainProvider, ChainStaking, ChainTraits};
-use gem_client::Client;
+use gem_client::{Client, ClientExt};
 use primitives::chain::Chain;
 
 use crate::models::{
@@ -28,7 +28,7 @@ impl<C: Client> CardanoClient<C> {
         let json = serde_json::json!({
             "query": "{ cardano { tip { number } } }"
         });
-        let response: Data<BlockData> = self.client.post("/", &json, None).await?;
+        let response: Data<BlockData> = self.client.post("/", &json).await?;
         Ok(response.data.cardano.tip.number as i64)
     }
 
@@ -40,7 +40,7 @@ impl<C: Client> CardanoClient<C> {
             },
             "operationName": "GetBlockByNumber"
         });
-        let response: Data<Blocks> = self.client.post("/", &json, None).await?;
+        let response: Data<Blocks> = self.client.post("/", &json).await?;
         response.data.blocks.first().cloned().ok_or_else(|| "Block not found".into())
     }
 
@@ -50,7 +50,7 @@ impl<C: Client> CardanoClient<C> {
             "variables": {"address": address},
             "query": "query GetBalance($address: String!) { utxos: utxos_aggregate(where: { address: { _eq: $address }  } ) { aggregate { sum { value } } } }"
         });
-        let response: GraphqlData<BalanceResponse> = self.client.post("/", &json, None).await?;
+        let response: GraphqlData<BalanceResponse> = self.client.post("/", &json).await?;
 
         if let Some(errors) = response.errors
             && let Some(error) = errors.first()
@@ -71,7 +71,7 @@ impl<C: Client> CardanoClient<C> {
             "variables": {"address": address},
             "query": "query UtxoSetForAddress($address: String!) { utxos(order_by: { value: desc } , where: { address: { _eq: $address }  } ) { address value txHash index tokens { quantity asset { fingerprint policyId assetName } } } }"
         });
-        let response: Data<UTXOS<Vec<UTXO>>> = self.client.post("/", &json, None).await?;
+        let response: Data<UTXOS<Vec<UTXO>>> = self.client.post("/", &json).await?;
         Ok(response.data.utxos)
     }
 
@@ -81,7 +81,7 @@ impl<C: Client> CardanoClient<C> {
             "variables": {},
             "query": "query GetNetworkMagic { genesis { shelley { networkMagic } } }"
         });
-        let response: Data<GenesisData> = self.client.post("/", &json, None).await?;
+        let response: Data<GenesisData> = self.client.post("/", &json).await?;
         Ok(response.data.genesis.shelley.network_magic.to_string())
     }
 
@@ -91,7 +91,7 @@ impl<C: Client> CardanoClient<C> {
             "variables": {"transaction": data},
             "query": "mutation SubmitTransaction($transaction: String!) { submitTransaction(transaction: $transaction) { hash } }"
         });
-        let response: GraphqlData<TransactionBroadcast> = self.client.post("/", &json, None).await?;
+        let response: GraphqlData<TransactionBroadcast> = self.client.post("/", &json).await?;
 
         if let Some(errors) = response.errors
             && let Some(error) = errors.first()

@@ -37,18 +37,54 @@ pub const X_CACHE_TTL: &str = "x-cache-ttl";
 
 #[async_trait]
 pub trait Client: Send + Sync + Debug {
-    async fn get<R>(&self, path: &str) -> Result<R, ClientError>
+    async fn get_with<R>(&self, path: &str, query: &[(String, String)], headers: HashMap<String, String>) -> Result<R, ClientError>
     where
         R: DeserializeOwned;
-    async fn get_with_headers<R>(&self, path: &str, headers: Option<HashMap<String, String>>) -> Result<R, ClientError>
-    where
-        R: DeserializeOwned,
-    {
-        let _ = headers;
-        self.get(path).await
-    }
-    async fn post<T, R>(&self, path: &str, body: &T, headers: Option<HashMap<String, String>>) -> Result<R, ClientError>
+
+    async fn post_with<T, R>(&self, path: &str, body: &T, headers: HashMap<String, String>) -> Result<R, ClientError>
     where
         T: Serialize + Send + Sync,
         R: DeserializeOwned;
 }
+
+#[async_trait]
+pub trait ClientExt: Client {
+    async fn get<R>(&self, path: &str) -> Result<R, ClientError>
+    where
+        R: DeserializeOwned + Send,
+    {
+        self.get_with(path, &[], HashMap::new()).await
+    }
+
+    async fn get_with_query<R>(&self, path: &str, query: &[(String, String)]) -> Result<R, ClientError>
+    where
+        R: DeserializeOwned + Send,
+    {
+        self.get_with(path, query, HashMap::new()).await
+    }
+
+    async fn get_with_headers<R>(&self, path: &str, headers: HashMap<String, String>) -> Result<R, ClientError>
+    where
+        R: DeserializeOwned + Send,
+    {
+        self.get_with(path, &[], headers).await
+    }
+
+    async fn post<T, R>(&self, path: &str, body: &T) -> Result<R, ClientError>
+    where
+        T: Serialize + Send + Sync,
+        R: DeserializeOwned + Send,
+    {
+        self.post_with(path, body, HashMap::new()).await
+    }
+
+    async fn post_with_headers<T, R>(&self, path: &str, body: &T, headers: HashMap<String, String>) -> Result<R, ClientError>
+    where
+        T: Serialize + Send + Sync,
+        R: DeserializeOwned + Send,
+    {
+        self.post_with(path, body, headers).await
+    }
+}
+
+impl<T: Client + ?Sized> ClientExt for T {}

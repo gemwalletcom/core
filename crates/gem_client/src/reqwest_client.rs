@@ -55,18 +55,14 @@ impl ReqwestClient {
         format!("{}{}", self.base_url.trim_end_matches('/'), path)
     }
 
-    fn build_request(&self, request: RequestBuilder, headers: Option<HashMap<String, String>>) -> RequestBuilder {
+    fn build_request(&self, request: RequestBuilder, headers: HashMap<String, String>) -> RequestBuilder {
         let request = if let Some(ref user_agent) = self.user_agent {
             request.header(USER_AGENT, user_agent)
         } else {
             request
         };
 
-        if let Some(headers) = headers {
-            headers.into_iter().fold(request, |req, (key, value)| req.header(&key, &value))
-        } else {
-            request
-        }
+        headers.into_iter().fold(request, |req, (key, value)| req.header(&key, &value))
     }
 
     async fn send_request<R>(&self, response: reqwest::Response) -> Result<R, ClientError>
@@ -97,31 +93,28 @@ impl ReqwestClient {
 
 #[async_trait]
 impl Client for ReqwestClient {
-    async fn get<R>(&self, path: &str) -> Result<R, ClientError>
-    where
-        R: DeserializeOwned,
-    {
-        self.get_with_headers(path, None).await
-    }
-
-    async fn get_with_headers<R>(&self, path: &str, headers: Option<HashMap<String, String>>) -> Result<R, ClientError>
+    async fn get_with<R>(&self, path: &str, query: &[(String, String)], headers: HashMap<String, String>) -> Result<R, ClientError>
     where
         R: DeserializeOwned,
     {
         let url = self.build_url(path);
-        let request = self.build_request(self.client.get(&url), headers);
+        let request = self.build_request(self.client.get(&url).query(query), headers);
 
         let response = request.send().await.map_err(Self::map_reqwest_error)?;
         self.send_request(response).await
     }
 
-    async fn post<T, R>(&self, path: &str, body: &T, headers: Option<HashMap<String, String>>) -> Result<R, ClientError>
+    async fn post_with<T, R>(&self, path: &str, body: &T, headers: HashMap<String, String>) -> Result<R, ClientError>
     where
         T: Serialize + Send + Sync,
         R: DeserializeOwned,
     {
         let url = self.build_url(path);
-        let headers = headers.unwrap_or_else(|| HashMap::from([(CONTENT_TYPE.to_string(), ContentType::ApplicationJson.as_str().to_string())]));
+        let headers = if headers.is_empty() {
+            HashMap::from([(CONTENT_TYPE.to_string(), ContentType::ApplicationJson.as_str().to_string())])
+        } else {
+            headers
+        };
 
         let content_type = headers.get(CONTENT_TYPE).and_then(|s| ContentType::from_str(s).ok());
 
@@ -131,7 +124,6 @@ impl Client for ReqwestClient {
                 match json_value {
                     serde_json::Value::String(s) => {
                         if matches!(content_type, Some(ContentType::ApplicationXBinary) | Some(ContentType::ApplicationAptosBcs)) {
-                            // For binary content, decode hex string to bytes
                             hex::decode(&s).map_err(|e| ClientError::Serialization(format!("Failed to decode hex string: {e}")))?
                         } else {
                             s.into_bytes()
@@ -146,7 +138,7 @@ impl Client for ReqwestClient {
             _ => serde_json::to_vec(body).map_err(|e| ClientError::Serialization(format!("Failed to serialize request: {e}")))?,
         };
 
-        let request = self.build_request(self.client.post(&url).body(request_body), Some(headers));
+        let request = self.build_request(self.client.post(&url).body(request_body), headers);
 
         let response = request.send().await.map_err(Self::map_reqwest_error)?;
 

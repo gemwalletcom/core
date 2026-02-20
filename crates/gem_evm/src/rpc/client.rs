@@ -61,15 +61,15 @@ impl<C: Client + Clone> EthereumClient<C> {
         self.chain.to_chain()
     }
 
-    pub async fn call<T: DeserializeOwned + 'static>(&self, method: String, params: serde_json::Value) -> Result<T, JsonRpcError> {
+    pub async fn call<T: DeserializeOwned + Send + 'static>(&self, method: String, params: serde_json::Value) -> Result<T, JsonRpcError> {
         self.client.call(&method, params).await
     }
 
-    pub async fn batch_call<T: DeserializeOwned + 'static>(&self, calls: Vec<(String, serde_json::Value)>) -> Result<Vec<JsonRpcResult<T>>, JsonRpcError> {
+    pub async fn batch_call<T: DeserializeOwned + Send + 'static>(&self, calls: Vec<(String, serde_json::Value)>) -> Result<Vec<JsonRpcResult<T>>, JsonRpcError> {
         Ok(self.client.batch_call::<T>(calls).await?.into_iter().collect())
     }
 
-    pub async fn eth_call<T: DeserializeOwned + 'static>(&self, contract_address: &str, call_data: &str) -> Result<T, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn eth_call<T: DeserializeOwned + Send + 'static>(&self, contract_address: &str, call_data: &str) -> Result<T, Box<dyn std::error::Error + Send + Sync>> {
         let to_address = Address::from_str(contract_address)?;
 
         let params = json!([

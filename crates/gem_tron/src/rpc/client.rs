@@ -16,7 +16,7 @@ use crate::rpc::constants::{DECIMALS_SELECTOR, DEFAULT_OWNER_ADDRESS, NAME_SELEC
 use crate::rpc::trongrid::client::TronGridClient;
 use alloy_primitives::Address as AlloyAddress;
 use alloy_sol_types::SolCall;
-use gem_client::Client;
+use gem_client::{Client, ClientExt};
 use gem_evm::contracts::erc20::{decode_abi_string, decode_abi_uint8};
 
 #[derive(Clone)]
@@ -82,7 +82,7 @@ impl<C: Client> TronClient<C> {
     }
 
     async fn trigger_constant_contract_request(&self, request: &(impl serde::Serialize + Send + Sync)) -> Result<TriggerConstantContractResponse, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.post("/wallet/triggerconstantcontract", request, None).await?)
+        Ok(self.client.post("/wallet/triggerconstantcontract", request).await?)
     }
 
     pub async fn get_token_allowance(&self, owner_address: &str, token_address: &str, spender_address: &str) -> Result<BigUint, Box<dyn Error + Send + Sync>> {
@@ -183,7 +183,7 @@ impl<C: Client> TronClient<C> {
             visible: true,
         };
 
-        Ok(self.client.post("/wallet/getaccount", &request, None).await?)
+        Ok(self.client.post("/wallet/getaccount", &request).await?)
     }
 
     pub async fn get_account_usage(&self, address: &str) -> Result<TronAccountUsage, Box<dyn Error + Send + Sync>> {
@@ -192,7 +192,7 @@ impl<C: Client> TronClient<C> {
             visible: true,
         };
 
-        Ok(self.client.post("/wallet/getaccountresource", &request, None).await?)
+        Ok(self.client.post("/wallet/getaccountresource", &request).await?)
     }
 
     pub async fn get_reward(&self, address: &str) -> Result<TronReward, Box<dyn Error + Send + Sync>> {
@@ -201,11 +201,11 @@ impl<C: Client> TronClient<C> {
             visible: true,
         };
 
-        Ok(self.client.post("/wallet/getReward", &request, None).await?)
+        Ok(self.client.post("/wallet/getReward", &request).await?)
     }
 
     pub async fn trigger_smart_contract(&self, request: &TronSmartContractCall) -> Result<TronSmartContractResult, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.post("/wallet/triggerconstantcontract", request, None).await?)
+        Ok(self.client.post("/wallet/triggerconstantcontract", request).await?)
     }
 
     pub async fn is_new_account(&self, address: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
@@ -214,17 +214,17 @@ impl<C: Client> TronClient<C> {
             visible: true,
         };
 
-        let account: TronEmptyAccount = self.client.post("/wallet/getaccount", &request, None).await?;
+        let account: TronEmptyAccount = self.client.post("/wallet/getaccount", &request).await?;
         Ok(account.address.is_none_or(|addr| addr.is_empty()))
     }
 
     pub async fn broadcast_transaction(&self, data: String) -> Result<TronTransactionBroadcast, Box<dyn Error + Send + Sync>> {
         let json_value: serde_json::Value = serde_json::from_str(&data)?;
-        Ok(self.client.post("/wallet/broadcasttransaction", &json_value, None).await?)
+        Ok(self.client.post("/wallet/broadcasttransaction", &json_value).await?)
     }
 
     pub async fn get_tron_block(&self) -> Result<TronBlock, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.post("/wallet/getnowblock", &serde_json::json!({}), None).await?)
+        Ok(self.client.post("/wallet/getnowblock", &serde_json::json!({})).await?)
     }
 
     pub async fn estimate_trc20_transfer_gas(

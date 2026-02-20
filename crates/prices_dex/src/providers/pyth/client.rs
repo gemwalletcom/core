@@ -1,24 +1,19 @@
 use std::error::Error;
 
 use super::model::{HermesResponse, Price, PriceFeed};
-use reqwest::Client;
+use gem_client::{ClientExt, ReqwestClient};
 
 pub struct PythClient {
-    hermes_url: String,
-    client: Client,
+    client: ReqwestClient,
 }
 
 impl PythClient {
-    pub fn new(hermes_url: &str) -> Self {
-        Self {
-            hermes_url: hermes_url.to_string(),
-            client: Client::new(),
-        }
+    pub fn new(client: ReqwestClient) -> Self {
+        Self { client }
     }
 
     pub async fn get_price_feeds(&self) -> Result<Vec<PriceFeed>, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/v2/price_feeds", self.hermes_url);
-        Ok(self.client.get(&url).send().await?.json().await?)
+        Ok(self.client.get("/v2/price_feeds").await?)
     }
 
     pub async fn get_asset_prices(&self, price_ids: Vec<String>) -> Result<Vec<Price>, Box<dyn Error + Send + Sync>> {
@@ -26,17 +21,11 @@ impl PythClient {
         let mut all_prices = Vec::new();
 
         for chunk in price_ids.chunks(CHUNK_SIZE) {
-            let url = format!("{}/v2/updates/price/latest", self.hermes_url);
+            let query: Vec<(String, String)> = chunk.iter().map(|id| ("ids[]".to_string(), id.clone())).collect();
 
-            let mut request = self.client.get(&url);
-            for id in chunk {
-                request = request.query(&[("ids[]", id)]);
-            }
+            let response = self.client.get_with_query::<HermesResponse>("/v2/updates/price/latest", &query).await?;
 
-            let response = request.send().await?;
-            let hermes_response: HermesResponse = response.json().await?;
-
-            let prices: Vec<Price> = hermes_response
+            let prices: Vec<Price> = response
                 .parsed
                 .into_iter()
                 .map(|feed| {

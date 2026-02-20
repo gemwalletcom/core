@@ -3,7 +3,7 @@ use super::{
     model::{InboundAddress, QuoteSwapRequest, QuoteSwapResponse, Transaction},
 };
 use crate::SwapperError;
-use gem_client::{Client, X_CACHE_TTL};
+use gem_client::{Client, ClientExt, X_CACHE_TTL};
 use serde_urlencoded;
 use std::{collections::HashMap, fmt::Debug};
 
@@ -49,10 +49,7 @@ where
 
     pub async fn get_inbound_addresses(&self) -> Result<Vec<InboundAddress>, SwapperError> {
         let headers = HashMap::from([(X_CACHE_TTL.to_string(), "600".to_string())]);
-        self.client
-            .get_with_headers("/thorchain/inbound_addresses", Some(headers))
-            .await
-            .map_err(SwapperError::from)
+        self.client.get_with_headers("/thorchain/inbound_addresses", headers).await.map_err(SwapperError::from)
     }
 
     pub async fn get_transaction_status(&self, transaction_hash: &str) -> Result<Transaction, SwapperError> {

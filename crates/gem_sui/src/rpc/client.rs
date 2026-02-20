@@ -56,7 +56,7 @@ impl<C: Client + Clone> SuiClient<C> {
         &self.client
     }
 
-    pub async fn rpc_call<T: DeserializeOwned + Clone>(&self, rpc: SuiRpc) -> Result<T, Box<dyn Error + Send + Sync>> {
+    pub async fn rpc_call<T: DeserializeOwned + Clone + Send>(&self, rpc: SuiRpc) -> Result<T, Box<dyn Error + Send + Sync>> {
         Ok(self.client.request(rpc).await?)
     }
 

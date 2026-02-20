@@ -1,5 +1,5 @@
+use gem_client::ReqwestClient;
 use gem_tracing::info_with_fields;
-use prices_dex::providers::pyth::client::PythClient;
 use prices_dex::{AssetPriceFeed, DexAssetPrice, JupiterProvider, PriceChainAssetsProvider, PriceFeedProvider, PythProvider};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -14,11 +14,10 @@ pub struct PricesDexUpdater {
 
 impl PricesDexUpdater {
     pub fn new(provider_type: PriceFeedProvider, url: &str, database: Database) -> Self {
+        let client = ReqwestClient::new_with_retry(url.to_string(), 30, 3);
         let provider: Arc<dyn PriceChainAssetsProvider> = match provider_type {
-            PriceFeedProvider::Pyth => Arc::new(PythProvider {
-                pyth_client: PythClient::new(url),
-            }),
-            PriceFeedProvider::Jupiter => Arc::new(JupiterProvider::new(url)),
+            PriceFeedProvider::Pyth => Arc::new(PythProvider::new(client)),
+            PriceFeedProvider::Jupiter => Arc::new(JupiterProvider::new(client)),
         };
 
         Self {

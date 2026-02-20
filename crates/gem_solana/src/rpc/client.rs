@@ -62,7 +62,7 @@ impl<C: Client + Clone> SolanaClient<C> {
 
     pub async fn rpc_call<T>(&self, method: &str, params: serde_json::Value) -> Result<T, JsonRpcError>
     where
-        T: serde::de::DeserializeOwned,
+        T: serde::de::DeserializeOwned + Send,
     {
         self.client.call(method, params).await
     }

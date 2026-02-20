@@ -1,6 +1,7 @@
 use std::error::Error;
 
 use chrono::Utc;
+use gem_client::ReqwestClient;
 use primitives::Chain;
 
 use crate::{AssetPriceFeed, DexAssetPrice, PriceChainAssetsProvider, PriceFeedId, PriceFeedProvider};
@@ -12,7 +13,15 @@ use super::{
 };
 
 pub struct PythProvider {
-    pub pyth_client: PythClient,
+    pyth_client: PythClient,
+}
+
+impl PythProvider {
+    pub fn new(client: ReqwestClient) -> Self {
+        Self {
+            pyth_client: PythClient::new(client),
+        }
+    }
 }
 
 #[async_trait]

@@ -3,7 +3,7 @@ use super::{
     model::{QuoteRequest, QuoteResponse},
 };
 use crate::SwapperError;
-use gem_client::Client;
+use gem_client::{Client, ClientExt};
 use serde_json::Value;
 use serde_urlencoded;
 use std::fmt::Debug;

@@ -1,5 +1,5 @@
 use super::model::*;
-use gem_client::{CONTENT_TYPE, Client, ClientError};
+use gem_client::{CONTENT_TYPE, Client, ClientError, ClientExt};
 use std::collections::HashMap;
 
 #[derive(Clone, Debug)]
@@ -26,6 +26,6 @@ where
 
     pub async fn get_swap_quote_data(&self, request: &QuoteDataRequest) -> Result<QuoteDataResponse, ClientError> {
         let headers = HashMap::from([(CONTENT_TYPE.to_string(), "application/json".into())]);
-        self.client.post("/swap/v1/swap", request, Some(headers)).await
+        self.client.post_with_headers("/swap/v1/swap", request, headers).await
     }
 }

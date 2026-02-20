@@ -3,7 +3,7 @@ use std::error::Error;
 use crate::models::{Block, Transactions};
 
 #[cfg(feature = "rpc")]
-use gem_client::Client;
+use gem_client::{Client, ClientExt};
 
 #[derive(Clone, Debug)]
 pub struct AlgorandClientIndexer<C: Client> {

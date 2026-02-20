@@ -117,34 +117,23 @@ impl<E> Client for RpcClient<E>
 where
     E: RpcClientError,
 {
-    async fn get<R>(&self, path: &str) -> Result<R, ClientError>
-    where
-        R: DeserializeOwned,
-    {
-        self.get_with_headers(path, None).await
-    }
-
-    async fn get_with_headers<R>(&self, path: &str, headers: Option<HashMap<String, String>>) -> Result<R, ClientError>
+    async fn get_with<R>(&self, path: &str, _query: &[(String, String)], headers: HashMap<String, String>) -> Result<R, ClientError>
     where
         R: DeserializeOwned,
     {
         let url = self.build_url(path);
-        let target = if let Some(headers) = headers {
-            Target {
-                url,
-                method: HttpMethod::Get,
-                headers: Some(headers),
-                body: None,
-            }
-        } else {
-            Target::get(&url)
+        let target = Target {
+            url,
+            method: HttpMethod::Get,
+            headers: if headers.is_empty() { None } else { Some(headers) },
+            body: None,
         };
 
         let response = self.provider.request(target).await.map_err(|e| e.into_client_error())?;
         deserialize_response(&response)
     }
 
-    async fn post<T, R>(&self, path: &str, body: &T, headers: Option<HashMap<String, String>>) -> Result<R, ClientError>
+    async fn post_with<T, R>(&self, path: &str, body: &T, headers: HashMap<String, String>) -> Result<R, ClientError>
     where
         T: Serialize + Send + Sync,
         R: DeserializeOwned,
@@ -152,10 +141,7 @@ where
         let url = self.build_url(path);
 
         let mut request_headers = HashMap::from([("Content-Type".to_string(), ContentType::ApplicationJson.as_str().to_string())]);
-
-        if let Some(provided_headers) = headers {
-            request_headers.extend(provided_headers);
-        }
+        request_headers.extend(headers);
 
         let content_type = request_headers.get("Content-Type").and_then(|s| ContentType::from_str(s).ok());
 

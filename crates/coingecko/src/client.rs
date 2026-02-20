@@ -1,5 +1,5 @@
 use crate::model::{Coin, CoinGeckoResponse, CoinIds, CoinInfo, CoinMarket, CoinQuery, CointListQuery, Data, ExchangeRates, Global, MarketChart, SearchTrending, TopGainersLosers};
-use gem_client::{Client, ReqwestClient, build_path_with_query, retry};
+use gem_client::{Client, ClientExt, ReqwestClient, build_path_with_query, retry};
 use primitives::{DEFAULT_FIAT_CURRENCY, FiatRate};
 use reqwest::header::{HeaderMap, HeaderValue};
 use std::error::Error;
@@ -41,7 +41,7 @@ impl<C: Client> CoinGeckoClient<C> {
 
     async fn _get<T>(&self, path: &str) -> Result<T, Box<dyn Error + Send + Sync>>
     where
-        T: serde::de::DeserializeOwned,
+        T: serde::de::DeserializeOwned + Send,
     {
         retry(
             || async {

@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainProvider, ChainTraits};
-use gem_client::Client;
+use gem_client::{Client, ClientExt};
 use primitives::{Asset, Chain};
 
 use crate::models::account::PolkadotAccountBalance;
@@ -29,7 +29,7 @@ impl<C: Client> PolkadotClient<C> {
 
     pub async fn estimate_fee(&self, tx: &str) -> Result<PolkadotEstimateFee, Box<dyn Error + Send + Sync>> {
         let payload = serde_json::json!({ "tx": tx });
-        Ok(self.client.post("/transaction/fee-estimate", &payload, None).await?)
+        Ok(self.client.post("/transaction/fee-estimate", &payload).await?)
     }
 
     pub async fn get_node_version(&self) -> Result<PolkadotNodeVersion, Box<dyn Error + Send + Sync>> {
@@ -46,7 +46,7 @@ impl<C: Client> PolkadotClient<C> {
 
     pub async fn broadcast_transaction(&self, data: String) -> Result<PolkadotTransactionBroadcastResponse, Box<dyn Error + Send + Sync>> {
         let payload = serde_json::json!({ "tx": data });
-        Ok(self.client.post("/transaction", &payload, None).await?)
+        Ok(self.client.post("/transaction", &payload).await?)
     }
 
     pub async fn get_block_header(&self, block: &str) -> Result<BlockHeader, Box<dyn Error + Send + Sync>> {

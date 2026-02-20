@@ -10,7 +10,7 @@ use crate::models::{
     user::{AgentSession, LedgerUpdate, UserFee, UserRole},
 };
 use chain_traits::ChainTraits;
-use gem_client::{CONTENT_TYPE, Client, ContentType};
+use gem_client::{CONTENT_TYPE, Client, ClientExt, ContentType};
 use std::{
     collections::HashMap,
     error::Error,
@@ -101,13 +101,13 @@ impl<C: Client> HyperCoreClient<C> {
 
     async fn info<T>(&self, payload: serde_json::Value) -> Result<T, Box<dyn Error + Send + Sync>>
     where
-        T: serde::de::DeserializeOwned,
+        T: serde::de::DeserializeOwned + Send,
     {
-        Ok(self.client.post("/info", &payload, None).await?)
+        Ok(self.client.post("/info", &payload).await?)
     }
 
     pub async fn exchange(&self, payload: serde_json::Value) -> Result<serde_json::Value, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.post("/exchange", &payload, None).await?)
+        Ok(self.client.post("/exchange", &payload).await?)
     }
 
     pub async fn get_validators(&self) -> Result<Vec<Validator>, Box<dyn Error + Send + Sync>> {
@@ -165,7 +165,7 @@ impl<C: Client> HyperCoreClient<C> {
             (String::from(CONTENT_TYPE), ContentType::ApplicationJson.as_str().to_string()),
             (String::from(X_CACHE_TTL), SPOT_META_CACHE_TTL_SECS.to_string()),
         ]);
-        let response = self.client.post("/info", &json!({ "type": "spotMeta" }), Some(headers)).await?;
+        let response = self.client.post_with_headers("/info", &json!({ "type": "spotMeta" }), headers).await?;
         let raw: SpotMetaRaw = serde_json::from_value(response)?;
         Ok(raw.into())
     }

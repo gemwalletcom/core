@@ -7,6 +7,8 @@ use crate::multicall3::{IMulticall3, create_call3, decode_call3_return};
 
 use alloy_primitives::Address;
 use gem_client::Client;
+#[cfg(all(feature = "rpc", feature = "reqwest"))]
+use gem_client::ClientExt;
 use num_bigint::BigUint;
 use num_traits::Zero;
 use std::{error::Error, str::FromStr};
