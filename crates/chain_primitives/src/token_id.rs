@@ -31,7 +31,8 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         | Chain::Plasma
         | Chain::Monad
         | Chain::XLayer
-        | Chain::Stable => Address::from_str(&token_id).ok().map(|address| address.to_checksum(None)),
+        | Chain::Stable
+        | Chain::Rootstock => Address::from_str(&token_id).ok().map(|address| address.to_checksum(None)),
         Chain::Solana | Chain::Ton | Chain::Near => Some(token_id),
         Chain::Tron => (token_id.len() == 34 && token_id.starts_with('T')).then_some(token_id),
         Chain::Xrp => {

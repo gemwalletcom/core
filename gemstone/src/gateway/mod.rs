@@ -130,7 +130,8 @@ impl GemGateway {
             | Chain::Plasma
             | Chain::Monad
             | Chain::XLayer
-            | Chain::Stable => Ok(Arc::new(EthereumClient::new(JsonRpcClient::new(alien_client), EVMChain::from_chain(chain).unwrap()))),
+            | Chain::Stable
+            | Chain::Rootstock => Ok(Arc::new(EthereumClient::new(JsonRpcClient::new(alien_client), EVMChain::from_chain(chain).unwrap()))),
         }
     }
 }

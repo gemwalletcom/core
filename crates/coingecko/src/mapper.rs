@@ -50,6 +50,7 @@ pub fn get_chain_for_coingecko_platform_id(id: &str) -> Option<Chain> {
         "plasma" => Some(Chain::Plasma),
         "monad" => Some(Chain::Monad),
         "stable-2" => Some(Chain::Stable),
+        "rootstock" => Some(Chain::Rootstock),
         _ => None,
     }
 }
@@ -106,5 +107,6 @@ pub fn get_coingecko_market_id_for_chain(chain: Chain) -> &'static str {
         Chain::Plasma => "plasma",
         Chain::XLayer => "okb",
         Chain::Stable => "tether", // gUSDT is the native gas token
+        Chain::Rootstock => "rootstock"
     }
 }

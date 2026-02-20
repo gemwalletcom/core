@@ -63,6 +63,7 @@ pub enum Chain {
     Monad,
     XLayer,
     Stable,
+    Rootstock,
 }
 
 impl fmt::Display for Chain {
