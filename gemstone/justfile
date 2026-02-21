@@ -17,7 +17,7 @@ integration-test:
 build-integration-tests:
     cargo test --test integration_test --no-run --features reqwest_provider
 
-export ANDROID_HOME := env_var_or_default("ANDROID_HOME", "~/Library/Android/sdk")
+export ANDROID_HOME := env("ANDROID_HOME", "~/Library/Android/sdk")
 export HOST_ARCH := arch()
 
 install-ndk:
@@ -54,7 +54,7 @@ export FW_NAME := "Gemstone"
 export STATIC_LIB_NAME := "lib" + LIB_NAME + ".a"
 export DY_LIB_NAME := if os() == "macos" { "libgemstone.dylib" } else { "libgemstone.so" }
 
-export BUILD_MODE_ENV := env_var_or_default("BUILD_MODE", "debug")
+export BUILD_MODE_ENV := env("BUILD_MODE", "debug")
 export BUILD_MODE_TARGET := if BUILD_MODE_ENV == "release" { "release" } else { "debug" }
 export BUILD_FLAG := if BUILD_MODE_TARGET == "release" { "--release" } else { "" }
 
@@ -67,7 +67,7 @@ export TARGET_XC_FW_FOLDER := "target/spm"
 export FW_FFI_NAME := FW_NAME + "FFI"
 export FW_FFI_FILE := FW_FFI_NAME + ".framework"
 export XC_FW_FFI_NAME := FW_FFI_NAME + ".xcframework"
-export DEPLOYMENT_TARGET := env_var_or_default("IPHONEOS_DEPLOYMENT_TARGET", "17.0")
+export DEPLOYMENT_TARGET := env("IPHONEOS_DEPLOYMENT_TARGET", "17.0")
 export LIB_OUTPUT_PATH := TARGET_DIR + "/" + BUILD_MODE_TARGET + "/" + DY_LIB_NAME
 build-ios: build-targets bindgen-swift assemble-frameworks xcframework cp-xcframework-source
 
