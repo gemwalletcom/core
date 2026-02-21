@@ -139,13 +139,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         prefix: config.metrics.prefix.clone(),
     };
     let metrics = Metrics::new(metrics_config);
+    let client = gem_client::builder().timeout(config.request.timeout).build()?;
     let node_service = NodeService::new(
         chains,
         metrics.clone(),
+        client,
         config.cache.clone(),
         config.monitoring.clone(),
         config.retry.clone(),
-        config.request.clone(),
         config.headers.clone(),
     );
     if node_service.monitoring_config.enabled {

@@ -11,7 +11,7 @@ use tokio::sync::RwLock;
 use super::request_health::RequestAdaptiveMonitor;
 use super::switch_reason::NodeSwitchReason;
 use crate::cache::RequestCache;
-use crate::config::{CacheConfig, ChainConfig, ErrorMatcherConfig, HeadersConfig, NodeMonitoringConfig, RequestConfig, RetryConfig, Url};
+use crate::config::{CacheConfig, ChainConfig, ErrorMatcherConfig, HeadersConfig, NodeMonitoringConfig, RetryConfig, Url};
 use crate::jsonrpc_types::{JsonRpcErrorResponse, RequestType};
 use crate::metrics::Metrics;
 use crate::proxy::constants::JSON_CONTENT_TYPE;
@@ -39,17 +39,16 @@ impl NodeService {
     pub fn new(
         chains: HashMap<Chain, ChainConfig>,
         metrics: Metrics,
+        client: reqwest::Client,
         cache_config: CacheConfig,
         monitoring_config: NodeMonitoringConfig,
         retry_config: RetryConfig,
-        request_config: RequestConfig,
         headers_config: HeadersConfig,
     ) -> Self {
         let nodes = chains.values().map(|c| (c.chain, NodeDomain::new(c.urls.first().unwrap().clone(), c.clone()))).collect();
 
-        let http_client = gem_client::builder().timeout(request_config.timeout).build().unwrap();
         let cache = RequestCache::new(cache_config);
-        let proxy_builder = ProxyBuilder::new(metrics.clone(), cache, http_client, headers_config);
+        let proxy_builder = ProxyBuilder::new(metrics.clone(), cache, client, headers_config);
         let request_adaptive_monitor = Arc::new(RequestAdaptiveMonitor::new(monitoring_config.adaptive.clone()));
 
         Self {
@@ -346,12 +345,10 @@ mod tests {
         NodeService::new(
             chains,
             Metrics::new(MetricsConfig::default()),
+            reqwest::Client::new(),
             CacheConfig::default(),
             testkit::monitoring_config(),
             retry_config,
-            RequestConfig {
-                timeout: std::time::Duration::from_millis(30000),
-            },
             HeadersConfig {
                 forward: vec![header::CONTENT_TYPE.to_string()],
                 domains: HashMap::new(),
