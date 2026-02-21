@@ -226,7 +226,8 @@ impl FiatClient {
     }
 
     pub async fn get_quotes(&self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
-        let _asset = self.database.assets()?.get_asset(&request.asset_id)?;
+        let asset_id = request.asset_id.to_string();
+        let _asset = self.database.assets()?.get_asset(&asset_id)?;
 
         let fiat_providers_countries = self.get_fiat_providers_countries().await?;
         let ip_address_info = match self.get_ip_address(&request.ip_address).await {
@@ -235,7 +236,7 @@ impl FiatClient {
                 return Err(format!("IP address validation failed: {}", e).into());
             }
         };
-        let (fiat_mapping_map, db_providers) = self.get_fiat_mapping(&request.asset_id, &request.quote_type)?;
+        let (fiat_mapping_map, db_providers) = self.get_fiat_mapping(&asset_id, &request.quote_type)?;
 
         let provider_impls = self.get_providers(request.provider_id.clone());
 
@@ -297,6 +298,7 @@ impl FiatClient {
                     let quote = FiatQuote::new(
                         response.quote_id,
                         request.asset_id.clone(),
+                        mapping.asset_symbol.symbol.clone(),
                         provider.name().as_fiat_provider(),
                         quote_request.quote_type,
                         response.fiat_amount,
@@ -384,7 +386,7 @@ impl FiatClient {
         let quote = self.fiat_cacher.get_quote(quote_id).await?;
         let provider = self.provider(&quote.quote.provider.id)?;
 
-        let asset = self.database.assets()?.get_asset(&quote.quote.asset_id)?;
+        let asset = self.database.assets()?.get_asset(&quote.quote.asset_id.to_string())?;
 
         let wallet_address = self.database.client()?.subscriptions_wallet_address_for_chain(device_id, wallet_id, asset.chain)?;
 

@@ -33,7 +33,7 @@ pub async fn get_fiat_quotes(
         .lock()
         .await
         .get_quotes_old(
-            &asset_id.0,
+            &asset_id.0.to_string(),
             fiat_amount,
             crypto_value,
             quote_type,
@@ -105,7 +105,16 @@ pub async fn get_fiat_on_ramp_quotes(
     Ok(client
         .lock()
         .await
-        .get_quotes_old(&asset_id.0, Some(amount), None, FiatQuoteType::Buy, currency, &wallet_address.0, &ip_addr, provider)
+        .get_quotes_old(
+            &asset_id.0.to_string(),
+            Some(amount),
+            None,
+            FiatQuoteType::Buy,
+            currency,
+            &wallet_address.0,
+            &ip_addr,
+            provider,
+        )
         .await?
         .into())
 }

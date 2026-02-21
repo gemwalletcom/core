@@ -24,7 +24,8 @@ pub struct FiatMetrics {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
 struct FiatQuoteLabels {
     provider: String,
-    asset_id: String,
+    chain: String,
+    symbol: String,
     quote_type: String,
 }
 
@@ -68,7 +69,8 @@ impl FiatMetrics {
         for quote in &quotes.quotes {
             let labels = FiatQuoteLabels {
                 provider: quote.provider.id.clone(),
-                asset_id: quote.asset_id.clone(),
+                chain: quote.asset_id.chain.as_ref().to_string(),
+                symbol: quote.symbol.clone(),
                 quote_type: quote.quote_type.as_ref().to_string(),
             };
 
@@ -99,7 +101,8 @@ impl FiatMetrics {
     pub fn record_quote_url(&self, quote: &FiatQuote) {
         let labels = FiatQuoteLabels {
             provider: quote.provider.id.clone(),
-            asset_id: quote.asset_id.clone(),
+            chain: quote.asset_id.chain.as_ref().to_string(),
+            symbol: quote.symbol.clone(),
             quote_type: quote.quote_type.as_ref().to_string(),
         };
 

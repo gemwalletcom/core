@@ -8,7 +8,7 @@ use rocket::{State, get, post, serde::json::Json, tokio::sync::Mutex};
 #[get("/prices/<asset_id>?<currency>")]
 pub async fn get_price(asset_id: AssetIdParam, currency: Option<&str>, price_client: &State<Mutex<PriceClient>>) -> Result<ApiResponse<AssetMarketPrice>, ApiError> {
     let currency = currency.unwrap_or(DEFAULT_FIAT_CURRENCY);
-    Ok(price_client.lock().await.get_asset_price(&asset_id.0, currency).await?.into())
+    Ok(price_client.lock().await.get_asset_price(&asset_id.0.to_string(), currency).await?.into())
 }
 
 #[post("/prices", format = "json", data = "<request>")]
@@ -34,11 +34,12 @@ pub async fn get_charts(
     let period = period.map(|p| p.0).unwrap_or(ChartPeriod::Day);
     let currency_value = currency.unwrap_or(DEFAULT_FIAT_CURRENCY);
 
-    let coin_id = charts_client.lock().await.get_coin_id(&asset_id.0)?;
+    let asset_id = asset_id.0.to_string();
+    let coin_id = charts_client.lock().await.get_coin_id(&asset_id)?;
 
     let prices = charts_client.lock().await.get_charts_prices(&coin_id, period, currency_value).await?;
 
-    let asset_price = price_client.lock().await.get_asset_price(&asset_id.0, currency_value).await?;
+    let asset_price = price_client.lock().await.get_asset_price(&asset_id, currency_value).await?;
 
     let response = Charts {
         price: asset_price.price,

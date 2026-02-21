@@ -1,5 +1,5 @@
 use primitives::currency::Currency;
-use primitives::{Chain, ChartPeriod, Device, FiatQuoteType, NFTAssetId, NFTCollectionId, TransactionId, WalletId};
+use primitives::{AssetId, Chain, ChartPeriod, Device, FiatQuoteType, NFTAssetId, NFTCollectionId, TransactionId, WalletId};
 use rocket::data::{FromData, Outcome, ToByteUnit};
 use rocket::form::{self, FromFormField, ValueField};
 use rocket::http::Status;
@@ -139,7 +139,7 @@ impl<'r> FromParam<'r> for NftAssetIdParam {
     }
 }
 
-pub struct AssetIdParam(pub String);
+pub struct AssetIdParam(pub AssetId);
 
 impl<'r> FromParam<'r> for AssetIdParam {
     type Error = &'r str;
@@ -148,7 +148,7 @@ impl<'r> FromParam<'r> for AssetIdParam {
         if param.is_empty() || param.len() > MAX_ASSET_ID_LENGTH {
             return Err(param);
         }
-        Ok(AssetIdParam(param.to_string()))
+        AssetId::new(param).map(AssetIdParam).ok_or(param)
     }
 }
 

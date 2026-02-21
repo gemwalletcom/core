@@ -1,6 +1,6 @@
 use crate::currency::Currency;
 use crate::fiat_assets::FiatAssetLimits;
-use crate::{Asset, Chain, FiatBuyQuote, FiatProvider, FiatQuote, FiatQuoteOld, FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, PaymentType};
+use crate::{Asset, AssetId, Chain, FiatBuyQuote, FiatProvider, FiatQuote, FiatQuoteOld, FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, PaymentType};
 
 impl FiatBuyQuote {
     pub fn mock() -> Self {
@@ -34,7 +34,7 @@ impl FiatQuoteOldRequest {
 impl FiatQuoteRequest {
     pub fn mock() -> Self {
         FiatQuoteRequest {
-            asset_id: "bitcoin".to_string(),
+            asset_id: AssetId::from_chain(Chain::Bitcoin),
             quote_type: FiatQuoteType::Buy,
             currency: "USD".to_string(),
             amount: 100.0,
@@ -45,7 +45,7 @@ impl FiatQuoteRequest {
 
     pub fn mock_sell() -> Self {
         FiatQuoteRequest {
-            asset_id: "bitcoin".to_string(),
+            asset_id: AssetId::from_chain(Chain::Bitcoin),
             quote_type: FiatQuoteType::Sell,
             currency: "USD".to_string(),
             amount: 250.0,
@@ -101,7 +101,8 @@ impl FiatQuote {
     pub fn mock(provider_id: &str) -> Self {
         FiatQuote {
             id: "quote_123".to_string(),
-            asset_id: "bitcoin".to_string(),
+            asset_id: AssetId::from_chain(Chain::Bitcoin),
+            symbol: "BTC".to_string(),
             provider: FiatProvider::mock(provider_id),
             quote_type: FiatQuoteType::Buy,
             fiat_amount: 100.0,

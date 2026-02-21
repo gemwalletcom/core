@@ -1,5 +1,5 @@
 use crate::currency::Currency;
-use crate::{Asset, FiatQuoteType};
+use crate::{Asset, AssetId, FiatQuoteType};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
@@ -63,7 +63,7 @@ impl FiatQuoteTypeResult {
 #[serde(rename_all = "camelCase")]
 pub struct FiatQuoteRequest {
     #[typeshare(skip)]
-    pub asset_id: String,
+    pub asset_id: AssetId,
     #[serde(rename = "type")]
     #[typeshare(skip)]
     pub quote_type: FiatQuoteType,
