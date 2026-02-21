@@ -25,6 +25,11 @@ pub static RESERVED_NATIVE_FEES: LazyLock<HashMap<Chain, &'static str>> = LazyLo
         (Chain::Cardano, "2000000"),              // 2 ADA
         (Chain::Aptos, "20000000"),               // 0.2 APT
         (Chain::Stellar, "100000"),               // 0.01 XLM
+        (Chain::Litecoin, "100000"),              // 0.001 LTC
+        (Chain::BitcoinCash, "100000"),           // 0.001 BCH
+        (Chain::Monad, "5000000000000000"),       // 0.005 MON
+        (Chain::XLayer, "5000000000000000"),      // 0.005 OKB
+        (Chain::Plasma, "5000000000000000"),      // 0.005 XPL
     ])
 });
 

@@ -3,9 +3,10 @@ use primitives::{
     AssetId, Chain,
     asset_constants::{
         AAVE_ETH_ASSET_ID, ARB_ARB_ASSET_ID, CBBTC_BASE_ASSET_ID, CBBTC_ETH_ASSET_ID, DAI_ETH_ASSET_ID, LINK_ETH_ASSET_ID, OP_OP_ASSET_ID, UNI_ETH_ASSET_ID, USDC_ARB_ASSET_ID,
-        USDC_AVAX_ASSET_ID, USDC_BASE_ASSET_ID, USDC_ETH_ASSET_ID, USDC_GNOSIS_ASSET_ID, USDC_OP_ASSET_ID, USDC_POLYGON_ASSET_ID, USDC_SMARTCHAIN_ASSET_ID, USDC_SOLANA_ASSET_ID,
-        USDC_SUI_ASSET_ID, USDT_APTOS_ASSET_ID, USDT_ARB_ASSET_ID, USDT_AVAX_ASSET_ID, USDT_ETH_ASSET_ID, USDT_OP_ASSET_ID, USDT_POLYGON_ASSET_ID, USDT_SMARTCHAIN_ASSET_ID,
-        USDT_SOLANA_ASSET_ID, USDT_TON_ASSET_ID, USDT_TRON_ASSET_ID, WBTC_ETH_ASSET_ID,
+        USDC_AVAX_ASSET_ID, USDC_BASE_ASSET_ID, USDC_ETH_ASSET_ID, USDC_GNOSIS_ASSET_ID, USDC_MONAD_ASSET_ID, USDC_OP_ASSET_ID, USDC_POLYGON_ASSET_ID, USDC_SMARTCHAIN_ASSET_ID,
+        USDC_SOLANA_ASSET_ID, USDC_SUI_ASSET_ID, USDC_XLAYER_ASSET_ID, USDT_APTOS_ASSET_ID, USDT_ARB_ASSET_ID, USDT_AVAX_ASSET_ID, USDT_BERA_ASSET_ID,
+        USDT_ETH_ASSET_ID, USDT_GNOSIS_ASSET_ID, USDT_MONAD_ASSET_ID, USDT_OP_ASSET_ID, USDT_PLASMA_ASSET_ID, USDT_POLYGON_ASSET_ID, USDT_SMARTCHAIN_ASSET_ID,
+        USDT_SOLANA_ASSET_ID, USDT_TON_ASSET_ID, USDT_TRON_ASSET_ID, USDT_XLAYER_ASSET_ID, WBTC_ETH_ASSET_ID,
     },
 };
 use std::{collections::HashMap, sync::LazyLock};
@@ -62,6 +63,19 @@ pub const NEAR_INTENTS_APT_NATIVE: &str = "nep141:aptos.omft.near";
 pub const NEAR_INTENTS_APT_USDT: &str = "nep141:aptos-88cb7619440a914fe6400149a12b443c3ac21d59.omft.near";
 pub const NEAR_INTENTS_ZEC_NATIVE: &str = "nep141:zec.omft.near";
 pub const NEAR_INTENTS_STELLAR_NATIVE: &str = "nep245:v2_1.omni.hot.tg:1100_111bzQBB5v7AhLyPMDwS8uJgQV24KaAPXtwyVWu2KXbbfQU6NXRCz";
+// pub const NEAR_INTENTS_STELLAR_USDC: &str = "nep245:v2_1.omni.hot.tg:1100_111bzQBB65GxAPAVoxqmMcgYo5oS3txhqs1Uh1cgahKQUeTUq1TJu";
+pub const NEAR_INTENTS_LTC_NATIVE: &str = "nep141:ltc.omft.near";
+pub const NEAR_INTENTS_BCH_NATIVE: &str = "nep141:bch.omft.near";
+pub const NEAR_INTENTS_BERA_USDT: &str = "nep141:bera-0x779ded0c9e1022225f8e0630b35a9b54be713736.omft.near";
+pub const NEAR_INTENTS_GNOSIS_USDT: &str = "nep141:gnosis-0x4ecaba5870353805a9f068101a40e0f32ed605c6.omft.near";
+pub const NEAR_INTENTS_MONAD_NATIVE: &str = "nep245:v2_1.omni.hot.tg:143_11111111111111111111";
+pub const NEAR_INTENTS_MONAD_USDT: &str = "nep245:v2_1.omni.hot.tg:143_4EJiJxSALvGoTZbnc8K7Ft9533et";
+pub const NEAR_INTENTS_MONAD_USDC: &str = "nep245:v2_1.omni.hot.tg:143_2dmLwYWkCQKyTjeUPAsGJuiVLbFx";
+pub const NEAR_INTENTS_XLAYER_NATIVE: &str = "nep245:v2_1.omni.hot.tg:196_11111111111111111111";
+pub const NEAR_INTENTS_XLAYER_USDT: &str = "nep245:v2_1.omni.hot.tg:196_2fezDCvVYRsG8wrK6deJ2VRPiAS1";
+pub const NEAR_INTENTS_XLAYER_USDC: &str = "nep245:v2_1.omni.hot.tg:196_2dK9kLNR7Ekq7su8FxNGiUW3djTw";
+pub const NEAR_INTENTS_PLASMA_NATIVE: &str = "nep245:v2_1.omni.hot.tg:9745_11111111111111111111";
+pub const NEAR_INTENTS_PLASMA_USDT: &str = "nep245:v2_1.omni.hot.tg:9745_3aL9skCy1yhPoDB8oKMmRHRN7SJW";
 
 type AssetsMap = HashMap<String, &'static str>;
 
@@ -170,7 +184,10 @@ pub static NEAR_INTENTS_ASSETS: LazyLock<HashMap<Chain, AssetsMap>> = LazyLock::
     map.insert(Chain::Doge, HashMap::from([("doge".to_string(), NEAR_INTENTS_DOGE_NATIVE)]));
     map.insert(Chain::Xrp, HashMap::from([("xrp".to_string(), NEAR_INTENTS_XRP_NATIVE)]));
     map.insert(Chain::Cardano, HashMap::from([("cardano".to_string(), NEAR_INTENTS_CARDANO_NATIVE)]));
-    map.insert(Chain::Berachain, HashMap::from([("berachain".to_string(), NEAR_INTENTS_BERA_NATIVE)]));
+    map.insert(
+        Chain::Berachain,
+        HashMap::from([("berachain".to_string(), NEAR_INTENTS_BERA_NATIVE), (asset_key(USDT_BERA_ASSET_ID), NEAR_INTENTS_BERA_USDT)]),
+    );
     map.insert(
         Chain::Aptos,
         HashMap::from([("aptos".to_string(), NEAR_INTENTS_APT_NATIVE), (asset_key(USDT_APTOS_ASSET_ID), NEAR_INTENTS_APT_USDT)]),
@@ -182,10 +199,40 @@ pub static NEAR_INTENTS_ASSETS: LazyLock<HashMap<Chain, AssetsMap>> = LazyLock::
         HashMap::from([
             ("gnosis".to_string(), NEAR_INTENTS_GNOSIS_NATIVE),
             (asset_key(USDC_GNOSIS_ASSET_ID), NEAR_INTENTS_GNOSIS_USDC),
+            (asset_key(USDT_GNOSIS_ASSET_ID), NEAR_INTENTS_GNOSIS_USDT),
         ]),
     );
 
     map.insert(Chain::Stellar, HashMap::from([("stellar".to_string(), NEAR_INTENTS_STELLAR_NATIVE)]));
+
+    map.insert(Chain::Litecoin, HashMap::from([("litecoin".to_string(), NEAR_INTENTS_LTC_NATIVE)]));
+    map.insert(Chain::BitcoinCash, HashMap::from([("bitcoincash".to_string(), NEAR_INTENTS_BCH_NATIVE)]));
+
+    map.insert(
+        Chain::Monad,
+        HashMap::from([
+            ("monad".to_string(), NEAR_INTENTS_MONAD_NATIVE),
+            (asset_key(USDT_MONAD_ASSET_ID), NEAR_INTENTS_MONAD_USDT),
+            (asset_key(USDC_MONAD_ASSET_ID), NEAR_INTENTS_MONAD_USDC),
+        ]),
+    );
+
+    map.insert(
+        Chain::XLayer,
+        HashMap::from([
+            ("xlayer".to_string(), NEAR_INTENTS_XLAYER_NATIVE),
+            (asset_key(USDT_XLAYER_ASSET_ID), NEAR_INTENTS_XLAYER_USDT),
+            (asset_key(USDC_XLAYER_ASSET_ID), NEAR_INTENTS_XLAYER_USDC),
+        ]),
+    );
+
+    map.insert(
+        Chain::Plasma,
+        HashMap::from([
+            ("plasma".to_string(), NEAR_INTENTS_PLASMA_NATIVE),
+            (asset_key(USDT_PLASMA_ASSET_ID), NEAR_INTENTS_PLASMA_USDT),
+        ]),
+    );
 
     map
 });
