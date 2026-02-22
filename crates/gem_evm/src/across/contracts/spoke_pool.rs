@@ -1,7 +1,7 @@
 use alloy_sol_types::sol;
 
 // https://docs.across.to/reference/selected-contract-functions
-// https://github.com/across-protocol/contracts/blob/master/contracts/interfaces/SpokePoolInterface.sol
+// https://github.com/across-protocol/contracts/blob/master/contracts/interfaces/V3SpokePoolInterface.sol
 sol! {
     // Contains structs and functions used by SpokePool contracts to facilitate universal settlement.
     interface V3SpokePoolInterface {
@@ -10,16 +10,16 @@ sol! {
         // replay attacks on other chains. If any portion of this data differs, the relay is considered to be
         // completely distinct.
         struct V3RelayData {
-            // The address that made the deposit on the origin chain.
-            address depositor;
-            // The recipient address on the destination chain.
-            address recipient;
+            // The bytes32 that made the deposit on the origin chain.
+            bytes32 depositor;
+            // The recipient bytes32 on the destination chain.
+            bytes32 recipient;
             // This is the exclusive relayer who can fill the deposit before the exclusivity deadline.
-            address exclusiveRelayer;
+            bytes32 exclusiveRelayer;
             // Token that is deposited on origin chain by depositor.
-            address inputToken;
+            bytes32 inputToken;
             // Token that is received on destination chain by recipient.
-            address outputToken;
+            bytes32 outputToken;
             // The amount of input token deposited by depositor.
             uint256 inputAmount;
             // The amount of output token to be received by recipient.
@@ -27,7 +27,7 @@ sol! {
             // Origin chain id.
             uint256 originChainId;
             // The id uniquely identifying this deposit on the origin chain.
-            uint32 depositId;
+            uint256 depositId;
             // The timestamp on the destination chain after which this deposit can no longer be filled.
             uint32 fillDeadline;
             // The timestamp on the destination chain after which any relayer can fill the deposit.
@@ -38,21 +38,25 @@ sol! {
 
         function getCurrentTime() public view virtual returns (uint256);
 
-        function depositV3(
-            address depositor,
-            address recipient,
-            address inputToken,
-            address outputToken,
+        function deposit(
+            bytes32 depositor,
+            bytes32 recipient,
+            bytes32 inputToken,
+            bytes32 outputToken,
             uint256 inputAmount,
             uint256 outputAmount,
             uint256 destinationChainId,
-            address exclusiveRelayer,
+            bytes32 exclusiveRelayer,
             uint32 quoteTimestamp,
             uint32 fillDeadline,
             uint32 exclusivityDeadline,
             bytes calldata message
         ) external payable;
 
-        function fillV3Relay(V3RelayData calldata relayData, uint256 repaymentChainId) external;
+        function fillRelay(
+            V3RelayData calldata relayData,
+            uint256 repaymentChainId,
+            bytes32 repaymentAddress
+        ) external;
     }
 }

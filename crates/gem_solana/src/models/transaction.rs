@@ -176,3 +176,17 @@ pub struct SingleTransaction {
     pub meta: Meta,
     pub transaction: Transaction,
 }
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TransactionMetaWithLogs {
+    pub err: Option<serde_json::Value>,
+    pub log_messages: Option<Vec<String>>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TransactionWithLogs {
+    pub slot: u64,
+    pub meta: Option<TransactionMetaWithLogs>,
+}

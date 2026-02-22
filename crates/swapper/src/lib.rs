@@ -20,6 +20,7 @@ pub mod near_intents;
 pub mod permit2_data;
 pub mod proxy;
 pub mod slippage;
+pub mod solana;
 pub mod swapper;
 pub mod thorchain;
 pub mod uniswap;
