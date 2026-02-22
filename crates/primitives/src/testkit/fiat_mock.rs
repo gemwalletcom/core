@@ -101,8 +101,7 @@ impl FiatQuote {
     pub fn mock(provider_id: &str) -> Self {
         FiatQuote {
             id: "quote_123".to_string(),
-            asset_id: AssetId::from_chain(Chain::Bitcoin),
-            symbol: "BTC".to_string(),
+            asset: Asset::from_chain(Chain::Bitcoin),
             provider: FiatProvider::mock(provider_id),
             quote_type: FiatQuoteType::Buy,
             fiat_amount: 100.0,

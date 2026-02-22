@@ -227,7 +227,7 @@ impl FiatClient {
 
     pub async fn get_quotes(&self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
         let asset_id = request.asset_id.to_string();
-        let _asset = self.database.assets()?.get_asset(&asset_id)?;
+        let asset = self.database.assets()?.get_asset(&asset_id)?;
 
         let fiat_providers_countries = self.get_fiat_providers_countries().await?;
         let ip_address_info = match self.get_ip_address(&request.ip_address).await {
@@ -261,6 +261,7 @@ impl FiatClient {
 
             fiat_mapping_map.get(&provider_id).map(|mapping| {
                 let request = request.clone();
+                let asset = asset.clone();
                 let mapping = mapping.clone();
                 let country_code = ip_address_info.clone().alpha2;
                 let provider_id_clone = provider_id.clone();
@@ -297,8 +298,7 @@ impl FiatClient {
                     let latency = start.elapsed().as_millis() as u64;
                     let quote = FiatQuote::new(
                         response.quote_id,
-                        request.asset_id.clone(),
-                        mapping.asset_symbol.symbol.clone(),
+                        asset,
                         provider.name().as_fiat_provider(),
                         quote_request.quote_type,
                         response.fiat_amount,
@@ -386,7 +386,7 @@ impl FiatClient {
         let quote = self.fiat_cacher.get_quote(quote_id).await?;
         let provider = self.provider(&quote.quote.provider.id)?;
 
-        let asset = self.database.assets()?.get_asset(&quote.quote.asset_id.to_string())?;
+        let asset = &quote.quote.asset;
 
         let wallet_address = self.database.client()?.subscriptions_wallet_address_for_chain(device_id, wallet_id, asset.chain)?;
 

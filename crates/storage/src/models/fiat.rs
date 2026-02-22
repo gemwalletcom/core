@@ -233,7 +233,7 @@ impl FiatQuoteRow {
         Self {
             id: quote.id.clone(),
             provider_id: quote.provider.id.clone(),
-            asset_id: quote.asset_id.to_string(),
+            asset_id: quote.asset.id.to_string(),
             fiat_amount: quote.fiat_amount,
             fiat_currency: quote.fiat_currency.clone(),
         }

@@ -1,4 +1,4 @@
-use crate::{AssetId, FiatQuoteType, fiat_provider::FiatProvider};
+use crate::{Asset, FiatQuoteType, fiat_provider::FiatProvider};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
@@ -21,9 +21,7 @@ pub struct FiatQuoteOld {
 pub struct FiatQuote {
     pub id: String,
     #[typeshare(skip)]
-    pub asset_id: AssetId,
-    #[typeshare(skip)]
-    pub symbol: String,
+    pub asset: Asset,
     pub provider: FiatProvider,
     #[serde(rename = "type")]
     pub quote_type: FiatQuoteType,
@@ -35,21 +33,10 @@ pub struct FiatQuote {
 }
 
 impl FiatQuote {
-    pub fn new(
-        id: String,
-        asset_id: AssetId,
-        symbol: String,
-        provider: FiatProvider,
-        quote_type: FiatQuoteType,
-        fiat_amount: f64,
-        fiat_currency: String,
-        crypto_amount: f64,
-        latency: u64,
-    ) -> Self {
+    pub fn new(id: String, asset: Asset, provider: FiatProvider, quote_type: FiatQuoteType, fiat_amount: f64, fiat_currency: String, crypto_amount: f64, latency: u64) -> Self {
         Self {
             id,
-            asset_id,
-            symbol,
+            asset,
             provider,
             quote_type,
             fiat_amount,

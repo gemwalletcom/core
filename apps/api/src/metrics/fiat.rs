@@ -69,8 +69,8 @@ impl FiatMetrics {
         for quote in &quotes.quotes {
             let labels = FiatQuoteLabels {
                 provider: quote.provider.id.clone(),
-                chain: quote.asset_id.chain.as_ref().to_string(),
-                symbol: quote.symbol.clone(),
+                chain: quote.asset.chain.as_ref().to_string(),
+                symbol: quote.asset.symbol.clone(),
                 quote_type: quote.quote_type.as_ref().to_string(),
             };
 
@@ -101,8 +101,8 @@ impl FiatMetrics {
     pub fn record_quote_url(&self, quote: &FiatQuote) {
         let labels = FiatQuoteLabels {
             provider: quote.provider.id.clone(),
-            chain: quote.asset_id.chain.as_ref().to_string(),
-            symbol: quote.symbol.clone(),
+            chain: quote.asset.chain.as_ref().to_string(),
+            symbol: quote.asset.symbol.clone(),
             quote_type: quote.quote_type.as_ref().to_string(),
         };
 
