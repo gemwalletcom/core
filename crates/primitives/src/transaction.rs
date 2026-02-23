@@ -23,7 +23,7 @@ impl TransactionsResponse {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[typeshare(swift = "Sendable, Equatable")]
+#[typeshare(swift = "Sendable, Equatable, Hashable")]
 pub struct Transaction {
     pub id: TransactionId,
     #[typeshare(skip)]
