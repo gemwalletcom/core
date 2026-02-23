@@ -49,6 +49,12 @@ pub struct DelegationValidator {
     pub provider_type: EarnProviderType,
 }
 
+impl DelegationValidator {
+    pub fn stake(chain: Chain, id: String, name: String, is_active: bool, commission: f64, apr: f64) -> Self {
+        Self { chain, id, name, is_active, commission, apr, provider_type: EarnProviderType::Stake }
+    }
+}
+
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, Display, AsRefStr, EnumString, PartialEq)]
 #[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 #[serde(rename_all = "lowercase")]

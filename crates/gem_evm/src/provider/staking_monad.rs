@@ -6,7 +6,7 @@ use chrono::{DateTime, Utc};
 use gem_client::Client;
 use num_bigint::BigUint;
 use num_traits::{ToPrimitive, Zero};
-use primitives::{AssetBalance, AssetId, Chain, DelegationBase, DelegationState, DelegationValidator, EarnProviderType};
+use primitives::{AssetBalance, AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
 
 use crate::monad::{
     IMonadStakingLens, MONAD_SCALE, MonadLensBalance, MonadLensDelegation, MonadLensValidatorInfo, STAKING_LENS_CONTRACT, decode_get_lens_apys, decode_get_lens_balance,
@@ -117,15 +117,14 @@ impl<C: Client + Clone> EthereumClient<C> {
             .map(|name| (*name).to_string())
             .unwrap_or_else(|| validator.validator_id.to_string());
 
-        DelegationValidator {
-            id: validator.validator_id.to_string(),
-            chain: Chain::Monad,
-            name: validator_name,
-            is_active: validator.is_active,
-            commission: Self::lens_commission_rate(&validator.commission),
-            apr: if validator.apy_bps > 0 { validator.apy_bps as f64 / 100.0 } else { network_apy },
-            provider_type: EarnProviderType::Stake,
-        }
+        DelegationValidator::stake(
+            Chain::Monad,
+            validator.validator_id.to_string(),
+            validator_name,
+            validator.is_active,
+            Self::lens_commission_rate(&validator.commission),
+            if validator.apy_bps > 0 { validator.apy_bps as f64 / 100.0 } else { network_apy },
+        )
     }
 
     fn map_lens_state(position: &MonadLensDelegation) -> DelegationState {

@@ -299,18 +299,10 @@ mod tests {
     use super::*;
     use crate::everstake::{EVERSTAKE_POOL_ADDRESS, IAccounting};
     use num_bigint::BigUint;
-    use primitives::{Delegation, DelegationBase, DelegationState, DelegationValidator, EarnProviderType, RedelegateData};
+    use primitives::{Delegation, DelegationBase, DelegationState, DelegationValidator, RedelegateData};
 
     fn everstake_validator() -> DelegationValidator {
-        DelegationValidator {
-            chain: Chain::Ethereum,
-            id: EVERSTAKE_POOL_ADDRESS.to_string(),
-            name: "Everstake Pool".to_string(),
-            is_active: true,
-            commission: 10.0,
-            apr: 4.2,
-            provider_type: EarnProviderType::Stake,
-        }
+        DelegationValidator::stake(Chain::Ethereum, EVERSTAKE_POOL_ADDRESS.to_string(), "Everstake Pool".to_string(), true, 10.0, 4.2)
     }
 
     #[test]
@@ -437,15 +429,7 @@ mod tests {
 
     #[test]
     fn test_encode_stake_hub_delegate() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let validator = DelegationValidator {
-            chain: Chain::SmartChain,
-            id: "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(),
-            name: "Test Validator".to_string(),
-            is_active: true,
-            commission: 5.0,
-            apr: 10.0,
-            provider_type: EarnProviderType::Stake,
-        };
+        let validator = DelegationValidator::stake(Chain::SmartChain, "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(), "Test Validator".to_string(), true, 5.0, 10.0);
 
         let stake_type = StakeType::Stake(validator);
         let amount = BigInt::from(1_000_000_000_000_000_000u64); // 1 BNB
@@ -474,15 +458,7 @@ mod tests {
                 delegation_id: "test".to_string(),
                 validator_id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
             },
-            validator: DelegationValidator {
-                chain: Chain::SmartChain,
-                id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
-                name: "Test Validator".to_string(),
-                is_active: true,
-                commission: 5.0,
-                apr: 10.0,
-                provider_type: EarnProviderType::Stake,
-            },
+            validator: DelegationValidator::stake(Chain::SmartChain, "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(), "Test Validator".to_string(), true, 5.0, 10.0),
             price: None,
         };
 
@@ -512,27 +488,11 @@ mod tests {
                 delegation_id: "test".to_string(),
                 validator_id: "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(),
             },
-            validator: DelegationValidator {
-                chain: Chain::SmartChain,
-                id: "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(),
-                name: "Source Validator".to_string(),
-                is_active: true,
-                commission: 5.0,
-                apr: 10.0,
-                provider_type: EarnProviderType::Stake,
-            },
+            validator: DelegationValidator::stake(Chain::SmartChain, "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(), "Source Validator".to_string(), true, 5.0, 10.0),
             price: None,
         };
 
-        let to_validator = DelegationValidator {
-            chain: Chain::SmartChain,
-            id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
-            name: "Target Validator".to_string(),
-            is_active: true,
-            commission: 3.0,
-            apr: 12.0,
-            provider_type: EarnProviderType::Stake,
-        };
+        let to_validator = DelegationValidator::stake(Chain::SmartChain, "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(), "Target Validator".to_string(), true, 3.0, 12.0);
 
         let redelegate_data = RedelegateData { delegation, to_validator };
 
@@ -562,15 +522,7 @@ mod tests {
                 delegation_id: "test".to_string(),
                 validator_id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
             },
-            validator: DelegationValidator {
-                chain: Chain::SmartChain,
-                id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
-                name: "Test Validator".to_string(),
-                is_active: true,
-                commission: 5.0,
-                apr: 10.0,
-                provider_type: EarnProviderType::Stake,
-            },
+            validator: DelegationValidator::stake(Chain::SmartChain, "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(), "Test Validator".to_string(), true, 5.0, 10.0),
             price: None,
         };
 

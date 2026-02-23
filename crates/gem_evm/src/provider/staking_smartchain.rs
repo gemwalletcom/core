@@ -7,7 +7,7 @@ use gem_bsc::stake_hub::{
 };
 use gem_client::Client;
 use num_bigint::BigUint;
-use primitives::{AssetId, Chain, DelegationBase, DelegationState, DelegationValidator, EarnProviderType};
+use primitives::{AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
 use std::{error::Error, str::FromStr};
 
 #[cfg(feature = "rpc")]
@@ -30,15 +30,7 @@ impl<C: Client + Clone> EthereumClient<C> {
 
         Ok(validators
             .into_iter()
-            .map(|v| DelegationValidator {
-                id: v.operator_address.clone(),
-                chain: Chain::SmartChain,
-                name: v.moniker,
-                is_active: !v.jailed,
-                commission: v.commission as f64 / 10000.0,
-                apr: v.apy as f64 / 100.0,
-                provider_type: EarnProviderType::Stake,
-            })
+            .map(|v| DelegationValidator::stake(Chain::SmartChain, v.operator_address.clone(), v.moniker, !v.jailed, v.commission as f64 / 10000.0, v.apy as f64 / 100.0))
             .collect())
     }
 

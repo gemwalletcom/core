@@ -11,7 +11,7 @@ use crate::models::{OsmosisDistributionProportions, OsmosisMintParams};
 
 use number_formatter::BigNumberFormatter;
 use primitives::chain_cosmos::CosmosChain;
-use primitives::{DelegationBase, DelegationState, DelegationValidator, EarnProviderType};
+use primitives::{DelegationBase, DelegationState, DelegationValidator};
 use std::collections::HashMap;
 
 const BOND_STATUS_BONDED: &str = "BOND_STATUS_BONDED";
@@ -61,15 +61,7 @@ pub fn map_staking_validators(validators: Vec<Validator>, chain: CosmosChain, ap
             let is_active = !validator.jailed && validator.status == BOND_STATUS_BONDED;
             let validator_apr = if is_active { apy.map(|apr| apr - (apr * commission_rate)).unwrap_or(0.0) } else { 0.0 };
 
-            DelegationValidator {
-                chain: chain.as_chain(),
-                id: validator.operator_address,
-                name: validator.description.moniker,
-                is_active,
-                commission: commission_rate * 100.0,
-                apr: validator_apr,
-                provider_type: EarnProviderType::Stake,
-            }
+            DelegationValidator::stake(chain.as_chain(), validator.operator_address, validator.description.moniker, is_active, commission_rate * 100.0, validator_apr)
         })
         .collect()
 }

@@ -1,22 +1,14 @@
 use crate::models::balance::{DelegationBalance, Validator};
 use num_bigint::BigUint;
 use number_formatter::BigNumberFormatter;
-use primitives::{Asset, Chain, DelegationBase, DelegationState, DelegationValidator, EarnProviderType};
+use primitives::{Asset, Chain, DelegationBase, DelegationState, DelegationValidator};
 use std::str::FromStr;
 
 pub fn map_staking_validators(validators: Vec<Validator>, chain: Chain, apy: Option<f64>) -> Vec<DelegationValidator> {
     let calculated_apy = apy.unwrap_or_else(|| Validator::max_apr(validators.clone()));
     validators
         .into_iter()
-        .map(|x| DelegationValidator {
-            chain,
-            id: x.validator_address(),
-            name: x.name,
-            is_active: x.is_active,
-            commission: x.commission,
-            apr: calculated_apy,
-            provider_type: EarnProviderType::Stake,
-        })
+        .map(|x| DelegationValidator::stake(chain, x.validator_address(), x.name, x.is_active, x.commission, calculated_apy))
         .collect()
 }
 

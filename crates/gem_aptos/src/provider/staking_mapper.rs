@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use num_bigint::BigUint;
-use primitives::{Chain, DelegationBase, DelegationState, DelegationValidator, EarnProviderType};
+use primitives::{Chain, DelegationBase, DelegationState, DelegationValidator};
 
 use crate::models::{DelegationPoolStake, StakingConfig, ValidatorInfo, ValidatorSet};
 
@@ -14,15 +14,7 @@ pub fn map_validators(validator_set: ValidatorSet, apy: f64, pool_address: &str,
 }
 
 pub fn map_validator(validator: &ValidatorInfo, apy: f64, commission: f64, is_active: bool) -> DelegationValidator {
-    DelegationValidator {
-        chain: Chain::Aptos,
-        id: validator.addr.clone(),
-        name: "".to_string(),
-        is_active,
-        commission,
-        apr: apy,
-        provider_type: EarnProviderType::Stake,
-    }
+    DelegationValidator::stake(Chain::Aptos, validator.addr.clone(), "".to_string(), is_active, commission, apy)
 }
 
 fn map_delegation(asset_id: &primitives::AssetId, state: DelegationState, balance: BigUint, validator_id: &str, completion_date: Option<DateTime<Utc>>) -> DelegationBase {

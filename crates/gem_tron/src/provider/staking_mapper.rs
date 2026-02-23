@@ -1,6 +1,6 @@
 use crate::address::TronAddress;
 use crate::models::WitnessesList;
-use primitives::{Chain, DelegationValidator, EarnProviderType, StakeValidator};
+use primitives::{Chain, DelegationValidator, StakeValidator};
 
 const SYSTEM_UNSTAKING_VALIDATOR_ID: &str = "system";
 const SYSTEM_UNSTAKING_VALIDATOR_NAME: &str = "Unstaking";
@@ -15,27 +15,18 @@ pub fn map_staking_validators(witnesses: WitnessesList, apy: Option<f64>) -> Vec
         .witnesses
         .into_iter()
         .filter_map(|witness| {
-            Some(DelegationValidator {
-                chain: Chain::Tron,
-                id: TronAddress::from_hex(&witness.address)?,
-                name: String::new(),
-                is_active: witness.is_jobs.unwrap_or(false),
-                commission: 0.0,
-                apr: default_apy,
-                provider_type: EarnProviderType::Stake,
-            })
+            Some(DelegationValidator::stake(Chain::Tron, TronAddress::from_hex(&witness.address)?, String::new(), witness.is_jobs.unwrap_or(false), 0.0, default_apy))
         })
         .collect();
 
-    validators.push(DelegationValidator {
-        chain: Chain::Tron,
-        id: SYSTEM_UNSTAKING_VALIDATOR_ID.to_string(),
-        name: SYSTEM_UNSTAKING_VALIDATOR_NAME.to_string(),
-        is_active: true,
-        commission: 0.0,
-        apr: default_apy,
-        provider_type: EarnProviderType::Stake,
-    });
+    validators.push(DelegationValidator::stake(
+        Chain::Tron,
+        SYSTEM_UNSTAKING_VALIDATOR_ID.to_string(),
+        SYSTEM_UNSTAKING_VALIDATOR_NAME.to_string(),
+        true,
+        0.0,
+        default_apy,
+    ));
 
     validators
 }

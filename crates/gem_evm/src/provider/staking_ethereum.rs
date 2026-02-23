@@ -1,7 +1,7 @@
 use gem_client::Client;
 use num_bigint::BigUint;
 use num_traits::Zero;
-use primitives::{AssetBalance, AssetId, Balance, Chain, DelegationBase, DelegationState, DelegationValidator, EarnProviderType};
+use primitives::{AssetBalance, AssetId, Balance, Chain, DelegationBase, DelegationState, DelegationValidator};
 use std::error::Error;
 
 use crate::everstake::{EVERSTAKE_POOL_ADDRESS, get_everstake_account_state, map_balance_to_delegation, map_withdraw_request_to_delegations};
@@ -25,15 +25,7 @@ impl<C: Client + Clone> EthereumClient<C> {
     }
 
     pub async fn get_ethereum_validators(&self, apy: f64) -> Result<Vec<DelegationValidator>, Box<dyn Error + Sync + Send>> {
-        Ok(vec![DelegationValidator {
-            id: EVERSTAKE_POOL_ADDRESS.to_string(),
-            chain: Chain::Ethereum,
-            name: "Everstake".to_string(),
-            is_active: true,
-            commission: 0.1,
-            apr: apy,
-            provider_type: EarnProviderType::Stake,
-        }])
+        Ok(vec![DelegationValidator::stake(Chain::Ethereum, EVERSTAKE_POOL_ADDRESS.to_string(), "Everstake".to_string(), true, 0.1, apy)])
     }
 
     pub async fn get_ethereum_delegations(&self, address: &str) -> Result<Vec<DelegationBase>, Box<dyn Error + Sync + Send>> {
