@@ -39,7 +39,7 @@ impl ChatwootApiClient {
         });
         self.client
             .post(&url)
-            .header("api_access_token", &self.api_key)
+            .bearer_auth(&self.api_key)
             .json(&body)
             .send()
             .await?
@@ -52,7 +52,7 @@ impl ChatwootApiClient {
         let body = serde_json::json!({ "status": status });
         self.client
             .post(&url)
-            .header("api_access_token", &self.api_key)
+            .bearer_auth(&self.api_key)
             .json(&body)
             .send()
             .await?
@@ -65,7 +65,7 @@ impl ChatwootApiClient {
         let response = self
             .client
             .get(&url)
-            .header("api_access_token", &self.api_key)
+            .bearer_auth(&self.api_key)
             .send()
             .await?
             .error_for_status()?
