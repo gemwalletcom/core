@@ -4,11 +4,35 @@ pub const EVENT_MESSAGE_CREATED: &str = "message_created";
 pub const EVENT_CONVERSATION_STATUS_CHANGED: &str = "conversation_status_changed";
 pub const EVENT_CONVERSATION_UPDATED: &str = "conversation_updated";
 
-pub const MESSAGE_TYPE_INCOMING: &str = "incoming";
-pub const MESSAGE_TYPE_OUTGOING: &str = "outgoing";
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(from = "i32", into = "i32")]
+pub enum MessageType {
+    Incoming,
+    Outgoing,
+}
 
-pub const MESSAGE_TYPE_INCOMING_INT: i32 = 0;
-pub const MESSAGE_TYPE_OUTGOING_INT: i32 = 1;
+impl From<i32> for MessageType {
+    fn from(value: i32) -> Self {
+        match value {
+            1 => MessageType::Outgoing,
+            _ => MessageType::Incoming,
+        }
+    }
+}
+
+impl From<MessageType> for i32 {
+    fn from(value: MessageType) -> Self {
+        match value {
+            MessageType::Incoming => 0,
+            MessageType::Outgoing => 1,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Account {
+    pub id: i64,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatwootWebhookPayload {
@@ -16,6 +40,7 @@ pub struct ChatwootWebhookPayload {
     pub message_type: Option<String>,
     pub unread_count: Option<i32>,
     pub conversation: Option<Conversation>,
+    pub account: Option<Account>,
     pub meta: Option<Meta>,
     pub content: Option<String>,
     #[serde(default)]
@@ -24,6 +49,7 @@ pub struct ChatwootWebhookPayload {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Conversation {
+    pub id: Option<i64>,
     pub meta: Meta,
     pub unread_count: Option<i32>,
     #[serde(default)]
@@ -34,13 +60,13 @@ pub struct Conversation {
 pub struct Message {
     pub id: i64,
     pub content: Option<String>,
-    pub message_type: i32,
+    pub message_type: MessageType,
     pub sender: Option<Sender>,
 }
 
 impl Message {
     pub fn is_incoming(&self) -> bool {
-        self.message_type == MESSAGE_TYPE_INCOMING_INT
+        self.message_type == MessageType::Incoming
     }
 }
 
@@ -70,7 +96,19 @@ impl ChatwootWebhookPayload {
     }
 
     pub fn is_outgoing_message(&self) -> bool {
-        self.message_type.as_deref() == Some(MESSAGE_TYPE_OUTGOING)
+        self.message_type.as_deref() == Some("outgoing")
+    }
+
+    pub fn is_incoming_message(&self) -> bool {
+        self.message_type.as_deref() == Some("incoming")
+    }
+
+    pub fn get_account_id(&self) -> Option<i64> {
+        self.account.as_ref().map(|a| a.id)
+    }
+
+    pub fn get_conversation_id(&self) -> Option<i64> {
+        self.conversation.as_ref().and_then(|c| c.id)
     }
 
     pub fn get_messages(&self) -> &[Message] {

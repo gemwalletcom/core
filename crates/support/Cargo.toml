@@ -6,7 +6,11 @@ version = { workspace = true }
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
+reqwest = { workspace = true }
+async-trait = { workspace = true }
+gem_tracing = { path = "../tracing" }
 localizer = { path = "../localizer" }
 primitives = { path = "../primitives", features = ["testkit"] }
 storage = { path = "../storage" }
 streamer = { path = "../streamer" }
+claude = { path = "../claude" }

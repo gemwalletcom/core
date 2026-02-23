@@ -46,6 +46,41 @@ impl ChainSigner for SolanaChainSigner {
     }
 }
 
+impl SolanaChainSigner {
+    fn sign_transaction(tx_base64: &str, private_key: &[u8], unit_price: u64, gas_limit: u32) -> Result<String, SignerError> {
+        let data = STANDARD.decode(tx_base64).map_err(|e| SignerError::invalid_input(format!("base64 decode: {e}")))?;
+
+        let mut tx = VersionedTransaction::deserialize_with_version(&data).map_err(|e| SignerError::invalid_input(format!("parse transaction: {e}")))?;
+
+        // Skip message modifications if co-signers present — changing the message would invalidate their signatures
+        if tx.signatures().len() <= 1 {
+            if unit_price > 0 {
+                tx.set_compute_unit_price(unit_price)
+                    .map_err(|e| SignerError::invalid_input(format!("set compute unit price: {e}")))?;
+            }
+            if gas_limit > 0 {
+                tx.set_compute_unit_limit(gas_limit)
+                    .map_err(|e| SignerError::invalid_input(format!("set compute unit limit: {e}")))?;
+            }
+        }
+
+        let message_bytes = tx.serialize_message().map_err(|e| SignerError::signing_error(format!("serialize message: {e}")))?;
+
+        let sig = sign_message(private_key, &message_bytes).map_err(|e| SignerError::signing_error(format!("sign: {e}")))?;
+
+        let sigs = tx.signatures_mut();
+        if sigs.is_empty() {
+            sigs.push(sig);
+        } else {
+            sigs[0] = sig;
+        }
+
+        let bytes = tx.serialize().map_err(|e| SignerError::signing_error(format!("serialize transaction: {e}")))?;
+
+        Ok(STANDARD.encode(&bytes))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -94,40 +129,5 @@ mod tests {
 
         let sig_bytes = bs58::decode(&result).into_vec().unwrap();
         assert_eq!(sig_bytes.len(), 64);
-    }
-}
-
-impl SolanaChainSigner {
-    fn sign_transaction(tx_base64: &str, private_key: &[u8], unit_price: u64, gas_limit: u32) -> Result<String, SignerError> {
-        let data = STANDARD.decode(tx_base64).map_err(|e| SignerError::invalid_input(format!("base64 decode: {e}")))?;
-
-        let mut tx = VersionedTransaction::deserialize_with_version(&data).map_err(|e| SignerError::invalid_input(format!("parse transaction: {e}")))?;
-
-        // Skip message modifications if co-signers present — changing the message would invalidate their signatures
-        if tx.signatures().len() <= 1 {
-            if unit_price > 0 {
-                tx.set_compute_unit_price(unit_price)
-                    .map_err(|e| SignerError::invalid_input(format!("set compute unit price: {e}")))?;
-            }
-            if gas_limit > 0 {
-                tx.set_compute_unit_limit(gas_limit)
-                    .map_err(|e| SignerError::invalid_input(format!("set compute unit limit: {e}")))?;
-            }
-        }
-
-        let message_bytes = tx.serialize_message().map_err(|e| SignerError::signing_error(format!("serialize message: {e}")))?;
-
-        let sig = sign_message(private_key, &message_bytes).map_err(|e| SignerError::signing_error(format!("sign: {e}")))?;
-
-        let sigs = tx.signatures_mut();
-        if sigs.is_empty() {
-            sigs.push(sig);
-        } else {
-            sigs[0] = sig;
-        }
-
-        let bytes = tx.serialize().map_err(|e| SignerError::signing_error(format!("serialize transaction: {e}")))?;
-
-        Ok(STANDARD.encode(&bytes))
     }
 }

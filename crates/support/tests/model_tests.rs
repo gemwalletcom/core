@@ -64,3 +64,49 @@ fn test_is_outgoing_message() {
     let payload: ChatwootWebhookPayload = serde_json::from_str(r#"{"event": "message_created"}"#).unwrap();
     assert!(!payload.is_outgoing_message());
 }
+
+#[test]
+fn test_parse_bot_incoming_message() {
+    let payload: ChatwootWebhookPayload = serde_json::from_str(include_str!("testdata/chatwoot_bot_message_incoming.json")).unwrap();
+    assert_eq!(payload.event, "message_created");
+    assert_eq!(payload.content, Some("How do I stake my tokens?".to_string()));
+    assert!(payload.is_incoming_message());
+    assert!(!payload.is_outgoing_message());
+    assert_eq!(payload.get_account_id(), Some(1));
+    assert_eq!(payload.get_conversation_id(), Some(42));
+    assert_eq!(payload.get_device_id(), Some("test-device-id-2".to_string()));
+
+    let messages = payload.get_messages();
+    assert_eq!(messages.len(), 1);
+    assert!(messages[0].is_incoming());
+}
+
+#[test]
+fn test_is_incoming_message() {
+    let payload: ChatwootWebhookPayload = serde_json::from_str(r#"{"event": "message_created", "message_type": "incoming"}"#).unwrap();
+    assert!(payload.is_incoming_message());
+
+    let payload: ChatwootWebhookPayload = serde_json::from_str(r#"{"event": "message_created", "message_type": "outgoing"}"#).unwrap();
+    assert!(!payload.is_incoming_message());
+
+    let payload: ChatwootWebhookPayload = serde_json::from_str(r#"{"event": "message_created"}"#).unwrap();
+    assert!(!payload.is_incoming_message());
+}
+
+#[test]
+fn test_get_account_id() {
+    let payload: ChatwootWebhookPayload = serde_json::from_str(include_str!("testdata/chatwoot_message_created.json")).unwrap();
+    assert_eq!(payload.get_account_id(), Some(1));
+
+    let payload: ChatwootWebhookPayload = serde_json::from_str(r#"{"event": "test"}"#).unwrap();
+    assert_eq!(payload.get_account_id(), None);
+}
+
+#[test]
+fn test_get_conversation_id() {
+    let payload: ChatwootWebhookPayload = serde_json::from_str(include_str!("testdata/chatwoot_message_created.json")).unwrap();
+    assert_eq!(payload.get_conversation_id(), Some(1));
+
+    let payload: ChatwootWebhookPayload = serde_json::from_str(r#"{"event": "test"}"#).unwrap();
+    assert_eq!(payload.get_conversation_id(), None);
+}

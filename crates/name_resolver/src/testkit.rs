@@ -15,18 +15,22 @@ pub struct TestProvider {
 }
 
 impl TestProvider {
-    pub fn new(provider: NameProvider, domains: Vec<&'static str>, chains: Vec<Chain>, response: Result<&'static str, &'static str>) -> Box<dyn NameClient + Send + Sync> {
+    pub fn new(provider: NameProvider, domains: Vec<&'static str>, chains: Vec<Chain>, response: Result<&'static str, &'static str>) -> Self {
         let response = match response {
             Ok(address) => Ok(address.to_string()),
             Err(error) => Err(error),
         };
 
-        Box::new(Self {
+        Self {
             provider,
             domains,
             chains,
             response,
-        })
+        }
+    }
+
+    pub fn boxed(provider: NameProvider, domains: Vec<&'static str>, chains: Vec<Chain>, response: Result<&'static str, &'static str>) -> Box<dyn NameClient + Send + Sync> {
+        Box::new(Self::new(provider, domains, chains, response))
     }
 }
 

@@ -40,6 +40,8 @@ pub struct Settings {
     pub assets: Assets,
     pub rewards: Rewards,
     pub ip: Ip,
+    pub chatwoot: Chatwoot,
+    pub claude: Claude,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -390,6 +392,18 @@ pub struct Ip {
 }
 pub type AbuseIPDB = UrlSecretKeySettings;
 pub type IpApi = UrlSecretKeySettings;
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Chatwoot {
+    pub url: String,
+    pub key: KeySecret,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Claude {
+    pub url: String,
+    pub key: KeySecret,
+}
 
 #[cfg(feature = "testkit")]
 pub mod testkit;

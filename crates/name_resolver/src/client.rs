@@ -105,13 +105,13 @@ mod tests {
     #[tokio::test]
     async fn test_resolve_prefers_longer_domain_match() {
         let client = Client::new(vec![
-            TestProvider::new(NameProvider::Ens, vec!["*"], vec![Chain::Base], Ok("0x0000000000000000000000000000000000000001")),
-            TestProvider::new(
+            Box::new(TestProvider::new(NameProvider::Ens, vec!["*"], vec![Chain::Base], Ok("0x0000000000000000000000000000000000000001"))),
+            Box::new(TestProvider::new(
                 NameProvider::Basenames,
                 vec!["base.eth"],
                 vec![Chain::Base],
                 Ok("0x0000000000000000000000000000000000000002"),
-            ),
+            )),
         ]);
 
         let record = client.resolve("alice.base.eth", Chain::Base).await.unwrap();
@@ -123,8 +123,8 @@ mod tests {
     #[tokio::test]
     async fn test_resolve_returns_more_specific_provider_error() {
         let client = Client::new(vec![
-            TestProvider::new(NameProvider::Ens, vec!["*"], vec![Chain::Base], Ok("0x0000000000000000000000000000000000000003")),
-            TestProvider::new(NameProvider::Basenames, vec!["base.eth"], vec![Chain::Base], Err("failed")),
+            Box::new(TestProvider::new(NameProvider::Ens, vec!["*"], vec![Chain::Base], Ok("0x0000000000000000000000000000000000000003"))),
+            Box::new(TestProvider::new(NameProvider::Basenames, vec!["base.eth"], vec![Chain::Base], Err("failed"))),
         ]);
 
         let error = client.resolve("alice.base.eth", Chain::Base).await.err().unwrap();

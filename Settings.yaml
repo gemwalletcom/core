@@ -290,6 +290,16 @@ nft:
 rewards:
   wallets: {}
 
+chatwoot:
+  url: "https://support.gemwallet.com"
+  key:
+    secret: ""
+
+claude:
+  url: "https://api.anthropic.com"
+  key:
+    secret: ""
+
 ip:
   abuseipdb:
     url: https://api.abuseipdb.com

@@ -289,7 +289,7 @@ mod tests {
         assert_eq!(result.get("tron_method_version").unwrap(), "v2");
 
         let result = wc.config_session_properties(HashMap::new(), vec![Chain::Ethereum.to_string()]);
-        assert!(result.get("tron_method_version").is_none());
+        assert!(!result.contains_key("tron_method_version"));
     }
 }
 

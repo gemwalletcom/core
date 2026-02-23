@@ -1634,6 +1634,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a1d728cc89cf3aee9ff92b05e62b19ee65a02b5702cff7d5a377e32c6ae29d8d"
 
 [[package]]
+name = "claude"
+version = "1.0.0"
+dependencies = [
+ "reqwest 0.13.2",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "cli"
 version = "1.0.0"
 dependencies = [
@@ -7096,8 +7105,12 @@ dependencies = [
 name = "support"
 version = "1.0.0"
 dependencies = [
+ "async-trait",
+ "claude",
+ "gem_tracing",
  "localizer",
  "primitives",
+ "reqwest 0.13.2",
  "serde",
  "serde_json",
  "storage",
