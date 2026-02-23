@@ -12,10 +12,10 @@ use cacher::CacherClient;
 use primitives::{Chain, NFTChain};
 use settings::Settings;
 use storage::Database;
-use streamer::{ChainAddressPayload, ConsumerStatusReporter, FetchAssetsPayload, FetchBlocksPayload, QueueName, ShutdownReceiver, run_consumer};
+use streamer::{ChainAddressPayload, ConsumerStatusReporter, FetchAssetsPayload, FetchBlocksPayload, QueueName, ShutdownReceiver, StreamConnection, StreamReader, run_consumer};
 
 use crate::consumers::runner::ChainConsumerRunner;
-use crate::consumers::{chain_providers, consumer_config, reader_for_queue};
+use crate::consumers::{chain_providers, consumer_config, reader_config};
 
 use fetch_address_transactions_consumer::FetchAddressTransactionsConsumer;
 use fetch_assets_consumer::FetchAssetsConsumer;
@@ -25,23 +25,34 @@ use fetch_nft_assets_addresses_consumer::FetchNftAssetsAddressesConsumer;
 use fetch_token_addresses_consumer::FetchTokenAddressesConsumer;
 
 pub async fn run_consumer_indexer(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let settings = Arc::new(settings);
 
     futures::future::try_join_all(vec![
-        tokio::spawn(run_fetch_blocks(settings.clone(), shutdown_rx.clone(), reporter.clone())),
-        tokio::spawn(run_fetch_assets(settings.clone(), shutdown_rx.clone(), reporter.clone())),
-        tokio::spawn(run_fetch_token_associations(settings.clone(), shutdown_rx.clone(), reporter.clone())),
-        tokio::spawn(run_fetch_coin_associations(settings.clone(), shutdown_rx.clone(), reporter.clone())),
-        tokio::spawn(run_fetch_nft_associations(settings.clone(), shutdown_rx.clone(), reporter.clone())),
-        tokio::spawn(run_fetch_transaction_associations(settings.clone(), shutdown_rx.clone(), reporter.clone())),
+        tokio::spawn(run_fetch_blocks(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
+        tokio::spawn(run_fetch_assets(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
+        tokio::spawn(run_fetch_token_associations(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
+        tokio::spawn(run_fetch_coin_associations(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
+        tokio::spawn(run_fetch_nft_associations(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
+        tokio::spawn(run_fetch_transaction_associations(
+            settings.clone(),
+            database.clone(),
+            shutdown_rx.clone(),
+            reporter.clone(),
+        )),
     ])
     .await?;
 
     Ok(())
 }
 
-async fn run_fetch_blocks(settings: Arc<Settings>, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
-    ChainConsumerRunner::new((*settings).clone(), QueueName::FetchBlocks, shutdown_rx, reporter)
+async fn run_fetch_blocks(
+    settings: Arc<Settings>,
+    database: Database,
+    shutdown_rx: ShutdownReceiver,
+    reporter: Arc<dyn ConsumerStatusReporter>,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
+    ChainConsumerRunner::new((*settings).clone(), database, QueueName::FetchBlocks, shutdown_rx, reporter)
         .await?
         .run(|runner, chain| async move {
             let queue = QueueName::FetchBlocks;
@@ -64,10 +75,17 @@ async fn run_fetch_blocks(settings: Arc<Settings>, shutdown_rx: ShutdownReceiver
         .await
 }
 
-async fn run_fetch_assets(settings: Arc<Settings>, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let database = Database::new(&settings.postgres.url, settings.postgres.pool);
+async fn run_fetch_assets(
+    settings: Arc<Settings>,
+    database: Database,
+    shutdown_rx: ShutdownReceiver,
+    reporter: Arc<dyn ConsumerStatusReporter>,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
     let queue = QueueName::FetchAssets;
-    let (name, stream_reader) = reader_for_queue(&settings, &queue).await?;
+    let name = queue.to_string();
+    let connection = StreamConnection::new(&settings.rabbitmq.url, name.clone()).await?;
+    let config = reader_config(&settings.rabbitmq, name.clone());
+    let stream_reader = StreamReader::from_connection(&connection, config).await?;
     let cacher = CacherClient::new(&settings.redis.url).await;
     let consumer = FetchAssetsConsumer {
         providers: chain_providers(&settings, &name),
@@ -79,10 +97,11 @@ async fn run_fetch_assets(settings: Arc<Settings>, shutdown_rx: ShutdownReceiver
 
 async fn run_fetch_token_associations(
     settings: Arc<Settings>,
+    database: Database,
     shutdown_rx: ShutdownReceiver,
     reporter: Arc<dyn ConsumerStatusReporter>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-    ChainConsumerRunner::new((*settings).clone(), QueueName::FetchTokenAssociations, shutdown_rx, reporter)
+    ChainConsumerRunner::new((*settings).clone(), database, QueueName::FetchTokenAssociations, shutdown_rx, reporter)
         .await?
         .run(|runner, chain| async move {
             let queue = QueueName::FetchTokenAssociations;
@@ -107,10 +126,11 @@ async fn run_fetch_token_associations(
 
 async fn run_fetch_coin_associations(
     settings: Arc<Settings>,
+    database: Database,
     shutdown_rx: ShutdownReceiver,
     reporter: Arc<dyn ConsumerStatusReporter>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-    ChainConsumerRunner::new((*settings).clone(), QueueName::FetchCoinAssociations, shutdown_rx, reporter)
+    ChainConsumerRunner::new((*settings).clone(), database, QueueName::FetchCoinAssociations, shutdown_rx, reporter)
         .await?
         .run(|runner, chain| async move {
             let queue = QueueName::FetchCoinAssociations;
@@ -132,9 +152,14 @@ async fn run_fetch_coin_associations(
         .await
 }
 
-async fn run_fetch_nft_associations(settings: Arc<Settings>, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
+async fn run_fetch_nft_associations(
+    settings: Arc<Settings>,
+    database: Database,
+    shutdown_rx: ShutdownReceiver,
+    reporter: Arc<dyn ConsumerStatusReporter>,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
     let chains: Vec<Chain> = NFTChain::all().into_iter().map(Into::into).collect();
-    ChainConsumerRunner::new((*settings).clone(), QueueName::FetchNftAssociations, shutdown_rx, reporter)
+    ChainConsumerRunner::new((*settings).clone(), database, QueueName::FetchNftAssociations, shutdown_rx, reporter)
         .await?
         .run_for_chains(chains, |runner, chain| async move {
             FetchNftAssetsAddressesConsumer::run(
@@ -154,10 +179,11 @@ async fn run_fetch_nft_associations(settings: Arc<Settings>, shutdown_rx: Shutdo
 
 async fn run_fetch_transaction_associations(
     settings: Arc<Settings>,
+    database: Database,
     shutdown_rx: ShutdownReceiver,
     reporter: Arc<dyn ConsumerStatusReporter>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-    ChainConsumerRunner::new((*settings).clone(), QueueName::FetchAddressTransactions, shutdown_rx, reporter)
+    ChainConsumerRunner::new((*settings).clone(), database, QueueName::FetchAddressTransactions, shutdown_rx, reporter)
         .await?
         .run(|runner, chain| async move {
             let queue = QueueName::FetchAddressTransactions;

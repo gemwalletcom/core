@@ -27,12 +27,17 @@ impl StreamReaderConfig {
 pub struct StreamReader {
     config: StreamReaderConfig,
     channel: Channel,
+    connection: Option<StreamConnection>,
 }
 
 impl StreamReader {
     pub async fn new(config: StreamReaderConfig) -> Result<Self, Box<dyn Error + Send + Sync>> {
         let channel = with_retry(&config.retry, &config.name, || Self::try_connect(&config)).await?;
-        Ok(Self { config, channel })
+        Ok(Self {
+            config,
+            channel,
+            connection: None,
+        })
     }
 
     pub async fn from_connection(connection: &StreamConnection, config: StreamReaderConfig) -> Result<Self, Box<dyn Error + Send + Sync>> {
@@ -41,8 +46,12 @@ impl StreamReader {
             name: connection.name().to_string(),
             ..config
         };
-        let channel = with_retry(&config.retry, &config.name, || Self::try_connect(&config)).await?;
-        Ok(Self { config, channel })
+        let channel = Self::create_channel(connection, config.prefetch).await?;
+        Ok(Self {
+            config,
+            channel,
+            connection: Some(connection.clone()),
+        })
     }
 
     async fn try_connect(config: &StreamReaderConfig) -> Result<Channel, Box<dyn Error + Send + Sync>> {
@@ -58,6 +67,19 @@ impl StreamReader {
         Ok(())
     }
 
+    async fn create_channel(connection: &StreamConnection, prefetch: u16) -> Result<Channel, Box<dyn Error + Send + Sync>> {
+        let channel = connection.create_channel().await?;
+        channel.basic_qos(prefetch, BasicQosOptions { global: false }).await?;
+        Ok(channel)
+    }
+
+    async fn try_connect_shared(&self) -> Result<Channel, Box<dyn Error + Send + Sync>> {
+        if let Some(ref conn) = self.connection {
+            return Self::create_channel(conn, self.config.prefetch).await;
+        }
+        Self::try_connect(&self.config).await
+    }
+
     async fn reconnect(&mut self, shutdown_rx: &ShutdownReceiver) -> Result<bool, Box<dyn Error + Send + Sync>> {
         let mut delay = self.config.retry.delay;
         let mut attempt: u32 = 0;
@@ -66,7 +88,7 @@ impl StreamReader {
                 return Ok(false);
             }
             attempt += 1;
-            match Self::try_connect(&self.config).await {
+            match self.try_connect_shared().await {
                 Ok(channel) => {
                     self.channel = channel;
                     info_with_fields!("rabbitmq reconnected", connection = self.config.name.as_str(), attempt = attempt);
