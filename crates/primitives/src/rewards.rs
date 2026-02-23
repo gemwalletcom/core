@@ -5,7 +5,7 @@ use typeshare::typeshare;
 
 use crate::Asset;
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, EnumIter, EnumString, AsRefStr, PartialEq)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, EnumIter, AsRefStr, PartialEq)]
 //#[typeshare(swift = "Equatable, Hashable, Sendable, CaseIterable")]
 #[serde(rename_all = "camelCase")]
 #[strum(serialize_all = "camelCase")]
