@@ -3,7 +3,7 @@ use typeshare::typeshare;
 use crate::{Transaction, Asset, Price, AssetPrice, AddressName};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Sendable")]
+#[typeshare(swift = "Sendable, Equatable, Hashable")]
 pub struct TransactionExtended {
     pub transaction: Transaction,
     pub asset: Asset,
