@@ -50,7 +50,7 @@ impl Client {
         let address = provider.resolve(name, chain).await?;
 
         Ok(NameRecord {
-            provider: provider.provider().as_ref().to_string(),
+            provider: provider.provider(),
             address,
             name: name.to_string(),
             chain,
@@ -116,7 +116,7 @@ mod tests {
 
         let record = client.resolve("alice.base.eth", Chain::Base).await.unwrap();
 
-        assert_eq!(record.provider, NameProvider::Basenames.as_ref());
+        assert_eq!(record.provider, NameProvider::Basenames);
         assert_eq!(record.address, "0x0000000000000000000000000000000000000002");
     }
 
