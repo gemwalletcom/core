@@ -15,18 +15,11 @@ Guidance for AI assistants (Claude Code, Gemini, Codex, etc.) collaborating on t
 - [Defensive Programming](skills/defensive-programming.md) — Safety rules and exhaustive patterns
 - [Common Issues](skills/common-issues.md) — Known anti-patterns and their fixes
 
-## Formatting (mandatory)
-
-After code changes, format only touched files:
-```sh
-rustfmt --edition 2024 <files>
-cargo clippy -p <crate> -- -D warnings
-```
-
 ## Task Completion
 
 Before finishing a task:
 1. **Review for simplification** — reduce duplication, extract helpers, consolidate modules, remove dead code
-2. **Run tests**: `just test <CRATE>`
-3. **Run clippy**: `cargo clippy -p <crate> -- -D warnings`
-4. **Format only touched files**: `rustfmt --edition 2024 <files>`
+2. **Keep changes minimal** — code must be concise and focused; reviewers cannot realistically review thousands of lines per PR, so only include what is necessary for the task
+3. **Run tests**: `just test <CRATE>`
+4. **Run clippy**: `cargo clippy -p <crate> -- -D warnings`
+5. **Format only touched files**: `rustfmt --edition 2024 <files>`

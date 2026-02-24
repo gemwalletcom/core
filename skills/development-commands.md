@@ -30,7 +30,7 @@ just fix                        # Auto-fix clippy issues
 just unused                     # Find unused dependencies with cargo-machete
 ```
 
-**Per-file formatting** (preferred over `just format`):
+**Formatting and Linting** — only format files touched in the PR. Running `just format` reformats the entire workspace and inflates diffs, making review impractical.
 ```sh
 rustfmt --edition 2024 <file1> <file2> ...
 cargo clippy -p <crate> -- -D warnings
