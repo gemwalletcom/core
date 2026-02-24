@@ -3,12 +3,28 @@ use chrono::{TimeZone, Utc};
 use primitives::{TransactionState, TransactionType, chain::Chain, transaction_utxo::TransactionUtxoInput};
 use std::error::Error;
 
+const OP_RETURN_PREFIX: &str = "OP_RETURN ";
+
 pub fn map_transaction_broadcast(hash: String) -> Result<String, Box<dyn Error + Sync + Send>> {
     if hash.is_empty() { Err("Empty transaction hash".into()) } else { Ok(hash) }
 }
 
 pub fn map_transactions(chain: Chain, transactions: Vec<Transaction>) -> Vec<primitives::Transaction> {
     transactions.into_iter().flat_map(|x| map_transaction(chain, &x)).collect()
+}
+
+fn op_return_memo(transaction: &Transaction) -> Option<String> {
+    transaction
+        .vout
+        .iter()
+        .filter(|o| !o.is_address)
+        .flat_map(|o| o.addresses.as_deref().unwrap_or_default())
+        .find_map(|addr| {
+            addr.strip_prefix(OP_RETURN_PREFIX)
+                .map(|s| s.strip_prefix('(').unwrap_or(s))
+                .map(|s| s.strip_suffix(')').unwrap_or(s))
+                .map(String::from)
+        })
 }
 
 pub fn map_transaction(chain: Chain, transaction: &Transaction) -> Option<primitives::Transaction> {
@@ -36,6 +52,7 @@ pub fn map_transaction(chain: Chain, transaction: &Transaction) -> Option<primit
         return None;
     }
     let created_at = Utc.timestamp_opt(transaction.block_time, 0).single()?;
+    let memo = op_return_memo(transaction);
 
     let transaction = primitives::Transaction::new_with_utxo(
         transaction.txid.clone(),
@@ -45,7 +62,7 @@ pub fn map_transaction(chain: Chain, transaction: &Transaction) -> Option<primit
         transaction.fees.clone(),
         chain.as_asset_id(),
         transaction.value.clone(),
-        None,
+        memo,
         inputs.into(),
         outputs.into(),
         None,
@@ -68,19 +85,17 @@ mod tests {
             ..Transaction::mock()
         };
 
-        let result = map_transaction(Chain::Bitcoin, &transaction);
-
-        assert!(result.is_some());
-        let result = result.unwrap();
+        let result = map_transaction(Chain::Bitcoin, &transaction).unwrap();
         assert_eq!(result.id.to_string(), "bitcoin_abc123");
         assert_eq!(result.value, "100000");
         assert_eq!(result.fee, "5000");
         assert_eq!(result.transaction_type, TransactionType::Transfer);
         assert_eq!(result.state, TransactionState::Confirmed);
-        let utxo_inputs = result.utxo_inputs.as_ref().expect("expected at least one input");
+        assert!(result.memo.is_none());
+        let utxo_inputs = result.utxo_inputs.as_ref().unwrap();
         assert_eq!(utxo_inputs.len(), 1);
         assert_eq!(utxo_inputs[0].address, "bc1qinput");
-        let utxo_outputs = result.utxo_outputs.as_ref().expect("expected at least one output");
+        let utxo_outputs = result.utxo_outputs.as_ref().unwrap();
         assert_eq!(utxo_outputs.len(), 1);
         assert_eq!(utxo_outputs[0].address, "bc1qoutput");
     }
@@ -100,16 +115,57 @@ mod tests {
             ..Transaction::mock()
         };
 
-        let result = map_transaction(Chain::BitcoinCash, &transaction);
-
-        assert!(result.is_some());
-        let result = result.unwrap();
+        let result = map_transaction(Chain::BitcoinCash, &transaction).unwrap();
         assert_eq!(result.id.to_string(), "bitcoincash_def456");
-        let utxo_inputs = result.utxo_inputs.as_ref().expect("expected at least one input");
+        let utxo_inputs = result.utxo_inputs.as_ref().unwrap();
         assert_eq!(utxo_inputs.len(), 1);
         assert_eq!(utxo_inputs[0].address, "qqm3kh5j8ptj2y4ryglk0j83t6jkcjk7x52kgzvh4q");
-        let utxo_outputs = result.utxo_outputs.as_ref().expect("expected at least one output");
+        let utxo_outputs = result.utxo_outputs.as_ref().unwrap();
         assert_eq!(utxo_outputs.len(), 1);
         assert_eq!(utxo_outputs[0].address, "qpcns7lget89x9km0t8ry5fk52e8lhl53q0a64gd65");
+    }
+
+    #[test]
+    fn test_map_transaction_with_op_return_memo() {
+        let transaction = Transaction {
+            vin: vec![Input::mock()],
+            vout: vec![
+                Output::mock(),
+                Output {
+                    is_address: false,
+                    addresses: Some(vec!["OP_RETURN (=:e:0xaF1879D693d49375fc9b74a66b937C2d73557bCb:0/1/0:g1:50)".to_string()]),
+                    value: "0".to_string(),
+                    n: 2,
+                },
+            ],
+            ..Transaction::mock()
+        };
+
+        let result = map_transaction(Chain::Bitcoin, &transaction).unwrap();
+        assert_eq!(result.memo.as_deref(), Some("=:e:0xaF1879D693d49375fc9b74a66b937C2d73557bCb:0/1/0:g1:50"),);
+    }
+
+    #[test]
+    fn test_op_return_memo_none_without_op_return() {
+        let transaction = Transaction {
+            vin: vec![Input::mock()],
+            vout: vec![Output::mock()],
+            ..Transaction::mock()
+        };
+        assert!(op_return_memo(&transaction).is_none());
+    }
+
+    #[test]
+    fn test_op_return_memo_ignores_regular_addresses() {
+        let transaction = Transaction {
+            vin: vec![Input::mock()],
+            vout: vec![Output {
+                is_address: true,
+                addresses: Some(vec!["OP_RETURN (fake)".to_string()]),
+                ..Output::mock()
+            }],
+            ..Transaction::mock()
+        };
+        assert!(op_return_memo(&transaction).is_none());
     }
 }

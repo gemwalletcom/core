@@ -1,5 +1,5 @@
 use super::SwapStatus;
-use crate::Chain;
+use crate::TransactionSwapMetadata;
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
@@ -8,8 +8,5 @@ use typeshare::typeshare;
 #[serde(rename_all = "camelCase")]
 pub struct SwapResult {
     pub status: SwapStatus,
-    pub from_chain: Chain,
-    pub from_tx_hash: String,
-    pub to_chain: Option<Chain>,
-    pub to_tx_hash: Option<String>,
+    pub metadata: Option<TransactionSwapMetadata>,
 }

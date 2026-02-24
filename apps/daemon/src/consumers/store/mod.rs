@@ -53,12 +53,17 @@ async fn run_store_transactions(
             let name = format!("{}.{}", queue, chain.as_ref());
             let stream_reader = runner.stream_reader().await?;
             let stream_producer = runner.stream_producer().await?;
+            let config_cacher = ConfigCacher::new(runner.database.clone());
             let consumer = StoreTransactionsConsumer {
                 database: runner.database.clone(),
-                config_cacher: ConfigCacher::new(runner.database.clone()),
                 stream_producer,
                 pusher: Pusher::new(runner.database.clone()),
-                config: StoreTransactionsConsumerConfig {},
+                config: StoreTransactionsConsumerConfig {
+                    swap_outdated_timeout: config_cacher.get_duration(ConfigKey::TransactionSwapOutdatedTimeout)?,
+                    outdated_block_count: config_cacher.get_i64(ConfigKey::TransactionsOutdatedBlockCount)? as u64,
+                    outdated_min_timeout: config_cacher.get_duration(ConfigKey::TransactionsOutdatedMinTimeout)?,
+                },
+                config_cacher,
             };
             run_consumer::<TransactionsPayload, StoreTransactionsConsumer, usize>(
                 &name,

@@ -1,6 +1,6 @@
 use super::{
-    AppFee, DepositMode, ExecutionStatus, NearIntentsClient, QuoteRequest as NearQuoteRequest, QuoteResponse, QuoteResponseError, QuoteResponseResult, SwapType,
-    asset_id_from_near_intents, auto_quote_time_chains, deposit_memo_chains, get_near_intents_asset_id,
+    AppFee, DepositMode, NearIntentsClient, QuoteRequest as NearQuoteRequest, QuoteResponse, QuoteResponseError, QuoteResponseResult, SwapType, auto_quote_time_chains,
+    deposit_memo_chains, get_near_intents_asset_id,
     model::{DEFAULT_REFERRAL, DEFAULT_WAIT_TIME_MS, DEPOSIT_TYPE_ORIGIN, RECIPIENT_TYPE_DESTINATION},
     reserved_tx_fees, supported_assets,
 };
@@ -161,19 +161,11 @@ where
     fn map_transaction_status(status: &str) -> SwapStatus {
         match status {
             "SWAP_COMPLETED" | "SWAP_COMPLETED_TX" | "SUCCESS" => SwapStatus::Completed,
-            "REFUNDED" | "SWAP_REFUNDED" => SwapStatus::Refunded,
+            "REFUNDED" | "SWAP_REFUNDED" => SwapStatus::Failed,
             "SWAP_FAILED" | "FAILED" | "SWAP_LIQUIDITY_TIMEOUT" | "SWAP_RISK_FAILED" => SwapStatus::Failed,
             "KNOWN_DEPOSIT_TX" | "PENDING_DEPOSIT" | "INCOMPLETE_DEPOSIT" | "PROCESSING" => SwapStatus::Pending,
             _ => SwapStatus::Pending,
         }
-    }
-
-    fn resolve_destination_chain(result: &ExecutionStatus) -> Option<Chain> {
-        result
-            .quote_response
-            .as_ref()
-            .and_then(|response| asset_id_from_near_intents(&response.quote_request.destination_asset))
-            .map(|asset| asset.chain)
     }
 
     fn resolve_deposit_mode(asset: &SwapperQuoteAsset) -> DepositMode {
@@ -287,7 +279,7 @@ where
     async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let mode = match request.mode {
             SwapperMode::ExactIn => SwapType::FlexInput,
-            SwapperMode::ExactOut => todo!("ExactOut mode is not supported for Near Intents"),
+            SwapperMode::ExactOut => return Err(SwapperError::NotSupportedAsset),
         };
 
         let amount = Self::resolve_quote_amount(request, &mode)?;
@@ -360,30 +352,13 @@ where
         })
     }
 
-    async fn get_swap_result(&self, chain: Chain, deposit_address: &str) -> Result<SwapResult, SwapperError> {
+    async fn get_swap_result(&self, _chain: Chain, deposit_address: &str) -> Result<SwapResult, SwapperError> {
         let status = self.client.get_transaction_status(deposit_address).await?;
-
         let swap_status = Self::map_transaction_status(status.status.as_str());
-        let destination_chain = Self::resolve_destination_chain(&status);
-
-        let swap_details = status.swap_details.unwrap_or_default();
-
-        let to_tx_hash = match swap_status {
-            SwapStatus::Refunded => swap_details.origin_chain_tx_hashes.first().map(|entry| entry.hash.clone()),
-            _ => swap_details.destination_chain_tx_hashes.first().map(|entry| entry.hash.clone()),
-        };
-
-        let to_chain = match swap_status {
-            SwapStatus::Refunded => Some(chain),
-            _ => destination_chain,
-        };
 
         Ok(SwapResult {
             status: swap_status,
-            from_chain: chain,
-            from_tx_hash: deposit_address.to_string(),
-            to_chain,
-            to_tx_hash,
+            metadata: None,
         })
     }
 }
@@ -553,10 +528,6 @@ mod swap_integration_tests {
         let deposit_address = "18gB9wZz1Q4CzniurLye1KdUUqjWjo3ePr";
 
         let swap_result = provider.get_swap_result(Chain::Bitcoin, deposit_address).await?;
-
-        if swap_result.status == SwapStatus::Completed {
-            assert_eq!(swap_result.to_chain, Some(Chain::Ethereum));
-        }
 
         println!("swap_result: {swap_result:?}");
 

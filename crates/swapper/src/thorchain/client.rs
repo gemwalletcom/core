@@ -1,6 +1,6 @@
 use super::{
     asset::THORChainAsset,
-    model::{InboundAddress, QuoteSwapRequest, QuoteSwapResponse, Transaction},
+    model::{InboundAddress, QuoteSwapRequest, QuoteSwapResponse, TransactionStatus},
 };
 use crate::SwapperError;
 use gem_client::{Client, ClientExt, X_CACHE_TTL};
@@ -52,8 +52,8 @@ where
         self.client.get_with_headers("/thorchain/inbound_addresses", headers).await.map_err(SwapperError::from)
     }
 
-    pub async fn get_transaction_status(&self, transaction_hash: &str) -> Result<Transaction, SwapperError> {
-        let path = format!("/thorchain/tx/{transaction_hash}");
+    pub async fn get_transaction_status(&self, hash: &str) -> Result<TransactionStatus, SwapperError> {
+        let path = format!("/thorchain/tx/status/{hash}");
         self.client.get(&path).await.map_err(SwapperError::from)
     }
 }

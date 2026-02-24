@@ -128,6 +128,7 @@ pub enum WorkerJob {
     UpdateObservedPrices,
     UpdateDexFeeds,
     UpdateDexPrices,
+    UpdateInTransitTransactions,
 }
 
 impl WorkerJob {
@@ -174,6 +175,7 @@ impl WorkerJob {
             UpdateObservedPrices => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceObservedFetchInterval)),
             UpdateDexFeeds => JobSpec::new(WorkerService::Prices, JobInterval::Duration(Duration::from_secs(3600))),
             UpdateDexPrices => JobSpec::new(WorkerService::Prices, JobInterval::Duration(Duration::from_secs(1800))),
+            UpdateInTransitTransactions => JobSpec::new(WorkerService::Transactions, JobInterval::Config(ConfigKey::TransactionTimerInTransitUpdate)),
         }
     }
 

@@ -136,7 +136,12 @@ diesel_enum!(
     [CreateUsername, InvitePending, InviteNew, InviteExisting, Joined, Disabled]
 );
 
-diesel_enum!(TransactionState, PrimitiveTransactionState, TransactionStateSql, [Pending, Confirmed, Failed, Reverted]);
+diesel_enum!(
+    TransactionState,
+    PrimitiveTransactionState,
+    TransactionStateSql,
+    [Pending, Confirmed, InTransit, Failed, Reverted]
+);
 
 diesel_enum!(UsernameStatus, PrimitiveUsernameStatus, UsernameStatusSql, [Unverified, Verified]);
 

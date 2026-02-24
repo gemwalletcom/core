@@ -1,5 +1,5 @@
 CREATE TYPE transaction_type AS ENUM ('transfer', 'transferNFT', 'swap', 'tokenApproval', 'stakeDelegate', 'stakeUndelegate', 'stakeRewards', 'stakeRedelegate', 'stakeWithdraw', 'stakeFreeze', 'stakeUnfreeze', 'assetActivation', 'smartContractCall', 'perpetualOpenPosition', 'perpetualClosePosition', 'perpetualModifyPosition');
-CREATE TYPE transaction_state AS ENUM ('pending', 'confirmed', 'failed', 'reverted');
+CREATE TYPE transaction_state AS ENUM ('pending', 'confirmed', 'inTransit', 'failed', 'reverted');
 
 CREATE TABLE transactions
 (

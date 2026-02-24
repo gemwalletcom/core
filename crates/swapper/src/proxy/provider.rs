@@ -4,7 +4,7 @@ use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 use super::{
     client::ProxyClient,
-    mayan::{MayanClientStatus, MayanExplorer, wormhole_chain_id_to_chain},
+    mayan::{MayanExplorer, wormhole_chain_id_to_chain},
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperError, SwapperProvider, SwapperProviderMode, SwapperQuoteData,
@@ -16,7 +16,7 @@ use crate::{
 };
 use gem_client::Client;
 use primitives::{
-    Chain, ChainType,
+    AssetId, Chain, ChainType, TransactionSwapMetadata,
     swap::{ApprovalData, ProxyQuote, ProxyQuoteRequest, SwapQuoteData},
 };
 
@@ -241,29 +241,29 @@ where
             SwapperProvider::Mayan => {
                 let client = MayanExplorer::new(self.rpc_provider.clone());
                 let result = client.get_transaction_status(transaction_hash).await?;
+                let to_chain = result.dest_chain.parse::<u16>().ok().and_then(wormhole_chain_id_to_chain);
 
-                let swap_status = result.client_status.swap_status();
-                let dest_chain = result.dest_chain.parse::<u16>().ok().and_then(wormhole_chain_id_to_chain);
-
-                let (to_chain, to_tx_hash) = match result.client_status {
-                    MayanClientStatus::Completed => (dest_chain, result.fulfill_tx_hash),
-                    MayanClientStatus::Refunded | MayanClientStatus::InProgress => (dest_chain, None),
-                };
+                let metadata = to_chain.map(|to| TransactionSwapMetadata {
+                    from_asset: AssetId::from_chain(chain),
+                    from_value: result.from_amount,
+                    to_asset: AssetId::from_chain(to),
+                    to_value: result.to_amount,
+                    provider: Some(SwapperProvider::Mayan.as_ref().to_string()),
+                });
 
                 Ok(SwapResult {
-                    status: swap_status,
-                    from_chain: chain,
-                    from_tx_hash: transaction_hash.to_string(),
-                    to_chain,
-                    to_tx_hash,
+                    status: result.client_status.swap_status(),
+                    metadata,
                 })
             }
-            // For OnChain providers, use the default implementation
             _ => {
                 if self.provider.mode == SwapperProviderMode::OnChain {
-                    Ok(self.get_onchain_swap_status(chain, transaction_hash))
+                    Ok(SwapResult {
+                        status: primitives::swap::SwapStatus::Completed,
+                        metadata: None,
+                    })
                 } else {
-                    todo!("Swap result not implemented for provider {:?}", self.provider.id)
+                    Err(SwapperError::NotSupportedAsset)
                 }
             }
         }
@@ -322,7 +322,7 @@ mod swap_integration_tests {
         alien::reqwest_provider::NativeProvider,
         {SwapperMode, SwapperQuoteAsset, asset::SUI_USDC_TOKEN_ID, models::Options},
     };
-    use primitives::AssetId;
+    use primitives::{AssetId, TransactionSwapMetadata, swap::SwapStatus};
 
     #[tokio::test]
     async fn test_mayan_provider_fetch_quote() -> Result<(), SwapperError> {
@@ -394,24 +394,19 @@ mod swap_integration_tests {
     #[tokio::test]
     #[cfg(feature = "swap_integration_tests")]
     async fn test_mayan_get_swap_result() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        use primitives::swap::SwapStatus;
-
         let rpc_provider = Arc::new(NativeProvider::default());
         let provider = ProxyProvider::new_mayan(rpc_provider);
 
-        // Real Mayan swap: ETH to SUI via CCTP
-        // Ethereum source tx: 0x56acc6a58fc0bdd9e9be5cc2a3ff079b91b933f562cf0fe760f1d8d6b76f4876
         let tx_hash = "0x56acc6a58fc0bdd9e9be5cc2a3ff079b91b933f562cf0fe760f1d8d6b76f4876";
-        let chain = Chain::Ethereum;
+        let result = provider.get_swap_result(Chain::Ethereum, tx_hash).await?;
 
-        let result = provider.get_swap_result(chain, tx_hash).await?;
-
-        println!("Mayan swap result: {:?}", result);
-        assert_eq!(result.from_chain, chain);
-        assert_eq!(result.from_tx_hash, tx_hash);
         assert_eq!(result.status, SwapStatus::Completed);
-        assert_eq!(result.to_chain, Some(Chain::Sui));
-        assert_eq!(result.to_tx_hash, Some("GLs1TUZ6jQdWBBDHVBYFumaBMf6kVNcb2NxQnapXqJUL".to_string()));
+        let metadata = result.metadata.unwrap();
+        assert_eq!(metadata.from_asset, AssetId::from_chain(Chain::Ethereum));
+        assert_eq!(metadata.to_asset, AssetId::from_chain(Chain::Sui));
+        assert!(!metadata.from_value.is_empty());
+        assert!(!metadata.to_value.is_empty());
+        assert_eq!(metadata.provider, Some("mayan".to_string()));
 
         Ok(())
     }

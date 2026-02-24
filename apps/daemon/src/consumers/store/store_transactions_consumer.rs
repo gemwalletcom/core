@@ -2,14 +2,28 @@ use std::collections::HashSet;
 use std::{collections::HashMap, error::Error};
 
 use async_trait::async_trait;
-use primitives::{AssetAddress, AssetIdVecExt, ConfigKey, Transaction, TransactionId, WalletId};
+use primitives::{AssetAddress, AssetIdVecExt, ConfigKey, Transaction, TransactionId, TransactionState, TransactionType, WalletId};
 use storage::{AssetsAddressesRepository, AssetsRepository, ConfigCacher, Database, TransactionsRepository, WalletsRepository};
 use streamer::{AssetId, DeviceStreamEvent, DeviceStreamPayload, NotificationsPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
+use swapper::cross_chain;
 
 use crate::consumers::store::StoreTransactionsConsumerConfig;
 use crate::pusher::Pusher;
 
 const TRANSACTION_BATCH_SIZE: usize = 100;
+
+fn set_cross_chain_in_transit(transactions: Vec<Transaction>) -> Vec<Transaction> {
+    transactions
+        .into_iter()
+        .map(|mut tx| {
+            if tx.state == TransactionState::Confirmed && tx.transaction_type != TransactionType::Swap && cross_chain::is_cross_chain_swap(&tx.id.chain, &tx.to, tx.memo.as_deref())
+            {
+                tx.state = TransactionState::InTransit;
+            }
+            tx
+        })
+        .collect()
+}
 
 pub struct StoreTransactionsConsumer {
     pub database: Database,
@@ -99,7 +113,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
                 txn_ids.insert(transaction.id.clone());
                 asset_ids.extend(transaction_asset_ids.iter().cloned());
 
-                let is_outdated = self.config.is_transaction_outdated(transaction.created_at.naive_utc(), chain);
+                let is_outdated = self.config.is_transaction_outdated(transaction.created_at.naive_utc(), chain, transaction.transaction_type.clone());
                 let should_notify = !is_outdated && is_notify_devices;
 
                 if should_notify {
@@ -168,10 +182,57 @@ impl StoreTransactionsConsumer {
             return Ok(0);
         }
 
+        let transactions = set_cross_chain_in_transit(transactions);
         for chunk in transactions.chunks(TRANSACTION_BATCH_SIZE) {
             self.database.transactions()?.add_transactions(chunk.to_vec())?;
         }
 
         Ok(transactions.len())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_set_cross_chain_in_transit_cross_chain() {
+        let memo = "=:ETH.USDT:0x858734a6353C9921a78fB3c937c8E20Ba6f36902:1635978e6/1/0";
+        let tx = Transaction {
+            memo: Some(memo.to_string()),
+            ..Transaction::mock()
+        };
+        let result = set_cross_chain_in_transit(vec![tx]);
+        assert_eq!(result[0].state, TransactionState::InTransit);
+    }
+
+    #[test]
+    fn test_set_cross_chain_in_transit_regular_transfer() {
+        let result = set_cross_chain_in_transit(vec![Transaction::mock()]);
+        assert_eq!(result[0].state, TransactionState::Confirmed);
+    }
+
+    #[test]
+    fn test_set_cross_chain_in_transit_skip_swap_type() {
+        let memo = "=:ETH.USDT:0x858734a6353C9921a78fB3c937c8E20Ba6f36902:1635978e6/1/0";
+        let tx = Transaction {
+            transaction_type: TransactionType::Swap,
+            memo: Some(memo.to_string()),
+            ..Transaction::mock()
+        };
+        let result = set_cross_chain_in_transit(vec![tx]);
+        assert_eq!(result[0].state, TransactionState::Confirmed);
+    }
+
+    #[test]
+    fn test_set_cross_chain_in_transit_skip_pending() {
+        let memo = "=:ETH.USDT:0x858734a6353C9921a78fB3c937c8E20Ba6f36902:1635978e6/1/0";
+        let tx = Transaction {
+            state: TransactionState::Pending,
+            memo: Some(memo.to_string()),
+            ..Transaction::mock()
+        };
+        let result = set_cross_chain_in_transit(vec![tx]);
+        assert_eq!(result[0].state, TransactionState::Pending);
     }
 }

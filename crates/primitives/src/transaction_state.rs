@@ -4,11 +4,12 @@ use typeshare::typeshare;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, AsRefStr, EnumIter, EnumString)]
 #[typeshare(swift = "Equatable, CaseIterable, Sendable")]
-#[serde(rename_all = "lowercase")]
-#[strum(serialize_all = "lowercase")]
+#[serde(rename_all = "camelCase")]
+#[strum(serialize_all = "camelCase")]
 pub enum TransactionState {
     Pending,
     Confirmed,
+    InTransit,
     Failed,
     Reverted,
 }

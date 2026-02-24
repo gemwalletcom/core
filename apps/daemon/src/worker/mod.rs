@@ -10,6 +10,7 @@ pub mod rewards;
 pub mod runtime;
 pub mod search;
 pub mod system;
+pub mod transactions;
 
 use std::error::Error;
 use std::sync::Arc;
@@ -31,6 +32,7 @@ impl WorkerService {
             WorkerService::System => system::jobs(ctx, shutdown_rx).await,
             WorkerService::Search => search::jobs(ctx, shutdown_rx).await,
             WorkerService::Rewards => rewards::jobs(ctx, shutdown_rx).await,
+            WorkerService::Transactions => transactions::jobs(ctx, shutdown_rx).await,
         }
     }
 }

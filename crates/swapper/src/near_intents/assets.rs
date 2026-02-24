@@ -4,9 +4,9 @@ use primitives::{
     asset_constants::{
         AAVE_ETH_ASSET_ID, ARB_ARB_ASSET_ID, CBBTC_BASE_ASSET_ID, CBBTC_ETH_ASSET_ID, DAI_ETH_ASSET_ID, LINK_ETH_ASSET_ID, OP_OP_ASSET_ID, UNI_ETH_ASSET_ID, USDC_ARB_ASSET_ID,
         USDC_AVAX_ASSET_ID, USDC_BASE_ASSET_ID, USDC_ETH_ASSET_ID, USDC_GNOSIS_ASSET_ID, USDC_MONAD_ASSET_ID, USDC_OP_ASSET_ID, USDC_POLYGON_ASSET_ID, USDC_SMARTCHAIN_ASSET_ID,
-        USDC_SOLANA_ASSET_ID, USDC_SUI_ASSET_ID, USDC_XLAYER_ASSET_ID, USDT_APTOS_ASSET_ID, USDT_ARB_ASSET_ID, USDT_AVAX_ASSET_ID, USDT_BERA_ASSET_ID,
-        USDT_ETH_ASSET_ID, USDT_GNOSIS_ASSET_ID, USDT_MONAD_ASSET_ID, USDT_OP_ASSET_ID, USDT_PLASMA_ASSET_ID, USDT_POLYGON_ASSET_ID, USDT_SMARTCHAIN_ASSET_ID,
-        USDT_SOLANA_ASSET_ID, USDT_TON_ASSET_ID, USDT_TRON_ASSET_ID, USDT_XLAYER_ASSET_ID, WBTC_ETH_ASSET_ID,
+        USDC_SOLANA_ASSET_ID, USDC_SUI_ASSET_ID, USDC_XLAYER_ASSET_ID, USDT_APTOS_ASSET_ID, USDT_ARB_ASSET_ID, USDT_AVAX_ASSET_ID, USDT_BERA_ASSET_ID, USDT_ETH_ASSET_ID,
+        USDT_GNOSIS_ASSET_ID, USDT_MONAD_ASSET_ID, USDT_OP_ASSET_ID, USDT_PLASMA_ASSET_ID, USDT_POLYGON_ASSET_ID, USDT_SMARTCHAIN_ASSET_ID, USDT_SOLANA_ASSET_ID,
+        USDT_TON_ASSET_ID, USDT_TRON_ASSET_ID, USDT_XLAYER_ASSET_ID, WBTC_ETH_ASSET_ID,
     },
 };
 use std::{collections::HashMap, sync::LazyLock};
@@ -241,33 +241,12 @@ fn asset_key(asset_id: &str) -> String {
     asset_id.to_ascii_lowercase()
 }
 
-pub static NEAR_INTENTS_REVERSE_ASSETS: LazyLock<HashMap<&'static str, AssetId>> = LazyLock::new(|| {
-    let mut reverse = HashMap::new();
-    for (chain, assets) in NEAR_INTENTS_ASSETS.iter() {
-        for (asset_key, near_asset) in assets.iter() {
-            match AssetId::new(asset_key) {
-                Some(asset_id) => {
-                    reverse.insert(*near_asset, asset_id);
-                }
-                None => {
-                    reverse.insert(*near_asset, AssetId::from_chain(*chain));
-                }
-            }
-        }
-    }
-    reverse
-});
-
 pub fn get_near_intents_asset_id(asset: &SwapperQuoteAsset) -> Result<String, SwapperError> {
     let asset_id = asset.asset_id();
     let key = asset_id.to_string().to_lowercase();
     let chain_assets = NEAR_INTENTS_ASSETS.get(&asset_id.chain).ok_or(SwapperError::NotSupportedChain)?;
 
     chain_assets.get(&key).map(|value| value.to_string()).ok_or(SwapperError::NotSupportedAsset)
-}
-
-pub fn asset_id_from_near_intents(near_asset: &str) -> Option<AssetId> {
-    NEAR_INTENTS_REVERSE_ASSETS.get(near_asset).cloned()
 }
 
 pub fn supported_assets() -> Vec<SwapperChainAsset> {
@@ -300,11 +279,5 @@ mod tests {
     fn test_supported_assets_contains_near() {
         let supported = supported_assets();
         assert!(supported.iter().any(|entry| matches!(entry, SwapperChainAsset::Assets(chain, _) if *chain == Chain::Near)));
-    }
-
-    #[test]
-    fn test_asset_id_from_near_intents() {
-        let asset = asset_id_from_near_intents(NEAR_INTENTS_ETH_USDC).unwrap();
-        assert_eq!(asset.chain, Chain::Ethereum);
     }
 }

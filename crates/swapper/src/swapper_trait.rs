@@ -17,22 +17,14 @@ pub trait Swapper: Send + Sync + Debug {
         Ok(None)
     }
     async fn fetch_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError>;
-    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
+    async fn get_swap_result(&self, _chain: Chain, _transaction_hash: &str) -> Result<SwapResult, SwapperError> {
         if self.provider().mode == SwapperProviderMode::OnChain {
-            Ok(self.get_onchain_swap_status(chain, transaction_hash))
+            Ok(SwapResult {
+                status: SwapStatus::Completed,
+                metadata: None,
+            })
         } else {
-            todo!("get_swap_result not implemented for provider {:?}", self.provider().id)
-        }
-    }
-
-    /// Default OnChain provider swap status implementation
-    fn get_onchain_swap_status(&self, chain: Chain, transaction_hash: &str) -> SwapResult {
-        SwapResult {
-            status: SwapStatus::Completed,
-            from_chain: chain,
-            from_tx_hash: transaction_hash.to_string(),
-            to_chain: Some(chain),
-            to_tx_hash: Some(transaction_hash.to_string()),
+            Err(SwapperError::NotSupportedAsset)
         }
     }
 }

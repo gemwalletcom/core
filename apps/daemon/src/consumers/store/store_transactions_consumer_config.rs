@@ -1,20 +1,27 @@
-use chrono::{Duration, NaiveDateTime, Utc};
+use std::time::Duration;
+
+use chrono::NaiveDateTime;
 use number_formatter::BigNumberFormatter;
 use primitives::{Asset, Chain, Price, Transaction, TransactionType};
 
-pub struct StoreTransactionsConsumerConfig {}
+pub struct StoreTransactionsConsumerConfig {
+    pub swap_outdated_timeout: Duration,
+    pub outdated_block_count: u64,
+    pub outdated_min_timeout: Duration,
+}
 
 impl StoreTransactionsConsumerConfig {
-    pub fn is_transaction_outdated(&self, transaction_created_at: NaiveDateTime, chain: Chain) -> bool {
-        Utc::now().naive_utc() - transaction_created_at > Duration::seconds(self.outdated_seconds(chain))
+    pub fn is_transaction_outdated(&self, transaction_created_at: NaiveDateTime, chain: Chain, transaction_type: TransactionType) -> bool {
+        let elapsed = (chrono::Utc::now().naive_utc() - transaction_created_at).to_std().unwrap_or_default();
+        elapsed > self.outdated_timeout(chain, transaction_type)
     }
 
-    pub fn outdated_seconds(&self, chain: Chain) -> i64 {
-        match chain {
-            Chain::Bitcoin => 7_200,                // 2 hours
-            Chain::Litecoin | Chain::Doge => 1_800, // 30 minutes
-            _ => 900,                               // 15 minutes
+    fn outdated_timeout(&self, chain: Chain, transaction_type: TransactionType) -> Duration {
+        if transaction_type == TransactionType::Swap {
+            return self.swap_outdated_timeout;
         }
+        let block_time_secs = chain.block_time() as u64 / 1000;
+        Duration::from_secs(block_time_secs * self.outdated_block_count).max(self.outdated_min_timeout)
     }
 
     pub fn is_transaction_insufficient_amount(&self, transaction: &Transaction, asset: &Asset, price: Option<Price>, min_amount: f64) -> bool {
@@ -35,22 +42,44 @@ mod tests {
 
     impl StoreTransactionsConsumerConfig {
         fn mock() -> Self {
-            Self {}
+            Self {
+                swap_outdated_timeout: Duration::from_secs(7_200),
+                outdated_block_count: 12,
+                outdated_min_timeout: Duration::from_secs(900),
+            }
         }
     }
 
     #[test]
     fn test_is_transaction_outdated_positive() {
-        let options = StoreTransactionsConsumerConfig::mock();
-        let created_at = Utc::now() - Duration::seconds(options.outdated_seconds(Chain::Bitcoin) + 1);
-        assert!(options.is_transaction_outdated(created_at.naive_utc(), Chain::Bitcoin));
+        let config = StoreTransactionsConsumerConfig::mock();
+        let timeout = config.outdated_timeout(Chain::Bitcoin, TransactionType::Transfer);
+        let created_at = chrono::Utc::now() - chrono::Duration::from_std(timeout).unwrap() - chrono::Duration::seconds(1);
+        assert!(config.is_transaction_outdated(created_at.naive_utc(), Chain::Bitcoin, TransactionType::Transfer));
     }
 
     #[test]
     fn test_is_transaction_outdated_negative() {
-        let options = StoreTransactionsConsumerConfig::mock();
-        let created_at = Utc::now() - Duration::seconds(options.outdated_seconds(Chain::Bitcoin) - 1);
-        assert!(!options.is_transaction_outdated(created_at.naive_utc(), Chain::Bitcoin));
+        let config = StoreTransactionsConsumerConfig::mock();
+        let timeout = config.outdated_timeout(Chain::Bitcoin, TransactionType::Transfer);
+        let created_at = chrono::Utc::now() - chrono::Duration::from_std(timeout).unwrap() + chrono::Duration::seconds(1);
+        assert!(!config.is_transaction_outdated(created_at.naive_utc(), Chain::Bitcoin, TransactionType::Transfer));
+    }
+
+    #[test]
+    fn test_is_swap_outdated_positive() {
+        let config = StoreTransactionsConsumerConfig::mock();
+        let timeout = config.outdated_timeout(Chain::Ethereum, TransactionType::Swap);
+        let created_at = chrono::Utc::now() - chrono::Duration::from_std(timeout).unwrap() - chrono::Duration::seconds(1);
+        assert!(config.is_transaction_outdated(created_at.naive_utc(), Chain::Ethereum, TransactionType::Swap));
+    }
+
+    #[test]
+    fn test_is_swap_outdated_negative() {
+        let config = StoreTransactionsConsumerConfig::mock();
+        let timeout = config.outdated_timeout(Chain::Ethereum, TransactionType::Swap);
+        let created_at = chrono::Utc::now() - chrono::Duration::from_std(timeout).unwrap() + chrono::Duration::seconds(1);
+        assert!(!config.is_transaction_outdated(created_at.naive_utc(), Chain::Ethereum, TransactionType::Swap));
     }
 
     #[test]
@@ -58,7 +87,7 @@ mod tests {
         use chrono::Utc;
         use primitives::AssetId;
 
-        let options = StoreTransactionsConsumerConfig::mock();
+        let config = StoreTransactionsConsumerConfig::mock();
 
         let token_asset = Asset::mock_erc20();
         let native_asset = Asset::mock_btc();
@@ -88,7 +117,7 @@ mod tests {
         ];
 
         for (transaction, asset, price, min_amount, expected) in test_cases {
-            assert_eq!(options.is_transaction_insufficient_amount(&transaction, asset, price, min_amount), expected);
+            assert_eq!(config.is_transaction_insufficient_amount(&transaction, asset, price, min_amount), expected);
         }
     }
 }

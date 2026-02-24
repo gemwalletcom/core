@@ -1,6 +1,6 @@
 use crate::DatabaseClient;
 use crate::DatabaseError;
-use crate::database::transactions::TransactionsStore;
+use crate::database::transactions::{TransactionFilter, TransactionUpdate, TransactionsStore};
 use crate::models::{AddressChainIdResultRow, TransactionRow};
 use chrono::NaiveDateTime;
 use primitives::Transaction;
@@ -20,6 +20,8 @@ pub trait TransactionsRepository {
     fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<i64>, DatabaseError>;
     fn delete_orphaned_transactions(&mut self, candidate_ids: Vec<i64>) -> Result<usize, DatabaseError>;
     fn get_asset_usage_counts(&mut self, since: NaiveDateTime) -> Result<Vec<(String, i64)>, DatabaseError>;
+    fn get_transactions_by_filter(&mut self, filters: Vec<TransactionFilter>, limit: i64) -> Result<Vec<TransactionRow>, DatabaseError>;
+    fn update_transaction(&mut self, chain: &str, hash: &str, updates: Vec<TransactionUpdate>) -> Result<usize, DatabaseError>;
 }
 
 impl TransactionsRepository for DatabaseClient {
@@ -63,5 +65,13 @@ impl TransactionsRepository for DatabaseClient {
 
     fn get_asset_usage_counts(&mut self, since: NaiveDateTime) -> Result<Vec<(String, i64)>, DatabaseError> {
         Ok(TransactionsStore::get_asset_usage_counts(self, since)?)
+    }
+
+    fn get_transactions_by_filter(&mut self, filters: Vec<TransactionFilter>, limit: i64) -> Result<Vec<TransactionRow>, DatabaseError> {
+        Ok(TransactionsStore::get_transactions_by_filter(self, filters, limit)?)
+    }
+
+    fn update_transaction(&mut self, chain: &str, hash: &str, updates: Vec<TransactionUpdate>) -> Result<usize, DatabaseError> {
+        Ok(TransactionsStore::update_transaction(self, chain, hash, updates)?)
     }
 }

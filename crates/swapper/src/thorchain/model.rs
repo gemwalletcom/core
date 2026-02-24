@@ -3,7 +3,11 @@ use primitives::swap::SwapStatus;
 use serde::{Deserialize, Serialize};
 use serde_serializers::deserialize_bigint_from_str;
 
-use super::{asset::THORChainAsset, chain::THORChainName, constants::THORCHAIN_INBOUND_ADDRESS};
+use super::{
+    asset::THORChainAsset,
+    chain::THORChainName,
+    constants::{THORCHAIN_INBOUND_ADDRESS, ZERO_HASH},
+};
 use crate::SwapperError;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -30,27 +34,49 @@ pub struct QuoteSwapResponse {
 pub struct QuoteFees {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Transaction {
-    pub observed_tx: TransactionObserved,
+pub struct TransactionStatus {
+    pub tx: TransactionStatusTx,
+    pub stages: TransactionStages,
+    pub out_txs: Option<Vec<TransactionStatusOutTx>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TransactionTx {
+pub struct TransactionStatusTx {
     pub memo: String,
+    pub coins: Vec<TransactionCoin>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct TransactionObserved {
-    pub tx: TransactionTx,
-    pub status: Option<String>,
-    pub out_hashes: Option<Vec<String>>,
+pub struct TransactionCoin {
+    pub asset: String,
+    pub amount: String,
 }
 
-impl TransactionObserved {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionStages {
+    pub swap_status: TransactionSwapStage,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionSwapStage {
+    pub pending: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionStatusOutTx {
+    pub id: String,
+    pub chain: String,
+    pub coins: Vec<TransactionCoin>,
+}
+
+impl TransactionStatus {
     pub fn swap_status(&self) -> SwapStatus {
-        match self.status.as_deref() {
-            Some("done") => SwapStatus::Completed,
-            _ => SwapStatus::Failed, // TODO: Handle refunded status detection later
+        let has_output = self.out_txs.as_ref().is_some_and(|txs| txs.iter().any(|tx| tx.id != ZERO_HASH && !tx.id.is_empty()));
+
+        if !self.stages.swap_status.pending && has_output {
+            SwapStatus::Completed
+        } else {
+            SwapStatus::Pending
         }
     }
 }
@@ -103,6 +129,44 @@ impl ErrorResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_tx_status_completed_ltc_to_tron() {
+        let status: TransactionStatus = serde_json::from_str(include_str!("testdata/tx_status_ltc_to_tron.json")).unwrap();
+
+        assert_eq!(status.swap_status(), SwapStatus::Completed);
+        assert_eq!(status.tx.memo, "=:TRON.USDT:TMazs4f2ybMjGf7WXAx4uiRf2T7XtMC6qt:0/1/0:g1:50");
+        assert_eq!(status.tx.coins[0].amount, "160661010");
+
+        let out_txs = status.out_txs.unwrap();
+        let destination = out_txs.iter().find(|tx| tx.id != ZERO_HASH && !tx.id.is_empty()).unwrap();
+        assert_eq!(destination.chain, "TRON");
+        assert_eq!(destination.id, "544827704F9AD53F2D33209F73F7CC39C3AA5068481D87316ED189B322784222");
+        assert_eq!(destination.coins[0].amount, "7915842900");
+    }
+
+    #[test]
+    fn test_tx_status_pending_btc_to_tron() {
+        let status: TransactionStatus = serde_json::from_str(include_str!("testdata/tx_status_btc_to_tron_pending.json")).unwrap();
+
+        assert_eq!(status.swap_status(), SwapStatus::Pending);
+        assert_eq!(status.tx.coins[0].amount, "23516479");
+        assert!(status.out_txs.is_none());
+    }
+
+    #[test]
+    fn test_tx_status_completed_tcy_to_eth_usdt() {
+        let status: TransactionStatus = serde_json::from_str(include_str!("testdata/tx_status_tcy_to_eth_usdt.json")).unwrap();
+
+        assert_eq!(status.swap_status(), SwapStatus::Completed);
+        assert_eq!(status.tx.coins[0].amount, "11921829956942");
+
+        let out_txs = status.out_txs.unwrap();
+        let destination = out_txs.iter().find(|tx| tx.id != ZERO_HASH && !tx.id.is_empty()).unwrap();
+        assert_eq!(destination.chain, "ETH");
+        assert_eq!(destination.id, "1D8300FDC5A47ACA3E7D59791180229AE314C86ABA32C14E4975464491865576");
+        assert_eq!(destination.coins[0].amount, "380962656200");
+    }
 
     #[test]
     fn test_get_inbound_address_thorchain() {

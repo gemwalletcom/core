@@ -1,0 +1,127 @@
+{
+  "tx": {
+    "id": "E58A582CD7EB3A83F32B5B4AF76F6EF9E78250DC06213DB9D5618B184C1CEC48",
+    "chain": "THOR",
+    "from_address": "thor104epn66u38fy6lkjyk9p3dcns7mxdfh06qkupl",
+    "to_address": "thor1g98cy3n9mmjrpn0sxmn63lztelera37n8n67c0",
+    "coins": [
+      {
+        "asset": "THOR.TCY",
+        "amount": "11921829956942"
+      }
+    ],
+    "gas": null,
+    "memo": "=:ETH.USDT:0x4dbc7e789455390640fb88b80058ef896798203a:1093333440253/1/0:wr:125"
+  },
+  "planned_out_txs": [
+    {
+      "chain": "ETH",
+      "to_address": "0x4dbc7e789455390640fb88b80058ef896798203a",
+      "coin": {
+        "asset": "ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7",
+        "amount": "380962656200"
+      },
+      "refund": false
+    },
+    {
+      "chain": "THOR",
+      "to_address": "thor104epn66u38fy6lkjyk9p3dcns7mxdfh06qkupl",
+      "coin": {
+        "asset": "THOR.TCY",
+        "amount": "7749189472011"
+      },
+      "refund": true
+    },
+    {
+      "chain": "THOR",
+      "to_address": "thor1dl7un46w7l7f3ewrnrm6nq58nerjtp0dradjtd",
+      "coin": {
+        "asset": "THOR.RUNE",
+        "amount": "12636775600"
+      },
+      "refund": false
+    }
+  ],
+  "out_txs": [
+    {
+      "id": "0000000000000000000000000000000000000000000000000000000000000000",
+      "chain": "THOR",
+      "from_address": "thor1g98cy3n9mmjrpn0sxmn63lztelera37n8n67c0",
+      "to_address": "thor104epn66u38fy6lkjyk9p3dcns7mxdfh06qkupl",
+      "coins": [
+        {
+          "asset": "THOR.TCY",
+          "amount": "7749189472011"
+        }
+      ],
+      "gas": [
+        {
+          "asset": "THOR.RUNE",
+          "amount": "2000000"
+        }
+      ],
+      "memo": "REFUND:E58A582CD7EB3A83F32B5B4AF76F6EF9E78250DC06213DB9D5618B184C1CEC48"
+    },
+    {
+      "id": "0000000000000000000000000000000000000000000000000000000000000000",
+      "chain": "THOR",
+      "from_address": "thor1g98cy3n9mmjrpn0sxmn63lztelera37n8n67c0",
+      "to_address": "thor1dl7un46w7l7f3ewrnrm6nq58nerjtp0dradjtd",
+      "coins": [
+        {
+          "asset": "THOR.RUNE",
+          "amount": "12636775600"
+        }
+      ],
+      "gas": [
+        {
+          "asset": "THOR.RUNE",
+          "amount": "2000000"
+        }
+      ],
+      "memo": "OUT:E58A582CD7EB3A83F32B5B4AF76F6EF9E78250DC06213DB9D5618B184C1CEC48"
+    },
+    {
+      "id": "1D8300FDC5A47ACA3E7D59791180229AE314C86ABA32C14E4975464491865576",
+      "chain": "ETH",
+      "from_address": "0x29c2fdd217ff6ab439bddca4f8c7718689f00235",
+      "to_address": "0x4DbC7e789455390640FB88b80058Ef896798203a",
+      "coins": [
+        {
+          "asset": "ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7",
+          "amount": "380962656200",
+          "decimals": 6
+        }
+      ],
+      "gas": [
+        {
+          "asset": "ETH.ETH",
+          "amount": "13005"
+        }
+      ],
+      "memo": "OUT:E58A582CD7EB3A83F32B5B4AF76F6EF9E78250DC06213DB9D5618B184C1CEC48"
+    }
+  ],
+  "stages": {
+    "inbound_observed": {
+      "final_count": 0,
+      "completed": true
+    },
+    "inbound_confirmation_counted": {
+      "remaining_confirmation_seconds": 0,
+      "completed": true
+    },
+    "inbound_finalised": {
+      "completed": true
+    },
+    "swap_status": {
+      "pending": false
+    },
+    "swap_finalised": {
+      "completed": true
+    },
+    "outbound_signed": {
+      "completed": true
+    }
+  }
+}

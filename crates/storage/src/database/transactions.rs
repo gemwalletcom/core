@@ -1,9 +1,25 @@
-use crate::{DatabaseClient, models::*, schema::transactions_addresses};
+use crate::{
+    DatabaseClient,
+    models::*,
+    schema::transactions_addresses,
+    sql_types::{TransactionState, TransactionType},
+};
 use chrono::NaiveDateTime;
 use diesel::dsl::count;
 use diesel::prelude::*;
 use diesel::upsert::excluded;
 use primitives::Transaction;
+
+pub enum TransactionFilter {
+    State(TransactionState),
+}
+
+#[derive(Debug, Clone)]
+pub enum TransactionUpdate {
+    State(TransactionState),
+    Kind(TransactionType),
+    Metadata(serde_json::Value),
+}
 
 pub(crate) trait TransactionsStore {
     fn get_transaction_by_id(&mut self, chain: &str, hash: &str) -> Result<TransactionRow, diesel::result::Error>;
@@ -20,6 +36,8 @@ pub(crate) trait TransactionsStore {
     fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<i64>, diesel::result::Error>;
     fn delete_orphaned_transactions(&mut self, candidate_ids: Vec<i64>) -> Result<usize, diesel::result::Error>;
     fn get_asset_usage_counts(&mut self, since: NaiveDateTime) -> Result<Vec<(String, i64)>, diesel::result::Error>;
+    fn get_transactions_by_filter(&mut self, filters: Vec<TransactionFilter>, limit: i64) -> Result<Vec<TransactionRow>, diesel::result::Error>;
+    fn update_transaction(&mut self, chain: &str, hash: &str, updates: Vec<TransactionUpdate>) -> Result<usize, diesel::result::Error>;
 }
 
 impl TransactionsStore for DatabaseClient {
@@ -94,7 +112,8 @@ impl TransactionsStore for DatabaseClient {
             .into_boxed()
             .inner_join(transactions_addresses::table)
             .filter(chain.eq_any(chains.clone()))
-            .filter(transactions_addresses::address.eq_any(addresses));
+            .filter(transactions_addresses::address.eq_any(addresses))
+            .filter(state.ne(TransactionState::InTransit));
 
         if let Some(filter_asset) = filter_asset_id {
             query = query.filter(asset_id.eq(filter_asset));
@@ -160,5 +179,46 @@ impl TransactionsStore for DatabaseClient {
             .group_by(asset_id)
             .select((asset_id, count(asset_id)))
             .load(&mut self.connection)
+    }
+
+    fn get_transactions_by_filter(&mut self, filters: Vec<TransactionFilter>, limit: i64) -> Result<Vec<TransactionRow>, diesel::result::Error> {
+        use crate::schema::transactions::dsl;
+        let mut query = dsl::transactions.into_boxed();
+
+        for filter in filters {
+            match filter {
+                TransactionFilter::State(state) => {
+                    query = query.filter(dsl::state.eq(state));
+                }
+            }
+        }
+
+        query
+            .order(dsl::created_at.asc())
+            .limit(limit)
+            .select(TransactionRow::as_select())
+            .load(&mut self.connection)
+    }
+
+    fn update_transaction(&mut self, chain: &str, hash: &str, updates: Vec<TransactionUpdate>) -> Result<usize, diesel::result::Error> {
+        use crate::schema::transactions::dsl;
+
+        if updates.is_empty() {
+            return Ok(0);
+        }
+
+        let target = dsl::transactions.filter(dsl::chain.eq(chain).and(dsl::hash.eq(hash)));
+        let mut total = 0;
+
+        for update in &updates {
+            let updated = match update {
+                TransactionUpdate::State(state) => diesel::update(target).set(dsl::state.eq(state)).execute(&mut self.connection)?,
+                TransactionUpdate::Kind(kind) => diesel::update(target).set(dsl::kind.eq(kind)).execute(&mut self.connection)?,
+                TransactionUpdate::Metadata(metadata) => diesel::update(target).set(dsl::metadata.eq(metadata)).execute(&mut self.connection)?,
+            };
+            total += updated;
+        }
+
+        Ok(total)
     }
 }

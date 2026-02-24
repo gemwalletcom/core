@@ -1,0 +1,40 @@
+{
+  "tx": {
+    "id": "2BC884C03438AAD437ABE2C18D97B5A7CAB9312F68C59CECBB3AD5715FE4C15D",
+    "chain": "BTC",
+    "from_address": "bc1qatt33ste4xywa97skmt9tmxwnpzrvqszwpm6pu",
+    "to_address": "bc1q2llgpmptppvuahaz9av983t5dypl9gehewjwud",
+    "coins": [
+      {
+        "asset": "BTC.BTC",
+        "amount": "23516479"
+      }
+    ],
+    "gas": [
+      {
+        "asset": "BTC.BTC",
+        "amount": "830"
+      }
+    ],
+    "memo": "=:TRON.USDT:TMwHWhFuEqSoicouuxgNqy3Z8yTiUoPetA:0/5/0:ej:75"
+  },
+  "stages": {
+    "inbound_observed": {
+      "final_count": 103,
+      "completed": true
+    },
+    "inbound_confirmation_counted": {
+      "remaining_confirmation_seconds": 0,
+      "completed": true
+    },
+    "inbound_finalised": {
+      "completed": true
+    },
+    "swap_status": {
+      "pending": true
+    },
+    "swap_finalised": {
+      "completed": false
+    }
+  }
+}

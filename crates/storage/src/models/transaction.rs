@@ -1,18 +1,16 @@
-use std::str::FromStr;
-
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use primitives::{AssetId, Chain, Transaction, TransactionDirection, TransactionId, TransactionUtxoInput};
 use serde::{Deserialize, Serialize};
 
-use crate::sql_types::{TransactionState, TransactionType};
+use crate::sql_types::{ChainRow, TransactionState, TransactionType};
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::transactions)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct TransactionRow {
     pub id: i64,
-    pub chain: String,
+    pub chain: ChainRow,
     pub hash: String,
     pub from_address: Option<String>,
     pub to_address: Option<String>,
@@ -33,7 +31,7 @@ pub struct TransactionRow {
 #[diesel(table_name = crate::schema::transactions)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct NewTransactionRow {
-    pub chain: String,
+    pub chain: ChainRow,
     pub hash: String,
     pub from_address: Option<String>,
     pub to_address: Option<String>,
@@ -51,12 +49,16 @@ pub struct NewTransactionRow {
 }
 
 impl TransactionRow {
+    pub fn chain(&self) -> Chain {
+        self.chain.0
+    }
+
     pub fn get_addresses(&self) -> Vec<String> {
         vec![self.from_address.clone(), self.to_address.clone()].into_iter().flatten().collect()
     }
 
     pub fn as_primitive(&self, addresses: Vec<String>) -> Transaction {
-        let chain = Chain::from_str(&self.chain).unwrap();
+        let chain = self.chain();
         let transaction_id = TransactionId::new(chain, self.hash.clone());
         let asset_id = AssetId::new(self.asset_id.clone().as_str()).unwrap();
         let from = self.from_address.clone().unwrap_or_default();
@@ -123,7 +125,7 @@ impl NewTransactionRow {
         };
 
         Self {
-            chain: transaction.asset_id.chain.as_ref().to_string(),
+            chain: transaction.asset_id.chain.into(),
             hash: transaction.hash,
             memo: transaction.memo,
             asset_id: transaction.asset_id.to_string(),

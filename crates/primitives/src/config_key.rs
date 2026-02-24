@@ -106,6 +106,8 @@ pub enum ConfigKey {
 
     // Transactions
     TransactionsMinAmountUsd,
+    TransactionsOutdatedBlockCount,
+    TransactionsOutdatedMinTimeout,
 
     // Alerter
     AlerterInterval,
@@ -165,6 +167,10 @@ pub enum ConfigKey {
 
     // Transaction
     TransactionTimerCleanup,
+    TransactionTimerInTransitUpdate,
+    TransactionInTransitTimeout,
+    TransactionInTransitQueryLimit,
+    TransactionSwapOutdatedTimeout,
     TransactionCleanupAddressMaxCount,
     TransactionCleanupAddressLimit,
     TransactionCleanupLookback,
@@ -288,6 +294,8 @@ impl ConfigKey {
             Self::ReferralAbuseDisabledReferrerPenalty => "80",
             Self::FiatValidateSubscription => "false",
             Self::TransactionsMinAmountUsd => "0.05",
+            Self::TransactionsOutdatedBlockCount => "12",
+            Self::TransactionsOutdatedMinTimeout => "15m",
             Self::AlerterInterval => "60s",
             Self::AlerterNotificationCooldown => "24h",
             Self::AlerterPriceChangeThreshold => "5.0",
@@ -329,6 +337,10 @@ impl ConfigKey {
             Self::DeviceTimerInactiveObserver => "1d",
             Self::VersionTimerUpdateStoreVersions => "1h",
             Self::TransactionTimerCleanup => "1d",
+            Self::TransactionTimerInTransitUpdate => "60s",
+            Self::TransactionInTransitTimeout => "6h",
+            Self::TransactionInTransitQueryLimit => "100",
+            Self::TransactionSwapOutdatedTimeout => "2h",
             Self::TransactionCleanupAddressMaxCount => "5000",
             Self::TransactionCleanupAddressLimit => "200",
             Self::TransactionCleanupLookback => "90d",

@@ -100,15 +100,10 @@ impl Swapper for HyperCoreBridge {
         }
     }
 
-    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
-        let from_chain = chain;
-        let to_chain = if chain == Chain::HyperCore { Chain::Hyperliquid } else { Chain::HyperCore };
+    async fn get_swap_result(&self, _chain: Chain, _transaction_hash: &str) -> Result<SwapResult, SwapperError> {
         Ok(SwapResult {
             status: SwapStatus::Completed,
-            from_chain,
-            from_tx_hash: transaction_hash.to_string(),
-            to_chain: Some(to_chain),
-            to_tx_hash: None,
+            metadata: None,
         })
     }
 }

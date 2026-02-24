@@ -42,8 +42,12 @@ impl GemSwapper {
         preferred_providers.contains(provider)
     }
 
-    fn get_swapper_by_provider<'a>(&'a self, provider: &SwapperProvider) -> Option<&'a dyn Swapper> {
-        self.swappers.iter().find(|x| x.provider().id == *provider).map(|v| &**v)
+    fn get_swapper_by_provider(&self, provider: &SwapperProvider) -> Result<&dyn Swapper, SwapperError> {
+        self.swappers
+            .iter()
+            .find(|x| x.provider().id == *provider)
+            .map(|v| &**v)
+            .ok_or(SwapperError::NoAvailableProvider)
     }
 
     fn apply_gas_limit_multiplier(chain: &Chain, gas_limit: String) -> String {
@@ -189,7 +193,6 @@ impl GemSwapper {
             match result {
                 Ok(quote) => quotes.push(quote),
                 Err(err) => {
-                    println!("fetch_quote error: {:?}", err);
                     errors.push(err);
                 }
             }
@@ -206,18 +209,18 @@ impl GemSwapper {
     }
 
     pub async fn fetch_quote_by_provider(&self, provider: SwapperProvider, request: QuoteRequest) -> Result<Quote, SwapperError> {
-        let provider = self.get_swapper_by_provider(&provider).ok_or(SwapperError::NoAvailableProvider)?;
+        let provider = self.get_swapper_by_provider(&provider)?;
         let request_for_quote = Self::transform_request(&request);
         provider.fetch_quote(request_for_quote.as_ref()).await
     }
 
     pub async fn fetch_permit2_for_quote(&self, quote: &Quote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
-        let provider = self.get_swapper_by_provider(&quote.data.provider.id).ok_or(SwapperError::NoAvailableProvider)?;
+        let provider = self.get_swapper_by_provider(&quote.data.provider.id)?;
         provider.fetch_permit2_for_quote(quote).await
     }
 
     pub async fn fetch_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
-        let provider = self.get_swapper_by_provider(&quote.data.provider.id).ok_or(SwapperError::NoAvailableProvider)?;
+        let provider = self.get_swapper_by_provider(&quote.data.provider.id)?;
         let mut quote_data = provider.fetch_quote_data(quote, data).await?;
         if let Some(gas_limit) = quote_data.gas_limit.take() {
             quote_data.gas_limit = Some(Self::apply_gas_limit_multiplier(&quote.request.from_asset.chain(), gas_limit));
@@ -226,7 +229,7 @@ impl GemSwapper {
     }
 
     pub async fn get_swap_result(&self, chain: Chain, swap_provider: SwapperProvider, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
-        let provider = self.get_swapper_by_provider(&swap_provider).ok_or(SwapperError::NoAvailableProvider)?;
+        let provider = self.get_swapper_by_provider(&swap_provider)?;
         provider.get_swap_result(chain, transaction_hash).await
     }
 }

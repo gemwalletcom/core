@@ -37,9 +37,21 @@ use gem_evm::{
     weth::WETH9,
 };
 use num_bigint::{BigInt, Sign};
-use primitives::{AssetId, Chain, EVMChain, swap::ApprovalData, swap::SwapStatus};
+use primitives::{AssetId, Chain, EVMChain, swap::ApprovalData};
 use serde_serializers::biguint_from_hex_str;
 use std::{fmt::Debug, str::FromStr, sync::Arc};
+
+pub struct AcrossCrossChain;
+
+impl crate::cross_chain::CrossChainProvider for AcrossCrossChain {
+    fn provider(&self) -> SwapperProvider {
+        SwapperProvider::Across
+    }
+
+    fn is_swap(&self, chain: &Chain, to_address: &str, _memo: Option<&str>) -> bool {
+        AcrossDeployment::deployment_by_chain(chain).is_some_and(|d| d.spoke_pool.eq_ignore_ascii_case(to_address))
+    }
+}
 
 #[derive(Debug)]
 pub struct Across {
@@ -511,8 +523,7 @@ impl Swapper for Across {
         if matches!(data, FetchQuoteData::EstimateGas) {
             let hex_value = format!("{:#x}", U256::from_str(value).unwrap());
             let tx = TransactionObject::new_call_to_value(&to, &hex_value, deposit_v3_call.clone());
-            let _gas_limit = self.estimate_gas_transaction(from_chain, tx).await?;
-            gas_limit = Some(_gas_limit.to_string());
+            gas_limit = Some(self.estimate_gas_transaction(from_chain, tx).await?.to_string());
         }
 
         Ok(SwapperQuoteData::new_contract(
@@ -527,22 +538,9 @@ impl Swapper for Across {
         let api = AcrossApi::new(self.rpc_provider.clone());
         let status = api.deposit_status(chain, transaction_hash).await?;
 
-        let swap_status = status.swap_status();
-        let destination_chain = Chain::from_chain_id(status.destination_chain_id);
-
-        // Determine the transaction hash to show based on status
-        let (to_chain, to_tx_hash) = match swap_status {
-            SwapStatus::Completed => (destination_chain, status.fill_tx.clone()),
-            SwapStatus::Failed | SwapStatus::Refunded => (Some(chain), None),
-            SwapStatus::Pending => (destination_chain, None),
-        };
-
         Ok(SwapResult {
-            status: swap_status,
-            from_chain: chain,
-            from_tx_hash: transaction_hash.to_string(),
-            to_chain,
-            to_tx_hash,
+            status: status.swap_status(),
+            metadata: None,
         })
     }
 }
@@ -710,11 +708,7 @@ mod tests {
             let result = swap_provider.get_swap_result(chain, tx_hash).await?;
 
             println!("Across swap result: {:?}", result);
-            assert_eq!(result.from_chain, chain);
-            assert_eq!(result.from_tx_hash, tx_hash);
             assert_eq!(result.status, SwapStatus::Completed);
-            assert_eq!(result.to_chain, Some(Chain::Linea));
-            assert_eq!(result.to_tx_hash, Some("0xcba653515ab00f5b3ebc16eb4d099e29611e1e59b3fd8f2800cf2302d175f9fe".to_string()));
 
             Ok(())
         }

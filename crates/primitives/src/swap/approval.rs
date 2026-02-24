@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{AssetId, Chain, SwapProvider};
+use crate::{AssetId, Chain, SwapProvider, TransactionState};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
@@ -135,5 +135,14 @@ pub enum SwapStatus {
     Pending,
     Completed,
     Failed,
-    Refunded,
+}
+
+impl SwapStatus {
+    pub fn transaction_state(&self) -> Option<TransactionState> {
+        match self {
+            SwapStatus::Completed => Some(TransactionState::Confirmed),
+            SwapStatus::Failed => Some(TransactionState::Failed),
+            SwapStatus::Pending => None,
+        }
+    }
 }

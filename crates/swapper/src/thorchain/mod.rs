@@ -1,10 +1,12 @@
 mod asset;
 mod chain;
-mod client;
+pub mod client;
 mod constants;
-mod memo;
+pub mod memo;
 pub(crate) mod model;
 mod provider;
+mod swap_mapper;
+pub use provider::ThorchainCrossChain;
 mod quote_data_mapper;
 
 use num_bigint::BigInt;

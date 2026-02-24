@@ -13,8 +13,8 @@ pub struct TransactionPerpetualMetadata {
     pub provider: Option<PerpetualProvider>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Sendable")]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionSwapMetadata {
     pub from_asset: AssetId,

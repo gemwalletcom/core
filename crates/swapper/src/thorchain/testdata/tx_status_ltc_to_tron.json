@@ -1,0 +1,105 @@
+{
+  "tx": {
+    "id": "FBEEBA21CB7503AA64809249B08050BD591F1A9AD0C0F94B09D666BC410DED66",
+    "chain": "LTC",
+    "from_address": "ltc1qp0esmcpjymjahn3aptwtpf82axyq2g36kzgrng",
+    "to_address": "ltc1q2w4h6e0pwlucnugce4rshpw3z52kv9etx7fpu5",
+    "coins": [
+      {
+        "asset": "LTC.LTC",
+        "amount": "160661010"
+      }
+    ],
+    "gas": [
+      {
+        "asset": "LTC.LTC",
+        "amount": "1790"
+      }
+    ],
+    "memo": "=:TRON.USDT:TMazs4f2ybMjGf7WXAx4uiRf2T7XtMC6qt:0/1/0:g1:50"
+  },
+  "planned_out_txs": [
+    {
+      "chain": "TRON",
+      "to_address": "TMazs4f2ybMjGf7WXAx4uiRf2T7XtMC6qt",
+      "coin": {
+        "asset": "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T",
+        "amount": "7915842900"
+      },
+      "refund": false
+    },
+    {
+      "chain": "THOR",
+      "to_address": "thor1dl7un46w7l7f3ewrnrm6nq58nerjtp0dradjtd",
+      "coin": {
+        "asset": "THOR.RUNE",
+        "amount": "107275600"
+      },
+      "refund": false
+    }
+  ],
+  "out_txs": [
+    {
+      "id": "0000000000000000000000000000000000000000000000000000000000000000",
+      "chain": "THOR",
+      "from_address": "thor1g98cy3n9mmjrpn0sxmn63lztelera37n8n67c0",
+      "to_address": "thor1dl7un46w7l7f3ewrnrm6nq58nerjtp0dradjtd",
+      "coins": [
+        {
+          "asset": "THOR.RUNE",
+          "amount": "107275600"
+        }
+      ],
+      "gas": [
+        {
+          "asset": "THOR.RUNE",
+          "amount": "2000000"
+        }
+      ],
+      "memo": "OUT:FBEEBA21CB7503AA64809249B08050BD591F1A9AD0C0F94B09D666BC410DED66"
+    },
+    {
+      "id": "544827704F9AD53F2D33209F73F7CC39C3AA5068481D87316ED189B322784222",
+      "chain": "TRON",
+      "from_address": "TDn2JApQgDumRE6MnKbxS5PyS4wtAzf6Dz",
+      "to_address": "TMazs4f2ybMjGf7WXAx4uiRf2T7XtMC6qt",
+      "coins": [
+        {
+          "asset": "TRON.USDT-TR7NHQJEKQXGTCI8Q8ZY4PL8OTSZGJLJ6T",
+          "amount": "7915842900",
+          "decimals": 6
+        }
+      ],
+      "gas": [
+        {
+          "asset": "TRON.TRX",
+          "amount": "1444450000",
+          "decimals": 6
+        }
+      ],
+      "memo": "OUT:FBEEBA21CB7503AA64809249B08050BD591F1A9AD0C0F94B09D666BC410DED66"
+    }
+  ],
+  "stages": {
+    "inbound_observed": {
+      "final_count": 103,
+      "completed": true
+    },
+    "inbound_confirmation_counted": {
+      "remaining_confirmation_seconds": 0,
+      "completed": true
+    },
+    "inbound_finalised": {
+      "completed": true
+    },
+    "swap_status": {
+      "pending": false
+    },
+    "swap_finalised": {
+      "completed": true
+    },
+    "outbound_signed": {
+      "completed": true
+    }
+  }
+}

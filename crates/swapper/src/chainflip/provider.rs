@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use gem_client::Client;
 use num_bigint::BigUint;
 use num_traits::ToPrimitive;
-use std::{fmt::Debug, str::FromStr, sync::Arc};
+use std::{fmt::Debug, sync::Arc};
 
 use super::{
     ChainflipRouteData,
@@ -60,10 +60,6 @@ where
             chain: chain_name,
             asset: asset.symbol.clone(),
         }
-    }
-
-    fn map_chainflip_chain_to_chain(chainflip_chain: &str) -> Option<Chain> {
-        Chain::from_str(&chainflip_chain.to_lowercase()).ok()
     }
 }
 
@@ -303,17 +299,12 @@ where
         }
     }
 
-    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
+    async fn get_swap_result(&self, _chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
         let status = self.chainflip_client.get_tx_status(transaction_hash).await?;
-        let swap_status = status.swap_status();
-        let to_tx_hash = status.swap_egress.as_ref().and_then(|x| x.tx_ref.clone());
 
         Ok(SwapResult {
-            status: swap_status,
-            from_chain: chain,
-            from_tx_hash: transaction_hash.to_string(),
-            to_chain: Self::map_chainflip_chain_to_chain(&status.dest_chain),
-            to_tx_hash,
+            status: status.swap_status(),
+            metadata: None,
         })
     }
 }
@@ -400,11 +391,7 @@ mod tests {
         let result = swap_provider.get_swap_result(chain, tx_hash).await?;
 
         println!("Chainflip swap result: {:?}", result);
-        assert_eq!(result.from_chain, chain);
-        assert_eq!(result.from_tx_hash, tx_hash);
         assert_eq!(result.status, SwapStatus::Completed);
-        assert_eq!(result.to_chain, Some(Chain::Ethereum));
-        assert_eq!(result.to_tx_hash, Some("0xc142acf0170a2efc7756d9c7c2d27474527ffc4fed6b6c535ca407ffed559dc1".to_string()));
 
         Ok(())
     }

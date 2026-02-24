@@ -27,6 +27,8 @@ use gem_ton::rpc::TonClient;
 use gem_tron::rpc::{client::TronClient, trongrid::client::TronGridClient};
 use gem_xrp::rpc::XRPClient;
 
+use std::collections::HashMap;
+
 use primitives::{Chain, EVMChain, NodeType, chain_cosmos::CosmosChain};
 use settings::Settings;
 
@@ -191,6 +193,14 @@ impl ProviderFactory {
             Chain::XLayer => &settings.chains.xlayer,
             Chain::Stable => &settings.chains.stable,
         }
+    }
+
+    pub fn get_chain_endpoints(settings: &Settings) -> HashMap<Chain, String> {
+        Chain::all()
+            .into_iter()
+            .map(|chain| (chain, Self::get_chain_config(chain, settings).url.clone()))
+            .filter(|(_, url)| !url.is_empty())
+            .collect()
     }
 
     pub fn get_node_type(url_type: ChainURLType) -> NodeType {

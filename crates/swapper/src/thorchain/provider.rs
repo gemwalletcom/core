@@ -5,13 +5,30 @@ use async_trait::async_trait;
 use gem_client::Client;
 use primitives::{Chain, swap::ApprovalData};
 
-use super::{QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY, ThorChain, asset::THORChainAsset, chain::THORChainName, memo::ThorchainMemo, model::RouteData, quote_data_mapper};
+use super::{
+    QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY, ThorChain,
+    asset::THORChainAsset,
+    chain::THORChainName,
+    memo::ThorchainMemo,
+    model::RouteData,
+    quote_data_mapper, swap_mapper,
+};
 use crate::{
-    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperQuoteData,
-    approval::check_approval_erc20, asset::*, thorchain::client::ThorChainSwapClient,
+    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider,
+    SwapperQuoteData, approval::check_approval_erc20, asset::*, thorchain::client::ThorChainSwapClient,
 };
 
-const ZERO_HASH: &str = "0000000000000000000000000000000000000000000000000000000000000000";
+pub struct ThorchainCrossChain;
+
+impl crate::cross_chain::CrossChainProvider for ThorchainCrossChain {
+    fn provider(&self) -> SwapperProvider {
+        SwapperProvider::Thorchain
+    }
+
+    fn is_swap(&self, _chain: &Chain, _to_address: &str, memo: Option<&str>) -> bool {
+        memo.is_some_and(ThorchainMemo::is_swap)
+    }
+}
 
 impl ThorChain<RpcClient> {
     pub fn new(rpc_provider: Arc<dyn RpcProvider>) -> Self {
@@ -156,27 +173,8 @@ where
     }
 
     async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
-        let status = self.swap_client.get_transaction_status(transaction_hash).await?;
-
-        let swap_status = status.observed_tx.swap_status();
-        let memo_parsed = ThorchainMemo::parse(&status.observed_tx.tx.memo);
-        let destination_chain = memo_parsed.as_ref().and_then(|m| m.destination_chain());
-
-        let destination_tx_hash = status
-            .observed_tx
-            .out_hashes
-            .as_ref()
-            .and_then(|hashes| hashes.iter().find(|h| *h != ZERO_HASH && !h.is_empty()).cloned());
-
-        let (to_chain, to_tx_hash) = destination_chain.map(|chain| (Some(chain), destination_tx_hash)).unwrap_or((None, None));
-
-        Ok(SwapResult {
-            status: swap_status,
-            from_chain: chain,
-            from_tx_hash: transaction_hash.to_string(),
-            to_chain,
-            to_tx_hash,
-        })
+        let response = self.swap_client.get_transaction_status(transaction_hash).await?;
+        Ok(swap_mapper::map_swap_result(&response, chain))
     }
 }
 
@@ -184,6 +182,7 @@ where
 mod swap_integration_tests {
     use super::*;
     use crate::{SwapperQuoteAsset, alien::reqwest_provider::NativeProvider, testkit::mock_quote};
+    use primitives::swap::SwapStatus;
     use std::sync::Arc;
 
     #[tokio::test]
@@ -242,24 +241,20 @@ mod swap_integration_tests {
     }
 
     #[tokio::test]
-    async fn test_get_swap_result() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        use primitives::swap::SwapStatus;
-
+    async fn test_thorchain_get_swap_result() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let provider = Arc::new(NativeProvider::default());
         let swapper = ThorChain::new(provider.clone());
 
-        // Dogecoin deposit tx: 324c16cf014cceca1b2e1c078417f736c9833197735b71a4e875bbb3b07b2fe4
         let tx_hash = "324c16cf014cceca1b2e1c078417f736c9833197735b71a4e875bbb3b07b2fe4";
-        let chain = Chain::Doge;
+        let result = swapper.get_swap_result(Chain::Doge, tx_hash).await?;
 
-        let result = swapper.get_swap_result(chain, tx_hash).await?;
-
-        println!("THORChain swap result: {:?}", result);
-        assert_eq!(result.from_chain, chain);
-        assert_eq!(result.from_tx_hash, tx_hash);
         assert_eq!(result.status, SwapStatus::Completed);
-        assert_eq!(result.to_chain, Some(Chain::Ethereum));
-        assert_eq!(result.to_tx_hash, Some("DC56C32556D2E518F67594B6A5F5BCB777484C0C3CF8940F5CA2E1B2DDC182E9".to_string()));
+
+        let metadata = result.metadata.unwrap();
+        assert_eq!(metadata.from_asset, Chain::Doge.as_asset_id());
+        assert!(!metadata.from_value.is_empty());
+        assert!(!metadata.to_value.is_empty());
+        assert_eq!(metadata.provider.unwrap(), "thorchain");
 
         Ok(())
     }

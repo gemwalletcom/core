@@ -9,7 +9,6 @@ pub struct ThorchainMemo {
 }
 
 impl ThorchainMemo {
-    /// Parse a THORChain memo string into structured data
     pub fn parse(memo: &str) -> Option<Self> {
         if memo.is_empty() {
             return None;
@@ -27,17 +26,21 @@ impl ThorchainMemo {
         })
     }
 
-    pub fn destination_chain(&self) -> Option<Chain> {
-        // Check if it's a token (contains '.')
-        if let Some(dot_pos) = self.asset.find('.') {
-            let chain_part = &self.asset[..dot_pos];
-            THORChainName::from_symbol(chain_part).map(|thorchain_name| thorchain_name.chain())
-        } else {
-            THORChainName::from_symbol(&self.asset).map(|thorchain_name| thorchain_name.chain())
-        }
+    pub fn is_swap(memo: &str) -> bool {
+        Self::parse(memo).is_some_and(|m| m.tx_type == "=" || m.tx_type == "s")
     }
 
-    #[allow(dead_code)]
+    pub fn destination_chain(&self) -> Option<Chain> {
+        let chain_part = match self.asset.find('.') {
+            Some(dot_pos) => &self.asset[..dot_pos],
+            None => &self.asset,
+        };
+        THORChainName::from_symbol(chain_part).map(|n| n.chain())
+    }
+}
+
+#[cfg(test)]
+impl ThorchainMemo {
     pub fn token_symbol(&self) -> Option<String> {
         self.asset.find('.').map(|dot_pos| self.asset[dot_pos + 1..].to_string())
     }
@@ -96,6 +99,16 @@ mod tests {
 
         assert_eq!(parsed.destination_chain(), Some(Chain::SmartChain));
         assert_eq!(parsed.token_symbol(), Some("USDT".to_string()));
+    }
+
+    #[test]
+    fn test_is_swap() {
+        assert!(ThorchainMemo::is_swap("=:ETH.USDT:0x858734a6353C9921a78fB3c937c8E20Ba6f36902:1635978e6/1/0"));
+        assert!(ThorchainMemo::is_swap("s:ETH:0x858734a6353C9921a78fB3c937c8E20Ba6f36902"));
+        assert!(ThorchainMemo::is_swap("=:BTC:bc1qaddress:0/1/0:affiliate:150"));
+        assert!(!ThorchainMemo::is_swap(""));
+        assert!(!ThorchainMemo::is_swap("WITHDRAW:ETH.ETH:100"));
+        assert!(!ThorchainMemo::is_swap("ADD:ETH.ETH:0x123"));
     }
 
     #[test]

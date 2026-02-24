@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use super::{AlienError, HttpMethod, Target};
 use primitives::{Chain, node_config::get_nodes_for_chain};
 
@@ -10,6 +12,7 @@ use reqwest::Client;
 pub struct NativeProvider {
     pub client: Client,
     debug: bool,
+    endpoints: HashMap<Chain, String>,
 }
 
 impl NativeProvider {
@@ -17,6 +20,15 @@ impl NativeProvider {
         Self {
             client: Client::new(),
             debug: true,
+            endpoints: HashMap::new(),
+        }
+    }
+
+    pub fn new_with_endpoints(endpoints: HashMap<Chain, String>) -> Self {
+        Self {
+            client: Client::new(),
+            debug: false,
+            endpoints,
         }
     }
 
@@ -37,6 +49,9 @@ impl GenericRpcProvider for NativeProvider {
     type Error = AlienError;
 
     fn get_endpoint(&self, chain: Chain) -> Result<String, Self::Error> {
+        if let Some(url) = self.endpoints.get(&chain) {
+            return Ok(url.clone());
+        }
         let nodes = get_nodes_for_chain(chain);
         if nodes.is_empty() {
             return Err(Self::Error::response_error(format!("not supported chain: {chain:?}")));

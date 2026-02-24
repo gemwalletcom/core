@@ -91,6 +91,7 @@ pub enum TransactionMetadata {
 pub enum TransactionState {
     Pending,
     Confirmed,
+    InTransit,
     Failed,
     Reverted,
 }

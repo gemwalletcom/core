@@ -1,6 +1,7 @@
 mod alien;
 mod approval;
 mod chainlink;
+pub mod cross_chain;
 mod eth_address;
 mod swapper_trait;
 
@@ -54,3 +55,5 @@ pub type SwapperSlippage = primitives::swap::Slippage;
 pub type SwapperSlippageMode = primitives::swap::SlippageMode;
 pub type SwapperQuoteData = primitives::swap::SwapQuoteData;
 pub type SwapperSwapStatus = primitives::swap::SwapStatus;
+pub type SwapperTransactionSwapMetadata = primitives::TransactionSwapMetadata;
+pub type SwapperSwapResult = primitives::swap::SwapResult;

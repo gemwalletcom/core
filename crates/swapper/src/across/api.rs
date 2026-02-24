@@ -39,7 +39,7 @@ impl DepositStatus {
     pub fn swap_status(&self) -> SwapStatus {
         match self.status.as_str() {
             "filled" => SwapStatus::Completed,
-            "refunded" => SwapStatus::Refunded,
+            "refunded" => SwapStatus::Failed,
             _ => SwapStatus::Pending,
         }
     }
