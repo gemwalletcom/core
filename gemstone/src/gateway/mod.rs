@@ -32,7 +32,7 @@ use gem_xrp::rpc::client::XRPClient;
 use std::future::Future;
 use std::sync::Arc;
 
-use primitives::{BitcoinChain, Chain, ChartPeriod, EVMChain, ScanAddressTarget, ScanTransactionPayload, TransactionPreloadInput, chain_cosmos::CosmosChain};
+use primitives::{AssetId, BitcoinChain, Chain, ChartPeriod, EVMChain, ScanAddressTarget, ScanTransactionPayload, TransactionPreloadInput, chain_cosmos::CosmosChain};
 
 #[uniffi::export(with_foreign)]
 #[async_trait::async_trait]
@@ -303,17 +303,17 @@ impl GemGateway {
         Ok(vec![])
     }
 
-    pub async fn get_earn_data(&self, _chain: Chain, _asset_id: String, _address: String, _value: String, _earn_type: GemEarnType) -> Result<GemEarnData, GatewayError> {
+    pub async fn get_earn_data(&self, _asset_id: AssetId, _address: String, _value: String, _earn_type: GemEarnType) -> Result<GemEarnData, GatewayError> {
         Err(GatewayError::NetworkError {
             msg: "Earn provider not available".to_string(),
         })
     }
 
-    pub async fn get_earn_providers(&self, _asset_id: String) -> Result<Vec<GemDelegationValidator>, GatewayError> {
-        Ok(vec![])
+    pub fn get_earn_providers(&self, _asset_id: AssetId) -> Vec<GemDelegationValidator> {
+        vec![]
     }
 
-    pub async fn get_earn_positions(&self, _chain: Chain, _address: String) -> Result<Vec<GemDelegationBase>, GatewayError> {
+    pub async fn get_earn_positions(&self, _chain: Chain, _address: String, _asset_ids: Vec<AssetId>) -> Result<Vec<GemDelegationBase>, GatewayError> {
         Ok(vec![])
     }
 
