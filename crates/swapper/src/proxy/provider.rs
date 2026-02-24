@@ -239,7 +239,8 @@ where
     async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
         match self.provider.id {
             SwapperProvider::Mayan => {
-                let client = MayanExplorer::new(self.rpc_provider.clone());
+                let base_url = get_swap_api_url("mayan/explorer");
+                let client = MayanExplorer::new(base_url, self.rpc_provider.clone());
                 let result = client.get_transaction_status(transaction_hash).await?;
                 let to_chain = result.dest_chain.parse::<u16>().ok().and_then(wormhole_chain_id_to_chain);
 
