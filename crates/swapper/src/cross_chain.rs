@@ -79,4 +79,13 @@ mod tests {
             Some(SwapperProvider::Thorchain),
         );
     }
+
+    #[test]
+    fn test_non_evm_chains_no_panic() {
+        assert!(!is_cross_chain_swap(&Chain::Bitcoin, "bc1qaddress", None));
+        assert!(!is_cross_chain_swap(&Chain::Solana, "So1111111111111111111111111111111111111111", None));
+        assert!(!is_cross_chain_swap(&Chain::Ton, "EQAddress", None));
+        assert!(!is_cross_chain_swap(&Chain::Cosmos, "cosmos1address", None));
+        assert!(!is_cross_chain_swap(&Chain::Sui, "0xaddress", None));
+    }
 }

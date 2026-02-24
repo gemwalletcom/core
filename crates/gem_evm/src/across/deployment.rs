@@ -23,70 +23,26 @@ pub struct AssetMapping {
 
 impl AcrossDeployment {
     pub fn deployment_by_chain(chain: &Chain) -> Option<Self> {
-        let chain_id: u32 = chain.network_id().parse().unwrap();
-        match chain {
-            Chain::Ethereum => Some(Self {
-                chain_id,
-                spoke_pool: "0x5c7BCd6E7De5423a257D81B442095A1a6ced35C5",
-            }),
-            Chain::Arbitrum => Some(Self {
-                chain_id,
-                spoke_pool: "0xe35e9842fceaca96570b734083f4a58e8f7c5f2a",
-            }),
-            Chain::Base => Some(Self {
-                chain_id,
-                spoke_pool: "0x09aea4b2242abC8bb4BB78D537A67a245A7bEC64",
-            }),
-            Chain::Blast => Some(Self {
-                chain_id,
-                spoke_pool: "0x2D509190Ed0172ba588407D4c2df918F955Cc6E1",
-            }),
-            Chain::Linea => Some(Self {
-                chain_id,
-                spoke_pool: "0x7E63A5f1a8F0B4d0934B2f2327DAED3F6bb2ee75",
-            }),
-            Chain::Optimism => Some(Self {
-                chain_id,
-                spoke_pool: "0x6f26Bf09B1C792e3228e5467807a900A503c0281",
-            }),
-            Chain::Polygon => Some(Self {
-                chain_id,
-                spoke_pool: "0x9295ee1d8C5b022Be115A2AD3c30C72E34e7F096",
-            }),
-            Chain::World => Some(Self {
-                chain_id,
-                spoke_pool: "0x09aea4b2242abC8bb4BB78D537A67a245A7bEC64",
-            }),
-            Chain::ZkSync => Some(Self {
-                chain_id,
-                spoke_pool: "0xE0B015E54d54fc84a6cB9B666099c46adE9335FF",
-            }),
-            Chain::Ink => Some(Self {
-                chain_id,
-                spoke_pool: "0xeF684C38F94F48775959ECf2012D7E864ffb9dd4",
-            }),
-            Chain::Unichain => Some(Self {
-                chain_id,
-                spoke_pool: "0x09aea4b2242abC8bb4BB78D537A67a245A7bEC64",
-            }),
-            Chain::Monad => Some(Self {
-                chain_id,
-                spoke_pool: "0xd2ecb3afe598b746F8123CaE365a598DA831A449",
-            }),
-            Chain::SmartChain => Some(Self {
-                chain_id,
-                spoke_pool: "0x4e8E101924eDE233C13e2D8622DC8aED2872d505",
-            }),
-            Chain::Hyperliquid => Some(Self {
-                chain_id,
-                spoke_pool: "0x35E63eA3eb0fb7A3bc543C71FB66412e1F6B0E04",
-            }),
-            Chain::Plasma => Some(Self {
-                chain_id,
-                spoke_pool: "0x50039fAEfebef707cFD94D6d462fE6D10B39207a",
-            }),
-            _ => None,
-        }
+        let chain_id: u32 = chain.network_id().parse().ok()?;
+        let spoke_pool = match chain {
+            Chain::Ethereum => "0x5c7BCd6E7De5423a257D81B442095A1a6ced35C5",
+            Chain::Arbitrum => "0xe35e9842fceaca96570b734083f4a58e8f7c5f2a",
+            Chain::Base => "0x09aea4b2242abC8bb4BB78D537A67a245A7bEC64",
+            Chain::Blast => "0x2D509190Ed0172ba588407D4c2df918F955Cc6E1",
+            Chain::Linea => "0x7E63A5f1a8F0B4d0934B2f2327DAED3F6bb2ee75",
+            Chain::Optimism => "0x6f26Bf09B1C792e3228e5467807a900A503c0281",
+            Chain::Polygon => "0x9295ee1d8C5b022Be115A2AD3c30C72E34e7F096",
+            Chain::World => "0x09aea4b2242abC8bb4BB78D537A67a245A7bEC64",
+            Chain::ZkSync => "0xE0B015E54d54fc84a6cB9B666099c46adE9335FF",
+            Chain::Ink => "0xeF684C38F94F48775959ECf2012D7E864ffb9dd4",
+            Chain::Unichain => "0x09aea4b2242abC8bb4BB78D537A67a245A7bEC64",
+            Chain::Monad => "0xd2ecb3afe598b746F8123CaE365a598DA831A449",
+            Chain::SmartChain => "0x4e8E101924eDE233C13e2D8622DC8aED2872d505",
+            Chain::Hyperliquid => "0x35E63eA3eb0fb7A3bc543C71FB66412e1F6B0E04",
+            Chain::Plasma => "0x50039fAEfebef707cFD94D6d462fE6D10B39207a",
+            _ => return None,
+        };
+        Some(Self { chain_id, spoke_pool })
     }
 
     pub fn multicall_handler(&self) -> String {
