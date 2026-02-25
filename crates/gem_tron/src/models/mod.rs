@@ -54,6 +54,7 @@ pub struct ContractRet {
 pub struct TransactionData {
     pub contract: Vec<Contract>,
     pub fee_limit: Option<u64>,
+    pub data: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

@@ -67,6 +67,7 @@ pub fn map_transaction(chain: Chain, transaction: TronTransaction, receipt: Tran
         let fee = receipt.fee.unwrap_or_default().to_string();
         let created_at = DateTime::from_timestamp_millis(receipt.block_time_stamp)?;
 
+        let memo = transaction.raw_data.data.as_deref().map(decode_hex_message);
         let contract_value = value.parameter.value;
         let from = contract_value.owner_address.unwrap_or_default();
 
@@ -107,7 +108,7 @@ pub fn map_transaction(chain: Chain, transaction: TronTransaction, receipt: Tran
                 fee,
                 chain.as_asset_id(),
                 amount,
-                None,
+                memo.clone(),
                 metadata,
                 created_at,
             );
@@ -139,7 +140,7 @@ pub fn map_transaction(chain: Chain, transaction: TronTransaction, receipt: Tran
                 fee,
                 chain.as_asset_id(),
                 value.to_string(),
-                None,
+                memo,
                 None,
                 created_at,
             );
@@ -326,5 +327,25 @@ mod tests {
         let tx = result.unwrap();
         assert_eq!(tx.transaction_type, TransactionType::Transfer);
         assert_ne!(tx.from, tx.to);
+    }
+
+    #[test]
+    fn test_map_transaction_thorchain_swap() {
+        let transaction: TronTransaction = serde_json::from_str(include_str!("../../testdata/transaction_thorchain_swap.json")).unwrap();
+        let receipt = TransactionReceiptData {
+            id: "test_id".to_string(),
+            fee: Some(1000),
+            block_number: 12345,
+            block_time_stamp: 1771951038000,
+            receipt: TransactionReceipt {
+                result: Some("SUCCESS".to_string()),
+            },
+            log: None,
+        };
+
+        let tx = map_transaction(Chain::Tron, transaction, receipt).unwrap();
+        assert_eq!(tx.transaction_type, TransactionType::Transfer);
+        assert_eq!(tx.value, "200000000");
+        assert_eq!(tx.memo.as_deref(), Some("=:TRON.USDT:TNAwd1WFe7GHTxovGU9MeT6mi3J4KAZMvP:0/1/0:g1:50"));
     }
 }

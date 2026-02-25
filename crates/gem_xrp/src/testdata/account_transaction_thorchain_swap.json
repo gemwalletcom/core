@@ -1,0 +1,39 @@
+{
+  "result": {
+    "account": "r3vqg3dpN7uEafvpqwxaTLBq8mkAzZtTxp",
+    "ledger_index_min": 32570,
+    "ledger_index_max": 102363477,
+    "transactions": [
+      {
+        "meta": {
+          "AffectedNodes": [],
+          "TransactionIndex": 1,
+          "TransactionResult": "tesSUCCESS",
+          "delivered_amount": "30000000"
+        },
+        "tx_json": {
+          "Account": "r3vqg3dpN7uEafvpqwxaTLBq8mkAzZtTxp",
+          "DeliverMax": "30000000",
+          "Destination": "rwWikcVRNqfMxpMPux5edYfv8DRgvT8Wsu",
+          "Fee": "5000",
+          "LastLedgerSequence": 102363477,
+          "Memos": [
+            {
+              "Memo": {
+                "MemoData": "3D3A623A62633171337977347439786C7171393938327168767039356C6773363078726A646B6D6A647461306A6E3A302F312F303A67313A3530"
+              }
+            }
+          ],
+          "Sequence": 102357116,
+          "TransactionType": "Payment",
+          "date": 824865440,
+          "ledger_index": 102363466
+        },
+        "ledger_index": 102363466,
+        "hash": "7CF740EDAB5FB094089766DF372228E27C546DC2D946B0FC78CFB1B018BBA1A4",
+        "validated": true
+      }
+    ],
+    "validated": true
+  }
+}

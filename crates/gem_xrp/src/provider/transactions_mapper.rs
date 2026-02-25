@@ -1,4 +1,4 @@
-use crate::models::rpc::{AccountLedger, AccountLedgerTransaction, AccountObject, Amount, Ledger, Transaction as XrpTransaction, TransactionBroadcast};
+use crate::models::rpc::{AccountLedger, AccountLedgerTransaction, AccountObject, Amount, Ledger, Transaction as XrpTransaction, TransactionBroadcast, TransactionMemo};
 use crate::{RESULT_SUCCESS, TRANSACTION_TYPE_PAYMENT, XRP_DEFAULT_ASSET_DECIMALS, XRP_EPOCH_OFFSET_SECONDS};
 use chrono::DateTime;
 use primitives::{Asset, AssetId, AssetType, Transaction, TransactionState, TransactionType, chain::Chain};
@@ -54,13 +54,18 @@ fn map_transaction_common(
     destination: Option<String>,
     amount: Option<Amount>,
     destination_tag: Option<i64>,
+    memos: Option<Vec<TransactionMemo>>,
     fee: Option<String>,
     transaction_type: String,
     meta_result: String,
     timestamp: i64,
 ) -> Option<Transaction> {
     if transaction_type == TRANSACTION_TYPE_PAYMENT {
-        let memo = destination_tag.map(|x| x.to_string());
+        let memo = memos
+            .as_ref()
+            .and_then(|m| m.first())
+            .and_then(|m| m.decoded_data())
+            .or_else(|| destination_tag.map(|x| x.to_string()));
         let value = amount.clone()?.as_value_string()?;
         let token_id = amount?.token_id();
         let asset_id = AssetId::from(chain, token_id);
@@ -99,6 +104,7 @@ pub fn map_account_transaction(chain: Chain, transaction: AccountLedgerTransacti
         transaction.tx_json.destination,
         transaction.tx_json.amount,
         transaction.tx_json.destination_tag,
+        transaction.tx_json.memos,
         transaction.tx_json.fee,
         transaction.tx_json.transaction_type,
         transaction.meta.result,
@@ -114,6 +120,7 @@ pub fn map_block_transaction(chain: Chain, transaction: XrpTransaction, close_ti
         transaction.destination,
         transaction.amount,
         transaction.destination_tag,
+        transaction.memos,
         transaction.fee,
         transaction.transaction_type,
         transaction.meta.result,
@@ -190,6 +197,20 @@ mod tests {
         );
 
         assert_eq!(transactions.first().unwrap(), &expected_tx);
+    }
+
+    #[test]
+    fn test_map_account_transaction_thorchain_swap() {
+        let ledger = serde_json::from_str::<JsonRpcResult<AccountLedger>>(include_str!("../testdata/account_transaction_thorchain_swap.json"))
+            .unwrap()
+            .take()
+            .unwrap();
+        let transactions = map_account_transactions(Chain::Xrp, ledger);
+
+        let tx = transactions.first().unwrap();
+        assert_eq!(tx.transaction_type, TransactionType::Transfer);
+        assert_eq!(tx.value, "30000000");
+        assert_eq!(tx.memo.as_deref(), Some("=:b:bc1q3yw4t9xlqq9982qhvp95lgs60xrjdkmjdta0jn:0/1/0:g1:50"));
     }
 
     #[test]

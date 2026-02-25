@@ -161,6 +161,14 @@ pub struct TransactionMemoData {
     pub data: Option<String>,
 }
 
+impl TransactionMemo {
+    pub fn decoded_data(&self) -> Option<String> {
+        let data = self.memo.data.as_ref()?;
+        let bytes = hex::decode(data).ok()?;
+        String::from_utf8(bytes).ok()
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AccountInfo {
     #[serde(rename = "Balance", deserialize_with = "deserialize_u64_from_str")]
