@@ -9,12 +9,14 @@ pub fn get_validators() -> HashMap<String, Vec<String>> {
             vec![
                 "cosmosvaloper1tflk30mq5vgqjdly92kkhhq3raev2hnz6eete3".to_string(), // everstake
                 "cosmosvaloper1fhr7e04ct0zslmkzqt9smakg3sxrdve6ulclj2".to_string(), // stakin
+                "cosmosvaloper1hjadhj9nqzpye2vkmkz4thahhd0z8dh3udhq74".to_string(), // stakeshark
             ],
         ),
         (
             Chain::Osmosis.to_string(),
             vec![
                 "osmovaloper1wgmdcxzp49vjgrqusgcagq6qefk4mtjv5c0k7q".to_string(), // everstake
+                "osmovaloper1e893vrtzzp6zyzs80tqg52j2vdckzqrdjrjva5".to_string(), // stakeshark
             ],
         ),
         (
@@ -47,9 +49,10 @@ pub fn get_validators() -> HashMap<String, Vec<String>> {
         (
             Chain::Solana.to_string(),
             vec![
-                "9hQqNe3DQTiwhspatewA8EXhz12e6sq5UJVJ2qNRwnTf".to_string(), // stakeshark
                 "9QU2QSxhb24FUX3Tu2FpczXjpK3VYrvRudywSZaM29mF".to_string(), // everstake
                 "4PsiLMyoUQ7QRn1FFiFCvej4hsUTFzfvJnyN4bj1tmSN".to_string(), // stakin
+                "9hQqNe3DQTiwhspatewA8EXhz12e6sq5UJVJ2qNRwnTf".to_string(), // stakeshark
+
             ],
         ),
         (
