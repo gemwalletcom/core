@@ -53,7 +53,7 @@ impl GemSwapper {
         self.inner.fetch_quote_data(quote, data).await
     }
 
-    pub async fn get_swap_result(&self, chain: Chain, swap_provider: SwapperProvider, transaction_hash: &str) -> Result<SwapperSwapResult, SwapperError> {
-        self.inner.get_swap_result(chain, swap_provider, transaction_hash).await
+    pub async fn get_swap_result(&self, chain: Chain, provider: SwapperProvider, transaction_hash: &str) -> Result<SwapperSwapResult, SwapperError> {
+        self.inner.get_swap_result(chain, provider, transaction_hash).await
     }
 }

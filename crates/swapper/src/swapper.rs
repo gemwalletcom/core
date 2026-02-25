@@ -228,9 +228,9 @@ impl GemSwapper {
         Ok(quote_data)
     }
 
-    pub async fn get_swap_result(&self, chain: Chain, swap_provider: SwapperProvider, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
-        let provider = self.get_swapper_by_provider(&swap_provider)?;
-        provider.get_swap_result(chain, transaction_hash).await
+    pub async fn get_swap_result(&self, chain: Chain, provider: SwapperProvider, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
+        let swapper = self.get_swapper_by_provider(&provider)?;
+        swapper.get_swap_result(chain, transaction_hash).await
     }
 }
 
