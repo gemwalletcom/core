@@ -16,10 +16,7 @@ fn set_cross_chain_in_transit(transactions: Vec<Transaction>) -> Vec<Transaction
     transactions
         .into_iter()
         .map(|mut transaction| {
-            if transaction.state == TransactionState::Confirmed
-                && transaction.transaction_type != TransactionType::Swap
-                && cross_chain::is_cross_chain_swap(&transaction)
-            {
+            if transaction.state == TransactionState::Confirmed && transaction.transaction_type != TransactionType::Swap && cross_chain::is_cross_chain_swap(&transaction) {
                 transaction.state = TransactionState::InTransit;
             }
             transaction
@@ -50,7 +47,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
 
     async fn process(&self, payload: TransactionsPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let chain = payload.chain;
-        let transactions = payload.transactions;
+        let transactions = set_cross_chain_in_transit(payload.transactions);
         let is_notify_devices = !payload.blocks.is_empty();
 
         let min_amount = self.config_cacher.get_f64(ConfigKey::TransactionsMinAmountUsd)?;
@@ -118,7 +115,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
                 let is_outdated = self
                     .config
                     .is_transaction_outdated(transaction.created_at.naive_utc(), chain, transaction.transaction_type.clone());
-                let should_notify = !is_outdated && is_notify_devices;
+                let should_notify = !is_outdated && is_notify_devices && transaction.state != TransactionState::InTransit;
 
                 if should_notify {
                     let assets: Vec<primitives::Asset> = transaction_asset_ids
@@ -186,7 +183,6 @@ impl StoreTransactionsConsumer {
             return Ok(0);
         }
 
-        let transactions = set_cross_chain_in_transit(transactions);
         for chunk in transactions.chunks(TRANSACTION_BATCH_SIZE) {
             self.database.transactions()?.add_transactions(chunk.to_vec())?;
         }

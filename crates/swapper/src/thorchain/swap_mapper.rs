@@ -8,9 +8,14 @@ use crate::{SwapResult, SwapperProvider};
 
 pub fn map_swap_result(response: &TransactionStatus, chain: Chain) -> SwapResult {
     let status = response.swap_status();
-    let memo = ThorchainMemo::parse(&response.tx.memo);
+
+    let Some(ref tx) = response.tx else {
+        return SwapResult { status, metadata: None };
+    };
+
+    let memo = ThorchainMemo::parse(&tx.memo);
     let destination_chain = memo.as_ref().and_then(|m| m.destination_chain());
-    let from_value = response.tx.coins.first().and_then(|c| c.native_value(chain)).unwrap_or_default();
+    let from_value = tx.coins.first().and_then(|c| c.native_value(chain)).unwrap_or_default();
 
     let out_transaction = response.out_txs.as_ref().and_then(|out_txs| {
         let chain_name = destination_chain.and_then(|c| THORChainName::from_chain(&c)).map(|n| n.long_name().to_string());

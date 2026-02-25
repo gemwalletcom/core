@@ -35,7 +35,7 @@ pub struct QuoteFees {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionStatus {
-    pub tx: TransactionStatusTx,
+    pub tx: Option<TransactionStatusTx>,
     pub stages: TransactionStages,
     pub out_txs: Option<Vec<TransactionStatusOutTx>>,
 }
@@ -68,7 +68,7 @@ impl TransactionCoin {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionStages {
-    pub swap_status: TransactionSwapStage,
+    pub swap_status: Option<TransactionSwapStage>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -86,12 +86,9 @@ pub struct TransactionStatusOutTx {
 impl TransactionStatus {
     pub fn swap_status(&self) -> SwapStatus {
         let has_output = self.out_txs.as_ref().is_some_and(|txs| txs.iter().any(|tx| tx.id != ZERO_HASH && !tx.id.is_empty()));
+        let swap_done = self.stages.swap_status.as_ref().is_some_and(|s| !s.pending);
 
-        if !self.stages.swap_status.pending && has_output {
-            SwapStatus::Completed
-        } else {
-            SwapStatus::Pending
-        }
+        if swap_done && has_output { SwapStatus::Completed } else { SwapStatus::Pending }
     }
 }
 
@@ -147,13 +144,14 @@ mod tests {
     #[test]
     fn test_tx_status_completed_ltc_to_tron() {
         let status: TransactionStatus = serde_json::from_str(include_str!("testdata/tx_status_ltc_to_tron.json")).unwrap();
-
         assert_eq!(status.swap_status(), SwapStatus::Completed);
-        assert_eq!(status.tx.memo, "=:TRON.USDT:TMazs4f2ybMjGf7WXAx4uiRf2T7XtMC6qt:0/1/0:g1:50");
-        assert_eq!(status.tx.coins[0].amount, "160661010");
+
+        let tx = status.tx.unwrap();
+        assert_eq!(tx.memo, "=:TRON.USDT:TMazs4f2ybMjGf7WXAx4uiRf2T7XtMC6qt:0/1/0:g1:50");
+        assert_eq!(tx.coins[0].amount, "160661010");
 
         let out_txs = status.out_txs.unwrap();
-        let destination = out_txs.iter().find(|tx| tx.id != ZERO_HASH && !tx.id.is_empty()).unwrap();
+        let destination = out_txs.iter().find(|t| t.id != ZERO_HASH && !t.id.is_empty()).unwrap();
         assert_eq!(destination.chain, "TRON");
         assert_eq!(destination.id, "544827704F9AD53F2D33209F73F7CC39C3AA5068481D87316ED189B322784222");
         assert_eq!(destination.coins[0].amount, "7915842900");
@@ -162,21 +160,23 @@ mod tests {
     #[test]
     fn test_tx_status_pending_btc_to_tron() {
         let status: TransactionStatus = serde_json::from_str(include_str!("testdata/tx_status_btc_to_tron_pending.json")).unwrap();
-
         assert_eq!(status.swap_status(), SwapStatus::Pending);
-        assert_eq!(status.tx.coins[0].amount, "23516479");
+
+        let tx = status.tx.unwrap();
+        assert_eq!(tx.coins[0].amount, "23516479");
         assert!(status.out_txs.is_none());
     }
 
     #[test]
     fn test_tx_status_completed_tcy_to_eth_usdt() {
         let status: TransactionStatus = serde_json::from_str(include_str!("testdata/tx_status_tcy_to_eth_usdt.json")).unwrap();
-
         assert_eq!(status.swap_status(), SwapStatus::Completed);
-        assert_eq!(status.tx.coins[0].amount, "11921829956942");
+
+        let tx = status.tx.unwrap();
+        assert_eq!(tx.coins[0].amount, "11921829956942");
 
         let out_txs = status.out_txs.unwrap();
-        let destination = out_txs.iter().find(|tx| tx.id != ZERO_HASH && !tx.id.is_empty()).unwrap();
+        let destination = out_txs.iter().find(|t| t.id != ZERO_HASH && !t.id.is_empty()).unwrap();
         assert_eq!(destination.chain, "ETH");
         assert_eq!(destination.id, "1D8300FDC5A47ACA3E7D59791180229AE314C86ABA32C14E4975464491865576");
         assert_eq!(destination.coins[0].amount, "380962656200");
@@ -203,17 +203,43 @@ mod tests {
 
     #[test]
     fn test_native_value() {
-        let native = TransactionCoin { asset: "LTC.LTC".to_string(), amount: "160661010".to_string(), decimals: None };
+        let native = TransactionCoin {
+            asset: "LTC.LTC".to_string(),
+            amount: "160661010".to_string(),
+            decimals: None,
+        };
         assert_eq!(native.native_value(Chain::Litecoin), Some("160661010".to_string()));
 
-        let native_18 = TransactionCoin { asset: "ETH.ETH".to_string(), amount: "2509674".to_string(), decimals: None };
+        let native_18 = TransactionCoin {
+            asset: "ETH.ETH".to_string(),
+            amount: "2509674".to_string(),
+            decimals: None,
+        };
         assert_eq!(native_18.native_value(Chain::Ethereum), Some("25096740000000000".to_string()));
 
-        let token_with_decimals = TransactionCoin { asset: "ETH.USDT-0xDAC17F958D2ee523a2206206994597C13D831ec7".to_string(), amount: "380962656200".to_string(), decimals: Some(6) };
+        let token_with_decimals = TransactionCoin {
+            asset: "ETH.USDT-0xDAC17F958D2ee523a2206206994597C13D831ec7".to_string(),
+            amount: "380962656200".to_string(),
+            decimals: Some(6),
+        };
         assert_eq!(token_with_decimals.native_value(Chain::Ethereum), Some("3809626562".to_string()));
 
-        let token_no_decimals = TransactionCoin { asset: "ETH.USDT-0xDAC17F958D2ee523a2206206994597C13D831ec7".to_string(), amount: "380962656200".to_string(), decimals: None };
+        let token_no_decimals = TransactionCoin {
+            asset: "ETH.USDT-0xDAC17F958D2ee523a2206206994597C13D831ec7".to_string(),
+            amount: "380962656200".to_string(),
+            decimals: None,
+        };
         assert_eq!(token_no_decimals.native_value(Chain::Ethereum), None);
+    }
+
+    #[test]
+    fn test_tx_status_not_observed() {
+        let json = r#"{"stages":{"inbound_observed":{"started":false,"final_count":0,"completed":false}}}"#;
+        let status: TransactionStatus = serde_json::from_str(json).unwrap();
+
+        assert_eq!(status.swap_status(), SwapStatus::Pending);
+        assert!(status.tx.is_none());
+        assert!(status.out_txs.is_none());
     }
 
     #[test]

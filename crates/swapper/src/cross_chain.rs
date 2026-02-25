@@ -131,6 +131,17 @@ mod tests {
     }
 
     #[test]
+    fn test_thorchain_evm_approval_not_detected() {
+        let transaction = Transaction {
+            asset_id: Chain::SmartChain.as_asset_id(),
+            transaction_type: primitives::TransactionType::TokenApproval,
+            to: "0xb30ec53f98ff5947ede720d32ac2da7e52a5f56b".to_string(),
+            ..Transaction::mock()
+        };
+        assert!(swap_provider(&transaction).is_none());
+    }
+
+    #[test]
     fn test_thorchain_evm_data_detected() {
         let data = "0x3d3a623a626331713965797870616730777875386a74756b7a747a6b636876637a65793039616134397632326c353a302f312f303a67313a3530";
         let transaction = Transaction {

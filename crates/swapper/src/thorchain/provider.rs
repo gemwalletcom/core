@@ -25,14 +25,8 @@ impl ThorchainCrossChain {
             _ => None,
         }
     }
-}
 
-impl crate::cross_chain::CrossChainProvider for ThorchainCrossChain {
-    fn provider(&self) -> SwapperProvider {
-        SwapperProvider::Thorchain
-    }
-
-    fn is_swap(&self, transaction: &primitives::Transaction) -> bool {
+    fn has_swap_memo(transaction: &primitives::Transaction) -> bool {
         if transaction.memo.as_deref().is_some_and(ThorchainMemo::is_swap) {
             return true;
         }
@@ -41,8 +35,21 @@ impl crate::cross_chain::CrossChainProvider for ThorchainCrossChain {
         {
             return true;
         }
+        false
+    }
+}
+
+impl crate::cross_chain::CrossChainProvider for ThorchainCrossChain {
+    fn provider(&self) -> SwapperProvider {
+        SwapperProvider::Thorchain
+    }
+
+    fn is_swap(&self, transaction: &primitives::Transaction) -> bool {
+        if Self::has_swap_memo(transaction) {
+            return true;
+        }
         if let Some(router) = Self::router_address(&transaction.asset_id.chain) {
-            return router.eq_ignore_ascii_case(&transaction.to);
+            return router.eq_ignore_ascii_case(&transaction.to) && transaction.transaction_type == primitives::TransactionType::Transfer;
         }
         false
     }
