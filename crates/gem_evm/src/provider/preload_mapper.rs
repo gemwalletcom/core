@@ -149,7 +149,7 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
             if let Some(approval) = &earn_data.approval {
                 Ok(TransactionParams::new(approval.token.clone(), encode_erc20_approve(&approval.spender)?, BigInt::from(0)))
             } else {
-                Ok(TransactionParams::new(earn_data.contract_address.clone(), hex::decode(&earn_data.call_data)?, value))
+                Ok(TransactionParams::new(earn_data.contract_address.clone(), primitives::decode_hex(&earn_data.call_data)?, BigInt::from(0)))
             }
         }
         _ => Err("Unsupported transfer type".into()),
