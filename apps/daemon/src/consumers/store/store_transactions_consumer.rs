@@ -2,8 +2,8 @@ use std::collections::HashSet;
 use std::{collections::HashMap, error::Error};
 
 use async_trait::async_trait;
-use primitives::{AssetAddress, AssetIdVecExt, ConfigKey, Transaction, TransactionId, TransactionState, TransactionType, WalletId};
-use storage::{AssetsAddressesRepository, AssetsRepository, ConfigCacher, Database, TransactionsRepository, WalletsRepository};
+use primitives::{AssetAddress, AssetIdVecExt, Transaction, TransactionId, TransactionState, TransactionType, WalletId};
+use storage::{AssetsAddressesRepository, AssetsRepository, Database, TransactionsRepository, WalletsRepository};
 use streamer::{AssetId, DeviceStreamEvent, DeviceStreamPayload, NotificationsPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
 use swapper::cross_chain;
 
@@ -26,7 +26,6 @@ fn set_cross_chain_in_transit(transactions: Vec<Transaction>) -> Vec<Transaction
 
 pub struct StoreTransactionsConsumer {
     pub database: Database,
-    pub config_cacher: ConfigCacher,
     pub stream_producer: StreamProducer,
     pub pusher: Pusher,
     pub config: StoreTransactionsConsumerConfig,
@@ -50,7 +49,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
         let transactions = set_cross_chain_in_transit(payload.transactions);
         let is_notify_devices = !payload.blocks.is_empty();
 
-        let min_amount = self.config_cacher.get_f64(ConfigKey::TransactionsMinAmountUsd)?;
+        let min_amount = self.config.min_amount_usd;
 
         let addresses: Vec<_> = transactions.iter().flat_map(|tx| tx.addresses()).collect::<HashSet<_>>().into_iter().collect();
         let subscriptions = self.database.wallets()?.get_subscriptions_by_chain_addresses(chain, addresses)?;
@@ -112,10 +111,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
                 txn_ids.insert(transaction.id.clone());
                 asset_ids.extend(transaction_asset_ids.iter().cloned());
 
-                let is_outdated = self
-                    .config
-                    .is_transaction_outdated(transaction.created_at.naive_utc(), chain, transaction.transaction_type.clone());
-                let should_notify = !is_outdated && is_notify_devices && transaction.state != TransactionState::InTransit;
+                let should_notify = self.config.should_notify_transaction(transaction, is_notify_devices);
 
                 if should_notify {
                     let assets: Vec<primitives::Asset> = transaction_asset_ids

@@ -2,12 +2,13 @@ use std::time::Duration;
 
 use chrono::NaiveDateTime;
 use number_formatter::BigNumberFormatter;
-use primitives::{Asset, Chain, Price, Transaction, TransactionType};
+use primitives::{Asset, Chain, Price, Transaction, TransactionState, TransactionType};
 
 pub struct StoreTransactionsConsumerConfig {
     pub swap_outdated_timeout: Duration,
     pub outdated_block_count: u64,
     pub outdated_min_timeout: Duration,
+    pub min_amount_usd: f64,
 }
 
 impl StoreTransactionsConsumerConfig {
@@ -22,6 +23,12 @@ impl StoreTransactionsConsumerConfig {
         }
         let block_time_secs = chain.block_time() as u64 / 1000;
         Duration::from_secs(block_time_secs * self.outdated_block_count).max(self.outdated_min_timeout)
+    }
+
+    pub fn should_notify_transaction(&self, transaction: &Transaction, is_notify_devices: bool) -> bool {
+        is_notify_devices
+            && transaction.state != TransactionState::InTransit
+            && !self.is_transaction_outdated(transaction.created_at.naive_utc(), transaction.asset_id.chain, transaction.transaction_type.clone())
     }
 
     pub fn is_transaction_insufficient_amount(&self, transaction: &Transaction, asset: &Asset, price: Option<Price>, min_amount: f64) -> bool {
@@ -46,6 +53,7 @@ mod tests {
                 swap_outdated_timeout: Duration::from_secs(7_200),
                 outdated_block_count: 12,
                 outdated_min_timeout: Duration::from_secs(900),
+                min_amount_usd: 0.01,
             }
         }
     }
@@ -119,5 +127,28 @@ mod tests {
         for (transaction, asset, price, min_amount, expected) in test_cases {
             assert_eq!(config.is_transaction_insufficient_amount(&transaction, asset, price, min_amount), expected);
         }
+    }
+
+    #[test]
+    fn test_should_notify_transaction() {
+        let config = StoreTransactionsConsumerConfig::mock();
+
+        assert!(config.should_notify_transaction(&Transaction::mock(), true));
+    }
+
+    #[test]
+    fn test_should_notify_transaction_in_transit() {
+        let config = StoreTransactionsConsumerConfig::mock();
+        let tx = Transaction {
+            state: TransactionState::InTransit,
+            ..Transaction::mock()
+        };
+        assert!(!config.should_notify_transaction(&tx, true));
+    }
+
+    #[test]
+    fn test_should_notify_transaction_no_devices() {
+        let config = StoreTransactionsConsumerConfig::mock();
+        assert!(!config.should_notify_transaction(&Transaction::mock(), false));
     }
 }
