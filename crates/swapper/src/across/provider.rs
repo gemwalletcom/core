@@ -48,7 +48,8 @@ impl crate::cross_chain::CrossChainProvider for AcrossCrossChain {
         SwapperProvider::Across
     }
 
-    fn is_swap(&self, chain: &Chain, to_address: &str, _memo: Option<&str>) -> bool {
+    fn is_swap(&self, chain: &Chain, to_address: Option<&str>, _memo: Option<&str>) -> bool {
+        let Some(to_address) = to_address else { return false };
         AcrossDeployment::deployment_by_chain(chain).is_some_and(|d| d.spoke_pool.eq_ignore_ascii_case(to_address))
     }
 }

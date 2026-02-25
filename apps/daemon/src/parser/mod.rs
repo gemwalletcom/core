@@ -209,6 +209,7 @@ impl Parser {
         if transactions.is_empty() {
             return Ok(0);
         }
+        self.reporter.record_transactions(&transactions);
         let count = transactions.len();
         let payload = TransactionsPayload::new(self.chain, blocks, transactions);
         self.stream_producer.publish_transactions(payload).await?;

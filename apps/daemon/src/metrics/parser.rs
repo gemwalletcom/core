@@ -19,6 +19,12 @@ struct ParserErrorLabels {
     error: String,
 }
 
+#[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
+struct TransactionTypeLabels {
+    chain: String,
+    transaction_type: String,
+}
+
 #[derive(Default)]
 struct ParserState {
     current_block: i64,
@@ -26,6 +32,7 @@ struct ParserState {
     is_enabled: bool,
     updated_at: i64,
     errors: HashMap<String, u64>,
+    transactions: HashMap<String, u64>,
 }
 
 pub struct ParserMetrics {
@@ -53,6 +60,14 @@ impl ParserMetrics {
         let state = chains.entry(chain.to_string()).or_default();
         *state.errors.entry(super::sanitize_error_message(error)).or_default() += 1;
     }
+
+    pub fn record_transactions(&self, chain: &str, transactions: &[(String, u64)]) {
+        let mut chains = self.chains.lock().unwrap();
+        let state = chains.entry(chain.to_string()).or_default();
+        for (transaction_type, count) in transactions {
+            *state.transactions.entry(transaction_type.clone()).or_default() += count;
+        }
+    }
 }
 
 impl MetricsProvider for ParserMetrics {
@@ -62,6 +77,7 @@ impl MetricsProvider for ParserMetrics {
         let is_enabled = Family::<ParserLabels, Gauge>::default();
         let updated_at = Family::<ParserLabels, Gauge>::default();
         let errors = Family::<ParserErrorLabels, Gauge>::default();
+        let transactions = Family::<TransactionTypeLabels, Gauge>::default();
 
         let chains = self.chains.lock().unwrap();
         for (chain, state) in chains.iter() {
@@ -79,6 +95,14 @@ impl MetricsProvider for ParserMetrics {
                 };
                 errors.get_or_create(&error_labels).set(*count as i64);
             }
+
+            for (transaction_type, count) in &state.transactions {
+                let type_labels = TransactionTypeLabels {
+                    chain: chain.clone(),
+                    transaction_type: transaction_type.clone(),
+                };
+                transactions.get_or_create(&type_labels).set(*count as i64);
+            }
         }
 
         registry.register("parser_state_latest_block", "Parser latest block", latest_block);
@@ -86,5 +110,6 @@ impl MetricsProvider for ParserMetrics {
         registry.register("parser_state_is_enabled", "Parser is enabled", is_enabled);
         registry.register("parser_state_updated_at", "Parser updated at", updated_at);
         registry.register("parser_errors", "Parser error count by message", errors);
+        registry.register("parser_transactions_total", "Transactions parsed total", transactions);
     }
 }
