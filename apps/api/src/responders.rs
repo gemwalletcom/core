@@ -59,6 +59,12 @@ impl From<DatabaseError> for ApiError {
     }
 }
 
+impl From<swapper::SwapperError> for ApiError {
+    fn from(error: swapper::SwapperError) -> Self {
+        ApiError::InternalServerError(error.to_string())
+    }
+}
+
 impl From<FiatQuoteError> for ApiError {
     fn from(error: FiatQuoteError) -> Self {
         ApiError::BadRequest(error.to_string())
