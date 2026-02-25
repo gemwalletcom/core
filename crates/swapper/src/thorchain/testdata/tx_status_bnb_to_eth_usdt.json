@@ -1,0 +1,105 @@
+{
+  "tx": {
+    "id": "F87B68976E5EF68C2C8BED031A44566F9977FFC0BE90EAC45C807CC84C56D4C5",
+    "chain": "BSC",
+    "from_address": "0xb1dfff6762b9a5edd945e7fa55ee15288e2e294f",
+    "to_address": "0x54eb90bcd8ab035440647cf290e74394201bb933",
+    "coins": [
+      {
+        "asset": "BSC.BNB",
+        "amount": "2130000"
+      }
+    ],
+    "gas": [
+      {
+        "asset": "BSC.BNB",
+        "amount": "119"
+      }
+    ],
+    "memo": "=:ETH.USDT:0xb1Dfff6762b9A5Edd945e7fA55EE15288e2E294F:0/1/0:g1:50"
+  },
+  "planned_out_txs": [
+    {
+      "chain": "ETH",
+      "to_address": "0xb1Dfff6762b9A5Edd945e7fA55EE15288e2E294F",
+      "coin": {
+        "asset": "ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7",
+        "amount": "1297378100"
+      },
+      "refund": false
+    },
+    {
+      "chain": "THOR",
+      "to_address": "thor1dl7un46w7l7f3ewrnrm6nq58nerjtp0dradjtd",
+      "coin": {
+        "asset": "THOR.RUNE",
+        "amount": "15742200"
+      },
+      "refund": false
+    }
+  ],
+  "out_txs": [
+    {
+      "id": "0000000000000000000000000000000000000000000000000000000000000000",
+      "chain": "THOR",
+      "from_address": "thor1g98cy3n9mmjrpn0sxmn63lztelera37n8n67c0",
+      "to_address": "thor1dl7un46w7l7f3ewrnrm6nq58nerjtp0dradjtd",
+      "coins": [
+        {
+          "asset": "THOR.RUNE",
+          "amount": "15742200"
+        }
+      ],
+      "gas": [
+        {
+          "asset": "THOR.RUNE",
+          "amount": "2000000"
+        }
+      ],
+      "memo": "OUT:F87B68976E5EF68C2C8BED031A44566F9977FFC0BE90EAC45C807CC84C56D4C5"
+    },
+    {
+      "id": "2FF066BC2688F4CF099E1FEFD560ABADC731FCF25E2F2FAE432469DFCA7C0DFC",
+      "chain": "ETH",
+      "from_address": "0x29c2fdd217ff6ab439bddca4f8c7718689f00235",
+      "to_address": "0xb1Dfff6762b9A5Edd945e7fA55EE15288e2E294F",
+      "coins": [
+        {
+          "asset": "ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7",
+          "amount": "1297378100",
+          "decimals": 6
+        }
+      ],
+      "gas": [
+        {
+          "asset": "ETH.ETH",
+          "amount": "15581"
+        }
+      ],
+      "memo": "OUT:F87B68976E5EF68C2C8BED031A44566F9977FFC0BE90EAC45C807CC84C56D4C5"
+    }
+  ],
+  "stages": {
+    "inbound_observed": {
+      "pre_confirmation_count": 29,
+      "final_count": 103,
+      "completed": true
+    },
+    "inbound_confirmation_counted": {
+      "remaining_confirmation_seconds": 0,
+      "completed": true
+    },
+    "inbound_finalised": {
+      "completed": true
+    },
+    "swap_status": {
+      "pending": false
+    },
+    "swap_finalised": {
+      "completed": true
+    },
+    "outbound_signed": {
+      "completed": true
+    }
+  }
+}

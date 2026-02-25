@@ -4,7 +4,6 @@ use std::sync::Arc;
 use alloy_primitives::U256;
 use async_trait::async_trait;
 use gem_client::Client;
-use gem_evm::address::ethereum_address_checksum;
 use primitives::{Chain, hex::decode_hex_utf8, swap::ApprovalData};
 
 use super::{
@@ -102,10 +101,8 @@ where
     async fn get_vault_addresses(&self) -> Result<Vec<String>, SwapperError> {
         let inbound = self.client.get_inbound_addresses().await?;
         let addresses = inbound.iter().flat_map(|entry| {
-            let is_evm = THORChainName::from_symbol(&entry.chain).is_some_and(|n| n.is_evm_chain());
-            let checksum = move |addr: String| {
-                if is_evm { ethereum_address_checksum(&addr).unwrap_or(addr) } else { addr }
-            };
+            let chain = THORChainName::from_symbol(&entry.chain);
+            let checksum = move |addr: String| chain.as_ref().map(|c| c.checksum_address(&addr)).unwrap_or(addr);
             let addr = std::iter::once(checksum(entry.address.clone()));
             let router = entry.router.iter().filter(|r| !r.is_empty()).map(move |r| checksum(r.clone()));
             addr.chain(router)
@@ -218,9 +215,9 @@ where
         Ok(data)
     }
 
-    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
-        let response = self.client.get_transaction_status(transaction_hash).await?;
-        Ok(swap_mapper::map_swap_result(&response, chain))
+    async fn get_swap_result(&self, _chain: Chain, hash: &str) -> Result<SwapResult, SwapperError> {
+        let response = self.client.get_transaction_status(hash).await?;
+        Ok(swap_mapper::map_swap_result(&response))
     }
 }
 

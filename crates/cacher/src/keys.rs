@@ -92,7 +92,7 @@ impl CacheKey<'_> {
             Self::ConsumerStatus(_) => 7 * SECONDS_PER_DAY,
             Self::ParserStatus(_) => 7 * SECONDS_PER_DAY,
             Self::ObservedAssets => 2 * SECONDS_PER_MINUTE,
-            Self::SwapVaultAddresses(_) => 30 * SECONDS_PER_MINUTE,
+            Self::SwapVaultAddresses(_) => SECONDS_PER_DAY,
         }
     }
 }
