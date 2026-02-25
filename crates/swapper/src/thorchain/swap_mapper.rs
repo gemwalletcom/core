@@ -15,7 +15,7 @@ pub fn map_swap_result(response: &TransactionStatus, chain: Chain) -> SwapResult
 
     let memo = ThorchainMemo::parse(&tx.memo);
     let destination_chain = memo.as_ref().and_then(|m| m.destination_chain());
-    let from_value = tx.coins.first().and_then(|c| c.native_value(chain)).unwrap_or_default();
+    let from_value = tx.coins.first().and_then(|c| c.native_value(chain)).unwrap_or("0".to_string());
 
     let out_transaction = response.out_txs.as_ref().and_then(|out_txs| {
         let chain_name = destination_chain.and_then(|c| THORChainName::from_chain(&c)).map(|n| n.long_name().to_string());
@@ -27,7 +27,7 @@ pub fn map_swap_result(response: &TransactionStatus, chain: Chain) -> SwapResult
     let to_chain = destination_chain.or_else(|| out_transaction.and_then(|t| THORChainName::from_symbol(&t.chain).map(|n| n.chain())));
     let to_value = out_transaction
         .and_then(|t| t.coins.first().and_then(|c| to_chain.and_then(|tc| c.native_value(tc))))
-        .unwrap_or_default();
+        .unwrap_or("0".to_string());
 
     let metadata = to_chain.map(|to| TransactionSwapMetadata {
         from_asset: AssetId::from_chain(chain),
@@ -80,7 +80,7 @@ mod tests {
                     from_asset: Chain::Bitcoin.as_asset_id(),
                     from_value: "23516479".to_string(),
                     to_asset: Chain::Tron.as_asset_id(),
-                    to_value: String::new(),
+                    to_value: "0".to_string(),
                     provider: Some("thorchain".to_string()),
                 }),
             }
