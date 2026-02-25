@@ -29,7 +29,7 @@ impl StoreTransactionsConsumerConfig {
     pub fn should_notify_transaction(&self, transaction: &Transaction, is_notify_devices: bool, vault_addresses: &HashSet<String>) -> bool {
         is_notify_devices
             && transaction.state != TransactionState::InTransit
-            && !vault_addresses.contains(&transaction.from.to_lowercase())
+            && !vault_addresses.contains(&transaction.from)
             && !self.is_transaction_outdated(transaction.created_at.naive_utc(), transaction.asset_id.chain, transaction.transaction_type.clone())
     }
 
@@ -161,7 +161,7 @@ mod tests {
     fn test_should_notify_transaction_from_vault() {
         let config = StoreTransactionsConsumerConfig::mock();
         let tx = Transaction::mock();
-        let vault_addresses = HashSet::from([tx.from.to_lowercase()]);
+        let vault_addresses = HashSet::from([tx.from.clone()]);
         assert!(!config.should_notify_transaction(&tx, true, &vault_addresses));
     }
 }

@@ -4,6 +4,7 @@ use std::sync::Arc;
 use alloy_primitives::U256;
 use async_trait::async_trait;
 use gem_client::Client;
+use gem_evm::address::ethereum_address_checksum;
 use primitives::{Chain, hex::decode_hex_utf8, swap::ApprovalData};
 
 use super::{
@@ -20,9 +21,9 @@ impl ThorchainCrossChain {
     fn router_address(chain: &Chain) -> Option<&'static str> {
         match chain {
             Chain::Ethereum => Some("0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146"),
-            Chain::SmartChain => Some("0xb30ec53f98ff5947ede720d32ac2da7e52a5f56b"),
+            Chain::SmartChain => Some("0xb30eC53F98ff5947EDe720D32aC2da7e52A5f56b"),
             Chain::AvalancheC => Some("0x8F66c4AE756BEbC49Ec8B81966DD8bba9f127549"),
-            Chain::Base => Some("0x68208d99746b805a1ae41421950a47b711e35681"),
+            Chain::Base => Some("0x68208D99746b805a1Ae41421950A47b711E35681"),
             _ => None,
         }
     }
@@ -101,8 +102,12 @@ where
     async fn get_vault_addresses(&self) -> Result<Vec<String>, SwapperError> {
         let inbound = self.client.get_inbound_addresses().await?;
         let addresses = inbound.iter().flat_map(|entry| {
-            let addr = std::iter::once(entry.address.clone());
-            let router = entry.router.iter().filter(|r| !r.is_empty()).cloned();
+            let is_evm = THORChainName::from_symbol(&entry.chain).is_some_and(|n| n.is_evm_chain());
+            let checksum = move |addr: String| {
+                if is_evm { ethereum_address_checksum(&addr).unwrap_or(addr) } else { addr }
+            };
+            let addr = std::iter::once(checksum(entry.address.clone()));
+            let router = entry.router.iter().filter(|r| !r.is_empty()).map(move |r| checksum(r.clone()));
             addr.chain(router)
         });
         let static_addresses = ThorchainCrossChain::static_router_addresses().into_iter().map(String::from);

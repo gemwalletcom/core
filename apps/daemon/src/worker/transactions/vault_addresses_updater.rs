@@ -16,7 +16,7 @@ impl VaultAddressesUpdater {
     }
 
     pub async fn update(&self, provider: SwapProvider) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let addresses: Vec<String> = self.swapper.get_vault_addresses(&provider).await?.into_iter().map(|a| a.to_lowercase()).collect();
+        let addresses = self.swapper.get_vault_addresses(&provider).await?;
         let count = addresses.len();
         let hash_key = CacheKey::SwapVaultAddresses.key();
         self.cacher.set_hset(&hash_key, provider.as_ref(), &addresses).await?;
