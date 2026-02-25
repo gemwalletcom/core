@@ -15,6 +15,7 @@ pub enum THORChainName {
     Base,
     Xrp,
     Tron,
+    Solana,
 }
 
 // https://dev.thorchain.org/concepts/memo-length-reduction.html
@@ -33,6 +34,7 @@ impl THORChainName {
             THORChainName::Base => "f",        // BASE.ETH
             THORChainName::Xrp => "x",         // XRP.XRP
             THORChainName::Tron => "tr",       // TRON.TRX
+            THORChainName::Solana => "o",      // SOL.SOL
         }
     }
 
@@ -50,6 +52,7 @@ impl THORChainName {
             THORChainName::Base => "BASE",
             THORChainName::Xrp => "XRP",
             THORChainName::Tron => "TRON",
+            THORChainName::Solana => "SOL",
         }
     }
 
@@ -67,6 +70,7 @@ impl THORChainName {
             THORChainName::Base => Chain::Base,
             THORChainName::Xrp => Chain::Xrp,
             THORChainName::Tron => Chain::Tron,
+            THORChainName::Solana => Chain::Solana,
         }
     }
 
@@ -84,6 +88,7 @@ impl THORChainName {
             Chain::Base => Some(THORChainName::Base),
             Chain::Xrp => Some(THORChainName::Xrp),
             Chain::Tron => Some(THORChainName::Tron),
+            Chain::Solana => Some(THORChainName::Solana),
             _ => None,
         }
     }
@@ -98,7 +103,8 @@ impl THORChainName {
             | THORChainName::BitcoinCash
             | THORChainName::Litecoin
             | THORChainName::Xrp
-            | THORChainName::Tron => false,
+            | THORChainName::Tron
+            | THORChainName::Solana => false,
         }
     }
 

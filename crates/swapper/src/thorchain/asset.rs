@@ -96,6 +96,10 @@ impl THORChainAsset {
                 TRON_USDT_TOKEN_ID => Some(chain.asset(TRON_USDT.clone())),
                 _ => None,
             },
+            THORChainName::Solana => match token_id {
+                SOLANA_USDC_TOKEN_ID => Some(chain.asset(SOLANA_USDC.clone())),
+                _ => None,
+            },
             _ => None,
         }
     }
@@ -222,6 +226,22 @@ mod tests {
             ),
             Some("=:THOR.TCY:0x1234567890abcdef:0/1/0:g1:50".into())
         );
+    }
+
+    #[test]
+    fn test_solana_usdc_memo() {
+        let destination = "HN7cABqLq46Es1jh92dQQisAi5YqpaAqUoM3pMYmZYBN".to_string();
+        let fee_address = "g1".to_string();
+        let bps = 50;
+
+        let solana_usdc_asset_id = &AssetId::from_token(Chain::Solana, SOLANA_USDC_TOKEN_ID).to_string();
+        let asset = THORChainAsset::from_asset_id(solana_usdc_asset_id);
+
+        assert!(asset.is_some());
+
+        let memo = asset.unwrap().get_memo(destination, 0, 1, 0, fee_address, bps);
+
+        assert_eq!(memo, Some("=:SOL.USDC:HN7cABqLq46Es1jh92dQQisAi5YqpaAqUoM3pMYmZYBN:0/1/0:g1:50".into()));
     }
 
     #[test]

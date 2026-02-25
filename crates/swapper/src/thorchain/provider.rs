@@ -88,6 +88,7 @@ where
                 Chain::AvalancheC => SwapperChainAsset::Assets(chain, vec![AVALANCHE_USDT.id.clone(), AVALANCHE_USDC.id.clone()]),
                 Chain::Base => SwapperChainAsset::Assets(chain, vec![BASE_USDC.id.clone(), BASE_CBBTC.id.clone()]),
                 Chain::Tron => SwapperChainAsset::Assets(chain, vec![TRON_USDT.id.clone()]),
+                Chain::Solana => SwapperChainAsset::Assets(chain, vec![SOLANA_USDC.id.clone()]),
                 _ => SwapperChainAsset::Assets(chain, vec![]),
             })
             .collect()
