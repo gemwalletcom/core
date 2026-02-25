@@ -5,7 +5,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::SystemTime;
 
 use async_trait::async_trait;
-use gem_tracing::{error_with_fields, info_with_fields};
+use gem_tracing::{error_with_fields, human_duration, info_with_fields};
 pub mod schedule;
 pub use schedule::{JobSchedule, RunAlways, RunDecision};
 use tokio::sync::watch;
@@ -26,29 +26,6 @@ pub async fn sleep_or_shutdown(duration: Duration, shutdown_rx: &ShutdownReceive
         _ = tokio::time::sleep(duration) => false,
         _ = rx.changed() => true,
     }
-}
-
-fn human_duration(duration: Duration) -> String {
-    if duration.is_zero() {
-        return "0s".to_string();
-    }
-
-    let mut parts = Vec::new();
-    let mut remaining = duration.as_secs();
-    const UNITS: [(&str, u64); 4] = [("d", 86_400), ("h", 3_600), ("m", 60), ("s", 1)];
-
-    for (label, unit) in UNITS {
-        if remaining >= unit {
-            let value = remaining / unit;
-            remaining %= unit;
-            parts.push(format!("{value}{label}"));
-            if parts.len() == 2 {
-                break;
-            }
-        }
-    }
-
-    if parts.is_empty() { format!("{}ms", duration.subsec_millis()) } else { parts.join(" ") }
 }
 
 pub async fn run_job<Name, F, Fut, R>(
@@ -198,7 +175,7 @@ impl JobHandle {
 
 #[cfg(test)]
 mod tests {
-    use super::human_duration;
+    use gem_tracing::human_duration;
     use std::time::Duration;
 
     #[test]

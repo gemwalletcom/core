@@ -179,13 +179,9 @@ impl StoreTransactionsConsumer {
     }
 
     async fn get_vault_addresses(&self) -> HashSet<String> {
-        self.cacher
-            .get_hset_all_values::<Vec<String>>(&CacheKey::SwapVaultAddresses.key())
-            .await
-            .unwrap_or_default()
-            .into_iter()
-            .flatten()
-            .collect()
+        let keys = cross_chain::providers().iter().map(|p| CacheKey::SwapVaultAddresses(p.as_ref()).key()).collect();
+        let values: Vec<Vec<String>> = self.cacher.get_values(keys).await.unwrap_or_default();
+        values.into_iter().flatten().collect()
     }
 
     async fn store_transactions(&self, transactions: Vec<Transaction>) -> Result<usize, Box<dyn Error + Send + Sync>> {

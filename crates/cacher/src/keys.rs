@@ -40,8 +40,7 @@ pub enum CacheKey<'a> {
     // Price WebSocket observed assets
     ObservedAssets,
 
-    // Swap vault/router addresses hash (field = provider, value = addresses)
-    SwapVaultAddresses,
+    SwapVaultAddresses(&'a str),
 }
 
 impl CacheKey<'_> {
@@ -67,7 +66,7 @@ impl CacheKey<'_> {
             Self::ConsumerStatus(name) => format!("consumers:status:{}", name),
             Self::ParserStatus(chain) => format!("parser:status:{}", chain),
             Self::ObservedAssets => "observed_assets".to_string(),
-            Self::SwapVaultAddresses => "swap:vault_addresses".to_string(),
+            Self::SwapVaultAddresses(provider) => format!("swap:vault_addresses:{}", provider),
         }
     }
 
@@ -93,7 +92,7 @@ impl CacheKey<'_> {
             Self::ConsumerStatus(_) => 7 * SECONDS_PER_DAY,
             Self::ParserStatus(_) => 7 * SECONDS_PER_DAY,
             Self::ObservedAssets => 2 * SECONDS_PER_MINUTE,
-            Self::SwapVaultAddresses => 30 * SECONDS_PER_MINUTE,
+            Self::SwapVaultAddresses(_) => 30 * SECONDS_PER_MINUTE,
         }
     }
 }
