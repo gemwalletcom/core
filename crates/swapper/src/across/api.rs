@@ -3,11 +3,12 @@ use crate::{
     alien::{RpcProvider, Target},
     client_factory::create_eth_client,
 };
+use alloy_primitives::U256;
+use alloy_sol_types::SolEvent;
+use gem_evm::{across::contracts::V3SpokePoolInterface, rpc::model::Log};
 use primitives::{Chain, swap::SwapStatus};
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-
-const FUNDS_DEPOSITED_TOPIC: &str = "0x32ed1a409ef04c7b0227189c3a103dc5ac10e775a15b785dcc510201f7c25ad3";
 
 #[derive(Debug, Clone)]
 pub struct AcrossApi {
@@ -16,11 +17,8 @@ pub struct AcrossApi {
 }
 
 impl AcrossApi {
-    pub fn new(provider: Arc<dyn RpcProvider>) -> Self {
-        Self {
-            url: "https://app.across.to".into(),
-            provider,
-        }
+    pub fn new(url: String, provider: Arc<dyn RpcProvider>) -> Self {
+        Self { url, provider }
     }
 }
 
@@ -33,6 +31,16 @@ pub struct DepositStatus {
     pub fill_tx: Option<String>,
     pub destination_chain_id: u64,
     pub deposit_refund_tx_hash: Option<String>,
+    #[serde(skip)]
+    pub origin_chain_id: Option<u64>,
+    #[serde(skip)]
+    pub input_token: Option<String>,
+    #[serde(skip)]
+    pub output_token: Option<String>,
+    #[serde(skip)]
+    pub input_amount: Option<String>,
+    #[serde(skip)]
+    pub output_amount: Option<String>,
 }
 
 impl DepositStatus {
@@ -45,6 +53,74 @@ impl DepositStatus {
     }
 }
 
+pub(crate) struct ParsedDeposit {
+    pub deposit_id: String,
+    pub origin_chain_id: String,
+    pub input_token: Option<String>,
+    pub output_token: Option<String>,
+    pub input_amount: Option<String>,
+    pub output_amount: Option<String>,
+}
+
+fn parse_topic_u256(topic: &str) -> Option<U256> {
+    U256::from_str_radix(topic.strip_prefix("0x").unwrap_or(topic), 16).ok()
+}
+
+fn decode_token_amounts(data: &[u8]) -> Option<(String, String, String, String)> {
+    if data.len() < 128 {
+        return None;
+    }
+    let input_token = format!("0x{}", alloy_primitives::hex::encode(&data[12..32]));
+    let output_token = format!("0x{}", alloy_primitives::hex::encode(&data[44..64]));
+    let input_amount = U256::from_be_slice(&data[64..96]).to_string();
+    let output_amount = U256::from_be_slice(&data[96..128]).to_string();
+    Some((input_token, output_token, input_amount, output_amount))
+}
+
+pub(crate) fn parse_deposit_from_logs(logs: &[Log], origin_chain_id: &str) -> Result<ParsedDeposit, SwapperError> {
+    let event_topics = [
+        (format!("{:#x}", V3SpokePoolInterface::FundsDeposited::SIGNATURE_HASH), false),
+        (format!("{:#x}", V3SpokePoolInterface::V3FundsDeposited::SIGNATURE_HASH), false),
+        (format!("{:#x}", V3SpokePoolInterface::FilledRelay::SIGNATURE_HASH), true),
+    ];
+
+    let (log, is_fill) = event_topics
+        .iter()
+        .find_map(|(topic, is_fill)| logs.iter().find(|l| l.topics.first().is_some_and(|t| t == topic)).map(|l| (l, *is_fill)))
+        .ok_or_else(|| SwapperError::TransactionError("FundsDeposited event not found".into()))?;
+
+    if log.topics.len() < 3 {
+        return Err(SwapperError::TransactionError("invalid event topics".into()));
+    }
+
+    let deposit_id = parse_topic_u256(&log.topics[2])
+        .ok_or_else(|| SwapperError::TransactionError("failed to parse deposit ID".into()))?
+        .to_string();
+
+    let origin = if is_fill {
+        parse_topic_u256(&log.topics[1])
+            .ok_or_else(|| SwapperError::TransactionError("failed to parse origin chain ID".into()))?
+            .to_string()
+    } else {
+        origin_chain_id.to_string()
+    };
+
+    let (input_token, output_token, input_amount, output_amount) = alloy_primitives::hex::decode(&log.data)
+        .ok()
+        .and_then(|d| decode_token_amounts(&d))
+        .map(|(a, b, c, d)| (Some(a), Some(b), Some(c), Some(d)))
+        .unwrap_or_default();
+
+    Ok(ParsedDeposit {
+        deposit_id,
+        origin_chain_id: origin,
+        input_token,
+        output_token,
+        input_amount,
+        output_amount,
+    })
+}
+
 impl AcrossApi {
     pub async fn deposit_status(&self, chain: Chain, tx_hash: &str) -> Result<DepositStatus, SwapperError> {
         let receipt = create_eth_client(self.provider.clone(), chain)?
@@ -52,31 +128,18 @@ impl AcrossApi {
             .await
             .map_err(SwapperError::from)?;
 
-        let deposit_log = receipt
-            .logs
-            .iter()
-            .find(|log| log.topics.first().map(|topic| topic.eq_ignore_ascii_case(FUNDS_DEPOSITED_TOPIC)).unwrap_or(false))
-            .ok_or_else(|| SwapperError::TransactionError("FundsDeposited event not found".into()))?;
+        let parsed = parse_deposit_from_logs(&receipt.logs, chain.network_id())?;
 
-        if deposit_log.topics.len() < 3 {
-            return Err(SwapperError::TransactionError("invalid FundsDeposited topics".into()));
-        }
-        // The deposit ID is in topics[2] (topics[0] is event signature, topics[1] is destination chain ID)
-        let deposit_id_hex = deposit_log.topics[2].clone();
-
-        // Convert hex deposit ID to decimal string
-        let deposit_id = if let Some(stripped) = deposit_id_hex.strip_prefix("0x") {
-            u64::from_str_radix(stripped, 16)
-                .map_err(|e| SwapperError::TransactionError(format!("Failed to parse deposit ID: {}", e)))?
-                .to_string()
-        } else {
-            deposit_id_hex
-        };
-
-        let url = format!("{}/api/deposit/status?originChainId={}&depositId={}", self.url, chain.network_id(), &deposit_id);
+        let url = format!("{}/api/deposit/status?originChainId={}&depositId={}", self.url, parsed.origin_chain_id, parsed.deposit_id);
         let target = Target::get(&url);
         let response = self.provider.request(target).await?;
-        let status: DepositStatus = serde_json::from_slice(&response.data).map_err(SwapperError::from)?;
+        let mut status: DepositStatus = serde_json::from_slice(&response.data).map_err(SwapperError::from)?;
+
+        status.origin_chain_id = parsed.origin_chain_id.parse::<u64>().ok();
+        status.input_token = parsed.input_token;
+        status.output_token = parsed.output_token;
+        status.input_amount = parsed.input_amount;
+        status.output_amount = parsed.output_amount;
 
         Ok(status)
     }

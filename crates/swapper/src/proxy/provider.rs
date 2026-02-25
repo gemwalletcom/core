@@ -4,7 +4,7 @@ use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 use super::{
     client::ProxyClient,
-    mayan::{MayanExplorer, wormhole_chain_id_to_chain},
+    mayan::{MAYAN_CONTRACTS, MayanClientStatus, MayanExplorer, resolve_asset_id, wormhole_chain_id_to_chain},
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperError, SwapperProvider, SwapperProviderMode, SwapperQuoteData,
@@ -16,7 +16,7 @@ use crate::{
 };
 use gem_client::Client;
 use primitives::{
-    AssetId, Chain, ChainType, TransactionSwapMetadata,
+    Chain, ChainType, TransactionSwapMetadata,
     swap::{ApprovalData, ProxyQuote, ProxyQuoteRequest, SwapQuoteData},
 };
 
@@ -59,7 +59,7 @@ where
                 if from_asset.is_native() {
                     Ok((None, None))
                 } else {
-                    let token = from_asset.token_id.unwrap();
+                    let token = from_asset.token_id.ok_or(SwapperError::NotSupportedAsset)?;
                     self.check_evm_approval(
                         request.wallet_address.clone(),
                         token,
@@ -216,7 +216,7 @@ where
                 routes: vec![Route {
                     input: request.from_asset.asset_id(),
                     output: request.to_asset.asset_id(),
-                    route_data: serde_json::to_string(&quote).unwrap(),
+                    route_data: serde_json::to_string(&quote).map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))?,
                     gas_limit: None,
                 }],
                 slippage_bps: request.options.slippage.bps,
@@ -227,8 +227,8 @@ where
     }
 
     async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
-        let routes = quote.data.clone().routes;
-        let route_data: ProxyQuote = serde_json::from_str(&routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
+        let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
+        let route_data: ProxyQuote = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
 
         let data = self.client.get_quote_data(route_data).await?;
         let (approval, gas_limit) = self.check_approval_and_limit(quote, &data).await?;
@@ -236,26 +236,35 @@ where
         Ok(SwapperQuoteData::new_contract(data.to, data.value, data.data, approval, gas_limit))
     }
 
-    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
+    async fn get_swap_result(&self, _chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
         match self.provider.id {
             SwapperProvider::Mayan => {
                 let base_url = get_swap_api_url("mayan/explorer");
                 let client = MayanExplorer::new(base_url, self.rpc_provider.clone());
                 let result = client.get_transaction_status(transaction_hash).await?;
-                let to_chain = result.dest_chain.parse::<u16>().ok().and_then(wormhole_chain_id_to_chain);
+                let status = result.client_status.swap_status();
 
-                let metadata = to_chain.map(|to| TransactionSwapMetadata {
-                    from_asset: AssetId::from_chain(chain),
-                    from_value: result.from_amount,
-                    to_asset: AssetId::from_chain(to),
-                    to_value: result.to_amount,
-                    provider: Some(SwapperProvider::Mayan.as_ref().to_string()),
-                });
+                let metadata = if result.client_status == MayanClientStatus::Completed {
+                    let from_chain = result.from_token_chain.parse::<u16>().ok().and_then(wormhole_chain_id_to_chain);
+                    let to_chain = result.to_token_chain.parse::<u16>().ok().and_then(wormhole_chain_id_to_chain);
+                    from_chain.zip(to_chain).and_then(|(fc, tc)| {
+                        let from_asset = resolve_asset_id(fc, &result.from_token_address)?;
+                        let to_asset = resolve_asset_id(tc, &result.to_token_address)?;
+                        let from_value = result.from_amount64.as_ref()?;
+                        let to_value = result.to_amount64.as_ref()?;
+                        Some(TransactionSwapMetadata {
+                            from_asset,
+                            from_value: from_value.clone(),
+                            to_asset,
+                            to_value: to_value.clone(),
+                            provider: Some(SwapperProvider::Mayan.as_ref().to_string()),
+                        })
+                    })
+                } else {
+                    None
+                };
 
-                Ok(SwapResult {
-                    status: result.client_status.swap_status(),
-                    metadata,
-                })
+                Ok(SwapResult { status, metadata })
             }
             _ => {
                 if self.provider.mode == SwapperProviderMode::OnChain {
@@ -267,6 +276,13 @@ where
                     Err(SwapperError::NotSupportedAsset)
                 }
             }
+        }
+    }
+
+    async fn get_vault_addresses(&self) -> Result<Vec<String>, SwapperError> {
+        match self.provider.id {
+            SwapperProvider::Mayan => Ok(MAYAN_CONTRACTS.map(String::from).to_vec()),
+            _ => Ok(vec![]),
         }
     }
 }

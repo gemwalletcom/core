@@ -47,7 +47,7 @@ impl CacheRule {
         let Some(rule_method) = self.method.as_ref() else {
             return false;
         };
-        if !method.eq_ignore_ascii_case(rule_method) {
+        if method != rule_method {
             return false;
         }
 
@@ -99,8 +99,7 @@ mod tests {
         };
 
         assert_eq!(rule.matches_path("/api/data", "GET", None), Some(Duration::from_secs(60)));
-        assert_eq!(rule.matches_path("/api/data", "get", None), Some(Duration::from_secs(60))); // case insensitive
-        assert_eq!(rule.matches_path("/api/data?q=1", "GET", None), Some(Duration::from_secs(60))); // strips query
+        assert_eq!(rule.matches_path("/api/data?q=1", "GET", None), Some(Duration::from_secs(60)));
         assert_eq!(rule.matches_path("/api/data", "POST", None), None);
         assert_eq!(rule.matches_path("/other", "GET", None), None);
     }

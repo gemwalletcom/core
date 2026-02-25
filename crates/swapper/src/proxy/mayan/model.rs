@@ -12,8 +12,12 @@ pub struct MayanTransactionResult {
     pub dest_chain: String,
     pub from_token_address: String,
     pub to_token_address: String,
+    pub from_token_chain: String,
+    pub to_token_chain: String,
     pub from_amount: String,
     pub to_amount: String,
+    pub from_amount64: Option<String>,
+    pub to_amount64: Option<String>,
     pub fulfill_tx_hash: Option<String>,
     pub refund_tx_hash: Option<String>,
     pub steps: Vec<MayanTransactionStep>,
@@ -98,5 +102,30 @@ mod tests {
         assert_eq!(result.steps[1].status, MayanTransactionStepStatus::Failed);
         assert_eq!(result.steps[1].r#type, MayanTransactionStepType::Info);
         assert_eq!(result.client_status, MayanClientStatus::Refunded);
+    }
+
+    #[test]
+    fn test_token_chain_fields_eth_to_sui() {
+        let result: MayanTransactionResult = serde_json::from_str(include_str!("../test/eth_to_sui_swift.json")).unwrap();
+        assert_eq!(result.from_token_chain, "2");
+        assert_eq!(result.to_token_chain, "21");
+        assert_eq!(result.from_token_address, "0x0000000000000000000000000000000000000000");
+        assert_eq!(result.to_token_address, "0x2::sui::SUI");
+    }
+
+    #[test]
+    fn test_token_chain_fields_base_to_arb() {
+        let result: MayanTransactionResult = serde_json::from_str(include_str!("../test/mctp_pending.json")).unwrap();
+        assert_eq!(result.from_token_chain, "30");
+        assert_eq!(result.to_token_chain, "23");
+        assert_eq!(result.from_token_address, "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913");
+        assert_eq!(result.to_token_address, "0xaf88d065e77c8cc2239327c5edb3a432268e5831");
+    }
+
+    #[test]
+    fn test_token_chain_fields_refunded() {
+        let result: MayanTransactionResult = serde_json::from_str(include_str!("../test/swift_refunded.json")).unwrap();
+        assert_eq!(result.from_token_chain, "2");
+        assert_eq!(result.to_token_chain, "1");
     }
 }

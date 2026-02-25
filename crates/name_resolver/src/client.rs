@@ -105,7 +105,12 @@ mod tests {
     #[tokio::test]
     async fn test_resolve_prefers_longer_domain_match() {
         let client = Client::new(vec![
-            Box::new(TestProvider::new(NameProvider::Ens, vec!["*"], vec![Chain::Base], Ok("0x0000000000000000000000000000000000000001"))),
+            Box::new(TestProvider::new(
+                NameProvider::Ens,
+                vec!["*"],
+                vec![Chain::Base],
+                Ok("0x0000000000000000000000000000000000000001"),
+            )),
             Box::new(TestProvider::new(
                 NameProvider::Basenames,
                 vec!["base.eth"],
@@ -123,7 +128,12 @@ mod tests {
     #[tokio::test]
     async fn test_resolve_returns_more_specific_provider_error() {
         let client = Client::new(vec![
-            Box::new(TestProvider::new(NameProvider::Ens, vec!["*"], vec![Chain::Base], Ok("0x0000000000000000000000000000000000000003"))),
+            Box::new(TestProvider::new(
+                NameProvider::Ens,
+                vec!["*"],
+                vec![Chain::Base],
+                Ok("0x0000000000000000000000000000000000000003"),
+            )),
             Box::new(TestProvider::new(NameProvider::Basenames, vec!["base.eth"], vec![Chain::Base], Err("failed"))),
         ]);
 

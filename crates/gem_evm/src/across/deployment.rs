@@ -100,6 +100,17 @@ impl AcrossDeployment {
         ])
     }
 
+    pub fn vault_addresses() -> Vec<String> {
+        let mut addresses: HashSet<String> = HashSet::default();
+        for chain in Chain::all() {
+            if let Some(deployment) = Self::deployment_by_chain(&chain) {
+                addresses.insert(deployment.spoke_pool.to_string());
+                addresses.insert(deployment.multicall_handler());
+            }
+        }
+        addresses.into_iter().collect()
+    }
+
     pub fn asset_mappings() -> Vec<AssetMapping> {
         vec![
             AssetMapping {

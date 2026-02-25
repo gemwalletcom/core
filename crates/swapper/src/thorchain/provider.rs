@@ -4,7 +4,7 @@ use std::sync::Arc;
 use alloy_primitives::U256;
 use async_trait::async_trait;
 use gem_client::Client;
-use primitives::{Chain, hex::decode_hex_utf8, swap::ApprovalData};
+use primitives::{Chain, Transaction, TransactionType, hex::decode_hex_utf8, swap::ApprovalData};
 
 use super::{
     QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY, ThorChain, asset::THORChainAsset, chain::THORChainName, memo::ThorchainMemo, model::RouteData, quote_data_mapper, swap_mapper,
@@ -49,12 +49,12 @@ impl crate::cross_chain::CrossChainProvider for ThorchainCrossChain {
         SwapperProvider::Thorchain
     }
 
-    fn is_swap(&self, transaction: &primitives::Transaction) -> bool {
+    fn is_swap(&self, transaction: &Transaction) -> bool {
         if Self::has_swap_memo(transaction) {
             return true;
         }
         if let Some(router) = Self::router_address(&transaction.asset_id.chain) {
-            return router.eq_ignore_ascii_case(&transaction.to) && transaction.transaction_type == primitives::TransactionType::Transfer;
+            return router == transaction.to && transaction.transaction_type == TransactionType::Transfer;
         }
         false
     }
