@@ -6,12 +6,7 @@ use gem_client::Client;
 use primitives::{Chain, swap::ApprovalData};
 
 use super::{
-    QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY, ThorChain,
-    asset::THORChainAsset,
-    chain::THORChainName,
-    memo::ThorchainMemo,
-    model::RouteData,
-    quote_data_mapper, swap_mapper,
+    QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY, ThorChain, asset::THORChainAsset, chain::THORChainName, memo::ThorchainMemo, model::RouteData, quote_data_mapper, swap_mapper,
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider,
@@ -20,13 +15,33 @@ use crate::{
 
 pub struct ThorchainCrossChain;
 
+impl ThorchainCrossChain {
+    fn router_address(chain: &Chain) -> Option<&'static str> {
+        match chain {
+            Chain::Ethereum => Some("0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146"),
+            Chain::SmartChain => Some("0xb30ec53f98ff5947ede720d32ac2da7e52a5f56b"),
+            Chain::AvalancheC => Some("0x8F66c4AE756BEbC49Ec8B81966DD8bba9f127549"),
+            Chain::Base => Some("0x68208d99746b805a1ae41421950a47b711e35681"),
+            _ => None,
+        }
+    }
+}
+
 impl crate::cross_chain::CrossChainProvider for ThorchainCrossChain {
     fn provider(&self) -> SwapperProvider {
         SwapperProvider::Thorchain
     }
 
-    fn is_swap(&self, _chain: &Chain, _to_address: &str, memo: Option<&str>) -> bool {
-        memo.is_some_and(ThorchainMemo::is_swap)
+    fn is_swap(&self, chain: &Chain, to_address: Option<&str>, memo: Option<&str>) -> bool {
+        if memo.is_some_and(ThorchainMemo::is_swap) {
+            return true;
+        }
+        if let Some(to) = to_address
+            && let Some(router) = Self::router_address(chain)
+        {
+            return router.eq_ignore_ascii_case(to);
+        }
+        false
     }
 }
 
