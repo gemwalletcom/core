@@ -56,6 +56,9 @@ pub struct Transaction {
     pub utxo_outputs: Option<Vec<TransactionUtxoInput>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
+    #[typeshare(skip)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<String>,
     #[serde(rename = "createdAt")]
     pub created_at: DateTime<Utc>,
 }
@@ -95,6 +98,7 @@ impl Transaction {
             utxo_inputs: vec![].into(),
             utxo_outputs: vec![].into(),
             metadata,
+            data: None,
             created_at,
         }
     }
@@ -132,6 +136,7 @@ impl Transaction {
             utxo_inputs: utxo_inputs.unwrap_or_default().into(),
             utxo_outputs: utxo_outputs.unwrap_or_default().into(),
             metadata,
+            data: None,
             created_at,
         }
     }
@@ -236,6 +241,7 @@ impl Transaction {
             utxo_inputs: self.utxo_inputs.clone(),
             utxo_outputs: self.utxo_outputs.clone(),
             metadata: self.metadata.clone(),
+            data: self.data.clone(),
             created_at: self.created_at,
         }
     }
@@ -325,6 +331,11 @@ impl Transaction {
             utxo_outputs: None,
             ..self
         }
+    }
+
+    pub fn with_data(mut self, data: Option<String>) -> Self {
+        self.data = data;
+        self
     }
 }
 

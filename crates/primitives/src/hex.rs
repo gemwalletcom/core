@@ -22,6 +22,11 @@ pub fn encode_with_0x(data: &[u8]) -> String {
     format!("0x{}", hex::encode(data))
 }
 
+pub fn decode_hex_utf8(value: &str) -> Option<String> {
+    let bytes = decode_hex(value).ok()?;
+    String::from_utf8(bytes).ok()
+}
+
 pub fn decode_hex(value: &str) -> Result<Vec<u8>, HexError> {
     let stripped = value.trim().strip_prefix("0x").unwrap_or(value.trim());
     if stripped.is_empty() {

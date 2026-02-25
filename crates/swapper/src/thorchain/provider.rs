@@ -3,7 +3,7 @@ use std::sync::Arc;
 use alloy_primitives::U256;
 use async_trait::async_trait;
 use gem_client::Client;
-use primitives::{Chain, swap::ApprovalData};
+use primitives::{Chain, hex::decode_hex_utf8, swap::ApprovalData};
 
 use super::{
     QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY, ThorChain, asset::THORChainAsset, chain::THORChainName, memo::ThorchainMemo, model::RouteData, quote_data_mapper, swap_mapper,
@@ -32,14 +32,17 @@ impl crate::cross_chain::CrossChainProvider for ThorchainCrossChain {
         SwapperProvider::Thorchain
     }
 
-    fn is_swap(&self, chain: &Chain, to_address: Option<&str>, memo: Option<&str>) -> bool {
-        if memo.is_some_and(ThorchainMemo::is_swap) {
+    fn is_swap(&self, transaction: &primitives::Transaction) -> bool {
+        if transaction.memo.as_deref().is_some_and(ThorchainMemo::is_swap) {
             return true;
         }
-        if let Some(to) = to_address
-            && let Some(router) = Self::router_address(chain)
+        if let Some(decoded) = transaction.data.as_deref().and_then(decode_hex_utf8)
+            && ThorchainMemo::is_swap(&decoded)
         {
-            return router.eq_ignore_ascii_case(to);
+            return true;
+        }
+        if let Some(router) = Self::router_address(&transaction.asset_id.chain) {
+            return router.eq_ignore_ascii_case(&transaction.to);
         }
         false
     }
@@ -87,7 +90,7 @@ where
         let from_asset = THORChainAsset::from_asset_id(&request.from_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
         let to_asset = THORChainAsset::from_asset_id(&request.to_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
 
-        let value = self.value_from(request.clone().value, from_asset.decimals as i32);
+        let value = super::asset::value_from(&request.value, from_asset.decimals as i32);
 
         if from_asset.chain != THORChainName::Thorchain {
             let inbound_addresses = self.swap_client.get_inbound_addresses().await?;
@@ -117,7 +120,7 @@ where
             .await
             .map_err(|e| self.map_quote_error(e, from_asset.decimals as i32))?;
 
-        let to_value = self.value_to(quote.expected_amount_out, to_asset.decimals as i32);
+        let to_value = super::asset::value_to(&quote.expected_amount_out, to_asset.decimals as i32);
         let inbound_address = RouteData::get_inbound_address(&from_asset, quote.inbound_address.clone())?;
         let route_data = RouteData {
             router_address: quote.router.clone(),

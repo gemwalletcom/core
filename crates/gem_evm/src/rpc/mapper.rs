@@ -74,6 +74,7 @@ impl EthereumMapper {
             && Self::get_data_cost(&transaction.input).is_some_and(|data_cost| transaction_reciept.gas_used <= BigUint::from(TRANSFER_GAS_LIMIT + data_cost));
 
         if is_native_transfer || is_native_transfer_with_data {
+            let data = if is_native_transfer_with_data { Some(transaction.input.clone()) } else { None };
             let transaction = primitives::Transaction::new(
                 hash,
                 chain.as_asset_id(),
@@ -88,7 +89,8 @@ impl EthereumMapper {
                 None,
                 None,
                 created_at,
-            );
+            )
+            .with_data(data);
             return Some(transaction);
         }
 

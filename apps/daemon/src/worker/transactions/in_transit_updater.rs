@@ -59,8 +59,9 @@ impl InTransitUpdater {
 
     async fn process_transaction(&self, row: &TransactionRow, cutoff: NaiveDateTime) -> Result<bool, Box<dyn Error + Send + Sync>> {
         let chain = row.chain();
+        let transaction = row.as_primitive(row.get_addresses());
 
-        let Some(provider) = cross_chain::swap_provider(&chain, row.to_address.as_deref(), row.memo.as_deref()) else {
+        let Some(provider) = cross_chain::swap_provider(&transaction) else {
             info_with_fields!("in_transit unknown provider", chain = chain.as_ref(), hash = row.hash);
             return Ok(false);
         };

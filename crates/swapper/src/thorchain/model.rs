@@ -1,10 +1,10 @@
 use num_bigint::BigInt;
-use primitives::swap::SwapStatus;
+use primitives::{Asset, Chain, swap::SwapStatus};
 use serde::{Deserialize, Serialize};
 use serde_serializers::deserialize_bigint_from_str;
 
 use super::{
-    asset::THORChainAsset,
+    asset::{THORChainAsset, value_to},
     chain::THORChainName,
     constants::{THORCHAIN_INBOUND_ADDRESS, ZERO_HASH},
 };
@@ -50,6 +50,20 @@ pub struct TransactionStatusTx {
 pub struct TransactionCoin {
     pub asset: String,
     pub amount: String,
+    pub decimals: Option<i32>,
+}
+
+impl TransactionCoin {
+    pub fn native_value(&self, chain: Chain) -> Option<String> {
+        let decimals = self
+            .decimals
+            .or_else(|| if self.is_native_asset() { Some(Asset::from_chain(chain).decimals) } else { None })?;
+        Some(value_to(&self.amount, decimals).to_string())
+    }
+
+    fn is_native_asset(&self) -> bool {
+        !self.asset.contains('-')
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -185,6 +199,21 @@ mod tests {
 
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), quote_address);
+    }
+
+    #[test]
+    fn test_native_value() {
+        let native = TransactionCoin { asset: "LTC.LTC".to_string(), amount: "160661010".to_string(), decimals: None };
+        assert_eq!(native.native_value(Chain::Litecoin), Some("160661010".to_string()));
+
+        let native_18 = TransactionCoin { asset: "ETH.ETH".to_string(), amount: "2509674".to_string(), decimals: None };
+        assert_eq!(native_18.native_value(Chain::Ethereum), Some("25096740000000000".to_string()));
+
+        let token_with_decimals = TransactionCoin { asset: "ETH.USDT-0xDAC17F958D2ee523a2206206994597C13D831ec7".to_string(), amount: "380962656200".to_string(), decimals: Some(6) };
+        assert_eq!(token_with_decimals.native_value(Chain::Ethereum), Some("3809626562".to_string()));
+
+        let token_no_decimals = TransactionCoin { asset: "ETH.USDT-0xDAC17F958D2ee523a2206206994597C13D831ec7".to_string(), amount: "380962656200".to_string(), decimals: None };
+        assert_eq!(token_no_decimals.native_value(Chain::Ethereum), None);
     }
 
     #[test]

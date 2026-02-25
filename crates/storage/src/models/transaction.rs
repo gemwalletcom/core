@@ -94,6 +94,7 @@ impl TransactionRow {
             utxo_inputs: inputs.unwrap_or_default().into(),
             utxo_outputs: outputs.unwrap_or_default().into(),
             metadata: self.metadata.clone(),
+            data: None,
             created_at: self.created_at.and_utc(),
         }
     }

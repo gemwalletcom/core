@@ -163,9 +163,7 @@ pub struct TransactionMemoData {
 
 impl TransactionMemo {
     pub fn decoded_data(&self) -> Option<String> {
-        let data = self.memo.data.as_ref()?;
-        let bytes = hex::decode(data).ok()?;
-        String::from_utf8(bytes).ok()
+        primitives::hex::decode_hex_utf8(self.memo.data.as_ref()?)
     }
 }
 

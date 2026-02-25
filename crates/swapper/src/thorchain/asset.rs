@@ -1,8 +1,26 @@
+use num_bigint::BigInt;
 use primitives::{Asset, AssetId};
+use std::str::FromStr;
 
 use crate::asset::*;
 
 use super::chain::THORChainName;
+
+const THORCHAIN_DECIMALS: i32 = 8;
+
+pub fn value_from(value: &str, decimals: i32) -> BigInt {
+    let value = BigInt::from_str(value).unwrap_or_default();
+    let diff = decimals - THORCHAIN_DECIMALS;
+    let factor = BigInt::from(10).pow(diff.unsigned_abs());
+    if diff > 0 { value / factor } else { value * factor }
+}
+
+pub fn value_to(value: &str, decimals: i32) -> BigInt {
+    let value = BigInt::from_str(value).unwrap_or_default();
+    let diff = decimals - THORCHAIN_DECIMALS;
+    let factor = BigInt::from(10).pow(diff.unsigned_abs());
+    if diff > 0 { value * factor } else { value / factor }
+}
 
 #[derive(Clone, Debug)]
 pub struct THORChainAsset {
@@ -204,6 +222,22 @@ mod tests {
             ),
             Some("=:THOR.TCY:0x1234567890abcdef:0/1/0:g1:50".into())
         );
+    }
+
+    #[test]
+    fn test_value_from() {
+        assert_eq!(value_from("1000000000000000000", 18), BigInt::from(100000000));
+        assert_eq!(value_from("1000000000", 10), BigInt::from(10000000));
+        assert_eq!(value_from("1000000000", 6), BigInt::from_str("100000000000").unwrap());
+        assert_eq!(value_from("1000000000", 8), BigInt::from(1000000000));
+    }
+
+    #[test]
+    fn test_value_to() {
+        assert_eq!(value_to("2509674", 18), BigInt::from_str("25096740000000000").unwrap());
+        assert_eq!(value_to("10000000", 10), BigInt::from(1000000000));
+        assert_eq!(value_to("79158429", 6), BigInt::from(791584));
+        assert_eq!(value_to("160661010", 8), BigInt::from(160661010));
     }
 
     #[test]

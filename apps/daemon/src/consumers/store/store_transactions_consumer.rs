@@ -15,12 +15,14 @@ const TRANSACTION_BATCH_SIZE: usize = 100;
 fn set_cross_chain_in_transit(transactions: Vec<Transaction>) -> Vec<Transaction> {
     transactions
         .into_iter()
-        .map(|mut tx| {
-            if tx.state == TransactionState::Confirmed && tx.transaction_type != TransactionType::Swap && cross_chain::is_cross_chain_swap(&tx.id.chain, &tx.to, tx.memo.as_deref())
+        .map(|mut transaction| {
+            if transaction.state == TransactionState::Confirmed
+                && transaction.transaction_type != TransactionType::Swap
+                && cross_chain::is_cross_chain_swap(&transaction)
             {
-                tx.state = TransactionState::InTransit;
+                transaction.state = TransactionState::InTransit;
             }
-            tx
+            transaction
         })
         .collect()
 }
@@ -113,7 +115,9 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
                 txn_ids.insert(transaction.id.clone());
                 asset_ids.extend(transaction_asset_ids.iter().cloned());
 
-                let is_outdated = self.config.is_transaction_outdated(transaction.created_at.naive_utc(), chain, transaction.transaction_type.clone());
+                let is_outdated = self
+                    .config
+                    .is_transaction_outdated(transaction.created_at.naive_utc(), chain, transaction.transaction_type.clone());
                 let should_notify = !is_outdated && is_notify_devices;
 
                 if should_notify {
