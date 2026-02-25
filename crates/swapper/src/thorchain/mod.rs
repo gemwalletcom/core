@@ -3,7 +3,7 @@ mod chain;
 pub mod client;
 mod constants;
 pub mod memo;
-pub(crate) mod model;
+pub mod model;
 mod provider;
 mod swap_mapper;
 pub use provider::ThorchainCrossChain;
@@ -33,7 +33,7 @@ where
 {
     pub provider: ProviderType,
     pub rpc_provider: Arc<dyn RpcProvider>,
-    pub(crate) swap_client: client::ThorChainSwapClient<C>,
+    pub(crate) client: client::ThorChainSwapClient<C>,
 }
 
 impl<C> ThorChain<C>
@@ -44,7 +44,7 @@ where
         Self {
             provider: ProviderType::new(SwapperProvider::Thorchain),
             rpc_provider,
-            swap_client,
+            client: swap_client,
         }
     }
 

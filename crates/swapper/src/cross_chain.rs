@@ -11,6 +11,10 @@ pub trait CrossChainProvider: Send + Sync {
 
 const PROVIDERS: [&dyn CrossChainProvider; 2] = [&ThorchainCrossChain, &AcrossCrossChain];
 
+pub fn providers() -> Vec<SwapperProvider> {
+    PROVIDERS.iter().map(|p| p.provider()).collect()
+}
+
 pub fn swap_provider(transaction: &Transaction) -> Option<SwapperProvider> {
     PROVIDERS.iter().find(|p| p.is_swap(transaction)).map(|p| p.provider())
 }

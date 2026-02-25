@@ -1,9 +1,11 @@
 mod in_transit_updater;
+mod vault_addresses_updater;
 
 use crate::model::WorkerService;
 use crate::worker::context::WorkerContext;
 use crate::worker::jobs::WorkerJob;
 use crate::worker::plan::JobPlanBuilder;
+use cacher::CacherClient;
 use in_transit_updater::{InTransitConfig, InTransitUpdater};
 use job_runner::{JobHandle, ShutdownReceiver};
 use primitives::ConfigKey;
@@ -14,6 +16,7 @@ use storage::ConfigCacher;
 use streamer::{StreamProducer, StreamProducerConfig};
 use swapper::NativeProvider;
 use swapper::swapper::GemSwapper;
+use vault_addresses_updater::VaultAddressesUpdater;
 
 pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
     let runtime = ctx.runtime();
@@ -32,6 +35,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
     let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
     let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
     let stream_producer = StreamProducer::new(&rabbitmq_config, "transactions_worker").await?;
+    let cacher = CacherClient::new(&settings.redis.url).await;
 
     JobPlanBuilder::with_config(WorkerService::Transactions, runtime.plan(shutdown_rx), &config)
         .job(WorkerJob::UpdateInTransitTransactions, {
@@ -41,6 +45,14 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
             move || {
                 let updater = InTransitUpdater::new(database.clone(), in_transit_config, swapper.clone(), stream_producer.clone());
                 async move { updater.update().await }
+            }
+        })
+        .jobs(WorkerJob::UpdateSwapVaultAddresses, swapper::cross_chain::providers(), |provider, _| {
+            let swapper = swapper.clone();
+            let cacher = cacher.clone();
+            move || {
+                let updater = VaultAddressesUpdater::new(swapper.clone(), cacher.clone());
+                async move { updater.update(provider).await }
             }
         })
         .finish()

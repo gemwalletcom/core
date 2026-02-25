@@ -231,6 +231,10 @@ impl GemSwapper {
     pub async fn get_swap_result(&self, chain: Chain, provider: SwapperProvider, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
         self.get_swapper_by_provider(&provider)?.get_swap_result(chain, transaction_hash).await
     }
+
+    pub async fn get_vault_addresses(&self, provider: &SwapperProvider) -> Result<Vec<String>, SwapperError> {
+        self.get_swapper_by_provider(provider)?.get_vault_addresses().await
+    }
 }
 
 #[cfg(all(test, feature = "reqwest_provider"))]

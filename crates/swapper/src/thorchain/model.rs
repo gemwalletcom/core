@@ -111,6 +111,8 @@ impl RouteData {
 #[derive(Debug, Clone, Deserialize)]
 pub struct InboundAddress {
     pub chain: String,
+    pub address: String,
+    pub router: Option<String>,
     #[serde(deserialize_with = "deserialize_bigint_from_str")]
     pub dust_threshold: BigInt,
 }

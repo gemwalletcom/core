@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use alloy_primitives::U256;
@@ -24,6 +25,10 @@ impl ThorchainCrossChain {
             Chain::Base => Some("0x68208d99746b805a1ae41421950a47b711e35681"),
             _ => None,
         }
+    }
+
+    pub fn static_router_addresses() -> Vec<&'static str> {
+        Chain::all().iter().filter_map(|chain| Self::router_address(chain)).collect()
     }
 
     fn has_swap_memo(transaction: &primitives::Transaction) -> bool {
@@ -93,6 +98,17 @@ where
             .collect()
     }
 
+    async fn get_vault_addresses(&self) -> Result<Vec<String>, SwapperError> {
+        let inbound = self.client.get_inbound_addresses().await?;
+        let addresses = inbound.iter().flat_map(|entry| {
+            let addr = std::iter::once(entry.address.clone());
+            let router = entry.router.iter().filter(|r| !r.is_empty()).cloned();
+            addr.chain(router)
+        });
+        let static_addresses = ThorchainCrossChain::static_router_addresses().into_iter().map(String::from);
+        Ok(addresses.chain(static_addresses).collect::<HashSet<_>>().into_iter().collect())
+    }
+
     async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let from_asset = THORChainAsset::from_asset_id(&request.from_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
         let to_asset = THORChainAsset::from_asset_id(&request.to_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
@@ -100,7 +116,7 @@ where
         let value = super::asset::value_from(&request.value, from_asset.decimals as i32);
 
         if from_asset.chain != THORChainName::Thorchain {
-            let inbound_addresses = self.swap_client.get_inbound_addresses().await?;
+            let inbound_addresses = self.client.get_inbound_addresses().await?;
             let from_inbound_address = inbound_addresses
                 .iter()
                 .find(|address| address.chain == from_asset.chain.long_name())
@@ -114,7 +130,7 @@ where
         let fee = request.options.clone().fee.unwrap_or_default().thorchain;
 
         let quote = self
-            .swap_client
+            .client
             .get_quote(
                 from_asset.clone(),
                 to_asset.clone(),
@@ -198,7 +214,7 @@ where
     }
 
     async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
-        let response = self.swap_client.get_transaction_status(transaction_hash).await?;
+        let response = self.client.get_transaction_status(transaction_hash).await?;
         Ok(swap_mapper::map_swap_result(&response, chain))
     }
 }

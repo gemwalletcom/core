@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::{collections::HashMap, error::Error};
 
 use async_trait::async_trait;
+use cacher::{CacheKey, CacherClient};
 use primitives::{AssetAddress, AssetIdVecExt, Transaction, TransactionId, TransactionState, TransactionType, WalletId};
 use storage::{AssetsAddressesRepository, AssetsRepository, Database, TransactionsRepository, WalletsRepository};
 use streamer::{AssetId, DeviceStreamEvent, DeviceStreamPayload, NotificationsPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
@@ -29,6 +30,7 @@ pub struct StoreTransactionsConsumer {
     pub stream_producer: StreamProducer,
     pub pusher: Pusher,
     pub config: StoreTransactionsConsumerConfig,
+    pub cacher: CacherClient,
 }
 
 struct ProcessingResult {
@@ -68,6 +70,8 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
         let existing_assets_map: HashMap<AssetId, primitives::AssetPriceMetadata> = existing_assets.into_iter().map(|asset| (asset.asset.asset.id.clone(), asset)).collect();
 
         let _ = self.stream_producer.publish_fetch_assets(missing_assets).await;
+
+        let vault_addresses = self.get_vault_addresses().await;
 
         let mut transactions_map: HashMap<TransactionId, Transaction> = HashMap::new();
         let mut notifications: Vec<NotificationsPayload> = Vec::new();
@@ -111,7 +115,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
                 txn_ids.insert(transaction.id.clone());
                 asset_ids.extend(transaction_asset_ids.iter().cloned());
 
-                let should_notify = self.config.should_notify_transaction(transaction, is_notify_devices);
+                let should_notify = self.config.should_notify_transaction(transaction, is_notify_devices, &vault_addresses);
 
                 if should_notify {
                     let assets: Vec<primitives::Asset> = transaction_asset_ids
@@ -172,6 +176,16 @@ impl StoreTransactionsConsumer {
             .collect::<Vec<_>>();
 
         Ok((assets_with_prices, missing_assets_ids))
+    }
+
+    async fn get_vault_addresses(&self) -> HashSet<String> {
+        self.cacher
+            .get_hset_all_values::<Vec<String>>(&CacheKey::SwapVaultAddresses.key())
+            .await
+            .unwrap_or_default()
+            .into_iter()
+            .flatten()
+            .collect()
     }
 
     async fn store_transactions(&self, transactions: Vec<Transaction>) -> Result<usize, Box<dyn Error + Send + Sync>> {

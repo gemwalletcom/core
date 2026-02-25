@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::error::Error;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -92,6 +93,11 @@ impl CacherClient {
         let serialized_value = serde_json::to_string(value)?;
         let redis_result: i64 = self.connection.clone().hset(hash_key, field, serialized_value).await?;
         Ok(redis_result == 1)
+    }
+
+    pub async fn get_hset_all_values<T: serde::de::DeserializeOwned>(&self, hash_key: &str) -> Result<Vec<T>, Box<dyn Error + Send + Sync>> {
+        let map: HashMap<String, String> = self.connection.clone().hgetall(hash_key).await?;
+        Ok(map.into_values().filter_map(|v| serde_json::from_str(&v).ok()).collect())
     }
 
     pub async fn can_process_now(&self, key: &str, ttl_seconds: u64) -> Result<bool, Box<dyn Error + Send + Sync>> {
