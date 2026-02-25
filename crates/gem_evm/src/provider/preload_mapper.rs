@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::str::FromStr;
 
-use alloy_primitives::{Address, U256};
+use alloy_primitives::{Address, U256, hex};
 use alloy_sol_types::SolCall;
 use gem_bsc::stake_hub::STAKE_HUB_ADDRESS;
 use num_bigint::BigInt;
@@ -37,7 +37,7 @@ pub fn bigint_to_hex_string(value: &BigInt) -> String {
 }
 
 pub fn bytes_to_hex_string(data: &[u8]) -> String {
-    format!("0x{}", alloy_primitives::hex::encode(data))
+    format!("0x{}", hex::encode(data))
 }
 
 pub fn map_transaction_preload(nonce_hex: String, chain_id: String) -> Result<TransactionLoadMetadata, Box<dyn std::error::Error + Send + Sync>> {
@@ -92,13 +92,13 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
                 match from_asset.id.token_subtype() {
                     AssetSubtype::NATIVE => Ok(TransactionParams::new(
                         swap_data.data.to.clone(),
-                        alloy_primitives::hex::decode(swap_data.data.data.clone())?,
+                        hex::decode(swap_data.data.data.clone())?,
                         BigInt::from_str_radix(&swap_data.data.value, 10)?,
                     )),
                     AssetSubtype::TOKEN => match swap_data.data.data_type {
                         SwapQuoteDataType::Contract => Ok(TransactionParams::new(
                             swap_data.data.to.clone(),
-                            alloy_primitives::hex::decode(swap_data.data.data.clone())?,
+                            hex::decode(swap_data.data.data.clone())?,
                             BigInt::ZERO,
                         )),
                         SwapQuoteDataType::Transfer => {
@@ -191,10 +191,8 @@ pub fn get_extra_fee_gas_limit(input: &TransactionLoadInput) -> Result<BigInt, B
             }
         }
         TransactionInputType::Earn(_, _, earn_data) => {
-            if earn_data.approval.is_some() {
-                if let Some(gas_limit) = &earn_data.gas_limit {
-                    return Ok(BigInt::from_str_radix(gas_limit, 10)?);
-                }
+            if earn_data.approval.is_some() && let Some(gas_limit) = &earn_data.gas_limit {
+                return Ok(BigInt::from_str_radix(gas_limit, 10)?);
             }
             Ok(BigInt::from(0))
         }
