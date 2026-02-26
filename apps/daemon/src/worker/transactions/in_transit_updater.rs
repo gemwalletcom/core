@@ -62,7 +62,8 @@ impl InTransitUpdater {
         let transaction = row.as_primitive(row.get_addresses());
         let elapsed = DurationMs((Utc::now().naive_utc() - row.created_at).to_std().unwrap_or_default());
 
-        let result = match cross_chain::swap_provider(&transaction) {
+        let provider = cross_chain::swap_provider(&transaction);
+        let result = match provider {
             Some(provider) => match self.swapper.get_swap_result(chain, provider, &row.hash).await {
                 Ok(r) => r,
                 Err(err) => {
@@ -76,8 +77,9 @@ impl InTransitUpdater {
             },
         };
 
+        let provider_name = provider.map(|p| p.as_ref().to_string()).unwrap_or_default();
         let Some((state, metadata)) = resolve_status(&result, row.created_at, cutoff) else {
-            info_with_fields!("in_transit pending", chain = chain.as_ref(), hash = row.hash, elapsed = elapsed);
+            info_with_fields!("in_transit pending", chain = chain.as_ref(), hash = row.hash, provider = provider_name, elapsed = elapsed);
             return Ok(false);
         };
 
