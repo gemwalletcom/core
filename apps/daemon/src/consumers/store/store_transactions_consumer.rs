@@ -13,11 +13,16 @@ use crate::pusher::Pusher;
 
 const TRANSACTION_BATCH_SIZE: usize = 100;
 
+const IN_TRANSIT_TYPES: [TransactionType; 2] = [TransactionType::Transfer, TransactionType::SmartContractCall];
+
 fn set_cross_chain_in_transit(transactions: Vec<Transaction>) -> Vec<Transaction> {
     transactions
         .into_iter()
         .map(|mut transaction| {
-            if transaction.state == TransactionState::Confirmed && transaction.transaction_type != TransactionType::Swap && cross_chain::is_cross_chain_swap(&transaction) {
+            if transaction.state == TransactionState::Confirmed
+                && IN_TRANSIT_TYPES.contains(&transaction.transaction_type)
+                && cross_chain::is_cross_chain_swap(&transaction)
+            {
                 transaction.state = TransactionState::InTransit;
             }
             transaction
@@ -224,6 +229,17 @@ mod tests {
         let tx = Transaction {
             transaction_type: TransactionType::Swap,
             memo: Some(memo.to_string()),
+            ..Transaction::mock()
+        };
+        let result = set_cross_chain_in_transit(vec![tx]);
+        assert_eq!(result[0].state, TransactionState::Confirmed);
+    }
+
+    #[test]
+    fn test_set_cross_chain_in_transit_skip_token_approval() {
+        let tx = Transaction {
+            transaction_type: TransactionType::TokenApproval,
+            to: "0x337685fdaB40D39bd02028545a4FfA7D287cC3E2".to_string(),
             ..Transaction::mock()
         };
         let result = set_cross_chain_in_transit(vec![tx]);

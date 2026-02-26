@@ -63,11 +63,17 @@ impl InTransitUpdater {
         let elapsed = DurationMs((Utc::now().naive_utc() - row.created_at).to_std().unwrap_or_default());
 
         let provider = cross_chain::swap_provider(&transaction);
+        let provider_name = provider.map(|p| p.as_ref().to_string()).unwrap_or_default();
         let result = match provider {
             Some(provider) => match self.swapper.get_swap_result(chain, provider, &row.hash).await {
                 Ok(r) => r,
                 Err(err) => {
-                    error_with_fields!("in_transit check failed", &err as &dyn Error, chain = chain.as_ref(), hash = row.hash, elapsed = elapsed);
+                    error_with_fields!("in_transit check failed", &err as &dyn Error, chain = chain.as_ref(), hash = row.hash, provider = provider_name, elapsed = elapsed);
+                    if row.created_at < cutoff {
+                        info_with_fields!("in_transit timed out", chain = chain.as_ref(), hash = row.hash, provider = provider_name, elapsed = elapsed);
+                        self.save_and_publish(chain, row, &TransactionState::Failed, None).await?;
+                        return Ok(true);
+                    }
                     return Ok(false);
                 }
             },
@@ -76,8 +82,6 @@ impl InTransitUpdater {
                 metadata: None,
             },
         };
-
-        let provider_name = provider.map(|p| p.as_ref().to_string()).unwrap_or_default();
         let Some((state, metadata)) = resolve_status(&result, row.created_at, cutoff) else {
             info_with_fields!("in_transit pending", chain = chain.as_ref(), hash = row.hash, provider = provider_name, elapsed = elapsed);
             return Ok(false);
