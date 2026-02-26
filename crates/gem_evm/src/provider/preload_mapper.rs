@@ -300,7 +300,7 @@ mod tests {
     use primitives::{Delegation, DelegationBase, DelegationState, DelegationValidator, RedelegateData};
 
     fn everstake_validator() -> DelegationValidator {
-        DelegationValidator::stake(Chain::Ethereum, EVERSTAKE_POOL_ADDRESS.to_string(), "Everstake Pool".to_string(), true, 10.0, 4.2)
+        DelegationValidator::stake(Chain::Ethereum, EVERSTAKE_POOL_ADDRESS.to_string(), "Everstake".to_string(), true, 10.0, 4.2)
     }
 
     #[test]
