@@ -458,6 +458,7 @@ mod tests {
                     "0x000000000000000000000000f1a3687303606a6fD48179Ce503164CDcBAbeaB6".to_string(), // delegator
                 ],
                 data: "0x00000000000000000000000000000000000000000000000d5cc0065cf2d900aa0000000000000000000000000000000000000000000000001158e460913d00000".to_string(),
+                transaction_hash: None,
             }],
             status: "0x1".to_string(),
             block_number: BigUint::from(0x1234u32),

@@ -376,6 +376,7 @@ mod tests {
                 "0x00000000000000000000000051eD60604637989d19D29e43c5D94B098A0d1Af7".to_string(),
             ],
             data: "0x00000000000000000000000000000000000000000000000d5cc0065cf2d900aa0000000000000000000000000000000000000000000000000de0b6b3a7640000".to_string(),
+            transaction_hash: None,
         };
 
         let receipt = create_test_receipt_with_log(log);
@@ -413,6 +414,7 @@ mod tests {
                 "0x000000000000000000000000a103B70852B1fE3eF3a0B60B818279F9D0D337d9".to_string(),
             ],
             data: "0x0000000000000000000000000000000000000000000000000e539ee6df39e04c0000000000000000000000000000000000000000000000000e83bec8de346b99".to_string(),
+            transaction_hash: None,
         };
 
         let receipt = create_test_receipt_with_log(log);
@@ -451,6 +453,7 @@ mod tests {
                 "0x000000000000000000000000B5a0A71Be7B79F2A8Bd19B3A4D54d1b85fA2d50b".to_string(),
             ],
             data: "0x000000000000000000000000000000000000000000000000206ebdb8157d551f0000000000000000000000000000000000000000000000002068edb30143ec5300000000000000000000000000000000000000000000000020e60fe483aabb11".to_string(),
+            transaction_hash: None,
         };
 
         let receipt = create_test_receipt_with_log(log);
@@ -488,6 +491,7 @@ mod tests {
                 "0x00000000000000000000000047B47f2586089F68Ec17384a437F96800f499274".to_string(),
             ],
             data: "0x0000000000000000000000000000000000000000000000003786b5ea2b989d0d".to_string(),
+            transaction_hash: None,
         };
 
         let receipt = create_test_receipt_with_log(log);
@@ -524,6 +528,7 @@ mod tests {
                 "0x0000000000000000000000001234567890123456789012345678901234567890".to_string(),
             ],
             data: "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000de0b6b3a7640000".to_string(),
+            transaction_hash: None,
         };
 
         let receipt = create_test_receipt_with_log(log);
@@ -552,6 +557,7 @@ mod tests {
                 "0x0000000000000000000000001234567890123456789012345678901234567890".to_string(),
             ],
             data: "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000de0b6b3a7640000".to_string(),
+            transaction_hash: None,
         };
 
         let receipt = create_test_receipt_with_log(log);
