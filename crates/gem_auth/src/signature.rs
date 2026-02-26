@@ -28,7 +28,7 @@ fn verify_hash_signature(hash: &[u8; 32], signature: &str, expected_address: &st
     let Some(recovered) = recover_address_from_hash(hash, signature) else {
         return false;
     };
-    recovered.eq_ignore_ascii_case(expected_address)
+    recovered == expected_address
 }
 
 fn recover_address_from_hash(hash: &[u8; 32], signature: &str) -> Option<String> {

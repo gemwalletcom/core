@@ -1,12 +1,20 @@
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use alloy_primitives::U256;
 use async_trait::async_trait;
 use gem_client::Client;
-use primitives::{Chain, hex::decode_hex_utf8, swap::ApprovalData};
+use primitives::{Chain, Transaction, TransactionType, hex::decode_hex_utf8, swap::ApprovalData};
+
+use num_bigint::BigInt;
 
 use super::{
-    QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY, ThorChain, asset::THORChainAsset, chain::THORChainName, memo::ThorchainMemo, model::RouteData, quote_data_mapper, swap_mapper,
+    DUST_THRESHOLD_MULTIPLIER, QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY, ThorChain,
+    asset::{THORChainAsset, value_to},
+    chain::THORChainName,
+    memo::ThorchainMemo,
+    model::RouteData,
+    quote_data_mapper, swap_mapper,
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider,
@@ -19,11 +27,15 @@ impl ThorchainCrossChain {
     fn router_address(chain: &Chain) -> Option<&'static str> {
         match chain {
             Chain::Ethereum => Some("0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146"),
-            Chain::SmartChain => Some("0xb30ec53f98ff5947ede720d32ac2da7e52a5f56b"),
+            Chain::SmartChain => Some("0xb30eC53F98ff5947EDe720D32aC2da7e52A5f56b"),
             Chain::AvalancheC => Some("0x8F66c4AE756BEbC49Ec8B81966DD8bba9f127549"),
-            Chain::Base => Some("0x68208d99746b805a1ae41421950a47b711e35681"),
+            Chain::Base => Some("0x68208D99746b805a1Ae41421950A47b711E35681"),
             _ => None,
         }
+    }
+
+    pub fn static_router_addresses() -> Vec<&'static str> {
+        Chain::all().iter().filter_map(|chain| Self::router_address(chain)).collect()
     }
 
     fn has_swap_memo(transaction: &primitives::Transaction) -> bool {
@@ -44,12 +56,12 @@ impl crate::cross_chain::CrossChainProvider for ThorchainCrossChain {
         SwapperProvider::Thorchain
     }
 
-    fn is_swap(&self, transaction: &primitives::Transaction) -> bool {
+    fn is_swap(&self, transaction: &Transaction) -> bool {
         if Self::has_swap_memo(transaction) {
             return true;
         }
         if let Some(router) = Self::router_address(&transaction.asset_id.chain) {
-            return router.eq_ignore_ascii_case(&transaction.to) && transaction.transaction_type == primitives::TransactionType::Transfer;
+            return router == transaction.to && transaction.transaction_type == TransactionType::Transfer;
         }
         false
     }
@@ -93,6 +105,19 @@ where
             .collect()
     }
 
+    async fn get_vault_addresses(&self) -> Result<Vec<String>, SwapperError> {
+        let inbound = self.client.get_inbound_addresses().await?;
+        let addresses = inbound.iter().flat_map(|entry| {
+            let chain = THORChainName::from_symbol(&entry.chain);
+            let checksum = move |addr: String| chain.as_ref().map(|c| c.checksum_address(&addr)).unwrap_or(addr);
+            let addr = std::iter::once(checksum(entry.address.clone()));
+            let router = entry.router.iter().filter(|r| !r.is_empty()).map(move |r| checksum(r.clone()));
+            addr.chain(router)
+        });
+        let static_addresses = ThorchainCrossChain::static_router_addresses().into_iter().map(String::from);
+        Ok(addresses.chain(static_addresses).collect::<HashSet<_>>().into_iter().collect())
+    }
+
     async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let from_asset = THORChainAsset::from_asset_id(&request.from_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
         let to_asset = THORChainAsset::from_asset_id(&request.to_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
@@ -100,21 +125,22 @@ where
         let value = super::asset::value_from(&request.value, from_asset.decimals as i32);
 
         if from_asset.chain != THORChainName::Thorchain {
-            let inbound_addresses = self.swap_client.get_inbound_addresses().await?;
+            let inbound_addresses = self.client.get_inbound_addresses().await?;
             let from_inbound_address = inbound_addresses
                 .iter()
                 .find(|address| address.chain == from_asset.chain.long_name())
                 .ok_or(SwapperError::InvalidRoute)?;
 
-            if from_inbound_address.dust_threshold > value {
-                return Err(SwapperError::InputAmountError { min_amount: None });
+            let min_value = min_value(&from_inbound_address.dust_threshold);
+            if min_value > value {
+                return Err(SwapperError::InputAmountError { min_amount: Some(value_to(&min_value.to_string(), from_asset.decimals as i32).to_string()) });
             }
         }
 
         let fee = request.options.clone().fee.unwrap_or_default().thorchain;
 
         let quote = self
-            .swap_client
+            .client
             .get_quote(
                 from_asset.clone(),
                 to_asset.clone(),
@@ -197,9 +223,26 @@ where
         Ok(data)
     }
 
-    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
-        let response = self.swap_client.get_transaction_status(transaction_hash).await?;
-        Ok(swap_mapper::map_swap_result(&response, chain))
+    async fn get_swap_result(&self, _chain: Chain, hash: &str) -> Result<SwapResult, SwapperError> {
+        let hash = hash.strip_prefix("0x").unwrap_or(hash).to_uppercase();
+        let response = self.client.get_transaction_status(&hash).await?;
+        Ok(swap_mapper::map_swap_result(&response))
+    }
+}
+
+fn min_value(dust_threshold: &BigInt) -> BigInt {
+    dust_threshold * DUST_THRESHOLD_MULTIPLIER
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_min_value() {
+        assert_eq!(min_value(&BigInt::from(10000)), BigInt::from(20000));
+        assert_eq!(min_value(&BigInt::from(0)), BigInt::from(0));
+        assert_eq!(min_value(&BigInt::from(50000)), BigInt::from(100000));
     }
 }
 
@@ -250,7 +293,7 @@ mod swap_integration_tests {
     }
 
     #[tokio::test]
-    async fn test_thorchain_quote_rejects_below_min_amount() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_thorchain_quote_rejects_below_min_value() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let provider = Arc::new(NativeProvider::default());
         let swapper = ThorChain::new(provider.clone());
 

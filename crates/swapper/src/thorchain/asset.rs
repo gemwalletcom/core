@@ -1,12 +1,29 @@
+use std::str::FromStr;
+use std::sync::LazyLock;
+
 use num_bigint::BigInt;
 use primitives::{Asset, AssetId};
-use std::str::FromStr;
 
 use crate::asset::*;
 
 use super::chain::THORChainName;
 
 const THORCHAIN_DECIMALS: i32 = 8;
+
+static ASSETS: &[(THORChainName, &str, &LazyLock<Asset>)] = &[
+    (THORChainName::Ethereum, ETHEREUM_USDT_TOKEN_ID, &ETHEREUM_USDT),
+    (THORChainName::Ethereum, ETHEREUM_USDC_TOKEN_ID, &ETHEREUM_USDC),
+    (THORChainName::Ethereum, ETHEREUM_WBTC_TOKEN_ID, &ETHEREUM_WBTC),
+    (THORChainName::Ethereum, ETHEREUM_DAI_TOKEN_ID, &ETHEREUM_DAI),
+    (THORChainName::SmartChain, SMARTCHAIN_USDT_TOKEN_ID, &SMARTCHAIN_USDT),
+    (THORChainName::SmartChain, SMARTCHAIN_USDC_TOKEN_ID, &SMARTCHAIN_USDC),
+    (THORChainName::AvalancheC, AVALANCHE_USDT_TOKEN_ID, &AVALANCHE_USDT),
+    (THORChainName::AvalancheC, AVALANCHE_USDC_TOKEN_ID, &AVALANCHE_USDC),
+    (THORChainName::Base, BASE_USDC_TOKEN_ID, &BASE_USDC),
+    (THORChainName::Base, BASE_CBBTC_TOKEN_ID, &BASE_CBBTC),
+    (THORChainName::Thorchain, THORCHAIN_TCY_TOKEN_ID, &THORCHAIN_TCY),
+    (THORChainName::Tron, TRON_USDT_TOKEN_ID, &TRON_USDT),
+];
 
 pub fn value_from(value: &str, decimals: i32) -> BigInt {
     let value = BigInt::from_str(value).unwrap_or_default();
@@ -63,41 +80,12 @@ impl THORChainAsset {
         }
     }
 
-    //TODO: Refactor to remove mapping.
     pub fn from(chain: THORChainName, token_id: &str) -> Option<THORChainAsset> {
-        match chain {
-            THORChainName::Ethereum => match token_id {
-                ETHEREUM_USDT_TOKEN_ID => Some(chain.asset(ETHEREUM_USDT.clone())),
-                ETHEREUM_USDC_TOKEN_ID => Some(chain.asset(ETHEREUM_USDC.clone())),
-                ETHEREUM_WBTC_TOKEN_ID => Some(chain.asset(ETHEREUM_WBTC.clone())),
-                ETHEREUM_DAI_TOKEN_ID => Some(chain.asset(ETHEREUM_DAI.clone())),
-                _ => None,
-            },
-            THORChainName::SmartChain => match token_id {
-                SMARTCHAIN_USDT_TOKEN_ID => Some(chain.asset(SMARTCHAIN_USDT.clone())),
-                SMARTCHAIN_USDC_TOKEN_ID => Some(chain.asset(SMARTCHAIN_USDC.clone())),
-                _ => None,
-            },
-            THORChainName::AvalancheC => match token_id {
-                AVALANCHE_USDT_TOKEN_ID => Some(chain.asset(AVALANCHE_USDT.clone())),
-                AVALANCHE_USDC_TOKEN_ID => Some(chain.asset(AVALANCHE_USDC.clone())),
-                _ => None,
-            },
-            THORChainName::Base => match token_id {
-                BASE_USDC_TOKEN_ID => Some(chain.asset(BASE_USDC.clone())),
-                BASE_CBBTC_TOKEN_ID => Some(chain.asset(BASE_CBBTC.clone())),
-                _ => None,
-            },
-            THORChainName::Thorchain => match token_id {
-                THORCHAIN_TCY_TOKEN_ID => Some(chain.asset(THORCHAIN_TCY.clone())),
-                _ => None,
-            },
-            THORChainName::Tron => match token_id {
-                TRON_USDT_TOKEN_ID => Some(chain.asset(TRON_USDT.clone())),
-                _ => None,
-            },
-            _ => None,
-        }
+        let token_id = chain.checksum_address(token_id);
+        ASSETS
+            .iter()
+            .find(|(c, id, _)| *c == chain && token_id == c.checksum_address(id))
+            .map(|(c, _, asset)| c.asset((**asset).clone()))
     }
 
     // https://dev.thorchain.org/concepts/memos.html#swap

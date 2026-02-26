@@ -78,6 +78,12 @@ impl JobLabel for PlatformStore {
     }
 }
 
+impl JobLabel for primitives::SwapProvider {
+    fn job_label(&self) -> String {
+        self.as_ref().to_string()
+    }
+}
+
 fn compose_job_name(base: &str, label: Option<&str>) -> String {
     match label.map(str::trim).filter(|value| !value.is_empty()) {
         Some(suffix) => format!("{base}.{suffix}"),
@@ -129,6 +135,7 @@ pub enum WorkerJob {
     UpdateDexFeeds,
     UpdateDexPrices,
     UpdateInTransitTransactions,
+    UpdateSwapVaultAddresses,
 }
 
 impl WorkerJob {
@@ -176,6 +183,7 @@ impl WorkerJob {
             UpdateDexFeeds => JobSpec::new(WorkerService::Prices, JobInterval::Duration(Duration::from_secs(3600))),
             UpdateDexPrices => JobSpec::new(WorkerService::Prices, JobInterval::Duration(Duration::from_secs(1800))),
             UpdateInTransitTransactions => JobSpec::new(WorkerService::Transactions, JobInterval::Config(ConfigKey::TransactionTimerInTransitUpdate)),
+            UpdateSwapVaultAddresses => JobSpec::new(WorkerService::Transactions, JobInterval::Duration(Duration::from_secs(300))),
         }
     }
 

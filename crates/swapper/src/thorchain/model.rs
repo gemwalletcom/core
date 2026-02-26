@@ -1,5 +1,5 @@
 use num_bigint::BigInt;
-use primitives::{Asset, Chain, swap::SwapStatus};
+use primitives::{Asset, AssetId, Chain, swap::SwapStatus};
 use serde::{Deserialize, Serialize};
 use serde_serializers::deserialize_bigint_from_str;
 
@@ -42,6 +42,7 @@ pub struct TransactionStatus {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionStatusTx {
+    pub chain: String,
     pub memo: String,
     pub coins: Vec<TransactionCoin>,
 }
@@ -59,6 +60,18 @@ impl TransactionCoin {
             .decimals
             .or_else(|| if self.is_native_asset() { Some(Asset::from_chain(chain).decimals) } else { None })?;
         Some(value_to(&self.amount, decimals).to_string())
+    }
+
+    pub fn resolve_asset_id(&self) -> Option<AssetId> {
+        let (chain_str, rest) = self.asset.split_once('.')?;
+        let chain_name = THORChainName::from_symbol(chain_str)?;
+        let chain = chain_name.chain();
+        let key = rest.split_once('-').map_or(rest, |(_, addr)| addr);
+        match THORChainAsset::from(chain_name, key).and_then(|a| a.token_id) {
+            Some(token_id) => Some(AssetId::from_token(chain, &token_id)),
+            None if self.is_native_asset() => Some(AssetId::from_chain(chain)),
+            None => None,
+        }
     }
 
     fn is_native_asset(&self) -> bool {
@@ -111,6 +124,8 @@ impl RouteData {
 #[derive(Debug, Clone, Deserialize)]
 pub struct InboundAddress {
     pub chain: String,
+    pub address: String,
+    pub router: Option<String>,
     #[serde(deserialize_with = "deserialize_bigint_from_str")]
     pub dust_threshold: BigInt,
 }
@@ -143,7 +158,7 @@ mod tests {
 
     #[test]
     fn test_tx_status_completed_ltc_to_tron() {
-        let status: TransactionStatus = serde_json::from_str(include_str!("testdata/tx_status_ltc_to_tron.json")).unwrap();
+        let status: TransactionStatus = serde_json::from_str(include_str!("testdata/tx_status_ltc_to_tron_usdt.json")).unwrap();
         assert_eq!(status.swap_status(), SwapStatus::Completed);
 
         let tx = status.tx.unwrap();
@@ -240,6 +255,33 @@ mod tests {
         assert_eq!(status.swap_status(), SwapStatus::Pending);
         assert!(status.tx.is_none());
         assert!(status.out_txs.is_none());
+    }
+
+    #[test]
+    fn test_resolve_asset_id() {
+        fn coin(asset: &str) -> TransactionCoin {
+            TransactionCoin {
+                asset: asset.to_string(),
+                amount: "0".to_string(),
+                decimals: None,
+            }
+        }
+
+        assert_eq!(coin("LTC.LTC").resolve_asset_id(), Some(Chain::Litecoin.as_asset_id()));
+        assert_eq!(coin("ETH.ETH").resolve_asset_id(), Some(Chain::Ethereum.as_asset_id()));
+        assert_eq!(coin("BTC.BTC").resolve_asset_id(), Some(Chain::Bitcoin.as_asset_id()));
+        assert_eq!(coin("THOR.RUNE").resolve_asset_id(), Some(Chain::Thorchain.as_asset_id()));
+        assert_eq!(
+            coin("ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7").resolve_asset_id(),
+            Some(AssetId::from_token(Chain::Ethereum, "0xdAC17F958D2ee523a2206206994597C13D831ec7"))
+        );
+        assert_eq!(
+            coin("TRON.USDT-TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t").resolve_asset_id(),
+            Some(AssetId::from_token(Chain::Tron, "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"))
+        );
+        assert_eq!(coin("THOR.TCY").resolve_asset_id(), Some(AssetId::from_token(Chain::Thorchain, "tcy")));
+        assert_eq!(coin("ETH.UNKNOWN-0x1234567890abcdef1234567890abcdef12345678").resolve_asset_id(), None);
+        assert_eq!(coin("INVALID").resolve_asset_id(), None);
     }
 
     #[test]

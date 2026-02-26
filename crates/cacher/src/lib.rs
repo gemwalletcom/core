@@ -88,12 +88,6 @@ impl CacherClient {
         Ok(fresh_value)
     }
 
-    pub async fn set_hset<T: serde::Serialize>(&self, hash_key: &str, field: &str, value: &T) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        let serialized_value = serde_json::to_string(value)?;
-        let redis_result: i64 = self.connection.clone().hset(hash_key, field, serialized_value).await?;
-        Ok(redis_result == 1)
-    }
-
     pub async fn can_process_now(&self, key: &str, ttl_seconds: u64) -> Result<bool, Box<dyn Error + Send + Sync>> {
         let now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
         let last_processed: u64 = self.get_or_set_value(key, || async { Ok(now) }, Some(ttl_seconds)).await?;

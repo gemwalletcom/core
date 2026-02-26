@@ -1,5 +1,5 @@
 use primitives::currency::Currency;
-use primitives::{AssetId, Chain, ChartPeriod, Device, FiatQuoteType, NFTAssetId, NFTCollectionId, TransactionId, WalletId};
+use primitives::{AssetId, Chain, ChartPeriod, Device, FiatQuoteType, NFTAssetId, NFTCollectionId, SwapProvider, TransactionId, WalletId};
 use rocket::data::{FromData, Outcome, ToByteUnit};
 use rocket::form::{self, FromFormField, ValueField};
 use rocket::http::Status;
@@ -180,6 +180,16 @@ impl<'r> FromFormField<'r> for ChartPeriodParam {
         ChartPeriod::new(field.value.to_string())
             .map(ChartPeriodParam)
             .ok_or_else(|| form::Error::validation(format!("Invalid period: {}", field.value)).into())
+    }
+}
+
+pub struct SwapProviderParam(pub SwapProvider);
+
+impl<'r> FromParam<'r> for SwapProviderParam {
+    type Error = &'r str;
+
+    fn from_param(param: &'r str) -> Result<Self, Self::Error> {
+        SwapProvider::from_str(param).map(SwapProviderParam).map_err(|_| param)
     }
 }
 

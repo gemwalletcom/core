@@ -2,6 +2,7 @@ use primitives::Transaction;
 
 use crate::SwapperProvider;
 use crate::across::AcrossCrossChain;
+use crate::proxy::mayan::MayanCrossChain;
 use crate::thorchain::ThorchainCrossChain;
 
 pub trait CrossChainProvider: Send + Sync {
@@ -9,7 +10,11 @@ pub trait CrossChainProvider: Send + Sync {
     fn is_swap(&self, transaction: &Transaction) -> bool;
 }
 
-const PROVIDERS: [&dyn CrossChainProvider; 2] = [&ThorchainCrossChain, &AcrossCrossChain];
+const PROVIDERS: [&dyn CrossChainProvider; 3] = [&ThorchainCrossChain, &AcrossCrossChain, &MayanCrossChain];
+
+pub fn providers() -> Vec<SwapperProvider> {
+    PROVIDERS.iter().map(|p| p.provider()).collect()
+}
 
 pub fn swap_provider(transaction: &Transaction) -> Option<SwapperProvider> {
     PROVIDERS.iter().find(|p| p.is_swap(transaction)).map(|p| p.provider())
@@ -22,6 +27,7 @@ pub fn is_cross_chain_swap(transaction: &Transaction) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::proxy::mayan::MAYAN_CONTRACTS;
     use primitives::Chain;
 
     #[test]
@@ -50,15 +56,6 @@ mod tests {
     fn test_across_swap_detected() {
         let transaction = Transaction {
             to: "0x5c7BCd6E7De5423a257D81B442095A1a6ced35C5".to_string(),
-            ..Transaction::mock()
-        };
-        assert_eq!(swap_provider(&transaction), Some(SwapperProvider::Across));
-    }
-
-    #[test]
-    fn test_across_swap_case_insensitive() {
-        let transaction = Transaction {
-            to: "0x5c7bcd6e7de5423a257d81b442095a1a6ced35c5".to_string(),
             ..Transaction::mock()
         };
         assert_eq!(swap_provider(&transaction), Some(SwapperProvider::Across));
@@ -150,5 +147,24 @@ mod tests {
             ..Transaction::mock()
         };
         assert_eq!(swap_provider(&transaction), Some(SwapperProvider::Thorchain));
+    }
+
+    #[test]
+    fn test_mayan_contracts_detected() {
+        for contract in MAYAN_CONTRACTS {
+            let transaction = Transaction {
+                to: contract.to_string(),
+                ..Transaction::mock()
+            };
+            assert_eq!(swap_provider(&transaction), Some(SwapperProvider::Mayan));
+        }
+    }
+
+    #[test]
+    fn test_providers_list() {
+        let all = providers();
+        assert!(all.contains(&SwapperProvider::Thorchain));
+        assert!(all.contains(&SwapperProvider::Across));
+        assert!(all.contains(&SwapperProvider::Mayan));
     }
 }

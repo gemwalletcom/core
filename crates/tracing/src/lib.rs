@@ -8,16 +8,34 @@ pub fn get_subscriber() -> Arc<FmtSubscriber> {
     TRACING_SUBSCRIBER.get_or_init(|| Arc::new(tracing_subscriber::fmt().with_target(false).finish())).clone()
 }
 
+pub fn human_duration(duration: Duration) -> String {
+    if duration.is_zero() {
+        return "0s".to_string();
+    }
+
+    let mut parts = Vec::new();
+    let mut remaining = duration.as_secs();
+    const UNITS: [(&str, u64); 4] = [("d", 86_400), ("h", 3_600), ("m", 60), ("s", 1)];
+
+    for (label, unit) in UNITS {
+        if remaining >= unit {
+            let value = remaining / unit;
+            remaining %= unit;
+            parts.push(format!("{value}{label}"));
+            if parts.len() == 2 {
+                break;
+            }
+        }
+    }
+
+    if parts.is_empty() { format!("{}ms", duration.subsec_millis()) } else { parts.join(" ") }
+}
+
 pub struct DurationMs(pub Duration);
 
 impl std::fmt::Display for DurationMs {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let ms = self.0.as_millis();
-        if ms >= 5000 && ms.is_multiple_of(1000) {
-            write!(f, "{}s", ms / 1000)
-        } else {
-            write!(f, "{}ms", ms)
-        }
+        f.write_str(&human_duration(self.0))
     }
 }
 

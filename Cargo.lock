@@ -632,6 +632,7 @@ dependencies = [
  "storage",
  "streamer",
  "strum",
+ "swapper",
  "tokio",
  "unic-langid",
 ]

@@ -54,6 +54,7 @@ use settings_chain::{ChainProviders, ProviderFactory};
 use storage::Database;
 use streamer::{StreamProducer, StreamProducerConfig};
 use swap::SwapClient;
+use swapper::swapper::GemSwapper;
 use transactions::TransactionsClient;
 use wallets::WalletsClient;
 use webhooks::WebhooksClient;
@@ -94,6 +95,7 @@ fn mount_routes(rocket: Rocket<Build>, metrics_path: &str) -> Rocket<Build> {
                 chain::block::get_latest_block_number,
                 chain::block::get_block_transactions,
                 chain::block::get_block_transactions_finalize,
+                chain::swap::get_swap_result,
                 swap::get_swap_assets,
                 nft::get_nft_assets_by_chain,
                 nft::get_nft_collection,
@@ -186,6 +188,8 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let name_client = NameClient::new(providers);
 
     let chain_client = chain::ChainClient::new(ChainProviders::new(ProviderFactory::new_providers(&settings)));
+    let endpoints = ProviderFactory::get_chain_endpoints(&settings);
+    let swapper = Arc::new(GemSwapper::new(Arc::new(swapper::NativeProvider::new_with_endpoints(endpoints))));
 
     let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
     let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
@@ -250,6 +254,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(nft_client))
         .manage(Mutex::new(price_alert_client))
         .manage(Mutex::new(chain_client))
+        .manage(swapper)
         .manage(Mutex::new(markets_client))
         .manage(Mutex::new(webhooks_client))
         .manage(Mutex::new(fiat_ip_check_client))

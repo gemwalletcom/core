@@ -90,10 +90,13 @@ impl TransactionReciept {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Log {
     pub address: String,
     pub topics: Vec<String>,
     pub data: String,
+    #[serde(default)]
+    pub transaction_hash: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]

@@ -83,11 +83,7 @@ impl HyperCoreSpot {
         });
 
         let (symbol, contract, index) = components.ok_or(SwapperError::NotSupportedAsset)?;
-        let token = meta
-            .tokens()
-            .iter()
-            .find(|token| token.name.eq_ignore_ascii_case(&symbol))
-            .ok_or(SwapperError::NotSupportedAsset)?;
+        let token = meta.tokens().iter().find(|token| token.name == symbol).ok_or(SwapperError::NotSupportedAsset)?;
 
         if let Some(contract) = contract
             && token.token_id != contract

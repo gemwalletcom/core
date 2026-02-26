@@ -64,6 +64,7 @@ async fn run_store_transactions(
                     outdated_min_timeout: config_cacher.get_duration(ConfigKey::TransactionsOutdatedMinTimeout)?,
                     min_amount_usd: config_cacher.get_f64(ConfigKey::TransactionsMinAmountUsd)?,
                 },
+                cacher: runner.cacher.clone(),
             };
             run_consumer::<TransactionsPayload, StoreTransactionsConsumer, usize>(
                 &name,

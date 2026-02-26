@@ -1,3 +1,4 @@
+use gem_evm::address::ethereum_address_checksum;
 use primitives::Chain;
 use strum::{EnumIter, IntoEnumIterator};
 
@@ -108,10 +109,17 @@ impl THORChainName {
         }
     }
 
-    /// Parse THORChain symbol to THORChainName
-    /// Supports both long names (ETH, BSC, AVAX) and short names (e, s, a)
     pub fn from_symbol(symbol: &str) -> Option<THORChainName> {
         THORChainName::iter().find(|variant| variant.long_name() == symbol || variant.short_name() == symbol)
+    }
+
+    pub fn checksum_address(&self, address: &str) -> String {
+        if self.is_evm_chain() {
+            let address = address.strip_prefix("0X").unwrap_or(address);
+            ethereum_address_checksum(address).unwrap_or(address.to_string())
+        } else {
+            address.to_lowercase()
+        }
     }
 }
 

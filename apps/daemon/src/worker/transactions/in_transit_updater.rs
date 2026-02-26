@@ -3,8 +3,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use chrono::{NaiveDateTime, Utc};
-use gem_tracing::{error_with_fields, info_with_fields};
-use primitives::swap::SwapResult;
+use gem_tracing::{DurationMs, error_with_fields, info_with_fields};
+use primitives::swap::{SwapResult, SwapStatus};
 use primitives::{Chain, TransactionSwapMetadata, TransactionType};
 use storage::models::TransactionRow;
 use storage::{Database, TransactionFilter, TransactionState, TransactionUpdate, TransactionsRepository};
@@ -60,26 +60,30 @@ impl InTransitUpdater {
     async fn process_transaction(&self, row: &TransactionRow, cutoff: NaiveDateTime) -> Result<bool, Box<dyn Error + Send + Sync>> {
         let chain = row.chain();
         let transaction = row.as_primitive(row.get_addresses());
+        let elapsed = DurationMs((Utc::now().naive_utc() - row.created_at).to_std().unwrap_or_default());
 
-        let Some(provider) = cross_chain::swap_provider(&transaction) else {
-            info_with_fields!("in_transit unknown provider", chain = chain.as_ref(), hash = row.hash);
-            return Ok(false);
+        let provider = cross_chain::swap_provider(&transaction);
+        let result = match provider {
+            Some(provider) => match self.swapper.get_swap_result(chain, provider, &row.hash).await {
+                Ok(r) => r,
+                Err(err) => {
+                    error_with_fields!("in_transit check failed", &err as &dyn Error, chain = chain.as_ref(), hash = row.hash, elapsed = elapsed);
+                    return Ok(false);
+                }
+            },
+            None => SwapResult {
+                status: SwapStatus::Pending,
+                metadata: None,
+            },
         };
 
-        let result = match self.swapper.get_swap_result(chain, provider, &row.hash).await {
-            Ok(r) => r,
-            Err(err) => {
-                error_with_fields!("in_transit check failed", &err as &dyn Error, chain = chain.as_ref(), hash = row.hash);
-                return Ok(false);
-            }
-        };
-
+        let provider_name = provider.map(|p| p.as_ref().to_string()).unwrap_or_default();
         let Some((state, metadata)) = resolve_status(&result, row.created_at, cutoff) else {
-            info_with_fields!("in_transit pending", chain = chain.as_ref(), hash = row.hash);
+            info_with_fields!("in_transit pending", chain = chain.as_ref(), hash = row.hash, provider = provider_name, elapsed = elapsed);
             return Ok(false);
         };
 
-        info_with_fields!("in_transit updated", chain = chain.as_ref(), hash = row.hash, state = state.as_ref());
+        info_with_fields!("in_transit updated", chain = chain.as_ref(), hash = row.hash, state = state.as_ref(), elapsed = elapsed);
 
         let metadata = metadata.and_then(|m| serde_json::to_value(m).ok());
         self.save_and_publish(chain, row, &state, metadata).await?;
@@ -123,7 +127,6 @@ fn resolve_status(result: &SwapResult, created_at: NaiveDateTime, cutoff: NaiveD
 mod tests {
     use super::*;
     use primitives::TransactionState as PrimitiveTransactionState;
-    use primitives::swap::SwapStatus;
 
     fn swap_result(status: SwapStatus, metadata: Option<TransactionSwapMetadata>) -> SwapResult {
         SwapResult { status, metadata }

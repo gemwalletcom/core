@@ -3,7 +3,7 @@ mod chain;
 pub mod client;
 mod constants;
 pub mod memo;
-pub(crate) mod model;
+pub mod model;
 mod provider;
 mod swap_mapper;
 pub use provider::ThorchainCrossChain;
@@ -21,6 +21,7 @@ use super::{ProviderType, SwapperError, SwapperProvider};
 const QUOTE_MINIMUM: i64 = 0;
 const QUOTE_INTERVAL: i64 = 1;
 const QUOTE_QUANTITY: i64 = 0;
+const DUST_THRESHOLD_MULTIPLIER: i64 = 2;
 const OUTBOUND_DELAY_SECONDS: u32 = 60;
 
 // FIXME: estimate gas limit with memo x bytes
@@ -33,7 +34,7 @@ where
 {
     pub provider: ProviderType,
     pub rpc_provider: Arc<dyn RpcProvider>,
-    pub(crate) swap_client: client::ThorChainSwapClient<C>,
+    pub(crate) client: client::ThorChainSwapClient<C>,
 }
 
 impl<C> ThorChain<C>
@@ -44,7 +45,7 @@ where
         Self {
             provider: ProviderType::new(SwapperProvider::Thorchain),
             rpc_provider,
-            swap_client,
+            client: swap_client,
         }
     }
 

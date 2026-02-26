@@ -9,7 +9,7 @@ use crate::{
     registry::ContractRegistry,
     rpc::model::{Block, Transaction, TransactionReciept, TransactionReplayTrace},
 };
-use primitives::{AssetId, NFTAssetId, TransactionType, chain::Chain, transaction_metadata_types::TransactionNFTTransferMetadata};
+use primitives::{AssetId, NFTAssetId, TransactionType, chain::Chain, hex::decode_hex_utf8, transaction_metadata_types::TransactionNFTTransferMetadata};
 
 pub const INPUT_0X: &str = "0x";
 pub const FUNCTION_ERC20_TRANSFER: &str = "0xa9059cbb";
@@ -75,6 +75,7 @@ impl EthereumMapper {
 
         if is_native_transfer || is_native_transfer_with_data {
             let data = if is_native_transfer_with_data { Some(transaction.input.clone()) } else { None };
+            let memo = data.as_deref().and_then(decode_hex_utf8).filter(|m| !m.is_empty());
             let transaction = primitives::Transaction::new(
                 hash,
                 chain.as_asset_id(),
@@ -86,7 +87,7 @@ impl EthereumMapper {
                 fee.to_string(),
                 fee_asset_id,
                 value,
-                None,
+                memo,
                 None,
                 created_at,
             )
@@ -471,5 +472,37 @@ mod tests {
         assert_eq!(tx.to, "0xd34403249B2d82AAdDB14e778422c966265e5Fb5");
         assert_eq!(tx.contract.unwrap(), "0x0000000000000000000000000000000000002002");
         assert!(tx.metadata.is_none());
+    }
+
+    #[test]
+    fn test_native_transfer_with_memo() {
+        let memo = "=:LTC.LTC:ltc1qexample";
+        let input = format!("0x{}", hex::encode(memo));
+
+        let transaction = Transaction {
+            hash: "0xabc123".to_string(),
+            from: "0xf1a3687303606a6fd48179ce503164cdcbabeab6".to_string(),
+            to: Some("0x0700572b54cca24dad0ed4cdad2c3d3ab6db652a".to_string()),
+            value: BigUint::from(1_000_000_000_000_000_000u64),
+            gas: 50000,
+            input: input.clone(),
+            block_number: BigUint::from(1000u32),
+        };
+
+        let receipt = TransactionReciept {
+            gas_used: BigUint::from(22496u32),
+            effective_gas_price: BigUint::from(5_000_000_000u64),
+            l1_fee: None,
+            logs: vec![],
+            status: "0x1".to_string(),
+            block_number: BigUint::from(1000u32),
+        };
+
+        let tx = EthereumMapper::map_transaction(Chain::SmartChain, &transaction, &receipt, None, &BigUint::from(1735671600u64), None).unwrap();
+
+        assert_eq!(tx.transaction_type, TransactionType::Transfer);
+        assert_eq!(tx.asset_id, AssetId::from_chain(Chain::SmartChain));
+        assert_eq!(tx.memo, Some(memo.to_string()));
+        assert_eq!(tx.data, Some(input));
     }
 }
