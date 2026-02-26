@@ -224,7 +224,8 @@ where
     }
 
     async fn get_swap_result(&self, _chain: Chain, hash: &str) -> Result<SwapResult, SwapperError> {
-        let response = self.client.get_transaction_status(hash).await?;
+        let hash = hash.strip_prefix("0x").unwrap_or(hash).to_uppercase();
+        let response = self.client.get_transaction_status(&hash).await?;
         Ok(swap_mapper::map_swap_result(&response))
     }
 }
