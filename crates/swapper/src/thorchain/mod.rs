@@ -21,6 +21,7 @@ use super::{ProviderType, SwapperError, SwapperProvider};
 const QUOTE_MINIMUM: i64 = 0;
 const QUOTE_INTERVAL: i64 = 1;
 const QUOTE_QUANTITY: i64 = 0;
+const DUST_THRESHOLD_MULTIPLIER: i64 = 2;
 const OUTBOUND_DELAY_SECONDS: u32 = 60;
 
 // FIXME: estimate gas limit with memo x bytes

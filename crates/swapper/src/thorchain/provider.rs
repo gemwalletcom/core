@@ -6,8 +6,15 @@ use async_trait::async_trait;
 use gem_client::Client;
 use primitives::{Chain, Transaction, TransactionType, hex::decode_hex_utf8, swap::ApprovalData};
 
+use num_bigint::BigInt;
+
 use super::{
-    QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY, ThorChain, asset::THORChainAsset, chain::THORChainName, memo::ThorchainMemo, model::RouteData, quote_data_mapper, swap_mapper,
+    DUST_THRESHOLD_MULTIPLIER, QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY, ThorChain,
+    asset::{THORChainAsset, value_to},
+    chain::THORChainName,
+    memo::ThorchainMemo,
+    model::RouteData,
+    quote_data_mapper, swap_mapper,
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider,
@@ -124,8 +131,9 @@ where
                 .find(|address| address.chain == from_asset.chain.long_name())
                 .ok_or(SwapperError::InvalidRoute)?;
 
-            if from_inbound_address.dust_threshold > value {
-                return Err(SwapperError::InputAmountError { min_amount: None });
+            let min_value = min_value(&from_inbound_address.dust_threshold);
+            if min_value > value {
+                return Err(SwapperError::InputAmountError { min_amount: Some(value_to(&min_value.to_string(), from_asset.decimals as i32).to_string()) });
             }
         }
 
@@ -221,6 +229,22 @@ where
     }
 }
 
+fn min_value(dust_threshold: &BigInt) -> BigInt {
+    dust_threshold * DUST_THRESHOLD_MULTIPLIER
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_min_value() {
+        assert_eq!(min_value(&BigInt::from(10000)), BigInt::from(20000));
+        assert_eq!(min_value(&BigInt::from(0)), BigInt::from(0));
+        assert_eq!(min_value(&BigInt::from(50000)), BigInt::from(100000));
+    }
+}
+
 #[cfg(all(test, feature = "swap_integration_tests"))]
 mod swap_integration_tests {
     use super::*;
@@ -268,7 +292,7 @@ mod swap_integration_tests {
     }
 
     #[tokio::test]
-    async fn test_thorchain_quote_rejects_below_min_amount() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_thorchain_quote_rejects_below_min_value() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let provider = Arc::new(NativeProvider::default());
         let swapper = ThorChain::new(provider.clone());
 
