@@ -15,7 +15,7 @@ use gem_client::Client;
 use num_bigint::BigInt;
 use primitives::GasPriceType;
 #[cfg(feature = "rpc")]
-use primitives::stake_type::StakeData;
+use primitives::ContractCallData;
 #[cfg(feature = "rpc")]
 use primitives::{FeeRate, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
 #[cfg(feature = "rpc")]
@@ -68,9 +68,11 @@ impl<C: Client + Clone> EthereumClient<C> {
                 TransactionLoadMetadata::Evm { nonce, chain_id, .. } => TransactionLoadMetadata::Evm {
                     nonce,
                     chain_id,
-                    stake_data: Some(StakeData {
-                        data: if params.data.is_empty() { None } else { Some(hex::encode(&params.data)) },
-                        to: Some(params.to),
+                    contract_call: Some(ContractCallData {
+                        contract_address: params.to,
+                        call_data: hex::encode(&params.data),
+                        approval: None,
+                        gas_limit: None,
                     }),
                 },
                 _ => input.metadata,

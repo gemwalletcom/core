@@ -3,7 +3,8 @@ use serde::{Deserialize, Serialize};
 use crate::{
     UTXO,
     solana_token_program::SolanaTokenProgramId,
-    stake_type::{StakeData, TronStakeData},
+    contract_call_data::ContractCallData,
+    stake_type::TronStakeData,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -48,7 +49,7 @@ pub enum TransactionLoadMetadata {
     Evm {
         nonce: u64,
         chain_id: u64,
-        stake_data: Option<StakeData>,
+        contract_call: Option<ContractCallData>,
     },
     Near {
         sequence: u64,

@@ -1,11 +1,12 @@
 use crate::models::*;
 use num_bigint::BigInt;
-use primitives::stake_type::{FreezeData, StakeData};
+use primitives::contract_call_data::ContractCallData;
+use primitives::stake_type::FreezeData;
 use primitives::{
-    AccountDataType, Asset, EarnData, EarnType, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, Resource,
-    StakeType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata,
-    TransactionState, TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, TronStakeData,
-    TronUnfreeze, TronVote, UInt64, WalletConnectionSessionAppMetadata,
+    AccountDataType, Asset, EarnType, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, Resource, StakeType,
+    TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata, TransactionState,
+    TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, TronStakeData, TronUnfreeze, TronVote,
+    UInt64, WalletConnectionSessionAppMetadata,
     perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualReduceData, TPSLOrderData},
 };
 use std::collections::HashMap;
@@ -159,12 +160,14 @@ pub struct GemHyperliquidOrder {
     pub agent_private_key: String,
 }
 
-pub type GemStakeData = StakeData;
+pub type GemContractCallData = ContractCallData;
 
 #[uniffi::remote(Record)]
-pub struct GemStakeData {
-    pub data: Option<String>,
-    pub to: Option<String>,
+pub struct GemContractCallData {
+    pub contract_address: String,
+    pub call_data: String,
+    pub approval: Option<GemApprovalData>,
+    pub gas_limit: Option<String>,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -181,16 +184,6 @@ pub enum GemStakeType {
 pub struct GemFreezeData {
     pub freeze_type: GemFreezeType,
     pub resource: GemResource,
-}
-
-pub type GemEarnData = EarnData;
-
-#[uniffi::remote(Record)]
-pub struct GemEarnData {
-    pub contract_address: String,
-    pub call_data: String,
-    pub approval: Option<GemApprovalData>,
-    pub gas_limit: Option<String>,
 }
 
 pub type GemEarnType = EarnType;
@@ -326,7 +319,7 @@ pub enum GemTransactionInputType {
     Earn {
         asset: GemAsset,
         earn_type: GemEarnType,
-        earn_data: GemEarnData,
+        earn_data: GemContractCallData,
     },
 }
 
@@ -353,7 +346,7 @@ impl GemTransactionInputType {
         }
     }
 
-    pub fn earn_data(&self) -> Result<&GemEarnData, String> {
+    pub fn earn_data(&self) -> Result<&GemContractCallData, String> {
         match self {
             Self::Earn { earn_data, .. } => Ok(earn_data),
             _ => Err("Expected Earn".to_string()),
@@ -438,7 +431,7 @@ pub enum GemTransactionLoadMetadata {
     Evm {
         nonce: u64,
         chain_id: u64,
-        stake_data: Option<GemStakeData>,
+        contract_call: Option<GemContractCallData>,
     },
     Near {
         sequence: u64,
@@ -523,7 +516,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
             TransactionLoadMetadata::Bitcoin { utxos } => GemTransactionLoadMetadata::Bitcoin { utxos },
             TransactionLoadMetadata::Zcash { utxos, branch_id } => GemTransactionLoadMetadata::Zcash { utxos, branch_id },
             TransactionLoadMetadata::Cardano { utxos } => GemTransactionLoadMetadata::Cardano { utxos },
-            TransactionLoadMetadata::Evm { nonce, chain_id, stake_data } => GemTransactionLoadMetadata::Evm { nonce, chain_id, stake_data },
+            TransactionLoadMetadata::Evm { nonce, chain_id, contract_call } => GemTransactionLoadMetadata::Evm { nonce, chain_id, contract_call },
             TransactionLoadMetadata::Near { sequence, block_hash } => GemTransactionLoadMetadata::Near { sequence, block_hash },
             TransactionLoadMetadata::Stellar {
                 sequence,
@@ -611,7 +604,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
             GemTransactionLoadMetadata::Bitcoin { utxos } => TransactionLoadMetadata::Bitcoin { utxos },
             GemTransactionLoadMetadata::Zcash { utxos, branch_id } => TransactionLoadMetadata::Zcash { utxos, branch_id },
             GemTransactionLoadMetadata::Cardano { utxos } => TransactionLoadMetadata::Cardano { utxos },
-            GemTransactionLoadMetadata::Evm { nonce, chain_id, stake_data } => TransactionLoadMetadata::Evm { nonce, chain_id, stake_data },
+            GemTransactionLoadMetadata::Evm { nonce, chain_id, contract_call } => TransactionLoadMetadata::Evm { nonce, chain_id, contract_call },
             GemTransactionLoadMetadata::Near { sequence, block_hash } => TransactionLoadMetadata::Near { sequence, block_hash },
             GemTransactionLoadMetadata::Stellar {
                 sequence,

@@ -1,5 +1,5 @@
-use crate::earn_data::EarnData;
 use crate::earn_type::EarnType;
+use crate::contract_call_data::ContractCallData;
 use crate::stake_type::StakeType;
 use crate::swap::{ApprovalData, SwapData};
 use crate::transaction_fee::TransactionFee;
@@ -23,7 +23,7 @@ pub enum TransactionInputType {
     TransferNft(Asset, NFTAsset),
     Account(Asset, AccountDataType),
     Perpetual(Asset, PerpetualType),
-    Earn(Asset, EarnType, EarnData),
+    Earn(Asset, EarnType, ContractCallData),
 }
 
 impl TransactionInputType {

@@ -45,7 +45,7 @@ pub fn map_transaction_preload(nonce_hex: String, chain_id: String) -> Result<Tr
     Ok(TransactionLoadMetadata::Evm {
         nonce,
         chain_id: chain_id.parse::<u64>()?,
-        stake_data: None,
+        contract_call: None,
     })
 }
 
@@ -311,10 +311,10 @@ mod tests {
         let result = map_transaction_preload(nonce_hex, chain_id)?;
 
         match result {
-            TransactionLoadMetadata::Evm { nonce, chain_id, stake_data } => {
+            TransactionLoadMetadata::Evm { nonce, chain_id, contract_call } => {
                 assert_eq!(nonce, 10);
                 assert_eq!(chain_id, 1);
-                assert!(stake_data.is_none());
+                assert!(contract_call.is_none());
             }
             _ => panic!("Expected Evm variant"),
         }

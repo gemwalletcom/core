@@ -303,7 +303,7 @@ impl GemGateway {
         Ok(vec![])
     }
 
-    pub async fn get_earn_data(&self, _asset_id: AssetId, _address: String, _value: String, _earn_type: GemEarnType) -> Result<GemEarnData, GatewayError> {
+    pub async fn get_earn_data(&self, _asset_id: AssetId, _address: String, _value: String, _earn_type: GemEarnType) -> Result<GemContractCallData, GatewayError> {
         Err(GatewayError::NetworkError {
             msg: "Earn provider not available".to_string(),
         })
