@@ -232,8 +232,6 @@ pub mod yield_provider;
 pub use self::yield_provider::YieldProvider;
 pub mod earn_type;
 pub use self::earn_type::EarnType;
-pub mod earn_transaction;
-pub use self::earn_transaction::EarnTransaction;
 pub mod transaction_update;
 pub use self::transaction_update::{TransactionChange, TransactionMetadata, TransactionStateRequest, TransactionUpdate};
 pub mod transaction_preload_input;
