@@ -12,7 +12,7 @@ use std::str::FromStr;
 
 use super::{
     ankr::AnkrClient,
-    model::{Block, BlockTransactionsIds, EthSyncingStatus, Transaction, TransactionReciept, TransactionReplayTrace},
+    model::{Block, BlockTransactionsIds, EthSyncingStatus, Log, Transaction, TransactionReciept, TransactionReplayTrace},
 };
 use crate::models::fee::EthereumFeeHistory;
 #[cfg(feature = "rpc")]
@@ -231,6 +231,16 @@ impl<C: Client + Clone> EthereumClient<C> {
         let data = format!("0x70a08231000000000000000000000000{:0>40}", address.strip_prefix("0x").unwrap_or(address));
         let calls: Vec<(String, serde_json::Value)> = contracts.iter().map(|x| ("eth_call".to_string(), json!([{"to": x, "data": &data}, "latest"]))).collect();
         Ok(self.client.batch_call::<String>(calls).await?.extract())
+    }
+
+    pub async fn get_logs(&self, address: &str, topics: &[Option<String>], from_block: &str, to_block: &str) -> Result<Vec<Log>, JsonRpcError> {
+        let params = json!([{
+            "address": address,
+            "topics": topics,
+            "fromBlock": from_block,
+            "toBlock": to_block
+        }]);
+        self.client.call("eth_getLogs", params).await
     }
 
     pub async fn estimate_gas(&self, from: Option<&str>, to: &str, value: Option<&str>, data: Option<&str>) -> Result<String, JsonRpcError> {

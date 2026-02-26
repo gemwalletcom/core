@@ -1,6 +1,6 @@
 use super::{
     DEFAULT_FILL_TIMEOUT,
-    api::{AcrossApi, DepositStatus},
+    api::{ParsedDeposit, filled_relay_topic, parse_deposit_from_logs},
     config_store::{ConfigStoreClient, TokenConfig},
     hubpool::HubPoolClient,
 };
@@ -12,7 +12,7 @@ use crate::{
     asset::*,
     chainlink::ChainlinkPriceFeed,
     client_factory::create_eth_client,
-    config::{ReferralFee, get_swap_api_url},
+    config::ReferralFee,
     eth_address,
     models::*,
 };
@@ -89,18 +89,32 @@ impl Across {
         Box::new(Self::new(rpc_provider))
     }
 
-    fn build_swap_metadata(status: &DepositStatus) -> Option<TransactionSwapMetadata> {
-        let origin_chain = status.origin_chain_id.and_then(Chain::from_chain_id)?;
-        let from_asset = resolve_token_asset(origin_chain, status.input_token.as_ref()?)?;
-        let to_chain = Chain::from_chain_id(status.destination_chain_id)?;
-        let to_asset = resolve_token_asset(to_chain, status.output_token.as_ref()?)?;
+    fn build_swap_metadata(deposit: &ParsedDeposit, destination_chain_id: u64) -> Option<TransactionSwapMetadata> {
+        let origin_chain = Chain::from_chain_id(deposit.origin_chain_id)?;
+        let from_asset = resolve_token_asset(origin_chain, deposit.input_token.as_ref()?)?;
+        let to_chain = Chain::from_chain_id(destination_chain_id)?;
+        let to_asset = resolve_token_asset(to_chain, deposit.output_token.as_ref()?)?;
         Some(TransactionSwapMetadata {
             from_asset,
-            from_value: status.input_amount.clone()?,
+            from_value: deposit.input_amount.clone()?,
             to_asset,
-            to_value: status.output_amount.clone()?,
+            to_value: deposit.output_amount.clone()?,
             provider: Some(SwapperProvider::Across.as_ref().to_string()),
         })
+    }
+
+    async fn check_fill_on_chain(&self, origin_chain_id: u64, deposit_id: u64, destination_chain: Chain) -> Result<Option<String>, SwapperError> {
+        let deployment = AcrossDeployment::deployment_by_chain(&destination_chain).ok_or(SwapperError::NotSupportedChain)?;
+        let client = create_eth_client(self.rpc_provider.clone(), destination_chain)?;
+
+        let topic0 = filled_relay_topic();
+        let topic1 = format!("{:#066x}", U256::from(origin_chain_id));
+        let topic2 = format!("{:#066x}", U256::from(deposit_id));
+        let topics = vec![Some(topic0), Some(topic1), Some(topic2)];
+
+        let logs = client.get_logs(deployment.spoke_pool, &topics, "0x0", "latest").await.map_err(SwapperError::from)?;
+
+        Ok(logs.first().and_then(|l| l.transaction_hash.clone()))
     }
 
     pub fn is_supported_pair(from_asset: &AssetId, to_asset: &AssetId) -> bool {
@@ -562,20 +576,43 @@ impl Swapper for Across {
     }
 
     async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
-        let api = AcrossApi::new(get_swap_api_url("across"), self.rpc_provider.clone());
-        let status = api.deposit_status(chain, transaction_hash).await?;
-        let swap_status = status.swap_status();
+        let receipt = create_eth_client(self.rpc_provider.clone(), chain)?
+            .get_transaction_receipt(transaction_hash)
+            .await
+            .map_err(SwapperError::from)?;
 
-        let metadata = if status.status == "filled" { Self::build_swap_metadata(&status) } else { None };
+        let origin_chain_id: u64 = chain.network_id().parse().map_err(|_| SwapperError::NotSupportedChain)?;
+        let deposit = parse_deposit_from_logs(&receipt.logs, origin_chain_id)?;
 
-        Ok(SwapResult { status: swap_status, metadata })
+        if let Some(destination_chain_id) = deposit.destination_chain_id {
+            let destination_chain = Chain::from_chain_id(destination_chain_id).ok_or(SwapperError::NotSupportedChain)?;
+            let fill_tx = self.check_fill_on_chain(deposit.origin_chain_id, deposit.deposit_id, destination_chain).await?;
+
+            if fill_tx.is_some() {
+                let metadata = Self::build_swap_metadata(&deposit, destination_chain_id);
+                Ok(SwapResult {
+                    status: primitives::swap::SwapStatus::Completed,
+                    metadata,
+                })
+            } else {
+                Ok(SwapResult {
+                    status: primitives::swap::SwapStatus::Pending,
+                    metadata: None,
+                })
+            }
+        } else {
+            let metadata = Self::build_swap_metadata(&deposit, origin_chain_id);
+            Ok(SwapResult {
+                status: primitives::swap::SwapStatus::Completed,
+                metadata,
+            })
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::across::api::parse_deposit_from_logs;
     use alloy_sol_types::SolEvent;
     use gem_evm::{multicall3::IMulticall3, rpc::model::Log};
     use primitives::asset_constants::*;
@@ -668,9 +705,10 @@ mod tests {
             output_amount,
         );
 
-        let result = parse_deposit_from_logs(&[log], "1").unwrap();
-        assert_eq!(result.deposit_id, "12345");
-        assert_eq!(result.origin_chain_id, "1");
+        let result = parse_deposit_from_logs(&[log], 1).unwrap();
+        assert_eq!(result.deposit_id, 12345);
+        assert_eq!(result.origin_chain_id, 1);
+        assert_eq!(result.destination_chain_id.unwrap(), 42161);
         assert_eq!(result.input_token.unwrap(), "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
         assert_eq!(result.output_token.unwrap(), "0x82af49447d8a07e3bd95bd0d56f35241523fbab1");
         assert_eq!(result.input_amount.unwrap(), input_amount.to_string());
@@ -690,8 +728,9 @@ mod tests {
             output_amount,
         );
 
-        let result = parse_deposit_from_logs(&[log], "1").unwrap();
-        assert_eq!(result.deposit_id, "5452553");
+        let result = parse_deposit_from_logs(&[log], 1).unwrap();
+        assert_eq!(result.deposit_id, 5452553);
+        assert_eq!(result.destination_chain_id.unwrap(), 8453);
         assert_eq!(result.input_token.unwrap(), "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
         assert_eq!(result.output_token.unwrap(), "0x4200000000000000000000000000000000000006");
         assert_eq!(result.input_amount.unwrap(), input_amount.to_string());
@@ -711,9 +750,10 @@ mod tests {
             output_amount,
         );
 
-        let result = parse_deposit_from_logs(&[log], "8453").unwrap();
-        assert_eq!(result.deposit_id, "3708468");
-        assert_eq!(result.origin_chain_id, "1");
+        let result = parse_deposit_from_logs(&[log], 8453).unwrap();
+        assert_eq!(result.deposit_id, 3708468);
+        assert_eq!(result.origin_chain_id, 1);
+        assert!(result.destination_chain_id.is_none());
         assert_eq!(result.input_token.unwrap(), "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
         assert_eq!(result.output_token.unwrap(), "0x4200000000000000000000000000000000000006");
     }
@@ -724,19 +764,13 @@ mod tests {
             address: String::new(),
             topics: vec!["0xdeadbeef".into()],
             data: "0x".into(),
+            transaction_hash: None,
         };
-        assert!(parse_deposit_from_logs(&[log], "1").is_err());
-        assert!(parse_deposit_from_logs(&[], "1").is_err());
+        assert!(parse_deposit_from_logs(&[log], 1).is_err());
+        assert!(parse_deposit_from_logs(&[], 1).is_err());
     }
 
-    fn build_event_log(
-        signature: alloy_primitives::FixedBytes<32>,
-        indexed: &[u64],
-        input_token: &str,
-        output_token: &str,
-        input_amount: U256,
-        output_amount: U256,
-    ) -> gem_evm::rpc::model::Log {
+    fn build_event_log(signature: alloy_primitives::FixedBytes<32>, indexed: &[u64], input_token: &str, output_token: &str, input_amount: U256, output_amount: U256) -> Log {
         let mut data = Vec::new();
         let mut buf = [0u8; 32];
         let input_bytes = alloy_primitives::hex::decode(input_token.strip_prefix("0x").unwrap_or(input_token)).unwrap();
@@ -755,10 +789,11 @@ mod tests {
             topics.push(format!("{:#066x}", t));
         }
 
-        gem_evm::rpc::model::Log {
+        Log {
             address: String::new(),
             topics,
             data: HexEncode(&data),
+            transaction_hash: None,
         }
     }
 
@@ -857,8 +892,8 @@ mod tests {
             let network_provider = Arc::new(NativeProvider::default());
             let swap_provider = Across::new(network_provider.clone());
 
-            let tx_hash = "0x9827ca4bdd5dea3a310cff3485f87463987cdc52118077dba34f86ee79456952";
-            let chain = Chain::Unichain;
+            let tx_hash = "0x2ed43336441c830e859dada09e6eee6b5ee5b160e0e420fdf17f6e46dc240e88";
+            let chain = Chain::Base;
 
             let result = swap_provider.get_swap_result(chain, tx_hash).await?;
 

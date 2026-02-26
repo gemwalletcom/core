@@ -1,6 +1,7 @@
-// use chrono::{DateTime, Utc};
+use gem_evm::ethereum_address_checksum;
 use primitives::swap::SwapStatus;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeSet;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -74,6 +75,27 @@ pub struct MayanTransactionStepMeta {
     pub start_block: u64,
     pub w_chain_id: u64,
     pub minimum_confirmation: u64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct MayanChain {
+    pub mayan_address: String,
+}
+
+fn checksum_address(address: &str) -> String {
+    ethereum_address_checksum(address).unwrap_or_else(|_| address.to_string())
+}
+
+impl MayanChain {
+    pub fn unique_addresses(chains: Vec<MayanChain>) -> Vec<String> {
+        chains
+            .into_iter()
+            .filter(|c| !c.mayan_address.is_empty())
+            .map(|c| checksum_address(&c.mayan_address))
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect()
+    }
 }
 
 #[cfg(test)]

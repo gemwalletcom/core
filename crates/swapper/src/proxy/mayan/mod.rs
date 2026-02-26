@@ -1,8 +1,10 @@
 mod explorer;
 mod model;
+mod price;
 
 pub use explorer::MayanExplorer;
-pub use model::{MayanClientStatus, MayanTransactionResult};
+pub use model::{MayanChain, MayanClientStatus, MayanTransactionResult};
+pub use price::MayanPrice;
 
 use crate::SwapperProvider;
 use crate::cross_chain::CrossChainProvider;
