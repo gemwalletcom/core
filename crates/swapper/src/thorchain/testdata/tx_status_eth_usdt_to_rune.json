@@ -1,0 +1,46 @@
+{
+  "tx": {
+    "id": "160BC649AA77D0DC359199E32AFD0A2D9EB60563AB938A1BEAFFA9EEA1C0FC18",
+    "chain": "ETH",
+    "memo": "=:r:thor14f64wnrz5lkm8fqtq7z55wf02xjz56htmjs2nf:0/1/0:g1:50",
+    "coins": [
+      {
+        "asset": "ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7",
+        "amount": "836600000000",
+        "decimals": 6
+      }
+    ]
+  },
+  "stages": {
+    "inbound_observed": {
+      "pre_confirmation_count": 103,
+      "final_count": 103,
+      "completed": true
+    },
+    "inbound_confirmation_counted": {
+      "remaining_confirmation_seconds": 0,
+      "completed": true
+    },
+    "inbound_finalised": {
+      "completed": true
+    },
+    "swap_status": {
+      "pending": false
+    },
+    "swap_finalised": {
+      "completed": true
+    }
+  },
+  "out_txs": [
+    {
+      "id": "0000000000000000000000000000000000000000000000000000000000000000",
+      "chain": "THOR",
+      "coins": [
+        {
+          "asset": "THOR.RUNE",
+          "amount": "2096315169517"
+        }
+      ]
+    }
+  ]
+}
