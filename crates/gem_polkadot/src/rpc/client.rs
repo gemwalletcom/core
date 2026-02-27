@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainProvider, ChainTraits};
+use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainProvider, ChainSimulation, ChainTraits};
 use gem_client::{Client, ClientExt};
 use primitives::{Asset, Chain};
 
@@ -72,3 +72,4 @@ impl<C: Client> ChainTraits for PolkadotClient<C> {}
 impl<C: Client> ChainAccount for PolkadotClient<C> {}
 impl<C: Client> ChainPerpetual for PolkadotClient<C> {}
 impl<C: Client> ChainAddressStatus for PolkadotClient<C> {}
+impl<C: Client> ChainSimulation for PolkadotClient<C> {}

@@ -17,6 +17,14 @@ pub struct SuiTransaction {
     pub effects: SuiEffects,
 }
 
+#[cfg(feature = "rpc")]
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DryRunResult {
+    pub effects: SuiEffects,
+    pub balance_changes: Vec<BalanceChange>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SuiStatus {
@@ -29,6 +37,16 @@ pub struct SuiEffects {
     pub gas_used: GasUsed,
     pub status: SuiStatus,
     pub created: Option<Vec<SuiObjectChange>>,
+}
+
+impl SuiEffects {
+    pub fn is_success(&self) -> bool {
+        self.status.status == "success"
+    }
+
+    pub fn error(&self) -> Option<String> {
+        if self.is_success() { None } else { Some(self.status.status.clone()) }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

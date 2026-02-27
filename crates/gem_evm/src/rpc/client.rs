@@ -12,8 +12,10 @@ use std::str::FromStr;
 
 use super::{
     ankr::AnkrClient,
+    debug_trace::{CallFrame, PrestateDiffResult},
     model::{Block, BlockTransactionsIds, EthSyncingStatus, Log, Transaction, TransactionReciept, TransactionReplayTrace},
 };
+use crate::jsonrpc::TransactionObject;
 use crate::models::fee::EthereumFeeHistory;
 #[cfg(feature = "rpc")]
 use crate::multicall3::{
@@ -281,5 +283,21 @@ impl<C: Client + Clone> EthereumClient<C> {
         let multicall_results = IMulticall3::aggregate3Call::abi_decode_returns(&result_data).map_err(|e| Box::new(e) as Box<dyn std::error::Error + Sync + Send>)?;
 
         Ok(multicall_results)
+    }
+
+    pub async fn debug_trace_call_prestate(&self, tx: &TransactionObject) -> Result<PrestateDiffResult, JsonRpcError> {
+        let params = json!([tx, "latest", {
+            "tracer": "prestateTracer",
+            "tracerConfig": { "diffMode": true }
+        }]);
+        self.client.call("debug_traceCall", params).await
+    }
+
+    pub async fn debug_trace_call_logs(&self, tx: &TransactionObject) -> Result<CallFrame, JsonRpcError> {
+        let params = json!([tx, "latest", {
+            "tracer": "callTracer",
+            "tracerConfig": { "onlyTopCall": true, "withLog": true }
+        }]);
+        self.client.call("debug_traceCall", params).await
     }
 }

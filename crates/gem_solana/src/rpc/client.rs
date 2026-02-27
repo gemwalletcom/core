@@ -4,6 +4,7 @@ use crate::models::{
     balances::SolanaBalance,
     blockhash::SolanaBlockhashResult,
     prioritization_fee::SolanaPrioritizationFee,
+    simulation::SimulateTransactionValue,
     transaction::{BlockTransactions, SolanaTransaction},
 };
 use chain_traits::ChainProvider;
@@ -251,6 +252,18 @@ impl<C: Client + Clone> SolanaClient<C> {
         }
 
         Ok(transactions)
+    }
+
+    pub async fn simulate_transaction(&self, encoded_tx: &str) -> Result<SimulateTransactionValue, JsonRpcError> {
+        let params = serde_json::json!([
+            encoded_tx,
+            {
+                "encoding": "base64",
+                "sigVerify": false,
+                "replaceRecentBlockhash": true
+            }
+        ]);
+        self.rpc_call("simulateTransaction", params).await
     }
 
     pub async fn get_token_accounts(&self, address: &str, token_mints: &[String]) -> Result<Vec<ValueResult<Vec<TokenAccountInfo>>>, Box<dyn Error + Send + Sync>> {

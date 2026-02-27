@@ -1,5 +1,5 @@
 use crate::models::{Account, AccountAccessKey, Block, BroadcastResult, GasPrice, GenesisConfig};
-use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainProvider, ChainStaking, ChainToken, ChainTraits};
+use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainProvider, ChainSimulation, ChainStaking, ChainToken, ChainTraits};
 use gem_client::Client;
 use gem_jsonrpc::{client::JsonRpcClient, types::JsonRpcError};
 use primitives::{Asset, Chain};
@@ -83,4 +83,5 @@ impl<C: Client + Clone> ChainPerpetual for NearClient<C> {}
 impl<C: Client + Clone> ChainAddressStatus for NearClient<C> {}
 impl<C: Client + Clone> ChainAccount for NearClient<C> {}
 impl<C: Client + Clone> ChainToken for NearClient<C> {}
+impl<C: Client + Clone> ChainSimulation for NearClient<C> {}
 impl<C: Client + Clone> ChainTraits for NearClient<C> {}

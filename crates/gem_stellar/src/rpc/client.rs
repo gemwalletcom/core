@@ -7,7 +7,7 @@ use crate::models::node::NodeStatus;
 use crate::models::transaction::{Payment, StellarTransactionBroadcast, StellarTransactionStatus};
 use crate::models::{AccountEmpty, AccountResult};
 
-use chain_traits::{ChainAddressStatus, ChainPerpetual, ChainProvider, ChainStaking, ChainTraits};
+use chain_traits::{ChainAddressStatus, ChainPerpetual, ChainProvider, ChainSimulation, ChainStaking, ChainTraits};
 use gem_client::{Client, ClientError, ClientExt, ContentType};
 use primitives::Chain;
 use std::collections::HashMap;
@@ -112,6 +112,8 @@ impl<C: Client> ChainPerpetual for StellarClient<C> {}
 impl<C: Client> ChainAddressStatus for StellarClient<C> {}
 
 impl<C: Client> chain_traits::ChainAccount for StellarClient<C> {}
+
+impl<C: Client> ChainSimulation for StellarClient<C> {}
 
 impl<C: Client> ChainTraits for StellarClient<C> {}
 

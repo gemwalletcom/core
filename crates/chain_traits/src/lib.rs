@@ -5,8 +5,9 @@ use primitives::chart::ChartCandleStick;
 use primitives::perpetual::{PerpetualData, PerpetualPositionsSummary};
 use primitives::portfolio::PerpetualPortfolio;
 use primitives::{
-    AddressStatus, Asset, AssetBalance, BroadcastOptions, Chain, ChartPeriod, DelegationBase, DelegationValidator, FeeRate, NodeSyncStatus, Transaction, TransactionFee,
-    TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate, UTXO,
+    AddressStatus, Asset, AssetBalance, BroadcastOptions, Chain, ChartPeriod, DelegationBase, DelegationValidator, FeeRate, NodeSyncStatus, SimulationInput, SimulationResult,
+    Transaction, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, TransactionStateRequest,
+    TransactionUpdate, UTXO,
 };
 
 pub trait ChainTraits:
@@ -21,6 +22,7 @@ pub trait ChainTraits:
     + ChainToken
     + ChainTransactionLoad
     + ChainAddressStatus
+    + ChainSimulation
 {
 }
 
@@ -154,5 +156,12 @@ pub trait ChainTransactionLoad: Send + Sync {
 pub trait ChainAddressStatus: Send + Sync {
     async fn get_address_status(&self, _address: String) -> Result<Vec<AddressStatus>, Box<dyn Error + Sync + Send>> {
         Ok(vec![])
+    }
+}
+
+#[async_trait]
+pub trait ChainSimulation: Send + Sync {
+    async fn simulate_transaction(&self, _input: SimulationInput) -> Result<SimulationResult, Box<dyn Error + Send + Sync>> {
+        Err("Chain does not support transaction simulation".into())
     }
 }

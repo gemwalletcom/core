@@ -1,12 +1,20 @@
-use crate::models::InspectGasUsed;
+use crate::models::GasUsed;
+use num_bigint::BigUint;
+use num_traits::ToPrimitive;
 use std::cmp::max;
 
-pub struct GasBudgetCalculator {}
+pub struct GasBudgetCalculator;
 
 impl GasBudgetCalculator {
-    pub fn gas_budget(gas_used: &InspectGasUsed) -> u64 {
-        let computation_budget = gas_used.computation_cost;
-        let budget = max(computation_budget, computation_budget + gas_used.storage_cost - gas_used.storage_rebate);
-        budget * 120 / 100
+    pub fn total_gas(gas_used: &GasUsed) -> u64 {
+        let computation = &gas_used.computation_cost;
+        let storage = &gas_used.storage_cost;
+        let rebate = &gas_used.storage_rebate;
+        let net = if computation + storage > *rebate {
+            computation + storage - rebate
+        } else {
+            BigUint::from(0u64)
+        };
+        max(computation.clone(), net).to_u64().unwrap_or(0)
     }
 }

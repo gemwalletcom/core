@@ -264,6 +264,10 @@ pub mod ip_usage_type;
 pub use self::ip_usage_type::IpUsageType;
 pub mod metrics;
 pub use self::metrics::{ConsumerStatus, JobStatus, ParserStatus, ReportedError};
+pub mod balance_diff;
+pub use self::balance_diff::{BalanceDiff, BalanceDiffMap};
+pub mod simulation;
+pub use self::simulation::{SimulationInput, SimulationResult};
 pub mod value_access;
 pub use self::value_access::ValueAccess;
 

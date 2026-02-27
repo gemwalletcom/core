@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use chain_traits::{ChainAccount, ChainPerpetual, ChainTraits};
+use chain_traits::{ChainAccount, ChainPerpetual, ChainSimulation, ChainTraits};
 use num_bigint::BigUint;
 use primitives::{Asset, AssetId, asset_type::AssetType, chain::Chain};
 use std::{error::Error, str::FromStr};
@@ -261,6 +261,9 @@ impl<C: Client + Clone> ChainAccount for TronClient<C> {}
 
 #[async_trait]
 impl<C: Client + Clone> ChainPerpetual for TronClient<C> {}
+
+#[async_trait]
+impl<C: Client + Clone> ChainSimulation for TronClient<C> {}
 
 impl<C: Client + Clone> chain_traits::ChainProvider for TronClient<C> {
     fn get_chain(&self) -> primitives::Chain {

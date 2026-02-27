@@ -5,6 +5,7 @@ pub mod balances_smartchain;
 pub mod preload;
 pub mod preload_mapper;
 pub mod preload_optimism;
+pub mod simulation;
 pub mod staking;
 pub mod staking_ethereum;
 pub mod staking_mapper;

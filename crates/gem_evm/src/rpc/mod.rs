@@ -1,6 +1,7 @@
 pub mod ankr;
 pub mod balance_differ;
 pub mod client;
+pub mod debug_trace;
 pub mod mapper;
 pub mod model;
 pub mod staking_mapper;

@@ -11,6 +11,7 @@ rpc = [
     "dep:gem_client",
     "dep:chain_traits",
     "dep:futures",
+    "dep:solana-primitives",
 ]
 signer = ["dep:signer", "dep:solana-primitives", "dep:num-traits"]
 reqwest = ["gem_jsonrpc/reqwest"]

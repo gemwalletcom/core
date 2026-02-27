@@ -25,4 +25,4 @@ pub use staking::RpcSuiSystemState;
 #[cfg(feature = "rpc")]
 pub use staking::{EventStake, EventUnstake, ValidatorApy, ValidatorInfo, ValidatorSet};
 #[cfg(feature = "rpc")]
-pub use transaction::{Digest, Digests, Effect, Event, GasUsed, ResultData, Status, TransactionBroadcast};
+pub use transaction::{Digest, Digests, DryRunResult, Effect, Event, GasUsed, ResultData, Status, TransactionBroadcast};

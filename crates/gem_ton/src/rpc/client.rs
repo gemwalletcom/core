@@ -3,7 +3,7 @@ use std::error::Error;
 use primitives::{Asset, AssetId, AssetType, chain::Chain};
 use serde_json;
 
-use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainStaking, ChainTraits};
+use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainSimulation, ChainStaking, ChainTraits};
 use gem_client::{Client, ClientExt};
 
 use crate::models::{ApiResult, BroadcastTransaction, Chainhead, JettonInfo, JettonWalletsResponse, MessageTransactions, SimpleJettonBalance, WalletInfo};
@@ -85,6 +85,7 @@ impl<C: Client> ChainAccount for TonClient<C> {}
 impl<C: Client> ChainPerpetual for TonClient<C> {}
 impl<C: Client> ChainAddressStatus for TonClient<C> {}
 impl<C: Client> ChainStaking for TonClient<C> {}
+impl<C: Client> ChainSimulation for TonClient<C> {}
 impl<C: Client> chain_traits::ChainProvider for TonClient<C> {
     fn get_chain(&self) -> primitives::Chain {
         Chain::Ton

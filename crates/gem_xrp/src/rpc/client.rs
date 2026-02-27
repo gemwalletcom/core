@@ -3,7 +3,7 @@ use std::error::Error;
 
 use crate::models::rpc::{AccountInfo, AccountInfoResult, AccountLedger, AccountObjects, FeesResult, Ledger, LedgerCurrent, LedgerData, TransactionBroadcast, TransactionStatus};
 
-use chain_traits::{ChainAddressStatus, ChainPerpetual, ChainProvider, ChainStaking, ChainTraits};
+use chain_traits::{ChainAddressStatus, ChainPerpetual, ChainProvider, ChainSimulation, ChainStaking, ChainTraits};
 use gem_client::Client;
 use gem_jsonrpc::client::JsonRpcClient as GenericJsonRpcClient;
 use primitives::Chain;
@@ -125,6 +125,8 @@ impl<C: Client + Clone> ChainPerpetual for XRPClient<C> {}
 impl<C: Client + Clone> ChainAddressStatus for XRPClient<C> {}
 
 impl<C: Client + Clone> chain_traits::ChainAccount for XRPClient<C> {}
+
+impl<C: Client + Clone> ChainSimulation for XRPClient<C> {}
 
 impl<C: Client + Clone> ChainTraits for XRPClient<C> {}
 

@@ -291,6 +291,13 @@ impl GemGateway {
         self.with_provider(chain, |provider| async move { provider.get_perpetual_portfolio(address).await }).await
     }
 
+    pub async fn simulate_transaction(&self, chain: Chain, encoded_transaction: String) -> Result<GemSimulationResult, GatewayError> {
+        self.with_provider(chain, |provider| async move {
+            provider.simulate_transaction(primitives::SimulationInput { encoded_transaction }).await
+        })
+        .await
+    }
+
     pub async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<GemAsset, GatewayError> {
         self.with_provider(chain, |provider| async move { provider.get_token_data(token_id).await }).await
     }

@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use chain_traits::ChainAccount;
+use chain_traits::{ChainAccount, ChainSimulation};
 use gem_client::Client;
 
 pub mod balances;
@@ -24,3 +24,6 @@ use crate::rpc::client::HyperCoreClient;
 
 #[async_trait]
 impl<C: Client> ChainAccount for HyperCoreClient<C> {}
+
+#[async_trait]
+impl<C: Client> ChainSimulation for HyperCoreClient<C> {}

@@ -7,7 +7,7 @@ use crate::models::{
     AnnualProvisionsResponse, BlockResponse, InflationResponse, OsmosisEpochProvisionsResponse, OsmosisMintParamsResponse, StakingPoolResponse, SupplyResponse,
     TransactionResponse, TransactionsResponse, ValidatorsResponse,
 };
-use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainTraits};
+use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainSimulation, ChainTraits};
 use gem_client::{Client, ClientExt};
 use primitives::chain_cosmos::CosmosChain;
 
@@ -157,6 +157,8 @@ impl<C: Client> ChainAccount for CosmosClient<C> {}
 impl<C: Client> ChainPerpetual for CosmosClient<C> {}
 
 impl<C: Client> ChainAddressStatus for CosmosClient<C> {}
+
+impl<C: Client> ChainSimulation for CosmosClient<C> {}
 
 impl<C: Client> ChainTraits for CosmosClient<C> {}
 

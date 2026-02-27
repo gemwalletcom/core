@@ -17,11 +17,11 @@ use serde::de::DeserializeOwned;
 use sui_types::Address;
 
 use crate::models::staking::{SuiStakeDelegation, SuiSystemState, SuiValidators};
-use crate::models::transaction::{SuiBroadcastTransaction, SuiTransaction};
+use crate::models::transaction::SuiBroadcastTransaction;
 use crate::models::{Balance, Checkpoint, Digest, Digests, ResultData, TransactionBlocks};
 #[cfg(feature = "rpc")]
 use crate::models::{CoinAsset, InspectResult, SuiObject};
-use crate::models::{SuiCoin, SuiCoinMetadata};
+use crate::models::{DryRunResult, SuiCoin, SuiCoinMetadata};
 #[cfg(feature = "rpc")]
 use crate::{
     SUI_COIN_TYPE, SUI_COIN_TYPE_FULL,
@@ -123,7 +123,7 @@ impl<C: Client + Clone> SuiClient<C> {
         Ok(self.client.call::<ResultData<SuiObject>>("sui_getObject", params).await?.data)
     }
 
-    pub async fn dry_run(&self, tx_data: String) -> Result<SuiTransaction, Box<dyn Error + Send + Sync>> {
+    pub async fn dry_run(&self, tx_data: String) -> Result<DryRunResult, Box<dyn Error + Send + Sync>> {
         let params = serde_json::json!([tx_data]);
         Ok(self.client.call("sui_dryRunTransactionBlock", params).await?)
     }

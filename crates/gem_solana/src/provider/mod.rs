@@ -6,6 +6,8 @@ pub mod testkit;
 #[cfg(feature = "rpc")]
 pub mod preload_mapper;
 #[cfg(feature = "rpc")]
+pub mod simulation;
+#[cfg(feature = "rpc")]
 pub mod staking;
 #[cfg(feature = "rpc")]
 pub mod staking_mapper;

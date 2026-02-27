@@ -221,7 +221,7 @@ impl<C: Client> AptosClient<C> {
 mod chain_trait_impls {
     use super::*;
     use async_trait::async_trait;
-    use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual};
+    use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainSimulation};
 
     #[async_trait]
     impl<C: Client> ChainAccount for AptosClient<C> {}
@@ -231,4 +231,7 @@ mod chain_trait_impls {
 
     #[async_trait]
     impl<C: Client> ChainAddressStatus for AptosClient<C> {}
+
+    #[async_trait]
+    impl<C: Client> ChainSimulation for AptosClient<C> {}
 }
