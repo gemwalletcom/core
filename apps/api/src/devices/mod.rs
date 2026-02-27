@@ -13,6 +13,7 @@ use crate::responders::{ApiError, ApiResponse};
 use crate::scan::ScanClient;
 use crate::transactions::TransactionsClient;
 use crate::wallets::WalletsClient;
+use crate::wallets::client::WalletSubscriptionInput;
 use auth_config::AuthConfig;
 pub use cacher::DeviceCacher;
 pub use client::DevicesClient;
@@ -24,7 +25,7 @@ use primitives::device::Device;
 use primitives::rewards::{RedemptionRequest, RedemptionResult};
 use primitives::{
     AssetId, AuthNonce, FiatQuoteRequest, FiatQuoteUrl, FiatQuotes, InAppNotification, MigrateDeviceIdRequest, NFTData, PriceAlerts, ReportNft, RewardEvent, Rewards,
-    ScanTransaction, ScanTransactionPayload, TransactionsResponse, WalletSubscription, WalletSubscriptionChains,
+    ScanTransaction, ScanTransactionPayload, TransactionsResponse, WalletSubscriptionChains,
 };
 use rocket::{State, delete, get, post, put, serde::json::Json, tokio::sync::Mutex};
 use std::sync::Arc;
@@ -234,10 +235,11 @@ pub async fn get_device_subscriptions_v2(device: AuthenticatedDevice, client: &S
 #[post("/devices/subscriptions", format = "json", data = "<subscriptions>")]
 pub async fn add_device_subscriptions_v2(
     device: AuthenticatedDevice,
-    subscriptions: Json<Vec<WalletSubscription>>,
+    subscriptions: Json<Vec<WalletSubscriptionInput>>,
     client: &State<Mutex<WalletsClient>>,
 ) -> Result<ApiResponse<usize>, ApiError> {
-    Ok(client.lock().await.add_subscriptions(&device.device_row.device_id, subscriptions.0).await?.into())
+    let wallet_subscriptions = subscriptions.0.into_iter().map(|x| x.into_wallet_subscription()).collect();
+    Ok(client.lock().await.add_subscriptions(&device.device_row.device_id, wallet_subscriptions).await?.into())
 }
 
 #[delete("/devices/subscriptions", format = "json", data = "<subscriptions>")]

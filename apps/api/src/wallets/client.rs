@@ -2,11 +2,28 @@ use std::collections::{BTreeMap, HashMap};
 use std::error::Error;
 
 use crate::devices::DeviceCacher;
-use primitives::{Chain, WalletId, WalletSource, WalletSubscription, WalletSubscriptionChains};
+use primitives::{Chain, WalletId, WalletSource, WalletSubscription, WalletSubscriptionChains, WalletSubscriptionLegacy};
+use serde::Deserialize;
 use storage::models::NewWalletRow;
 use storage::sql_types::WalletType;
 use storage::{Database, WalletsRepository};
 use streamer::{ChainAddressPayload, StreamProducer, StreamProducerQueue};
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(untagged)]
+pub(crate) enum WalletSubscriptionInput {
+    New(WalletSubscription),
+    Legacy(WalletSubscriptionLegacy),
+}
+
+impl WalletSubscriptionInput {
+    pub fn into_wallet_subscription(self) -> WalletSubscription {
+        match self {
+            Self::New(ws) => ws,
+            Self::Legacy(legacy) => WalletSubscription::from(legacy),
+        }
+    }
+}
 
 #[derive(Clone)]
 pub struct WalletsClient {
@@ -78,7 +95,7 @@ impl WalletsClient {
             .filter_map(|ws| {
                 wallet_ids
                     .get(&ws.wallet_id.id())
-                    .map(|&wallet_id| ws.subscriptions.iter().map(move |s| (wallet_id, s.chain, s.address.clone())))
+                    .map(|&wallet_id| ws.chain_addresses().into_iter().map(move |ca| (wallet_id, ca.chain, ca.address)))
             })
             .flatten()
             .collect();
@@ -88,7 +105,7 @@ impl WalletsClient {
         let payload: Vec<ChainAddressPayload> = wallet_subscriptions
             .into_iter()
             .filter(|x| x.source == Some(WalletSource::Import))
-            .flat_map(|x| x.subscriptions)
+            .flat_map(|x| x.chain_addresses())
             .map(ChainAddressPayload::from)
             .collect();
 
