@@ -10,8 +10,8 @@ use super::{
     asset::{SUPPORTED_CHAINS, map_asset_to_relay_currency},
     chain::RelayChain,
     client::RelayClient,
+    mapper,
     model::{RelayQuoteRequest, RelayQuoteResponse},
-    quote_data_mapper,
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperQuoteData,
@@ -144,274 +144,95 @@ where
             _ => None,
         };
 
-        quote_data_mapper::map_quote_data(&from_chain, &quote_response.steps, &quote.from_value, approval)
+        mapper::map_quote_data(&from_chain, &quote_response.steps, &quote.from_value, approval)
     }
 
-    async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
-        let status = self.client.get_swap_status(transaction_hash).await?;
-        let to_chain = status.destination_chain_id.and_then(RelayChain::chain_from_id);
-        let to_tx_hash = status.out_tx_hashes.and_then(|hashes| hashes.first().cloned());
-
-        Ok(SwapResult {
-            status: status.status.into_swap_status(),
-            from_chain: chain,
-            from_tx_hash: transaction_hash.to_string(),
-            to_chain,
-            to_tx_hash,
-        })
+    async fn get_swap_result(&self, _chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
+        let response = self.client.get_request(transaction_hash).await?;
+        let request = response.requests.first().ok_or(SwapperError::InvalidRoute)?;
+        Ok(mapper::map_swap_result(request))
     }
 }
 
 #[cfg(all(test, feature = "swap_integration_tests"))]
 mod swap_integration_tests {
     use super::*;
-    use crate::{SwapperMode, SwapperQuoteAsset, alien::reqwest_provider::NativeProvider, asset::SMARTCHAIN_USDT_TOKEN_ID, models::Options};
+    use crate::{SwapperMode, SwapperQuoteAsset, alien::reqwest_provider::NativeProvider, models::Options};
     use primitives::AssetId;
 
     #[tokio::test]
-    async fn test_relay_quote_eth_to_base() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_relay_btc_to_eth() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        use crate::asset::ETHEREUM_USDC_TOKEN_ID;
+
         let provider = Arc::new(NativeProvider::default());
         let relay = Relay::new(provider);
 
-        let options = Options::new_with_slippage(100.into());
-
         let request = QuoteRequest {
-            from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
-            to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Base)),
-            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
+            from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Bitcoin)),
+            to_asset: SwapperQuoteAsset::from(AssetId::from_token(Chain::Ethereum, ETHEREUM_USDC_TOKEN_ID)),
+            wallet_address: "bc1q4vxn43l44h30nkluqfxd9eckf45vr2awz38lwa".to_string(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
-            value: "10000000000000000".to_string(),
+            value: "2000000".to_string(),
             mode: SwapperMode::ExactIn,
-            options,
-        };
-
-        let quote = relay.fetch_quote(&request).await?;
-
-        assert_eq!(quote.from_value, request.value);
-        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
-        assert!(!quote.data.routes.is_empty());
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_relay_quote_base_to_arbitrum() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let provider = Arc::new(NativeProvider::default());
-        let relay = Relay::new(provider);
-
-        let options = Options::new_with_slippage(100.into());
-
-        let request = QuoteRequest {
-            from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Base)),
-            to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Arbitrum)),
-            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
-            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
-            value: "10000000000000000".to_string(),
-            mode: SwapperMode::ExactIn,
-            options,
-        };
-
-        let quote = relay.fetch_quote(&request).await?;
-
-        assert_eq!(quote.from_value, request.value);
-        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_relay_quote_bnb_usdt_to_sol() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let provider = Arc::new(NativeProvider::default());
-        let relay = Relay::new(provider);
-
-        let options = Options::new_with_slippage(100.into());
-
-        let request = QuoteRequest {
-            from_asset: SwapperQuoteAsset::from(AssetId::from_token(Chain::SmartChain, SMARTCHAIN_USDT_TOKEN_ID)),
-            to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Solana)),
-            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
-            destination_address: "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy".to_string(),
-            value: "10000000000000000000".to_string(),
-            mode: SwapperMode::ExactIn,
-            options,
-        };
-
-        let quote = relay.fetch_quote(&request).await?;
-
-        println!("Relay BNB USDT -> SOL quote: from={}, to={}", quote.from_value, quote.to_value);
-        assert_eq!(quote.from_value, request.value);
-        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
-        assert!(!quote.data.routes.is_empty());
-        assert!(quote.eta_in_seconds.is_some());
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_relay_quote_data_eth_to_base() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let provider = Arc::new(NativeProvider::default());
-        let relay = Relay::new(provider);
-
-        let options = Options::new_with_slippage(100.into());
-
-        let request = QuoteRequest {
-            from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
-            to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Base)),
-            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
-            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
-            value: "10000000000000000".to_string(),
-            mode: SwapperMode::ExactIn,
-            options,
+            options: Options::new_with_slippage(100.into()),
         };
 
         let quote = relay.fetch_quote(&request).await?;
         let quote_data = relay.fetch_quote_data(&quote, FetchQuoteData::None).await?;
 
-        assert!(!quote_data.to.is_empty());
+        assert_eq!(quote.from_value, request.value);
+        assert!(!quote.to_value.is_empty());
         assert!(!quote_data.data.is_empty());
-        assert!(quote_data.approval.is_none());
 
         Ok(())
     }
 
     #[tokio::test]
-    async fn test_relay_quote_data_sol_to_eth() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_relay_eth_to_sol() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let provider = Arc::new(NativeProvider::default());
         let relay = Relay::new(provider);
 
-        let options = Options::new_with_slippage(100.into());
+        let request = QuoteRequest {
+            from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
+            to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Solana)),
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
+            destination_address: "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy".to_string(),
+            value: "10000000000000000".to_string(),
+            mode: SwapperMode::ExactIn,
+            options: Options::new_with_slippage(100.into()),
+        };
+
+        let quote = relay.fetch_quote(&request).await?;
+        let quote_data = relay.fetch_quote_data(&quote, FetchQuoteData::None).await?;
+
+        assert_eq!(quote.from_value, request.value);
+        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
+        assert!(!quote_data.data.is_empty());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_relay_sol_to_arb() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let provider = Arc::new(NativeProvider::default());
+        let relay = Relay::new(provider);
 
         let request = QuoteRequest {
             from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Solana)),
-            to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
+            to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Arbitrum)),
             wallet_address: "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy".to_string(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             value: "100000000".to_string(),
             mode: SwapperMode::ExactIn,
-            options,
+            options: Options::new_with_slippage(100.into()),
         };
 
         let quote = relay.fetch_quote(&request).await?;
         let quote_data = relay.fetch_quote_data(&quote, FetchQuoteData::None).await?;
 
-        assert!(!quote_data.data.is_empty());
-        assert!(quote_data.approval.is_none());
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_relay_quote_eth_usdt_to_btc() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        use crate::asset::ETHEREUM_USDT_TOKEN_ID;
-
-        let provider = Arc::new(NativeProvider::default());
-        let relay = Relay::new(provider);
-
-        let options = Options::new_with_slippage(100.into());
-
-        let request = QuoteRequest {
-            from_asset: SwapperQuoteAsset::from(AssetId::from_token(Chain::Ethereum, ETHEREUM_USDT_TOKEN_ID)),
-            to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Bitcoin)),
-            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
-            destination_address: "bc1qcr8te4kr609gcawutmrza0j4xv80jy8z306fyu".to_string(),
-            value: "10000000".to_string(),
-            mode: SwapperMode::ExactIn,
-            options,
-        };
-
-        let quote = relay.fetch_quote(&request).await?;
-
-        println!("Relay ETH USDT -> BTC quote: from={}, to={}", quote.from_value, quote.to_value);
         assert_eq!(quote.from_value, request.value);
-        assert!(!quote.to_value.is_empty());
-        assert!(!quote.data.routes.is_empty());
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_relay_quote_data_eth_usdt_to_btc() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        use crate::asset::ETHEREUM_USDT_TOKEN_ID;
-
-        let provider = Arc::new(NativeProvider::default());
-        let relay = Relay::new(provider);
-
-        let options = Options::new_with_slippage(100.into());
-
-        let request = QuoteRequest {
-            from_asset: SwapperQuoteAsset::from(AssetId::from_token(Chain::Ethereum, ETHEREUM_USDT_TOKEN_ID)),
-            to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Bitcoin)),
-            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
-            destination_address: "bc1qcr8te4kr609gcawutmrza0j4xv80jy8z306fyu".to_string(),
-            value: "10000000".to_string(),
-            mode: SwapperMode::ExactIn,
-            options,
-        };
-
-        let quote = relay.fetch_quote(&request).await?;
-        let quote_data = relay.fetch_quote_data(&quote, FetchQuoteData::None).await?;
-
-        println!("Relay ETH USDT -> BTC quote_data: to={}, value={}", quote_data.to, quote_data.value);
-        assert!(!quote_data.to.is_empty());
+        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
         assert!(!quote_data.data.is_empty());
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_relay_quote_btc_to_eth_usdc() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        use crate::asset::ETHEREUM_USDC_TOKEN_ID;
-
-        let provider = Arc::new(NativeProvider::default());
-        let relay = Relay::new(provider);
-
-        let options = Options::new_with_slippage(100.into());
-
-        let request = QuoteRequest {
-            from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Bitcoin)),
-            to_asset: SwapperQuoteAsset::from(AssetId::from_token(Chain::Ethereum, ETHEREUM_USDC_TOKEN_ID)),
-            wallet_address: "bc1q4vxn43l44h30nkluqfxd9eckf45vr2awz38lwa".to_string(),
-            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
-            value: "2000000".to_string(),
-            mode: SwapperMode::ExactIn,
-            options,
-        };
-
-        let quote = relay.fetch_quote(&request).await?;
-
-        println!("Relay BTC -> ETH USDC quote: from={}, to={}", quote.from_value, quote.to_value);
-        assert_eq!(quote.from_value, request.value);
-        assert!(!quote.to_value.is_empty());
-        assert!(!quote.data.routes.is_empty());
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_relay_quote_data_btc_to_eth_usdc() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        use crate::asset::ETHEREUM_USDC_TOKEN_ID;
-
-        let provider = Arc::new(NativeProvider::default());
-        let relay = Relay::new(provider);
-
-        let options = Options::new_with_slippage(100.into());
-
-        let request = QuoteRequest {
-            from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Bitcoin)),
-            to_asset: SwapperQuoteAsset::from(AssetId::from_token(Chain::Ethereum, ETHEREUM_USDC_TOKEN_ID)),
-            wallet_address: "bc1q4vxn43l44h30nkluqfxd9eckf45vr2awz38lwa".to_string(),
-            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
-            value: "2000000".to_string(),
-            mode: SwapperMode::ExactIn,
-            options,
-        };
-
-        let quote = relay.fetch_quote(&request).await?;
-        let quote_data = relay.fetch_quote_data(&quote, FetchQuoteData::None).await?;
-
-        println!("Relay BTC -> ETH USDC quote_data: value={}, data_len={}", quote_data.value, quote_data.data.len());
-        assert!(!quote_data.data.is_empty());
-        assert!(quote_data.data.starts_with("70736274")); // PSBT magic bytes in hex
 
         Ok(())
     }

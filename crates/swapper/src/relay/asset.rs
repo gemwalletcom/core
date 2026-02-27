@@ -73,6 +73,15 @@ pub fn map_asset_to_relay_currency(asset_id: &AssetId, relay_chain: &RelayChain)
     }
 }
 
+pub fn relay_currency_to_asset_id(chain: Chain, currency: &str) -> AssetId {
+    match chain {
+        Chain::Bitcoin => AssetId::from_chain(Chain::Bitcoin),
+        Chain::Solana if currency == WSOL_TOKEN_ADDRESS => AssetId::from_chain(Chain::Solana),
+        _ if currency == EVM_ZERO_ADDRESS => AssetId::from_chain(chain),
+        _ => AssetId::from_token(chain, currency),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

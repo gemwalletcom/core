@@ -101,16 +101,37 @@ impl RelayStatus {
         match self {
             RelayStatus::Pending | RelayStatus::Waiting | RelayStatus::Unknown => SwapStatus::Pending,
             RelayStatus::Success | RelayStatus::Completed => SwapStatus::Completed,
-            RelayStatus::Failed => SwapStatus::Failed,
-            RelayStatus::Refunded => SwapStatus::Refunded,
+            RelayStatus::Failed | RelayStatus::Refunded => SwapStatus::Failed,
         }
     }
 }
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct RelayStatusResponse {
+pub struct RelayRequestsResponse {
+    pub requests: Vec<RelayRequest>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RelayRequest {
     pub status: RelayStatus,
-    pub out_tx_hashes: Option<Vec<String>>,
-    pub destination_chain_id: Option<u64>,
+    #[serde(default)]
+    pub metadata: Option<RelayRequestMetadata>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RelayRequestMetadata {
+    pub currency_in: Option<RelayCurrencyDetail>,
+    pub currency_out: Option<RelayCurrencyDetail>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RelayCurrencyDetail {
+    pub currency: String,
+    pub chain_id: u64,
+    #[serde(default)]
+    pub amount: String,
 }

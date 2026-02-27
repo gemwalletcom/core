@@ -1,11 +1,12 @@
-use primitives::swap::ApprovalData;
+use primitives::{TransactionSwapMetadata, swap::ApprovalData};
 
 use super::{
     DEFAULT_GAS_LIMIT,
+    asset::relay_currency_to_asset_id,
     chain::RelayChain,
-    model::{Step, StepData},
+    model::{RelayRequest, Step, StepData},
 };
-use crate::{SwapperError, SwapperQuoteData};
+use crate::{SwapResult, SwapperError, SwapperProvider, SwapperQuoteData};
 
 fn get_step_data(steps: &[Step]) -> Result<&StepData, SwapperError> {
     let tx_step = steps
@@ -42,10 +43,32 @@ pub fn map_quote_data(chain: &RelayChain, steps: &[Step], value: &str, approval:
     Ok(SwapperQuoteData::new_contract(to, tx_value, data, approval, gas_limit))
 }
 
+pub fn map_swap_result(request: &RelayRequest) -> SwapResult {
+    let metadata = request.metadata.as_ref().and_then(|m| {
+        let currency_in = m.currency_in.as_ref()?;
+        let currency_out = m.currency_out.as_ref()?;
+        let from_chain = RelayChain::from_chain_id(currency_in.chain_id)?.to_chain();
+        let to_chain = RelayChain::from_chain_id(currency_out.chain_id)?.to_chain();
+        Some(TransactionSwapMetadata {
+            from_asset: relay_currency_to_asset_id(from_chain, &currency_in.currency),
+            from_value: currency_in.amount.clone(),
+            to_asset: relay_currency_to_asset_id(to_chain, &currency_out.currency),
+            to_value: currency_out.amount.clone(),
+            provider: Some(SwapperProvider::Relay.as_ref().to_string()),
+        })
+    });
+
+    SwapResult {
+        status: request.status.clone().into_swap_status(),
+        metadata,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::relay::model::{StepData, StepItem};
+    use crate::relay::model::{RelayCurrencyDetail, RelayRequestMetadata, RelayStatus, StepData, StepItem};
+    use primitives::{AssetId, Chain, swap::SwapStatus};
 
     fn create_transaction_step(to: &str, value: &str, data: &str) -> Step {
         Step {
@@ -133,5 +156,77 @@ mod tests {
         assert_eq!(result.data, psbt);
         assert!(result.approval.is_none());
         assert!(result.gas_limit.is_none());
+    }
+
+    fn create_relay_request(status: RelayStatus, metadata: Option<RelayRequestMetadata>) -> RelayRequest {
+        RelayRequest { status, metadata }
+    }
+
+    fn create_currency_detail(currency: &str, chain_id: u64, amount: &str) -> RelayCurrencyDetail {
+        RelayCurrencyDetail {
+            currency: currency.to_string(),
+            chain_id,
+            amount: amount.to_string(),
+        }
+    }
+
+    #[test]
+    fn test_map_swap_result_evm_to_evm() {
+        let request = create_relay_request(
+            RelayStatus::Success,
+            Some(RelayRequestMetadata {
+                currency_in: Some(create_currency_detail("0x0000000000000000000000000000000000000000", 1, "1000000000000000000")),
+                currency_out: Some(create_currency_detail("0x0000000000000000000000000000000000000000", 8453, "999000000000000000")),
+            }),
+        );
+
+        let result = map_swap_result(&request);
+
+        assert_eq!(result.status, SwapStatus::Completed);
+        let metadata = result.metadata.unwrap();
+        assert_eq!(metadata.from_asset, AssetId::from_chain(Chain::Ethereum));
+        assert_eq!(metadata.from_value, "1000000000000000000");
+        assert_eq!(metadata.to_asset, AssetId::from_chain(Chain::Base));
+        assert_eq!(metadata.to_value, "999000000000000000");
+        assert_eq!(metadata.provider, Some("relay".to_string()));
+    }
+
+    #[test]
+    fn test_map_swap_result_evm_token_to_btc() {
+        let usdt_address = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
+        let request = create_relay_request(
+            RelayStatus::Completed,
+            Some(RelayRequestMetadata {
+                currency_in: Some(create_currency_detail(usdt_address, 1, "10000000")),
+                currency_out: Some(create_currency_detail("bc1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqmql8k8", 8253038, "50000")),
+            }),
+        );
+
+        let result = map_swap_result(&request);
+
+        assert_eq!(result.status, SwapStatus::Completed);
+        let metadata = result.metadata.unwrap();
+        assert_eq!(metadata.from_asset, AssetId::from_token(Chain::Ethereum, usdt_address));
+        assert_eq!(metadata.to_asset, AssetId::from_chain(Chain::Bitcoin));
+    }
+
+    #[test]
+    fn test_map_swap_result_pending() {
+        let request = create_relay_request(RelayStatus::Pending, None);
+
+        let result = map_swap_result(&request);
+
+        assert_eq!(result.status, SwapStatus::Pending);
+        assert!(result.metadata.is_none());
+    }
+
+    #[test]
+    fn test_map_swap_result_failed() {
+        let request = create_relay_request(RelayStatus::Failed, None);
+
+        let result = map_swap_result(&request);
+
+        assert_eq!(result.status, SwapStatus::Failed);
+        assert!(result.metadata.is_none());
     }
 }

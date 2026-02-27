@@ -2,7 +2,7 @@ use std::{collections::HashMap, fmt::Debug};
 
 use gem_client::{CONTENT_TYPE, Client, ClientExt};
 
-use super::model::{RelayQuoteRequest, RelayQuoteResponse, RelayStatusResponse};
+use super::model::{RelayQuoteRequest, RelayQuoteResponse, RelayRequestsResponse};
 use crate::SwapperError;
 
 #[derive(Clone, Debug)]
@@ -26,8 +26,8 @@ where
         self.client.post_with("/quote/v2", &request, headers).await.map_err(SwapperError::from)
     }
 
-    pub async fn get_swap_status(&self, request_id: &str) -> Result<RelayStatusResponse, SwapperError> {
-        let path = format!("/intents/status?requestId={}", request_id);
+    pub async fn get_request(&self, transaction_hash: &str) -> Result<RelayRequestsResponse, SwapperError> {
+        let path = format!("/requests/v2?hash={}", transaction_hash);
         self.client.get(&path).await.map_err(SwapperError::from)
     }
 }

@@ -46,17 +46,31 @@ impl RelayChain {
         }
     }
 
-    pub fn chain_from_id(chain_id: u64) -> Option<Chain> {
+    pub fn to_chain(self) -> Chain {
+        match self {
+            RelayChain::Bitcoin => Chain::Bitcoin,
+            RelayChain::Ethereum => Chain::Ethereum,
+            RelayChain::Solana => Chain::Solana,
+            RelayChain::SmartChain => Chain::SmartChain,
+            RelayChain::Base => Chain::Base,
+            RelayChain::Arbitrum => Chain::Arbitrum,
+            RelayChain::Hyperliquid => Chain::Hyperliquid,
+            RelayChain::Berachain => Chain::Berachain,
+            RelayChain::Manta => Chain::Manta,
+        }
+    }
+
+    pub fn from_chain_id(chain_id: u64) -> Option<Self> {
         match chain_id {
-            BITCOIN_CHAIN_ID => Some(Chain::Bitcoin),
-            1 => Some(Chain::Ethereum),
-            56 => Some(Chain::SmartChain),
-            8453 => Some(Chain::Base),
-            42161 => Some(Chain::Arbitrum),
-            999 => Some(Chain::Hyperliquid),
-            80094 => Some(Chain::Berachain),
-            792703809 => Some(Chain::Solana),
-            169 => Some(Chain::Manta),
+            BITCOIN_CHAIN_ID => Some(RelayChain::Bitcoin),
+            1 => Some(RelayChain::Ethereum),
+            792703809 => Some(RelayChain::Solana),
+            56 => Some(RelayChain::SmartChain),
+            8453 => Some(RelayChain::Base),
+            42161 => Some(RelayChain::Arbitrum),
+            999 => Some(RelayChain::Hyperliquid),
+            80094 => Some(RelayChain::Berachain),
+            169 => Some(RelayChain::Manta),
             _ => None,
         }
     }

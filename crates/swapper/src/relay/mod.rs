@@ -1,9 +1,9 @@
 mod asset;
 mod chain;
 mod client;
+mod mapper;
 mod model;
 mod provider;
-mod quote_data_mapper;
 
 use std::sync::Arc;
 
