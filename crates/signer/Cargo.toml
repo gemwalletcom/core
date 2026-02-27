@@ -7,6 +7,8 @@ edition = { workspace = true }
 ed25519-dalek = { version = "2.2.0", default-features = false, features = ["std", "zeroize"] }
 k256 = { workspace = true }
 hex = { workspace = true }
+primitives = { path = "../primitives" }
+bs58 = { workspace = true }
 alloy-primitives = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }

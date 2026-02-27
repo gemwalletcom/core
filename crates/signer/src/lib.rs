@@ -1,3 +1,4 @@
+mod decode;
 mod ed25519;
 mod eip712;
 mod error;
@@ -9,6 +10,7 @@ use zeroize::Zeroizing;
 use crate::ed25519::{sign_digest as sign_ed25519_digest, signing_key_from_bytes};
 use crate::secp256k1::sign_digest as sign_secp256k1_digest;
 
+pub use decode::{decode_private_key, supports_private_key_import};
 pub use eip712::hash_typed_data as hash_eip712;
 pub use error::SignerError;
 
