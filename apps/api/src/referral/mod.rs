@@ -76,7 +76,7 @@ pub async fn redeem_rewards(
     request: Authenticated<RedemptionRequest>,
     client: &State<Mutex<RewardsRedemptionClient>>,
 ) -> Result<ApiResponse<RedemptionResult>, ApiError> {
-    if wallet.0.address() != &request.auth.address {
+    if wallet.0.address() != request.auth.address {
         return Err(ApiError::BadRequest("Address mismatch".to_string()));
     }
     Ok(client.lock().await.redeem(&wallet.id(), &request.data.id, request.auth.device.id).await?.into())
