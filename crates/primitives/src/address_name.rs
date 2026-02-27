@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{scan::AddressType, Chain};
+use crate::{Chain, scan::AddressType};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]

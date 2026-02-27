@@ -91,8 +91,7 @@ impl<'de, T: Deserialize<'de>> Deserialize<'de> for JsonRpcResult<T> {
             return Err(serde::de::Error::custom(format!("missing result and error fields, raw: {raw}")));
         };
 
-        let result =
-            T::deserialize(result.clone()).map_err(|e| serde::de::Error::custom(format!("failed to deserialize result: {e}, raw: {result}")))?;
+        let result = T::deserialize(result.clone()).map_err(|e| serde::de::Error::custom(format!("failed to deserialize result: {e}, raw: {result}")))?;
         Ok(JsonRpcResult::Value(JsonRpcResponse { id, result }))
     }
 }

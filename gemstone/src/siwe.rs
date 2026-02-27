@@ -1,5 +1,5 @@
-pub use gem_evm::siwe::SiweMessage;
 use crate::GemstoneError;
+pub use gem_evm::siwe::SiweMessage;
 use primitives::Chain;
 
 #[uniffi::remote(Record)]
