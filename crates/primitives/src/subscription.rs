@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
@@ -17,6 +17,15 @@ pub struct AddressChains {
     pub chains: Vec<Chain>,
 }
 
+impl AddressChains {
+    pub fn new(address: String, chains: Vec<Chain>) -> Self {
+        Self {
+            address,
+            chains: chains.into_iter().collect::<BTreeSet<_>>().into_iter().collect(),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
@@ -30,9 +39,11 @@ pub struct WalletSubscription {
 
 impl WalletSubscription {
     pub fn chain_addresses(&self) -> Vec<ChainAddress> {
+        let mut seen = BTreeSet::new();
         self.subscriptions
             .iter()
             .flat_map(|x| x.chains.iter().map(|&chain| ChainAddress::new(chain, x.address.clone())))
+            .filter(|x| seen.insert((x.chain, x.address.clone())))
             .collect()
     }
 }
@@ -55,7 +66,7 @@ impl From<WalletSubscriptionLegacy> for WalletSubscription {
         Self {
             wallet_id: legacy.wallet_id,
             source: legacy.source,
-            subscriptions: by_address.into_iter().map(|(address, chains)| AddressChains { address, chains }).collect(),
+            subscriptions: by_address.into_iter().map(|(address, chains)| AddressChains::new(address, chains)).collect(),
         }
     }
 }

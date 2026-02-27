@@ -5,13 +5,10 @@ use crate::constants::{TRANSACTION_TYPE_TRANSFER_ALLOW_DEATH, TRANSACTION_TYPE_T
 use crate::models::rpc::{Block, Extrinsic, ExtrinsicArguments};
 
 pub fn map_transactions(chain: Chain, block: Block) -> Vec<Transaction> {
-    let created_at = block
-        .extrinsics
-        .iter()
-        .find_map(|ext| match &ext.args {
-            ExtrinsicArguments::Timestamp(timestamp) => DateTime::from_timestamp_millis(timestamp.now as i64),
-            _ => None,
-        });
+    let created_at = block.extrinsics.iter().find_map(|ext| match &ext.args {
+        ExtrinsicArguments::Timestamp(timestamp) => DateTime::from_timestamp_millis(timestamp.now as i64),
+        _ => None,
+    });
 
     let Some(created_at) = created_at else {
         return vec![];
@@ -84,7 +81,10 @@ mod tests {
     fn make_extrinsic(args: ExtrinsicArguments) -> Extrinsic {
         Extrinsic {
             hash: String::new(),
-            method: ExtrinsicMethod { pallet: String::new(), method: String::new() },
+            method: ExtrinsicMethod {
+                pallet: String::new(),
+                method: String::new(),
+            },
             info: ExtrinsicInfo { partial_fee: None },
             success: true,
             args,
@@ -110,9 +110,7 @@ mod tests {
     fn map_transactions_returns_empty_without_timestamp() {
         let block = Block {
             number: 1,
-            extrinsics: vec![
-                make_extrinsic(ExtrinsicArguments::Other(serde_json::json!({"data": {}}))),
-            ],
+            extrinsics: vec![make_extrinsic(ExtrinsicArguments::Other(serde_json::json!({"data": {}})))],
         };
 
         let result = map_transactions(Chain::Polkadot, block);

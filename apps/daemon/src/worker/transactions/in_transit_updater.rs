@@ -68,7 +68,14 @@ impl InTransitUpdater {
             Some(provider) => match self.swapper.get_swap_result(chain, provider, &row.hash).await {
                 Ok(r) => r,
                 Err(err) => {
-                    error_with_fields!("in_transit check failed", &err as &dyn Error, chain = chain.as_ref(), hash = row.hash, provider = provider_name, elapsed = elapsed);
+                    error_with_fields!(
+                        "in_transit check failed",
+                        &err as &dyn Error,
+                        chain = chain.as_ref(),
+                        hash = row.hash,
+                        provider = provider_name,
+                        elapsed = elapsed
+                    );
                     if row.created_at < cutoff {
                         info_with_fields!("in_transit timed out", chain = chain.as_ref(), hash = row.hash, provider = provider_name, elapsed = elapsed);
                         self.save_and_publish(chain, row, &TransactionState::Failed, None).await?;

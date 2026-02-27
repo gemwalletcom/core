@@ -19,10 +19,7 @@ fn set_cross_chain_in_transit(transactions: Vec<Transaction>) -> Vec<Transaction
     transactions
         .into_iter()
         .map(|mut transaction| {
-            if transaction.state == TransactionState::Confirmed
-                && IN_TRANSIT_TYPES.contains(&transaction.transaction_type)
-                && cross_chain::is_cross_chain_swap(&transaction)
-            {
+            if transaction.state == TransactionState::Confirmed && IN_TRANSIT_TYPES.contains(&transaction.transaction_type) && cross_chain::is_cross_chain_swap(&transaction) {
                 transaction.state = TransactionState::InTransit;
             }
             transaction
