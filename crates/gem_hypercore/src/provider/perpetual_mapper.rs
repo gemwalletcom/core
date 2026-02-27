@@ -14,7 +14,7 @@ use primitives::{
 };
 
 pub fn create_perpetual_asset_id(coin: &str) -> AssetId {
-    AssetId::from(Chain::HyperCore, Some(AssetId::sub_token_id(&["perpetual".to_string(), coin.to_string()])))
+    crate::models::metadata::perpetual_asset_id(coin)
 }
 
 pub fn create_perpetual_id(coin: &str) -> String {
@@ -94,7 +94,7 @@ pub fn map_perpetuals_data(metadata: HypercoreMetadataResponse) -> Vec<Perpetual
         .map(|(index, universe_asset)| {
             let metadata_item = asset_metadata.get(index);
 
-            let asset_id = create_perpetual_asset_id(&universe_asset.name);
+            let asset_id = universe_asset.asset_id();
 
             let current_price = metadata_item
                 .and_then(|m| m.mid_px.as_ref().and_then(|mid| mid.parse().ok()).or_else(|| m.mark_px.parse().ok()))

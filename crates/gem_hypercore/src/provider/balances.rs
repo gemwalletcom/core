@@ -7,7 +7,7 @@ use gem_client::Client;
 use number_formatter::BigNumberFormatter;
 use primitives::{Asset, AssetBalance};
 
-use super::balances_mapper::{map_balance_coin, map_balance_staking, map_balance_tokens};
+use super::balances_mapper::{map_balance_assets, map_balance_coin, map_balance_staking, map_balance_tokens};
 use crate::rpc::client::HyperCoreClient;
 
 const NATIVE_TOKEN_INDEX: u32 = 150;
@@ -38,8 +38,9 @@ impl<C: Client> ChainBalances for HyperCoreClient<C> {
         Ok(Some(map_balance_staking(&balance, self.chain)?))
     }
 
-    async fn get_balance_assets(&self, _address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![])
+    async fn get_balance_assets(&self, address: String) -> Result<Vec<AssetBalance>, Box<dyn Error + Send + Sync>> {
+        let (spot_balances, spot_meta) = try_join!(self.get_spot_balances(&address), self.get_spot_meta())?;
+        Ok(map_balance_assets(&spot_balances, spot_meta.tokens(), self.chain))
     }
 }
 
@@ -94,7 +95,12 @@ mod integration_tests {
         let address = TEST_ADDRESS.to_string();
         let assets = client.get_balance_assets(address).await?;
 
-        assert_eq!(assets.len(), 0);
+        println!("Hypercore asset balances: {:?}", assets);
+
+        for asset in &assets {
+            assert_eq!(asset.asset_id.chain, primitives::Chain::HyperCore);
+            assert!(asset.asset_id.token_id.is_some());
+        }
         Ok(())
     }
 }

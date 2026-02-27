@@ -3,7 +3,7 @@ use chain_traits::ChainToken;
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{Asset, AssetId, AssetType};
+use primitives::{Asset, AssetType};
 
 use crate::rpc::client::HyperCoreClient;
 
@@ -17,15 +17,12 @@ impl<C: Client> ChainToken for HyperCoreClient<C> {
             .find(|t| t.name == token_id)
             .ok_or(format!("Token not found with symbol: {}", token_id))?;
 
-        let asset_id = AssetId::from(
-            self.chain,
-            Some(AssetId::sub_token_id(&[token_id.clone(), token.token_id.clone(), token.index.to_string()])),
-        );
+        let asset_id = token.asset_id(self.chain);
 
         Ok(Asset {
             id: asset_id.clone(),
             chain: self.chain,
-            token_id: asset_id.token_id.clone(),
+            token_id: asset_id.token_id,
             name: token.name.clone(),
             symbol: token.name.clone(),
             decimals: token.wei_decimals,
