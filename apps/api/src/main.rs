@@ -237,7 +237,6 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let auth_config = devices::auth_config::AuthConfig::new(settings.api.auth.enabled, settings.api.auth.tolerance, jwt_config);
 
     let rocket = rocket::build()
-        .configure(("log_level", "off"))
         .manage(auth_config)
         .manage(database)
         .manage(Mutex::new(fiat_quotes_client))
@@ -276,7 +275,6 @@ async fn rocket_ws_prices(settings: Settings) -> Rocket<Build> {
         redis_url: settings.redis.url.clone(),
     };
     rocket::build()
-        .configure(("log_level", "off"))
         .manage(Arc::new(Mutex::new(price_client)))
         .manage(Arc::new(price_observer_config))
         .mount("/", routes![websocket_prices::ws_health])
@@ -299,7 +297,6 @@ async fn rocket_ws_stream(settings: Settings) -> Rocket<Build> {
     let auth_config = devices::auth_config::AuthConfig::new(settings.api.auth.enabled, settings.api.auth.tolerance, jwt_config);
 
     rocket::build()
-        .configure(("log_level", "off"))
         .manage(auth_config)
         .manage(database)
         .manage(Arc::new(Mutex::new(price_client)))
@@ -322,6 +319,8 @@ async fn main() {
     };
 
     println!("api start service: {}", service.as_ref());
+
+    gem_tracing::init();
 
     let rocket = match service {
         APIService::Api => rocket_api(settings).await,
