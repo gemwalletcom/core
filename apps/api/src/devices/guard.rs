@@ -1,3 +1,4 @@
+use gem_tracing::info_with_fields;
 use rocket::Request;
 use rocket::http::Status;
 use rocket::outcome::Outcome::{Error, Success};
@@ -31,6 +32,9 @@ fn auth_error_outcome<T>(req: &Request<'_>, error: DeviceError, device_id: Optio
         Some(id) => format!("{} device_id={}", error, id),
         None => error.to_string(),
     };
+    let uri = req.uri().to_string();
+    let user_agent = req.headers().get_one("User-Agent").unwrap_or("unknown");
+    info_with_fields!("Request guard failed", uri = uri, status = status.code, error = message, user_agent = user_agent);
     cache_error(req, &message);
     Error((status, message))
 }
