@@ -8,13 +8,19 @@ use super::{
 };
 use crate::{SwapResult, SwapperError, SwapperProvider, SwapperQuoteData};
 
-fn get_step_data(steps: &[Step]) -> Result<&StepData, SwapperError> {
+pub fn get_step_data(steps: &[Step]) -> Result<&StepData, SwapperError> {
     let tx_step = steps
         .iter()
-        .find(|s| s.id == "swap" || s.id == "deposit" || s.kind == "transaction")
-        .or_else(|| steps.iter().find(|s| !s.items.is_empty()))
+        .find(|s| s.id == "swap" || s.id == "deposit")
+        .or_else(|| steps.iter().find(|s| s.kind == "transaction" && s.id != "approve"))
+        .or_else(|| steps.iter().find(|s| s.items.as_ref().is_some_and(|i| !i.is_empty())))
         .ok_or(SwapperError::InvalidRoute)?;
-    tx_step.items.first().and_then(|item| item.data.as_ref()).ok_or(SwapperError::InvalidRoute)
+    tx_step
+        .items
+        .as_ref()
+        .and_then(|items| items.first())
+        .and_then(|item| item.data.as_ref())
+        .ok_or(SwapperError::InvalidRoute)
 }
 
 pub fn map_quote_data(chain: &RelayChain, steps: &[Step], value: &str, approval: Option<ApprovalData>) -> Result<SwapperQuoteData, SwapperError> {
@@ -26,16 +32,15 @@ pub fn map_quote_data(chain: &RelayChain, steps: &[Step], value: &str, approval:
             (String::new(), value.to_string(), psbt.clone(), None)
         }
         RelayChain::Solana => {
-            let data = step_data
-                .instructions
-                .as_ref()
-                .map(|i| serde_json::to_string(i).unwrap_or_default())
-                .unwrap_or_else(|| step_data.data.clone());
-            (step_data.to.clone(), step_data.value.clone(), data, None)
+            let to = step_data.to.clone().unwrap_or_default();
+            let data = step_data.data.clone().unwrap_or_default();
+            (to, step_data.value.clone(), data, None)
         }
         _ if chain.is_evm() => {
+            let to = step_data.to.clone().unwrap_or_default();
+            let data = step_data.data.clone().unwrap_or_default();
             let gas_limit = approval.as_ref().map(|_| DEFAULT_GAS_LIMIT.to_string());
-            (step_data.to.clone(), step_data.value.clone(), step_data.data.clone(), gas_limit)
+            (to, step_data.value.clone(), data, gas_limit)
         }
         _ => return Err(SwapperError::NotSupportedChain),
     };
@@ -51,9 +56,9 @@ pub fn map_swap_result(request: &RelayRequest) -> SwapResult {
         let to_chain = RelayChain::from_chain_id(currency_out.chain_id)?.to_chain();
         Some(TransactionSwapMetadata {
             from_asset: relay_currency_to_asset_id(from_chain, &currency_in.currency),
-            from_value: currency_in.amount.clone(),
+            from_value: currency_in.amount.clone().unwrap_or_default(),
             to_asset: relay_currency_to_asset_id(to_chain, &currency_out.currency),
-            to_value: currency_out.amount.clone(),
+            to_value: currency_out.amount.clone().unwrap_or_default(),
             provider: Some(SwapperProvider::Relay.as_ref().to_string()),
         })
     });
@@ -74,15 +79,16 @@ mod tests {
         Step {
             id: "swap".to_string(),
             kind: "transaction".to_string(),
-            items: vec![StepItem {
+            items: Some(vec![StepItem {
                 data: Some(StepData {
-                    to: to.to_string(),
-                    data: data.to_string(),
+                    to: Some(to.to_string()),
+                    data: Some(data.to_string()),
                     value: value.to_string(),
                     instructions: None,
+                    address_lookup_table_addresses: None,
                     psbt: None,
                 }),
-            }],
+            }]),
         }
     }
 
@@ -90,15 +96,16 @@ mod tests {
         Step {
             id: "deposit".to_string(),
             kind: "transaction".to_string(),
-            items: vec![StepItem {
+            items: Some(vec![StepItem {
                 data: Some(StepData {
-                    to: String::new(),
-                    data: String::new(),
+                    to: None,
+                    data: None,
                     value: String::new(),
                     instructions: None,
+                    address_lookup_table_addresses: None,
                     psbt: Some(psbt.to_string()),
                 }),
-            }],
+            }]),
         }
     }
 
@@ -166,7 +173,7 @@ mod tests {
         RelayCurrencyDetail {
             currency: currency.to_string(),
             chain_id,
-            amount: amount.to_string(),
+            amount: Some(amount.to_string()),
         }
     }
 

@@ -4,6 +4,7 @@ mod client;
 mod mapper;
 mod model;
 mod provider;
+mod tx_builder;
 
 use std::sync::Arc;
 

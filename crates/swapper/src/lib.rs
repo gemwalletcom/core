@@ -3,6 +3,7 @@ mod approval;
 mod chainlink;
 pub mod cross_chain;
 mod eth_address;
+pub(crate) mod fees;
 mod swapper_trait;
 
 #[cfg(test)]

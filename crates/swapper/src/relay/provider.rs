@@ -11,35 +11,26 @@ use super::{
     chain::RelayChain,
     client::RelayClient,
     mapper,
-    model::{RelayQuoteRequest, RelayQuoteResponse},
+    model::{RelayAppFee, RelayInstruction, RelayQuoteRequest, RelayQuoteResponse},
+    tx_builder,
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperQuoteData,
-    approval::check_approval_erc20, config::ReferralFee, referrer::DEFAULT_REFERRER,
+    approval::check_approval_erc20, fees::resolve_max_quote_amount, referrer::DEFAULT_REFERRER,
 };
 
-fn resolve_referral_fee(request: &QuoteRequest, to_chain: RelayChain) -> Option<&ReferralFee> {
-    let fees = request.options.fee.as_ref()?;
-    let fee = match to_chain {
-        RelayChain::Bitcoin => return None,
-        RelayChain::Solana => &fees.solana,
-        _ if to_chain.is_evm() => &fees.evm,
-        _ => return None,
+fn resolve_app_fees(request: &QuoteRequest) -> Vec<RelayAppFee> {
+    let Some(fees) = &request.options.fee else {
+        return vec![];
     };
-
+    let fee = &fees.evm;
     if fee.address.is_empty() || fee.bps == 0 {
-        return None;
+        return vec![];
     }
-
-    Some(fee)
-}
-
-fn resolve_referrer_data(request: &QuoteRequest, to_chain: RelayChain) -> (Option<String>, Option<String>) {
-    let fee = resolve_referral_fee(request, to_chain);
-    let referrer_address = fee.map(|fee| fee.address.clone());
-    let referrer = referrer_address.as_ref().map(|_| DEFAULT_REFERRER.to_string());
-
-    (referrer, referrer_address)
+    vec![RelayAppFee {
+        recipient: fee.address.clone(),
+        fee: fee.bps.to_string(),
+    }]
 }
 
 impl Relay<RpcClient> {
@@ -71,7 +62,8 @@ where
 
         let origin_currency = map_asset_to_relay_currency(&from_asset_id, &from_chain)?;
         let destination_currency = map_asset_to_relay_currency(&to_asset_id, &to_chain)?;
-        let (referrer, referrer_address) = resolve_referrer_data(request, to_chain);
+        let app_fees = resolve_app_fees(request);
+        let amount = resolve_max_quote_amount(request)?;
 
         let relay_request = RelayQuoteRequest {
             user: request.wallet_address.clone(),
@@ -79,21 +71,27 @@ where
             destination_chain_id: to_chain.chain_id(),
             origin_currency,
             destination_currency,
-            amount: request.value.clone(),
+            amount: amount.clone(),
             recipient: request.destination_address.clone(),
             trade_type: "EXACT_INPUT".to_string(),
-            referrer,
-            referrer_address,
+            referrer: if app_fees.is_empty() { None } else { Some(DEFAULT_REFERRER.to_string()) },
+            app_fees,
             refund_to: Some(request.wallet_address.clone()),
+            slippage_tolerance: Some(request.options.slippage.bps.to_string()),
         };
 
         let quote_response = self.client.get_quote(relay_request).await?;
 
-        let to_value = quote_response.details.currency_out.amount.clone();
+        let to_value = quote_response
+            .details
+            .currency_out
+            .minimum_amount
+            .clone()
+            .unwrap_or(quote_response.details.currency_out.amount.clone());
         let eta_in_seconds = quote_response.details.time_estimate_u32();
 
         let quote = Quote {
-            from_value: request.value.clone(),
+            from_value: amount,
             to_value,
             data: ProviderData {
                 provider: self.provider().clone(),
@@ -119,12 +117,23 @@ where
         let from_chain = RelayChain::from_chain(&quote.request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
         let from_asset_id = quote.request.from_asset.asset_id();
 
+        if from_chain == RelayChain::Solana {
+            let step_data = mapper::get_step_data(&quote_response.steps)?;
+            if let Some(instructions_json) = &step_data.instructions {
+                let instructions: Vec<RelayInstruction> = serde_json::from_value(instructions_json.clone()).map_err(|_| SwapperError::InvalidRoute)?;
+                let lookup_addresses = step_data.address_lookup_table_addresses.as_deref().unwrap_or_default();
+                let tx_data = tx_builder::build_solana_tx(&quote.request.wallet_address, &instructions, lookup_addresses, self.rpc_provider.clone()).await?;
+                return Ok(SwapperQuoteData::new_contract(String::new(), String::new(), tx_data, None, None));
+            }
+        }
+
         let approval = match from_asset_id.chain.chain_type() {
             ChainType::Ethereum if !from_asset_id.is_native() => {
                 let router_address = quote_response
                     .steps
                     .iter()
-                    .find_map(|s| s.items.first().and_then(|item| item.data.as_ref().map(|d| d.to.clone())))
+                    .filter(|s| s.id != "approve")
+                    .find_map(|s| s.items.as_ref()?.first().and_then(|item| item.data.as_ref().and_then(|d| d.to.clone())))
                     .ok_or(SwapperError::InvalidRoute)?;
 
                 let token = from_asset_id.token_id.clone().ok_or(SwapperError::NotSupportedAsset)?;

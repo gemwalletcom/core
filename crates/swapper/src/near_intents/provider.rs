@@ -2,21 +2,19 @@ use super::{
     AppFee, DepositMode, NearIntentsClient, NearIntentsExplorer, QuoteRequest as NearQuoteRequest, QuoteResponse, QuoteResponseError, QuoteResponseResult, SwapType,
     auto_quote_time_chains, deposit_memo_chains, get_asset_id_from_near_intents, get_near_intents_asset_id,
     model::{DEFAULT_WAIT_TIME_MS, DEPOSIT_TYPE_ORIGIN, ExplorerTransaction, RECIPIENT_TYPE_DESTINATION},
-    reserved_tx_fees, supported_assets,
+    supported_assets,
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperMode,
-    SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, client_factory::create_client_with_chain,
-    near_intents::client::{base_url, explorer_url},
-amount_to_value,
+    SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, amount_to_value, client_factory::create_client_with_chain,
+    near_intents::client::{base_url, explorer_url}, fees::resolve_max_quote_amount,
 referrer::DEFAULT_REFERRER,
 };
-use alloy_primitives::U256;
 use async_trait::async_trait;
 use chrono::{Duration, Utc};
 use gem_sui::{SuiClient, build_transfer_message_bytes};
 use primitives::{Chain, TransactionSwapMetadata, swap::SwapStatus};
-use std::{fmt::Debug, str::FromStr, sync::Arc};
+use std::{fmt::Debug, sync::Arc};
 
 const DEFAULT_DEADLINE_MINUTES: i64 = 30;
 
@@ -80,36 +78,6 @@ where
             sui_client,
         }
     }
-    fn resolve_quote_amount(request: &QuoteRequest, mode: &SwapType) -> Result<String, SwapperError> {
-        let base_amount = match mode {
-            SwapType::ExactInput => request.value.clone(),
-            SwapType::FlexInput => request.value.clone(),
-        };
-
-        if !request.options.use_max_amount || !request.from_asset.asset_id().is_native() {
-            return Ok(base_amount);
-        }
-
-        let Some(reserved_base_amount) = reserved_tx_fees(request.from_asset.chain()) else {
-            return Ok(base_amount);
-        };
-
-        let reserved_fee = Self::parse_u256(reserved_base_amount, "reservedFee")?;
-        let amount_u256 = Self::parse_u256(&base_amount, "amount")?;
-
-        if amount_u256 <= reserved_fee {
-            return Err(SwapperError::InputAmountError {
-                min_amount: Some(reserved_fee.to_string()),
-            });
-        }
-
-        Ok((amount_u256 - reserved_fee).to_string())
-    }
-
-    fn parse_u256(value: &str, field: &str) -> Result<U256, SwapperError> {
-        U256::from_str(value).map_err(|_| SwapperError::ComputeQuoteError(format!("Invalid {field} value: {value}")))
-    }
-
     fn build_app_fee(options: &QuoteRequest) -> Option<Vec<AppFee>> {
         let fee = options.options.fee.as_ref()?;
 
@@ -301,7 +269,7 @@ where
             SwapperMode::ExactOut => return Err(SwapperError::NotSupportedAsset),
         };
 
-        let amount = Self::resolve_quote_amount(request, &mode)?;
+        let amount = resolve_max_quote_amount(request)?;
         let quote_request = self.build_quote_request(request, mode, amount.clone(), true)?;
         let response = Self::extract_quote(self.client.fetch_quote(&quote_request).await?, request.from_asset.decimals)?;
         let amount_out = Self::parse_amount(&response.quote.amount_out, "amountOut")?;
@@ -394,10 +362,13 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{SwapperError, SwapperMode, SwapperQuoteAsset, models::Options};
+    use crate::{SwapperError, SwapperMode, SwapperQuoteAsset, fees::reserved_tx_fees, models::Options};
     use primitives::asset_constants::USDT_SMARTCHAIN_ASSET_ID;
+    use alloy_primitives::U256;
     use primitives::{AssetId, Chain};
     use serde_json::json;
+
+    use std::str::FromStr;
 
     fn status(json: &str) -> SwapResult {
         let transactions: Vec<ExplorerTransaction> = serde_json::from_str(json).unwrap();
@@ -408,24 +379,24 @@ mod tests {
     }
 
     fn build_quote_request(amount: &str, use_max: bool, chain: Chain) -> QuoteRequest {
-        let from_asset = SwapperQuoteAsset::from(AssetId::from_chain(chain));
-        let to_asset = SwapperQuoteAsset::from(AssetId::from_chain(Chain::Near));
+    let from_asset = SwapperQuoteAsset::from(AssetId::from_chain(chain));
+    let to_asset = SwapperQuoteAsset::from(AssetId::from_chain(Chain::Near));
 
-        let options = Options {
-            use_max_amount: use_max,
-            ..Default::default()
-        };
+    let options = Options {
+        use_max_amount: use_max,
+        ..Default::default()
+    };
 
-        QuoteRequest {
-            from_asset,
-            to_asset,
-            wallet_address: "wallet".into(),
-            destination_address: "dest".into(),
-            value: amount.into(),
-            mode: SwapperMode::ExactIn,
-            options,
-        }
+    QuoteRequest {
+        from_asset,
+        to_asset,
+        wallet_address: "wallet".into(),
+        destination_address: "dest".into(),
+        value: amount.into(),
+        mode: SwapperMode::ExactIn,
+        options,
     }
+}
 
     #[test]
     fn resolve_quote_amount_with_use_max_reserves_fee() {
@@ -433,7 +404,7 @@ mod tests {
         let amount = (reserve + U256::from(500u64)).to_string();
 
         let request = build_quote_request(&amount, true, Chain::Ethereum);
-        let result = NearIntents::<RpcClient>::resolve_quote_amount(&request, &SwapType::FlexInput).expect("expected amount to resolve");
+        let result = resolve_max_quote_amount(&request).expect("expected amount to resolve");
 
         assert_eq!(result, (U256::from_str(&amount).unwrap() - reserve).to_string());
     }
@@ -442,7 +413,7 @@ mod tests {
     fn resolve_quote_amount_without_use_max_keeps_amount() {
         let amount = "123456";
         let request = build_quote_request(amount, false, Chain::Ethereum);
-        let result = NearIntents::<RpcClient>::resolve_quote_amount(&request, &SwapType::FlexInput).expect("expected amount to resolve");
+        let result = resolve_max_quote_amount(&request).expect("expected amount to resolve");
 
         assert_eq!(result, amount);
     }
@@ -452,7 +423,7 @@ mod tests {
         let reserve = U256::from_str(reserved_tx_fees(Chain::Ethereum).unwrap()).unwrap();
         let request = build_quote_request(&reserve.to_string(), true, Chain::Ethereum);
 
-        let err = NearIntents::<RpcClient>::resolve_quote_amount(&request, &SwapType::FlexInput).expect_err("expected error");
+        let err = resolve_max_quote_amount(&request).expect_err("expected error");
 
         assert!(matches!(err, SwapperError::InputAmountError { .. }));
     }

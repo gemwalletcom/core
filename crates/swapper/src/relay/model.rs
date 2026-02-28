@@ -15,11 +15,19 @@ pub struct RelayQuoteRequest {
     pub recipient: String,
     pub trade_type: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub referrer: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub referrer_address: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub refund_to: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub slippage_tolerance: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub referrer: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub app_fees: Vec<RelayAppFee>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct RelayAppFee {
+    pub recipient: String,
+    pub fee: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -34,8 +42,7 @@ pub struct RelayQuoteResponse {
 pub struct Step {
     pub id: String,
     pub kind: String,
-    #[serde(default)]
-    pub items: Vec<StepItem>,
+    pub items: Option<Vec<StepItem>>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -47,23 +54,35 @@ pub struct StepItem {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StepData {
-    #[serde(default)]
-    pub to: String,
-    #[serde(default)]
-    pub data: String,
+    pub to: Option<String>,
+    pub data: Option<String>,
     #[serde(default, deserialize_with = "deserialize_string_from_value")]
     pub value: String,
-    #[serde(default)]
     pub instructions: Option<serde_json::Value>,
-    #[serde(default)]
+    pub address_lookup_table_addresses: Option<Vec<String>>,
     pub psbt: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RelayInstruction {
+    pub program_id: String,
+    pub keys: Vec<RelayAccountMeta>,
+    pub data: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RelayAccountMeta {
+    pub pubkey: String,
+    pub is_signer: bool,
+    pub is_writable: bool,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct QuoteDetails {
     pub currency_out: CurrencyAmount,
-    #[serde(default)]
     pub time_estimate: Option<f64>,
 }
 
@@ -81,6 +100,7 @@ impl QuoteDetails {
 #[serde(rename_all = "camelCase")]
 pub struct CurrencyAmount {
     pub amount: String,
+    pub minimum_amount: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -116,7 +136,6 @@ pub struct RelayRequestsResponse {
 #[serde(rename_all = "camelCase")]
 pub struct RelayRequest {
     pub status: RelayStatus,
-    #[serde(default)]
     pub metadata: Option<RelayRequestMetadata>,
 }
 
@@ -132,6 +151,5 @@ pub struct RelayRequestMetadata {
 pub struct RelayCurrencyDetail {
     pub currency: String,
     pub chain_id: u64,
-    #[serde(default)]
-    pub amount: String,
+    pub amount: Option<String>,
 }
