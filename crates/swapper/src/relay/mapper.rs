@@ -8,11 +8,15 @@ use super::{
 };
 use crate::{SwapResult, SwapperError, SwapperProvider, SwapperQuoteData};
 
+pub const STEP_SWAP: &str = "swap";
+pub const STEP_DEPOSIT: &str = "deposit";
+pub const STEP_APPROVE: &str = "approve";
+
 pub fn get_step_data(steps: &[Step]) -> Result<&StepData, SwapperError> {
     let tx_step = steps
         .iter()
-        .find(|s| s.id == "swap" || s.id == "deposit")
-        .or_else(|| steps.iter().find(|s| s.kind == "transaction" && s.id != "approve"))
+        .find(|s| s.id == STEP_SWAP || s.id == STEP_DEPOSIT)
+        .or_else(|| steps.iter().find(|s| s.kind == "transaction" && s.id != STEP_APPROVE))
         .or_else(|| steps.iter().find(|s| s.items.as_ref().is_some_and(|i| !i.is_empty())))
         .ok_or(SwapperError::InvalidRoute)?;
     tx_step
@@ -30,11 +34,6 @@ pub fn map_quote_data(chain: &RelayChain, steps: &[Step], value: &str, approval:
         RelayChain::Bitcoin => {
             let psbt = step_data.psbt.as_ref().ok_or(SwapperError::InvalidRoute)?;
             (String::new(), value.to_string(), psbt.clone(), None)
-        }
-        RelayChain::Solana => {
-            let to = step_data.to.clone().unwrap_or_default();
-            let data = step_data.data.clone().unwrap_or_default();
-            (to, step_data.value.clone(), data, None)
         }
         _ if chain.is_evm() => {
             let to = step_data.to.clone().unwrap_or_default();
@@ -136,19 +135,6 @@ mod tests {
         assert_eq!(result.to, "0xrouter");
         assert_eq!(result.approval, Some(approval));
         assert_eq!(result.gas_limit, Some(DEFAULT_GAS_LIMIT.to_string()));
-    }
-
-    #[test]
-    fn test_map_solana_quote_data() {
-        let steps = vec![create_transaction_step("SolanaProgramAddress", "0", "base64txdata")];
-
-        let result = map_quote_data(&RelayChain::Solana, &steps, "1000000000", None).unwrap();
-
-        assert_eq!(result.to, "SolanaProgramAddress");
-        assert_eq!(result.value, "0");
-        assert_eq!(result.data, "base64txdata");
-        assert!(result.approval.is_none());
-        assert!(result.gas_limit.is_none());
     }
 
     #[test]

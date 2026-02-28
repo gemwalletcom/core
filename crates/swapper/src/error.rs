@@ -133,3 +133,9 @@ impl From<number_formatter::NumberFormatterError> for SwapperError {
         Self::ComputeQuoteError(format!("{}: {err}", INVALID_AMOUNT))
     }
 }
+
+impl From<solana_primitives::SolanaError> for SwapperError {
+    fn from(_err: solana_primitives::SolanaError) -> Self {
+        Self::InvalidRoute
+    }
+}

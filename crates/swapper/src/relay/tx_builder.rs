@@ -6,7 +6,7 @@ use alloy_primitives::hex;
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use gem_solana::{
-    ASSOCIATED_TOKEN_ACCOUNT_PROGRAM, SYSTEM_PROGRAM_ID, TOKEN_PROGRAM, WSOL_TOKEN_ADDRESS,
+    ASSOCIATED_TOKEN_ACCOUNT_PROGRAM, COMPUTE_BUDGET_PROGRAM_ID, COMPUTE_UNIT_LIMIT_DATA, COMPUTE_UNIT_PRICE_DATA, SYSTEM_PROGRAM_ID, TOKEN_PROGRAM, WSOL_TOKEN_ADDRESS,
     jsonrpc::SolanaRpc,
     models::{
         LatestBlockhash,
@@ -14,25 +14,16 @@ use gem_solana::{
     },
     token_account::get_token_account,
 };
-use primitives::Chain;
+use primitives::{Chain, SolanaAccountMeta, SolanaInstruction};
 use solana_primitives::{
-    CompiledInstruction, MessageAddressTableLookup, MessageHeader, Pubkey, SignatureBytes, VersionedMessageV0, VersionedTransaction,
-    instructions::system::SystemInstruction,
+    CompiledInstruction, MessageAddressTableLookup, MessageHeader, Pubkey, SignatureBytes, VersionedMessageV0, VersionedTransaction, instructions::system::SystemInstruction,
     instructions::token::TokenInstruction,
 };
 
-use super::model::{RelayAccountMeta, RelayInstruction};
 use crate::{SwapperError, alien::RpcProvider, client_factory::create_client_with_chain};
 
 const LOOKUP_TABLE_META_SIZE: usize = 56;
 const PUBKEY_SIZE: usize = 32;
-const COMPUTE_BUDGET_PROGRAM_ID: &str = "ComputeBudget111111111111111111111111111111";
-const COMPUTE_UNIT_LIMIT_DATA: &str = "0200000000";
-const COMPUTE_UNIT_PRICE_DATA: &str = "030000000000000000";
-
-fn parse_pubkey(value: &str) -> Result<Pubkey, SwapperError> {
-    Pubkey::from_str(value).map_err(|_| SwapperError::InvalidRoute)
-}
 
 struct ParsedInstruction {
     program_id: Pubkey,
@@ -47,15 +38,15 @@ struct LookupTable {
 
 pub async fn build_solana_tx(
     fee_payer: &str,
-    instructions: &[RelayInstruction],
+    instructions: &[SolanaInstruction],
     lookup_table_addresses: &[String],
     provider: Arc<dyn RpcProvider>,
     wrap_sol_amount: Option<u64>,
 ) -> Result<String, SwapperError> {
-    let fee_payer_pk = parse_pubkey(fee_payer)?;
+    let fee_payer_pk = Pubkey::from_str(fee_payer)?;
     let mut instructions = ensure_compute_budget_instructions(instructions);
     if let Some(amount) = wrap_sol_amount {
-        ensure_wsol_wrap(&mut instructions, fee_payer, amount);
+        ensure_wrap_wsol(&mut instructions, fee_payer, amount);
     }
     let parsed = parse_instructions(&instructions)?;
 
@@ -100,17 +91,17 @@ async fn fetch_lookup_tables(provider: &Arc<dyn RpcProvider>, addresses: &[Strin
                 .map(|chunk| Ok(Pubkey::new(chunk.try_into().map_err(|_| SwapperError::InvalidRoute)?)))
                 .collect::<Result<_, SwapperError>>()?;
             Ok(LookupTable {
-                key: parse_pubkey(address)?,
+                key: Pubkey::from_str(address)?,
                 addresses,
             })
         })
         .collect()
 }
 
-fn ensure_compute_budget_instructions(instructions: &[RelayInstruction]) -> Vec<RelayInstruction> {
-    let budget_ix = |data: &str| RelayInstruction {
+fn ensure_compute_budget_instructions(instructions: &[SolanaInstruction]) -> Vec<SolanaInstruction> {
+    let budget_ix = |data: &str| SolanaInstruction {
         program_id: COMPUTE_BUDGET_PROGRAM_ID.to_string(),
-        keys: vec![],
+        accounts: vec![],
         data: data.to_string(),
     };
     let has_limit = instructions.iter().any(|i| i.program_id == COMPUTE_BUDGET_PROGRAM_ID && i.data.starts_with("02"));
@@ -126,13 +117,13 @@ fn ensure_compute_budget_instructions(instructions: &[RelayInstruction]) -> Vec<
     result
 }
 
-fn ensure_wsol_wrap(instructions: &mut Vec<RelayInstruction>, fee_payer: &str, amount: u64) {
+fn ensure_wrap_wsol(instructions: &mut Vec<SolanaInstruction>, fee_payer: &str, amount: u64) {
     let wsol_ata = get_token_account(fee_payer, WSOL_TOKEN_ADDRESS, TOKEN_PROGRAM);
     let transfer_prefix = hex::encode(&SystemInstruction::Transfer { lamports: 0 }.serialize()[..4]);
 
     let has_wsol_transfer = instructions
         .iter()
-        .any(|ix| ix.program_id == SYSTEM_PROGRAM_ID && ix.data.starts_with(&transfer_prefix) && ix.keys.len() >= 2 && ix.keys[1].pubkey == wsol_ata);
+        .any(|ix| ix.program_id == SYSTEM_PROGRAM_ID && ix.data.starts_with(&transfer_prefix) && ix.accounts.len() >= 2 && ix.accounts[1].pubkey == wsol_ata);
     if has_wsol_transfer {
         return;
     }
@@ -141,17 +132,29 @@ fn ensure_wsol_wrap(instructions: &mut Vec<RelayInstruction>, fee_payer: &str, a
     let sync_native_data = TokenInstruction::SyncNative.serialize();
 
     let wrap_instructions = vec![
-        RelayInstruction {
+        SolanaInstruction {
             program_id: SYSTEM_PROGRAM_ID.to_string(),
-            keys: vec![
-                RelayAccountMeta { pubkey: fee_payer.to_string(), is_signer: true, is_writable: true },
-                RelayAccountMeta { pubkey: wsol_ata.clone(), is_signer: false, is_writable: true },
+            accounts: vec![
+                SolanaAccountMeta {
+                    pubkey: fee_payer.to_string(),
+                    is_signer: true,
+                    is_writable: true,
+                },
+                SolanaAccountMeta {
+                    pubkey: wsol_ata.clone(),
+                    is_signer: false,
+                    is_writable: true,
+                },
             ],
             data: hex::encode(transfer_data),
         },
-        RelayInstruction {
+        SolanaInstruction {
             program_id: TOKEN_PROGRAM.to_string(),
-            keys: vec![RelayAccountMeta { pubkey: wsol_ata, is_signer: false, is_writable: true }],
+            accounts: vec![SolanaAccountMeta {
+                pubkey: wsol_ata,
+                is_signer: false,
+                is_writable: true,
+            }],
             data: hex::encode(sync_native_data),
         },
     ];
@@ -167,17 +170,17 @@ fn ensure_wsol_wrap(instructions: &mut Vec<RelayInstruction>, fee_payer: &str, a
     }
 }
 
-fn parse_instructions(instructions: &[RelayInstruction]) -> Result<Vec<ParsedInstruction>, SwapperError> {
+fn parse_instructions(instructions: &[SolanaInstruction]) -> Result<Vec<ParsedInstruction>, SwapperError> {
     instructions
         .iter()
         .map(|instruction| {
             let accounts = instruction
-                .keys
+                .accounts
                 .iter()
-                .map(|key| Ok((parse_pubkey(&key.pubkey)?, key.is_signer, key.is_writable)))
+                .map(|key| Ok((Pubkey::from_str(&key.pubkey)?, key.is_signer, key.is_writable)))
                 .collect::<Result<_, SwapperError>>()?;
             Ok(ParsedInstruction {
-                program_id: parse_pubkey(&instruction.program_id)?,
+                program_id: Pubkey::from_str(&instruction.program_id)?,
                 accounts,
                 data: hex::decode(&instruction.data).map_err(|_| SwapperError::InvalidRoute)?,
             })
@@ -318,14 +321,13 @@ fn build_v0_transaction(fee_payer: Pubkey, instructions: &[ParsedInstruction], l
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::relay::model::RelayAccountMeta;
 
-    fn make_instruction(program_id: &str, keys: Vec<(&str, bool, bool)>, data: &str) -> RelayInstruction {
-        RelayInstruction {
+    fn make_instruction(program_id: &str, keys: Vec<(&str, bool, bool)>, data: &str) -> SolanaInstruction {
+        SolanaInstruction {
             program_id: program_id.to_string(),
-            keys: keys
+            accounts: keys
                 .into_iter()
-                .map(|(pk, is_signer, is_writable)| RelayAccountMeta {
+                .map(|(pk, is_signer, is_writable)| SolanaAccountMeta {
                     pubkey: pk.to_string(),
                     is_signer,
                     is_writable,
@@ -335,9 +337,9 @@ mod tests {
         }
     }
 
-    fn build_test_tx(fee_payer: &str, raw: &[RelayInstruction], tables: &[LookupTable]) -> Result<String, SwapperError> {
+    fn build_test_tx(fee_payer: &str, raw: &[SolanaInstruction], tables: &[LookupTable]) -> Result<String, SwapperError> {
         let parsed = parse_instructions(raw)?;
-        build_v0_transaction(parse_pubkey(fee_payer)?, &parsed, tables, [1u8; 32])
+        build_v0_transaction(Pubkey::from_str(fee_payer)?, &parsed, tables, [1u8; 32])
     }
 
     #[test]
@@ -365,7 +367,7 @@ mod tests {
             "0200000040420f0000000000",
         )];
         let tables = vec![LookupTable {
-            key: parse_pubkey("BZcyEKqjBNG5bEY6i5ev6PfPTgDSB9LwovJE1hJfJoHF").unwrap(),
+            key: Pubkey::from_str("BZcyEKqjBNG5bEY6i5ev6PfPTgDSB9LwovJE1hJfJoHF").unwrap(),
             addresses: vec![account_in_table, Pubkey::new([99u8; 32])],
         }];
 
@@ -425,30 +427,30 @@ mod tests {
 
     #[test]
     fn test_build_v0_invalid_program_id() {
-        let raw = vec![RelayInstruction {
+        let raw = vec![SolanaInstruction {
             program_id: "invalid".to_string(),
-            keys: vec![],
+            accounts: vec![],
             data: String::new(),
         }];
         assert!(build_test_tx(&Pubkey::new([1u8; 32]).to_base58(), &raw, &[]).is_err());
     }
 
     #[test]
-    fn test_ensure_wsol_wrap_inserts_after_ata() {
+    fn test_ensure_wrap_wsol_inserts_after_ata() {
         let fee_payer = "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy";
         let mut instructions = vec![
             make_instruction(COMPUTE_BUDGET_PROGRAM_ID, vec![], "0200000000"),
             make_instruction(ASSOCIATED_TOKEN_ACCOUNT_PROGRAM, vec![], "00"),
             make_instruction("DF1ow4tspfHX9JwWJsAb9epbkA8hmpSEAtxXy1V27QBH", vec![], "aabb"),
         ];
-        ensure_wsol_wrap(&mut instructions, fee_payer, 200_000_000);
+        ensure_wrap_wsol(&mut instructions, fee_payer, 200_000_000);
         assert_eq!(instructions.len(), 5);
         assert_eq!(instructions[2].program_id, SYSTEM_PROGRAM_ID);
         assert_eq!(instructions[3].program_id, TOKEN_PROGRAM);
     }
 
     #[test]
-    fn test_ensure_wsol_wrap_skips_when_present() {
+    fn test_ensure_wrap_wsol_skips_when_present() {
         let fee_payer = "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy";
         let wsol_ata = get_token_account(fee_payer, WSOL_TOKEN_ADDRESS, TOKEN_PROGRAM);
         let transfer_data = hex::encode(SystemInstruction::Transfer { lamports: 500_000_000 }.serialize());
@@ -457,18 +459,18 @@ mod tests {
             make_instruction(SYSTEM_PROGRAM_ID, vec![(fee_payer, true, true), (&wsol_ata, false, true)], &transfer_data),
             make_instruction("DF1ow4tspfHX9JwWJsAb9epbkA8hmpSEAtxXy1V27QBH", vec![], "aabb"),
         ];
-        ensure_wsol_wrap(&mut instructions, fee_payer, 200_000_000);
+        ensure_wrap_wsol(&mut instructions, fee_payer, 200_000_000);
         assert_eq!(instructions.len(), 3);
     }
 
     #[test]
-    fn test_ensure_wsol_wrap_no_ata() {
+    fn test_ensure_wrap_wsol_no_ata() {
         let fee_payer = "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy";
         let mut instructions = vec![
             make_instruction(COMPUTE_BUDGET_PROGRAM_ID, vec![], "0200000000"),
             make_instruction("DF1ow4tspfHX9JwWJsAb9epbkA8hmpSEAtxXy1V27QBH", vec![], "aabb"),
         ];
-        ensure_wsol_wrap(&mut instructions, fee_payer, 50_000_000);
+        ensure_wrap_wsol(&mut instructions, fee_payer, 50_000_000);
         assert_eq!(instructions.len(), 4);
         assert_eq!(instructions[1].program_id, SYSTEM_PROGRAM_ID);
         assert_eq!(instructions[2].program_id, TOKEN_PROGRAM);

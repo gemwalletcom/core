@@ -9,8 +9,6 @@ use primitives::{
 use super::chain::{BITCOIN_CURRENCY, RelayChain};
 use crate::{SwapperChainAsset, SwapperError, asset::*};
 
-pub const EVM_ZERO_ADDRESS: &str = "0x0000000000000000000000000000000000000000";
-
 pub static SUPPORTED_CHAINS: LazyLock<Vec<SwapperChainAsset>> = LazyLock::new(|| {
     vec![
         SwapperChainAsset::Assets(Chain::Bitcoin, vec![AssetId::from_chain(Chain::Bitcoin)]),
@@ -49,6 +47,11 @@ pub static SUPPORTED_CHAINS: LazyLock<Vec<SwapperChainAsset>> = LazyLock::new(||
         ),
         SwapperChainAsset::Assets(Chain::Berachain, vec![AssetId::from_chain(Chain::Berachain)]),
         SwapperChainAsset::Assets(Chain::Manta, vec![AssetId::from_chain(Chain::Manta)]),
+        SwapperChainAsset::Assets(Chain::Sonic, vec![AssetId::from_chain(Chain::Sonic)]),
+        SwapperChainAsset::Assets(Chain::Abstract, vec![AssetId::from_chain(Chain::Abstract)]),
+        SwapperChainAsset::Assets(Chain::Mantle, vec![AssetId::from_chain(Chain::Mantle)]),
+        SwapperChainAsset::Assets(Chain::Celo, vec![AssetId::from_chain(Chain::Celo)]),
+        SwapperChainAsset::Assets(Chain::Stable, vec![AssetId::from_chain(Chain::Stable)]),
     ]
 });
 

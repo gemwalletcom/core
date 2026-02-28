@@ -3,20 +3,20 @@ use std::sync::Arc;
 use alloy_primitives::U256;
 use async_trait::async_trait;
 use gem_client::Client;
-use primitives::{Chain, ChainType};
+use primitives::{AssetId, Chain, ChainType, SolanaInstruction};
 
 use super::{
-    RELAY_API_URL, Relay,
+    Relay,
     asset::{SUPPORTED_CHAINS, map_asset_to_relay_currency},
     chain::RelayChain,
     client::RelayClient,
     mapper,
-    model::{RelayAppFee, RelayInstruction, RelayQuoteRequest, RelayQuoteResponse},
+    model::{RelayAppFee, RelayQuoteRequest, RelayQuoteResponse},
     tx_builder,
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperQuoteData,
-    approval::check_approval_erc20, fees::resolve_max_quote_amount, referrer::DEFAULT_REFERRER,
+    approval::check_approval_erc20, config::get_swap_api_url, fees::resolve_max_quote_amount, referrer::DEFAULT_REFERRER,
 };
 
 fn resolve_app_fees(request: &QuoteRequest) -> Vec<RelayAppFee> {
@@ -35,7 +35,8 @@ fn resolve_app_fees(request: &QuoteRequest) -> Vec<RelayAppFee> {
 
 impl Relay<RpcClient> {
     pub fn new(rpc_provider: Arc<dyn RpcProvider>) -> Self {
-        let client = RelayClient::new(RpcClient::new(RELAY_API_URL.to_string(), rpc_provider.clone()));
+        let url = get_swap_api_url("relay");
+        let client = RelayClient::new(RpcClient::new(url, rpc_provider.clone()));
         Self::with_client(client, rpc_provider)
     }
 }
@@ -114,33 +115,57 @@ where
         let from_asset_id = quote.request.from_asset.asset_id();
 
         if from_chain == RelayChain::Solana {
-            let step_data = mapper::get_step_data(&quote_response.steps)?;
-            if let Some(instructions_json) = &step_data.instructions {
-                let instructions: Vec<RelayInstruction> = serde_json::from_value(instructions_json.clone()).map_err(|_| SwapperError::InvalidRoute)?;
-                let lookup_addresses = step_data.address_lookup_table_addresses.as_deref().unwrap_or_default();
-                let wrap_sol_amount = if from_asset_id.is_native() {
-                    Some(quote.from_value.parse::<u64>().map_err(|_| SwapperError::InvalidRoute)?)
-                } else {
-                    None
-                };
-                let tx_data = tx_builder::build_solana_tx(&quote.request.wallet_address, &instructions, lookup_addresses, self.rpc_provider.clone(), wrap_sol_amount).await?;
-                return Ok(SwapperQuoteData::new_contract(String::new(), String::new(), tx_data, None, None));
-            }
+            return self.build_solana_quote_data(quote, &quote_response, &from_asset_id).await;
         }
 
-        let approval = match from_asset_id.chain.chain_type() {
+        let approval = self.check_evm_approval(quote, &quote_response, &from_asset_id).await?;
+        mapper::map_quote_data(&from_chain, &quote_response.steps, &quote.from_value, approval)
+    }
+
+    async fn get_swap_result(&self, _chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
+        let response = self.client.get_request(transaction_hash).await?;
+        let request = response.requests.first().ok_or(SwapperError::InvalidRoute)?;
+        Ok(mapper::map_swap_result(request))
+    }
+}
+
+impl<C> Relay<C>
+where
+    C: Client + Clone + Send + Sync + std::fmt::Debug + 'static,
+{
+    async fn build_solana_quote_data(&self, quote: &Quote, quote_response: &RelayQuoteResponse, from_asset_id: &AssetId) -> Result<SwapperQuoteData, SwapperError> {
+        let step_data = mapper::get_step_data(&quote_response.steps)?;
+        let instructions_json = step_data.instructions.as_ref().ok_or(SwapperError::InvalidRoute)?;
+        let instructions: Vec<SolanaInstruction> = serde_json::from_value(instructions_json.clone()).map_err(|_| SwapperError::InvalidRoute)?;
+        let lookup_addresses = step_data.address_lookup_table_addresses.as_deref().unwrap_or_default();
+        let wrap_sol_amount = if from_asset_id.is_native() {
+            Some(quote.from_value.parse::<u64>().map_err(|_| SwapperError::InvalidRoute)?)
+        } else {
+            None
+        };
+        let tx_data = tx_builder::build_solana_tx(&quote.request.wallet_address, &instructions, lookup_addresses, self.rpc_provider.clone(), wrap_sol_amount).await?;
+        Ok(SwapperQuoteData::new_contract(String::new(), String::new(), tx_data, None, None))
+    }
+
+    async fn check_evm_approval(
+        &self,
+        quote: &Quote,
+        quote_response: &RelayQuoteResponse,
+        from_asset_id: &AssetId,
+    ) -> Result<Option<primitives::swap::ApprovalData>, SwapperError> {
+        match from_asset_id.chain.chain_type() {
             ChainType::Ethereum if !from_asset_id.is_native() => {
                 let router_address = quote_response
                     .steps
                     .iter()
-                    .filter(|s| s.id != "approve")
+                    .filter(|s| s.id != mapper::STEP_APPROVE)
                     .find_map(|s| s.items.as_ref()?.first().and_then(|item| item.data.as_ref().and_then(|d| d.to.clone())))
                     .ok_or(SwapperError::InvalidRoute)?;
 
                 let token = from_asset_id.token_id.clone().ok_or(SwapperError::NotSupportedAsset)?;
                 let amount: U256 = quote.from_value.parse().map_err(SwapperError::from)?;
 
-                check_approval_erc20(
+                Ok(check_approval_erc20(
                     quote.request.wallet_address.clone(),
                     token,
                     router_address,
@@ -149,18 +174,10 @@ where
                     &from_asset_id.chain,
                 )
                 .await?
-                .approval_data()
+                .approval_data())
             }
-            _ => None,
-        };
-
-        mapper::map_quote_data(&from_chain, &quote_response.steps, &quote.from_value, approval)
-    }
-
-    async fn get_swap_result(&self, _chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
-        let response = self.client.get_request(transaction_hash).await?;
-        let request = response.requests.first().ok_or(SwapperError::InvalidRoute)?;
-        Ok(mapper::map_swap_result(request))
+            _ => Ok(None),
+        }
     }
 }
 

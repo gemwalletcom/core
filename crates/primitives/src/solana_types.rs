@@ -6,6 +6,7 @@ use typeshare::typeshare;
 #[serde(rename_all = "camelCase")]
 pub struct SolanaInstruction {
     pub program_id: String,
+    #[serde(alias = "keys")]
     pub accounts: Vec<SolanaAccountMeta>,
     pub data: String,
 }

@@ -13,7 +13,6 @@ use gem_client::Client;
 
 use super::{ProviderType, SwapperProvider};
 
-const RELAY_API_URL: &str = "https://api.relay.link";
 const DEFAULT_GAS_LIMIT: u64 = 750_000;
 
 #[derive(Debug)]

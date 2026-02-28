@@ -1,6 +1,7 @@
-use primitives::Chain;
+use primitives::{Chain, chain_evm::EVMChain};
 
 pub const BITCOIN_CHAIN_ID: u64 = 8253038;
+pub const SOLANA_CHAIN_ID: u64 = 792703809;
 pub const BITCOIN_CURRENCY: &str = "bc1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqmql8k8";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -14,20 +15,19 @@ pub enum RelayChain {
     Hyperliquid,
     Berachain,
     Manta,
+    Sonic,
+    Abstract,
+    Mantle,
+    Celo,
+    Stable,
 }
 
 impl RelayChain {
     pub fn chain_id(&self) -> u64 {
         match self {
             RelayChain::Bitcoin => BITCOIN_CHAIN_ID,
-            RelayChain::Ethereum => 1,
-            RelayChain::Solana => 792703809,
-            RelayChain::SmartChain => 56,
-            RelayChain::Base => 8453,
-            RelayChain::Arbitrum => 42161,
-            RelayChain::Hyperliquid => 999,
-            RelayChain::Berachain => 80094,
-            RelayChain::Manta => 169,
+            RelayChain::Solana => SOLANA_CHAIN_ID,
+            _ => EVMChain::from_chain(self.to_chain()).unwrap().chain_id(),
         }
     }
 
@@ -42,6 +42,11 @@ impl RelayChain {
             Chain::Hyperliquid => Some(RelayChain::Hyperliquid),
             Chain::Berachain => Some(RelayChain::Berachain),
             Chain::Manta => Some(RelayChain::Manta),
+            Chain::Sonic => Some(RelayChain::Sonic),
+            Chain::Abstract => Some(RelayChain::Abstract),
+            Chain::Mantle => Some(RelayChain::Mantle),
+            Chain::Celo => Some(RelayChain::Celo),
+            Chain::Stable => Some(RelayChain::Stable),
             _ => None,
         }
     }
@@ -57,30 +62,40 @@ impl RelayChain {
             RelayChain::Hyperliquid => Chain::Hyperliquid,
             RelayChain::Berachain => Chain::Berachain,
             RelayChain::Manta => Chain::Manta,
+            RelayChain::Sonic => Chain::Sonic,
+            RelayChain::Abstract => Chain::Abstract,
+            RelayChain::Mantle => Chain::Mantle,
+            RelayChain::Celo => Chain::Celo,
+            RelayChain::Stable => Chain::Stable,
         }
     }
 
     pub fn from_chain_id(chain_id: u64) -> Option<Self> {
         match chain_id {
             BITCOIN_CHAIN_ID => Some(RelayChain::Bitcoin),
-            1 => Some(RelayChain::Ethereum),
-            792703809 => Some(RelayChain::Solana),
-            56 => Some(RelayChain::SmartChain),
-            8453 => Some(RelayChain::Base),
-            42161 => Some(RelayChain::Arbitrum),
-            999 => Some(RelayChain::Hyperliquid),
-            80094 => Some(RelayChain::Berachain),
-            169 => Some(RelayChain::Manta),
-            _ => None,
+            SOLANA_CHAIN_ID => Some(RelayChain::Solana),
+            _ => Self::ALL_EVM.iter().find(|c| c.chain_id() == chain_id).copied(),
         }
     }
 
     pub fn is_evm(&self) -> bool {
-        match self {
-            RelayChain::Bitcoin | RelayChain::Solana => false,
-            RelayChain::Ethereum | RelayChain::SmartChain | RelayChain::Base | RelayChain::Arbitrum | RelayChain::Hyperliquid | RelayChain::Berachain | RelayChain::Manta => true,
-        }
+        !matches!(self, RelayChain::Bitcoin | RelayChain::Solana)
     }
+
+    const ALL_EVM: [RelayChain; 12] = [
+        RelayChain::Ethereum,
+        RelayChain::SmartChain,
+        RelayChain::Base,
+        RelayChain::Arbitrum,
+        RelayChain::Hyperliquid,
+        RelayChain::Berachain,
+        RelayChain::Manta,
+        RelayChain::Sonic,
+        RelayChain::Abstract,
+        RelayChain::Mantle,
+        RelayChain::Celo,
+        RelayChain::Stable,
+    ];
 }
 
 #[cfg(test)]

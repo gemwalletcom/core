@@ -16,6 +16,8 @@ const CBBTC_SYMBOL: &str = "cbBTC";
 const USDS_NAME: &str = "USDS Stablecoin";
 const USDS_SYMBOL: &str = "USDS";
 
+pub const EVM_ZERO_ADDRESS: &str = "0x0000000000000000000000000000000000000000";
+
 // TODO: merge into primitives::asset_constants
 // Ethereum
 pub const ETHEREUM_USDC_TOKEN_ID: &str = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";

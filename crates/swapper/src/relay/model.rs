@@ -65,22 +65,6 @@ pub struct StepData {
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct RelayInstruction {
-    pub program_id: String,
-    pub keys: Vec<RelayAccountMeta>,
-    pub data: String,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RelayAccountMeta {
-    pub pubkey: String,
-    pub is_signer: bool,
-    pub is_writable: bool,
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
 pub struct QuoteDetails {
     pub currency_out: CurrencyAmount,
     pub time_estimate: Option<f64>,
