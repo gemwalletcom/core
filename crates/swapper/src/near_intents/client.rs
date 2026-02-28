@@ -68,7 +68,7 @@ impl<C: Client + Send + Sync + Debug> NearIntentsExplorer<C> {
 
     pub async fn get_deposit_addresses(&self, start_timestamp: u64) -> Result<Vec<String>, SwapperError> {
         let path = format!(
-            "/api/v0/transactions?referral={}&startTimestampUnix={}&statuses=PENDING_DEPOSIT",
+            "/api/v0/transactions?referral={}&startTimestampUnix={}&statuses=PENDING_DEPOSIT,FAILED,PROCESSING,REFUNDED,SUCCESS",
             DEFAULT_REFERRAL, start_timestamp
         );
         let transactions = self.client.get::<Vec<ExplorerTransaction>>(&path).await.map_err(SwapperError::from)?;
