@@ -77,17 +77,15 @@ where
             referrer: if app_fees.is_empty() { None } else { Some(DEFAULT_REFERRER.to_string()) },
             app_fees,
             refund_to: Some(request.wallet_address.clone()),
-            slippage_tolerance: Some(request.options.slippage.bps.to_string()),
+            slippage_tolerance: None,
+            disable_origin_swaps: from_chain == RelayChain::Solana,
+            include_compute_unit_limit: from_chain == RelayChain::Solana,
+            max_route_length: 6,
         };
 
         let quote_response = self.client.get_quote(relay_request).await?;
 
-        let to_value = quote_response
-            .details
-            .currency_out
-            .minimum_amount
-            .clone()
-            .unwrap_or(quote_response.details.currency_out.amount.clone());
+        let to_value = quote_response.details.currency_out.amount.clone();
         let eta_in_seconds = quote_response.details.time_estimate_u32();
 
         let quote = Quote {

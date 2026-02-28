@@ -22,6 +22,9 @@ pub struct RelayQuoteRequest {
     pub referrer: Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub app_fees: Vec<RelayAppFee>,
+    pub disable_origin_swaps: bool,
+    pub include_compute_unit_limit: bool,
+    pub max_route_length: u32,
 }
 
 #[derive(Debug, Clone, Serialize)]
