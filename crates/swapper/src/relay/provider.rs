@@ -77,8 +77,6 @@ where
             referrer: if app_fees.is_empty() { None } else { Some(DEFAULT_REFERRER.to_string()) },
             app_fees,
             refund_to: Some(request.wallet_address.clone()),
-            slippage_tolerance: None,
-            disable_origin_swaps: from_chain == RelayChain::Solana,
             include_compute_unit_limit: from_chain == RelayChain::Solana,
             max_route_length: 6,
         };
@@ -120,7 +118,12 @@ where
             if let Some(instructions_json) = &step_data.instructions {
                 let instructions: Vec<RelayInstruction> = serde_json::from_value(instructions_json.clone()).map_err(|_| SwapperError::InvalidRoute)?;
                 let lookup_addresses = step_data.address_lookup_table_addresses.as_deref().unwrap_or_default();
-                let tx_data = tx_builder::build_solana_tx(&quote.request.wallet_address, &instructions, lookup_addresses, self.rpc_provider.clone()).await?;
+                let wrap_sol_amount = if from_asset_id.is_native() {
+                    Some(quote.from_value.parse::<u64>().map_err(|_| SwapperError::InvalidRoute)?)
+                } else {
+                    None
+                };
+                let tx_data = tx_builder::build_solana_tx(&quote.request.wallet_address, &instructions, lookup_addresses, self.rpc_provider.clone(), wrap_sol_amount).await?;
                 return Ok(SwapperQuoteData::new_contract(String::new(), String::new(), tx_data, None, None));
             }
         }

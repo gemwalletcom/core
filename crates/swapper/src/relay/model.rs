@@ -17,12 +17,9 @@ pub struct RelayQuoteRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub refund_to: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub slippage_tolerance: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub referrer: Option<String>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub app_fees: Vec<RelayAppFee>,
-    pub disable_origin_swaps: bool,
     pub include_compute_unit_limit: bool,
     pub max_route_length: u32,
 }
