@@ -28,6 +28,11 @@ pub fn calculate_risk_score(
         .high_risk_device_models
         .iter()
         .any(|pattern| Regex::new(pattern).map(|re| re.is_match(&input.device_model)).unwrap_or(false));
+    let is_high_risk_user_agent = !input.user_agent.is_empty()
+        && config
+            .high_risk_user_agents
+            .iter()
+            .any(|pattern| Regex::new(pattern).map(|re| re.is_match(&input.user_agent)).unwrap_or(false));
 
     let mut breakdown = RiskScoreBreakdown {
         abuse_score: if is_blocked_type {
@@ -47,6 +52,7 @@ pub fn calculate_risk_score(
         country_score: if is_high_risk_country { config.high_risk_country_penalty } else { 0 },
         locale_score: if is_high_risk_locale { config.high_risk_locale_penalty } else { 0 },
         high_risk_device_model_score: if is_high_risk_device_model { config.high_risk_device_model_penalty } else { 0 },
+        user_agent_score: if is_high_risk_user_agent { config.high_risk_user_agent_penalty } else { 0 },
         ..Default::default()
     };
 
@@ -181,6 +187,7 @@ pub fn calculate_risk_score(
         + breakdown.country_score
         + breakdown.locale_score
         + breakdown.high_risk_device_model_score
+        + breakdown.user_agent_score
         + breakdown.velocity_score
         + breakdown.ip_history_score
         + breakdown.cross_referrer_device_score
@@ -235,6 +242,7 @@ mod tests {
             ip_isp: "Comcast".to_string(),
             ip_abuse_score: 0,
             referrer_status: RewardStatus::Unverified,
+            user_agent: String::new(),
         }
     }
 
@@ -256,6 +264,7 @@ mod tests {
             ip_isp: isp.to_string(),
             ip_abuse_score: 0,
             risk_score: 0,
+            user_agent: String::new(),
             metadata: None,
             created_at: chrono::Utc::now().naive_utc() - chrono::TimeDelta::hours(1),
         }
@@ -819,6 +828,42 @@ mod tests {
         let result = calculate_risk_score(&input, &[], 0, 0, 0, 0, 0, &config);
 
         assert_eq!(result.breakdown.high_risk_device_model_score, 50);
+    }
+
+    #[test]
+    fn high_risk_user_agent_python() {
+        let mut input = create_test_input();
+        input.user_agent = "python-requests/2.32.5".to_string();
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 0, 0, &RiskScoreConfig::default());
+
+        assert_eq!(result.breakdown.user_agent_score, 100);
+        assert!(!result.is_allowed);
+    }
+
+    #[test]
+    fn high_risk_user_agent_curl() {
+        let mut input = create_test_input();
+        input.user_agent = "curl/8.1.2".to_string();
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 0, 0, &RiskScoreConfig::default());
+
+        assert_eq!(result.breakdown.user_agent_score, 100);
+    }
+
+    #[test]
+    fn high_risk_user_agent_no_match() {
+        let mut input = create_test_input();
+        input.user_agent = "Gem/3.0 (iOS 18.0; iPhone15,2)".to_string();
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 0, 0, &RiskScoreConfig::default());
+
+        assert_eq!(result.breakdown.user_agent_score, 0);
+    }
+
+    #[test]
+    fn high_risk_user_agent_empty() {
+        let input = create_test_input();
+        let result = calculate_risk_score(&input, &[], 0, 0, 0, 0, 0, &RiskScoreConfig::default());
+
+        assert_eq!(result.breakdown.user_agent_score, 0);
     }
 
     #[test]

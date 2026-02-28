@@ -5,7 +5,7 @@ pub use client::RewardsClient;
 pub use redemption_client::RewardsRedemptionClient;
 
 use crate::auth::Authenticated;
-use crate::params::MulticoinParam;
+use crate::params::{MulticoinParam, UserAgent};
 use crate::responders::{ApiError, ApiResponse};
 use primitives::rewards::{RedemptionRequest, RedemptionResult, RewardRedemptionOption};
 use primitives::{ReferralCode, ReferralLeaderboard, RewardEvent, Rewards, WalletId};
@@ -60,12 +60,13 @@ pub async fn update_referral(request: Authenticated<ReferralCode>, client: &Stat
 pub async fn use_referral_code(
     request: Authenticated<ReferralCode>,
     ip: std::net::IpAddr,
+    user_agent: UserAgent,
     client: &State<Mutex<RewardsClient>>,
 ) -> Result<ApiResponse<Vec<RewardEvent>>, ApiError> {
     let events = client
         .lock()
         .await
-        .use_referral_code(&request.auth.device, &request.auth.address, &request.data.code, &ip.to_string())
+        .use_referral_code(&request.auth.device, &request.auth.address, &request.data.code, &ip.to_string(), &user_agent.0)
         .await?;
     Ok(events.into())
 }

@@ -204,6 +204,20 @@ impl<'r> FromFormField<'r> for SearchQueryParam {
     }
 }
 
+pub struct UserAgent(pub String);
+
+#[rocket::async_trait]
+impl<'r> rocket::request::FromRequest<'r> for UserAgent {
+    type Error = ();
+
+    async fn from_request(request: &'r Request<'_>) -> rocket::request::Outcome<Self, Self::Error> {
+        match request.headers().get_one(rocket::http::hyper::header::USER_AGENT.as_str()) {
+            Some(ua) => rocket::request::Outcome::Success(UserAgent(ua.to_string())),
+            None => rocket::request::Outcome::Error((Status::BadRequest, ())),
+        }
+    }
+}
+
 pub struct DeviceParam(pub Device);
 
 #[rocket::async_trait]

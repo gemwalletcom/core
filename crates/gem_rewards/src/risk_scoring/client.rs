@@ -18,6 +18,7 @@ pub struct RiskScoringInput {
     pub device_currency: String,
     pub ip_result: IpCheckResult,
     pub referrer_status: RewardStatus,
+    pub user_agent: String,
 }
 
 impl RiskScoringInput {
@@ -37,6 +38,7 @@ impl RiskScoringInput {
             ip_isp: self.ip_result.isp.clone(),
             ip_abuse_score: self.ip_result.confidence_score,
             referrer_status: self.referrer_status,
+            user_agent: self.user_agent.clone(),
         }
     }
 }
@@ -84,6 +86,7 @@ pub fn evaluate_risk(
         ip_isp: signal_input.ip_isp,
         ip_abuse_score: signal_input.ip_abuse_score as i32,
         risk_score: score.score as i32,
+        user_agent: signal_input.user_agent,
         metadata: Some(score.breakdown.to_metadata_json()),
     };
 
@@ -116,6 +119,7 @@ mod tests {
                 isp: "Comcast".to_string(),
             },
             referrer_status: RewardStatus::Unverified,
+            user_agent: String::new(),
         }
     }
 

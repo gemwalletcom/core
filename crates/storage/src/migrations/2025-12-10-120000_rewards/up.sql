@@ -49,6 +49,7 @@ CREATE TABLE rewards_risk_signals (
     ip_isp VARCHAR(128) NOT NULL,
     ip_abuse_score INT NOT NULL,
     risk_score INT NOT NULL,
+    user_agent VARCHAR(256) NOT NULL,
     metadata JSONB,
     created_at TIMESTAMP NOT NULL DEFAULT current_timestamp
 );
