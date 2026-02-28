@@ -15,11 +15,14 @@ const TRANSACTION_BATCH_SIZE: usize = 100;
 
 const IN_TRANSIT_TYPES: [TransactionType; 2] = [TransactionType::Transfer, TransactionType::SmartContractCall];
 
-fn set_cross_chain_in_transit(transactions: Vec<Transaction>) -> Vec<Transaction> {
+fn set_cross_chain_in_transit(transactions: Vec<Transaction>, vault_addresses: &HashSet<String>) -> Vec<Transaction> {
     transactions
         .into_iter()
         .map(|mut transaction| {
-            if transaction.state == TransactionState::Confirmed && IN_TRANSIT_TYPES.contains(&transaction.transaction_type) && cross_chain::is_cross_chain_swap(&transaction) {
+            if transaction.state == TransactionState::Confirmed
+                && IN_TRANSIT_TYPES.contains(&transaction.transaction_type)
+                && (cross_chain::is_cross_chain_swap(&transaction) || vault_addresses.contains(&transaction.to))
+            {
                 transaction.state = TransactionState::InTransit;
             }
             transaction
@@ -50,8 +53,9 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
 
     async fn process(&self, payload: TransactionsPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let chain = payload.chain;
-        let transactions = set_cross_chain_in_transit(payload.transactions);
         let is_notify_devices = !payload.blocks.is_empty();
+        let vault_addresses = self.get_vault_addresses().await?;
+        let transactions = set_cross_chain_in_transit(payload.transactions, &vault_addresses);
 
         let min_amount = self.config.min_amount_usd;
 
@@ -72,8 +76,6 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
         let existing_assets_map: HashMap<AssetId, primitives::AssetPriceMetadata> = existing_assets.into_iter().map(|asset| (asset.asset.asset.id.clone(), asset)).collect();
 
         let _ = self.stream_producer.publish_fetch_assets(missing_assets).await;
-
-        let vault_addresses = self.get_vault_addresses().await?;
 
         let mut transactions_map: HashMap<TransactionId, Transaction> = HashMap::new();
         let mut notifications: Vec<NotificationsPayload> = Vec::new();
@@ -210,13 +212,13 @@ mod tests {
             memo: Some(memo.to_string()),
             ..Transaction::mock()
         };
-        let result = set_cross_chain_in_transit(vec![tx]);
+        let result = set_cross_chain_in_transit(vec![tx], &HashSet::new());
         assert_eq!(result[0].state, TransactionState::InTransit);
     }
 
     #[test]
     fn test_set_cross_chain_in_transit_regular_transfer() {
-        let result = set_cross_chain_in_transit(vec![Transaction::mock()]);
+        let result = set_cross_chain_in_transit(vec![Transaction::mock()], &HashSet::new());
         assert_eq!(result[0].state, TransactionState::Confirmed);
     }
 
@@ -228,7 +230,7 @@ mod tests {
             memo: Some(memo.to_string()),
             ..Transaction::mock()
         };
-        let result = set_cross_chain_in_transit(vec![tx]);
+        let result = set_cross_chain_in_transit(vec![tx], &HashSet::new());
         assert_eq!(result[0].state, TransactionState::Confirmed);
     }
 
@@ -239,7 +241,7 @@ mod tests {
             to: "0x337685fdaB40D39bd02028545a4FfA7D287cC3E2".to_string(),
             ..Transaction::mock()
         };
-        let result = set_cross_chain_in_transit(vec![tx]);
+        let result = set_cross_chain_in_transit(vec![tx], &HashSet::new());
         assert_eq!(result[0].state, TransactionState::Confirmed);
     }
 
@@ -251,7 +253,19 @@ mod tests {
             memo: Some(memo.to_string()),
             ..Transaction::mock()
         };
-        let result = set_cross_chain_in_transit(vec![tx]);
+        let result = set_cross_chain_in_transit(vec![tx], &HashSet::new());
         assert_eq!(result[0].state, TransactionState::Pending);
+    }
+
+    #[test]
+    fn test_set_cross_chain_in_transit_vault_address() {
+        let vault = "TMoD2uJiUAvB2RhLGm1BmzCVVzi5VLFDVt".to_string();
+        let tx = Transaction {
+            to: vault.clone(),
+            ..Transaction::mock()
+        };
+        let vault_addresses = HashSet::from([vault]);
+        let result = set_cross_chain_in_transit(vec![tx], &vault_addresses);
+        assert_eq!(result[0].state, TransactionState::InTransit);
     }
 }
