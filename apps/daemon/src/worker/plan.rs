@@ -1,9 +1,10 @@
 use crate::model::WorkerService;
 use crate::worker::jobs::{JobLabel, JobVariant, WorkerJob};
-use job_runner::{JobError, JobHandle, JobPlan};
+use job_runner::{JobContext, JobError, JobHandle, JobPlan};
 use std::error::Error;
 use std::fmt::Debug;
 use std::future::Future;
+use std::time::Duration;
 use storage::ConfigCacher;
 
 type PlanResult = Result<JobPlan, Box<dyn Error + Send + Sync>>;
@@ -26,7 +27,7 @@ impl<'a> JobPlanBuilder<'a> {
     pub fn job<J, F, Fut, R>(self, job: J, job_fn: F) -> Self
     where
         J: Into<JobVariant>,
-        F: Fn() -> Fut + Send + Sync + 'static,
+        F: Fn(JobContext) -> Fut + Send + Sync + 'static,
         Fut: Future<Output = Result<R, JobError>> + Send + 'static,
         R: Debug + Send + Sync + 'static,
     {
@@ -51,7 +52,43 @@ impl<'a> JobPlanBuilder<'a> {
         Items: IntoIterator<Item = Item>,
         Item: JobLabel + Clone + Send + Sync + 'static,
         Builder: Fn(Item, JobVariant) -> F,
-        F: Fn() -> Fut + Send + Sync + 'static,
+        F: Fn(JobContext) -> Fut + Send + Sync + 'static,
+        Fut: Future<Output = Result<R, JobError>> + Send + 'static,
+        R: Debug + Send + Sync + 'static,
+    {
+        self.build_jobs(job, items, |_, _| Ok(None), build_job)
+    }
+
+    pub fn jobs_with_config<Items, Item, K, Builder, F, Fut, R>(self, job: WorkerJob, items: Items, config_key: K, build_job: Builder) -> Self
+    where
+        Items: IntoIterator<Item = Item>,
+        Item: JobLabel + Clone + Send + Sync + 'static,
+        K: Fn(Item) -> primitives::ParamConfigKey,
+        Builder: Fn(Item, JobVariant) -> F,
+        F: Fn(JobContext) -> Fut + Send + Sync + 'static,
+        Fut: Future<Output = Result<R, JobError>> + Send + 'static,
+        R: Debug + Send + Sync + 'static,
+    {
+        let config = self.config;
+        self.build_jobs(
+            job,
+            items,
+            move |item, _| {
+                let param = config_key(item);
+                let cfg = config.ok_or("ConfigCacher required for jobs_with_config")?;
+                Ok(Some(cfg.get_param_duration(&param)?))
+            },
+            build_job,
+        )
+    }
+
+    fn build_jobs<Items, Item, V, Builder, F, Fut, R>(self, job: WorkerJob, items: Items, modify_interval: V, build_job: Builder) -> Self
+    where
+        Items: IntoIterator<Item = Item>,
+        Item: JobLabel + Clone + Send + Sync + 'static,
+        V: Fn(Item, &JobVariant) -> Result<Option<Duration>, Box<dyn Error + Send + Sync>>,
+        Builder: Fn(Item, JobVariant) -> F,
+        F: Fn(JobContext) -> Fut + Send + Sync + 'static,
         Fut: Future<Output = Result<R, JobError>> + Send + 'static,
         R: Debug + Send + Sync + 'static,
     {
@@ -62,8 +99,12 @@ impl<'a> JobPlanBuilder<'a> {
             }
             items.into_iter().try_fold(plan, |current, item| {
                 let variant = JobVariant::labeled(job, item.job_label());
+                let variant = match modify_interval(item.clone(), &variant)? {
+                    Some(duration) => variant.every(duration),
+                    None => variant,
+                };
                 let interval = variant.resolve_interval(config)?;
-                let job_fn = build_job(item.clone(), variant.clone());
+                let job_fn = build_job(item, variant.clone());
                 Ok(current.job(variant.name(), interval, job_fn))
             })
         });

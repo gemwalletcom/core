@@ -1,12 +1,14 @@
 use super::{
-    AppFee, DepositMode, NearIntentsClient, QuoteRequest as NearQuoteRequest, QuoteResponse, QuoteResponseError, QuoteResponseResult, SwapType, auto_quote_time_chains,
-    deposit_memo_chains, get_near_intents_asset_id,
+    AppFee, DepositMode, NearIntentsClient, NearIntentsExplorer, QuoteRequest as NearQuoteRequest, QuoteResponse, QuoteResponseError, QuoteResponseResult, SwapType,
+    auto_quote_time_chains, deposit_memo_chains, get_near_intents_asset_id,
     model::{DEFAULT_REFERRAL, DEFAULT_WAIT_TIME_MS, DEPOSIT_TYPE_ORIGIN, RECIPIENT_TYPE_DESTINATION},
     reserved_tx_fees, supported_assets,
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperMode,
-    SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, amount_to_value, client_factory::create_client_with_chain, near_intents::client::base_url,
+    SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, amount_to_value,
+    client_factory::create_client_with_chain,
+    near_intents::client::{base_url, explorer_url},
 };
 use alloy_primitives::U256;
 use async_trait::async_trait;
@@ -31,6 +33,7 @@ where
 {
     provider: ProviderType,
     client: NearIntentsClient<C>,
+    explorer: NearIntentsExplorer<C>,
     supported_assets: Vec<SwapperChainAsset>,
     sui_client: Arc<SuiClient<RpcClient>>,
 }
@@ -43,6 +46,7 @@ where
         f.debug_struct("NearIntents")
             .field("provider", &self.provider)
             .field("client", &self.client)
+            .field("explorer", &self.explorer)
             .field("supported_assets", &self.supported_assets)
             .field("sui_client", &"SuiClient::<RpcClient>")
             .finish()
@@ -52,8 +56,9 @@ where
 impl NearIntents<RpcClient> {
     pub fn new(rpc_provider: Arc<dyn RpcProvider>) -> Self {
         let client = NearIntentsClient::new(RpcClient::new(base_url(), rpc_provider.clone()), None);
+        let explorer = NearIntentsExplorer::new(RpcClient::new(explorer_url(), rpc_provider.clone()));
         let sui_client = Arc::new(SuiClient::new(create_client_with_chain(rpc_provider.clone(), Chain::Sui)));
-        Self::with_client(client, sui_client)
+        Self::with_client(client, explorer, sui_client)
     }
 
     pub fn boxed(rpc_provider: Arc<dyn RpcProvider>) -> Box<dyn crate::swapper_trait::Swapper> {
@@ -65,10 +70,11 @@ impl<C> NearIntents<C>
 where
     C: gem_client::Client + Clone + Send + Sync + Debug + 'static,
 {
-    pub fn with_client(client: NearIntentsClient<C>, sui_client: Arc<SuiClient<RpcClient>>) -> Self {
+    pub fn with_client(client: NearIntentsClient<C>, explorer: NearIntentsExplorer<C>, sui_client: Arc<SuiClient<RpcClient>>) -> Self {
         Self {
             provider: ProviderType::new(SwapperProvider::NearIntents),
             client,
+            explorer,
             supported_assets: supported_assets(),
             sui_client,
         }
@@ -360,6 +366,11 @@ where
             status: swap_status,
             metadata: None,
         })
+    }
+
+    async fn get_vault_addresses(&self, from_timestamp: Option<u64>) -> Result<Vec<String>, SwapperError> {
+        let start_timestamp = from_timestamp.unwrap_or_else(|| (Utc::now() - Duration::seconds(60)).timestamp() as u64);
+        self.explorer.get_deposit_addresses(start_timestamp).await
     }
 }
 

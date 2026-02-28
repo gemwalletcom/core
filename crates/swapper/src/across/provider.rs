@@ -571,7 +571,7 @@ impl Swapper for Across {
             gas_limit,
         ))
     }
-    async fn get_vault_addresses(&self) -> Result<Vec<String>, SwapperError> {
+    async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<Vec<String>, SwapperError> {
         Ok(AcrossDeployment::vault_addresses())
     }
 

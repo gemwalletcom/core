@@ -279,7 +279,7 @@ where
         }
     }
 
-    async fn get_vault_addresses(&self) -> Result<Vec<String>, SwapperError> {
+    async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<Vec<String>, SwapperError> {
         match self.provider.id {
             SwapperProvider::Mayan => {
                 let static_addresses: BTreeSet<String> = MAYAN_CONTRACTS.iter().map(|s| s.to_string()).collect();

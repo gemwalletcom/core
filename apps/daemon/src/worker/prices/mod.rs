@@ -68,7 +68,7 @@ pub async fn jobs(
             let database = database.clone();
             let config = config.clone();
             let price_metrics = price_metrics.clone();
-            move || {
+            move |_| {
                 let settings = settings.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
@@ -88,7 +88,7 @@ pub async fn jobs(
             let cacher_client = cacher_client.clone();
             let database = database.clone();
             let price_metrics = price_metrics.clone();
-            move || {
+            move |_| {
                 let settings = settings.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
@@ -101,7 +101,7 @@ pub async fn jobs(
             let cacher_client = cacher_client.clone();
             let database = database.clone();
             let price_metrics = price_metrics.clone();
-            move || {
+            move |_| {
                 let settings = settings.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
@@ -119,7 +119,7 @@ pub async fn jobs(
             let cacher_client = cacher_client.clone();
             let database = database.clone();
             let price_metrics = price_metrics.clone();
-            move || {
+            move |_| {
                 let settings = settings.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
@@ -137,7 +137,7 @@ pub async fn jobs(
             let cacher_client = cacher_client.clone();
             let database = database.clone();
             let price_metrics = price_metrics.clone();
-            move || {
+            move |_| {
                 let settings = settings.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
@@ -155,7 +155,7 @@ pub async fn jobs(
             let cacher_client = cacher_client.clone();
             let database = database.clone();
             let price_metrics = price_metrics.clone();
-            move || {
+            move |_| {
                 let settings = settings.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
@@ -173,7 +173,7 @@ pub async fn jobs(
             let coingecko_client = coingecko_client.clone();
             let cacher_client = cacher_client.clone();
             let database = database.clone();
-            move || {
+            move |_| {
                 let settings = settings.clone();
                 let coingecko_client = coingecko_client.clone();
                 let cacher_client = cacher_client.clone();
@@ -191,7 +191,7 @@ pub async fn jobs(
             let coingecko_client = coingecko_client.clone();
             let cacher_client = cacher_client.clone();
             let database = database.clone();
-            move || {
+            move |_| {
                 let settings = settings.clone();
                 let coingecko_client = coingecko_client.clone();
                 let cacher_client = cacher_client.clone();
@@ -209,7 +209,7 @@ pub async fn jobs(
             let coingecko_client = coingecko_client.clone();
             let cacher_client = cacher_client.clone();
             let database = database.clone();
-            move || {
+            move |_| {
                 let settings = settings.clone();
                 let coingecko_client = coingecko_client.clone();
                 let cacher_client = cacher_client.clone();
@@ -227,7 +227,7 @@ pub async fn jobs(
             let coingecko_client = coingecko_client.clone();
             let cacher_client = cacher_client.clone();
             let database = database.clone();
-            move || {
+            move |_| {
                 let settings = settings.clone();
                 let coingecko_client = coingecko_client.clone();
                 let cacher_client = cacher_client.clone();
@@ -244,7 +244,7 @@ pub async fn jobs(
             let settings = settings.clone();
             let cacher_client = cacher_client.clone();
             let database = database.clone();
-            move || {
+            move |_| {
                 let settings = settings.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
@@ -256,7 +256,7 @@ pub async fn jobs(
             let cacher_client = cacher_client.clone();
             let database = database.clone();
             let config = config.clone();
-            move || {
+            move |_| {
                 let settings = settings.clone();
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
@@ -282,7 +282,7 @@ pub async fn jobs(
                 let url = provider.url.clone();
                 let database = database.clone();
                 let provider_type = provider.provider_type.clone();
-                move || {
+                move |_| {
                     let url = url.clone();
                     let database = database.clone();
                     let provider_type = provider_type.clone();
@@ -294,7 +294,7 @@ pub async fn jobs(
                 let url = provider.url.clone();
                 let database = database.clone();
                 let provider_type = provider.provider_type.clone();
-                move || {
+                move |_| {
                     let url = url.clone();
                     let database = database.clone();
                     let provider_type = provider_type.clone();

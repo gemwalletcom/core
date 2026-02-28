@@ -1,7 +1,8 @@
 use gem_tracing::info_with_fields;
 use prices_dex::PriceFeedProvider;
 use primitives::{
-    Asset, AssetId, AssetTag, Chain, ConfigKey, FiatProviderName, NFTChain, NotificationType, PlatformStore as PrimitivePlatformStore, PriceAlert, PriceAlertDirection,
+    Asset, AssetId, AssetTag, Chain, ConfigKey, FiatProviderName, NFTChain, NotificationType, ParamConfigKey, PlatformStore as PrimitivePlatformStore, PriceAlert,
+    PriceAlertDirection,
 };
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
@@ -78,8 +79,12 @@ fn setup_database(database: &Database) -> Result<(), Box<dyn std::error::Error +
     let _ = database.prices_dex()?.add_prices_dex_providers(providers);
 
     info_with_fields!("setup", step = "config");
-    let configs = ConfigKey::all().into_iter().map(ConfigRow::from_primitive).collect::<Vec<_>>();
+    let configs: Vec<ConfigRow> = ConfigKey::all().into_iter().map(ConfigRow::from_primitive).collect();
     let _ = database.client()?.add_config(configs);
+
+    info_with_fields!("setup", step = "param config");
+    let param_configs: Vec<ConfigRow> = ParamConfigKey::all().into_iter().map(ConfigRow::from_param).collect();
+    let _ = database.client()?.add_config(param_configs);
 
     Ok(())
 }

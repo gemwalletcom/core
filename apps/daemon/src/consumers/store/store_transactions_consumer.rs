@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::{collections::HashMap, error::Error};
 
 use async_trait::async_trait;
-use cacher::{CacheKey, CacherClient};
+use cacher::{CacheKey, CacherClient, cache_keys};
 use primitives::{AssetAddress, AssetIdVecExt, Transaction, TransactionId, TransactionState, TransactionType, WalletId};
 use storage::{AssetsAddressesRepository, AssetsRepository, Database, TransactionsRepository, WalletsRepository};
 use streamer::{AssetId, DeviceStreamEvent, DeviceStreamPayload, NotificationsPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
@@ -73,7 +73,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
 
         let _ = self.stream_producer.publish_fetch_assets(missing_assets).await;
 
-        let vault_addresses = self.get_vault_addresses().await;
+        let vault_addresses = self.get_vault_addresses().await?;
 
         let mut transactions_map: HashMap<TransactionId, Transaction> = HashMap::new();
         let mut notifications: Vec<NotificationsPayload> = Vec::new();
@@ -180,10 +180,10 @@ impl StoreTransactionsConsumer {
         Ok((assets_with_prices, missing_assets_ids))
     }
 
-    async fn get_vault_addresses(&self) -> HashSet<String> {
-        let keys = cross_chain::providers().iter().map(|p| CacheKey::SwapVaultAddresses(p.as_ref()).key()).collect();
-        let values: Vec<Vec<String>> = self.cacher.get_values(keys).await.unwrap_or_default();
-        values.into_iter().flatten().collect()
+    async fn get_vault_addresses(&self) -> Result<HashSet<String>, Box<dyn Error + Send + Sync>> {
+        let keys = cache_keys(&cross_chain::providers(), CacheKey::SwapVaultAddresses);
+        let members = self.cacher.get_set_members_cached(keys).await?;
+        Ok(members.into_iter().collect())
     }
 
     async fn store_transactions(&self, transactions: Vec<Transaction>) -> Result<usize, Box<dyn Error + Send + Sync>> {

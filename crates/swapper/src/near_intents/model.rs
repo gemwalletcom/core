@@ -154,3 +154,9 @@ fn default_slippage_tolerance() -> u32 {
 fn default_quote_waiting_time_ms() -> u32 {
     DEFAULT_WAIT_TIME_MS
 }
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExplorerTransaction {
+    pub deposit_address: String,
+}

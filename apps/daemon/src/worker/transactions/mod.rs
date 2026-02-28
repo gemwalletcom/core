@@ -8,13 +8,14 @@ use crate::worker::plan::JobPlanBuilder;
 use cacher::CacherClient;
 use in_transit_updater::{InTransitConfig, InTransitUpdater};
 use job_runner::{JobHandle, ShutdownReceiver};
-use primitives::ConfigKey;
+use primitives::{ConfigKey, ParamConfigKey};
 use settings_chain::ProviderFactory;
 use std::error::Error;
 use std::sync::Arc;
 use storage::ConfigCacher;
 use streamer::{StreamProducer, StreamProducerConfig};
 use swapper::NativeProvider;
+use swapper::cross_chain;
 use swapper::swapper::GemSwapper;
 use vault_addresses_updater::VaultAddressesUpdater;
 
@@ -42,18 +43,22 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
             let database = database.clone();
             let swapper = swapper.clone();
             let stream_producer = stream_producer.clone();
-            move || {
+            move |_| {
                 let updater = InTransitUpdater::new(database.clone(), in_transit_config, swapper.clone(), stream_producer.clone());
                 async move { updater.update().await }
             }
         })
-        .jobs(WorkerJob::UpdateSwapVaultAddresses, swapper::cross_chain::providers(), |provider, _| {
-            let swapper = swapper.clone();
-            let cacher = cacher.clone();
-            move || {
-                let updater = VaultAddressesUpdater::new(swapper.clone(), cacher.clone());
-                async move { updater.update(provider).await }
-            }
-        })
+        .jobs_with_config(
+            WorkerJob::UpdateSwapVaultAddresses,
+            cross_chain::providers(),
+            ParamConfigKey::SwapperVaultAddresses,
+            |provider, _| {
+                let updater = Arc::new(VaultAddressesUpdater::new(swapper.clone(), cacher.clone()));
+                move |ctx| {
+                    let updater = updater.clone();
+                    async move { updater.update(provider, ctx.last_success_at).await }
+                }
+            },
+        )
         .finish()
 }

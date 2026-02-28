@@ -2,10 +2,14 @@ use crate::{SwapperError, config::get_swap_api_url};
 use gem_client::{Client, ClientError, ClientExt};
 use std::{collections::HashMap, fmt::Debug};
 
-use super::model::{ExecutionStatus, QuoteRequest, QuoteResponseResult};
+use super::model::{DEFAULT_REFERRAL, ExecutionStatus, ExplorerTransaction, QuoteRequest, QuoteResponseResult};
 
 pub fn base_url() -> String {
     get_swap_api_url("near-intents/1click")
+}
+
+pub fn explorer_url() -> String {
+    get_swap_api_url("near-intents/explorer")
 }
 
 #[derive(Clone, Debug)]
@@ -49,5 +53,25 @@ where
             }),
             Err(err) => Err(SwapperError::from(err)),
         }
+    }
+}
+
+#[derive(Debug)]
+pub struct NearIntentsExplorer<C: Client> {
+    client: C,
+}
+
+impl<C: Client + Send + Sync + Debug> NearIntentsExplorer<C> {
+    pub fn new(client: C) -> Self {
+        Self { client }
+    }
+
+    pub async fn get_deposit_addresses(&self, start_timestamp: u64) -> Result<Vec<String>, SwapperError> {
+        let path = format!(
+            "/api/v0/transactions?referral={}&startTimestampUnix={}&statuses=PENDING_DEPOSIT",
+            DEFAULT_REFERRAL, start_timestamp
+        );
+        let transactions = self.client.get::<Vec<ExplorerTransaction>>(&path).await.map_err(SwapperError::from)?;
+        Ok(transactions.into_iter().map(|t| t.deposit_address).collect())
     }
 }

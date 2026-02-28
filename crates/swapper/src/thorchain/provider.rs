@@ -105,7 +105,7 @@ where
             .collect()
     }
 
-    async fn get_vault_addresses(&self) -> Result<Vec<String>, SwapperError> {
+    async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<Vec<String>, SwapperError> {
         let inbound = self.client.get_inbound_addresses().await?;
         let addresses = inbound.iter().flat_map(|entry| {
             let chain = THORChainName::from_symbol(&entry.chain);

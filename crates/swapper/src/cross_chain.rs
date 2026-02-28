@@ -2,6 +2,7 @@ use primitives::Transaction;
 
 use crate::SwapperProvider;
 use crate::across::AcrossCrossChain;
+use crate::near_intents::NearIntentsCrossChain;
 use crate::proxy::mayan::MayanCrossChain;
 use crate::thorchain::ThorchainCrossChain;
 
@@ -10,10 +11,10 @@ pub trait CrossChainProvider: Send + Sync {
     fn is_swap(&self, transaction: &Transaction) -> bool;
 }
 
-const PROVIDERS: [&dyn CrossChainProvider; 3] = [&ThorchainCrossChain, &AcrossCrossChain, &MayanCrossChain];
+const PROVIDERS: [&dyn CrossChainProvider; 4] = [&ThorchainCrossChain, &AcrossCrossChain, &MayanCrossChain, &NearIntentsCrossChain];
 
-pub fn providers() -> Vec<SwapperProvider> {
-    PROVIDERS.iter().map(|p| p.provider()).collect()
+pub fn providers() -> Vec<primitives::CrossChainProvider> {
+    primitives::CrossChainProvider::all()
 }
 
 pub fn swap_provider(transaction: &Transaction) -> Option<SwapperProvider> {
@@ -158,13 +159,5 @@ mod tests {
             };
             assert_eq!(swap_provider(&transaction), Some(SwapperProvider::Mayan));
         }
-    }
-
-    #[test]
-    fn test_providers_list() {
-        let all = providers();
-        assert!(all.contains(&SwapperProvider::Thorchain));
-        assert!(all.contains(&SwapperProvider::Across));
-        assert!(all.contains(&SwapperProvider::Mayan));
     }
 }
