@@ -17,7 +17,7 @@ pub type JobError = Box<dyn std::error::Error + Send + Sync>;
 
 #[async_trait]
 pub trait JobStatusReporter: Send + Sync {
-    async fn report(&self, name: &str, interval: u64, duration: u64, success: bool, error: Option<String>);
+    async fn report(&self, name: &str, interval: u64, duration: u64, success: bool);
 }
 
 pub async fn sleep_or_shutdown(duration: Duration, shutdown_rx: &ShutdownReceiver) -> bool {
@@ -83,12 +83,11 @@ pub async fn run_job<Name, F, Fut, R>(
                 if let Err(err) = schedule.mark_success(job_name.as_str(), SystemTime::now()).await {
                     error_with_fields!("job schedule update failed", &*err, job = job_name.as_str());
                 }
-                reporter.report(&job_name, interval_duration.as_secs(), duration_ms, true, None).await;
+                reporter.report(&job_name, interval_duration.as_secs(), duration_ms, true).await;
             }
             Err(err) => {
-                let msg = err.to_string();
                 error_with_fields!("job failed", &*err, job = job_name.as_str(), duration = duration_display.as_str());
-                reporter.report(&job_name, interval_duration.as_secs(), duration_ms, false, Some(msg)).await;
+                reporter.report(&job_name, interval_duration.as_secs(), duration_ms, false).await;
             }
         }
 

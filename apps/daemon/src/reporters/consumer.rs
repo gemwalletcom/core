@@ -20,8 +20,4 @@ impl ConsumerStatusReporter for ConsumerReporter {
     async fn report_success(&self, name: &str, duration: u64, result: &str) {
         self.metrics.record_success(name, duration, result);
     }
-
-    async fn report_error(&self, name: &str, error: &str) {
-        self.metrics.record_error(name, error);
-    }
 }
