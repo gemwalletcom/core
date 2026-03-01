@@ -1,3 +1,4 @@
+mod client;
 mod consumers;
 mod health;
 mod metrics;

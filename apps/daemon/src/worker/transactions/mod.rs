@@ -1,10 +1,6 @@
 mod in_transit_updater;
 mod vault_addresses_updater;
 
-use crate::model::WorkerService;
-use crate::worker::context::WorkerContext;
-use crate::worker::jobs::WorkerJob;
-use crate::worker::plan::JobPlanBuilder;
 use cacher::CacherClient;
 use in_transit_updater::{InTransitConfig, InTransitUpdater};
 use job_runner::{JobHandle, ShutdownReceiver};
@@ -18,6 +14,12 @@ use swapper::NativeProvider;
 use swapper::cross_chain;
 use swapper::swapper::GemSwapper;
 use vault_addresses_updater::VaultAddressesUpdater;
+
+use crate::client::SwapVaultAddressClient;
+use crate::model::WorkerService;
+use crate::worker::context::WorkerContext;
+use crate::worker::jobs::WorkerJob;
+use crate::worker::plan::JobPlanBuilder;
 
 pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
     let runtime = ctx.runtime();
@@ -43,8 +45,9 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
             let database = database.clone();
             let swapper = swapper.clone();
             let stream_producer = stream_producer.clone();
+            let vault_client = SwapVaultAddressClient::new(cacher.clone());
             move |_| {
-                let updater = InTransitUpdater::new(database.clone(), in_transit_config, swapper.clone(), stream_producer.clone());
+                let updater = InTransitUpdater::new(database.clone(), in_transit_config, swapper.clone(), stream_producer.clone(), vault_client.clone());
                 async move { updater.update().await }
             }
         })

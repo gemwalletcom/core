@@ -1,4 +1,7 @@
-use crate::models::{balance::{Balances, StakeBalance}, token::SpotToken};
+use crate::models::{
+    balance::{Balances, StakeBalance},
+    token::SpotToken,
+};
 use num_bigint::BigUint;
 use number_formatter::BigNumberFormatter;
 use primitives::{Asset, AssetBalance, AssetId, Balance, Chain};

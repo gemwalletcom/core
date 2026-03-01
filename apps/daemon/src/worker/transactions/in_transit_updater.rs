@@ -9,8 +9,10 @@ use primitives::{Chain, TransactionSwapMetadata, TransactionType};
 use storage::models::TransactionRow;
 use storage::{Database, TransactionFilter, TransactionState, TransactionUpdate, TransactionsRepository};
 use streamer::{StreamProducer, StreamProducerQueue, TransactionsPayload};
-use swapper::cross_chain;
+use swapper::cross_chain::{self, VaultAddressMap};
 use swapper::swapper::GemSwapper;
+
+use crate::client::SwapVaultAddressClient;
 
 #[derive(Clone, Copy)]
 pub struct InTransitConfig {
@@ -23,15 +25,17 @@ pub struct InTransitUpdater {
     config: InTransitConfig,
     swapper: Arc<GemSwapper>,
     stream_producer: StreamProducer,
+    vault_client: SwapVaultAddressClient,
 }
 
 impl InTransitUpdater {
-    pub fn new(database: Database, config: InTransitConfig, swapper: Arc<GemSwapper>, stream_producer: StreamProducer) -> Self {
+    pub fn new(database: Database, config: InTransitConfig, swapper: Arc<GemSwapper>, stream_producer: StreamProducer, vault_client: SwapVaultAddressClient) -> Self {
         Self {
             database,
             config,
             swapper,
             stream_producer,
+            vault_client,
         }
     }
 
@@ -45,11 +49,12 @@ impl InTransitUpdater {
             return Ok(0);
         }
 
+        let vault_addresses = self.vault_client.get_address_map().await?;
         let cutoff = (Utc::now() - self.config.timeout).naive_utc();
         let mut updated = 0;
 
         for transaction in &transactions {
-            if self.process_transaction(transaction, cutoff).await? {
+            if self.process_transaction(transaction, cutoff, &vault_addresses).await? {
                 updated += 1;
             }
         }
@@ -57,12 +62,12 @@ impl InTransitUpdater {
         Ok(updated)
     }
 
-    async fn process_transaction(&self, row: &TransactionRow, cutoff: NaiveDateTime) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    async fn process_transaction(&self, row: &TransactionRow, cutoff: NaiveDateTime, vault_addresses: &VaultAddressMap) -> Result<bool, Box<dyn Error + Send + Sync>> {
         let chain = row.chain();
         let transaction = row.as_primitive(row.get_addresses());
         let elapsed = DurationMs((Utc::now().naive_utc() - row.created_at).to_std().unwrap_or_default());
 
-        let provider = cross_chain::swap_provider(&transaction);
+        let provider = cross_chain::swap_provider_with_vault_addresses(&transaction, vault_addresses);
         let provider_name = provider.map(|p| p.as_ref().to_string()).unwrap_or_default();
         let result = match provider {
             Some(provider) => match self.swapper.get_swap_result(chain, provider, &row.hash).await {

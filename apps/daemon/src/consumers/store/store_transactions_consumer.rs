@@ -2,12 +2,12 @@ use std::collections::HashSet;
 use std::{collections::HashMap, error::Error};
 
 use async_trait::async_trait;
-use cacher::{CacheKey, CacherClient, cache_keys};
 use primitives::{AssetAddress, AssetIdVecExt, Transaction, TransactionId, TransactionState, TransactionType, WalletId};
 use storage::{AssetsAddressesRepository, AssetsRepository, Database, TransactionsRepository, WalletsRepository};
 use streamer::{AssetId, DeviceStreamEvent, DeviceStreamPayload, NotificationsPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
-use swapper::cross_chain;
+use swapper::cross_chain::{self, VaultAddressMap};
 
+use crate::client::SwapVaultAddressClient;
 use crate::consumers::store::StoreTransactionsConsumerConfig;
 use crate::pusher::Pusher;
 
@@ -15,13 +15,13 @@ const TRANSACTION_BATCH_SIZE: usize = 100;
 
 const IN_TRANSIT_TYPES: [TransactionType; 2] = [TransactionType::Transfer, TransactionType::SmartContractCall];
 
-fn set_cross_chain_in_transit(transactions: Vec<Transaction>, vault_addresses: &HashSet<String>) -> Vec<Transaction> {
+fn set_cross_chain_in_transit(transactions: Vec<Transaction>, vault_addresses: &VaultAddressMap) -> Vec<Transaction> {
     transactions
         .into_iter()
         .map(|mut transaction| {
             if transaction.state == TransactionState::Confirmed
                 && IN_TRANSIT_TYPES.contains(&transaction.transaction_type)
-                && (cross_chain::is_cross_chain_swap(&transaction) || vault_addresses.contains(&transaction.to))
+                && cross_chain::is_cross_chain_swap(&transaction, vault_addresses)
             {
                 transaction.state = TransactionState::InTransit;
             }
@@ -35,7 +35,7 @@ pub struct StoreTransactionsConsumer {
     pub stream_producer: StreamProducer,
     pub pusher: Pusher,
     pub config: StoreTransactionsConsumerConfig,
-    pub cacher: CacherClient,
+    pub vault_client: SwapVaultAddressClient,
 }
 
 struct ProcessingResult {
@@ -54,7 +54,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
     async fn process(&self, payload: TransactionsPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let chain = payload.chain;
         let is_notify_devices = !payload.blocks.is_empty();
-        let vault_addresses = self.get_vault_addresses().await?;
+        let vault_addresses = self.vault_client.get_address_map().await?;
         let transactions = set_cross_chain_in_transit(payload.transactions, &vault_addresses);
 
         let min_amount = self.config.min_amount_usd;
@@ -182,12 +182,6 @@ impl StoreTransactionsConsumer {
         Ok((assets_with_prices, missing_assets_ids))
     }
 
-    async fn get_vault_addresses(&self) -> Result<HashSet<String>, Box<dyn Error + Send + Sync>> {
-        let keys = cache_keys(&cross_chain::providers(), CacheKey::SwapVaultAddresses);
-        let members = self.cacher.get_set_members_cached(keys).await?;
-        Ok(members.into_iter().collect())
-    }
-
     async fn store_transactions(&self, transactions: Vec<Transaction>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         if transactions.is_empty() {
             return Ok(0);
@@ -204,6 +198,7 @@ impl StoreTransactionsConsumer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use primitives::SwapProvider;
 
     #[test]
     fn test_set_cross_chain_in_transit_cross_chain() {
@@ -212,13 +207,13 @@ mod tests {
             memo: Some(memo.to_string()),
             ..Transaction::mock()
         };
-        let result = set_cross_chain_in_transit(vec![tx], &HashSet::new());
+        let result = set_cross_chain_in_transit(vec![tx], &VaultAddressMap::new());
         assert_eq!(result[0].state, TransactionState::InTransit);
     }
 
     #[test]
     fn test_set_cross_chain_in_transit_regular_transfer() {
-        let result = set_cross_chain_in_transit(vec![Transaction::mock()], &HashSet::new());
+        let result = set_cross_chain_in_transit(vec![Transaction::mock()], &VaultAddressMap::new());
         assert_eq!(result[0].state, TransactionState::Confirmed);
     }
 
@@ -230,7 +225,7 @@ mod tests {
             memo: Some(memo.to_string()),
             ..Transaction::mock()
         };
-        let result = set_cross_chain_in_transit(vec![tx], &HashSet::new());
+        let result = set_cross_chain_in_transit(vec![tx], &VaultAddressMap::new());
         assert_eq!(result[0].state, TransactionState::Confirmed);
     }
 
@@ -241,7 +236,7 @@ mod tests {
             to: "0x337685fdaB40D39bd02028545a4FfA7D287cC3E2".to_string(),
             ..Transaction::mock()
         };
-        let result = set_cross_chain_in_transit(vec![tx], &HashSet::new());
+        let result = set_cross_chain_in_transit(vec![tx], &VaultAddressMap::new());
         assert_eq!(result[0].state, TransactionState::Confirmed);
     }
 
@@ -253,7 +248,7 @@ mod tests {
             memo: Some(memo.to_string()),
             ..Transaction::mock()
         };
-        let result = set_cross_chain_in_transit(vec![tx], &HashSet::new());
+        let result = set_cross_chain_in_transit(vec![tx], &VaultAddressMap::new());
         assert_eq!(result[0].state, TransactionState::Pending);
     }
 
@@ -264,7 +259,7 @@ mod tests {
             to: vault.clone(),
             ..Transaction::mock()
         };
-        let vault_addresses = HashSet::from([vault]);
+        let vault_addresses = VaultAddressMap::from([(vault, SwapProvider::NearIntents)]);
         let result = set_cross_chain_in_transit(vec![tx], &vault_addresses);
         assert_eq!(result[0].state, TransactionState::InTransit);
     }
