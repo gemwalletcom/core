@@ -1,0 +1,13 @@
+[
+  {
+    "originAsset": "nep245:v2_1.omni.hot.tg:43114_11111111111111111111",
+    "destinationAsset": "nep245:v2_1.omni.hot.tg:56_11111111111111111111",
+    "depositAddress": "0x3ded70a0b68583572aA0a7581F50b5AFd8820175",
+    "status": "SUCCESS",
+    "amountIn": "28000000000000000",
+    "amountOut": "399605209991817",
+    "originChainTxHashes": [
+      "0x60d445fe823f8fd3778f8ce5192e6ec0fd96e7313bbeefa85c6aaea3907f4ce4"
+    ]
+  }
+]

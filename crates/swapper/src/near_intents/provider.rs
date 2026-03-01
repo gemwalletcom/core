@@ -1,7 +1,7 @@
 use super::{
     AppFee, DepositMode, NearIntentsClient, NearIntentsExplorer, QuoteRequest as NearQuoteRequest, QuoteResponse, QuoteResponseError, QuoteResponseResult, SwapType,
-    auto_quote_time_chains, deposit_memo_chains, get_near_intents_asset_id,
-    model::{DEFAULT_REFERRAL, DEFAULT_WAIT_TIME_MS, DEPOSIT_TYPE_ORIGIN, RECIPIENT_TYPE_DESTINATION},
+    auto_quote_time_chains, deposit_memo_chains, get_asset_id_from_near_intents, get_near_intents_asset_id,
+    model::{DEFAULT_REFERRAL, DEFAULT_WAIT_TIME_MS, DEPOSIT_TYPE_ORIGIN, ExplorerTransaction, RECIPIENT_TYPE_DESTINATION},
     reserved_tx_fees, supported_assets,
 };
 use crate::{
@@ -14,7 +14,7 @@ use alloy_primitives::U256;
 use async_trait::async_trait;
 use chrono::{Duration, Utc};
 use gem_sui::{SuiClient, build_transfer_message_bytes};
-use primitives::{Chain, swap::SwapStatus};
+use primitives::{Chain, TransactionSwapMetadata, swap::SwapStatus};
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 const DEFAULT_DEADLINE_MINUTES: i64 = 30;
@@ -172,6 +172,18 @@ where
             "KNOWN_DEPOSIT_TX" | "PENDING_DEPOSIT" | "INCOMPLETE_DEPOSIT" | "PROCESSING" => SwapStatus::Pending,
             _ => SwapStatus::Pending,
         }
+    }
+
+    fn build_swap_metadata(tx: &ExplorerTransaction) -> Option<TransactionSwapMetadata> {
+        let from_asset = get_asset_id_from_near_intents(&tx.origin_asset)?;
+        let to_asset = get_asset_id_from_near_intents(&tx.destination_asset)?;
+        Some(TransactionSwapMetadata {
+            from_asset,
+            from_value: tx.amount_in.clone(),
+            to_asset,
+            to_value: tx.amount_out.clone(),
+            provider: Some(SwapperProvider::NearIntents.as_ref().to_string()),
+        })
     }
 
     fn resolve_deposit_mode(asset: &SwapperQuoteAsset) -> DepositMode {
@@ -358,14 +370,18 @@ where
         })
     }
 
-    async fn get_swap_result(&self, _chain: Chain, deposit_address: &str) -> Result<SwapResult, SwapperError> {
-        let status = self.client.get_transaction_status(deposit_address).await?;
-        let swap_status = Self::map_transaction_status(status.status.as_str());
+    async fn get_swap_result(&self, _chain: Chain, hash: &str) -> Result<SwapResult, SwapperError> {
+        let Some(tx) = self.explorer.search_transaction(hash).await? else {
+            return Ok(SwapResult {
+                status: SwapStatus::Pending,
+                metadata: None,
+            });
+        };
 
-        Ok(SwapResult {
-            status: swap_status,
-            metadata: None,
-        })
+        let status = Self::map_transaction_status(&tx.status);
+        let metadata = Self::build_swap_metadata(&tx);
+
+        Ok(SwapResult { status, metadata })
     }
 
     async fn get_vault_addresses(&self, from_timestamp: Option<u64>) -> Result<Vec<String>, SwapperError> {
@@ -378,8 +394,17 @@ where
 mod tests {
     use super::*;
     use crate::{SwapperError, SwapperMode, SwapperQuoteAsset, models::Options};
+    use primitives::asset_constants::USDT_SMARTCHAIN_ASSET_ID;
     use primitives::{AssetId, Chain};
     use serde_json::json;
+
+    fn status(json: &str) -> SwapResult {
+        let transactions: Vec<ExplorerTransaction> = serde_json::from_str(json).unwrap();
+        let tx = &transactions[0];
+        let status = NearIntents::<RpcClient>::map_transaction_status(&tx.status);
+        let metadata = NearIntents::<RpcClient>::build_swap_metadata(tx);
+        SwapResult { status, metadata }
+    }
 
     fn build_quote_request(amount: &str, use_max: bool, chain: Chain) -> QuoteRequest {
         let from_asset = SwapperQuoteAsset::from(AssetId::from_chain(chain));
@@ -429,6 +454,85 @@ mod tests {
         let err = NearIntents::<RpcClient>::resolve_quote_amount(&request, &SwapType::FlexInput).expect_err("expected error");
 
         assert!(matches!(err, SwapperError::InputAmountError { .. }));
+    }
+
+    #[test]
+    fn swap_result_avax_to_smartchain() {
+        let result = status(include_str!("testdata/tx_status_avax_to_smartchain.json"));
+
+        assert_eq!(
+            result,
+            SwapResult {
+                status: SwapStatus::Completed,
+                metadata: Some(TransactionSwapMetadata {
+                    from_asset: AssetId::from_chain(Chain::AvalancheC),
+                    from_value: "28000000000000000".to_string(),
+                    to_asset: AssetId::from_chain(Chain::SmartChain),
+                    to_value: "399605209991817".to_string(),
+                    provider: Some("near_intents".to_string()),
+                }),
+            }
+        );
+    }
+
+    #[test]
+    fn swap_result_smartchain_to_bitcoin() {
+        let result = status(include_str!("testdata/tx_status_smartchain_to_bitcoin.json"));
+
+        assert_eq!(
+            result,
+            SwapResult {
+                status: SwapStatus::Completed,
+                metadata: Some(TransactionSwapMetadata {
+                    from_asset: AssetId::new(USDT_SMARTCHAIN_ASSET_ID).unwrap(),
+                    from_value: "82000000000000000000".to_string(),
+                    to_asset: AssetId::from_chain(Chain::Bitcoin),
+                    to_value: "120496".to_string(),
+                    provider: Some("near_intents".to_string()),
+                }),
+            }
+        );
+    }
+
+    #[test]
+    fn swap_result_bitcoin_to_ton_refunded() {
+        let result = status(include_str!("testdata/tx_status_bitcoin_to_ton_refunded.json"));
+
+        assert_eq!(
+            result,
+            SwapResult {
+                status: SwapStatus::Failed,
+                metadata: Some(TransactionSwapMetadata {
+                    from_asset: AssetId::from_chain(Chain::Bitcoin),
+                    from_value: "20000".to_string(),
+                    to_asset: AssetId::from_chain(Chain::Ton),
+                    to_value: "10031752296".to_string(),
+                    provider: Some("near_intents".to_string()),
+                }),
+            }
+        );
+    }
+
+    #[test]
+    fn map_transaction_status_values() {
+        let map = NearIntents::<RpcClient>::map_transaction_status;
+
+        assert_eq!(map("SUCCESS"), SwapStatus::Completed);
+        assert_eq!(map("SWAP_COMPLETED"), SwapStatus::Completed);
+        assert_eq!(map("SWAP_COMPLETED_TX"), SwapStatus::Completed);
+
+        assert_eq!(map("FAILED"), SwapStatus::Failed);
+        assert_eq!(map("SWAP_FAILED"), SwapStatus::Failed);
+        assert_eq!(map("REFUNDED"), SwapStatus::Failed);
+        assert_eq!(map("SWAP_REFUNDED"), SwapStatus::Failed);
+        assert_eq!(map("SWAP_LIQUIDITY_TIMEOUT"), SwapStatus::Failed);
+        assert_eq!(map("SWAP_RISK_FAILED"), SwapStatus::Failed);
+
+        assert_eq!(map("PENDING_DEPOSIT"), SwapStatus::Pending);
+        assert_eq!(map("PROCESSING"), SwapStatus::Pending);
+        assert_eq!(map("KNOWN_DEPOSIT_TX"), SwapStatus::Pending);
+        assert_eq!(map("INCOMPLETE_DEPOSIT"), SwapStatus::Pending);
+        assert_eq!(map("UNKNOWN_STATUS"), SwapStatus::Pending);
     }
 
     #[test]

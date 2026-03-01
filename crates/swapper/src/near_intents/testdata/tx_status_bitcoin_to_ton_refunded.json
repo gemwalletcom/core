@@ -1,0 +1,13 @@
+[
+  {
+    "originAsset": "nep141:btc.omft.near",
+    "destinationAsset": "nep245:v2_1.omni.hot.tg:1117_",
+    "depositAddress": "158gYbSooieRtN52drCxzvPdMQbH9jr2WV",
+    "status": "REFUNDED",
+    "amountIn": "20000",
+    "amountOut": "10031752296",
+    "originChainTxHashes": [
+      "abc123def456789012345678901234567890abcdef1234567890abcdef12345678"
+    ]
+  }
+]
