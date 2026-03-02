@@ -133,7 +133,9 @@ where
 
             let min_value = min_value(&from_inbound_address.dust_threshold);
             if min_value > value {
-                return Err(SwapperError::InputAmountError { min_amount: Some(value_to(&min_value.to_string(), from_asset.decimals as i32).to_string()) });
+                return Err(SwapperError::InputAmountError {
+                    min_amount: Some(value_to(&min_value.to_string(), from_asset.decimals as i32).to_string()),
+                });
             }
         }
 

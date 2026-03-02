@@ -28,6 +28,7 @@ impl ScanAddressRow {
             chain: Chain::from_str(&self.chain).unwrap(),
             address: self.address,
             name,
+            address_type: Some(self.type_.0.clone()),
         })
     }
 

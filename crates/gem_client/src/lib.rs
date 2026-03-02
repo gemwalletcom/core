@@ -15,9 +15,9 @@ pub mod client_config;
 
 pub mod query;
 
-pub use content_type::{CONTENT_TYPE, ContentType};
+pub use content_type::{ContentType, CONTENT_TYPE};
 pub use query::build_path_with_query;
-pub use types::{ClientError, Response, decode_json_byte_array, deserialize_response};
+pub use types::{decode_json_byte_array, deserialize_response, ClientError, Response};
 
 #[cfg(feature = "reqwest")]
 pub use reqwest_client::ReqwestClient;
@@ -29,7 +29,7 @@ pub use retry::{default_should_retry, retry, retry_policy};
 pub use client_config::builder;
 
 use async_trait::async_trait;
-use serde::{Serialize, de::DeserializeOwned};
+use serde::{de::DeserializeOwned, Serialize};
 use std::{collections::HashMap, fmt::Debug};
 
 pub type Data = Vec<u8>;

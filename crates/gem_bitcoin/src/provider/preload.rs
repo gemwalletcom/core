@@ -104,7 +104,6 @@ mod tests {
         assert!(calculate_fee_rate("invalid", 1).is_err());
     }
 
-
     #[test]
     fn test_map_fee_rates_bitcoin() {
         // all 1 sat → normal=2 (slow+1), fast=3 (slow+2)

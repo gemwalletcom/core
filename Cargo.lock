@@ -6816,10 +6816,12 @@ name = "signer"
 version = "1.0.0"
 dependencies = [
  "alloy-primitives",
+ "bs58",
  "ed25519-dalek",
  "gem_hash",
  "hex",
  "k256",
+ "primitives",
  "serde",
  "serde_json",
  "zeroize",

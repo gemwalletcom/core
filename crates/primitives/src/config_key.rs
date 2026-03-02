@@ -338,7 +338,7 @@ impl ConfigKey {
             Self::VersionTimerUpdateStoreVersions => "1h",
             Self::TransactionTimerCleanup => "1d",
             Self::TransactionTimerInTransitUpdate => "60s",
-            Self::TransactionInTransitTimeout => "6h",
+            Self::TransactionInTransitTimeout => "12h",
             Self::TransactionInTransitQueryLimit => "100",
             Self::TransactionSwapOutdatedTimeout => "2h",
             Self::TransactionCleanupAddressMaxCount => "5000",
