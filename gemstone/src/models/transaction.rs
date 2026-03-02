@@ -319,7 +319,7 @@ pub enum GemTransactionInputType {
     Earn {
         asset: GemAsset,
         earn_type: GemEarnType,
-        earn_data: GemContractCallData,
+        data: GemContractCallData,
     },
 }
 
@@ -348,7 +348,7 @@ impl GemTransactionInputType {
 
     pub fn earn_data(&self) -> Result<&GemContractCallData, String> {
         match self {
-            Self::Earn { earn_data, .. } => Ok(earn_data),
+            Self::Earn { data, .. } => Ok(data),
             _ => Err("Expected Earn".to_string()),
         }
     }
@@ -707,7 +707,7 @@ impl From<TransactionInputType> for GemTransactionInputType {
             TransactionInputType::TransferNft(asset, nft_asset) => GemTransactionInputType::TransferNft { asset, nft_asset },
             TransactionInputType::Account(asset, account_type) => GemTransactionInputType::Account { asset, account_type },
             TransactionInputType::Perpetual(asset, perpetual_type) => GemTransactionInputType::Perpetual { asset, perpetual_type },
-            TransactionInputType::Earn(asset, earn_type, earn_data) => GemTransactionInputType::Earn { asset, earn_type, earn_data },
+            TransactionInputType::Earn(asset, earn_type, data) => GemTransactionInputType::Earn { asset, earn_type, data },
         }
     }
 }
@@ -859,7 +859,7 @@ impl From<GemTransactionInputType> for TransactionInputType {
             GemTransactionInputType::TransferNft { asset, nft_asset } => TransactionInputType::TransferNft(asset, nft_asset),
             GemTransactionInputType::Account { asset, account_type } => TransactionInputType::Account(asset, account_type),
             GemTransactionInputType::Perpetual { asset, perpetual_type } => TransactionInputType::Perpetual(asset, perpetual_type),
-            GemTransactionInputType::Earn { asset, earn_type, earn_data } => TransactionInputType::Earn(asset, earn_type, earn_data),
+            GemTransactionInputType::Earn { asset, earn_type, data } => TransactionInputType::Earn(asset, earn_type, data),
         }
     }
 }

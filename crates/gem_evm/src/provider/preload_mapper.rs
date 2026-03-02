@@ -8,7 +8,7 @@ use num_bigint::BigInt;
 use num_traits::Num;
 use primitives::swap::SwapQuoteDataType;
 use primitives::{
-    AssetSubtype, Chain, EVMChain, FeeRate, NFTType, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, fee::FeePriority, fee::GasPriceType,
+    AssetSubtype, Chain, EVMChain, FeeRate, NFTType, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, decode_hex, fee::FeePriority, fee::GasPriceType,
 };
 
 use crate::contracts::{IERC20, IERC721, IERC1155};
@@ -29,6 +29,10 @@ pub struct TransactionParams {
 impl TransactionParams {
     pub fn new(to: String, data: Vec<u8>, value: BigInt) -> Self {
         Self { to, data, value }
+    }
+
+    pub fn new_approval(to: String, data: Vec<u8>) -> Self {
+        Self { to, data, value: BigInt::from(0) }
     }
 }
 
@@ -147,9 +151,9 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
         },
         TransactionInputType::Earn(_, _, earn_data) => {
             if let Some(approval) = &earn_data.approval {
-                Ok(TransactionParams::new(approval.token.clone(), encode_erc20_approve(&approval.spender)?, BigInt::from(0)))
+                Ok(TransactionParams::new_approval(approval.token.clone(), encode_erc20_approve(&approval.spender)?))
             } else {
-                Ok(TransactionParams::new(earn_data.contract_address.clone(), primitives::decode_hex(&earn_data.call_data)?, BigInt::from(0)))
+                Ok(TransactionParams::new(earn_data.contract_address.clone(), decode_hex(&earn_data.call_data)?, BigInt::from(0)))
             }
         }
         _ => Err("Unsupported transfer type".into()),
