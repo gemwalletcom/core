@@ -4,17 +4,6 @@ use primitives::{AssetId, Chain, CosmosDenom, FiatAssetSymbol, FiatProviderName}
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-pub struct FiatRequestMap {
-    pub crypto_currency: String,
-    pub network: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FiatRates {
-    pub rates: Vec<storage::models::FiatRateRow>,
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FiatMapping {

@@ -235,25 +235,6 @@ impl EthereumMapper {
             return Some(tx);
         }
 
-        // Check for smart contract call
-        // if transaction.to.is_some() && transaction.input.len() > 2 && Self::has_smart_contract_indicators(transaction, transaction_reciept) {
-        //     let transaction = primitives::Transaction::new(
-        //         transaction.hash.clone(),
-        //         chain.as_asset_id(),
-        //         from,
-        //         to,
-        //         None,
-        //         TransactionType::SmartContractCall,
-        //         state,
-        //         fee.to_string(),
-        //         chain.as_asset_id(),
-        //         value,
-        //         None,
-        //         None,
-        //         created_at,
-        //     );
-        //     return Some(transaction);
-        // }
         None
     }
 
@@ -264,14 +245,6 @@ impl EthereumMapper {
         Some(data_cost)
     }
 
-    #[allow(unused)]
-    fn has_smart_contract_indicators(transaction: &Transaction, transaction_reciept: &TransactionReciept) -> bool {
-        // 1. Gas limit > 21,000 (simple transfers use exactly 21,000)
-        // 2. Receipt has logs (contract execution emits events)
-        let has_logs = !transaction_reciept.logs.is_empty();
-
-        transaction.gas > TRANSFER_GAS_LIMIT && has_logs
-    }
 }
 
 #[cfg(test)]
@@ -295,18 +268,6 @@ mod tests {
         // assert_eq!(transaction.hash, "0x876707912c2d625723aa14bf268d83ede36c2657c70da500628e40e6b51577c9");
         // assert_eq!(transaction.from, "0x39ab5f6f1269590225EdAF9ad4c5967B09243747");
         // assert_eq!(transaction.to, "0xB907Dcc926b5991A149d04Cb7C0a4a25dC2D8f9a");
-    }
-
-    #[test]
-    fn test_has_smart_contract_indicators() {
-        let contract_call_tx_json: serde_json::Value = serde_json::from_str(include_str!("../../testdata/contract_call_tx.json")).unwrap();
-        let contract_call_tx: Transaction = serde_json::from_value::<JsonRpcResult<Transaction>>(contract_call_tx_json).unwrap().result;
-
-        let contract_call_receipt_json: serde_json::Value = serde_json::from_str(include_str!("../../testdata/contract_call_tx_receipt.json")).unwrap();
-        let contract_call_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(contract_call_receipt_json).unwrap().result;
-
-        assert!(EthereumMapper::has_smart_contract_indicators(&contract_call_tx, &contract_call_receipt));
-        assert_eq!(contract_call_tx.gas, 400000);
     }
 
     #[test]

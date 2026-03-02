@@ -23,24 +23,6 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-#[allow(unused)]
-#[derive(Debug, Clone)]
-pub enum CheckApprovalType {
-    ERC20 {
-        owner: String,
-        token: String,
-        spender: String,
-        amount: U256,
-    },
-    Permit2 {
-        permit2_contract: String,
-        owner: String,
-        token: String,
-        spender: String,
-        amount: U256,
-    },
-}
-
 pub async fn check_approval_erc20_with_client<C>(owner: String, token: String, spender: String, amount: U256, client: &JsonRpcClient<C>) -> Result<ApprovalType, SwapperError>
 where
     C: Client + Clone + std::fmt::Debug + Send + Sync + 'static,
@@ -131,33 +113,6 @@ where
     Ok(ApprovalType::None)
 }
 
-pub async fn check_approval_permit2(
-    permit2_contract: &str,
-    owner: String,
-    token: String,
-    spender: String,
-    amount: U256,
-    provider: Arc<dyn RpcProvider>,
-    chain: &Chain,
-) -> Result<ApprovalType, SwapperError> {
-    let client = create_client_with_chain(provider.clone(), *chain);
-    check_approval_permit2_with_client(permit2_contract, owner, token, spender, amount, &client).await
-}
-
-#[allow(unused)]
-pub async fn check_approval(check_type: CheckApprovalType, provider: Arc<dyn RpcProvider>, chain: &Chain) -> Result<ApprovalType, SwapperError> {
-    match check_type {
-        CheckApprovalType::ERC20 { owner, token, spender, amount } => check_approval_erc20(owner, token, spender, amount, provider, chain).await,
-        CheckApprovalType::Permit2 {
-            permit2_contract,
-            owner,
-            token,
-            spender,
-            amount,
-        } => check_approval_permit2(&permit2_contract, owner, token, spender, amount, provider, chain).await,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -166,11 +121,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_approval_tx_spender_is_permit2() -> Result<(), SwapperError> {
-        // Replicate https://optimistic.etherscan.io/tx/0x6aaa37e0ffdfcf0a0a45236cd39eb25fa9f3787133b583feeacc5d633f3e92f1
-        // Make sure use checksum addresses
-        let token = "0xdC6fF44d5d932Cbd77B52E5612Ba0529DC6226F1".to_string(); // WLD
+        let token = "0xdC6fF44d5d932Cbd77B52E5612Ba0529DC6226F1".to_string();
         let owner = "0x1085c5f70F7F7591D97da281A64688385455c2bD".to_string();
-        let spender = "0xCb1355ff08Ab38bBCE60111F1bb2B784bE25D7e8".to_string(); // Router
+        let spender = "0xCb1355ff08Ab38bBCE60111F1bb2B784bE25D7e8".to_string();
         let permit2_contract = "0x000000000022D473030F116dDEE9F6B43aC78BA3".to_string();
         let amount = U256::from(1000000000000000000u64);
         let chain: Chain = Chain::Optimism;
@@ -193,30 +146,12 @@ mod tests {
         };
         let provider = Arc::new(mock);
 
-        let erc20_check = CheckApprovalType::ERC20 {
-            owner: owner.clone(),
-            token: token.clone(),
-            spender: permit2_contract.clone(),
-            amount,
-        };
-        let permit2_check = CheckApprovalType::Permit2 {
-            permit2_contract: permit2_contract.clone(),
-            owner: owner.clone(),
-            token: token.clone(),
-            spender: spender.clone(),
-            amount,
-        };
-
-        let approvals = futures::future::join_all(vec![
-            check_approval(erc20_check, provider.clone(), &chain),
-            check_approval(permit2_check, provider.clone(), &chain),
-        ])
-        .await;
-
-        let result: Vec<ApprovalType> = approvals.into_iter().flatten().collect();
+        let erc20_result = check_approval_erc20(owner.clone(), token.clone(), permit2_contract.clone(), amount, provider.clone(), &chain).await?;
+        let client = create_client_with_chain(provider.clone(), chain);
+        let permit2_result = check_approval_permit2_with_client(&permit2_contract, owner.clone(), token.clone(), spender.clone(), amount, &client).await?;
 
         assert_eq!(
-            result,
+            vec![erc20_result, permit2_result],
             vec![
                 ApprovalType::Approve(ApprovalData {
                     token: token.clone(),

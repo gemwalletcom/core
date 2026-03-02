@@ -1,6 +1,5 @@
 pub mod client;
 pub mod config;
-pub mod error;
 pub mod factory;
 pub mod image_fetcher;
 pub mod provider;

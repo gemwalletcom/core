@@ -25,10 +25,6 @@ pub fn map_balance_tokens(balance_data: Vec<String>, token_ids: Vec<String>, cha
         .collect::<Result<Vec<_>, Box<dyn Error + Send + Sync>>>()
 }
 
-pub fn map_balance_staking(_staking_data: String) -> Option<AssetBalance> {
-    unimplemented!("map_balance_staking")
-}
-
 pub fn map_assets_balances(balances: Vec<(String, BigUint)>, chain: Chain) -> Vec<AssetBalance> {
     balances
         .into_iter()

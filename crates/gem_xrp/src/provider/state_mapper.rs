@@ -3,9 +3,7 @@ use primitives::NodeSyncStatus;
 use std::error::Error;
 
 pub fn map_node_status(ledger_info: &LedgerCurrent) -> Result<NodeSyncStatus, Box<dyn Error + Sync + Send>> {
-    let current_block = Some(ledger_info.ledger_current_index as u64);
-    let latest_block_number = Some(ledger_info.ledger_current_index as u64);
-    Ok(NodeSyncStatus::new(true, latest_block_number, current_block))
+    Ok(NodeSyncStatus::synced(ledger_info.ledger_current_index as u64))
 }
 
 #[cfg(test)]

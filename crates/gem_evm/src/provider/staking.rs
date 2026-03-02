@@ -139,10 +139,12 @@ mod chain_integration_tests {
                 delegation.validator_id, delegation.balance, delegation.state
             );
             assert_eq!(delegation.asset_id.chain, Chain::Ethereum);
-            assert!(matches!(
-                delegation.state,
-                DelegationState::Active | DelegationState::Activating | DelegationState::Deactivating | DelegationState::AwaitingWithdrawal
-            ));
+            assert!(
+                delegation.state == DelegationState::Active
+                    || delegation.state == DelegationState::Activating
+                    || delegation.state == DelegationState::Deactivating
+                    || delegation.state == DelegationState::AwaitingWithdrawal
+            );
             // Balance should be a valid positive number
             assert!(delegation.balance >= BigUint::from(0u32));
         }

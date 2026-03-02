@@ -3,9 +3,7 @@ use primitives::NodeSyncStatus;
 use std::error::Error;
 
 pub fn map_node_status(chainhead: &Chainhead) -> Result<NodeSyncStatus, Box<dyn Error + Sync + Send>> {
-    let current_block = Some(chainhead.last.seqno);
-    let latest_block_number = Some(chainhead.last.seqno);
-    Ok(NodeSyncStatus::new(true, latest_block_number, current_block))
+    Ok(NodeSyncStatus::synced(chainhead.last.seqno))
 }
 
 #[cfg(test)]

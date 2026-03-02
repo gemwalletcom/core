@@ -7142,7 +7142,6 @@ dependencies = [
  "gem_solana",
  "gem_sui",
  "gem_ton",
- "gem_tron",
  "hex",
  "num-bigint",
  "num-integer",

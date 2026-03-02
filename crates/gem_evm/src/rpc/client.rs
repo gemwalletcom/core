@@ -112,16 +112,7 @@ impl<C: Client + Clone> EthereumClient<C> {
             .iter()
             .map(|block| ("eth_getBlockByNumber".to_string(), json!([block, include_transactions])))
             .collect();
-
-        let results = self.client.batch_call::<BlockTransactionsIds>(calls).await?;
-        let mut blocks_result = Vec::new();
-        for result in results {
-            match result {
-                JsonRpcResult::Value(value) => blocks_result.push(value.result),
-                JsonRpcResult::Error(error) => return Err(error.error),
-            }
-        }
-        Ok(blocks_result)
+        self.client.batch_call::<BlockTransactionsIds>(calls).await?.take_all()
     }
 
     pub async fn get_transactions(&self, hashes: &[String]) -> Result<Vec<(BlockTransactionsIds, Transaction, TransactionReciept, TransactionReplayTrace)>, JsonRpcError> {
@@ -142,16 +133,7 @@ impl<C: Client + Clone> EthereumClient<C> {
 
     pub async fn get_transactions_by_hash(&self, hashes: &[String]) -> Result<Vec<Transaction>, JsonRpcError> {
         let calls: Vec<(String, serde_json::Value)> = hashes.iter().map(|hash| ("eth_getTransactionByHash".to_string(), json!([hash]))).collect();
-
-        let results = self.client.batch_call::<Transaction>(calls).await?;
-        let mut transactions = Vec::new();
-        for result in results {
-            match result {
-                JsonRpcResult::Value(value) => transactions.push(value.result),
-                JsonRpcResult::Error(error) => return Err(error.error),
-            }
-        }
-        Ok(transactions)
+        self.client.batch_call::<Transaction>(calls).await?.take_all()
     }
 
     pub async fn get_transactions_receipts(&self, hashes: &[String]) -> Result<Vec<TransactionReciept>, JsonRpcError> {

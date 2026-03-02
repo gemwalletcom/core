@@ -17,9 +17,7 @@ pub fn calculate_fee_rates(chain: CosmosChain, base_fee: BigInt) -> Vec<FeeRate>
 }
 
 pub fn map_node_status(latest_block: u64) -> Result<NodeSyncStatus, Box<dyn Error + Sync + Send>> {
-    let current_block = Some(latest_block);
-    let latest_block_number = Some(latest_block);
-    Ok(NodeSyncStatus::new(true, latest_block_number, current_block))
+    Ok(NodeSyncStatus::synced(latest_block))
 }
 
 #[cfg(test)]
