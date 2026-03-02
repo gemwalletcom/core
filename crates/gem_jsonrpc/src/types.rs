@@ -217,8 +217,14 @@ mod tests {
     #[test]
     fn test_take_all_success() {
         let results: JsonRpcResults<Block> = vec![
-            JsonRpcResult::Value(JsonRpcResponse { id: Some(1), result: Block { number: "0x10".into() } }),
-            JsonRpcResult::Value(JsonRpcResponse { id: Some(2), result: Block { number: "0x20".into() } }),
+            JsonRpcResult::Value(JsonRpcResponse {
+                id: Some(1),
+                result: Block { number: "0x10".into() },
+            }),
+            JsonRpcResult::Value(JsonRpcResponse {
+                id: Some(2),
+                result: Block { number: "0x20".into() },
+            }),
         ]
         .into();
 
@@ -231,10 +237,16 @@ mod tests {
     #[test]
     fn test_take_all_error_includes_index() {
         let results: JsonRpcResults<Block> = vec![
-            JsonRpcResult::Value(JsonRpcResponse { id: Some(1), result: Block { number: "0x10".into() } }),
+            JsonRpcResult::Value(JsonRpcResponse {
+                id: Some(1),
+                result: Block { number: "0x10".into() },
+            }),
             JsonRpcResult::Error(JsonRpcErrorResponse {
                 id: Some(2),
-                error: JsonRpcError { code: ERROR_INVALID_REQUEST, message: "Invalid".into() },
+                error: JsonRpcError {
+                    code: ERROR_INVALID_REQUEST,
+                    message: "Invalid".into(),
+                },
             }),
         ]
         .into();
