@@ -141,8 +141,9 @@ impl<C: Client + Clone> EthereumClient<C> {
             ),
         ];
 
+        let call_count = calls.len();
         let results: Vec<String> = self.client.batch_call::<String>(calls).await?.extract();
-        if results.len() < 2 {
+        if results.len() < call_count {
             return Err("Expected 2 RPC responses for staking state".into());
         }
 
