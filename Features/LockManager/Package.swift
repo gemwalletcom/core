@@ -14,7 +14,6 @@ let package = Package(
             targets: ["LockManager"]),
     ],
     dependencies: [
-        .package(name: "Primitives", path: "../../Packages/Primitives"),
         .package(name: "Style", path: "../../Packages/Style"),
         .package(name: "Components", path: "../../Packages/Components"),
         .package(name: "Localization", path: "../../Packages/Localization"),
@@ -24,7 +23,6 @@ let package = Package(
         .target(
             name: "LockManager",
             dependencies: [
-                "Primitives",
                 "Style",
                 "Components",
                 "Localization",

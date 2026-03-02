@@ -21,7 +21,6 @@ let package = Package(
         .package(name: "WalletCore", path: "../WalletCore"),
         .package(name: "Gemstone", path: "../Gemstone"),
         .package(name: "GemstonePrimitives", path: "../GemstonePrimitives"),
-        .package(name: "Keychain", path: "../Keychain"),
     ],
     targets: [
         .target(
@@ -49,7 +48,6 @@ let package = Package(
                 "Signer",
                 .product(name: "PrimitivesTestKit", package: "Primitives"),
                 .product(name: "KeystoreTestKit", package: "Keystore"),
-                .product(name: "KeychainTestKit", package: "Keychain"),
             ]
         ),
     ]
