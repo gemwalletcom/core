@@ -108,19 +108,17 @@ impl<T> JsonRpcResult<T> {
 pub struct JsonRpcResults<T>(pub Vec<JsonRpcResult<T>>);
 
 impl<T> JsonRpcResults<T> {
-    pub fn extract(self) -> Vec<T> {
-        let mut extracted = Vec::new();
-        for (i, result) in self.0.into_iter().enumerate() {
-            match result {
-                JsonRpcResult::Value(response) => {
-                    extracted.push(response.result);
-                }
-                JsonRpcResult::Error(error) => {
-                    eprintln!("Batch call error for request {}: {:?}", i, error);
-                }
-            }
-        }
-        extracted
+    pub fn take_all(self) -> Result<Vec<T>, JsonRpcError> {
+        self.0
+            .into_iter()
+            .enumerate()
+            .map(|(i, r)| {
+                r.take().map_err(|e| JsonRpcError {
+                    code: e.code,
+                    message: format!("batch request [{}]: {}", i, e.message),
+                })
+            })
+            .collect()
     }
 }
 
@@ -214,5 +212,35 @@ mod tests {
         let results: Vec<JsonRpcResult<Block>> = serde_json::from_str(json).unwrap();
         assert!(matches!(&results[0], JsonRpcResult::Value(_)));
         assert!(matches!(&results[1], JsonRpcResult::Error(_)));
+    }
+
+    #[test]
+    fn test_take_all_success() {
+        let results: JsonRpcResults<Block> = vec![
+            JsonRpcResult::Value(JsonRpcResponse { id: Some(1), result: Block { number: "0x10".into() } }),
+            JsonRpcResult::Value(JsonRpcResponse { id: Some(2), result: Block { number: "0x20".into() } }),
+        ]
+        .into();
+
+        let values = results.take_all().unwrap();
+        assert_eq!(values.len(), 2);
+        assert_eq!(values[0].number, "0x10");
+        assert_eq!(values[1].number, "0x20");
+    }
+
+    #[test]
+    fn test_take_all_error_includes_index() {
+        let results: JsonRpcResults<Block> = vec![
+            JsonRpcResult::Value(JsonRpcResponse { id: Some(1), result: Block { number: "0x10".into() } }),
+            JsonRpcResult::Error(JsonRpcErrorResponse {
+                id: Some(2),
+                error: JsonRpcError { code: ERROR_INVALID_REQUEST, message: "Invalid".into() },
+            }),
+        ]
+        .into();
+
+        let err = results.take_all().unwrap_err();
+        assert_eq!(err.code, ERROR_INVALID_REQUEST);
+        assert_eq!(err.message, "batch request [1]: Invalid");
     }
 }

@@ -258,9 +258,7 @@ impl<C: Client + Clone> SolanaClient<C> {
             .iter()
             .map(|mint| ("getTokenAccountsByOwner".to_string(), token_accounts_by_mint_params(address, mint)))
             .collect();
-
-        let results = self.get_client().batch_call(calls).await?.extract();
-        Ok(results)
+        Ok(self.get_client().batch_call(calls).await?.take_all()?)
     }
 }
 

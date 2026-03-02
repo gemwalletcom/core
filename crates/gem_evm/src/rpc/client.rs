@@ -156,7 +156,7 @@ impl<C: Client + Clone> EthereumClient<C> {
 
     pub async fn get_transactions_receipts(&self, hashes: &[String]) -> Result<Vec<TransactionReciept>, JsonRpcError> {
         let calls: Vec<(String, serde_json::Value)> = hashes.iter().map(|hash| ("eth_getTransactionReceipt".to_string(), json!([hash]))).collect();
-        Ok(self.client.batch_call::<TransactionReciept>(calls).await?.extract())
+        self.client.batch_call::<TransactionReciept>(calls).await?.take_all()
     }
 
     pub async fn get_transaction_receipt(&self, hash: &str) -> Result<TransactionReciept, JsonRpcError> {
@@ -174,7 +174,7 @@ impl<C: Client + Clone> EthereumClient<C> {
             .iter()
             .map(|hash| ("trace_replayTransaction".to_string(), json!([hash, json!(["stateDiff"])])))
             .collect();
-        Ok(self.client.batch_call::<TransactionReplayTrace>(calls).await?.extract())
+        self.client.batch_call::<TransactionReplayTrace>(calls).await?.take_all()
     }
 
     pub async fn get_eth_balance(&self, address: &str) -> Result<String, JsonRpcError> {
@@ -218,7 +218,7 @@ impl<C: Client + Clone> EthereumClient<C> {
             .iter()
             .map(|selector| ("eth_call".to_string(), json!([{"to": contract_address, "data": selector}, "latest"])))
             .collect();
-        let results = self.client.batch_call::<String>(calls).await?.extract();
+        let results = self.client.batch_call::<String>(calls).await?.take_all()?;
         results.try_into().map_err(|_| "Array conversion failed".into())
     }
 
@@ -230,7 +230,7 @@ impl<C: Client + Clone> EthereumClient<C> {
     pub async fn batch_token_balance_calls(&self, address: &str, contracts: &[String]) -> Result<Vec<String>, Box<dyn std::error::Error + Sync + Send>> {
         let data = format!("0x70a08231000000000000000000000000{:0>40}", address.strip_prefix("0x").unwrap_or(address));
         let calls: Vec<(String, serde_json::Value)> = contracts.iter().map(|x| ("eth_call".to_string(), json!([{"to": x, "data": &data}, "latest"]))).collect();
-        Ok(self.client.batch_call::<String>(calls).await?.extract())
+        Ok(self.client.batch_call::<String>(calls).await?.take_all()?)
     }
 
     pub async fn get_logs(&self, address: &str, topics: &[Option<String>], from_block: &str, to_block: &str) -> Result<Vec<Log>, JsonRpcError> {
