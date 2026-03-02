@@ -142,6 +142,9 @@ impl<C: Client + Clone> EthereumClient<C> {
         ];
 
         let results: Vec<String> = self.client.batch_call::<String>(calls).await?.extract();
+        if results.len() < 2 {
+            return Err("Expected 2 RPC responses for staking state".into());
+        }
 
         let delegations_data = hex::decode(&results[0])?;
         let delegations = decode_delegations_return(&delegations_data)?;
