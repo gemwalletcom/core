@@ -70,7 +70,7 @@ public struct TransferAmountCalculator {
             return TransferAmount(value: input.assetBalance.available, networkFee: input.fee, useMaxAmount: true)
         }
         if input.asset.type == .native && input.asset.chain.minimumAccountBalance > 0 &&
-            (input.availableValue - input.value - input.fee).isBetween(1, and: input.asset.chain.minimumAccountBalance)
+            (input.availableValue - input.value - input.fee).isBetween(-BigInt.MAX_256, and: input.asset.chain.minimumAccountBalance)
         {
             throw TransferAmountCalculatorError.minimumAccountBalanceTooLow(input.asset, required: input.asset.chain.minimumAccountBalance)
         }

@@ -283,6 +283,20 @@ struct TransferAmountCalculatorTests {
             ))
         }
 
+        #expect(throws: TransferAmountCalculatorError.minimumAccountBalanceTooLow(asset1, required: BigInt(890880))) {
+            try service.calculate(input: TransferAmountInput(
+                asset: asset1,
+                assetBalance: Balance(available: BigInt(1_000_000)),
+                value: BigInt(900_000),
+                availableValue: BigInt(1_000_000),
+                assetFee: asset1.feeAsset,
+                assetFeeBalance: Balance(available: BigInt(1_000_000)),
+                fee: BigInt(200_000),
+                canChangeValue: true,
+                ignoreValueCheck: false
+            ))
+        }
+
         let asset2 = Asset(.bitcoin)
 
         #expect(throws: Never.self) {
