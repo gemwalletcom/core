@@ -102,7 +102,6 @@ pub struct SwapImpact {
 #[serde(rename_all = "camelCase")]
 pub struct CurrencyAmount {
     pub amount: String,
-    pub minimum_amount: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
