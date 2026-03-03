@@ -6,10 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::error::Error;
 
 use crate::client::NameClient;
-use crate::error::NameError;
 use primitives::{Chain, NameProvider};
-
-const MAX_NAME_LENGTH: usize = 20;
 
 pub struct InjectiveNameClient {
     url: String,
@@ -59,11 +56,6 @@ impl NameClient for InjectiveNameClient {
     }
 
     async fn resolve(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let name_part = name.split('.').next().unwrap_or(name);
-        if name_part.len() > MAX_NAME_LENGTH {
-            return Err(Box::new(NameError::new(format!("name '{}' exceeds maximum length of {}", name_part, MAX_NAME_LENGTH))));
-        }
-
         let hash = namehash(name);
         let resolve = ResolverAddress {
             address: ResolverNode { node: hash.to_vec() },
@@ -86,18 +78,4 @@ impl NameClient for InjectiveNameClient {
     fn chains(&self) -> Vec<Chain> {
         vec![Chain::Injective]
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_resolve_rejects_long_name() {
-        let client = InjectiveNameClient::new("https://localhost".to_string());
-        let result = client.resolve("inj1kly3z4r8pzgfhh9cx5x69xjw0j4evlepq6ccgw.inj", Chain::Injective).await;
-        assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("exceeds maximum length"));
-    }
-
 }

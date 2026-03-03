@@ -36,6 +36,8 @@ where
     }
 }
 
+const MAX_NAME_LENGTH: usize = 20;
+
 pub struct Client {
     providers: Vec<Box<dyn NameClient + Send + Sync>>,
 }
@@ -46,6 +48,11 @@ impl Client {
     }
 
     pub async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error + Send + Sync>> {
+        let name_part = name.split('.').next().unwrap_or(name);
+        if name_part.len() > MAX_NAME_LENGTH {
+            return Err(NameError::new(format!("name '{}' exceeds maximum length of {}", name_part, MAX_NAME_LENGTH)).into());
+        }
+
         let provider = self.matched_provider(name, chain)?;
         let address = provider.resolve(name, chain).await?;
 
@@ -123,6 +130,20 @@ mod tests {
 
         assert_eq!(record.provider, NameProvider::Basenames);
         assert_eq!(record.address, "0x0000000000000000000000000000000000000002");
+    }
+
+    #[tokio::test]
+    async fn test_resolve_rejects_long_name() {
+        let client = Client::new(vec![Box::new(TestProvider::new(
+            NameProvider::Injective,
+            vec!["inj"],
+            vec![Chain::Injective],
+            Ok("inj14apqz6u2nprsly3j0mqa6jwpxnmnphq3pp0q9g"),
+        ))]);
+
+        let result = client.resolve("inj1kly3z4r8pzgfhh9cx5x69xjw0j4evlepq6ccgw.inj", Chain::Injective).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().to_string().contains("exceeds maximum length"));
     }
 
     #[tokio::test]
