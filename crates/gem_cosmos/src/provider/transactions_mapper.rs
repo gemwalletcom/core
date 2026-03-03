@@ -23,15 +23,15 @@ pub fn map_transaction_broadcast(response: &BroadcastResponse) -> Result<String,
     }
 }
 
-pub fn map_transaction_decode(body: String) -> Option<String> {
-    let bytes = general_purpose::STANDARD.decode(body.clone()).ok()?;
+pub fn map_transaction_decode(body: &str) -> Option<String> {
+    let bytes = general_purpose::STANDARD.decode(body).ok()?;
     let decoded_str = String::from_utf8_lossy(&bytes);
     let has_supported_type = crate::constants::SUPPORTED_MESSAGES.iter().any(|msg_type| decoded_str.contains(msg_type));
-    if has_supported_type { Some(get_hash(bytes)) } else { None }
+    if has_supported_type { Some(get_hash(&bytes)) } else { None }
 }
 
-pub fn get_hash(bytes: Vec<u8>) -> String {
-    hex::encode(sha256(&bytes)).to_uppercase()
+pub fn get_hash(bytes: &[u8]) -> String {
+    hex::encode(sha256(bytes)).to_uppercase()
 }
 
 pub fn map_transactions(chain: CosmosChain, transactions: Vec<TransactionResponse>) -> Vec<primitives::Transaction> {
@@ -45,11 +45,30 @@ pub fn map_transactions(chain: CosmosChain, transactions: Vec<TransactionRespons
         .collect()
 }
 
-pub fn map_transaction(chain: CosmosChain, body: TransactionBody, auth_info: Option<AuthInfo>, transaction: TransactionResponse) -> Option<Transaction> {
+fn asset_id_from_denom(chain: primitives::Chain, denom: &str, default_denom: &str) -> AssetId {
+    if denom == default_denom {
+        chain.as_asset_id()
+    } else {
+        AssetId::token(chain, denom)
+    }
+}
+
+pub fn map_transaction(cosmos_chain: CosmosChain, body: TransactionBody, auth_info: Option<AuthInfo>, transaction: TransactionResponse) -> Option<Transaction> {
     let hash = transaction.tx_response.txhash.clone();
-    let default_denom = chain.as_chain().as_denom()?.to_string();
-    let fee = auth_info?.fee.amount.into_iter().filter(|x| x.denom == default_denom).collect::<Vec<_>>();
-    let fee = fee.first().map(|f| f.amount.clone()).unwrap_or_else(|| get_base_fee(chain).to_string());
+    let chain = cosmos_chain.as_chain();
+    let default_denom = chain.as_denom()?.to_string();
+    let native_asset_id = chain.as_asset_id();
+
+    let fee_coin = auth_info.and_then(|info| info.fee.amount.into_iter().next());
+    let fee = fee_coin
+        .as_ref()
+        .map(|f| f.amount.clone())
+        .unwrap_or_else(|| get_base_fee(cosmos_chain).to_string());
+    let fee_asset_id = fee_coin
+        .as_ref()
+        .map(|coin| asset_id_from_denom(chain, &coin.denom, &default_denom))
+        .unwrap_or_else(|| native_asset_id.clone());
+
     let memo = if body.memo.is_empty() { None } else { Some(body.memo.clone()) };
 
     let state = if transaction.tx_response.code == 0 {
@@ -59,75 +78,72 @@ pub fn map_transaction(chain: CosmosChain, body: TransactionBody, auth_info: Opt
     };
     let created_at = DateTime::parse_from_rfc3339(&transaction.tx_response.timestamp).ok()?.into();
 
-    if body.messages.len() > 1 {
+    if body.messages.len() != 1 {
         return None;
     }
 
-    for message in body.messages {
-        let asset_id: AssetId;
-        let transaction_type: TransactionType;
-        let value: String;
-        let from_address: String;
-        let to_address: String;
-        match message {
-            Message::MsgSend(message) => {
-                asset_id = chain.as_chain().as_asset_id();
-                transaction_type = TransactionType::Transfer;
-                value = message.amount.first()?.amount.clone();
-                from_address = message.from_address;
-                to_address = message.to_address;
-            }
-            Message::MsgDelegate(message) => {
-                asset_id = chain.as_chain().as_asset_id();
-                transaction_type = TransactionType::StakeDelegate;
-                value = message.amount?.amount.clone();
-                from_address = message.delegator_address;
-                to_address = message.validator_address;
-            }
-            Message::MsgUndelegate(message) => {
-                asset_id = chain.as_chain().as_asset_id();
-                transaction_type = TransactionType::StakeUndelegate;
-                value = message.amount?.amount.clone();
-                from_address = message.delegator_address;
-                to_address = message.validator_address;
-            }
-            Message::MsgBeginRedelegate(message) => {
-                asset_id = chain.as_chain().as_asset_id();
-                transaction_type = TransactionType::StakeRedelegate;
-                value = message.amount?.amount.clone();
-                from_address = message.delegator_address;
-                to_address = message.validator_dst_address;
-            }
-            Message::MsgWithdrawDelegatorReward(message) => {
-                asset_id = chain.as_chain().as_asset_id();
-                value = transaction.get_rewards_value(&default_denom)?.to_string();
-                transaction_type = TransactionType::StakeRewards;
-                from_address = message.delegator_address;
-                to_address = message.validator_address;
-            }
-            _ => {
-                continue;
-            }
-        }
+    let message = body.messages.into_iter().next()?;
+    let asset_id: AssetId;
+    let transaction_type: TransactionType;
+    let value: String;
+    let from_address: String;
+    let to_address: String;
 
-        let transaction = Transaction::new(
-            hash,
-            asset_id.clone(),
-            from_address,
-            to_address,
-            None,
-            transaction_type,
-            state,
-            fee,
-            asset_id.clone(),
-            value,
-            memo,
-            None,
-            created_at,
-        );
-        return Some(transaction);
+    match message {
+        Message::MsgSend(message) => {
+            let coin = message.amount.first()?;
+            asset_id = asset_id_from_denom(chain, &coin.denom, &default_denom);
+            transaction_type = TransactionType::Transfer;
+            value = coin.amount.clone();
+            from_address = message.from_address;
+            to_address = message.to_address;
+        }
+        Message::MsgDelegate(message) => {
+            asset_id = native_asset_id.clone();
+            transaction_type = TransactionType::StakeDelegate;
+            value = message.amount?.amount.clone();
+            from_address = message.delegator_address;
+            to_address = message.validator_address;
+        }
+        Message::MsgUndelegate(message) => {
+            asset_id = native_asset_id.clone();
+            transaction_type = TransactionType::StakeUndelegate;
+            value = message.amount?.amount.clone();
+            from_address = message.delegator_address;
+            to_address = message.validator_address;
+        }
+        Message::MsgBeginRedelegate(message) => {
+            asset_id = native_asset_id.clone();
+            transaction_type = TransactionType::StakeRedelegate;
+            value = message.amount?.amount.clone();
+            from_address = message.delegator_address;
+            to_address = message.validator_dst_address;
+        }
+        Message::MsgWithdrawDelegatorReward(message) => {
+            asset_id = native_asset_id.clone();
+            value = transaction.get_rewards_value(&default_denom)?.to_string();
+            transaction_type = TransactionType::StakeRewards;
+            from_address = message.delegator_address;
+            to_address = message.validator_address;
+        }
+        _ => return None,
     }
-    None
+
+    Some(Transaction::new(
+        hash,
+        asset_id,
+        from_address,
+        to_address,
+        None,
+        transaction_type,
+        state,
+        fee,
+        fee_asset_id,
+        value,
+        memo,
+        None,
+        created_at,
+    ))
 }
 
 pub fn map_validators(validators: Vec<Validator>) -> Vec<StakeValidator> {
@@ -195,6 +211,31 @@ mod tests {
                 Some("6439432658467882".to_string()),
                 None,
                 DateTime::parse_from_rfc3339("2025-06-20T04:09:19Z").unwrap().into(),
+            )
+        );
+    }
+
+    #[test]
+    fn test_transfer_ibc() {
+        let result: TransactionResponse = serde_json::from_str(include_str!("../../testdata/transfer_ibc.json")).unwrap();
+        let transaction = map_transactions(CosmosChain::Cosmos, vec![result]).first().unwrap().clone();
+
+        assert_eq!(
+            transaction,
+            Transaction::new(
+                "90BBC25C199B58E6A4C9A2A3448C64E853B4E8DF3E88B1F6E35DE9FBF20400F6".to_string(),
+                AssetId::token(Chain::Cosmos, "ibc/915992C8486D299941292A913640167F0BA02DC2F599BFFED0732CE932C2FCC4"),
+                "cosmos1dej28rxfh39axghzlcusd98qhpkdarcqqu23ua".to_string(),
+                "cosmos1n3wq399w3s6reslvngve5quw85xusf7la5cpfs".to_string(),
+                None,
+                TransactionType::Transfer,
+                TransactionState::Confirmed,
+                "689".to_string(),
+                Chain::Cosmos.as_asset_id(),
+                "20000000000".to_string(),
+                None,
+                None,
+                DateTime::parse_from_rfc3339("2026-03-03T17:24:03Z").unwrap().into(),
             )
         );
     }
@@ -277,7 +318,7 @@ mod tests {
     #[test]
     fn test_decode_supported_transaction() {
         let payload = "CtQBCo8BChwvY29zbW9zLmJhbmsudjFiZXRhMS5Nc2dTZW5kEm8KLWNvc21vczF6ODM1Y2p4Zno3MzU5NXd1bnF0bjNmbHg2dGdscnN5MDV5NjczdxItY29zbW9zMXo4MzVjanhmejczNTk1d3VucXRuM2ZseDZ0Z2xyc3kwNXk2NzN3Gg8KBXVhdG9tEgYxMDAwMDASQGFlY2IyY2UwZDU1YTg0NTVhNzc2YTMzOWU2ODY1MDE2NmE2YWE0NTVjMDVlZmRkZjQ5ZTAxMWI0MjAzYTI1YTASZwpRCkYKHy9jb3Ntb3MuY3J5cHRvLnNlY3AyNTZrMS5QdWJLZXkSIwohAjhf6Rbk8v7+0NCc4zugr/adpy2yOQikY1pzi6L/SzH2EgQKAggBGOogEhIKDAoFdWF0b20SAzYxOBChxQcaQOl+CCMVx/uR1/yU0RvPKkUADK3LFwo+zsElulf0M34xP00FnS6/51y4FEgn/ewRJokkxy1mPwPvqmK2FBsFVdY=";
-        let result = map_transaction_decode(payload.to_string());
+        let result = map_transaction_decode(payload);
 
         assert!(result.is_some());
         assert_eq!(result.unwrap(), "F09F0730AB6C8C60FBD9252F3844184FF8D463ABE4978937AB7166149F5611FD");
@@ -286,7 +327,7 @@ mod tests {
     #[test]
     fn test_decode_unsupported_transaction() {
         let payload = "CooBCocBCiYvc2VpcHJvdG9jb2wuc2VpY2hhaW4ub3JhY2xlLk1zZ0FnZ3JlZ2F0ZUV4Y2hhbmdlUmF0ZVZvdGVdCjQuMjk2ODI3NTE5ODU5MzYzNDIxdWF0b20sMTIwNjgyLjg1MDMyNTUwOTUyMzkwOTIwMnVidGMsNDQ4NS45NDM1MTE1ODEyOTMxMDg2NDZ1ZXRoLDAuMTcxNzU3NzgyMjY4Nzc3Mzg0dW9zbW8sMC4zMDA2MDc3OTA2MDkyMzExNjF1c2VpLDAuOTk5MjM1MTc2MDUxMDgxMDI4dXVzZGMsMS4wMDA0NzA5MTg5NzYyMDM0Njd1dXNkdBIqc2VpMTRxcmN3bXpwZHN6cTBnZWhmcTYzcmFybTdweHF3eG03eGFyY3hqGjFzZWl2YWxvcGVyMTh0cGRldDIya3B2c3d4YXlla3duNTVyeTByNWFjeDRrYWF1dXBrYg==";
-        let result = map_transaction_decode(payload.to_string());
+        let result = map_transaction_decode(payload);
 
         assert!(result.is_none());
     }

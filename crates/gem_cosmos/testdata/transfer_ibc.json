@@ -1,0 +1,121 @@
+{
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/cosmos.bank.v1beta1.MsgSend",
+          "from_address": "cosmos1dej28rxfh39axghzlcusd98qhpkdarcqqu23ua",
+          "to_address": "cosmos1n3wq399w3s6reslvngve5quw85xusf7la5cpfs",
+          "amount": [
+            {
+              "denom": "ibc/915992C8486D299941292A913640167F0BA02DC2F599BFFED0732CE932C2FCC4",
+              "amount": "20000000000"
+            }
+          ]
+        }
+      ],
+      "memo": "",
+      "timeout_height": "0",
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "AuS4hp70wrJ+NGtUf1/RT9qfD//J2FBo5My46SB9lNAD"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "37754"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "uatom",
+            "amount": "689"
+          }
+        ],
+        "gas_limit": "137732",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "e+zuKkXx/jW/UFLv2KV9zUrg/ayPcnmR+W8y4Z9nA8MX1pUklWqtu0hBWmjSjpXG6Dr3Cis0CTwERo7idIa00g=="
+    ]
+  },
+  "tx_response": {
+    "height": "30033798",
+    "txhash": "90BBC25C199B58E6A4C9A2A3448C64E853B4E8DF3E88B1F6E35DE9FBF20400F6",
+    "codespace": "",
+    "code": 0,
+    "data": "12260A242F636F736D6F732E62616E6B2E763162657461312E4D736753656E64526573706F6E7365",
+    "raw_log": "",
+    "logs": [],
+    "info": "",
+    "gas_wanted": "137732",
+    "gas_used": "115692",
+    "tx": {
+      "@type": "/cosmos.tx.v1beta1.Tx",
+      "body": {
+        "messages": [
+          {
+            "@type": "/cosmos.bank.v1beta1.MsgSend",
+            "from_address": "cosmos1dej28rxfh39axghzlcusd98qhpkdarcqqu23ua",
+            "to_address": "cosmos1n3wq399w3s6reslvngve5quw85xusf7la5cpfs",
+            "amount": [
+              {
+                "denom": "ibc/915992C8486D299941292A913640167F0BA02DC2F599BFFED0732CE932C2FCC4",
+                "amount": "20000000000"
+              }
+            ]
+          }
+        ],
+        "memo": "",
+        "timeout_height": "0",
+        "extension_options": [],
+        "non_critical_extension_options": []
+      },
+      "auth_info": {
+        "signer_infos": [
+          {
+            "public_key": {
+              "@type": "/cosmos.crypto.secp256k1.PubKey",
+              "key": "AuS4hp70wrJ+NGtUf1/RT9qfD//J2FBo5My46SB9lNAD"
+            },
+            "mode_info": {
+              "single": {
+                "mode": "SIGN_MODE_DIRECT"
+              }
+            },
+            "sequence": "37754"
+          }
+        ],
+        "fee": {
+          "amount": [
+            {
+              "denom": "uatom",
+              "amount": "689"
+            }
+          ],
+          "gas_limit": "137732",
+          "payer": "",
+          "granter": ""
+        },
+        "tip": null
+      },
+      "signatures": [
+        "e+zuKkXx/jW/UFLv2KV9zUrg/ayPcnmR+W8y4Z9nA8MX1pUklWqtu0hBWmjSjpXG6Dr3Cis0CTwERo7idIa00g=="
+      ]
+    },
+    "timestamp": "2026-03-03T17:24:03Z",
+    "events": []
+  }
+}

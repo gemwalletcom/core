@@ -24,7 +24,7 @@ impl<C: Client> ChainTransactions for CosmosClient<C> {
             .clone()
             .into_iter()
             .filter(|x| x.len() < 1024)
-            .flat_map(map_transaction_decode)
+            .flat_map(|x| map_transaction_decode(&x))
             .collect::<Vec<_>>();
 
         let receipts = stream::iter(transaction_ids)
