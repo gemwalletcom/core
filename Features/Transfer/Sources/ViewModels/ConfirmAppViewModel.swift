@@ -24,7 +24,8 @@ public struct ConfirmAppViewModel: ItemModelProvidable {
                 .tokenApprove,
                 .stake,
                 .account,
-                .perpetual: .none
+                .perpetual,
+                .earn: .none
         case .generic(_, let metadata, _):
             URL(string: metadata.url)
         }
@@ -67,7 +68,8 @@ extension ConfirmAppViewModel {
                 .tokenApprove,
                 .stake,
                 .account,
-                .perpetual: .none
+                .perpetual,
+                .earn: .none
         case .generic(_, let metadata, _):
             metadata.shortName
         }
@@ -83,7 +85,8 @@ extension ConfirmAppViewModel {
                 .tokenApprove,
                 .stake,
                 .account,
-                .perpetual:
+                .perpetual,
+                .earn:
                 .none
         case let .generic(_, session, _):
             AssetImage(imageURL: session.icon.asURL)

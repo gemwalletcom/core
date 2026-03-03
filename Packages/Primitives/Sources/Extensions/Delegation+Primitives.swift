@@ -42,7 +42,8 @@ extension DelegationValidator {
             name: name,
             isActive: true,
             commission: .zero,
-            apr: .zero
+            apr: .zero,
+            providerType: .stake
         )
     }
 }

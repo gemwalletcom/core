@@ -48,7 +48,7 @@ public enum TransactionLoadMetadata: Sendable {
     case bitcoin(utxos: [UTXO])
     case zcash(utxos: [UTXO], branchId: String)
     case cardano(utxos: [UTXO])
-    case evm(nonce: UInt64, chainId: UInt64, stakeData: StakeData? = nil)
+    case evm(nonce: UInt64, chainId: UInt64, contractCall: ContractCallData? = nil)
     case near(
         sequence: UInt64,
         blockHash: String

@@ -17,7 +17,7 @@ public struct ReceiveScene: View {
             VStack {
                 Spacer()
                 VStack(spacing: .medium) {
-                    AssetImageTitleView(model: model.assetImageTitleModel)
+                    AssetPreviewView(model: model.assetModel)
 
                     Button(action: model.onCopyAddress) {
                         VStack(spacing: .medium) {

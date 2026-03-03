@@ -21,17 +21,17 @@ public typealias RecipientDataAction = ((RecipientData) -> Void)?
 @Observable
 @MainActor
 public final class RecipientSceneViewModel {
-    let wallet: Wallet
-    let asset: Asset
+    public let wallet: Wallet
+    public let asset: Asset
     let type: RecipientAssetType
 
-    let onTransferAction: TransferDataAction
+    public let onTransferAction: TransferDataAction
 
     private let walletService: WalletService
     private let onRecipientDataAction: RecipientDataAction
     private let formatter = ValueFormatter(style: .full)
 
-    var isPresentingScanner: RecipientScene.Field?
+    public var isPresentingScanner: RecipientScene.Field?
     var addressInputModel: AddressInputViewModel
     var memo: String = ""
     var amount: String = ""
@@ -72,7 +72,7 @@ public final class RecipientSceneViewModel {
     let recipientField = Localized.Transfer.Recipient.addressField
     var memoField: String { Localized.Transfer.memo }
 
-    var assetImageTitleModel: AssetImageTitleViewModel { AssetImageTitleViewModel(asset: asset) }
+    var assetModel: AssetViewModel { AssetViewModel(asset: asset) }
 
     var actionButtonTitle: String { Localized.Common.continue }
     var actionButtonState: ButtonState {
@@ -115,7 +115,7 @@ extension RecipientSceneViewModel {
         isPresentingScanner = field
     }
 
-    func onHandleScan(_ result: String, for field: RecipientScene.Field) {
+    public func onHandleScan(_ result: String, for field: RecipientScene.Field) {
         switch field {
         case .address:
             do {

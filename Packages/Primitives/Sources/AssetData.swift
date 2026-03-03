@@ -43,9 +43,11 @@ public struct AssetData: Codable, Equatable, Hashable, Sendable {
                 isSellEnabled: false,
                 isSwapEnabled: false,
                 isStakeEnabled: false,
+                isEarnEnabled: false,
                 isPinned: false,
                 isActive: true,
                 stakingApr: nil,
+                earnApr: nil,
                 rankScore: 0
             )
         )

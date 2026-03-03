@@ -16,7 +16,7 @@ protocol AmountDataProvidable {
     func shouldReserveFee(from assetData: AssetData) -> Bool
     func maxValue(from assetData: AssetData) -> BigInt
     func recipientData() -> RecipientData
-    func makeTransferData(value: BigInt) throws -> TransferData
+    func makeTransferData(value: BigInt) async throws -> TransferData
 }
 
 extension AmountDataProvidable {

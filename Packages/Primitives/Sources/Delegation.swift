@@ -42,14 +42,16 @@ public struct DelegationValidator: Codable, Equatable, Hashable, Sendable {
 	public let isActive: Bool
 	public let commission: Double
 	public let apr: Double
+	public let providerType: StakeProviderType
 
-	public init(chain: Chain, id: String, name: String, isActive: Bool, commission: Double, apr: Double) {
+	public init(chain: Chain, id: String, name: String, isActive: Bool, commission: Double, apr: Double, providerType: StakeProviderType) {
 		self.chain = chain
 		self.id = id
 		self.name = name
 		self.isActive = isActive
 		self.commission = commission
 		self.apr = apr
+		self.providerType = providerType
 	}
 }
 

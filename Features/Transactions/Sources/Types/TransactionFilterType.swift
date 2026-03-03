@@ -31,6 +31,7 @@ extension TransactionType {
         case .stakeDelegate, .stakeUndelegate, .stakeRewards, .stakeRedelegate, .stakeWithdraw, .stakeFreeze, .stakeUnfreeze: .stake
         case .assetActivation: .others
         case .perpetualOpenPosition, .perpetualClosePosition, .perpetualModifyPosition: .perpetuals
+        case .earnDeposit, .earnWithdraw: .stake
         }
     }
 }

@@ -7,26 +7,26 @@ import Primitives
 import PrimitivesComponents
 import Store
 
-struct RecipientScene: View {
-    enum Field: Int, Hashable, Identifiable {
+public struct RecipientScene: View {
+    public enum Field: Int, Hashable, Identifiable {
         case address
         case memo
-        var id: String { String(rawValue) }
+        public var id: String { String(rawValue) }
     }
 
     @FocusState private var focusedField: Field?
 
     private var model: RecipientSceneViewModel
 
-    init(model: RecipientSceneViewModel) {
+    public init(model: RecipientSceneViewModel) {
         self.model = model
     }
 
-    var body: some View {
+    public var body: some View {
         @Bindable var model = model
         List {
             Section { } header: {
-                AssetImageTitleView(model: model.assetImageTitleModel)
+                AssetPreviewView(model: model.assetModel)
                     .frame(maxWidth: .infinity)
                     .padding(.bottom, .small)
             }

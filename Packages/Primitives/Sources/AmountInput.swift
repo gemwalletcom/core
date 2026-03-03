@@ -1,5 +1,7 @@
 // Copyright (c). Gem Wallet. All rights reserved.
 
+public typealias AmountInputAction = ((AmountInput) -> Void)?
+
 public struct AmountInput {
     public let type: AmountType
     public let asset: Asset

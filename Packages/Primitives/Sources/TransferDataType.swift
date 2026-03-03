@@ -12,6 +12,7 @@ public enum TransferDataType: Hashable, Equatable, Sendable {
     case stake(Asset, StakeType)
     case account(Asset, AccountDataType)
     case perpetual(Asset, PerpetualType)
+    case earn(Asset, EarnType, ContractCallData)
     case generic(asset: Asset, metadata: WalletConnectionSessionAppMetadata, extra: TransferDataExtra)
 
     public var transactionType: TransactionType {
@@ -37,6 +38,11 @@ public enum TransferDataType: Hashable, Equatable, Sendable {
                 }
             }
         case .account: .assetActivation
+        case .earn(_, let type, _):
+            switch type {
+            case .deposit: .earnDeposit
+            case .withdraw: .earnWithdraw
+            }
         case .perpetual(_, let type):
             switch type {
             case .open, .increase: .perpetualOpenPosition
@@ -55,6 +61,7 @@ public enum TransferDataType: Hashable, Equatable, Sendable {
              .stake(let asset, _),
              .account(let asset, _),
              .perpetual(let asset, _),
+             .earn(let asset, _, _),
              .tokenApprove(let asset, _),
              .generic(let asset, _, _): asset.chain
         case .transferNft(let asset): asset.chain
@@ -89,7 +96,8 @@ public enum TransferDataType: Hashable, Equatable, Sendable {
             .deposit,
             .withdrawal,
             .tokenApprove,
-            .account:
+            .account,
+            .earn:
             return nil
         }
     }
@@ -103,7 +111,8 @@ public enum TransferDataType: Hashable, Equatable, Sendable {
              .stake(let asset, _),
              .generic(let asset, _, _),
              .account(let asset, _),
-             .perpetual(let asset, _): [asset.id]
+             .perpetual(let asset, _),
+             .earn(let asset, _, _): [asset.id]
         case .swap(let from, let to, _): [from.id, to.id]
         case .transferNft: []
         }
@@ -115,7 +124,7 @@ public enum TransferDataType: Hashable, Equatable, Sendable {
         default: .encodedTransaction
         }
     }
-    
+
     public var outputAction: TransferDataOutputAction {
         return switch self {
         case .generic(_, _, let extra): extra.outputAction
@@ -129,10 +138,17 @@ public enum TransferDataType: Hashable, Equatable, Sendable {
         }
         return (fromAsset, toAsset, data)
     }
-    
+
+    public func earn() throws -> (Asset, EarnType, data: ContractCallData) {
+        guard case .earn(let asset, let earnType, let data) = self else {
+            throw AnyError("EarnData missed")
+        }
+        return (asset, earnType, data)
+    }
+
     public var shouldIgnoreValueCheck: Bool {
         switch self {
-        case .transferNft, .stake, .account, .tokenApprove, .perpetual: true
+        case .transferNft, .stake, .account, .tokenApprove, .perpetual, .earn: true
         case .transfer, .deposit, .withdrawal, .swap, .generic: false
         }
     }

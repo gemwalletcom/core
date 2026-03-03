@@ -21,7 +21,7 @@ extension TransactionParticipantViewModel: ItemModelProvidable {
         switch transactionViewModel.transaction.transaction.type {
         case .stakeFreeze, .stakeUnfreeze: resourceItemModel
         case .transfer, .transferNFT, .tokenApproval, .smartContractCall, .stakeDelegate: participantItemModel
-        case .swap, .stakeUndelegate, .stakeRedelegate, .stakeRewards, .stakeWithdraw, .assetActivation, .perpetualOpenPosition, .perpetualClosePosition, .perpetualModifyPosition: .empty
+        case .swap, .stakeUndelegate, .stakeRedelegate, .stakeRewards, .stakeWithdraw, .assetActivation, .perpetualOpenPosition, .perpetualClosePosition, .perpetualModifyPosition, .earnDeposit, .earnWithdraw: .empty
         }
     }
 }
@@ -83,7 +83,7 @@ extension TransactionParticipantViewModel {
         case .stakeFreeze, .stakeUnfreeze:
             Localized.Stake.resource
         case .swap, .stakeUndelegate, .stakeRedelegate, .stakeRewards, .stakeWithdraw,
-                .assetActivation, .perpetualOpenPosition, .perpetualClosePosition, .perpetualModifyPosition: nil
+                .assetActivation, .perpetualOpenPosition, .perpetualClosePosition, .perpetualModifyPosition, .earnDeposit, .earnWithdraw: nil
         }
     }
 }

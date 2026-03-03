@@ -25,6 +25,8 @@ struct TransactionFilterTypeTests {
                 #expect(type.filterType == .others)
             case .perpetualOpenPosition, .perpetualClosePosition, .perpetualModifyPosition:
                 #expect(type.filterType == .perpetuals)
+            case .earnDeposit, .earnWithdraw:
+                #expect(type.filterType == .stake)
             }
         }
     }

@@ -3,6 +3,7 @@
 import Testing
 import PrimitivesTestKit
 import Primitives
+import EarnServiceTestKit
 
 @testable import Transfer
 @testable import Store
@@ -30,7 +31,7 @@ struct AmountSceneViewModelTests {
             balance: .mock(available: 2_000_000_000_000_000_000)
         )
         let model = AmountSceneViewModel.mock(
-            type: .stake(validators: [.mock()], recommendedValidator: nil),
+            type: .stake(.stake(validators: [.mock()], recommended: nil)),
             assetData: assetData
         )
 
@@ -49,7 +50,7 @@ struct AmountSceneViewModelTests {
             balance: .mock(available: 5_000_000_000_000_000_000)
         )
         let model = AmountSceneViewModel.mock(
-            type: .stake(validators: [.mock()], recommendedValidator: nil),
+            type: .stake(.stake(validators: [.mock()], recommended: nil)),
             assetData: assetData
         )
 
@@ -111,7 +112,7 @@ struct AmountSceneViewModelTests {
             balance: .mock(available: 5_000_000_000_000_000_000)
         )
         let model = AmountSceneViewModel.mock(
-            type: .stake(validators: [validator1, validator2], recommendedValidator: validator1),
+            type: .stake(.stake(validators: [validator1, validator2], recommended: validator1)),
             assetData: assetData
         )
 
@@ -139,7 +140,7 @@ struct AmountSceneViewModelTests {
         let delegation = Delegation.mock(base: .mock(state: .active, balance: "1000000"))
         let assetData = AssetData.mock(asset: .mockBNB())
         let model = AmountSceneViewModel.mock(
-            type: .stakeWithdraw(delegation: delegation),
+            type: .stake(.withdraw(delegation)),
             assetData: assetData
         )
 
@@ -158,6 +159,7 @@ extension AmountSceneViewModel {
         let model = AmountSceneViewModel(
             input: AmountInput(type: type, asset: assetData.asset),
             wallet: .mock(),
+            service: AmountService(earnDataProvider: MockEarnService()),
             onTransferAction: { _ in }
         )
         model.assetQuery.value = assetData

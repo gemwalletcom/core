@@ -14,7 +14,7 @@ public struct AssetViewModel: Sendable, Identifiable {
     }
 
     public var title: String {
-        String(format: "%@ (%@)", asset.name, asset.symbol)
+        asset.name == asset.symbol ? asset.name : String(format: "%@ (%@)", asset.name, asset.symbol)
     }
 
     public var name: String {
@@ -23,6 +23,10 @@ public struct AssetViewModel: Sendable, Identifiable {
 
     public var symbol: String {
         asset.symbol
+    }
+
+    public var subtitleSymbol: String? {
+        asset.name == asset.symbol ? nil : asset.symbol
     }
 
     public var assetImage: AssetImage {

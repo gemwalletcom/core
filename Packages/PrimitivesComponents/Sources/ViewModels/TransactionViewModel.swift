@@ -64,7 +64,9 @@ public struct TransactionViewModel: Sendable {
                 .perpetualClosePosition,
                 .stakeFreeze,
                 .stakeUnfreeze,
-                .perpetualModifyPosition: .none
+                .perpetualModifyPosition,
+                .earnDeposit,
+                .earnWithdraw: .none
         }
     }
 
@@ -134,6 +136,10 @@ public struct TransactionViewModel: Sendable {
                 return .empty
             case .perpetualModifyPosition:
                 return .empty
+            case .earnDeposit:
+                return Localized.Transfer.Stake.title
+            case .earnWithdraw:
+                return Localized.Transfer.Withdraw.title
             }
         }()
         return TextValue(
@@ -212,7 +218,9 @@ public struct TransactionViewModel: Sendable {
                     .assetActivation,
                     .perpetualModifyPosition,
                     .perpetualOpenPosition,
-                    .perpetualClosePosition:
+                    .perpetualClosePosition,
+                    .earnDeposit,
+                    .earnWithdraw:
                 guard let metadata = transaction.transaction.metadata?.decode(TransactionPerpetualMetadata.self) else {
                     return .none
                 }
@@ -240,7 +248,9 @@ public struct TransactionViewModel: Sendable {
             .stakeRedelegate,
             .assetActivation,
             .stakeFreeze,
-            .stakeUnfreeze:
+            .stakeUnfreeze,
+            .earnDeposit,
+            .earnWithdraw:
             return infoModel.amountDisplay(formatter: formatter).amount
         case .perpetualClosePosition:
             guard let metadata = transaction.transaction.metadata?.decode(TransactionPerpetualMetadata.self), metadata.pnl != 0 else {
@@ -289,7 +299,9 @@ public struct TransactionViewModel: Sendable {
                 .perpetualClosePosition,
                 .perpetualModifyPosition,
                 .stakeFreeze,
-                .stakeUnfreeze:
+                .stakeUnfreeze,
+                .earnDeposit,
+                .earnWithdraw:
             return .none
         case .swap:
             guard let metadata = transaction.transaction.metadata?.decode(TransactionSwapMetadata.self), let asset = transaction.assets.first(where: { $0.id == metadata.fromAsset }) else {

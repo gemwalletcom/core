@@ -14,6 +14,7 @@ public enum EmptyContentType {
     case asset(symbol: String, buy: (() -> Void)? = nil, swap: (() -> Void)? = nil, isViewOnly: Bool)
     case activity(receive: (() -> Void)? = nil, buy: (() -> Void)? = nil, isViewOnly: Bool)
     case stake(symbol: String)
+    case earn(symbol: String)
     case walletConnect
     case search(type: SearchType, action: (() -> Void)? = nil)
     case markets

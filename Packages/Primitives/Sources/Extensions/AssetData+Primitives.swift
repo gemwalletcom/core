@@ -20,6 +20,7 @@ public extension AssetData {
             BalanceType.staked: balance.staked,
             BalanceType.rewards: balance.rewards,
             BalanceType.reserved: balance.reserved,
+            BalanceType.earn: balance.earn,
         ]
     }
 

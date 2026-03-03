@@ -13,6 +13,7 @@ public struct Balance: Codable, Equatable, Hashable, Sendable {
     public var rewards: BigInt
     public var reserved: BigInt
     public var withdrawable: BigInt
+    public var earn: BigInt
     public var metadata: BalanceMetadata?
 
     public init(
@@ -25,6 +26,7 @@ public struct Balance: Codable, Equatable, Hashable, Sendable {
         rewards: BigInt = .zero,
         reserved: BigInt = .zero,
         withdrawable: BigInt = .zero,
+        earn: BigInt = .zero,
         metadata: BalanceMetadata? = .none
     ) {
         self.available = available
@@ -36,6 +38,7 @@ public struct Balance: Codable, Equatable, Hashable, Sendable {
         self.rewards = rewards
         self.reserved = reserved
         self.withdrawable = withdrawable
+        self.earn = earn
         self.metadata = metadata
     }
 }

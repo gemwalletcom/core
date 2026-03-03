@@ -12,11 +12,12 @@ import WalletConnector
 import WalletService
 import ChainService
 import StakeService
+import EarnService
+import Stake
 import NameService
 import BalanceService
 import PriceService
 import TransactionStateService
-import Staking
 import Assets
 import FiatConnect
 import WalletConnectorService
@@ -24,6 +25,7 @@ import AddressNameService
 import ActivityService
 import EventPresenterService
 import Preferences
+import PrimitivesComponents
 import GemAPI
 
 public struct ViewModelFactory: Sendable {
@@ -35,6 +37,8 @@ public struct ViewModelFactory: Sendable {
     let priceUpdater: any PriceUpdater
     let walletService: WalletService
     let stakeService: StakeService
+    let earnService: EarnService
+    let amountService: AmountService
     let nameService: NameService
     let balanceService: BalanceService
     let priceService: PriceService
@@ -53,6 +57,8 @@ public struct ViewModelFactory: Sendable {
         priceUpdater: any PriceUpdater,
         walletService: WalletService,
         stakeService: StakeService,
+        earnService: EarnService,
+        amountService: AmountService,
         nameService: NameService,
         balanceService: BalanceService,
         priceService: PriceService,
@@ -70,6 +76,8 @@ public struct ViewModelFactory: Sendable {
         self.priceUpdater = priceUpdater
         self.walletService = walletService
         self.stakeService = stakeService
+        self.earnService = earnService
+        self.amountService = amountService
         self.nameService = nameService
         self.balanceService = balanceService
         self.priceService = priceService
@@ -135,9 +143,10 @@ public struct ViewModelFactory: Sendable {
         wallet: Wallet,
         onTransferAction: TransferDataAction
     ) -> AmountSceneViewModel {
-        return AmountSceneViewModel(
+        AmountSceneViewModel(
             input: input,
             wallet: wallet,
+            service: amountService,
             onTransferAction: onTransferAction
         )
     }
@@ -181,7 +190,40 @@ public struct ViewModelFactory: Sendable {
         StakeSceneViewModel(
             wallet: wallet,
             chain: StakeChain(rawValue: chain.rawValue)!, // Expected Only StakeChain accepted.
+            currencyCode: Preferences.standard.currency,
             stakeService: stakeService
+        )
+    }
+
+    @MainActor
+    public func earnScene(
+        wallet: Wallet,
+        asset: Asset
+    ) -> EarnSceneViewModel {
+        EarnSceneViewModel(
+            wallet: wallet,
+            asset: asset,
+            currencyCode: Preferences.standard.currency,
+            earnService: earnService
+        )
+    }
+
+    @MainActor
+    public func delegationScene(
+        wallet: Wallet,
+        delegation: Delegation,
+        asset: Asset,
+        validators: [DelegationValidator],
+        onAmountInputAction: AmountInputAction,
+        onTransferAction: TransferDataAction
+    ) -> DelegationSceneViewModel {
+        DelegationSceneViewModel(
+            wallet: wallet,
+            model: DelegationViewModel(delegation: delegation, asset: asset, formatter: .auto, currencyCode: Preferences.standard.currency),
+            asset: asset,
+            validators: validators,
+            onAmountInputAction: onAmountInputAction,
+            onTransferAction: onTransferAction
         )
     }
 
@@ -194,22 +236,6 @@ public struct ViewModelFactory: Sendable {
             keystore: keystore,
             payload: payload,
             confirmTransferDelegate: confirmTransferDelegate
-        )
-    }
-    
-    @MainActor
-    public func stakeDetailScene(
-        wallet: Wallet,
-        delegation: Delegation,
-        onAmountInputAction: AmountInputAction,
-        onTransferAction: TransferDataAction
-    ) -> StakeDetailSceneViewModel {
-        StakeDetailSceneViewModel(
-            wallet: wallet,
-            model: StakeDelegationViewModel(delegation: delegation, formatter: .auto),
-            service: stakeService,
-            onAmountInputAction: onAmountInputAction,
-            onTransferAction: onTransferAction
         )
     }
     

@@ -29,7 +29,7 @@ extension ConfirmMemoViewModel {
     private var showMemo: Bool {
         switch type {
         case .transfer, .deposit, .withdrawal: type.chain.isMemoSupported
-        case .transferNft, .swap, .tokenApprove, .generic, .account, .stake, .perpetual: false
+        case .transferNft, .swap, .tokenApprove, .generic, .account, .stake, .perpetual, .earn: false
         }
     }
 }

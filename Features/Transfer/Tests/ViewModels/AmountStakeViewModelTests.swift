@@ -38,11 +38,11 @@ struct AmountStakeViewModelTests {
     }
 
     @Test
-    func stakeValidatorsType() {
-        #expect(AmountStakeViewModel(asset: .mockBNB(), action: .stake(validators: [.mock()], recommended: nil)).stakeValidatorsType == .stake)
-        #expect(AmountStakeViewModel(asset: .mockBNB(), action: .redelegate(.mock(), validators: [.mock()], recommended: nil)).stakeValidatorsType == .stake)
-        #expect(AmountStakeViewModel(asset: .mockBNB(), action: .unstake(.mock())).stakeValidatorsType == .unstake)
-        #expect(AmountStakeViewModel(asset: .mockBNB(), action: .withdraw(.mock())).stakeValidatorsType == .unstake)
+    func validatorSelectType() {
+        #expect(AmountStakeViewModel(asset: .mockBNB(), action: .stake(validators: [.mock()], recommended: nil)).validatorSelectType == .stake)
+        #expect(AmountStakeViewModel(asset: .mockBNB(), action: .redelegate(.mock(), validators: [.mock()], recommended: nil)).validatorSelectType == .stake)
+        #expect(AmountStakeViewModel(asset: .mockBNB(), action: .unstake(.mock())).validatorSelectType == .unstake)
+        #expect(AmountStakeViewModel(asset: .mockBNB(), action: .withdraw(.mock())).validatorSelectType == .unstake)
     }
 
     @Test

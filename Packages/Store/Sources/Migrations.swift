@@ -401,6 +401,32 @@ struct Migrations {
             }
         }
 
+        migrator.registerMigration("Add earn support") { db in
+            try? db.alter(table: AssetRecord.databaseTableName) {
+                $0.add(column: AssetRecord.Columns.isEarnable.name, .boolean).defaults(to: false)
+                $0.add(column: AssetRecord.Columns.earnApr.name, .double)
+            }
+
+            try? db.alter(table: BalanceRecord.databaseTableName) {
+                $0.add(column: BalanceRecord.Columns.earn.name, .text)
+                    .defaults(to: "0")
+                $0.add(column: BalanceRecord.Columns.earnAmount.name, .double)
+                    .defaults(to: 0)
+            }
+
+            try? db.alter(table: BalanceRecord.databaseTableName) {
+                $0.drop(column: BalanceRecord.Columns.totalAmount.name)
+                $0.addColumn(sql: BalanceRecord.totalAmountSQlCreation)
+            }
+        }
+
+        migrator.registerMigration("Add providerType to stake_validators") { db in
+            try? db.alter(table: StakeValidatorRecord.databaseTableName) {
+                $0.add(column: StakeValidatorRecord.Columns.providerType.name, .text)
+                    .defaults(to: StakeProviderType.stake.rawValue)
+            }
+        }
+
         try migrator.migrate(dbQueue)
     }
 }

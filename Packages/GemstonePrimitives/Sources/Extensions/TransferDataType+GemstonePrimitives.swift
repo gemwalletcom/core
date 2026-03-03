@@ -13,6 +13,7 @@ public extension TransferDataType {
              .stake(let asset, _),
              .account(let asset, _),
              .perpetual(let asset, _),
+             .earn(let asset, _, _),
              .tokenApprove(let asset, _),
              .generic(let asset, _, _):
             return asset

@@ -8,7 +8,7 @@ public struct TransferData: Identifiable, Sendable, Hashable {
     public let recipientData: RecipientData
     public let value: BigInt
     public let canChangeValue: Bool
-    
+
     public init(
         type: TransferDataType,
         recipientData: RecipientData,

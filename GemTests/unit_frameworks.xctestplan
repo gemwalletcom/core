@@ -81,9 +81,9 @@
     },
     {
       "target" : {
-        "containerPath" : "container:Features\/Staking",
-        "identifier" : "StakingTests",
-        "name" : "StakingTests"
+        "containerPath" : "container:Features\/Stake",
+        "identifier" : "StakeTests",
+        "name" : "StakeTests"
       }
     },
     {

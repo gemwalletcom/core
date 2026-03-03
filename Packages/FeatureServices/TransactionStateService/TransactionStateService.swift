@@ -6,6 +6,7 @@ import Primitives
 import Store
 import ChainService
 import StakeService
+import EarnService
 import BalanceService
 import NFTService
 
@@ -20,6 +21,7 @@ public struct TransactionStateService: Sendable {
         transactionStore: TransactionStore,
         swapper: any GemSwapperProtocol,
         stakeService: StakeService,
+        earnService: EarnService,
         nftService: NFTService,
         chainServiceFactory: any ChainServiceFactorable,
         balanceUpdater: any BalanceUpdater
@@ -34,6 +36,7 @@ public struct TransactionStateService: Sendable {
             transactionStore: transactionStore,
             balanceUpdater: balanceUpdater,
             stakeService: stakeService,
+            earnService: earnService,
             nftService: nftService
         )
     }

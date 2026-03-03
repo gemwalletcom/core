@@ -155,7 +155,7 @@ extension MainTabView {
 
     private func onComplete(type: SelectedAssetType) {
         switch type {
-        case .receive, .stake, .buy, .sell:
+        case .receive, .stake, .earn, .buy, .sell:
             presenter.isPresentingAssetInput.wrappedValue = nil
         case let .send(type):
             switch type {

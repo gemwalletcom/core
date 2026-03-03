@@ -1,33 +1,16 @@
 // Copyright (c). Gem Wallet. All rights reserved.
 
-import Foundation
 import SwiftUI
 import Primitives
-import Localization
-import SwapService
 import FiatConnect
 import PrimitivesComponents
-import PriceAlerts
 import Swap
-import Assets
 import Transfer
-import ChainService
-import ExplorerService
-import Signer
-import EventPresenterService
 
 struct SelectedAssetNavigationStack: View  {
     @Environment(\.viewModelFactory) private var viewModelFactory
-    @Environment(\.keystore) private var keystore
-    @Environment(\.chainServiceFactory) private var chainServiceFactory
     @Environment(\.assetsEnabler) private var assetsEnabler
-    @Environment(\.scanService) private var scanService
-    @Environment(\.balanceService) private var balanceService
-    @Environment(\.priceService) private var priceService
-    @Environment(\.transactionStateService) private var transactionStateService
-    @Environment(\.addressNameService) private var addressNameService
     @Environment(\.activityService) private var activityService
-    @Environment(\.eventPresenterService) private var eventPresenterService
 
     @State private var navigationPath = NavigationPath()
 
@@ -51,19 +34,6 @@ struct SelectedAssetNavigationStack: View  {
                 switch input.type {
                 case .send(let type):
                     RecipientNavigationView(
-                        confirmService: ConfirmServiceFactory.create(
-                            keystore: keystore,
-                            chainServiceFactory: chainServiceFactory,
-                            assetsEnabler: assetsEnabler,
-                            scanService: scanService,
-                            balanceService: balanceService,
-                            priceService: priceService,
-                            transactionStateService: transactionStateService,
-                            addressNameService: addressNameService,
-                            activityService: activityService,
-                            eventPresenterService: eventPresenterService,
-                            chain: input.asset.chain
-                        ),
                         model: viewModelFactory.recipientScene(
                             wallet: wallet,
                             asset: input.asset,
@@ -126,6 +96,17 @@ struct SelectedAssetNavigationStack: View  {
                         ),
                         navigationPath: $navigationPath
                     )
+                case .earn:
+                    #if DEBUG
+                    EarnNavigationView(
+                        wallet: wallet,
+                        asset: input.asset,
+                        viewModelFactory: viewModelFactory,
+                        navigationPath: $navigationPath
+                    )
+                    #else
+                    EmptyView()
+                    #endif
                 }
             }
             .toolbarDismissItem(type: .close, placement: .topBarLeading)

@@ -52,9 +52,6 @@ public final class ReceiveViewModel: Sendable {
         Localized.Common.copy
     }
 
-    var assetImageTitleModel: AssetImageTitleViewModel {
-        AssetImageTitleViewModel(asset: assetModel.asset)
-    }
 
     var warningMessage: AttributedString {
         let warning = Localized.Receive.warning(assetModel.symbol.boldMarkdown(), assetModel.networkFullName.boldMarkdown())

@@ -24,6 +24,6 @@ extension TransferAmountCalculatorError: LocalizedError {
     }
 
     static private func title(asset: Asset) -> String {
-        String(format: "%@ (%@)", asset.name, asset.symbol)
+        asset.name == asset.symbol ? asset.name : String(format: "%@ (%@)", asset.name, asset.symbol)
     }
 }

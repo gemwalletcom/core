@@ -62,12 +62,17 @@ public struct BalanceViewModel: Sendable {
         formatter.string(balance.available, decimals: asset.decimals.asInt, currency: asset.symbol)
     }
 
-    public var stakingBalanceTextWithSymbol: String {
-        let amount = switch StakeChain(rawValue: asset.chain.rawValue) {
-        case .celestia, .cosmos, .hyperCore, .injective, .osmosis, .sei, .smartChain, .solana, .sui, .ethereum, .aptos, .monad, .none:
-            balance.staked + balance.pending
-        case .tron:
-            balance.frozen + balance.locked + balance.pending
+    public func balanceTextWithSymbol(for type: StakeProviderType) -> String {
+        let amount = switch type {
+        case .stake:
+            switch StakeChain(rawValue: asset.chain.rawValue) {
+            case .celestia, .cosmos, .hyperCore, .injective, .osmosis, .sei, .smartChain, .solana, .sui, .ethereum, .aptos, .monad, .none:
+                balance.staked + balance.pending
+            case .tron:
+                balance.frozen + balance.locked + balance.pending
+            }
+        case .earn:
+            balance.earn
         }
         return formatter.string(amount, decimals: asset.decimals.asInt, currency: asset.symbol)
     }
@@ -115,6 +120,6 @@ public struct BalanceViewModel: Sendable {
     }
 
     var total: BigInt {
-        balance.available + balance.frozen + balance.locked + balance.staked + balance.pending + balance.rewards
+        balance.available + balance.frozen + balance.locked + balance.staked + balance.pending + balance.rewards + balance.earn
     }
 }

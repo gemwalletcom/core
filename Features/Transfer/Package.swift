@@ -31,8 +31,7 @@ let package = Package(
         .package(name: "Validators", path: "../../Packages/Validators"),
         .package(name: "Store", path: "../../Packages/Store"),
 
-        .package(name: "Staking", path: "../Staking"),
-        .package(name: "QRScanner", path: "../QRScanner"),
+        .package(name: "Stake", path: "../Stake"),
         .package(name: "WalletConnector", path: "../WalletConnector"),
         .package(name: "InfoSheet", path: "../InfoSheet"),
         .package(name: "FiatConnect", path: "../FiatConnect"),
@@ -61,8 +60,7 @@ let package = Package(
                 "Preferences",
                 "Validators",
 
-                "Staking",
-                "QRScanner",
+                "Stake",
                 "WalletConnector",
                 "InfoSheet",
                 "FiatConnect",
@@ -77,6 +75,7 @@ let package = Package(
                 .product(name: "ScanService", package: "ChainServices"),
                 .product(name: "BalanceService", package: "FeatureServices"),
                 .product(name: "PriceService", package: "FeatureServices"),
+                .product(name: "EarnService", package: "FeatureServices"),
                 .product(name: "PerpetualService", package: "FeatureServices"),
                 .product(name: "ExplorerService", package: "ChainServices"),
                 .product(name: "NameService", package: "ChainServices"),
@@ -119,6 +118,7 @@ let package = Package(
                 .product(name: "StakeServiceTestKit", package: "ChainServices"),
                 .product(name: "NFTServiceTestKit", package: "FeatureServices"),
                 .product(name: "SignerTestKit", package: "Signer"),
+                .product(name: "EarnServiceTestKit", package: "FeatureServices"),
                 .product(name: "EventPresenterServiceTestKit", package: "EventPresenterService"),
             ],
             path: "Tests"

@@ -48,6 +48,8 @@ public struct Signer: Sendable {
             return try [signer.signData(input: input, privateKey: privateKey)]
         case .stake:
             return try signer.signStake(input: input, privateKey: privateKey)
+        case .earn:
+            return try signer.signEarn(input: input, privateKey: privateKey)
         case .account:
             return try [signer.signAccountAction(input: input, privateKey: privateKey)]
         case .perpetual:

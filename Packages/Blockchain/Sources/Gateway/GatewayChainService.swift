@@ -34,6 +34,10 @@ extension GatewayChainService: ChainBalanceable {
     public func getStakeBalance(for address: String) async throws -> AssetBalance? {
         try await gateway.getStakeBalance(chain: chain, address: address)
     }
+
+    public func getEarnBalance(for address: String) async throws -> [AssetBalance] {
+        try await gateway.getEarnBalance(chain: chain, address: address)
+    }
 }
 
 // MARK: - ChainFeeRateFetchable

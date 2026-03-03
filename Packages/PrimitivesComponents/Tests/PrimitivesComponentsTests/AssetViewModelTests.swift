@@ -7,19 +7,18 @@ import PrimitivesTestKit
 @testable import PrimitivesComponents
 
 struct AssetViewModelTests {
-    let cosmos = Asset.mock(id: Chain.cosmos.assetId, name: "Cosmos", symbol: "Atom", decimals: 8, type: .native)
-    let btc = Asset.mock()
 
     @Test
-    func testTitle() {
-        #expect(AssetViewModel(asset: btc).title == "Bitcoin (BTC)")
+    func subtitleSymbol() {
+        #expect(AssetViewModel(asset: .mock()).subtitleSymbol == "BTC")
+        #expect(AssetViewModel(asset: .mockBNB()).subtitleSymbol == nil)
+        #expect(AssetViewModel(asset: .mockXRP()).subtitleSymbol == nil)
+        #expect(AssetViewModel(asset: .mockEthereumUSDT()).subtitleSymbol == "USDT")
     }
-    
+
     @Test
-    func testNetworkFullName() {
-        #expect(AssetViewModel(asset: Asset.mockEthereum()).networkFullName == "Ethereum")
-        #expect(
-            AssetViewModel(asset: Asset.mockEthereumUSDT()).networkFullName == "Ethereum (ERC20)"
-        )
+    func networkFullName() {
+        #expect(AssetViewModel(asset: .mockEthereum()).networkFullName == "Ethereum")
+        #expect(AssetViewModel(asset: .mockEthereumUSDT()).networkFullName == "Ethereum (ERC20)")
     }
 }

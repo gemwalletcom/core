@@ -93,8 +93,8 @@ public struct AssetDataViewModel: Sendable {
         balanceViewModel.availableBalanceTextWithSymbol
     }
 
-    public var stakeBalanceTextWithSymbol: String {
-        balanceViewModel.stakingBalanceTextWithSymbol
+    public func balanceTextWithSymbol(for type: StakeProviderType) -> String {
+        balanceViewModel.balanceTextWithSymbol(for: type)
     }
 
     public var hasReservedBalance: Bool {
@@ -171,8 +171,11 @@ public struct AssetDataViewModel: Sendable {
         assetData.account.address
     }
 
-    public var stakeApr: Double? {
-        assetData.metadata.stakingApr
+    public func apr(for type: StakeProviderType) -> Double? {
+        switch type {
+        case .stake: assetData.metadata.stakingApr
+        case .earn: assetData.metadata.earnApr
+        }
     }
     
     public var isPriceAlertsEnabled: Bool {

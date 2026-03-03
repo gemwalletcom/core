@@ -28,6 +28,7 @@ public final class AmountSceneViewModel {
 
     public let assetQuery: ObservableQuery<AssetRequest>
     var assetData: AssetData { assetQuery.value }
+    var transferState: StateViewType<TransferData> = .noData
     var amountInputModel: InputValidationViewModel
     var isPresentingSheet: AmountSheetType?
 
@@ -38,13 +39,14 @@ public final class AmountSceneViewModel {
     public init(
         input: AmountInput,
         wallet: Wallet,
+        service: AmountService,
         preferences: Preferences = .standard,
         onTransferAction: TransferDataAction
     ) {
         self.wallet = wallet
         self.onTransferAction = onTransferAction
         self.currencyFormatter = CurrencyFormatter(type: .currency, currencyCode: preferences.currency)
-        self.provider = .make(from: input)
+        self.provider = .make(from: input, wallet: wallet, service: service)
         self.assetQuery = ObservableQuery(AssetRequest(walletId: wallet.walletId, assetId: input.asset.id), initialValue: .with(asset: input.asset))
         self.amountInputModel = InputValidationViewModel(mode: .onDemand, validators: [])
         amountInputModel.update(validators: inputValidators)
@@ -72,7 +74,8 @@ public final class AmountSceneViewModel {
     }
 
     var actionButtonState: ButtonState {
-        amountInputModel.text.isNotEmpty && amountInputModel.isValid ? .normal : .disabled
+        if transferState.isLoading { return .loading() }
+        return amountInputModel.text.isNotEmpty && amountInputModel.isValid ? .normal : .disabled
     }
 
     var infoText: String? {
@@ -111,10 +114,8 @@ extension AmountSceneViewModel {
     }
 
     func onSelectNextButton() {
-        do {
-            try onNext()
-        } catch {
-            amountInputModel.update(error: error)
+        Task {
+            await fetch()
         }
     }
 
@@ -193,10 +194,17 @@ private extension AmountSceneViewModel {
         amountInputModel.update(validators: inputValidators)
     }
 
-    func onNext() throws {
-        let value = try formatter.inputNumber(from: amountTransferValue, decimals: asset.decimals.asInt)
-        let transfer = try provider.makeTransferData(value: value)
-        onTransferAction?(transfer)
+    func fetch() async {
+        do {
+            transferState = .loading
+            let value = try formatter.inputNumber(from: amountTransferValue, decimals: asset.decimals.asInt)
+            let transfer = try await provider.makeTransferData(value: value)
+            transferState = .noData
+            onTransferAction?(transfer)
+        } catch {
+            transferState = .error(error)
+            amountInputModel.update(error: error)
+        }
     }
 
     func onSelectBuy() {

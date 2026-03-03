@@ -34,7 +34,7 @@ extension ConfirmNetworkViewModel {
         switch type {
         case .transfer, .deposit, .withdrawal:
             return model.networkFullName
-        case .transferNft, .swap, .tokenApprove, .stake, .account, .generic, .perpetual:
+        case .transferNft, .swap, .tokenApprove, .stake, .account, .generic, .perpetual, .earn:
             return model.networkName
         }
     }

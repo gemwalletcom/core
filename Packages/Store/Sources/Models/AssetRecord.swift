@@ -24,7 +24,9 @@ struct AssetRecord: Identifiable, Codable, PersistableRecord, FetchableRecord, T
         static let isSellable = Column("isSellable")
         static let isSwappable = Column("isSwappable")
         static let isStakeable = Column("isStakeable")
+        static let isEarnable = Column("isEarnable")
         static let stakingApr = Column("stakingApr")
+        static let earnApr = Column("earnApr")
         static let hasImage = Column("hasImage")
     }
     
@@ -41,8 +43,10 @@ struct AssetRecord: Identifiable, Codable, PersistableRecord, FetchableRecord, T
     var isSellable: Bool
     var isSwappable: Bool
     var isStakeable: Bool
+    var isEarnable: Bool
     var rank: Int
     var stakingApr: Double?
+    var earnApr: Double?
     var hasImage: Bool
     
     static let price = hasOne(PriceRecord.self)
@@ -86,9 +90,12 @@ extension AssetRecord: CreateTable {
                 .defaults(to: false)
             $0.column(Columns.isStakeable.name, .boolean)
                 .defaults(to: false)
+            $0.column(Columns.isEarnable.name, .boolean)
+                .defaults(to: false)
             $0.column(Columns.rank.name, .numeric)
                 .defaults(to: 0)
             $0.column(Columns.stakingApr.name, .double)
+            $0.column(Columns.earnApr.name, .double)
             $0.column(Columns.hasImage.name, .boolean)
                 .defaults(to: false)
         }
@@ -110,6 +117,7 @@ extension Asset {
             isSellable: false,
             isSwappable: false,
             isStakeable: false,
+            isEarnable: false,
             rank: 0,
             hasImage: false
         )
@@ -138,8 +146,8 @@ extension AssetRecord {
                 isSwapable: isSwappable,
                 isStakeable: isStakeable,
                 stakingApr: stakingApr,
-                isEarnable: false,
-                earnApr: nil,
+                isEarnable: isEarnable,
+                earnApr: earnApr,
                 hasImage: hasImage
             ),
             score: AssetScore(rank: rank.asInt32),
@@ -180,9 +188,11 @@ extension AssetRecordInfo {
             isSellEnabled: asset.isSellable,
             isSwapEnabled: asset.isSwappable,
             isStakeEnabled: asset.isStakeable,
+            isEarnEnabled: asset.isEarnable,
             isPinned: balance?.isPinned ?? false,
             isActive: balance?.isActive ?? true,
             stakingApr: asset.stakingApr,
+            earnApr: asset.earnApr,
             rankScore: asset.rank.asInt32
         )
     }
@@ -203,8 +213,10 @@ extension AssetBasic {
             isSellable: properties.isSellable,
             isSwappable: properties.isSwapable,
             isStakeable: properties.isStakeable,
+            isEarnable: properties.isEarnable,
             rank: score.rank.asInt,
             stakingApr: properties.stakingApr,
+            earnApr: properties.earnApr,
             hasImage: properties.hasImage
         )
     }

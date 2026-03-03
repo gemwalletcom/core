@@ -5,8 +5,8 @@ import Primitives
 import PrimitivesComponents
 import Style
 import SwiftUI
-import struct Staking.StakeValidatorViewModel
-import struct Staking.ValidatorView
+import struct Stake.ValidatorViewModel
+import struct Stake.ValidatorView
 
 struct AmountScene: View {
     @FocusState private var focusedField: Bool
@@ -64,10 +64,10 @@ struct AmountScene: View {
                 Section(stake.validatorSelection.title) {
                     if stake.validatorSelection.isEnabled {
                         NavigationLink(value: stake.validatorSelection.selected) {
-                            ValidatorView(model: StakeValidatorViewModel(validator: stake.validatorSelection.selected))
+                            ValidatorView(model: ValidatorViewModel(validator: stake.validatorSelection.selected))
                         }
                     } else {
-                        ValidatorView(model: StakeValidatorViewModel(validator: stake.validatorSelection.selected))
+                        ValidatorView(model: ValidatorViewModel(validator: stake.validatorSelection.selected))
                     }
                 }
 
@@ -111,6 +111,11 @@ struct AmountScene: View {
                             action: model.onSelectAutoclose
                         )
                     }
+                }
+
+            case let .earn(earn):
+                Section(earn.providerTitle) {
+                    ValidatorView(model: ValidatorViewModel(validator: earn.provider))
                 }
 
             case .transfer:

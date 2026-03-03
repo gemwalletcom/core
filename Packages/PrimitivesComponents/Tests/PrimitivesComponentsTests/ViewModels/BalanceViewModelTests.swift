@@ -5,7 +5,6 @@ import Foundation
 import BigInt
 import Primitives
 import PrimitivesTestKit
-import Formatters
 
 import PrimitivesComponentsTestKit
 @testable import PrimitivesComponents
@@ -43,6 +42,17 @@ struct BalanceViewModelTests {
 
         #expect(tronModel.total == BigInt(1_005_497))
         #expect(bnbModel.total == BigInt(6_100_000))
+    }
+
+    @Test
+    func balanceTextWithSymbol() {
+        let model = BalanceViewModel.mock(
+            asset: .mockEthereum(),
+            balance: .mock(staked: BigInt(1_000_000_000_000_000_000), earn: BigInt(2_000_000_000_000_000_000)),
+            formatter: .medium
+        )
+        #expect(model.balanceTextWithSymbol(for: .stake) == "1.00 ETH")
+        #expect(model.balanceTextWithSymbol(for: .earn) == "2.00 ETH")
     }
 
     @Test

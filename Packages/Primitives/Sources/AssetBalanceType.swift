@@ -7,18 +7,19 @@ public enum AssetBalanceType: Sendable {
     case coin(available: BigInt, reserved: BigInt, pendingUnconfirmed: BigInt)
     case token(available: BigInt)
     case stake(staked: BigInt, pending: BigInt, rewards: BigInt, reserved: BigInt, locked: BigInt, frozen: BigInt, metadata: BalanceMetadata?)
+    case earn(BigInt)
 
     public var available: BigInt? {
         switch self {
         case .coin(let available, _, _): available
         case .token(let available): available
-        case .stake: nil
+        case .stake, .earn: nil
         }
     }
 
     public var metadata: BalanceMetadata? {
         switch self {
-        case .coin, .token: .none
+        case .coin, .token, .earn: .none
         case let .stake(_, _, _, _, _, _, metadata): metadata
         }
     }
@@ -93,7 +94,15 @@ extension AssetBalance {
             isActive: isActive
         )
     }
-    
+
+    public var earnChange: AssetBalanceChange {
+        AssetBalanceChange(
+            assetId: assetId,
+            type: .earn(balance.earn),
+            isActive: isActive
+        )
+    }
+
     public static func merge(assetIds: [AssetId], balances: [BigInt]) -> [AssetBalance] {
         return zip(assetIds, balances).map {
             AssetBalance(assetId: $0, balance: Balance(available: $1))

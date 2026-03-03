@@ -17,6 +17,7 @@ public extension GemTransactionInputType {
         case .generic(let asset, _, _): asset
         case .account(let asset, _): asset
         case .perpetual(asset: let asset, perpetualType: _): asset
+        case .earn(asset: let asset, earnType: _, data: _): asset
         }
     }
 }
@@ -42,6 +43,8 @@ public extension GemTransactionInputType {
             return try TransferDataType.account(asset.map(), accountType.map())
         case .perpetual(asset: let asset, perpetualType: let perpetualType):
             return try TransferDataType.perpetual(asset.map(), perpetualType.map())
+        case .earn(let asset, let earnType, let data):
+            return try TransferDataType.earn(asset.map(), earnType.map(), data.map())
         }
     }
 }
@@ -72,6 +75,8 @@ public extension TransferDataType {
             return .account(asset: asset.map(), accountType: accountData.map())
         case .perpetual(let asset, let perpetualType):
             return .perpetual(asset: asset.map(), perpetualType: perpetualType.map())
+        case .earn(let asset, let earnType, let data):
+            return .earn(asset: asset.map(), earnType: earnType.map(), data: data.map())
         }
     }
 }

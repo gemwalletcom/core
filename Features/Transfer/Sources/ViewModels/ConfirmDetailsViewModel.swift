@@ -42,7 +42,8 @@ extension ConfirmDetailsViewModel: ItemModelProvidable {
             .tokenApprove,
             .stake,
             .account,
-            .generic:
+            .generic,
+            .earn:
             .empty
         }
     }

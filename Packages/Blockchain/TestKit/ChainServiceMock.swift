@@ -45,6 +45,10 @@ extension ChainServiceMock {
     public func getStakeBalance(for address: String) async throws -> AssetBalance? {
         stakeBalance
     }
+
+    public func getEarnBalance(for address: String) async throws -> [AssetBalance] {
+        []
+    }
     
     public func broadcast(data: String, options: BroadcastOptions) async throws -> String {
         broadcastResponses.removeFirst()

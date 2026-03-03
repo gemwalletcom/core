@@ -13,4 +13,5 @@ public enum BalanceType: String, Codable, CaseIterable, Equatable, Sendable {
 	case pendingUnconfirmed
 	case rewards
 	case reserved
+	case earn
 }

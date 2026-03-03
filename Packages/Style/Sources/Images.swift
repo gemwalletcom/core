@@ -85,6 +85,10 @@ public enum Images {
         public static let nearIntents = Image(.nearIntents)
     }
 
+    public enum EarnProviders {
+        public static let yo = Image(.yo)
+    }
+
     public enum Fiat {
         public static let moonpay = Image(.moonpay)
         public static let transak = Image(.transak)

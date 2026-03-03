@@ -10,7 +10,8 @@ public extension DelegationValidator {
         name: String = "Test Delegation Validator",
         isActive: Bool = true,
         commission: Double = 5,
-        apr: Double = 1
+        apr: Double = 1,
+        providerType: StakeProviderType = .stake
     ) -> DelegationValidator {
         DelegationValidator(
             chain: chain,
@@ -18,7 +19,8 @@ public extension DelegationValidator {
             name: name,
             isActive: isActive,
             commission: commission,
-            apr: apr
+            apr: apr,
+            providerType: providerType
         )
     }
 }
