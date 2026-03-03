@@ -345,6 +345,8 @@ public enum Localized {
     public static let yes = Localized.tr("Localizable", "common.yes", fallback: "Yes")
   }
   public enum Contacts {
+    /// Add to Contacts
+    public static let addToContacts = Localized.tr("Localizable", "contacts.add_to_contacts", fallback: "Add to Contacts")
     /// Addresses
     public static let addresses = Localized.tr("Localizable", "contacts.addresses", fallback: "Addresses")
     /// Contact
