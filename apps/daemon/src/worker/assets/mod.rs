@@ -125,7 +125,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                 async move { updater.update_chain(chain).await }
             }
         })
-        .jobs(WorkerJob::UpdateStakingApy, Chain::stakeable(), |chain, _| {
+        .jobs(WorkerJob::UpdateStakeApy, Chain::stakeable(), |chain, _| {
             let settings = settings.clone();
             let database = database.clone();
             move |_| {
