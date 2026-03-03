@@ -64,8 +64,4 @@ impl ScanProvider for GoPlusProvider {
             provider: self.name().into(),
         })
     }
-
-    async fn scan_url(&self, _target: &str) -> Result<ScanResult<String>, Box<dyn std::error::Error + Send + Sync>> {
-        unimplemented!()
-    }
 }

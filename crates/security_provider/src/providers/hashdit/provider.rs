@@ -123,8 +123,4 @@ impl ScanProvider for HashDitProvider {
         });
         self._scan(target, "gem_wallet_token_detection", &body).await
     }
-
-    async fn scan_url(&self, _target: &str) -> Result<ScanResult<String>, Box<dyn std::error::Error + Send + Sync>> {
-        Err("scan_url not implemented".into())
-    }
 }
