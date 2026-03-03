@@ -30,7 +30,7 @@ impl DevicesClient {
 
     pub async fn send_push_notification_device(&self, device_id: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
         let device = self.get_device(device_id)?;
-        let notification = GorushNotification::from_device(
+        let notifications: Vec<_> = GorushNotification::from_device(
             device,
             "Test Notification".to_string(),
             "Test Message".to_string(),
@@ -38,8 +38,10 @@ impl DevicesClient {
                 notification_type: PushNotificationTypes::Test,
                 data: None,
             },
-        );
-        Ok(self.pusher.push_notifications(vec![notification]).await?.response.counts > 0)
+        )
+        .into_iter()
+        .collect();
+        Ok(self.pusher.push_notifications(notifications).await?.response.counts > 0)
     }
 
     pub fn delete_device(&self, device_id: &str) -> Result<usize, Box<dyn Error + Send + Sync>> {

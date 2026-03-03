@@ -30,7 +30,7 @@ pub use self::repositories::{
     rewards_redemptions_repository::RewardsRedemptionsRepository, rewards_repository::RewardsRepository, risk_signals_repository::RiskSignalsRepository,
     scan_addresses_repository::ScanAddressesRepository, tag_repository::TagRepository, transactions_repository::TransactionsRepository, wallets_repository::WalletsRepository,
 };
-pub use self::sql_types::{NotificationType, TransactionState, WalletSource, WalletType};
+pub use self::sql_types::{NotificationType, TransactionState, TransactionType, WalletSource, WalletType};
 pub use diesel::OptionalExtension;
 
 #[derive(Clone)]

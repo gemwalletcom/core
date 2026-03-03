@@ -47,7 +47,7 @@ impl SupportClient {
             data: serde_json::to_value(PushNotificationSupport {}).ok(),
         };
 
-        Some(GorushNotification::from_device(device.clone(), title, message, data))
+        GorushNotification::from_device(device.clone(), title, message, data)
     }
 }
 

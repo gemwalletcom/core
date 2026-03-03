@@ -16,7 +16,7 @@ impl InAppNotificationsConsumer {
         Self { database, stream_producer }
     }
 
-    fn create_push_notification(&self, device: &Device, notification_type: NotificationType, wallet_id: i32, points: Option<i32>) -> GorushNotification {
+    fn create_push_notification(&self, device: &Device, notification_type: NotificationType, wallet_id: i32, points: Option<i32>) -> Option<GorushNotification> {
         let localizer = LanguageLocalizer::new_with_language(device.locale.as_str());
         let (title, message) = notification_content(&localizer, notification_type, points.unwrap_or(0));
         let data = PushNotification {
@@ -54,8 +54,7 @@ impl MessageConsumer<InAppNotificationPayload, usize> for InAppNotificationsCons
 
         let notifications: Vec<GorushNotification> = devices
             .iter()
-            .filter(|d| d.can_receive_push_notification())
-            .map(|device| self.create_push_notification(device, payload.notification_type, payload.wallet_id, points))
+            .filter_map(|device| self.create_push_notification(device, payload.notification_type, payload.wallet_id, points))
             .collect();
 
         let count = notifications.len();
@@ -73,7 +72,7 @@ fn notification_content(localizer: &LanguageLocalizer, notification_type: Notifi
         ),
         NotificationType::RewardsInvite => (
             localizer.notification_reward_title(RewardEventType::InviteNew.points()),
-            localizer.notification_reward_invite_description(None),
+            localizer.notification_reward_invite_description(),
         ),
         NotificationType::ReferralJoined => (
             localizer.notification_reward_title(RewardEventType::Joined.points()),

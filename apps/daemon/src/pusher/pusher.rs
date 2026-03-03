@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use localizer::LanguageLocalizer;
-use number_formatter::BigNumberFormatter;
+use number_formatter::{ValueFormatter, ValueStyle};
 use primitives::{
     AddressFormatter, Asset, AssetVecExt, Chain, DeviceSubscription, GorushNotification, NFTAssetId, PushNotification, PushNotificationTransaction, PushNotificationTypes,
     Transaction, TransactionNFTTransferMetadata, TransactionSwapMetadata, TransactionType,
@@ -29,7 +29,7 @@ impl Pusher {
 
     pub fn message(&self, localizer: LanguageLocalizer, transaction: Transaction, address: &str, assets: Vec<Asset>) -> Result<Message, Box<dyn Error + Send + Sync>> {
         let asset = assets.asset_result(transaction.asset_id.clone())?;
-        let amount = BigNumberFormatter::value(transaction.value.as_str(), asset.decimals).unwrap_or_default();
+        let amount = ValueFormatter::format_with_symbol(ValueStyle::Auto, transaction.value.as_str(), asset.decimals, &asset.symbol)?;
         let chain = transaction.asset_id.chain;
 
         let to_address = self.get_address(chain, transaction.to.as_str())?;
@@ -38,8 +38,7 @@ impl Pusher {
         match transaction.transaction_type {
             TransactionType::Transfer | TransactionType::SmartContractCall => {
                 let is_sent = transaction.is_sent(address.to_string());
-                let value = self.get_value(amount, asset.symbol.clone());
-                let title = localizer.notification_transfer_title(is_sent, value.as_str());
+                let title = localizer.notification_transfer_title(is_sent, &amount);
                 let message = localizer.notification_transfer_description(is_sent, to_address.as_str(), from_address.as_str());
                 Ok(Message { title, message: Some(message) })
             }
@@ -64,23 +63,23 @@ impl Pusher {
                 message: None,
             }),
             TransactionType::StakeDelegate => Ok(Message {
-                title: localizer.notification_stake_title(self.get_value(amount, asset.symbol.clone()).as_str(), to_address.as_str()),
+                title: localizer.notification_stake_title(&amount, to_address.as_str()),
                 message: None,
             }),
             TransactionType::StakeUndelegate => Ok(Message {
-                title: localizer.notification_unstake_title(self.get_value(amount, asset.symbol.clone()).as_str(), to_address.as_str()),
+                title: localizer.notification_unstake_title(&amount, to_address.as_str()),
                 message: None,
             }),
             TransactionType::StakeRedelegate => Ok(Message {
-                title: localizer.notification_redelegate_title(self.get_value(amount, asset.symbol.clone()).as_str(), to_address.as_str()),
+                title: localizer.notification_redelegate_title(&amount, to_address.as_str()),
                 message: None,
             }),
             TransactionType::StakeRewards => Ok(Message {
-                title: localizer.notification_claim_rewards_title(self.get_value(amount, asset.symbol.clone()).as_str()),
+                title: localizer.notification_claim_rewards_title(&amount),
                 message: None,
             }),
             TransactionType::StakeWithdraw => Ok(Message {
-                title: localizer.notification_withdraw_stake_title(self.get_value(amount, asset.symbol.clone()).as_str(), to_address.as_str()),
+                title: localizer.notification_withdraw_stake_title(&amount, to_address.as_str()),
                 message: None,
             }),
             TransactionType::Swap => {
@@ -88,43 +87,34 @@ impl Pusher {
                 let metadata: TransactionSwapMetadata = serde_json::from_value(metadata)?;
                 let from_asset = assets.asset_result(metadata.from_asset.clone())?;
                 let to_asset = assets.asset_result(metadata.to_asset.clone())?;
-                let from_amount = BigNumberFormatter::value(metadata.from_value.as_str(), from_asset.decimals).unwrap_or_default();
-                let to_amount = BigNumberFormatter::value(metadata.to_value.as_str(), to_asset.decimals).unwrap_or_default();
+                let from_amount = ValueFormatter::format_with_symbol(ValueStyle::Auto, &metadata.from_value, from_asset.decimals, &from_asset.symbol)?;
+                let to_amount = ValueFormatter::format_with_symbol(ValueStyle::Auto, &metadata.to_value, to_asset.decimals, &to_asset.symbol)?;
 
                 Ok(Message {
                     title: localizer.notification_swap_title(from_asset.symbol.as_str(), to_asset.symbol.as_str()),
-                    message: Some(localizer.notification_swap_description(
-                        self.get_value(from_amount, from_asset.symbol.clone()).as_str(),
-                        self.get_value(to_amount, to_asset.symbol.clone()).as_str(),
-                    )),
+                    message: Some(localizer.notification_swap_description(&from_amount, &to_amount)),
                 })
             }
             TransactionType::PerpetualOpenPosition => {
-                let value = self.get_value(amount, asset.symbol.clone());
-                let title = format!("Opened Perpetual Position: {value}");
-                let message = format!("Opened perpetual position for {value} at {to_address}");
+                let title = format!("Opened Perpetual Position: {amount}");
+                let message = format!("Opened perpetual position for {amount} at {to_address}");
                 Ok(Message { title, message: Some(message) })
             }
             TransactionType::PerpetualClosePosition => {
-                let value = self.get_value(amount, asset.symbol.clone());
-                let title = format!("Closed Perpetual Position: {value}");
-                let message = format!("Closed perpetual position for {value} at {to_address}");
+                let title = format!("Closed Perpetual Position: {amount}");
+                let message = format!("Closed perpetual position for {amount} at {to_address}");
                 Ok(Message { title, message: Some(message) })
             }
             TransactionType::AssetActivation | TransactionType::PerpetualModifyPosition | TransactionType::EarnDeposit | TransactionType::EarnWithdraw => todo!(),
             TransactionType::StakeFreeze => Ok(Message {
-                title: localizer.notification_freeze_title(self.get_value(amount, asset.symbol.clone()).as_str()),
+                title: localizer.notification_freeze_title(&amount),
                 message: None,
             }),
             TransactionType::StakeUnfreeze => Ok(Message {
-                title: localizer.notification_unfreeze_title(self.get_value(amount, asset.symbol.clone()).as_str()),
+                title: localizer.notification_unfreeze_title(&amount),
                 message: None,
             }),
         }
-    }
-
-    pub fn get_value(&self, amount: String, symbol: String) -> String {
-        format! {"{amount} {symbol}"}
     }
 
     pub async fn get_messages(
@@ -133,10 +123,6 @@ impl Pusher {
         transaction: Transaction,
         assets: Vec<Asset>,
     ) -> Result<Vec<GorushNotification>, Box<dyn Error + Send + Sync>> {
-        if !subscription.device.can_receive_push_notification() {
-            return Ok(vec![]);
-        }
-
         let transaction = transaction.finalize(vec![subscription.address.clone()]).without_utxo();
 
         let localizer = LanguageLocalizer::new_with_language(subscription.device.locale.as_str());
@@ -153,8 +139,10 @@ impl Pusher {
             data: serde_json::to_value(&notification_transaction).ok(),
         };
 
-        let notification = GorushNotification::from_device(subscription.device.clone(), message.title, message.message.unwrap_or_default(), data);
-
-        Ok(vec![notification])
+        Ok(
+            GorushNotification::from_device(subscription.device.clone(), message.title, message.message.unwrap_or_default(), data)
+                .into_iter()
+                .collect(),
+        )
     }
 }

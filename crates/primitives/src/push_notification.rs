@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{AssetId, Transaction};
+use crate::{AssetId, Transaction, WalletId};
 
 #[typeshare(swift = "Equatable, Sendable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -15,6 +15,7 @@ pub enum PushNotificationTypes {
     SwapAsset,  // PushNotificationSwapAsset payload
     Support,    // PushNotificationSupport payload
     Rewards,    // PushNotificationReward payload
+    Stake,      // PushNotificationStaking payload
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -29,6 +30,13 @@ impl PushNotification {
         Self {
             notification_type: PushNotificationTypes::BuyAsset,
             data: serde_json::to_value(PushNotificationAsset { asset_id: asset_id.to_string() }).ok(),
+        }
+    }
+
+    pub fn new_stake(wallet_id: WalletId, asset_id: AssetId) -> Self {
+        Self {
+            notification_type: PushNotificationTypes::Stake,
+            data: serde_json::to_value(PushNotificationStaking { wallet_id, asset_id }).ok(),
         }
     }
 }
@@ -77,4 +85,12 @@ pub struct PushNotificationSupport {}
 #[serde(rename_all = "camelCase")]
 pub struct PushNotificationReward {
     pub wallet_id: String,
+}
+
+#[typeshare(swift = "Equatable, Sendable")]
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PushNotificationStaking {
+    pub wallet_id: WalletId,
+    pub asset_id: AssetId,
 }

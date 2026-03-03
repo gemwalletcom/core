@@ -38,6 +38,7 @@ pub(crate) trait TransactionsStore {
     fn get_asset_usage_counts(&mut self, since: NaiveDateTime) -> Result<Vec<(String, i64)>, diesel::result::Error>;
     fn get_transactions_by_filter(&mut self, filters: Vec<TransactionFilter>, limit: i64) -> Result<Vec<TransactionRow>, diesel::result::Error>;
     fn update_transaction(&mut self, chain: &str, hash: &str, updates: Vec<TransactionUpdate>) -> Result<usize, diesel::result::Error>;
+    fn get_addresses_by_chain_and_kind(&mut self, chain: &str, kinds: Vec<TransactionType>, since: NaiveDateTime) -> Result<Vec<String>, diesel::result::Error>;
 }
 
 impl TransactionsStore for DatabaseClient {
@@ -220,5 +221,20 @@ impl TransactionsStore for DatabaseClient {
         }
 
         Ok(total)
+    }
+
+    fn get_addresses_by_chain_and_kind(&mut self, chain: &str, kinds: Vec<TransactionType>, since: NaiveDateTime) -> Result<Vec<String>, diesel::result::Error> {
+        use crate::schema::transactions::dsl as tx_dsl;
+        use crate::schema::transactions_addresses::dsl::*;
+
+        transactions_addresses
+            .inner_join(tx_dsl::transactions)
+            .filter(tx_dsl::chain.eq(chain))
+            .filter(tx_dsl::kind.eq_any(kinds))
+            .filter(tx_dsl::state.eq(TransactionState::Confirmed))
+            .filter(tx_dsl::created_at.ge(since))
+            .select(address)
+            .distinct()
+            .load::<String>(&mut self.connection)
     }
 }

@@ -30,6 +30,22 @@ pub struct DelegationBase {
     pub validator_id: String,
 }
 
+impl DelegationBase {
+    pub fn total_active_balance(delegations: &[Self]) -> BigUint {
+        delegations
+            .iter()
+            .filter(|d| d.state == DelegationState::Active)
+            .fold(BigUint::from(0u32), |acc, d| acc + &d.balance)
+    }
+
+    pub fn total_active_rewards(delegations: &[Self]) -> BigUint {
+        delegations
+            .iter()
+            .filter(|d| d.state == DelegationState::Active)
+            .fold(BigUint::from(0u32), |acc, d| acc + &d.rewards)
+    }
+}
+
 impl From<DelegationValidator> for StakeValidator {
     fn from(value: DelegationValidator) -> Self {
         StakeValidator::new(value.id, value.name)
@@ -51,7 +67,15 @@ pub struct DelegationValidator {
 
 impl DelegationValidator {
     pub fn stake(chain: Chain, id: String, name: String, is_active: bool, commission: f64, apr: f64) -> Self {
-        Self { chain, id, name, is_active, commission, apr, provider_type: StakeProviderType::Stake }
+        Self {
+            chain,
+            id,
+            name,
+            is_active,
+            commission,
+            apr,
+            provider_type: StakeProviderType::Stake,
+        }
     }
 }
 

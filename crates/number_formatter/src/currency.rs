@@ -424,7 +424,7 @@ impl Formatter {
     }
 }
 
-fn add_thousands_separator(amount_str: &str, thousands_sep: char, decimal_sep: char) -> String {
+pub fn add_thousands_separator(amount_str: &str, thousands_sep: char, decimal_sep: char) -> String {
     let (integer_part, decimal_part) = amount_str.split_once('.').map_or((amount_str, None), |(int, dec)| (int, Some(dec)));
 
     let (sign, integer_part) = if let Some(stripped) = integer_part.strip_prefix('-') {

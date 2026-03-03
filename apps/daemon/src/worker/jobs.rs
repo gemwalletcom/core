@@ -94,7 +94,7 @@ fn compose_job_name(base: &str, label: Option<&str>) -> String {
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, AsRefStr)]
 #[strum(serialize_all = "snake_case")]
 pub enum WorkerJob {
-    SendPriceAlerts,
+    AlertPriceAlerts,
     UpdateExistingPricesAssets,
     UpdateAllPricesAssets,
     UpdateNativePricesAssets,
@@ -136,13 +136,14 @@ pub enum WorkerJob {
     UpdateDexPrices,
     UpdateInTransitTransactions,
     UpdateSwapVaultAddresses,
+    AlertStakeRewards,
 }
 
 impl WorkerJob {
     fn spec(&self) -> JobSpec {
         use WorkerJob::*;
         match self {
-            SendPriceAlerts => JobSpec::new(WorkerService::Alerter, JobInterval::Config(ConfigKey::AlerterInterval)),
+            AlertPriceAlerts => JobSpec::new(WorkerService::Alerter, JobInterval::Config(ConfigKey::AlerterPriceAlertsTimer)),
             UpdateExistingPricesAssets => JobSpec::new(WorkerService::Assets, JobInterval::Config(ConfigKey::AssetsTimerUpdateExisting)),
             UpdateAllPricesAssets => JobSpec::new(WorkerService::Assets, JobInterval::Config(ConfigKey::AssetsTimerUpdateAll)),
             UpdateNativePricesAssets => JobSpec::new(WorkerService::Assets, JobInterval::Config(ConfigKey::AssetsTimerUpdateNative)),
@@ -184,6 +185,7 @@ impl WorkerJob {
             UpdateDexPrices => JobSpec::new(WorkerService::Prices, JobInterval::Duration(Duration::from_secs(1800))),
             UpdateInTransitTransactions => JobSpec::new(WorkerService::Transactions, JobInterval::Config(ConfigKey::TransactionTimerInTransitUpdate)),
             UpdateSwapVaultAddresses => JobSpec::new(WorkerService::Transactions, JobInterval::Duration(Duration::from_secs(300))),
+            AlertStakeRewards => JobSpec::new(WorkerService::Alerter, JobInterval::Config(ConfigKey::AlerterStakeRewardsTimer)),
         }
     }
 

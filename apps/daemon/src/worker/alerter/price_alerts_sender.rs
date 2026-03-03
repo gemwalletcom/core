@@ -21,10 +21,10 @@ impl PriceAlertSender {
     }
 
     pub async fn run_observer(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let notification_cooldown = self.config.get_duration(ConfigKey::AlerterNotificationCooldown)?;
-        let price_change_threshold = self.config.get_f64(ConfigKey::AlerterPriceChangeThreshold)?;
-        let rank_divisor = self.config.get_f64(ConfigKey::AlerterRankDivisor)?;
-        let milestones = self.config.get_vec::<f64>(ConfigKey::AlerterMilestones)?;
+        let notification_cooldown = self.config.get_duration(ConfigKey::AlerterPriceAlertsCooldown)?;
+        let price_change_threshold = self.config.get_f64(ConfigKey::AlerterPriceAlertsThreshold)?;
+        let rank_divisor = self.config.get_f64(ConfigKey::AlerterPriceAlertsRankDivisor)?;
+        let milestones = self.config.get_vec::<f64>(ConfigKey::AlerterPriceAlertsMilestones)?;
 
         let rules = PriceAlertRules {
             notification_cooldown,

@@ -35,4 +35,8 @@ impl TransactionType {
     pub fn all() -> Vec<Self> {
         Self::iter().collect::<Vec<_>>()
     }
+
+    pub fn staking_types() -> Vec<Self> {
+        vec![Self::StakeDelegate, Self::StakeUndelegate, Self::StakeRedelegate, Self::StakeRewards]
+    }
 }

@@ -234,7 +234,7 @@ impl PriceAlertClient {
                 notification_type: PushNotificationTypes::PriceAlert,
             };
 
-            results.push(GorushNotification::from_device(alert.device.clone(), message.title, message.description, data));
+            results.extend(GorushNotification::from_device(alert.device.clone(), message.title, message.description, data));
         }
 
         results

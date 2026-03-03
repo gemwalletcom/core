@@ -41,6 +41,9 @@ pub enum CacheKey<'a> {
     ObservedAssets,
 
     SwapVaultAddresses(&'a str),
+
+    // Alerter keys
+    AlerterStakeRewards(&'a str, &'a str),
 }
 
 pub fn cache_keys<'a, T: AsRef<str>>(items: &'a [T], variant: impl Fn(&'a str) -> CacheKey<'a>) -> Vec<String> {
@@ -71,6 +74,7 @@ impl CacheKey<'_> {
             Self::ParserStatus(chain) => format!("parser:status:{}", chain),
             Self::ObservedAssets => "observed_assets".to_string(),
             Self::SwapVaultAddresses(provider) => format!("swap:vault_addresses:{}", provider),
+            Self::AlerterStakeRewards(chain, address) => format!("alerter:stake_rewards:{}:{}", chain, address),
         }
     }
 
@@ -97,6 +101,7 @@ impl CacheKey<'_> {
             Self::ParserStatus(_) => 7 * SECONDS_PER_DAY,
             Self::ObservedAssets => 2 * SECONDS_PER_MINUTE,
             Self::SwapVaultAddresses(_) => SECONDS_PER_DAY,
+            Self::AlerterStakeRewards(_, _) => 30 * SECONDS_PER_DAY,
         }
     }
 }

@@ -76,6 +76,16 @@ impl BigNumberFormatter {
     pub fn decimal_to_string(value: &BigDecimal, max_scale: u32) -> String {
         value.round(max_scale as i64).normalized().to_string()
     }
+
+    pub fn ratio(numerator: &BigUint, denominator: &BigUint) -> f64 {
+        if *denominator == BigUint::from(0u32) {
+            return 0.0;
+        }
+        let precision = BigUint::from(1_000_000u64);
+        let scaled = numerator * &precision / denominator;
+        let scaled_u64 = u64::try_from(&scaled).unwrap_or(u64::MAX);
+        scaled_u64 as f64 / 1_000_000.0
+    }
 }
 
 #[cfg(test)]
@@ -141,6 +151,20 @@ mod tests {
 
         let decimal = BigDecimal::from_str("10").unwrap();
         assert_eq!(BigNumberFormatter::decimal_to_string(&decimal, 6), "10");
+    }
+
+    #[test]
+    fn test_ratio() {
+        assert_eq!(BigNumberFormatter::ratio(&BigUint::from(1u32), &BigUint::from(2u32)), 0.5);
+        assert_eq!(BigNumberFormatter::ratio(&BigUint::from(1u32), &BigUint::from(4u32)), 0.25);
+        assert_eq!(BigNumberFormatter::ratio(&BigUint::from(0u32), &BigUint::from(100u32)), 0.0);
+        assert_eq!(BigNumberFormatter::ratio(&BigUint::from(100u32), &BigUint::from(0u32)), 0.0);
+        assert_eq!(BigNumberFormatter::ratio(&BigUint::from(1u32), &BigUint::from(100u32)), 0.01);
+        assert_eq!(BigNumberFormatter::ratio(&BigUint::from(3u32), &BigUint::from(100u32)), 0.03);
+
+        let large_num = BigUint::from(1_000_000_000u64);
+        let large_den = BigUint::from(10_000_000_000u64);
+        assert_eq!(BigNumberFormatter::ratio(&large_num, &large_den), 0.1);
     }
 
     #[test]

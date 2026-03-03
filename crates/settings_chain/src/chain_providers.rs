@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use chain_traits::ChainTraits;
-use primitives::{Asset, AssetBalance, Chain, StakeValidator, Transaction};
+use primitives::{Asset, AssetBalance, Chain, DelegationBase, StakeValidator, Transaction};
 use settings::Settings;
 
 use crate::ProviderFactory;
@@ -69,5 +69,9 @@ impl ChainProviders {
 
     pub async fn get_block_transactions(&self, chain: Chain, block_number: u64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         self.get_provider(chain)?.get_transactions_by_block(block_number).await
+    }
+
+    pub async fn get_staking_delegations(&self, chain: Chain, address: String) -> Result<Vec<DelegationBase>, Box<dyn Error + Send + Sync>> {
+        self.get_provider(chain)?.get_staking_delegations(address).await
     }
 }

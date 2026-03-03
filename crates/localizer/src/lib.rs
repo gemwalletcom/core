@@ -203,11 +203,8 @@ impl LanguageLocalizer {
         fl!(self.loader.as_ref(), "notification_reward_create_username_description")
     }
 
-    pub fn notification_reward_invite_description(&self, username: Option<&str>) -> String {
-        match username {
-            Some(name) if !name.is_empty() => fl!(self.loader.as_ref(), "notification_reward_invite_description", username = name),
-            _ => "Referral joined using your code.".to_string(),
-        }
+    pub fn notification_reward_invite_description(&self) -> String {
+        fl!(self.loader.as_ref(), "notification_reward_invite_description")
     }
 
     pub fn notification_reward_joined_description(&self) -> String {
@@ -223,11 +220,11 @@ impl LanguageLocalizer {
     }
 
     pub fn notification_reward_redeemed_title(&self) -> String {
-        fl!(self.loader.as_ref(), "notification_reward_redeemed_title")
+        fl!(self.loader.as_ref(), "notification_rewards_redeem_points_title")
     }
 
     pub fn notification_reward_redeemed_description(&self, points: i32) -> String {
-        fl!(self.loader.as_ref(), "notification_reward_redeemed_description", value = points.abs())
+        fl!(self.loader.as_ref(), "notification_rewards_redeem_points_description", value = points.abs())
     }
 
     pub fn errors_generic(&self) -> String {
@@ -284,5 +281,12 @@ impl LanguageLocalizer {
 
     pub fn notification_rewards_disabled_description(&self) -> String {
         fl!(self.loader.as_ref(), "notification_rewards_disabled_description")
+    }
+
+    pub fn notification_stake_rewards(&self, value: &str, chain: &str) -> LanguageNotification {
+        LanguageNotification {
+            title: fl!(self.loader.as_ref(), "notification_stake_rewards_title"),
+            description: fl!(self.loader.as_ref(), "notification_stake_rewards_description", value = value, chain = chain),
+        }
     }
 }

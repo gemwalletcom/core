@@ -20,8 +20,11 @@ pub struct GorushNotification {
 }
 
 impl GorushNotification {
-    pub fn from_device(device: Device, title: String, message: String, data: PushNotification) -> Self {
-        Self {
+    pub fn from_device(device: Device, title: String, message: String, data: PushNotification) -> Option<Self> {
+        if !device.can_receive_push_notification() {
+            return None;
+        }
+        Some(Self {
             tokens: vec![device.token.clone()],
             platform: device.platform.as_i32(),
             title,
@@ -30,7 +33,7 @@ impl GorushNotification {
             data,
             device_id: device.id,
             dry_run: None,
-        }
+        })
     }
 
     pub fn for_token_validation(token: String, platform: i32) -> Self {
@@ -91,6 +94,32 @@ impl PushErrorLog {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn mock_push_data() -> PushNotification {
+        PushNotification {
+            notification_type: crate::PushNotificationTypes::Test,
+            data: None,
+        }
+    }
+
+    #[test]
+    fn from_device() {
+        let device = Device::mock();
+        let result = GorushNotification::from_device(device.clone(), "title".to_string(), "msg".to_string(), mock_push_data());
+        assert!(result.is_some());
+
+        let notification = result.unwrap();
+        assert_eq!(notification.tokens, vec!["test-token-123"]);
+        assert_eq!(notification.title, "title");
+        assert_eq!(notification.message, "msg");
+        assert_eq!(notification.device_id, "test-device-id");
+
+        let disabled = Device::mock_with(false, "token".to_string(), None);
+        assert!(GorushNotification::from_device(disabled, "t".to_string(), "m".to_string(), mock_push_data()).is_none());
+
+        let empty_token = Device::mock_with(true, "".to_string(), None);
+        assert!(GorushNotification::from_device(empty_token, "t".to_string(), "m".to_string(), mock_push_data()).is_none());
+    }
 
     #[test]
     fn is_device_invalid() {

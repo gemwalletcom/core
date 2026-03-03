@@ -1,5 +1,5 @@
 use localizer::LanguageLocalizer;
-use number_formatter::BigNumberFormatter;
+use number_formatter::{ValueFormatter, ValueStyle};
 use primitives::{CoreEmoji, CoreListItem, CoreListItemBadge, CoreListItemIcon, Deeplink, InAppNotification, NotificationData, NotificationType, WalletId};
 
 pub fn map_notification(notification: NotificationData, localizer: &LanguageLocalizer) -> Option<InAppNotification> {
@@ -39,7 +39,6 @@ fn notification_item(
 fn map_to_list_item(notification: &NotificationData, localizer: &LanguageLocalizer) -> CoreListItem {
     let metadata = &notification.metadata;
     let points = get_i32(metadata, "points");
-    let username = get_string(metadata, "username");
     let id = notification.id.to_string();
     let url = Some(Deeplink::Rewards.to_url());
 
@@ -47,7 +46,7 @@ fn map_to_list_item(notification: &NotificationData, localizer: &LanguageLocaliz
         NotificationType::ReferralJoined => notification_item(
             id,
             localizer.notification_reward_pending_title(),
-            Some(localizer.notification_reward_invite_description(Some(&username))),
+            Some(localizer.notification_reward_invite_description()),
             Some(format!("+{}", points)),
             None,
             CoreEmoji::Party,
@@ -76,9 +75,9 @@ fn map_to_list_item(notification: &NotificationData, localizer: &LanguageLocaliz
         ),
         NotificationType::RewardsRedeemed => {
             let raw_value = get_string(metadata, "value");
-            let value = notification.asset.as_ref().map(|asset| {
-                let formatted = BigNumberFormatter::value(&raw_value, asset.decimals).unwrap_or(raw_value.clone());
-                format!("+{} {}", formatted, asset.symbol)
+            let value = notification.asset.as_ref().and_then(|asset| {
+                let value = ValueFormatter::format_with_symbol(ValueStyle::Auto, &raw_value, asset.decimals, &asset.symbol).ok()?;
+                Some(format!("+{}", value))
             });
             let subvalue = Some(format!("-{}", points));
             notification_item(
@@ -105,7 +104,7 @@ fn map_to_list_item(notification: &NotificationData, localizer: &LanguageLocaliz
         NotificationType::RewardsInvite => notification_item(
             id,
             localizer.notification_reward_title(points),
-            Some(localizer.notification_reward_invite_description(Some(&username))),
+            Some(localizer.notification_reward_invite_description()),
             Some(format!("+{}", points)),
             None,
             CoreEmoji::Party,
