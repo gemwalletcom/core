@@ -45,8 +45,8 @@ mod tests {
     async fn test_resolve_suins() {
         let nodes = get_nodes_for_chain(Chain::Sui);
         let client = SuinsClient::new(nodes[0].url.clone());
-        let address_result = client.resolve("test.sui", Chain::Sui).await;
-        assert_eq!(address_result.unwrap(), "0x3e04ea76cee7d2db4f41c2972ac8d929606d89f7293320f0886abb41a578190c");
+        let address_result = client.resolve("alpha.sui", Chain::Sui).await;
+        assert_eq!(address_result.unwrap(), "0x54e5c2a6f1276ac2ff623ac54e53e5a61a576906b3ec42fac8fe8bf5615d0957");
     }
 
     #[tokio::test]
