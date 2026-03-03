@@ -1,4 +1,5 @@
 use crate::client::NameClient;
+use crate::model::NameQuery;
 use async_trait::async_trait;
 use primitives::{Chain, NameProvider};
 use reqwest::Client;
@@ -61,13 +62,13 @@ impl NameClient for SNSClient {
         NameProvider::Sns
     }
 
-    async fn resolve(&self, name: &str, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
+    async fn resolve(&self, query: &NameQuery, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
         match chain {
             Chain::Solana => {
-                return self.resolve_sol_address(name, &chain.clone()).await;
+                return self.resolve_sol_address(&query.domain, &chain.clone()).await;
             }
             Chain::SmartChain => {
-                return self.resolve_hex_address(name, "BSC").await;
+                return self.resolve_hex_address(&query.domain, "BSC").await;
             }
             _ => return Err("error".to_string().into()),
         }

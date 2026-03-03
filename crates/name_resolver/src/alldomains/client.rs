@@ -11,6 +11,7 @@ use gem_solana::{COMMITMENT_CONFIRMED, pubkey::Pubkey};
 use primitives::{chain::Chain, name::NameProvider};
 
 use crate::client::NameClient;
+use crate::model::NameQuery;
 
 use super::model::NameRecordHeader;
 
@@ -145,14 +146,11 @@ impl AllDomainsClient {
 
 #[async_trait]
 impl NameClient for AllDomainsClient {
-    async fn resolve(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
-        // Split domain.tld
-        let parts: Vec<&str> = name.split('.').collect();
-        if parts.len() != 2 {
+    async fn resolve(&self, query: &NameQuery, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let tld = &query.suffix;
+        if tld.is_empty() || tld.contains('.') {
             return Err("Invalid domain format".into());
         }
-        let domain = parts[0];
-        let tld = parts[1];
 
         let name_origin_tld_key = self.get_origin_name_account_key().await?;
 
@@ -160,7 +158,7 @@ impl NameClient for AllDomainsClient {
         let parent_hashed_name = self.get_hashed_name(&tld_name).await?;
         let (parent_account_key, _) = self.get_name_account_key_with_bump(&parent_hashed_name, None, Some(name_origin_tld_key))?;
 
-        let domain_hashed_name = self.get_hashed_name(domain).await?;
+        let domain_hashed_name = self.get_hashed_name(&query.name).await?;
         let (domain_account_key, _) = self.get_name_account_key_with_bump(&domain_hashed_name, None, Some(parent_account_key))?;
 
         let (tld_house, _) = self.find_tld_house(&tld_name)?;

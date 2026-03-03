@@ -14,6 +14,7 @@ pub mod hyperliquid;
 pub mod icns;
 pub mod injective;
 pub mod lens;
+pub mod model;
 pub mod sns;
 pub mod spaceid;
 pub mod suins;
@@ -22,6 +23,7 @@ pub mod testkit;
 pub mod ton;
 pub mod ton_codec;
 pub mod ud;
+
 pub struct NameProviderFactory {}
 
 impl NameProviderFactory {

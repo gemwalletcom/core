@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, error::Error, sync::LazyLock};
 
 use crate::client::NameClient;
+use crate::model::NameQuery;
 use primitives::{Chain, NameProvider};
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -43,25 +44,25 @@ impl NameClient for IcnsClient {
         NameProvider::Icns
     }
 
-    async fn resolve(&self, name: &str, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let suffix = name.split('.').next_back().unwrap_or_default();
-        if !DOMAIN_MAP.contains_key(suffix) {
+    async fn resolve(&self, query: &NameQuery, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let suffix = &query.suffix;
+        if !DOMAIN_MAP.contains_key(suffix.as_str()) {
             return Err(format!("unsupported domain: {suffix}").into());
         }
 
         // chain type should match domain type
-        let suffix_chain = DOMAIN_MAP.get(suffix).unwrap();
+        let suffix_chain = DOMAIN_MAP.get(suffix.as_str()).unwrap();
         if *suffix_chain != chain {
             return Err(format!("domain: {suffix} doesn't match chain: {chain}").into());
         }
 
-        let query = serde_json::json!({
+        let rpc_query = serde_json::json!({
             "address_by_icns": {
-              "icns": name,
+              "icns": query.domain,
             },
         });
 
-        let b64 = general_purpose::STANDARD.encode(query.to_string());
+        let b64 = general_purpose::STANDARD.encode(rpc_query.to_string());
         let url = format!("{}/cosmwasm/wasm/v1/contract/{}/smart/{}", self.api_url, RESOLVER, b64);
         let address = self.client.get(&url).send().await?.json::<Data<Record>>().await?.data.bech32_address;
 

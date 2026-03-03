@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::error::Error;
 
 use crate::client::NameClient;
+use crate::model::NameQuery;
 use primitives::NameProvider;
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -30,8 +31,8 @@ impl NameClient for EthsClient {
         NameProvider::Tree
     }
 
-    async fn resolve(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/resolve/{}", self.api_url, name);
+    async fn resolve(&self, query: &NameQuery, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/resolve/{}", self.api_url, query.domain);
         let record: ResolveRecord = self.client.get(&url).send().await?.json().await?;
         let address = record.owner;
 

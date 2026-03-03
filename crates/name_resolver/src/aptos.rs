@@ -1,4 +1,5 @@
 use crate::client::NameClient;
+use crate::model::NameQuery;
 use async_trait::async_trait;
 use primitives::{Chain, NameProvider};
 use reqwest::Client;
@@ -35,8 +36,8 @@ impl NameClient for AptosClient {
         NameProvider::Aptos
     }
 
-    async fn resolve(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let address = self.resolve_name(name).await?;
+    async fn resolve(&self, query: &NameQuery, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let address = self.resolve_name(&query.domain).await?;
         Ok(address)
     }
 

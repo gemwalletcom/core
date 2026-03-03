@@ -1,5 +1,5 @@
 use crate::codec::Codec;
-use crate::{client::NameClient, ton_codec};
+use crate::{client::NameClient, model::NameQuery, ton_codec};
 use async_trait::async_trait;
 use primitives::{Chain, NameProvider};
 use reqwest::Client;
@@ -35,8 +35,8 @@ impl NameClient for TONClient {
         NameProvider::Ton
     }
 
-    async fn resolve(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/v2/dns/{}/resolve", self.url, name);
+    async fn resolve(&self, query: &NameQuery, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/v2/dns/{}/resolve", self.url, query.domain);
         let response = self.client.get(&url).send().await?.json::<ResolveResponse>().await?;
         // always encode as Bounceable address
         ton_codec::TonCodec::encode(response.wallet.address.as_bytes().to_vec())

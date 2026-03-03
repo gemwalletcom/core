@@ -43,7 +43,7 @@ use gem_rewards::{AbuseIPDBClient, IpApiClient, IpCheckProvider, IpSecurityClien
 use metrics::fiat::FiatMetrics;
 use model::APIService;
 use name_resolver::NameProviderFactory;
-use name_resolver::client::Client as NameClient;
+use name_resolver::client::{Client as NameClient, NameConfig};
 use notifications::NotificationsClient;
 use pricer::{ChartClient, MarketsClient, PriceAlertClient, PriceClient};
 use rocket::tokio::sync::Mutex;
@@ -185,8 +185,11 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let charts_client = ChartClient::new(database.clone());
     let config_client = ConfigClient::new(database.clone());
     let price_alert_client = PriceAlertClient::new(database.clone());
+    let name_config = NameConfig {
+        max_name_length: settings_clone.name.max_name_length,
+    };
     let providers = NameProviderFactory::create_providers(settings_clone.clone());
-    let name_client = NameClient::new(providers);
+    let name_client = NameClient::new(providers, name_config);
 
     let chain_client = chain::ChainClient::new(ChainProviders::new(ProviderFactory::new_providers(&settings)));
     let endpoints = ProviderFactory::get_chain_endpoints(&settings);

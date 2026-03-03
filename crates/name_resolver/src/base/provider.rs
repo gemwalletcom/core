@@ -10,6 +10,7 @@ use std::str::FromStr;
 
 use super::contract::L2Resolver;
 use crate::client::NameClient;
+use crate::model::NameQuery;
 use primitives::{chain::Chain, name::NameProvider};
 
 const L2_RESOLVER_ADDRESS: &str = "0xC6d566A56A1aFf6508b41f6c90ff131615583BCD";
@@ -53,8 +54,8 @@ impl Basenames {
 
 #[async_trait]
 impl NameClient for Basenames {
-    async fn resolve(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
-        match self.get_address_from_resolver(name).await {
+    async fn resolve(&self, query: &NameQuery, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
+        match self.get_address_from_resolver(&query.domain).await {
             Ok(addr) => {
                 if addr.is_zero() {
                     Err("Address not found".into())

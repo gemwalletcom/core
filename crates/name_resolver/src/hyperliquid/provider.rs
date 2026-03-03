@@ -11,7 +11,7 @@ use super::{
     contracts::{Registrator, Router},
     record::Record,
 };
-use crate::{client::NameClient, ens::normalize_domain};
+use crate::{client::NameClient, ens::normalize_domain, model::NameQuery};
 use primitives::{Chain, EVMChain, NameProvider};
 
 const ROUTER_ADDRESS: &str = "0x25d1971d6dc9812ea1111662008f07735c74bff5";
@@ -60,8 +60,8 @@ impl NameClient for Hyperliquid {
         vec![Chain::Bitcoin, Chain::Ethereum, Chain::Solana, Chain::Hyperliquid]
     }
 
-    async fn resolve(&self, name: &str, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let name = normalize_domain(name)?;
+    async fn resolve(&self, query: &NameQuery, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let name = normalize_domain(&query.domain)?;
         if !Self::is_valid_name(&name) {
             return Err(format!("Invalid name: {name}").into());
         }

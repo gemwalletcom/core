@@ -6,10 +6,11 @@ use primitives::chain::Chain;
 use primitives::name::{NameProvider, NameRecord};
 
 use crate::error::NameError;
+use crate::model::NameQuery;
 
 #[async_trait]
 pub trait NameClient {
-    async fn resolve(&self, name: &str, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>>;
+    async fn resolve(&self, query: &NameQuery, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>>;
     fn provider(&self) -> NameProvider;
     fn domains(&self) -> Vec<&'static str>;
     fn chains(&self) -> Vec<Chain>;
@@ -20,8 +21,8 @@ impl<T: Send + Sync> NameClient for Arc<T>
 where
     T: NameClient + ?Sized,
 {
-    async fn resolve(&self, name: &str, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
-        (**self).resolve(name, chain).await
+    async fn resolve(&self, query: &NameQuery, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
+        (**self).resolve(query, chain).await
     }
 
     fn provider(&self) -> NameProvider {
@@ -36,25 +37,30 @@ where
     }
 }
 
-const MAX_NAME_LENGTH: usize = 20;
+pub struct NameConfig {
+    pub max_name_length: usize,
+}
 
 pub struct Client {
     providers: Vec<Box<dyn NameClient + Send + Sync>>,
+    config: NameConfig,
 }
 
 impl Client {
-    pub fn new(providers: Vec<Box<dyn NameClient + Send + Sync>>) -> Self {
-        Self { providers }
+    pub fn new(providers: Vec<Box<dyn NameClient + Send + Sync>>, config: NameConfig) -> Self {
+        Self { providers, config }
     }
 
     pub async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error + Send + Sync>> {
-        let name_part = name.split('.').next().unwrap();
-        if name_part.len() > MAX_NAME_LENGTH {
-            return Err(NameError::new(format!("name '{}' exceeds maximum length of {}", name_part, MAX_NAME_LENGTH)).into());
+        let query = NameQuery::new(name);
+        if query.name.len() > self.config.max_name_length {
+            return Err(
+                NameError::new(format!("name '{}' exceeds maximum length of {}", query.name, self.config.max_name_length)).into(),
+            );
         }
 
         let provider = self.matched_provider(name, chain)?;
-        let address = provider.resolve(name, chain).await?;
+        let address = provider.resolve(&query, chain).await?;
 
         Ok(NameRecord {
             provider: provider.provider(),
@@ -106,25 +112,28 @@ mod tests {
     use crate::testkit::TestProvider;
     use primitives::name::NameProvider;
 
-    use super::Client;
+    use super::{Client, NameConfig};
     use primitives::chain::Chain;
 
     #[tokio::test]
     async fn test_resolve_prefers_longer_domain_match() {
-        let client = Client::new(vec![
-            Box::new(TestProvider::new(
-                NameProvider::Ens,
-                vec!["*"],
-                vec![Chain::Base],
-                Ok("0x0000000000000000000000000000000000000001"),
-            )),
-            Box::new(TestProvider::new(
-                NameProvider::Basenames,
-                vec!["base.eth"],
-                vec![Chain::Base],
-                Ok("0x0000000000000000000000000000000000000002"),
-            )),
-        ]);
+        let client = Client::new(
+            vec![
+                Box::new(TestProvider::new(
+                    NameProvider::Ens,
+                    vec!["*"],
+                    vec![Chain::Base],
+                    Ok("0x0000000000000000000000000000000000000001"),
+                )),
+                Box::new(TestProvider::new(
+                    NameProvider::Basenames,
+                    vec!["base.eth"],
+                    vec![Chain::Base],
+                    Ok("0x0000000000000000000000000000000000000002"),
+                )),
+            ],
+            NameConfig { max_name_length: 20 },
+        );
 
         let record = client.resolve("alice.base.eth", Chain::Base).await.unwrap();
 
@@ -134,12 +143,15 @@ mod tests {
 
     #[tokio::test]
     async fn test_resolve_rejects_long_name() {
-        let client = Client::new(vec![Box::new(TestProvider::new(
-            NameProvider::Injective,
-            vec!["inj"],
-            vec![Chain::Injective],
-            Ok("inj14apqz6u2nprsly3j0mqa6jwpxnmnphq3pp0q9g"),
-        ))]);
+        let client = Client::new(
+            vec![Box::new(TestProvider::new(
+                NameProvider::Injective,
+                vec!["inj"],
+                vec![Chain::Injective],
+                Ok("inj14apqz6u2nprsly3j0mqa6jwpxnmnphq3pp0q9g"),
+            ))],
+            NameConfig { max_name_length: 20 },
+        );
 
         let result = client.resolve("inj1kly3z4r8pzgfhh9cx5x69xjw0j4evlepq6ccgw.inj", Chain::Injective).await;
         assert_eq!(
@@ -150,15 +162,18 @@ mod tests {
 
     #[tokio::test]
     async fn test_resolve_returns_more_specific_provider_error() {
-        let client = Client::new(vec![
-            Box::new(TestProvider::new(
-                NameProvider::Ens,
-                vec!["*"],
-                vec![Chain::Base],
-                Ok("0x0000000000000000000000000000000000000003"),
-            )),
-            Box::new(TestProvider::new(NameProvider::Basenames, vec!["base.eth"], vec![Chain::Base], Err("failed"))),
-        ]);
+        let client = Client::new(
+            vec![
+                Box::new(TestProvider::new(
+                    NameProvider::Ens,
+                    vec!["*"],
+                    vec![Chain::Base],
+                    Ok("0x0000000000000000000000000000000000000003"),
+                )),
+                Box::new(TestProvider::new(NameProvider::Basenames, vec!["base.eth"], vec![Chain::Base], Err("failed"))),
+            ],
+            NameConfig { max_name_length: 20 },
+        );
 
         let error = client.resolve("alice.base.eth", Chain::Base).await.err().unwrap();
 

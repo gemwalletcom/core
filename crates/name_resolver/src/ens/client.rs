@@ -3,6 +3,7 @@ use std::error::Error;
 
 use super::provider::Provider;
 use crate::client::NameClient;
+use crate::model::NameQuery;
 use gem_evm::ethereum_address_checksum;
 use primitives::{chain::Chain, name::NameProvider};
 
@@ -24,8 +25,8 @@ impl NameClient for ENSClient {
         NameProvider::Ens
     }
 
-    async fn resolve(&self, name: &str, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let address = self.provider.resolve_name(name, chain).await?;
+    async fn resolve(&self, query: &NameQuery, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let address = self.provider.resolve_name(&query.domain, chain).await?;
         let address = ethereum_address_checksum(&address)?;
         Ok(address)
     }

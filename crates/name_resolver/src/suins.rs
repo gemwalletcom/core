@@ -1,4 +1,5 @@
 use crate::client::NameClient;
+use crate::model::NameQuery;
 use async_trait::async_trait;
 use primitives::NameProvider;
 use primitives::chain::Chain;
@@ -25,8 +26,8 @@ impl NameClient for SuinsClient {
         NameProvider::Suins
     }
 
-    async fn resolve(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let params = vec![serde_json::json!(name)];
+    async fn resolve(&self, query: &NameQuery, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let params = vec![serde_json::json!(query.domain)];
         let address: String = self.client.call("suix_resolveNameServiceAddress", params).await.map_err(|e: JsonRpcError| e.to_string())?;
         Ok(address)
     }

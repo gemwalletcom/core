@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::error::Error;
 
 use crate::client::NameClient;
+use crate::model::NameQuery;
 use primitives::{Chain, NameProvider};
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -36,10 +37,8 @@ impl NameClient for LensClient {
         NameProvider::Lens
     }
 
-    async fn resolve(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let mut parts = name.split('.').collect::<Vec<&str>>();
-        parts.reverse();
-        let handle = parts.join("/");
+    async fn resolve(&self, query: &NameQuery, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let handle = format!("{}/{}", query.suffix, query.name);
 
         let query = format!("query {{handleToAddress(request: {{handle: \"{handle}\" }} )}}");
         let query = serde_json::json!({

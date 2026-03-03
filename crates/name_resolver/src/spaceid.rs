@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::error::Error;
 
 use crate::client::NameClient;
+use crate::model::NameQuery;
 use primitives::NameProvider;
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -31,9 +32,9 @@ impl NameClient for SpaceIdClient {
         NameProvider::Spaceid
     }
 
-    async fn resolve(&self, name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let tld = name.split('.').clone().next_back().unwrap_or_default();
-        let url = format!("{}/v1/getAddress?tld={}&domain={}", self.api_url, tld, name);
+    async fn resolve(&self, query: &NameQuery, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let tld = &query.suffix;
+        let url = format!("{}/v1/getAddress?tld={}&domain={}", self.api_url, tld, query.domain);
         let record: ResolveRecord = self.client.get(&url).send().await?.json().await?;
         if record.code != 0 {
             return Err("SpaceIdClient: code != 0".into());

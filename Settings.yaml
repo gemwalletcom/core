@@ -51,6 +51,7 @@ prices:
 charter:
   timer: 60
 name:
+  max_name_length: 20
   ens:
     url: https://eth.llamarpc.com
   ud:

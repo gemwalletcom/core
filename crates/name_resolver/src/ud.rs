@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, error::Error};
 
 use crate::client::NameClient;
+use crate::model::NameQuery;
 use primitives::NameProvider;
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -50,8 +51,8 @@ impl NameClient for UDClient {
         NameProvider::Ud
     }
 
-    async fn resolve(&self, name: &str, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let url = format!("{}/resolve/domains/{}", self.api_url, name);
+    async fn resolve(&self, query: &NameQuery, chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let url = format!("{}/resolve/domains/{}", self.api_url, query.domain);
         let response = self.client.get(&url).bearer_auth(self.api_key.clone()).send().await?.json::<ResolveDomain>().await?;
         let records = response.records;
 

@@ -5,6 +5,7 @@ use primitives::chain::Chain;
 use primitives::name::NameProvider;
 
 use crate::client::NameClient;
+use crate::model::NameQuery;
 use crate::error::NameError;
 
 pub struct TestProvider {
@@ -36,7 +37,7 @@ impl TestProvider {
 
 #[async_trait]
 impl NameClient for TestProvider {
-    async fn resolve(&self, _name: &str, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
+    async fn resolve(&self, _query: &NameQuery, _chain: Chain) -> Result<String, Box<dyn Error + Send + Sync>> {
         match &self.response {
             Ok(address) => Ok(address.clone()),
             Err(error) => Err(Box::new(NameError::new(error.to_string()))),
