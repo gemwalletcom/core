@@ -7,7 +7,7 @@ publish = false
 [features]
 default = []
 rpc = ["dep:chain_traits", "dep:gem_client"]
-signer = ["dep:signer", "dep:gem_hash", "dep:hex"]
+signer = ["dep:signer", "dep:gem_hash", "dep:hex", "dep:bitcoin"]
 reqwest = ["gem_client/reqwest"]
 chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 
@@ -28,6 +28,7 @@ serde_serializers = { path = "../serde_serializers", features = ["bigint"] }
 signer = { path = "../signer", optional = true }
 gem_hash = { path = "../gem_hash", optional = true }
 hex = { workspace = true, optional = true }
+bitcoin = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }

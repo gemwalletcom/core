@@ -13,6 +13,9 @@ pub mod provider;
 
 pub mod models;
 
+#[cfg(feature = "transaction")]
+pub mod transaction;
+
 #[cfg(feature = "signer")]
 pub mod signer;
 
@@ -35,6 +38,8 @@ pub const TOKEN_PROGRAM_2022: &str = "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuE
 pub const ASSOCIATED_TOKEN_ACCOUNT_PROGRAM: &str = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
 pub const SYSTEM_PROGRAM_ID: &str = "11111111111111111111111111111111";
 pub const COMPUTE_BUDGET_PROGRAM_ID: &str = "ComputeBudget111111111111111111111111111111";
+pub const COMPUTE_UNIT_LIMIT_DISCRIMINANT: u8 = 2;
+pub const COMPUTE_UNIT_PRICE_DISCRIMINANT: u8 = 3;
 pub const JUPITER_PROGRAM_ID: &str = "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4";
 pub const COMMITMENT_CONFIRMED: &str = "confirmed";
 

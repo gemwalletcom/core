@@ -1,5 +1,6 @@
 use crate::{GemstoneError, models::transaction::GemTransactionLoadInput};
 use gem_aptos::AptosChainSigner;
+use gem_bitcoin::signer::BitcoinChainSigner;
 use gem_hypercore::signer::HyperCoreSigner;
 use gem_solana::signer::SolanaChainSigner;
 use gem_sui::signer::SuiChainSigner;
@@ -17,6 +18,7 @@ impl GemChainSigner {
     #[uniffi::constructor]
     pub fn new(chain: Chain) -> Self {
         let signer: Box<dyn ChainSigner> = match chain {
+            Chain::Bitcoin => Box::new(BitcoinChainSigner),
             Chain::Aptos => Box::new(AptosChainSigner),
             Chain::HyperCore => Box::new(HyperCoreSigner),
             Chain::Sui => Box::new(SuiChainSigner),

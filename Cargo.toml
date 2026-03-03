@@ -76,6 +76,7 @@ rocket_ws = { version = "0.1.1" }
 async-trait = { version = "0.1.89" }
 prometheus-client = { version = "0.24.0" }
 futures = { version = "0.3.32" }
+futures-timer = { version = "3.0.3" }
 uuid = { version = "1.21.0", features = ["v4"] }
 
 # db
@@ -113,6 +114,7 @@ sui-types = { package = "sui-sdk-types", version = "0.2.2", features = [
     "serde",
 ] }
 k256 = { version = "0.13.4", features = ["ecdsa", "sha256"] }
+bitcoin = { version = "0.32", default-features = false, features = ["std"] }
 
 uniffi = { version = "0.31.0" }
 regex = { version = "1.12.3" }

@@ -1,8 +1,8 @@
-use crate::{SwapperError, config::get_swap_api_url};
+use crate::{SwapperError, config::get_swap_api_url, referrer::DEFAULT_REFERRER};
 use gem_client::{Client, ClientExt};
 use std::{collections::HashMap, fmt::Debug};
 
-use super::model::{DEFAULT_REFERRAL, ExplorerTransaction, QuoteRequest, QuoteResponseResult};
+use super::model::{ExplorerTransaction, QuoteRequest, QuoteResponseResult};
 
 pub fn base_url() -> String {
     get_swap_api_url("near-intents/1click")
@@ -65,7 +65,7 @@ impl<C: Client + Send + Sync + Debug> NearIntentsExplorer<C> {
         let transactions = self
             .get_transactions(&format!(
                 "referral={}&startTimestampUnix={}&statuses=PENDING_DEPOSIT,FAILED,PROCESSING,REFUNDED,SUCCESS",
-                DEFAULT_REFERRAL, start_timestamp
+                DEFAULT_REFERRER, start_timestamp
             ))
             .await?;
         Ok(transactions.into_iter().map(|t| t.deposit_address).collect())

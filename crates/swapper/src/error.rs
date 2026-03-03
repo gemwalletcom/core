@@ -4,6 +4,7 @@ use crate::thorchain::model::ErrorResponse as ThorchainError;
 use gem_client::ClientError;
 use gem_jsonrpc::types::JsonRpcError;
 use serde::{Deserialize, Serialize};
+use solana_primitives::SolanaError;
 use std::fmt::Debug;
 use typeshare::typeshare;
 
@@ -131,5 +132,15 @@ impl From<num_bigint::ParseBigIntError> for SwapperError {
 impl From<number_formatter::NumberFormatterError> for SwapperError {
     fn from(err: number_formatter::NumberFormatterError) -> Self {
         Self::ComputeQuoteError(format!("{}: {err}", INVALID_AMOUNT))
+    }
+}
+
+impl From<SolanaError> for SwapperError {
+    fn from(err: SolanaError) -> Self {
+        match err {
+            SolanaError::InvalidPubkey(msg) => Self::ComputeQuoteError(format!("{INVALID_ADDRESS}: {msg}")),
+            SolanaError::SerializationError(msg) | SolanaError::DeserializationError(msg) => Self::TransactionError(msg),
+            _ => Self::InvalidRoute,
+        }
     }
 }

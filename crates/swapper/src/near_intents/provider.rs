@@ -1,21 +1,22 @@
 use super::{
     AppFee, DepositMode, NearIntentsClient, NearIntentsExplorer, QuoteRequest as NearQuoteRequest, QuoteResponse, QuoteResponseError, QuoteResponseResult, SwapType,
     auto_quote_time_chains, deposit_memo_chains, get_asset_id_from_near_intents, get_near_intents_asset_id,
-    model::{DEFAULT_REFERRAL, DEFAULT_WAIT_TIME_MS, DEPOSIT_TYPE_ORIGIN, ExplorerTransaction, RECIPIENT_TYPE_DESTINATION},
-    reserved_tx_fees, supported_assets,
+    model::{DEFAULT_WAIT_TIME_MS, DEPOSIT_TYPE_ORIGIN, ExplorerTransaction, RECIPIENT_TYPE_DESTINATION},
+    supported_assets,
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperMode,
     SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, amount_to_value,
     client_factory::create_client_with_chain,
+    fees::resolve_max_quote_amount,
     near_intents::client::{base_url, explorer_url},
+    referrer::DEFAULT_REFERRER,
 };
-use alloy_primitives::U256;
 use async_trait::async_trait;
 use chrono::{Duration, Utc};
 use gem_sui::{SuiClient, build_transfer_message_bytes};
 use primitives::{Chain, TransactionSwapMetadata, swap::SwapStatus};
-use std::{fmt::Debug, str::FromStr, sync::Arc};
+use std::{fmt::Debug, sync::Arc};
 
 const DEFAULT_DEADLINE_MINUTES: i64 = 30;
 
@@ -79,36 +80,6 @@ where
             sui_client,
         }
     }
-    fn resolve_quote_amount(request: &QuoteRequest, mode: &SwapType) -> Result<String, SwapperError> {
-        let base_amount = match mode {
-            SwapType::ExactInput => request.value.clone(),
-            SwapType::FlexInput => request.value.clone(),
-        };
-
-        if !request.options.use_max_amount || !request.from_asset.asset_id().is_native() {
-            return Ok(base_amount);
-        }
-
-        let Some(reserved_base_amount) = reserved_tx_fees(request.from_asset.chain()) else {
-            return Ok(base_amount);
-        };
-
-        let reserved_fee = Self::parse_u256(reserved_base_amount, "reservedFee")?;
-        let amount_u256 = Self::parse_u256(&base_amount, "amount")?;
-
-        if amount_u256 <= reserved_fee {
-            return Err(SwapperError::InputAmountError {
-                min_amount: Some(reserved_fee.to_string()),
-            });
-        }
-
-        Ok((amount_u256 - reserved_fee).to_string())
-    }
-
-    fn parse_u256(value: &str, field: &str) -> Result<U256, SwapperError> {
-        U256::from_str(value).map_err(|_| SwapperError::ComputeQuoteError(format!("Invalid {field} value: {value}")))
-    }
-
     fn build_app_fee(options: &QuoteRequest) -> Option<Vec<AppFee>> {
         let fee = options.options.fee.as_ref()?;
 
@@ -132,7 +103,7 @@ where
         let deposit_mode = Self::resolve_deposit_mode(&request.from_asset);
         let from_chain = request.from_asset.asset_id().chain;
         let to_chain = request.to_asset.asset_id().chain;
-        let quote_waiting_time_ms = Self::resolve_quote_waiting_time(from_chain, to_chain);
+        let quote_waiting_time_ms = Some(Self::resolve_quote_waiting_time(from_chain, to_chain));
 
         let deadline = (Utc::now() + Duration::minutes(DEFAULT_DEADLINE_MINUTES)).to_rfc3339();
 
@@ -140,7 +111,7 @@ where
             origin_asset,
             destination_asset,
             amount,
-            referral: DEFAULT_REFERRAL.to_string(),
+            referral: DEFAULT_REFERRER.to_string(),
             recipient: request.destination_address.clone(),
             swap_type: mode,
             slippage_tolerance: request.options.slippage.bps,
@@ -300,7 +271,7 @@ where
             SwapperMode::ExactOut => return Err(SwapperError::NotSupportedAsset),
         };
 
-        let amount = Self::resolve_quote_amount(request, &mode)?;
+        let amount = resolve_max_quote_amount(request)?;
         let quote_request = self.build_quote_request(request, mode, amount.clone(), true)?;
         let response = Self::extract_quote(self.client.fetch_quote(&quote_request).await?, request.from_asset.decimals)?;
         let amount_out = Self::parse_amount(&response.quote.amount_out, "amountOut")?;
@@ -393,10 +364,13 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{SwapperError, SwapperMode, SwapperQuoteAsset, models::Options};
+    use crate::{SwapperError, SwapperMode, SwapperQuoteAsset, fees::reserved_tx_fees, models::Options};
+    use alloy_primitives::U256;
     use primitives::asset_constants::USDT_SMARTCHAIN_ASSET_ID;
     use primitives::{AssetId, Chain};
     use serde_json::json;
+
+    use std::str::FromStr;
 
     fn status(json: &str) -> SwapResult {
         let transactions: Vec<ExplorerTransaction> = serde_json::from_str(json).unwrap();
@@ -432,7 +406,7 @@ mod tests {
         let amount = (reserve + U256::from(500u64)).to_string();
 
         let request = build_quote_request(&amount, true, Chain::Ethereum);
-        let result = NearIntents::<RpcClient>::resolve_quote_amount(&request, &SwapType::FlexInput).expect("expected amount to resolve");
+        let result = resolve_max_quote_amount(&request).expect("expected amount to resolve");
 
         assert_eq!(result, (U256::from_str(&amount).unwrap() - reserve).to_string());
     }
@@ -441,7 +415,7 @@ mod tests {
     fn resolve_quote_amount_without_use_max_keeps_amount() {
         let amount = "123456";
         let request = build_quote_request(amount, false, Chain::Ethereum);
-        let result = NearIntents::<RpcClient>::resolve_quote_amount(&request, &SwapType::FlexInput).expect("expected amount to resolve");
+        let result = resolve_max_quote_amount(&request).expect("expected amount to resolve");
 
         assert_eq!(result, amount);
     }
@@ -451,7 +425,7 @@ mod tests {
         let reserve = U256::from_str(reserved_tx_fees(Chain::Ethereum).unwrap()).unwrap();
         let request = build_quote_request(&reserve.to_string(), true, Chain::Ethereum);
 
-        let err = NearIntents::<RpcClient>::resolve_quote_amount(&request, &SwapType::FlexInput).expect_err("expected error");
+        let err = resolve_max_quote_amount(&request).expect_err("expected error");
 
         assert!(matches!(err, SwapperError::InputAmountError { .. }));
     }
@@ -560,7 +534,11 @@ mod tests {
 mod swap_integration_tests {
     use super::*;
     use crate::{FetchQuoteData, SwapperMode, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode, alien::reqwest_provider::NativeProvider, models::Options};
-    use primitives::{AssetId, Chain, swap::SwapStatus};
+    use primitives::{
+        AssetId, Chain,
+        asset_constants::{USDC_ARB_ASSET_ID, USDC_BASE_ASSET_ID},
+        swap::SwapStatus,
+    };
     use std::sync::Arc;
 
     #[tokio::test]
@@ -582,10 +560,10 @@ mod swap_integration_tests {
         };
 
         let request = QuoteRequest {
-            from_asset: SwapperQuoteAsset::from(AssetId::new("arbitrum_0xaf88d065e77c8cc2239327c5edb3a432268e5831").unwrap()),
-            to_asset: SwapperQuoteAsset::from(AssetId::new("solana_epjfwdd5aufqssqem2qn1xzybapc8g4weggkzwytdt1v").unwrap()),
-            wallet_address: "0x2527D02599Ba641c19FEa793cD0F167589a0f10D".to_string(),
-            destination_address: "13QkxhNMrTPxoCkRdYdJ65tFuwXPhL5gLS2Z5Nr6gjRK".to_string(),
+            from_asset: SwapperQuoteAsset::from(AssetId::new(USDC_ARB_ASSET_ID).unwrap()),
+            to_asset: SwapperQuoteAsset::from(AssetId::new(USDC_BASE_ASSET_ID).unwrap()),
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
+            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             value: "500000".to_string(),
             mode: SwapperMode::ExactIn,
             options,

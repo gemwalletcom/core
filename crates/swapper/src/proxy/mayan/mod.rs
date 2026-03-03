@@ -7,6 +7,7 @@ pub use model::{MayanChain, MayanClientStatus, MayanTransactionResult};
 pub use price::MayanPrice;
 
 use crate::SwapperProvider;
+use crate::asset::EVM_ZERO_ADDRESS;
 use crate::cross_chain::CrossChainProvider;
 use gem_evm::ethereum_address_checksum;
 use primitives::{AssetId, Chain, ChainType, Transaction};
@@ -17,8 +18,6 @@ const MAYAN_SWIFT: &str = "0xC38e4e6A15593f908255214653d3D947CA1c2338";
 const MAYAN_FULFILL_HELPER: &str = "0xBC0663ef502F0Ee9676626ED5B418037252eFeb2";
 
 pub const MAYAN_CONTRACTS: [&str; 4] = [MAYAN_FORWARDER, MAYAN_MCTP, MAYAN_SWIFT, MAYAN_FULFILL_HELPER];
-
-const ZERO_ADDRESS: &str = "0x0000000000000000000000000000000000000000";
 
 pub struct MayanCrossChain;
 
@@ -61,7 +60,7 @@ pub fn wormhole_chain_id_to_chain(chain_id: u16) -> Option<Chain> {
 }
 
 pub fn resolve_asset_id(chain: Chain, token_address: &str) -> Option<AssetId> {
-    let is_native = token_address == ZERO_ADDRESS || chain.config().denom.is_some_and(|d| d == token_address);
+    let is_native = token_address == EVM_ZERO_ADDRESS || chain.config().denom.is_some_and(|d| d == token_address);
     if is_native {
         return Some(AssetId::from_chain(chain));
     }
@@ -79,7 +78,7 @@ mod tests {
 
     #[test]
     fn test_resolve_asset_id_native_eth() {
-        let result = resolve_asset_id(Chain::Ethereum, ZERO_ADDRESS);
+        let result = resolve_asset_id(Chain::Ethereum, EVM_ZERO_ADDRESS);
         assert_eq!(result, Some(AssetId::from_chain(Chain::Ethereum)));
     }
 
@@ -91,7 +90,7 @@ mod tests {
 
     #[test]
     fn test_resolve_asset_id_native_solana_zero_address() {
-        let result = resolve_asset_id(Chain::Solana, ZERO_ADDRESS);
+        let result = resolve_asset_id(Chain::Solana, EVM_ZERO_ADDRESS);
         assert_eq!(result, Some(AssetId::from_chain(Chain::Solana)));
     }
 

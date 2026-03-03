@@ -1,5 +1,8 @@
+use alloy_primitives::U256;
 use primitives::Chain;
-use std::{collections::HashMap, sync::LazyLock};
+use std::{collections::HashMap, str::FromStr, sync::LazyLock};
+
+use crate::{QuoteRequest, SwapperError};
 
 // Reserved fees represent approximately two simple native transfers per chain, in base units.
 pub static RESERVED_NATIVE_FEES: LazyLock<HashMap<Chain, &'static str>> = LazyLock::new(|| {
@@ -35,4 +38,21 @@ pub static RESERVED_NATIVE_FEES: LazyLock<HashMap<Chain, &'static str>> = LazyLo
 
 pub fn reserved_tx_fees(chain: Chain) -> Option<&'static str> {
     RESERVED_NATIVE_FEES.get(&chain).copied()
+}
+
+pub fn resolve_max_quote_amount(request: &QuoteRequest) -> Result<String, SwapperError> {
+    if !request.options.use_max_amount || !request.from_asset.asset_id().is_native() {
+        return Ok(request.value.clone());
+    }
+    let Some(reserved) = reserved_tx_fees(request.from_asset.chain()) else {
+        return Ok(request.value.clone());
+    };
+    let reserved_fee = U256::from_str(reserved).map_err(|_| SwapperError::ComputeQuoteError(format!("invalid reserved fee: {reserved}")))?;
+    let amount = U256::from_str(&request.value).map_err(|_| SwapperError::ComputeQuoteError(format!("invalid amount: {}", request.value)))?;
+    if amount <= reserved_fee {
+        return Err(SwapperError::InputAmountError {
+            min_amount: Some(reserved_fee.to_string()),
+        });
+    }
+    Ok((amount - reserved_fee).to_string())
 }
