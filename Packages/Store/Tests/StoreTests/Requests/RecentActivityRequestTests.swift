@@ -17,12 +17,12 @@ struct RecentActivityRequestTests {
         let bnb = AssetId(chain: .smartChain)
         let now = Date()
 
-        try store.add(assetId: btc, toAssetId: .none, walletId: WalletId(id: ""), type: .search, createdAt: now.addingTimeInterval(-2))
-        try store.add(assetId: bnb, toAssetId: .none, walletId: WalletId(id: ""), type: .search, createdAt: now.addingTimeInterval(-1))
-        try store.add(assetId: btc, toAssetId: .none, walletId: WalletId(id: ""), type: .transfer, createdAt: now)
+        try store.add(assetId: btc, toAssetId: .none, walletId: WalletId.mock(), type: .search, createdAt: now.addingTimeInterval(-2))
+        try store.add(assetId: bnb, toAssetId: .none, walletId: WalletId.mock(), type: .search, createdAt: now.addingTimeInterval(-1))
+        try store.add(assetId: btc, toAssetId: .none, walletId: WalletId.mock(), type: .transfer, createdAt: now)
 
         try db.dbQueue.read { db in
-            let result = try RecentActivityRequest(walletId: WalletId(id: ""), limit: 10).fetch(db)
+            let result = try RecentActivityRequest(walletId: WalletId.mock(), limit: 10).fetch(db)
 
             #expect(result.count == 2)
             #expect(result.first?.asset.id == btc)

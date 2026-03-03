@@ -5,7 +5,7 @@ import Preferences
 import Primitives
 
 public extension WalletPreferences {
-    static func mock(walletId: WalletId = WalletId(id: UUID().uuidString)) -> WalletPreferences {
+    static func mock(walletId: WalletId = .multicoin(address: "0x\(UUID().uuidString)")) -> WalletPreferences {
         WalletPreferences(walletId: walletId)
     }
 }

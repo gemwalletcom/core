@@ -20,17 +20,17 @@ struct WalletsSceneViewModelTests {
         let model = WalletsSceneViewModel.mock(walletService: service)
         model.walletsQuery.value = service.wallets
 
-        #expect(model.currentWalletId == .mock(id: "1"))
+        #expect(model.currentWalletId == .multicoin(address: "0x1"))
 
-        await model.onDeleteConfirmed(wallet: .mock(id: "1"))
-        
-        #expect(model.currentWalletId == .mock(id: "2"))
+        await model.onDeleteConfirmed(wallet: .mock(id: "multicoin_0x1"))
 
-        await model.onDeleteConfirmed(wallet: .mock(id: "2"))
-        
-        #expect(model.currentWalletId == .mock(id: "3"))
+        #expect(model.currentWalletId == .multicoin(address: "0x2"))
 
-        await model.onDeleteConfirmed(wallet: .mock(id: "3"))
+        await model.onDeleteConfirmed(wallet: .mock(id: "multicoin_0x2"))
+
+        #expect(model.currentWalletId == .multicoin(address: "0x3"))
+
+        await model.onDeleteConfirmed(wallet: .mock(id: "multicoin_0x3"))
         
         #expect(model.currentWalletId == .none)
     }
@@ -42,16 +42,16 @@ struct WalletsSceneViewModelTests {
         model.walletsQuery.value = service.wallets
 
         model.onMove(from: IndexSet(integer: 0), to: 0)
-        #expect(service.sortedWallets.ids == ["1", "2", "3"])
+        #expect(service.sortedWallets.ids == ["multicoin_0x1", "multicoin_0x2", "multicoin_0x3"])
 
         model.onMove(from: IndexSet(integer: 1), to: 0)
-        #expect(service.sortedWallets.ids == ["2", "1", "3"])
+        #expect(service.sortedWallets.ids == ["multicoin_0x2", "multicoin_0x1", "multicoin_0x3"])
 
         model.onMove(from: IndexSet(integer: 0), to: 3)
-        #expect(service.sortedWallets.ids == ["3", "2", "1"])
+        #expect(service.sortedWallets.ids == ["multicoin_0x3", "multicoin_0x2", "multicoin_0x1"])
 
         model.onMove(from: IndexSet(integer: 2), to: 0)
-        #expect(service.sortedWallets.ids == ["2", "1", "3"])
+        #expect(service.sortedWallets.ids == ["multicoin_0x2", "multicoin_0x1", "multicoin_0x3"])
         
     }
 }
@@ -77,9 +77,9 @@ extension WalletsSceneViewModel {
 extension WalletService {
     static func mockWallets() throws -> Self {
         let walletStore = WalletStore.mock(db: .mock())
-        let wallet1 = Wallet.mock(id: "1")
-        let wallet2 = Wallet.mock(id: "2")
-        let wallet3 = Wallet.mock(id: "3")
+        let wallet1 = Wallet.mock(id: "multicoin_0x1")
+        let wallet2 = Wallet.mock(id: "multicoin_0x2")
+        let wallet3 = Wallet.mock(id: "multicoin_0x3")
         try walletStore.addWallet(wallet1)
         try walletStore.addWallet(wallet2)
         try walletStore.addWallet(wallet3)

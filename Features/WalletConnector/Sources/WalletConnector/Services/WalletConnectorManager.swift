@@ -26,12 +26,11 @@ extension WalletConnectorManager: WalletConnectorInteractable {
             guard let self else { return }
             self.presenter.isPresentingError = error.localizedDescription
         }
-
     }
 
     public func sessionApproval(payload: WCPairingProposal) async throws -> WalletId {
         let value = try await presentSheet(payload: payload, sheetType: { .connectionProposal($0) })
-        return WalletId(id: value)
+        return try WalletId.from(id: value)
     }
 
     public func signMessage(payload: SignMessagePayload) async throws -> String {

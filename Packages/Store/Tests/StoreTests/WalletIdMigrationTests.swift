@@ -224,13 +224,18 @@ struct WalletIdMigrationTests {
 
         let asset = AssetBasic.mock(asset: .mock(id: .mockEthereum()))
         try assetStore.add(assets: [asset])
-        try balanceStore.addBalance([AddBalance(assetId: asset.asset.id, isEnabled: true)], for: wallet.walletId)
+        try db.dbQueue.write { db in
+            try db.execute(
+                sql: "INSERT INTO balances (assetId, walletId, isEnabled) VALUES (?, ?, ?)",
+                arguments: [asset.asset.id.identifier, oldId, true]
+            )
+        }
 
         try db.dbQueue.write { db in
             try WalletIdMigration.migrate(db: db, userDefaults: userDefaults)
         }
 
-        let newWalletId = WalletId(id: "multicoin_\(ethAddress)")
+        let newWalletId = try WalletId.from(id: "multicoin_\(ethAddress)")
         let balances = try balanceStore.getBalances(walletId: newWalletId, assetIds: [asset.asset.id])
         #expect(balances.count == 1)
     }

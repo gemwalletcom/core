@@ -28,7 +28,7 @@ public enum PushNotification: Equatable, Sendable {
         case .transaction:
             let transaction = try decoder.decode(PushNotificationTransaction.self, from: data)
             let assetId = try AssetId(id: transaction.assetId)
-            let walletId = WalletId(id: transaction.walletId)
+            let walletId = try WalletId.from(id: transaction.walletId)
             self = .transaction(walletId: walletId, assetId, transaction: transaction.transaction)
         case .asset:
             let asset = try decoder.decode(PushNotificationAsset.self, from: data)

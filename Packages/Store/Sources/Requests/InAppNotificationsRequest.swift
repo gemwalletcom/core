@@ -17,7 +17,7 @@ public struct InAppNotificationsRequest: DatabaseQueryable {
             .filter(NotificationRecord.Columns.walletId == walletId)
             .order(NotificationRecord.Columns.createdAt.desc)
             .fetchAll(db)
-            .map { $0.mapToNotification() }
+            .map { try $0.mapToNotification() }
     }
 }
 

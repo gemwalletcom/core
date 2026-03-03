@@ -5,8 +5,8 @@ import Primitives
 
 public extension WalletId {
     static func mock(
-        id: String = ""
+        address: String = "0x0000000000000000000000000000000000000000"
     ) -> WalletId {
-        WalletId(id: id)
+        .multicoin(address: address)
     }
 }

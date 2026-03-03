@@ -13,7 +13,7 @@ struct WalletSetupServiceTests {
     @Test
     func setupMulticoinWallet() throws {
         let (db, balanceStore, walletStore, service) = setupService()
-        let wallet = Wallet.mock(id: "test", type: .multicoin, accounts: [.mock(chain: .cosmos), .mock(chain: .ethereum)])
+        let wallet = Wallet.mock(id: "multicoin_0xtest", type: .multicoin, accounts: [.mock(chain: .cosmos), .mock(chain: .ethereum)])
 
         try addAsset(db: db, chain: .cosmos)
         try addAsset(db: db, chain: .ethereum)
@@ -28,7 +28,7 @@ struct WalletSetupServiceTests {
     @Test
     func setupSingleWallet() throws {
         let (db, balanceStore, walletStore, service) = setupService()
-        let wallet = Wallet.mock(id: "test", type: .single, accounts: [.mock(chain: .cosmos)])
+        let wallet = Wallet.mock(id: "single_cosmos_0xtest", type: .single, accounts: [.mock(chain: .cosmos)])
 
         try addAsset(db: db, chain: .cosmos)
         try walletStore.addWallet(wallet)

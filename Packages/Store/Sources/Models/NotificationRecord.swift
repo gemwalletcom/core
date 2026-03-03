@@ -42,9 +42,9 @@ extension NotificationRecord: CreateTable {
 }
 
 extension NotificationRecord {
-    func mapToNotification() -> Primitives.InAppNotification {
+    func mapToNotification() throws -> Primitives.InAppNotification {
         Primitives.InAppNotification(
-            walletId: walletId,
+            walletId: try WalletId.from(id: walletId),
             readAt: readAt,
             createdAt: createdAt,
             item: item
@@ -53,7 +53,7 @@ extension NotificationRecord {
 }
 
 extension Primitives.InAppNotification {
-    func record(walletId: WalletId) -> NotificationRecord {
+    func record() -> NotificationRecord {
         NotificationRecord(
             id: item.id,
             walletId: walletId.id,

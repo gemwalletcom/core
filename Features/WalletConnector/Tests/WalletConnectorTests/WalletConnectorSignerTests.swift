@@ -14,10 +14,10 @@ import WalletSessionService
 struct WalletConnectorSignerTests {
     @Test
     func getWalletsRequiredChains() throws {
-        let ethOnlyWallet = Wallet.mock(id: "1", accounts: [.mock(chain: .ethereum)])
-        let ethPolygonWallet = Wallet.mock(id: "2", accounts: [.mock(chain: .ethereum), .mock(chain: .polygon)])
-        let solanaWallet = Wallet.mock(id: "3", accounts: [.mock(chain: .solana)])
-        
+        let ethOnlyWallet = Wallet.mock(id: "multicoin_0x1", accounts: [.mock(chain: .ethereum)])
+        let ethPolygonWallet = Wallet.mock(id: "multicoin_0x2", accounts: [.mock(chain: .ethereum), .mock(chain: .polygon)])
+        let solanaWallet = Wallet.mock(id: "multicoin_0x3", accounts: [.mock(chain: .solana)])
+
         let signer = try WalletConnectorSigner.mock(wallets: [ethOnlyWallet, ethPolygonWallet, solanaWallet])
 
         let matchingWallets = try signer.getWallets(for: .requiredChains())
@@ -30,9 +30,9 @@ struct WalletConnectorSignerTests {
 
     @Test
     func getWalletsOptionalChains() throws {
-        let regularWallet = Wallet.mock(id: "1", accounts: [.mock(chain: .ethereum)])
-        let viewOnlyWallet = Wallet.mock(id: "2", type: .view, accounts: [.mock(chain: .ethereum)])
-        let bitcoinWallet = Wallet.mock(id: "3", accounts: [.mock(chain: .bitcoin)])
+        let regularWallet = Wallet.mock(id: "multicoin_0x1", accounts: [.mock(chain: .ethereum)])
+        let viewOnlyWallet = Wallet.mock(id: "view_ethereum_0x2", type: .view, accounts: [.mock(chain: .ethereum)])
+        let bitcoinWallet = Wallet.mock(id: "multicoin_0x3", accounts: [.mock(chain: .bitcoin)])
         
         let signer = try WalletConnectorSigner.mock(wallets: [regularWallet, viewOnlyWallet, bitcoinWallet])
 
@@ -46,9 +46,9 @@ struct WalletConnectorSignerTests {
 
     @Test
     func getWalletsMultiOptionalNamespaces() throws {
-        let solWallet = Wallet.mock(id: "1", accounts: [.mock(chain: .solana)])
-        let solEthWallet = Wallet.mock(id: "2", accounts: [.mock(chain: .solana), .mock(chain: .ethereum)])
-        let solEthBnbWallet = Wallet.mock(id: "3", accounts: [.mock(chain: .solana), .mock(chain: .ethereum), .mock(chain: .smartChain)])
+        let solWallet = Wallet.mock(id: "multicoin_0x1", accounts: [.mock(chain: .solana)])
+        let solEthWallet = Wallet.mock(id: "multicoin_0x2", accounts: [.mock(chain: .solana), .mock(chain: .ethereum)])
+        let solEthBnbWallet = Wallet.mock(id: "multicoin_0x3", accounts: [.mock(chain: .solana), .mock(chain: .ethereum), .mock(chain: .smartChain)])
         
         let signer = try WalletConnectorSigner.mock(wallets: [solWallet, solEthWallet, solEthBnbWallet])
 
@@ -61,9 +61,9 @@ struct WalletConnectorSignerTests {
 
     @Test
     func getWalletsMixedRequiredOptional() throws {
-        let ethOnlyWallet = Wallet.mock(id: "1", accounts: [.mock(chain: .ethereum)])
-        let ethPolygonWallet = Wallet.mock(id: "2", accounts: [.mock(chain: .ethereum), .mock(chain: .polygon)])
-        let ethPolygonSolanaWallet = Wallet.mock(id: "3", accounts: [.mock(chain: .ethereum), .mock(chain: .polygon), .mock(chain: .solana)])
+        let ethOnlyWallet = Wallet.mock(id: "multicoin_0x1", accounts: [.mock(chain: .ethereum)])
+        let ethPolygonWallet = Wallet.mock(id: "multicoin_0x2", accounts: [.mock(chain: .ethereum), .mock(chain: .polygon)])
+        let ethPolygonSolanaWallet = Wallet.mock(id: "multicoin_0x3", accounts: [.mock(chain: .ethereum), .mock(chain: .polygon), .mock(chain: .solana)])
         
         let signer = try WalletConnectorSigner.mock(wallets: [ethOnlyWallet, ethPolygonWallet, ethPolygonSolanaWallet])
 
@@ -75,9 +75,9 @@ struct WalletConnectorSignerTests {
 
     @Test
     func getWalletsNonEIP155Optional() throws {
-        let ethWallet = Wallet.mock(id: "1", accounts: [.mock(chain: .ethereum)])
-        let bitcoinWallet = Wallet.mock(id: "2", accounts: [.mock(chain: .bitcoin)])
-        let cosmosWallet = Wallet.mock(id: "3", accounts: [.mock(chain: .cosmos)])
+        let ethWallet = Wallet.mock(id: "multicoin_0x1", accounts: [.mock(chain: .ethereum)])
+        let bitcoinWallet = Wallet.mock(id: "multicoin_0x2", accounts: [.mock(chain: .bitcoin)])
+        let cosmosWallet = Wallet.mock(id: "multicoin_0x3", accounts: [.mock(chain: .cosmos)])
 
         let signer = try WalletConnectorSigner.mock(wallets: [ethWallet, bitcoinWallet, cosmosWallet])
 
@@ -93,8 +93,8 @@ struct WalletConnectorSignerTests {
         let walletStore = WalletStore(db: db)
         let connectionsStore = ConnectionsStore(db: db)
 
-        let walletA = Wallet.mock(id: "wallet-a", name: "Wallet A", accounts: [.mock(chain: .ethereum)])
-        let walletB = Wallet.mock(id: "wallet-b", name: "Wallet B", accounts: [.mock(chain: .ethereum)])
+        let walletA = Wallet.mock(id: "multicoin_0xa", name: "Wallet A", accounts: [.mock(chain: .ethereum)])
+        let walletB = Wallet.mock(id: "multicoin_0xb", name: "Wallet B", accounts: [.mock(chain: .ethereum)])
 
         try walletStore.addWallet(walletA)
         try walletStore.addWallet(walletB)

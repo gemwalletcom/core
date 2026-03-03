@@ -23,12 +23,11 @@ struct TransactionStoreTests {
         
         let db = DB.mockAssets(assets: assets)
         let walletStore = WalletStore(db: db)
-        try walletStore.addWallet(.mock(id: "1", accounts: assets.map { Account.mock(chain: $0.asset.chain) }))
-        
+        let walletId = WalletId.multicoin(address: "test")
+        try walletStore.addWallet(.mock(id: walletId.id, accounts: assets.map { Account.mock(chain: $0.asset.chain) }))
+
         let store = TransactionStore(db: db)
         let transactionId = "1"
-
-        let walletId = WalletId(id: "1")
         try store.addTransactions(walletId: walletId, transactions: [
             .mock(
                 id: transactionId,

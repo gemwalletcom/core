@@ -24,7 +24,7 @@ public struct WalletSessionService: WalletSessionManageable {
 
     public var currentWalletId: Primitives.WalletId? {
         guard let id = preferences.currentWalletId else { return nil }
-        return WalletId(id: id)
+        return try? WalletId.from(id: id)
     }
 
     public func setCurrent(index: Int) -> WalletId? {
@@ -35,7 +35,7 @@ public struct WalletSessionService: WalletSessionManageable {
             return currentWallet.walletId
         }
         preferences.currentWalletId = wallet.id
-        
+
         return wallet.walletId
     }
 

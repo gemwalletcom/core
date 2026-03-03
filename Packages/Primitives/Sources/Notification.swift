@@ -5,12 +5,12 @@
 import Foundation
 
 public struct InAppNotification: Codable, Equatable, Sendable {
-	public let walletId: String
+	public let walletId: WalletId
 	public let readAt: Date?
 	public let createdAt: Date
 	public let item: CoreListItem
 
-	public init(walletId: String, readAt: Date?, createdAt: Date, item: CoreListItem) {
+	public init(walletId: WalletId, readAt: Date?, createdAt: Date, item: CoreListItem) {
 		self.walletId = walletId
 		self.readAt = readAt
 		self.createdAt = createdAt

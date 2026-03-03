@@ -12,7 +12,7 @@ public enum ImportIdentifier {
     case privateKey(chain: Chain, key: String)
     case address(address: String, chain: Chain)
 
-    func walletIdentifier() throws -> WalletIdentifier {
+    func walletId() throws -> WalletId {
         let (chain, address) = try deriveAddress()
         switch self {
         case .phrase: return .multicoin(address: address)

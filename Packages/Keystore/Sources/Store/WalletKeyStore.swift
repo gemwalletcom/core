@@ -25,7 +25,7 @@ struct WalletKeyStore: Sendable {
     }
 
     func importWallet(
-        id: WalletIdentifier,
+        id: WalletId,
         name: String,
         words: [String],
         chains: [Chain],
@@ -49,7 +49,7 @@ struct WalletKeyStore: Sendable {
         return privateKey
     }
 
-    func importPrivateKey(id: WalletIdentifier, name: String, key: String, chain: Chain, password: String, source: WalletSource) throws -> Primitives.Wallet {
+    func importPrivateKey(id: WalletId, name: String, key: String, chain: Chain, password: String, source: WalletSource) throws -> Primitives.Wallet {
         let privateKey = try Self.decodeKey(key, chain: chain)
         let wallet = try keyStore.import(privateKey: privateKey, name: name, password: password, coin: chain.coinType)
 
@@ -75,7 +75,7 @@ struct WalletKeyStore: Sendable {
     }
 
     func addCoins(
-        id: WalletIdentifier,
+        id: WalletId,
         wallet: WalletCore.Wallet,
         existingChains: [Chain],
         newChains: [Chain],
@@ -126,7 +126,7 @@ struct WalletKeyStore: Sendable {
         password: String
     ) throws -> Primitives.Wallet {
         try addCoins(
-            id: try WalletIdentifier.from(id: wallet.id),
+            id: try WalletId.from(id: wallet.id),
             wallet: try getWallet(id: wallet.keystoreId),
             existingChains: existingChains,
             newChains: newChains,

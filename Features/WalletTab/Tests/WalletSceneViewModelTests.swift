@@ -37,12 +37,12 @@ struct WalletSceneViewModelTests {
 
     @Test
     func onChangeWalletUpdatesImageUrl() {
-        let wallet = Wallet.mock(id: "1", imageUrl: nil)
+        let wallet = Wallet.mock(id: "multicoin_0x1", imageUrl: nil)
         let model = WalletSceneViewModel.mock(wallet: wallet)
 
         #expect(model.wallet.imageUrl == nil)
 
-        let updatedWallet = Wallet.mock(id: "1", imageUrl: "avatar.png")
+        let updatedWallet = Wallet.mock(id: "multicoin_0x1", imageUrl: "avatar.png")
         model.onChangeWallet(wallet, updatedWallet)
 
         #expect(model.wallet.imageUrl == "avatar.png")
@@ -50,14 +50,14 @@ struct WalletSceneViewModelTests {
 
     @Test
     func onChangeWalletSwitchesToDifferentWallet() {
-        let wallet = Wallet.mock(id: "1", name: "Wallet 1")
+        let wallet = Wallet.mock(id: "multicoin_0x1", name: "Wallet 1")
         let model = WalletSceneViewModel.mock(wallet: wallet)
 
-        #expect(model.wallet.id == "1")
+        #expect(model.wallet.id == "multicoin_0x1")
 
-        let newWallet = Wallet.mock(id: "2", name: "Wallet 2")
+        let newWallet = Wallet.mock(id: "multicoin_0x2", name: "Wallet 2")
         model.onChangeWallet(wallet, newWallet)
 
-        #expect(model.wallet.id == "2")
+        #expect(model.wallet.id == "multicoin_0x2")
     }
 }

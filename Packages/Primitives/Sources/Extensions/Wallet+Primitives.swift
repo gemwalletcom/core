@@ -18,11 +18,7 @@ public extension Wallet {
     }
 
     var walletId: WalletId {
-        WalletId(id: id)
-    }
-
-    func walletIdentifier() throws -> WalletIdentifier {
-        try WalletIdentifier.from(type: type, accounts: accounts)
+        try! WalletId.from(id: id)
     }
 
     var addressChains: [AddressChains] {
@@ -51,7 +47,7 @@ public extension Wallet {
 // factory
 public extension Wallet {
     static func makeView(name: String, chain: Chain, address: String) -> Wallet {
-        let id = WalletIdentifier.make(walletType: .view, chain: chain, address: address).id
+        let id = WalletId.make(walletType: .view, chain: chain, address: address).id
         return Wallet(
             id: id,
             externalId: nil,
