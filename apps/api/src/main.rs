@@ -129,6 +129,7 @@ fn mount_routes(rocket: Rocket<Build>, metrics_path: &str) -> Rocket<Build> {
                 referral::redeem_rewards,
                 notifications::get_notifications,
                 notifications::mark_notifications_read,
+                swap::near_intents::post_quote,
             ],
         )
         .mount(
@@ -234,6 +235,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let rewards_client = referral::RewardsClient::new(database.clone(), stream_producer.clone(), ip_security_client, pusher_client.clone());
     let redemption_client = referral::RewardsRedemptionClient::new(database.clone(), stream_producer.clone());
     let notifications_client = NotificationsClient::new(database.clone());
+    let near_intents_client = swap::NearIntentsProxyClient::new(cacher_client.clone());
     let jwt_config = devices::auth_config::JwtConfig {
         secret: settings.api.auth.jwt.secret.clone(),
         expiry: settings.api.auth.jwt.expiry,
@@ -266,6 +268,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(redemption_client))
         .manage(Mutex::new(wallets_client))
         .manage(Mutex::new(notifications_client))
+        .manage(Mutex::new(near_intents_client))
         .manage(auth_client);
 
     mount_routes(rocket, &settings.metrics.path)

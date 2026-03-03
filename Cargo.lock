@@ -621,6 +621,7 @@ dependencies = [
  "primitives",
  "prometheus-client",
  "redis",
+ "reqwest 0.13.2",
  "rocket",
  "rocket_ws",
  "search_index",

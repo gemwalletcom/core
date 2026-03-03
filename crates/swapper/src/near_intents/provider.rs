@@ -355,9 +355,8 @@ where
         Ok(SwapResult { status, metadata })
     }
 
-    async fn get_vault_addresses(&self, from_timestamp: Option<u64>) -> Result<Vec<String>, SwapperError> {
-        let start_timestamp = from_timestamp.unwrap_or_else(|| (Utc::now() - Duration::seconds(60)).timestamp() as u64);
-        self.explorer.get_deposit_addresses(start_timestamp).await
+    async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<Vec<String>, SwapperError> {
+        Ok(vec![])
     }
 }
 

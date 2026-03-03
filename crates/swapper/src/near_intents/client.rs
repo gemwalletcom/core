@@ -1,4 +1,4 @@
-use crate::{SwapperError, config::get_swap_api_url, referrer::DEFAULT_REFERRER};
+use crate::{SwapperError, config::get_swap_api_url};
 use gem_client::{Client, ClientExt};
 use std::{collections::HashMap, fmt::Debug};
 
@@ -61,13 +61,4 @@ impl<C: Client + Send + Sync + Debug> NearIntentsExplorer<C> {
         Ok(transactions.into_iter().find(|tx| tx.origin_chain_tx_hashes.iter().any(|h| h.eq_ignore_ascii_case(hash))))
     }
 
-    pub async fn get_deposit_addresses(&self, start_timestamp: u64) -> Result<Vec<String>, SwapperError> {
-        let transactions = self
-            .get_transactions(&format!(
-                "referral={}&startTimestampUnix={}&statuses=PENDING_DEPOSIT,FAILED,PROCESSING,REFUNDED,SUCCESS",
-                DEFAULT_REFERRER, start_timestamp
-            ))
-            .await?;
-        Ok(transactions.into_iter().map(|t| t.deposit_address).collect())
-    }
 }
