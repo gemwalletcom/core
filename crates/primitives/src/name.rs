@@ -5,7 +5,6 @@ use typeshare::typeshare;
 
 #[derive(Debug, Serialize)]
 #[typeshare(swift = "Sendable, Hashable")]
-#[allow(dead_code)]
 pub struct NameRecord {
     pub name: String,
     pub chain: Chain,

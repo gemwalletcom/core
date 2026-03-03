@@ -527,7 +527,6 @@ impl FiatClient {
     }
 }
 
-#[allow(dead_code)]
 fn precision(val: f64, precision: usize) -> f64 {
     format!("{val:.precision$}").parse::<f64>().unwrap()
 }

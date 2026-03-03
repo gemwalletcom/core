@@ -2,7 +2,7 @@ use crate::models::{Account, AccountAccessKey, Block, BroadcastResult, GasPrice,
 use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainProvider, ChainStaking, ChainToken, ChainTraits};
 use gem_client::Client;
 use gem_jsonrpc::{client::JsonRpcClient, types::JsonRpcError};
-use primitives::{Asset, Chain};
+use primitives::Chain;
 use serde_json::json;
 
 #[derive(Debug)]
@@ -62,13 +62,6 @@ impl<C: Client + Clone> NearClient<C> {
             "wait_until": "EXECUTED"
         });
         self.client.call("tx", params).await
-    }
-
-    pub async fn get_token_data(&self, _token_id: String) -> Result<Asset, JsonRpcError> {
-        Err(JsonRpcError {
-            code: -32000,
-            message: "NEAR token queries not implemented".to_string(),
-        })
     }
 }
 

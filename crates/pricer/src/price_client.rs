@@ -21,12 +21,6 @@ impl PriceClient {
         Self { database, cacher_client }
     }
 
-    pub fn get_coin_id(&self, asset_id: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let prices = self.database.prices()?.get_prices_assets_for_asset_id(asset_id)?;
-        let price = prices.first().ok_or("no price for asset_id")?;
-        Ok(price.price_id.clone())
-    }
-
     pub fn get_price_ids_for_asset_ids(&self, asset_ids: &[String]) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
         let prices_assets = self.database.prices()?.get_prices_assets()?;
         let requested: std::collections::HashSet<&String> = asset_ids.iter().collect();

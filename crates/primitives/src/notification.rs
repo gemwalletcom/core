@@ -1,4 +1,4 @@
-use crate::CoreListItem;
+use crate::{CoreListItem, WalletId};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
@@ -7,7 +7,7 @@ use typeshare::typeshare;
 #[typeshare(swift = "Sendable, Equatable")]
 #[serde(rename_all = "camelCase")]
 pub struct InAppNotification {
-    pub wallet_id: String,
+    pub wallet_id: WalletId,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub read_at: Option<DateTime<Utc>>,
     pub created_at: DateTime<Utc>,

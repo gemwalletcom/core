@@ -117,10 +117,6 @@ impl<C: Client> CardanoClient<C> {
     pub async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
         self.get_tip_number().await
     }
-
-    pub async fn get_token_data(&self, _token_id: String) -> Result<primitives::Asset, Box<dyn Error + Send + Sync>> {
-        unimplemented!()
-    }
 }
 
 impl<C: Client> ChainStaking for CardanoClient<C> {}
