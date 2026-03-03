@@ -6,9 +6,11 @@ use super::{
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperMode,
-    SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, amount_to_value, client_factory::create_client_with_chain,
-    near_intents::client::{base_url, explorer_url}, fees::resolve_max_quote_amount,
-referrer::DEFAULT_REFERRER,
+    SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, amount_to_value,
+    client_factory::create_client_with_chain,
+    fees::resolve_max_quote_amount,
+    near_intents::client::{base_url, explorer_url},
+    referrer::DEFAULT_REFERRER,
 };
 use async_trait::async_trait;
 use chrono::{Duration, Utc};
@@ -363,8 +365,8 @@ where
 mod tests {
     use super::*;
     use crate::{SwapperError, SwapperMode, SwapperQuoteAsset, fees::reserved_tx_fees, models::Options};
-    use primitives::asset_constants::USDT_SMARTCHAIN_ASSET_ID;
     use alloy_primitives::U256;
+    use primitives::asset_constants::USDT_SMARTCHAIN_ASSET_ID;
     use primitives::{AssetId, Chain};
     use serde_json::json;
 
@@ -379,24 +381,24 @@ mod tests {
     }
 
     fn build_quote_request(amount: &str, use_max: bool, chain: Chain) -> QuoteRequest {
-    let from_asset = SwapperQuoteAsset::from(AssetId::from_chain(chain));
-    let to_asset = SwapperQuoteAsset::from(AssetId::from_chain(Chain::Near));
+        let from_asset = SwapperQuoteAsset::from(AssetId::from_chain(chain));
+        let to_asset = SwapperQuoteAsset::from(AssetId::from_chain(Chain::Near));
 
-    let options = Options {
-        use_max_amount: use_max,
-        ..Default::default()
-    };
+        let options = Options {
+            use_max_amount: use_max,
+            ..Default::default()
+        };
 
-    QuoteRequest {
-        from_asset,
-        to_asset,
-        wallet_address: "wallet".into(),
-        destination_address: "dest".into(),
-        value: amount.into(),
-        mode: SwapperMode::ExactIn,
-        options,
+        QuoteRequest {
+            from_asset,
+            to_asset,
+            wallet_address: "wallet".into(),
+            destination_address: "dest".into(),
+            value: amount.into(),
+            mode: SwapperMode::ExactIn,
+            options,
+        }
     }
-}
 
     #[test]
     fn resolve_quote_amount_with_use_max_reserves_fee() {
@@ -560,8 +562,8 @@ mod swap_integration_tests {
         let request = QuoteRequest {
             from_asset: SwapperQuoteAsset::from(AssetId::new(USDC_ARB_ASSET_ID).unwrap()),
             to_asset: SwapperQuoteAsset::from(AssetId::new(USDC_BASE_ASSET_ID).unwrap()),
-            wallet_address: "0x514bcb1f9aabb904e6106bd1052b66d2706dbbb7".to_string(),
-            destination_address: "0x514bcb1f9aabb904e6106bd1052b66d2706dbbb7".to_string(),
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
+            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             value: "500000".to_string(),
             mode: SwapperMode::ExactIn,
             options,

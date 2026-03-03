@@ -3,9 +3,12 @@ use crate::{
     SwapperQuoteData, across, alien::RpcProvider, chainflip, config::DEFAULT_STABLE_SWAP_REFERRAL_BPS, hyperliquid, jupiter, near_intents, proxy::provider_factory, relay,
     thorchain, uniswap,
 };
+use futures::future::{self, Either};
 use num_traits::ToPrimitive;
 use primitives::{AssetId, Chain, EVMChain};
-use std::{borrow::Cow, collections::HashSet, fmt::Debug, sync::Arc};
+use std::{borrow::Cow, collections::HashSet, fmt::Debug, sync::Arc, time::Duration};
+
+const QUOTE_TIMEOUT: Duration = Duration::from_secs(3);
 
 #[derive(Debug)]
 pub struct GemSwapper {
@@ -182,19 +185,30 @@ impl GemSwapper {
         }
 
         let request_for_quote = Self::transform_request(request);
-        let quotes_futures = providers.into_iter().map(|x| x.fetch_quote(request_for_quote.as_ref()));
+        let quotes_futures = providers.into_iter().map(|provider| {
+            let (tx, rx) = futures::channel::oneshot::channel::<()>();
+            std::thread::spawn(move || {
+                std::thread::sleep(QUOTE_TIMEOUT);
+                let _ = tx.send(());
+            });
+            async {
+                match future::select(Box::pin(provider.fetch_quote(request_for_quote.as_ref())), rx).await {
+                    Either::Left((result, _)) => Some(result),
+                    Either::Right(_) => None,
+                }
+            }
+        });
 
-        let quote_results = futures::future::join_all(quotes_futures).await;
+        let quote_results = future::join_all(quotes_futures).await;
 
         let mut quotes = Vec::new();
         let mut errors = Vec::new();
 
         for result in quote_results {
             match result {
-                Ok(quote) => quotes.push(quote),
-                Err(err) => {
-                    errors.push(err);
-                }
+                Some(Ok(quote)) => quotes.push(quote),
+                Some(Err(err)) => errors.push(err),
+                None => errors.push(SwapperError::ComputeQuoteError("timeout".into())),
             }
         }
 

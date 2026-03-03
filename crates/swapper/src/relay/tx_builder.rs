@@ -6,19 +6,15 @@ use alloy_primitives::hex;
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD;
 use gem_solana::{
-    ASSOCIATED_TOKEN_ACCOUNT_PROGRAM, COMPUTE_BUDGET_PROGRAM_ID, COMPUTE_UNIT_LIMIT_DATA, COMPUTE_UNIT_PRICE_DATA, SYSTEM_PROGRAM_ID, TOKEN_PROGRAM, WSOL_TOKEN_ADDRESS,
+    COMPUTE_UNIT_LIMIT_DISCRIMINANT, COMPUTE_UNIT_PRICE_DISCRIMINANT,
     jsonrpc::SolanaRpc,
     models::{
         LatestBlockhash,
         rpc::{AccountData, ValueResult},
     },
-    token_account::get_token_account,
 };
-use primitives::{Chain, SolanaAccountMeta, SolanaInstruction};
-use solana_primitives::{
-    CompiledInstruction, MessageAddressTableLookup, MessageHeader, Pubkey, SignatureBytes, VersionedMessageV0, VersionedTransaction, instructions::system::SystemInstruction,
-    instructions::token::TokenInstruction,
-};
+use primitives::{Chain, SolanaInstruction};
+use solana_primitives::{CompiledInstruction, MessageAddressTableLookup, MessageHeader, Pubkey, SignatureBytes, VersionedMessageV0, VersionedTransaction};
 
 use crate::{SwapperError, alien::RpcProvider, client_factory::create_client_with_chain};
 
@@ -36,19 +32,50 @@ struct LookupTable {
     addresses: Vec<Pubkey>,
 }
 
+pub fn get_unit_limit(instructions: &[SolanaInstruction]) -> Option<u32> {
+    instructions.iter().find_map(|instruction| {
+        if instruction.program_id != gem_solana::COMPUTE_BUDGET_PROGRAM_ID {
+            return None;
+        }
+        let data = hex::decode(&instruction.data).ok()?;
+        if data.len() == 5 && data[0] == COMPUTE_UNIT_LIMIT_DISCRIMINANT {
+            let units = u32::from_le_bytes(data[1..5].try_into().ok()?);
+            Some((units as f64 * 1.2) as u32)
+        } else {
+            None
+        }
+    })
+}
+
+pub fn ensure_compute_unit_price(instructions: &mut Vec<SolanaInstruction>) {
+    let has_price = instructions.iter().any(|instruction| {
+        instruction.program_id == gem_solana::COMPUTE_BUDGET_PROGRAM_ID && {
+            let data = hex::decode(&instruction.data).unwrap_or_default();
+            data.len() == 9 && data[0] == COMPUTE_UNIT_PRICE_DISCRIMINANT
+        }
+    });
+    if !has_price {
+        let mut data = vec![COMPUTE_UNIT_PRICE_DISCRIMINANT];
+        data.extend_from_slice(&0u64.to_le_bytes());
+        instructions.insert(
+            0,
+            SolanaInstruction {
+                program_id: gem_solana::COMPUTE_BUDGET_PROGRAM_ID.to_string(),
+                accounts: vec![],
+                data: hex::encode(data),
+            },
+        );
+    }
+}
+
 pub async fn build_solana_tx(
     fee_payer: &str,
     instructions: &[SolanaInstruction],
     lookup_table_addresses: &[String],
     provider: Arc<dyn RpcProvider>,
-    wrap_sol_amount: Option<u64>,
 ) -> Result<String, SwapperError> {
     let fee_payer_pk = Pubkey::from_str(fee_payer)?;
-    let mut instructions = ensure_compute_budget_instructions(instructions);
-    if let Some(amount) = wrap_sol_amount {
-        ensure_wrap_wsol(&mut instructions, fee_payer, amount);
-    }
-    let parsed = parse_instructions(&instructions)?;
+    let parsed = parse_instructions(instructions)?;
 
     let (recent_blockhash, lookup_tables) = futures::try_join!(fetch_recent_blockhash(&provider), fetch_lookup_tables(&provider, lookup_table_addresses))?;
 
@@ -96,78 +123,6 @@ async fn fetch_lookup_tables(provider: &Arc<dyn RpcProvider>, addresses: &[Strin
             })
         })
         .collect()
-}
-
-fn ensure_compute_budget_instructions(instructions: &[SolanaInstruction]) -> Vec<SolanaInstruction> {
-    let budget_ix = |data: &str| SolanaInstruction {
-        program_id: COMPUTE_BUDGET_PROGRAM_ID.to_string(),
-        accounts: vec![],
-        data: data.to_string(),
-    };
-    let has_limit = instructions.iter().any(|i| i.program_id == COMPUTE_BUDGET_PROGRAM_ID && i.data.starts_with("02"));
-    let has_price = instructions.iter().any(|i| i.program_id == COMPUTE_BUDGET_PROGRAM_ID && i.data.starts_with("03"));
-    let mut result = Vec::new();
-    if !has_limit {
-        result.push(budget_ix(COMPUTE_UNIT_LIMIT_DATA));
-    }
-    if !has_price {
-        result.push(budget_ix(COMPUTE_UNIT_PRICE_DATA));
-    }
-    result.extend(instructions.iter().cloned());
-    result
-}
-
-fn ensure_wrap_wsol(instructions: &mut Vec<SolanaInstruction>, fee_payer: &str, amount: u64) {
-    let wsol_ata = get_token_account(fee_payer, WSOL_TOKEN_ADDRESS, TOKEN_PROGRAM);
-    let transfer_prefix = hex::encode(&SystemInstruction::Transfer { lamports: 0 }.serialize()[..4]);
-
-    let has_wsol_transfer = instructions
-        .iter()
-        .any(|ix| ix.program_id == SYSTEM_PROGRAM_ID && ix.data.starts_with(&transfer_prefix) && ix.accounts.len() >= 2 && ix.accounts[1].pubkey == wsol_ata);
-    if has_wsol_transfer {
-        return;
-    }
-
-    let transfer_data = SystemInstruction::Transfer { lamports: amount }.serialize();
-    let sync_native_data = TokenInstruction::SyncNative.serialize();
-
-    let wrap_instructions = vec![
-        SolanaInstruction {
-            program_id: SYSTEM_PROGRAM_ID.to_string(),
-            accounts: vec![
-                SolanaAccountMeta {
-                    pubkey: fee_payer.to_string(),
-                    is_signer: true,
-                    is_writable: true,
-                },
-                SolanaAccountMeta {
-                    pubkey: wsol_ata.clone(),
-                    is_signer: false,
-                    is_writable: true,
-                },
-            ],
-            data: hex::encode(transfer_data),
-        },
-        SolanaInstruction {
-            program_id: TOKEN_PROGRAM.to_string(),
-            accounts: vec![SolanaAccountMeta {
-                pubkey: wsol_ata,
-                is_signer: false,
-                is_writable: true,
-            }],
-            data: hex::encode(sync_native_data),
-        },
-    ];
-
-    let insert_pos = instructions
-        .iter()
-        .rposition(|i| i.program_id == ASSOCIATED_TOKEN_ACCOUNT_PROGRAM)
-        .map(|i| i + 1)
-        .unwrap_or_else(|| instructions.iter().position(|i| i.program_id != COMPUTE_BUDGET_PROGRAM_ID).unwrap_or(instructions.len()));
-
-    for (offset, ix) in wrap_instructions.into_iter().enumerate() {
-        instructions.insert(insert_pos + offset, ix);
-    }
 }
 
 fn parse_instructions(instructions: &[SolanaInstruction]) -> Result<Vec<ParsedInstruction>, SwapperError> {
@@ -321,6 +276,7 @@ fn build_v0_transaction(fee_payer: Pubkey, instructions: &[ParsedInstruction], l
 #[cfg(test)]
 mod tests {
     use super::*;
+    use primitives::SolanaAccountMeta;
 
     fn make_instruction(program_id: &str, keys: Vec<(&str, bool, bool)>, data: &str) -> SolanaInstruction {
         SolanaInstruction {
@@ -378,51 +334,38 @@ mod tests {
     }
 
     #[test]
-    fn test_ensure_compute_budget_prepended() {
-        let result = ensure_compute_budget_instructions(&[make_instruction("11111111111111111111111111111111", vec![], "00")]);
-        assert_eq!(result.len(), 3);
-        assert_eq!(result[0].program_id, COMPUTE_BUDGET_PROGRAM_ID);
-        assert_eq!(result[1].program_id, COMPUTE_BUDGET_PROGRAM_ID);
-    }
-
-    #[test]
-    fn test_ensure_compute_budget_adds_missing_price() {
+    fn test_get_unit_limit() {
         let instructions = vec![
-            make_instruction(COMPUTE_BUDGET_PROGRAM_ID, vec![], "0200000000"),
-            make_instruction("11111111111111111111111111111111", vec![], "00"),
+            make_instruction(gem_solana::COMPUTE_BUDGET_PROGRAM_ID, vec![], "0259340000"),
+            make_instruction("11111111111111111111111111111111", vec![], ""),
         ];
-        let result = ensure_compute_budget_instructions(&instructions);
-        assert_eq!(result.len(), 3);
-        assert_eq!(result[0].data, COMPUTE_UNIT_PRICE_DATA);
+        assert_eq!(get_unit_limit(&instructions), Some(16081));
     }
 
     #[test]
-    fn test_ensure_compute_budget_both_present() {
-        let instructions = vec![
-            make_instruction(COMPUTE_BUDGET_PROGRAM_ID, vec![], "0200000000"),
-            make_instruction(COMPUTE_BUDGET_PROGRAM_ID, vec![], "030000000000000000"),
-            make_instruction("11111111111111111111111111111111", vec![], "00"),
-        ];
-        assert_eq!(ensure_compute_budget_instructions(&instructions).len(), 3);
+    fn test_get_unit_limit_missing() {
+        let instructions = vec![make_instruction("11111111111111111111111111111111", vec![], "")];
+        assert_eq!(get_unit_limit(&instructions), None);
     }
 
     #[test]
-    fn test_build_v0_includes_compute_budget() {
-        let fee_payer = "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy";
-        let raw = ensure_compute_budget_instructions(&[make_instruction(
-            "11111111111111111111111111111111",
-            vec![(fee_payer, true, true), ("A21o4asMbFHYadqXdLusT9Bvx9xaC5YV9gcaidjqtdXC", false, true)],
-            "0200000040420f0000000000",
-        )]);
+    fn test_ensure_compute_unit_price_adds_when_missing() {
+        let mut instructions = vec![make_instruction(gem_solana::COMPUTE_BUDGET_PROGRAM_ID, vec![], "0259340000")];
+        ensure_compute_unit_price(&mut instructions);
+        assert_eq!(instructions.len(), 2);
+        assert_eq!(instructions[0].program_id, gem_solana::COMPUTE_BUDGET_PROGRAM_ID);
+        assert_eq!(instructions[0].data, "030000000000000000");
+    }
 
-        let b64 = build_test_tx(fee_payer, &raw, &[]).unwrap();
-        let bytes = STANDARD.decode(&b64).unwrap();
-        let tx = VersionedTransaction::deserialize_with_version(&bytes).unwrap();
-        assert_eq!(tx.get_compute_unit_limit(), Some(0));
-
-        let mut tx2 = VersionedTransaction::deserialize_with_version(&bytes).unwrap();
-        assert!(tx2.set_compute_unit_price(1000).unwrap());
-        assert!(tx2.set_compute_unit_limit(200_000).unwrap());
+    #[test]
+    fn test_ensure_compute_unit_price_skips_when_present() {
+        let mut instructions = vec![
+            make_instruction(gem_solana::COMPUTE_BUDGET_PROGRAM_ID, vec![], "03e803000000000000"),
+            make_instruction(gem_solana::COMPUTE_BUDGET_PROGRAM_ID, vec![], "0259340000"),
+        ];
+        ensure_compute_unit_price(&mut instructions);
+        assert_eq!(instructions.len(), 2);
+        assert_eq!(instructions[0].data, "03e803000000000000");
     }
 
     #[test]
@@ -433,46 +376,5 @@ mod tests {
             data: String::new(),
         }];
         assert!(build_test_tx(&Pubkey::new([1u8; 32]).to_base58(), &raw, &[]).is_err());
-    }
-
-    #[test]
-    fn test_ensure_wrap_wsol_inserts_after_ata() {
-        let fee_payer = "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy";
-        let mut instructions = vec![
-            make_instruction(COMPUTE_BUDGET_PROGRAM_ID, vec![], "0200000000"),
-            make_instruction(ASSOCIATED_TOKEN_ACCOUNT_PROGRAM, vec![], "00"),
-            make_instruction("DF1ow4tspfHX9JwWJsAb9epbkA8hmpSEAtxXy1V27QBH", vec![], "aabb"),
-        ];
-        ensure_wrap_wsol(&mut instructions, fee_payer, 200_000_000);
-        assert_eq!(instructions.len(), 5);
-        assert_eq!(instructions[2].program_id, SYSTEM_PROGRAM_ID);
-        assert_eq!(instructions[3].program_id, TOKEN_PROGRAM);
-    }
-
-    #[test]
-    fn test_ensure_wrap_wsol_skips_when_present() {
-        let fee_payer = "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy";
-        let wsol_ata = get_token_account(fee_payer, WSOL_TOKEN_ADDRESS, TOKEN_PROGRAM);
-        let transfer_data = hex::encode(SystemInstruction::Transfer { lamports: 500_000_000 }.serialize());
-        let mut instructions = vec![
-            make_instruction(COMPUTE_BUDGET_PROGRAM_ID, vec![], "0200000000"),
-            make_instruction(SYSTEM_PROGRAM_ID, vec![(fee_payer, true, true), (&wsol_ata, false, true)], &transfer_data),
-            make_instruction("DF1ow4tspfHX9JwWJsAb9epbkA8hmpSEAtxXy1V27QBH", vec![], "aabb"),
-        ];
-        ensure_wrap_wsol(&mut instructions, fee_payer, 200_000_000);
-        assert_eq!(instructions.len(), 3);
-    }
-
-    #[test]
-    fn test_ensure_wrap_wsol_no_ata() {
-        let fee_payer = "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy";
-        let mut instructions = vec![
-            make_instruction(COMPUTE_BUDGET_PROGRAM_ID, vec![], "0200000000"),
-            make_instruction("DF1ow4tspfHX9JwWJsAb9epbkA8hmpSEAtxXy1V27QBH", vec![], "aabb"),
-        ];
-        ensure_wrap_wsol(&mut instructions, fee_payer, 50_000_000);
-        assert_eq!(instructions.len(), 4);
-        assert_eq!(instructions[1].program_id, SYSTEM_PROGRAM_ID);
-        assert_eq!(instructions[2].program_id, TOKEN_PROGRAM);
     }
 }

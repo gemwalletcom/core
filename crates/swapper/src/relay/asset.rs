@@ -1,6 +1,6 @@
 use std::sync::LazyLock;
 
-use gem_solana::WSOL_TOKEN_ADDRESS;
+use gem_solana::SYSTEM_PROGRAM_ID;
 use primitives::{
     AssetId, Chain,
     asset_constants::{USDC_ARB_ASSET_ID, USDC_HYPEREVM_ASSET_ID, USDT_ARB_ASSET_ID, USDT_HYPEREVM_ASSET_ID},
@@ -55,12 +55,12 @@ pub static SUPPORTED_CHAINS: LazyLock<Vec<SwapperChainAsset>> = LazyLock::new(||
     ]
 });
 
-pub fn map_asset_to_relay_currency(asset_id: &AssetId, relay_chain: &RelayChain) -> Result<String, SwapperError> {
+pub fn asset_to_currency(asset_id: &AssetId, relay_chain: &RelayChain) -> Result<String, SwapperError> {
     match relay_chain {
         RelayChain::Bitcoin => Ok(BITCOIN_CURRENCY.to_string()),
         RelayChain::Solana => {
             if asset_id.is_native() {
-                Ok(WSOL_TOKEN_ADDRESS.to_string())
+                Ok(SYSTEM_PROGRAM_ID.to_string())
             } else {
                 asset_id.token_id.clone().ok_or(SwapperError::NotSupportedAsset)
             }
@@ -76,10 +76,10 @@ pub fn map_asset_to_relay_currency(asset_id: &AssetId, relay_chain: &RelayChain)
     }
 }
 
-pub fn relay_currency_to_asset_id(chain: Chain, currency: &str) -> AssetId {
+pub fn currency_to_asset_id(chain: Chain, currency: &str) -> AssetId {
     match chain {
         Chain::Bitcoin => AssetId::from_chain(Chain::Bitcoin),
-        Chain::Solana if currency == WSOL_TOKEN_ADDRESS => AssetId::from_chain(Chain::Solana),
+        Chain::Solana if currency == SYSTEM_PROGRAM_ID => AssetId::from_chain(Chain::Solana),
         _ if currency == EVM_ZERO_ADDRESS => AssetId::from_chain(chain),
         _ => AssetId::from_token(chain, currency),
     }
@@ -92,35 +92,27 @@ mod tests {
 
     #[test]
     fn test_evm_native_asset() {
-        let asset_id = AssetId::from_chain(Chain::Ethereum);
-        let relay_chain = RelayChain::Ethereum;
-        let result = map_asset_to_relay_currency(&asset_id, &relay_chain).unwrap();
+        let result = asset_to_currency(&AssetId::from_chain(Chain::Ethereum), &RelayChain::Ethereum).unwrap();
         assert_eq!(result, EVM_ZERO_ADDRESS);
     }
 
     #[test]
     fn test_evm_token_asset() {
         let token_address = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
-        let asset_id = AssetId::from_token(Chain::Ethereum, token_address);
-        let relay_chain = RelayChain::Ethereum;
-        let result = map_asset_to_relay_currency(&asset_id, &relay_chain).unwrap();
+        let result = asset_to_currency(&AssetId::from_token(Chain::Ethereum, token_address), &RelayChain::Ethereum).unwrap();
         assert_eq!(result, token_address);
     }
 
     #[test]
     fn test_solana_native_asset() {
-        let asset_id = AssetId::from_chain(Chain::Solana);
-        let relay_chain = RelayChain::Solana;
-        let result = map_asset_to_relay_currency(&asset_id, &relay_chain).unwrap();
-        assert_eq!(result, WSOL_TOKEN_ADDRESS);
+        let result = asset_to_currency(&AssetId::from_chain(Chain::Solana), &RelayChain::Solana).unwrap();
+        assert_eq!(result, SYSTEM_PROGRAM_ID);
     }
 
     #[test]
     fn test_solana_token_asset() {
         let mint_address = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
-        let asset_id = AssetId::from_token(Chain::Solana, mint_address);
-        let relay_chain = RelayChain::Solana;
-        let result = map_asset_to_relay_currency(&asset_id, &relay_chain).unwrap();
+        let result = asset_to_currency(&AssetId::from_token(Chain::Solana, mint_address), &RelayChain::Solana).unwrap();
         assert_eq!(result, mint_address);
     }
 }

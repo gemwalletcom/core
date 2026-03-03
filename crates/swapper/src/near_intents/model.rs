@@ -84,17 +84,6 @@ pub struct Quote {
     pub time_estimate: u32,
 }
 
-fn default_quote_waiting_time_ms() -> u32 {
-    DEFAULT_WAIT_TIME_MS
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TransactionDetails {
-    pub hash: String,
-    pub explorer_url: Option<String>,
-}
-
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ExplorerTransaction {

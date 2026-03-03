@@ -2,7 +2,7 @@ use primitives::{TransactionSwapMetadata, swap::ApprovalData};
 
 use super::{
     DEFAULT_GAS_LIMIT,
-    asset::relay_currency_to_asset_id,
+    asset::currency_to_asset_id,
     chain::RelayChain,
     model::{RelayRequest, Step, StepData},
 };
@@ -54,9 +54,9 @@ pub fn map_swap_result(request: &RelayRequest) -> SwapResult {
         let from_chain = RelayChain::from_chain_id(currency_in.chain_id)?.to_chain();
         let to_chain = RelayChain::from_chain_id(currency_out.chain_id)?.to_chain();
         Some(TransactionSwapMetadata {
-            from_asset: relay_currency_to_asset_id(from_chain, &currency_in.currency),
+            from_asset: currency_to_asset_id(from_chain, &currency_in.currency),
             from_value: currency_in.amount.clone().unwrap_or_default(),
-            to_asset: relay_currency_to_asset_id(to_chain, &currency_out.currency),
+            to_asset: currency_to_asset_id(to_chain, &currency_out.currency),
             to_value: currency_out.amount.clone().unwrap_or_default(),
             provider: Some(SwapperProvider::Relay.as_ref().to_string()),
         })

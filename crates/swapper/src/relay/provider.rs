@@ -7,7 +7,7 @@ use primitives::{AssetId, Chain, ChainType, SolanaInstruction};
 
 use super::{
     Relay,
-    asset::{SUPPORTED_CHAINS, map_asset_to_relay_currency},
+    asset::{SUPPORTED_CHAINS, asset_to_currency},
     chain::RelayChain,
     client::RelayClient,
     mapper,
@@ -61,8 +61,8 @@ where
         let from_asset_id = request.from_asset.asset_id();
         let to_asset_id = request.to_asset.asset_id();
 
-        let origin_currency = map_asset_to_relay_currency(&from_asset_id, &from_chain)?;
-        let destination_currency = map_asset_to_relay_currency(&to_asset_id, &to_chain)?;
+        let origin_currency = asset_to_currency(&from_asset_id, &from_chain)?;
+        let destination_currency = asset_to_currency(&to_asset_id, &to_chain)?;
         let app_fees = resolve_app_fees(request);
         let amount = resolve_max_quote_amount(request)?;
 
@@ -112,12 +112,12 @@ where
         let quote_response: RelayQuoteResponse = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
 
         let from_chain = RelayChain::from_chain(&quote.request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
-        let from_asset_id = quote.request.from_asset.asset_id();
 
         if from_chain == RelayChain::Solana {
-            return self.build_solana_quote_data(quote, &quote_response, &from_asset_id).await;
+            return self.build_solana_quote_data(quote, &quote_response).await;
         }
 
+        let from_asset_id = quote.request.from_asset.asset_id();
         let approval = self.check_evm_approval(quote, &quote_response, &from_asset_id).await?;
         mapper::map_quote_data(&from_chain, &quote_response.steps, &quote.from_value, approval)
     }
@@ -133,18 +133,17 @@ impl<C> Relay<C>
 where
     C: Client + Clone + Send + Sync + std::fmt::Debug + 'static,
 {
-    async fn build_solana_quote_data(&self, quote: &Quote, quote_response: &RelayQuoteResponse, from_asset_id: &AssetId) -> Result<SwapperQuoteData, SwapperError> {
+    async fn build_solana_quote_data(&self, quote: &Quote, quote_response: &RelayQuoteResponse) -> Result<SwapperQuoteData, SwapperError> {
         let step_data = mapper::get_step_data(&quote_response.steps)?;
         let instructions_json = step_data.instructions.as_ref().ok_or(SwapperError::InvalidRoute)?;
-        let instructions: Vec<SolanaInstruction> = serde_json::from_value(instructions_json.clone()).map_err(|_| SwapperError::InvalidRoute)?;
+        let mut instructions: Vec<SolanaInstruction> = serde_json::from_value(instructions_json.clone()).map_err(|_| SwapperError::InvalidRoute)?;
         let lookup_addresses = step_data.address_lookup_table_addresses.as_deref().unwrap_or_default();
-        let wrap_sol_amount = if from_asset_id.is_native() {
-            Some(quote.from_value.parse::<u64>().map_err(|_| SwapperError::InvalidRoute)?)
-        } else {
-            None
-        };
-        let tx_data = tx_builder::build_solana_tx(&quote.request.wallet_address, &instructions, lookup_addresses, self.rpc_provider.clone(), wrap_sol_amount).await?;
-        Ok(SwapperQuoteData::new_contract(String::new(), String::new(), tx_data, None, None))
+
+        let gas_limit = tx_builder::get_unit_limit(&instructions).map(|v| v.to_string());
+        tx_builder::ensure_compute_unit_price(&mut instructions);
+
+        let tx_data = tx_builder::build_solana_tx(&quote.request.wallet_address, &instructions, lookup_addresses, self.rpc_provider.clone()).await?;
+        Ok(SwapperQuoteData::new_contract(String::new(), String::new(), tx_data, None, gas_limit))
     }
 
     async fn check_evm_approval(

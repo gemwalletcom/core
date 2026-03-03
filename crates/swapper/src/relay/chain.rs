@@ -25,76 +25,76 @@ pub enum RelayChain {
 impl RelayChain {
     pub fn chain_id(&self) -> u64 {
         match self {
-            RelayChain::Bitcoin => BITCOIN_CHAIN_ID,
-            RelayChain::Solana => SOLANA_CHAIN_ID,
+            Self::Bitcoin => BITCOIN_CHAIN_ID,
+            Self::Solana => SOLANA_CHAIN_ID,
             _ => EVMChain::from_chain(self.to_chain()).unwrap().chain_id(),
         }
     }
 
     pub fn from_chain(chain: &Chain) -> Option<Self> {
         match chain {
-            Chain::Bitcoin => Some(RelayChain::Bitcoin),
-            Chain::Ethereum => Some(RelayChain::Ethereum),
-            Chain::Solana => Some(RelayChain::Solana),
-            Chain::SmartChain => Some(RelayChain::SmartChain),
-            Chain::Base => Some(RelayChain::Base),
-            Chain::Arbitrum => Some(RelayChain::Arbitrum),
-            Chain::Hyperliquid => Some(RelayChain::Hyperliquid),
-            Chain::Berachain => Some(RelayChain::Berachain),
-            Chain::Manta => Some(RelayChain::Manta),
-            Chain::Sonic => Some(RelayChain::Sonic),
-            Chain::Abstract => Some(RelayChain::Abstract),
-            Chain::Mantle => Some(RelayChain::Mantle),
-            Chain::Celo => Some(RelayChain::Celo),
-            Chain::Stable => Some(RelayChain::Stable),
+            Chain::Bitcoin => Some(Self::Bitcoin),
+            Chain::Ethereum => Some(Self::Ethereum),
+            Chain::Solana => Some(Self::Solana),
+            Chain::SmartChain => Some(Self::SmartChain),
+            Chain::Base => Some(Self::Base),
+            Chain::Arbitrum => Some(Self::Arbitrum),
+            Chain::Hyperliquid => Some(Self::Hyperliquid),
+            Chain::Berachain => Some(Self::Berachain),
+            Chain::Manta => Some(Self::Manta),
+            Chain::Sonic => Some(Self::Sonic),
+            Chain::Abstract => Some(Self::Abstract),
+            Chain::Mantle => Some(Self::Mantle),
+            Chain::Celo => Some(Self::Celo),
+            Chain::Stable => Some(Self::Stable),
             _ => None,
         }
     }
 
     pub fn to_chain(self) -> Chain {
         match self {
-            RelayChain::Bitcoin => Chain::Bitcoin,
-            RelayChain::Ethereum => Chain::Ethereum,
-            RelayChain::Solana => Chain::Solana,
-            RelayChain::SmartChain => Chain::SmartChain,
-            RelayChain::Base => Chain::Base,
-            RelayChain::Arbitrum => Chain::Arbitrum,
-            RelayChain::Hyperliquid => Chain::Hyperliquid,
-            RelayChain::Berachain => Chain::Berachain,
-            RelayChain::Manta => Chain::Manta,
-            RelayChain::Sonic => Chain::Sonic,
-            RelayChain::Abstract => Chain::Abstract,
-            RelayChain::Mantle => Chain::Mantle,
-            RelayChain::Celo => Chain::Celo,
-            RelayChain::Stable => Chain::Stable,
+            Self::Bitcoin => Chain::Bitcoin,
+            Self::Ethereum => Chain::Ethereum,
+            Self::Solana => Chain::Solana,
+            Self::SmartChain => Chain::SmartChain,
+            Self::Base => Chain::Base,
+            Self::Arbitrum => Chain::Arbitrum,
+            Self::Hyperliquid => Chain::Hyperliquid,
+            Self::Berachain => Chain::Berachain,
+            Self::Manta => Chain::Manta,
+            Self::Sonic => Chain::Sonic,
+            Self::Abstract => Chain::Abstract,
+            Self::Mantle => Chain::Mantle,
+            Self::Celo => Chain::Celo,
+            Self::Stable => Chain::Stable,
         }
     }
 
     pub fn from_chain_id(chain_id: u64) -> Option<Self> {
         match chain_id {
-            BITCOIN_CHAIN_ID => Some(RelayChain::Bitcoin),
-            SOLANA_CHAIN_ID => Some(RelayChain::Solana),
+            BITCOIN_CHAIN_ID => Some(Self::Bitcoin),
+            SOLANA_CHAIN_ID => Some(Self::Solana),
             _ => Self::ALL_EVM.iter().find(|c| c.chain_id() == chain_id).copied(),
         }
     }
 
     pub fn is_evm(&self) -> bool {
-        !matches!(self, RelayChain::Bitcoin | RelayChain::Solana)
+        !matches!(self, Self::Bitcoin | Self::Solana)
     }
 
-    const ALL_EVM: [RelayChain; 12] = [
-        RelayChain::Ethereum,
-        RelayChain::SmartChain,
-        RelayChain::Base,
-        RelayChain::Arbitrum,
-        RelayChain::Hyperliquid,
-        RelayChain::Berachain,
-        RelayChain::Manta,
-        RelayChain::Sonic,
-        RelayChain::Abstract,
-        RelayChain::Mantle,
-        RelayChain::Celo,
-        RelayChain::Stable,
+    const ALL_EVM: [Self; 12] = [
+        Self::Ethereum,
+        Self::SmartChain,
+        Self::Base,
+        Self::Arbitrum,
+        Self::Hyperliquid,
+        Self::Berachain,
+        Self::Manta,
+        Self::Sonic,
+        Self::Abstract,
+        Self::Mantle,
+        Self::Celo,
+        Self::Stable,
     ];
 }
 
