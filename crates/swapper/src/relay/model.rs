@@ -35,6 +35,19 @@ pub struct RelayAppFee {
 pub struct RelayQuoteResponse {
     pub steps: Vec<Step>,
     pub details: QuoteDetails,
+    pub fees: Option<RelayFees>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RelayFees {
+    pub gas: Option<RelayFeeAmount>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RelayFeeAmount {
+    pub amount: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

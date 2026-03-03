@@ -4,7 +4,7 @@ use super::{
     DEFAULT_GAS_LIMIT,
     asset::currency_to_asset_id,
     chain::RelayChain,
-    model::{RelayRequest, Step, StepData},
+    model::{RelayFees, RelayRequest, Step, StepData},
 };
 use crate::{SwapResult, SwapperError, SwapperProvider, SwapperQuoteData};
 
@@ -22,13 +22,17 @@ pub fn get_step_data(steps: &[Step]) -> Result<&StepData, SwapperError> {
         .ok_or(SwapperError::InvalidRoute)
 }
 
-pub fn map_quote_data(chain: &RelayChain, steps: &[Step], value: &str, approval: Option<ApprovalData>) -> Result<SwapperQuoteData, SwapperError> {
+pub fn gas_fee_amount(fees: &Option<RelayFees>) -> Option<String> {
+    fees.as_ref()?.gas.as_ref()?.amount.clone()
+}
+
+pub fn map_quote_data(chain: &RelayChain, steps: &[Step], value: &str, fees: &Option<RelayFees>, approval: Option<ApprovalData>) -> Result<SwapperQuoteData, SwapperError> {
     let step_data = get_step_data(steps)?;
 
     let (to, tx_value, data, gas_limit) = match chain {
         RelayChain::Bitcoin => {
             let psbt = step_data.psbt.as_ref().ok_or(SwapperError::InvalidRoute)?;
-            (String::new(), value.to_string(), psbt.clone(), None)
+            (String::new(), value.to_string(), psbt.clone(), gas_fee_amount(fees))
         }
         _ if chain.is_evm() => {
             let to = step_data.to.clone().unwrap_or_default();
@@ -66,14 +70,14 @@ pub fn map_swap_result(request: &RelayRequest) -> SwapResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::relay::model::{RelayCurrencyDetail, RelayRequest, RelayRequestMetadata, RelayStatus, Step};
+    use crate::relay::model::{RelayCurrencyDetail, RelayFeeAmount, RelayFees, RelayRequest, RelayRequestMetadata, RelayStatus, Step};
     use primitives::{AssetId, Chain, swap::SwapStatus};
 
     #[test]
     fn test_map_evm_quote_data() {
         let steps = vec![Step::mock_transaction("swap", "0xrouter", "1000000000000000000", "0xabcdef")];
 
-        let result = map_quote_data(&RelayChain::Ethereum, &steps, "1000000000000000000", None).unwrap();
+        let result = map_quote_data(&RelayChain::Ethereum, &steps, "1000000000000000000", &None, None).unwrap();
 
         assert_eq!(result.to, "0xrouter");
         assert_eq!(result.value, "1000000000000000000");
@@ -91,7 +95,7 @@ mod tests {
             value: "1000".to_string(),
         };
 
-        let result = map_quote_data(&RelayChain::Ethereum, &steps, "1000000000000000000", Some(approval.clone())).unwrap();
+        let result = map_quote_data(&RelayChain::Ethereum, &steps, "1000000000000000000", &None, Some(approval.clone())).unwrap();
 
         assert_eq!(result.to, "0xrouter");
         assert_eq!(result.approval, Some(approval));
@@ -103,13 +107,29 @@ mod tests {
         let psbt = "70736274ff0100abcdef";
         let steps = vec![Step::mock_bitcoin(psbt)];
 
-        let result = map_quote_data(&RelayChain::Bitcoin, &steps, "2000000", None).unwrap();
+        let result = map_quote_data(&RelayChain::Bitcoin, &steps, "2000000", &None, None).unwrap();
 
         assert_eq!(result.to, "");
         assert_eq!(result.value, "2000000");
         assert_eq!(result.data, psbt);
         assert!(result.approval.is_none());
         assert!(result.gas_limit.is_none());
+    }
+
+    #[test]
+    fn test_map_bitcoin_quote_data_with_gas_fee() {
+        let psbt = "70736274ff0100abcdef";
+        let steps = vec![Step::mock_bitcoin(psbt)];
+        let fees = Some(RelayFees {
+            gas: Some(RelayFeeAmount {
+                amount: Some("15000".to_string()),
+            }),
+        });
+
+        let result = map_quote_data(&RelayChain::Bitcoin, &steps, "2000000", &fees, None).unwrap();
+
+        assert_eq!(result.data, psbt);
+        assert_eq!(result.gas_limit, Some("15000".to_string()));
     }
 
     #[test]

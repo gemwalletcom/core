@@ -119,7 +119,7 @@ where
 
         let from_asset_id = quote.request.from_asset.asset_id();
         let approval = self.check_evm_approval(quote, &quote_response, &from_asset_id).await?;
-        mapper::map_quote_data(&from_chain, &quote_response.steps, &quote.from_value, approval)
+        mapper::map_quote_data(&from_chain, &quote_response.steps, &quote.from_value, &quote_response.fees, approval)
     }
 
     async fn get_swap_result(&self, _chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
