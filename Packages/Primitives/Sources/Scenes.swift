@@ -214,4 +214,12 @@ public struct Scenes {
             self.contact = contact
         }
     }
+
+    public struct ContactAddress: Hashable, Codable {
+        public let address: Primitives.ContactAddress
+
+        public init(address: Primitives.ContactAddress) {
+            self.address = address
+        }
+    }
 }

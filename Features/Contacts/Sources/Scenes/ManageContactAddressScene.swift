@@ -10,7 +10,9 @@ import QRScanner
 
 public struct ManageContactAddressScene: View {
 
-    @Binding private var model: ManageContactAddressViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var model: ManageContactAddressViewModel
 
     @FocusState private var focusedField: Field?
     enum Field: Int, Hashable {
@@ -18,8 +20,8 @@ public struct ManageContactAddressScene: View {
         case memo
     }
 
-    public init(model: Binding<ManageContactAddressViewModel>) {
-        _model = model
+    public init(model: ManageContactAddressViewModel) {
+        _model = State(initialValue: model)
     }
 
     public var body: some View {
@@ -45,6 +47,12 @@ public struct ManageContactAddressScene: View {
         }
         .sheet(isPresented: $model.isPresentingScanner) {
             ScanQRCodeNavigationStack(action: onScan)
+        }
+        .navigationDestination(for: Scenes.NetworksSelector.self) { _ in
+            ChainSelectorView(
+                chain: model.chain,
+                onSelectChain: model.onSelectChain
+            )
         }
     }
 }
@@ -95,5 +103,6 @@ extension ManageContactAddressScene {
     private func onComplete() {
         focusedField = nil
         model.complete()
+        dismiss()
     }
 }

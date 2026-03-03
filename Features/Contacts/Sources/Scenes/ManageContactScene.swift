@@ -43,16 +43,27 @@ public struct ManageContactScene: View {
                 focusedField = .name
             }
         }
-        .sheet(item: $model.isPresentingAddress) {
-            ManageContactAddressNavigationStack(
-                model: ManageContactAddressViewModel(
-                    contactId: model.contactId,
-                    nameService: model.nameService,
-                    mode: $0,
-                    onComplete: model.onAddressComplete
-                )
-            )
+        .navigationDestination(for: Scenes.ContactAddress.self) {
+            contactAddressScene(mode: .edit($0.address))
         }
+        .sheet(item: $model.isPresentingAddress) { mode in
+            NavigationStack {
+                contactAddressScene(mode: mode)
+                    .toolbarDismissItem(type: .close, placement: .cancellationAction)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func contactAddressScene(mode: ManageContactAddressViewModel.Mode) -> some View {
+        ManageContactAddressScene(
+            model: ManageContactAddressViewModel(
+                contactId: model.contactId,
+                nameService: model.nameService,
+                mode: mode,
+                onComplete: model.onAddressComplete
+            )
+        )
     }
 }
 
@@ -81,10 +92,9 @@ extension ManageContactScene {
     private var addressesSection: some View {
         Section {
             ForEach(model.addresses, id: \.id) { address in
-                NavigationCustomLink(
-                    with: ListItemView(model: model.listItemModel(for: address)),
-                    action: { model.isPresentingAddress = .edit(address) }
-                )
+                NavigationLink(value: Scenes.ContactAddress(address: address)) {
+                    ListItemView(model: model.listItemModel(for: address))
+                }
             }
             .onDelete(perform: model.deleteAddress)
 
