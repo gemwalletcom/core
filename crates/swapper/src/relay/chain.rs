@@ -74,28 +74,16 @@ impl RelayChain {
         match chain_id {
             BITCOIN_CHAIN_ID => Some(Self::Bitcoin),
             SOLANA_CHAIN_ID => Some(Self::Solana),
-            _ => Self::ALL_EVM.iter().find(|c| c.chain_id() == chain_id).copied(),
+            _ => {
+                let chain = EVMChain::all().into_iter().find(|c| c.chain_id() == chain_id)?.to_chain();
+                Self::from_chain(&chain)
+            }
         }
     }
 
     pub fn is_evm(&self) -> bool {
-        !matches!(self, Self::Bitcoin | Self::Solana)
+        EVMChain::from_chain(self.to_chain()).is_some()
     }
-
-    const ALL_EVM: [Self; 12] = [
-        Self::Ethereum,
-        Self::SmartChain,
-        Self::Base,
-        Self::Arbitrum,
-        Self::Hyperliquid,
-        Self::Berachain,
-        Self::Manta,
-        Self::Sonic,
-        Self::Abstract,
-        Self::Mantle,
-        Self::Celo,
-        Self::Stable,
-    ];
 }
 
 #[cfg(test)]
