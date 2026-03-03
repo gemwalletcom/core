@@ -109,7 +109,7 @@ public struct InfoSheetModelFactory {
             let amount = formatter.string(required, asset: asset)
             return InfoSheetModel(
                 title: Localized.Info.AccountMinimumBalance.title,
-                description: Localized.Transfer.minimumAccountBalance(amount),
+                description: Localized.Transfer.minimumAccountBalance(amount.boldMarkdown()),
                 image: .image(Images.Logo.logo),
                 button: .url(Docs.url(.accountMinimalBalance))
             )
