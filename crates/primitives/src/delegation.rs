@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, Display, EnumString};
 use typeshare::typeshare;
 
+use crate::stake_provider_type::StakeProviderType;
 use crate::{AssetId, Chain, Price, StakeValidator};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -45,6 +46,13 @@ pub struct DelegationValidator {
     pub is_active: bool,
     pub commission: f64,
     pub apr: f64,
+    pub provider_type: StakeProviderType,
+}
+
+impl DelegationValidator {
+    pub fn stake(chain: Chain, id: String, name: String, is_active: bool, commission: f64, apr: f64) -> Self {
+        Self { chain, id, name, is_active, commission, apr, provider_type: StakeProviderType::Stake }
+    }
 }
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, Display, AsRefStr, EnumString, PartialEq)]

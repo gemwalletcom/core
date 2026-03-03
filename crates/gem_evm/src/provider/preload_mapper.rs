@@ -1,14 +1,14 @@
 use std::error::Error;
 use std::str::FromStr;
 
-use alloy_primitives::{Address, U256};
+use alloy_primitives::{Address, U256, hex};
 use alloy_sol_types::SolCall;
 use gem_bsc::stake_hub::STAKE_HUB_ADDRESS;
 use num_bigint::BigInt;
 use num_traits::Num;
 use primitives::swap::SwapQuoteDataType;
 use primitives::{
-    AssetSubtype, Chain, EVMChain, FeeRate, NFTType, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, fee::FeePriority, fee::GasPriceType,
+    AssetSubtype, Chain, EVMChain, FeeRate, NFTType, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, decode_hex, fee::FeePriority, fee::GasPriceType,
 };
 
 use crate::contracts::{IERC20, IERC721, IERC1155};
@@ -30,6 +30,10 @@ impl TransactionParams {
     pub fn new(to: String, data: Vec<u8>, value: BigInt) -> Self {
         Self { to, data, value }
     }
+
+    pub fn new_approval(to: String, data: Vec<u8>) -> Self {
+        Self { to, data, value: BigInt::from(0) }
+    }
 }
 
 pub fn bigint_to_hex_string(value: &BigInt) -> String {
@@ -37,7 +41,7 @@ pub fn bigint_to_hex_string(value: &BigInt) -> String {
 }
 
 pub fn bytes_to_hex_string(data: &[u8]) -> String {
-    format!("0x{}", alloy_primitives::hex::encode(data))
+    format!("0x{}", hex::encode(data))
 }
 
 pub fn map_transaction_preload(nonce_hex: String, chain_id: String) -> Result<TransactionLoadMetadata, Box<dyn std::error::Error + Send + Sync>> {
@@ -45,7 +49,7 @@ pub fn map_transaction_preload(nonce_hex: String, chain_id: String) -> Result<Tr
     Ok(TransactionLoadMetadata::Evm {
         nonce,
         chain_id: chain_id.parse::<u64>()?,
-        stake_data: None,
+        contract_call: None,
     })
 }
 
@@ -92,13 +96,13 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
                 match from_asset.id.token_subtype() {
                     AssetSubtype::NATIVE => Ok(TransactionParams::new(
                         swap_data.data.to.clone(),
-                        alloy_primitives::hex::decode(swap_data.data.data.clone())?,
+                        hex::decode(swap_data.data.data.clone())?,
                         BigInt::from_str_radix(&swap_data.data.value, 10)?,
                     )),
                     AssetSubtype::TOKEN => match swap_data.data.data_type {
                         SwapQuoteDataType::Contract => Ok(TransactionParams::new(
                             swap_data.data.to.clone(),
-                            alloy_primitives::hex::decode(swap_data.data.data.clone())?,
+                            hex::decode(swap_data.data.data.clone())?,
                             BigInt::ZERO,
                         )),
                         SwapQuoteDataType::Transfer => {
@@ -145,6 +149,13 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
             }
             _ => Err("Unsupported chain for staking".into()),
         },
+        TransactionInputType::Earn(_, _, earn_data) => {
+            if let Some(approval) = &earn_data.approval {
+                Ok(TransactionParams::new_approval(approval.token.clone(), encode_erc20_approve(&approval.spender)?))
+            } else {
+                Ok(TransactionParams::new(earn_data.contract_address.clone(), decode_hex(&earn_data.call_data)?, BigInt::from(0)))
+            }
+        }
         _ => Err("Unsupported transfer type".into()),
     }
 }
@@ -182,6 +193,12 @@ pub fn get_extra_fee_gas_limit(input: &TransactionLoadInput) -> Result<BigInt, B
             } else {
                 Ok(BigInt::from(0))
             }
+        }
+        TransactionInputType::Earn(_, _, earn_data) => {
+            if earn_data.approval.is_some() && let Some(gas_limit) = &earn_data.gas_limit {
+                return Ok(BigInt::from_str_radix(gas_limit, 10)?);
+            }
+            Ok(BigInt::from(0))
         }
         _ => Ok(BigInt::from(0)),
     }
@@ -287,14 +304,7 @@ mod tests {
     use primitives::{Delegation, DelegationBase, DelegationState, DelegationValidator, RedelegateData};
 
     fn everstake_validator() -> DelegationValidator {
-        DelegationValidator {
-            chain: Chain::Ethereum,
-            id: EVERSTAKE_POOL_ADDRESS.to_string(),
-            name: "Everstake Pool".to_string(),
-            is_active: true,
-            commission: 10.0,
-            apr: 4.2,
-        }
+        DelegationValidator::stake(Chain::Ethereum, EVERSTAKE_POOL_ADDRESS.to_string(), "Everstake".to_string(), true, 10.0, 4.2)
     }
 
     #[test]
@@ -305,10 +315,10 @@ mod tests {
         let result = map_transaction_preload(nonce_hex, chain_id)?;
 
         match result {
-            TransactionLoadMetadata::Evm { nonce, chain_id, stake_data } => {
+            TransactionLoadMetadata::Evm { nonce, chain_id, contract_call } => {
                 assert_eq!(nonce, 10);
                 assert_eq!(chain_id, 1);
-                assert!(stake_data.is_none());
+                assert!(contract_call.is_none());
             }
             _ => panic!("Expected Evm variant"),
         }
@@ -421,14 +431,7 @@ mod tests {
 
     #[test]
     fn test_encode_stake_hub_delegate() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let validator = DelegationValidator {
-            chain: Chain::SmartChain,
-            id: "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(),
-            name: "Test Validator".to_string(),
-            is_active: true,
-            commission: 5.0,
-            apr: 10.0,
-        };
+        let validator = DelegationValidator::stake(Chain::SmartChain, "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(), "Test Validator".to_string(), true, 5.0, 10.0);
 
         let stake_type = StakeType::Stake(validator);
         let amount = BigInt::from(1_000_000_000_000_000_000u64); // 1 BNB
@@ -457,14 +460,7 @@ mod tests {
                 delegation_id: "test".to_string(),
                 validator_id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
             },
-            validator: DelegationValidator {
-                chain: Chain::SmartChain,
-                id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
-                name: "Test Validator".to_string(),
-                is_active: true,
-                commission: 5.0,
-                apr: 10.0,
-            },
+            validator: DelegationValidator::stake(Chain::SmartChain, "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(), "Test Validator".to_string(), true, 5.0, 10.0),
             price: None,
         };
 
@@ -494,25 +490,11 @@ mod tests {
                 delegation_id: "test".to_string(),
                 validator_id: "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(),
             },
-            validator: DelegationValidator {
-                chain: Chain::SmartChain,
-                id: "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(),
-                name: "Source Validator".to_string(),
-                is_active: true,
-                commission: 5.0,
-                apr: 10.0,
-            },
+            validator: DelegationValidator::stake(Chain::SmartChain, "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(), "Source Validator".to_string(), true, 5.0, 10.0),
             price: None,
         };
 
-        let to_validator = DelegationValidator {
-            chain: Chain::SmartChain,
-            id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
-            name: "Target Validator".to_string(),
-            is_active: true,
-            commission: 3.0,
-            apr: 12.0,
-        };
+        let to_validator = DelegationValidator::stake(Chain::SmartChain, "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(), "Target Validator".to_string(), true, 3.0, 12.0);
 
         let redelegate_data = RedelegateData { delegation, to_validator };
 
@@ -542,14 +524,7 @@ mod tests {
                 delegation_id: "test".to_string(),
                 validator_id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
             },
-            validator: DelegationValidator {
-                chain: Chain::SmartChain,
-                id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
-                name: "Test Validator".to_string(),
-                is_active: true,
-                commission: 5.0,
-                apr: 10.0,
-            },
+            validator: DelegationValidator::stake(Chain::SmartChain, "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(), "Test Validator".to_string(), true, 5.0, 10.0),
             price: None,
         };
 

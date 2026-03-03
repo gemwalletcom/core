@@ -49,13 +49,6 @@ impl DelegationBase {
 
 impl DelegationValidator {
     pub fn mock() -> Self {
-        DelegationValidator {
-            chain: Chain::Sui,
-            id: "validator1".to_string(),
-            name: "Test Validator".to_string(),
-            is_active: true,
-            commission: 0.05,
-            apr: 0.08,
-        }
+        DelegationValidator::stake(Chain::Sui, "validator1".to_string(), "Test Validator".to_string(), true, 0.05, 0.08)
     }
 }

@@ -436,14 +436,7 @@ mod tests {
     fn stake_actions_preserve_wei_and_nonces() {
         let signer = HyperCoreSigner;
         let asset = Asset::from_chain(Chain::HyperCore);
-        let validator = DelegationValidator {
-            chain: Chain::HyperCore,
-            id: "0x5ac99df645f3414876c816caa18b2d234024b487".into(),
-            name: "Validator".into(),
-            is_active: true,
-            commission: 0.0,
-            apr: 0.0,
-        };
+        let validator = DelegationValidator::stake(Chain::HyperCore, "0x5ac99df645f3414876c816caa18b2d234024b487".into(), "Validator".into(), true, 0.0, 0.0);
         let input = TransactionLoadInput {
             input_type: TransactionInputType::Stake(asset.clone(), StakeType::Stake(validator)),
             sender_address: "0xsender".into(),
@@ -490,14 +483,7 @@ mod tests {
                 delegation_id: "delegation".into(),
                 validator_id: "validator".into(),
             },
-            validator: DelegationValidator {
-                chain: Chain::HyperCore,
-                id: "0x66be52ec79f829cc88e5778a255e2cb9492798fd".into(),
-                name: "Validator".into(),
-                is_active: true,
-                commission: 0.0,
-                apr: 0.0,
-            },
+            validator: DelegationValidator::stake(Chain::HyperCore, "0x66be52ec79f829cc88e5778a255e2cb9492798fd".into(), "Validator".into(), true, 0.0, 0.0),
             price: None,
         };
         let input = TransactionLoadInput {

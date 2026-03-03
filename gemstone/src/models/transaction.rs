@@ -1,8 +1,9 @@
 use crate::models::*;
 use num_bigint::BigInt;
-use primitives::stake_type::{FreezeData, StakeData};
+use primitives::contract_call_data::ContractCallData;
+use primitives::stake_type::FreezeData;
 use primitives::{
-    AccountDataType, Asset, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, Resource, StakeType,
+    AccountDataType, Asset, EarnType, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, Resource, StakeType,
     TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata, TransactionState,
     TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, TronStakeData, TronUnfreeze, TronVote,
     UInt64, WalletConnectionSessionAppMetadata,
@@ -128,6 +129,8 @@ pub enum TransactionType {
     PerpetualOpenPosition,
     PerpetualClosePosition,
     PerpetualModifyPosition,
+    EarnDeposit,
+    EarnWithdraw,
 }
 
 pub type GemAccountDataType = AccountDataType;
@@ -157,12 +160,14 @@ pub struct GemHyperliquidOrder {
     pub agent_private_key: String,
 }
 
-pub type GemStakeData = StakeData;
+pub type GemContractCallData = ContractCallData;
 
 #[uniffi::remote(Record)]
-pub struct GemStakeData {
-    pub data: Option<String>,
-    pub to: Option<String>,
+pub struct GemContractCallData {
+    pub contract_address: String,
+    pub call_data: String,
+    pub approval: Option<GemApprovalData>,
+    pub gas_limit: Option<String>,
 }
 
 #[derive(Debug, Clone, uniffi::Enum)]
@@ -179,6 +184,14 @@ pub enum GemStakeType {
 pub struct GemFreezeData {
     pub freeze_type: GemFreezeType,
     pub resource: GemResource,
+}
+
+pub type GemEarnType = EarnType;
+
+#[uniffi::remote(Enum)]
+pub enum GemEarnType {
+    Deposit(GemDelegationValidator),
+    Withdraw(GemDelegation),
 }
 
 pub type GemWalletConnectionSessionAppMetadata = WalletConnectionSessionAppMetadata;
@@ -303,6 +316,11 @@ pub enum GemTransactionInputType {
         asset: GemAsset,
         perpetual_type: GemPerpetualType,
     },
+    Earn {
+        asset: GemAsset,
+        earn_type: GemEarnType,
+        data: GemContractCallData,
+    },
 }
 
 impl GemTransactionInputType {
@@ -315,7 +333,8 @@ impl GemTransactionInputType {
             | Self::Generic { asset, .. }
             | Self::TransferNft { asset, .. }
             | Self::Account { asset, .. }
-            | Self::Perpetual { asset, .. } => asset,
+            | Self::Perpetual { asset, .. }
+            | Self::Earn { asset, .. } => asset,
             Self::Swap { from_asset, .. } => from_asset,
         }
     }
@@ -324,6 +343,13 @@ impl GemTransactionInputType {
         match self {
             Self::Swap { swap_data, .. } => Ok(swap_data),
             _ => Err("Expected Swap".to_string()),
+        }
+    }
+
+    pub fn earn_data(&self) -> Result<&GemContractCallData, String> {
+        match self {
+            Self::Earn { data, .. } => Ok(data),
+            _ => Err("Expected Earn".to_string()),
         }
     }
 
@@ -405,7 +431,7 @@ pub enum GemTransactionLoadMetadata {
     Evm {
         nonce: u64,
         chain_id: u64,
-        stake_data: Option<GemStakeData>,
+        contract_call: Option<GemContractCallData>,
     },
     Near {
         sequence: u64,
@@ -490,7 +516,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
             TransactionLoadMetadata::Bitcoin { utxos } => GemTransactionLoadMetadata::Bitcoin { utxos },
             TransactionLoadMetadata::Zcash { utxos, branch_id } => GemTransactionLoadMetadata::Zcash { utxos, branch_id },
             TransactionLoadMetadata::Cardano { utxos } => GemTransactionLoadMetadata::Cardano { utxos },
-            TransactionLoadMetadata::Evm { nonce, chain_id, stake_data } => GemTransactionLoadMetadata::Evm { nonce, chain_id, stake_data },
+            TransactionLoadMetadata::Evm { nonce, chain_id, contract_call } => GemTransactionLoadMetadata::Evm { nonce, chain_id, contract_call },
             TransactionLoadMetadata::Near { sequence, block_hash } => GemTransactionLoadMetadata::Near { sequence, block_hash },
             TransactionLoadMetadata::Stellar {
                 sequence,
@@ -578,7 +604,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
             GemTransactionLoadMetadata::Bitcoin { utxos } => TransactionLoadMetadata::Bitcoin { utxos },
             GemTransactionLoadMetadata::Zcash { utxos, branch_id } => TransactionLoadMetadata::Zcash { utxos, branch_id },
             GemTransactionLoadMetadata::Cardano { utxos } => TransactionLoadMetadata::Cardano { utxos },
-            GemTransactionLoadMetadata::Evm { nonce, chain_id, stake_data } => TransactionLoadMetadata::Evm { nonce, chain_id, stake_data },
+            GemTransactionLoadMetadata::Evm { nonce, chain_id, contract_call } => TransactionLoadMetadata::Evm { nonce, chain_id, contract_call },
             GemTransactionLoadMetadata::Near { sequence, block_hash } => TransactionLoadMetadata::Near { sequence, block_hash },
             GemTransactionLoadMetadata::Stellar {
                 sequence,
@@ -681,6 +707,7 @@ impl From<TransactionInputType> for GemTransactionInputType {
             TransactionInputType::TransferNft(asset, nft_asset) => GemTransactionInputType::TransferNft { asset, nft_asset },
             TransactionInputType::Account(asset, account_type) => GemTransactionInputType::Account { asset, account_type },
             TransactionInputType::Perpetual(asset, perpetual_type) => GemTransactionInputType::Perpetual { asset, perpetual_type },
+            TransactionInputType::Earn(asset, earn_type, data) => GemTransactionInputType::Earn { asset, earn_type, data },
         }
     }
 }
@@ -832,6 +859,7 @@ impl From<GemTransactionInputType> for TransactionInputType {
             GemTransactionInputType::TransferNft { asset, nft_asset } => TransactionInputType::TransferNft(asset, nft_asset),
             GemTransactionInputType::Account { asset, account_type } => TransactionInputType::Account(asset, account_type),
             GemTransactionInputType::Perpetual { asset, perpetual_type } => TransactionInputType::Perpetual(asset, perpetual_type),
+            GemTransactionInputType::Earn { asset, earn_type, data } => TransactionInputType::Earn(asset, earn_type, data),
         }
     }
 }

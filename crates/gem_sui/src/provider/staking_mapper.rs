@@ -8,14 +8,7 @@ pub fn map_validators(validators: SuiValidators, default_apy: f64) -> Vec<Delega
     validators
         .apys
         .into_iter()
-        .map(|validator| DelegationValidator {
-            chain: Chain::Sui,
-            id: validator.address,
-            name: String::new(),
-            is_active: true,
-            commission: 0.0,
-            apr: default_apy,
-        })
+        .map(|validator| DelegationValidator::stake(Chain::Sui, validator.address, String::new(), true, 0.0, default_apy))
         .collect()
 }
 

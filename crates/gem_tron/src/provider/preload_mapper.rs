@@ -270,14 +270,7 @@ mod tests {
     #[test]
     fn test_calculate_stake_fee_rate() {
         let params = vec![chain_parameter(GET_TRANSACTION_FEE, 1000)];
-        let stake_type = StakeType::Stake(DelegationValidator {
-            chain: Chain::Tron,
-            id: "validator".to_string(),
-            name: "validator".to_string(),
-            is_active: true,
-            commission: 0.0,
-            apr: 0.0,
-        });
+        let stake_type = StakeType::Stake(DelegationValidator::stake(Chain::Tron, "validator".to_string(), "validator".to_string(), true, 0.0, 0.0));
 
         let with_bandwidth = account_usage(DEFAULT_BANDWIDTH_BYTES, 0, 0);
         assert_eq!(calculate_stake_fee_rate(&params, &with_bandwidth, &stake_type).unwrap(), BigInt::from(0));

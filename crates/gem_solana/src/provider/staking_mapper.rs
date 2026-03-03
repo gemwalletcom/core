@@ -11,14 +11,7 @@ pub fn map_staking_validators(vote_accounts: Vec<VoteAccount>, chain: Chain, net
             let is_active = true;
             let validator_apr = if is_active { network_apy - (network_apy * commission_rate) } else { 0.0 };
 
-            DelegationValidator {
-                chain,
-                id: validator.vote_pubkey,
-                name: String::new(),
-                is_active,
-                commission: validator.commission as f64,
-                apr: validator_apr,
-            }
+            DelegationValidator::stake(chain, validator.vote_pubkey, String::new(), is_active, validator.commission as f64, validator_apr)
         })
         .collect()
 }

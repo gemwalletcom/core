@@ -8,14 +8,7 @@ pub fn map_staking_validators(validators: Vec<Validator>, chain: Chain, apy: Opt
     let calculated_apy = apy.unwrap_or_else(|| Validator::max_apr(validators.clone()));
     validators
         .into_iter()
-        .map(|x| DelegationValidator {
-            chain,
-            id: x.validator_address(),
-            name: x.name,
-            is_active: x.is_active,
-            commission: x.commission,
-            apr: calculated_apy,
-        })
+        .map(|x| DelegationValidator::stake(chain, x.validator_address(), x.name, x.is_active, x.commission, calculated_apy))
         .collect()
 }
 

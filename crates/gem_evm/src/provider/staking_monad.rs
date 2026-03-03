@@ -117,14 +117,14 @@ impl<C: Client + Clone> EthereumClient<C> {
             .map(|name| (*name).to_string())
             .unwrap_or_else(|| validator.validator_id.to_string());
 
-        DelegationValidator {
-            id: validator.validator_id.to_string(),
-            chain: Chain::Monad,
-            name: validator_name,
-            is_active: validator.is_active,
-            commission: Self::lens_commission_rate(&validator.commission),
-            apr: if validator.apy_bps > 0 { validator.apy_bps as f64 / 100.0 } else { network_apy },
-        }
+        DelegationValidator::stake(
+            Chain::Monad,
+            validator.validator_id.to_string(),
+            validator_name,
+            validator.is_active,
+            Self::lens_commission_rate(&validator.commission),
+            if validator.apy_bps > 0 { validator.apy_bps as f64 / 100.0 } else { network_apy },
+        )
     }
 
     fn map_lens_state(position: &MonadLensDelegation) -> DelegationState {

@@ -266,7 +266,9 @@ impl Transaction {
             | TransactionType::SmartContractCall
             | TransactionType::PerpetualOpenPosition
             | TransactionType::PerpetualClosePosition
-            | TransactionType::PerpetualModifyPosition => vec![self.asset_id.clone(), self.fee_asset_id.clone()],
+            | TransactionType::PerpetualModifyPosition
+            | TransactionType::EarnDeposit
+            | TransactionType::EarnWithdraw => vec![self.asset_id.clone(), self.fee_asset_id.clone()],
             TransactionType::Swap => self
                 .metadata
                 .clone()
@@ -301,7 +303,9 @@ impl Transaction {
             | TransactionType::SmartContractCall
             | TransactionType::PerpetualOpenPosition
             | TransactionType::PerpetualClosePosition
-            | TransactionType::PerpetualModifyPosition => vec![AssetAddress::new(self.asset_id.clone(), self.to.clone(), None)],
+            | TransactionType::PerpetualModifyPosition
+            | TransactionType::EarnDeposit
+            | TransactionType::EarnWithdraw => vec![AssetAddress::new(self.asset_id.clone(), self.to.clone(), None)],
             TransactionType::Swap => self
                 .metadata
                 .clone()

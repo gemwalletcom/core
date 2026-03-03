@@ -94,6 +94,7 @@ fn new_stake_balance(
         pending_unconfirmed: BigUint::from(0u32),
         rewards,
         reserved: BigUint::from(0u32),
+        earn: BigUint::from(0u32),
         withdrawable: BigUint::from(0u32),
         metadata: Some(metadata),
     }
