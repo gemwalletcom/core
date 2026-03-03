@@ -66,15 +66,12 @@ pub fn map_swap_result(request: &RelayRequest) -> SwapResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::relay::{
-        model::{RelayRequestMetadata, RelayStatus},
-        testkit::{create_bitcoin_step, create_currency_detail, create_empty_step, create_relay_request, create_transaction_step},
-    };
+    use crate::relay::model::{RelayCurrencyDetail, RelayRequest, RelayRequestMetadata, RelayStatus, Step};
     use primitives::{AssetId, Chain, swap::SwapStatus};
 
     #[test]
     fn test_map_evm_quote_data() {
-        let steps = vec![create_transaction_step("swap", "0xrouter", "1000000000000000000", "0xabcdef")];
+        let steps = vec![Step::mock_transaction("swap", "0xrouter", "1000000000000000000", "0xabcdef")];
 
         let result = map_quote_data(&RelayChain::Ethereum, &steps, "1000000000000000000", None).unwrap();
 
@@ -87,7 +84,7 @@ mod tests {
 
     #[test]
     fn test_map_evm_quote_data_with_approval() {
-        let steps = vec![create_transaction_step("swap", "0xrouter", "0", "0xabcdef")];
+        let steps = vec![Step::mock_transaction("swap", "0xrouter", "0", "0xabcdef")];
         let approval = ApprovalData {
             token: "0xtoken".to_string(),
             spender: "0xrouter".to_string(),
@@ -104,7 +101,7 @@ mod tests {
     #[test]
     fn test_map_bitcoin_quote_data() {
         let psbt = "70736274ff0100abcdef";
-        let steps = vec![create_bitcoin_step(psbt)];
+        let steps = vec![Step::mock_bitcoin(psbt)];
 
         let result = map_quote_data(&RelayChain::Bitcoin, &steps, "2000000", None).unwrap();
 
@@ -117,11 +114,11 @@ mod tests {
 
     #[test]
     fn test_map_swap_result_evm_to_evm() {
-        let request = create_relay_request(
+        let request = RelayRequest::mock(
             RelayStatus::Success,
             Some(RelayRequestMetadata {
-                currency_in: Some(create_currency_detail("0x0000000000000000000000000000000000000000", 1, "1000000000000000000")),
-                currency_out: Some(create_currency_detail("0x0000000000000000000000000000000000000000", 8453, "999000000000000000")),
+                currency_in: Some(RelayCurrencyDetail::mock("0x0000000000000000000000000000000000000000", 1, "1000000000000000000")),
+                currency_out: Some(RelayCurrencyDetail::mock("0x0000000000000000000000000000000000000000", 8453, "999000000000000000")),
             }),
         );
 
@@ -139,11 +136,11 @@ mod tests {
     #[test]
     fn test_map_swap_result_evm_token_to_btc() {
         let usdt_address = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
-        let request = create_relay_request(
+        let request = RelayRequest::mock(
             RelayStatus::Completed,
             Some(RelayRequestMetadata {
-                currency_in: Some(create_currency_detail(usdt_address, 1, "10000000")),
-                currency_out: Some(create_currency_detail("bc1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqmql8k8", 8253038, "50000")),
+                currency_in: Some(RelayCurrencyDetail::mock(usdt_address, 1, "10000000")),
+                currency_out: Some(RelayCurrencyDetail::mock("bc1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqmql8k8", 8253038, "50000")),
             }),
         );
 
@@ -157,39 +154,39 @@ mod tests {
 
     #[test]
     fn test_map_swap_result_status() {
-        let pending = map_swap_result(&create_relay_request(RelayStatus::Pending, None));
+        let pending = map_swap_result(&RelayRequest::mock(RelayStatus::Pending, None));
         assert_eq!(pending.status, SwapStatus::Pending);
         assert!(pending.metadata.is_none());
 
-        let failed = map_swap_result(&create_relay_request(RelayStatus::Failed, None));
+        let failed = map_swap_result(&RelayRequest::mock(RelayStatus::Failed, None));
         assert_eq!(failed.status, SwapStatus::Failed);
         assert!(failed.metadata.is_none());
     }
 
     #[test]
     fn test_get_step_data_by_id() {
-        let steps = vec![create_empty_step("approve", "transaction"), create_transaction_step("swap", "0xrouter", "0", "0xdata")];
+        let steps = vec![Step::mock_empty("approve", "transaction"), Step::mock_transaction("swap", "0xrouter", "0", "0xdata")];
         let data = get_step_data(&steps).unwrap();
         assert_eq!(data.to.as_deref(), Some("0xrouter"));
     }
 
     #[test]
     fn test_get_step_data_deposit() {
-        let steps = vec![create_bitcoin_step("psbt_data")];
+        let steps = vec![Step::mock_bitcoin("psbt_data")];
         let data = get_step_data(&steps).unwrap();
         assert_eq!(data.psbt.as_deref(), Some("psbt_data"));
     }
 
     #[test]
     fn test_get_step_data_fallback_transaction_kind() {
-        let steps = vec![create_empty_step("approve", "transaction"), create_transaction_step("send", "0xto", "100", "0xdata")];
+        let steps = vec![Step::mock_empty("approve", "transaction"), Step::mock_transaction("send", "0xto", "100", "0xdata")];
         let data = get_step_data(&steps).unwrap();
         assert_eq!(data.to.as_deref(), Some("0xto"));
     }
 
     #[test]
     fn test_get_step_data_fallback_any_with_data() {
-        let steps = vec![create_empty_step("unknown", "other"), create_transaction_step("custom", "0xaddr", "0", "0x")];
+        let steps = vec![Step::mock_empty("unknown", "other"), Step::mock_transaction("custom", "0xaddr", "0", "0x")];
         let data = get_step_data(&steps).unwrap();
         assert_eq!(data.to.as_deref(), Some("0xaddr"));
     }
@@ -201,7 +198,7 @@ mod tests {
 
     #[test]
     fn test_get_step_data_no_usable_steps() {
-        let steps = vec![create_empty_step("approve", "transaction")];
+        let steps = vec![Step::mock_empty("approve", "transaction")];
         assert!(get_step_data(&steps).is_err());
     }
 }

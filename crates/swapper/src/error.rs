@@ -139,8 +139,7 @@ impl From<SolanaError> for SwapperError {
     fn from(err: SolanaError) -> Self {
         match err {
             SolanaError::InvalidPubkey(msg) => Self::ComputeQuoteError(format!("{INVALID_ADDRESS}: {msg}")),
-            SolanaError::SerializationError(msg) => Self::TransactionError(msg),
-            SolanaError::DeserializationError(msg) => Self::TransactionError(msg),
+            SolanaError::SerializationError(msg) | SolanaError::DeserializationError(msg) => Self::TransactionError(msg),
             _ => Self::InvalidRoute,
         }
     }
