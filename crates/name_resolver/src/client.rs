@@ -48,7 +48,7 @@ impl Client {
     }
 
     pub async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error + Send + Sync>> {
-        let name_part = name.split('.').next().unwrap_or(name);
+        let name_part = name.split('.').next().unwrap();
         if name_part.len() > MAX_NAME_LENGTH {
             return Err(NameError::new(format!("name '{}' exceeds maximum length of {}", name_part, MAX_NAME_LENGTH)).into());
         }
@@ -142,8 +142,10 @@ mod tests {
         ))]);
 
         let result = client.resolve("inj1kly3z4r8pzgfhh9cx5x69xjw0j4evlepq6ccgw.inj", Chain::Injective).await;
-        assert!(result.is_err());
-        assert!(result.unwrap_err().to_string().contains("exceeds maximum length"));
+        assert_eq!(
+            result.unwrap_err().to_string(),
+            "name 'inj1kly3z4r8pzgfhh9cx5x69xjw0j4evlepq6ccgw' exceeds maximum length of 20"
+        );
     }
 
     #[tokio::test]
