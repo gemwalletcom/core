@@ -3316,6 +3316,7 @@ dependencies = [
  "futures",
  "gem_client",
  "gem_jsonrpc",
+ "hex",
  "num-bigint",
  "num-traits",
  "primitives",

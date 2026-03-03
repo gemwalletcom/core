@@ -3,7 +3,7 @@ use std::sync::Arc;
 use alloy_primitives::U256;
 use async_trait::async_trait;
 use gem_client::Client;
-use primitives::{AssetId, Chain, ChainType, SolanaInstruction};
+use primitives::{AssetId, Chain, ChainType, SolanaInstruction, swap::ApprovalData};
 
 use super::{
     Relay,
@@ -98,7 +98,7 @@ where
                     route_data: serde_json::to_string(&quote_response).unwrap_or_default(),
                     gas_limit: None,
                 }],
-                slippage_bps: request.options.slippage.bps,
+                slippage_bps: quote_response.details.slippage_bps().unwrap_or(request.options.slippage.bps),
             },
             request: request.clone(),
             eta_in_seconds,
@@ -146,12 +146,7 @@ where
         Ok(SwapperQuoteData::new_contract(String::new(), String::new(), tx_data, None, gas_limit))
     }
 
-    async fn check_evm_approval(
-        &self,
-        quote: &Quote,
-        quote_response: &RelayQuoteResponse,
-        from_asset_id: &AssetId,
-    ) -> Result<Option<primitives::swap::ApprovalData>, SwapperError> {
+    async fn check_evm_approval(&self, quote: &Quote, quote_response: &RelayQuoteResponse, from_asset_id: &AssetId) -> Result<Option<ApprovalData>, SwapperError> {
         match from_asset_id.chain.chain_type() {
             ChainType::Ethereum if !from_asset_id.is_native() => {
                 let router_address = quote_response

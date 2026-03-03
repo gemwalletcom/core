@@ -13,6 +13,9 @@ pub mod provider;
 
 pub mod models;
 
+#[cfg(feature = "transaction")]
+pub mod transaction;
+
 #[cfg(feature = "signer")]
 pub mod signer;
 

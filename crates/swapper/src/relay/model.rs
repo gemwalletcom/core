@@ -45,6 +45,12 @@ pub struct Step {
     pub items: Option<Vec<StepItem>>,
 }
 
+impl Step {
+    pub fn step_data(&self) -> Option<&StepData> {
+        self.items.as_ref()?.first()?.data.as_ref()
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StepItem {
@@ -68,6 +74,7 @@ pub struct StepData {
 pub struct QuoteDetails {
     pub currency_out: CurrencyAmount,
     pub time_estimate: Option<f64>,
+    pub swap_impact: Option<SwapImpact>,
 }
 
 impl QuoteDetails {
@@ -78,6 +85,17 @@ impl QuoteDetails {
         }
         Some(value.ceil() as u32)
     }
+
+    pub fn slippage_bps(&self) -> Option<u32> {
+        let percent: f64 = self.swap_impact.as_ref()?.percent.as_ref()?.parse().ok()?;
+        Some((percent.abs() * 100.0) as u32)
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SwapImpact {
+    pub percent: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

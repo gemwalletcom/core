@@ -13,17 +13,12 @@ pub const STEP_DEPOSIT: &str = "deposit";
 pub const STEP_APPROVE: &str = "approve";
 
 pub fn get_step_data(steps: &[Step]) -> Result<&StepData, SwapperError> {
-    let tx_step = steps
+    steps
         .iter()
         .find(|s| s.id == STEP_SWAP || s.id == STEP_DEPOSIT)
         .or_else(|| steps.iter().find(|s| s.kind == "transaction" && s.id != STEP_APPROVE))
-        .or_else(|| steps.iter().find(|s| s.items.as_ref().is_some_and(|i| !i.is_empty())))
-        .ok_or(SwapperError::InvalidRoute)?;
-    tx_step
-        .items
-        .as_ref()
-        .and_then(|items| items.first())
-        .and_then(|item| item.data.as_ref())
+        .or_else(|| steps.iter().find(|s| s.step_data().is_some()))
+        .and_then(|s| s.step_data())
         .ok_or(SwapperError::InvalidRoute)
 }
 
@@ -71,46 +66,15 @@ pub fn map_swap_result(request: &RelayRequest) -> SwapResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::relay::model::{RelayCurrencyDetail, RelayRequestMetadata, RelayStatus, StepData, StepItem};
+    use crate::relay::{
+        model::{RelayRequestMetadata, RelayStatus},
+        testkit::{create_bitcoin_step, create_currency_detail, create_empty_step, create_relay_request, create_transaction_step},
+    };
     use primitives::{AssetId, Chain, swap::SwapStatus};
-
-    fn create_transaction_step(to: &str, value: &str, data: &str) -> Step {
-        Step {
-            id: "swap".to_string(),
-            kind: "transaction".to_string(),
-            items: Some(vec![StepItem {
-                data: Some(StepData {
-                    to: Some(to.to_string()),
-                    data: Some(data.to_string()),
-                    value: value.to_string(),
-                    instructions: None,
-                    address_lookup_table_addresses: None,
-                    psbt: None,
-                }),
-            }]),
-        }
-    }
-
-    fn create_bitcoin_step(psbt: &str) -> Step {
-        Step {
-            id: "deposit".to_string(),
-            kind: "transaction".to_string(),
-            items: Some(vec![StepItem {
-                data: Some(StepData {
-                    to: None,
-                    data: None,
-                    value: String::new(),
-                    instructions: None,
-                    address_lookup_table_addresses: None,
-                    psbt: Some(psbt.to_string()),
-                }),
-            }]),
-        }
-    }
 
     #[test]
     fn test_map_evm_quote_data() {
-        let steps = vec![create_transaction_step("0xrouter", "1000000000000000000", "0xabcdef")];
+        let steps = vec![create_transaction_step("swap", "0xrouter", "1000000000000000000", "0xabcdef")];
 
         let result = map_quote_data(&RelayChain::Ethereum, &steps, "1000000000000000000", None).unwrap();
 
@@ -123,7 +87,7 @@ mod tests {
 
     #[test]
     fn test_map_evm_quote_data_with_approval() {
-        let steps = vec![create_transaction_step("0xrouter", "0", "0xabcdef")];
+        let steps = vec![create_transaction_step("swap", "0xrouter", "0", "0xabcdef")];
         let approval = ApprovalData {
             token: "0xtoken".to_string(),
             spender: "0xrouter".to_string(),
@@ -149,18 +113,6 @@ mod tests {
         assert_eq!(result.data, psbt);
         assert!(result.approval.is_none());
         assert!(result.gas_limit.is_none());
-    }
-
-    fn create_relay_request(status: RelayStatus, metadata: Option<RelayRequestMetadata>) -> RelayRequest {
-        RelayRequest { status, metadata }
-    }
-
-    fn create_currency_detail(currency: &str, chain_id: u64, amount: &str) -> RelayCurrencyDetail {
-        RelayCurrencyDetail {
-            currency: currency.to_string(),
-            chain_id,
-            amount: Some(amount.to_string()),
-        }
     }
 
     #[test]
@@ -204,22 +156,52 @@ mod tests {
     }
 
     #[test]
-    fn test_map_swap_result_pending() {
-        let request = create_relay_request(RelayStatus::Pending, None);
+    fn test_map_swap_result_status() {
+        let pending = map_swap_result(&create_relay_request(RelayStatus::Pending, None));
+        assert_eq!(pending.status, SwapStatus::Pending);
+        assert!(pending.metadata.is_none());
 
-        let result = map_swap_result(&request);
-
-        assert_eq!(result.status, SwapStatus::Pending);
-        assert!(result.metadata.is_none());
+        let failed = map_swap_result(&create_relay_request(RelayStatus::Failed, None));
+        assert_eq!(failed.status, SwapStatus::Failed);
+        assert!(failed.metadata.is_none());
     }
 
     #[test]
-    fn test_map_swap_result_failed() {
-        let request = create_relay_request(RelayStatus::Failed, None);
+    fn test_get_step_data_by_id() {
+        let steps = vec![create_empty_step("approve", "transaction"), create_transaction_step("swap", "0xrouter", "0", "0xdata")];
+        let data = get_step_data(&steps).unwrap();
+        assert_eq!(data.to.as_deref(), Some("0xrouter"));
+    }
 
-        let result = map_swap_result(&request);
+    #[test]
+    fn test_get_step_data_deposit() {
+        let steps = vec![create_bitcoin_step("psbt_data")];
+        let data = get_step_data(&steps).unwrap();
+        assert_eq!(data.psbt.as_deref(), Some("psbt_data"));
+    }
 
-        assert_eq!(result.status, SwapStatus::Failed);
-        assert!(result.metadata.is_none());
+    #[test]
+    fn test_get_step_data_fallback_transaction_kind() {
+        let steps = vec![create_empty_step("approve", "transaction"), create_transaction_step("send", "0xto", "100", "0xdata")];
+        let data = get_step_data(&steps).unwrap();
+        assert_eq!(data.to.as_deref(), Some("0xto"));
+    }
+
+    #[test]
+    fn test_get_step_data_fallback_any_with_data() {
+        let steps = vec![create_empty_step("unknown", "other"), create_transaction_step("custom", "0xaddr", "0", "0x")];
+        let data = get_step_data(&steps).unwrap();
+        assert_eq!(data.to.as_deref(), Some("0xaddr"));
+    }
+
+    #[test]
+    fn test_get_step_data_empty_steps() {
+        assert!(get_step_data(&[]).is_err());
+    }
+
+    #[test]
+    fn test_get_step_data_no_usable_steps() {
+        let steps = vec![create_empty_step("approve", "transaction")];
+        assert!(get_step_data(&steps).is_err());
     }
 }

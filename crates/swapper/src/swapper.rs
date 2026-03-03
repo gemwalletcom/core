@@ -3,6 +3,7 @@ use crate::{
     SwapperQuoteData, across, alien::RpcProvider, chainflip, config::DEFAULT_STABLE_SWAP_REFERRAL_BPS, hyperliquid, jupiter, near_intents, proxy::provider_factory, relay,
     thorchain, uniswap,
 };
+use futures::channel::oneshot;
 use futures::future::{self, Either};
 use num_traits::ToPrimitive;
 use primitives::{AssetId, Chain, EVMChain};
@@ -186,7 +187,7 @@ impl GemSwapper {
 
         let request_for_quote = Self::transform_request(request);
         let quotes_futures = providers.into_iter().map(|provider| {
-            let (tx, rx) = futures::channel::oneshot::channel::<()>();
+            let (tx, rx) = oneshot::channel::<()>();
             std::thread::spawn(move || {
                 std::thread::sleep(QUOTE_TIMEOUT);
                 let _ = tx.send(());
@@ -208,7 +209,7 @@ impl GemSwapper {
             match result {
                 Some(Ok(quote)) => quotes.push(quote),
                 Some(Err(err)) => errors.push(err),
-                None => errors.push(SwapperError::ComputeQuoteError("timeout".into())),
+                None => errors.push(SwapperError::ComputeQuoteError("Timeout".into())),
             }
         }
 
