@@ -3,8 +3,8 @@ use crate::{
     SwapperQuoteData, across, alien::RpcProvider, chainflip, config::DEFAULT_STABLE_SWAP_REFERRAL_BPS, hyperliquid, jupiter, near_intents, proxy::provider_factory, relay,
     thorchain, uniswap,
 };
-use futures::channel::oneshot;
 use futures::future::{self, Either};
+use futures_timer::Delay;
 use num_traits::ToPrimitive;
 use primitives::{AssetId, Chain, EVMChain};
 use std::{borrow::Cow, collections::HashSet, fmt::Debug, sync::Arc, time::Duration};
@@ -186,17 +186,10 @@ impl GemSwapper {
         }
 
         let request_for_quote = Self::transform_request(request);
-        let quotes_futures = providers.into_iter().map(|provider| {
-            let (tx, rx) = oneshot::channel::<()>();
-            std::thread::spawn(move || {
-                std::thread::sleep(QUOTE_TIMEOUT);
-                let _ = tx.send(());
-            });
-            async {
-                match future::select(Box::pin(provider.fetch_quote(request_for_quote.as_ref())), rx).await {
-                    Either::Left((result, _)) => Some(result),
-                    Either::Right(_) => None,
-                }
+        let quotes_futures = providers.into_iter().map(|provider| async {
+            match future::select(Box::pin(provider.fetch_quote(request_for_quote.as_ref())), Delay::new(QUOTE_TIMEOUT)).await {
+                Either::Left((result, _)) => Some(result),
+                Either::Right(_) => None,
             }
         });
 

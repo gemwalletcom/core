@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use bitcoin::{
     NetworkKind, PrivateKey, Psbt, PublicKey, Witness,
-    bip32::{DerivationPath, Fingerprint},
+    bip32::{DerivationPath, Fingerprint, KeySource},
     secp256k1::Secp256k1,
 };
 use primitives::{ChainSigner, SignerError, SwapProvider, TransactionLoadInput};
@@ -37,9 +37,20 @@ fn sign_and_finalize(mut psbt: Psbt, private_key: &[u8]) -> Result<String, Signe
     let secp = Secp256k1::new();
     let key = PrivateKey::from_slice(private_key, NetworkKind::Main).map_err(|e| SignerError::invalid_input(format!("private key: {e}")))?;
     let pub_key = PublicKey::from_private_key(&secp, &key);
+    let (x_only_key, _parity) = pub_key.inner.x_only_public_key();
 
     for input in &mut psbt.inputs {
-        if input.bip32_derivation.is_empty() {
+        let is_taproot = input.witness_utxo.as_ref().is_some_and(|utxo| utxo.script_pubkey.is_p2tr());
+
+        if is_taproot {
+            if input.tap_internal_key.is_none() {
+                input.tap_internal_key = Some(x_only_key);
+            }
+            if input.tap_key_origins.is_empty() {
+                let key_source: KeySource = (Fingerprint::default(), DerivationPath::master());
+                input.tap_key_origins.insert(x_only_key, (vec![], key_source));
+            }
+        } else if input.bip32_derivation.is_empty() {
             input.bip32_derivation.insert(pub_key.inner, (Fingerprint::default(), DerivationPath::master()));
         }
     }
@@ -52,22 +63,40 @@ fn sign_and_finalize(mut psbt: Psbt, private_key: &[u8]) -> Result<String, Signe
         SignerError::signing_error(messages.join(", "))
     })?;
 
-    finalize_p2wpkh(&mut psbt, &pub_key)?;
+    finalize_inputs(&mut psbt, &pub_key)?;
 
     let transaction = psbt.extract_tx_unchecked_fee_rate();
     Ok(hex::encode(bitcoin::consensus::serialize(&transaction)))
 }
 
-fn finalize_p2wpkh(psbt: &mut Psbt, pub_key: &PublicKey) -> Result<(), SignerError> {
+fn finalize_inputs(psbt: &mut Psbt, pub_key: &PublicKey) -> Result<(), SignerError> {
     for (idx, input) in psbt.inputs.iter_mut().enumerate() {
-        let sig = input
-            .partial_sigs
-            .get(pub_key)
-            .ok_or_else(|| SignerError::signing_error(format!("missing signature for input {idx}")))?;
+        let script = input
+            .witness_utxo
+            .as_ref()
+            .ok_or_else(|| SignerError::signing_error(format!("missing witness_utxo for input {idx}")))?
+            .script_pubkey
+            .clone();
 
-        let mut witness = Witness::new();
-        witness.push(sig.to_vec());
-        witness.push(pub_key.to_bytes());
+        let witness = if script.is_p2wpkh() {
+            let sig = input
+                .partial_sigs
+                .get(pub_key)
+                .ok_or_else(|| SignerError::signing_error(format!("missing signature for input {idx}")))?;
+            let mut w = Witness::new();
+            w.push(sig.to_vec());
+            w.push(pub_key.to_bytes());
+            w
+        } else if script.is_p2tr() {
+            let sig = input
+                .tap_key_sig
+                .ok_or_else(|| SignerError::signing_error(format!("missing taproot signature for input {idx}")))?;
+            let mut w = Witness::new();
+            w.push(sig.to_vec());
+            w
+        } else {
+            return Err(SignerError::signing_error(format!("unsupported script type for input {idx}")));
+        };
 
         input.final_script_witness = Some(witness);
         input.partial_sigs = BTreeMap::new();

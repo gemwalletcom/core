@@ -76,6 +76,7 @@ rocket_ws = { version = "0.1.1" }
 async-trait = { version = "0.1.89" }
 prometheus-client = { version = "0.24.0" }
 futures = { version = "0.3.32" }
+futures-timer = { version = "3.0.3" }
 uuid = { version = "1.21.0", features = ["v4"] }
 
 # db
