@@ -23,6 +23,12 @@ impl Display for GatewayError {
 
 impl Error for GatewayError {}
 
+impl From<uniffi::UnexpectedUniFFICallbackError> for GatewayError {
+    fn from(e: uniffi::UnexpectedUniFFICallbackError) -> Self {
+        GatewayError::PlatformError { msg: e.reason }
+    }
+}
+
 pub(crate) fn map_network_error(error: Box<dyn Error + Send + Sync>) -> GatewayError {
     if let Some(jsonrpc_error) = error.downcast_ref::<JsonRpcError>()
         && jsonrpc_error.code == ERROR_CLIENT_ERROR
@@ -80,6 +86,17 @@ mod tests {
         match mapped {
             GatewayError::NetworkError { msg } => assert_eq!(msg, "HTTP error: status 404"),
             GatewayError::PlatformError { .. } => panic!("Expected NetworkError"),
+        }
+    }
+
+    #[test]
+    fn test_unexpected_callback_error_converts_to_platform_error() {
+        let unexpected = uniffi::UnexpectedUniFFICallbackError { reason: "SomeSwiftError: something went wrong".to_string() };
+        let gateway_error: GatewayError = unexpected.into();
+
+        match gateway_error {
+            GatewayError::PlatformError { msg } => assert_eq!(msg, "SomeSwiftError: something went wrong"),
+            GatewayError::NetworkError { .. } => panic!("Expected PlatformError"),
         }
     }
 
