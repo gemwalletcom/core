@@ -14,7 +14,7 @@ pub struct TransactionsPayload {
 
 impl fmt::Display for TransactionsPayload {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "chain: {}, blocks: {:?}, transactions: {}", self.chain.as_ref(), self.blocks, self.transactions.len())
+        write!(f, "chain={}, blocks={:?}, transactions: {}", self.chain.as_ref(), self.blocks, self.transactions.len())
     }
 }
 
@@ -65,7 +65,7 @@ pub struct FetchAssetsPayload {
 
 impl fmt::Display for FetchAssetsPayload {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "chain: {}, token_id: {:?}", self.asset_id.chain.as_ref(), self.asset_id.token_id)
+        write!(f, "chain={}, token_id={:?}", self.asset_id.chain.as_ref(), self.asset_id.token_id)
     }
 }
 
@@ -83,7 +83,7 @@ pub struct FetchBlocksPayload {
 
 impl fmt::Display for FetchBlocksPayload {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "chain: {}, block: {}", self.chain.as_ref(), self.block)
+        write!(f, "chain={}, block={}", self.chain.as_ref(), self.block)
     }
 }
 
@@ -107,7 +107,7 @@ impl FetchNFTCollectionPayload {
 
 impl fmt::Display for FetchNFTCollectionPayload {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "chain: {}, collection_id: {}", self.chain.as_ref(), self.collection_id)
+        write!(f, "chain={}, collection_id={}", self.chain.as_ref(), self.collection_id)
     }
 }
 
@@ -126,7 +126,7 @@ impl FetchNFTCollectionAssetPayload {
 
 impl fmt::Display for FetchNFTCollectionAssetPayload {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "chain: {}, collection_id: {}, asset_id: {}", self.chain.as_ref(), self.collection_id, self.asset_id)
+        write!(f, "chain={}, collection_id={}, asset_id={}", self.chain.as_ref(), self.collection_id, self.asset_id)
     }
 }
 
@@ -163,7 +163,7 @@ impl ChainAddressPayload {
 
 impl fmt::Display for ChainAddressPayload {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "chain: {}, address: {}", self.value.chain, self.value.address)
+        write!(f, "chain={}, address={}", self.value.chain, self.value.address)
     }
 }
 

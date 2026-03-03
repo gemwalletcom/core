@@ -21,6 +21,10 @@ impl NodeSyncStatus {
     pub fn in_sync() -> Self {
         Self::new(true, None, None)
     }
+
+    pub fn synced(block: u64) -> Self {
+        Self::new(true, Some(block), Some(block))
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -134,7 +134,7 @@ impl<C: Client + Clone> EthereumClient<C> {
             ),
         ];
 
-        let results: Vec<String> = self.client.batch_call::<String>(calls).await?.extract();
+        let results: Vec<String> = self.client.batch_call::<String>(calls).await?.take_all()?;
 
         let delegations_data = hex::decode(&results[0])?;
         let delegations = decode_delegations_return(&delegations_data)?;
@@ -187,5 +187,21 @@ mod tests {
         let completion_date = "invalid".parse::<i64>().ok().and_then(|unlock_time| DateTime::from_timestamp(unlock_time, 0));
 
         assert!(completion_date.is_none());
+    }
+}
+
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
+    use crate::provider::testkit::{TEST_SMARTCHAIN_STAKING_ADDRESS, create_smartchain_test_client};
+
+    #[tokio::test]
+    async fn test_get_smartchain_delegations() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_smartchain_test_client();
+        let delegations = client.get_smartchain_delegations(TEST_SMARTCHAIN_STAKING_ADDRESS).await?;
+
+        println!("SmartChain Delegations count: {}", delegations.len());
+        assert!(!delegations.is_empty());
+
+        Ok(())
     }
 }

@@ -14,19 +14,11 @@ struct JobLabels {
     job_name: String,
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, EncodeLabelSet)]
-struct JobErrorLabels {
-    service: String,
-    job_name: String,
-    error: String,
-}
-
 #[derive(Default)]
 struct JobState {
     interval: u64,
     duration: u64,
     last_success: Option<u64>,
-    errors: HashMap<String, u64>,
 }
 
 pub struct JobMetrics {
@@ -42,18 +34,16 @@ impl JobMetrics {
         }
     }
 
-    pub fn report(&self, name: &str, interval: u64, duration: u64, success: bool, error: Option<String>) {
+    pub fn report(&self, name: &str, interval: u64, duration: u64, success: bool) {
         let mut jobs = self.jobs.lock().unwrap();
         let state = jobs.entry(name.to_string()).or_default();
-        let timestamp = super::now_unix();
 
         state.interval = interval;
         state.duration = duration;
 
         if success {
+            let timestamp = super::now_unix();
             state.last_success = Some(timestamp);
-        } else if let Some(error) = error {
-            *state.errors.entry(super::sanitize_error_message(&error)).or_default() += 1;
         }
     }
 }
@@ -63,7 +53,6 @@ impl MetricsProvider for JobMetrics {
         let last_success_at = Family::<JobLabels, Gauge>::default();
         let interval = Family::<JobLabels, Gauge>::default();
         let duration = Family::<JobLabels, Gauge>::default();
-        let errors = Family::<JobErrorLabels, Gauge>::default();
 
         let jobs = self.jobs.lock().unwrap();
         for (name, state) in jobs.iter() {
@@ -78,20 +67,10 @@ impl MetricsProvider for JobMetrics {
             if let Some(ts) = state.last_success {
                 last_success_at.get_or_create(&labels).set(ts as i64);
             }
-
-            for (error, count) in &state.errors {
-                let error_labels = JobErrorLabels {
-                    service: self.service.clone(),
-                    job_name: name.clone(),
-                    error: error.clone(),
-                };
-                errors.get_or_create(&error_labels).set(*count as i64);
-            }
         }
 
         registry.register("job_last_success_at", "Last successful job run (unix timestamp)", last_success_at);
         registry.register("job_interval_seconds", "Job interval in seconds", interval);
         registry.register("job_duration_milliseconds", "Last job duration in milliseconds", duration);
-        registry.register("job_errors", "Job error count by message", errors);
     }
 }

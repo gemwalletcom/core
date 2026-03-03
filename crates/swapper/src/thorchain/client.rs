@@ -1,6 +1,6 @@
 use super::{
     asset::THORChainAsset,
-    model::{InboundAddress, QuoteSwapRequest, QuoteSwapResponse, TransactionStatus},
+    model::{AsgardVault, InboundAddress, QuoteSwapRequest, QuoteSwapResponse, TransactionStatus},
 };
 use crate::SwapperError;
 use gem_client::{Client, ClientExt, X_CACHE_TTL};
@@ -50,6 +50,10 @@ where
     pub async fn get_inbound_addresses(&self) -> Result<Vec<InboundAddress>, SwapperError> {
         let headers = HashMap::from([(X_CACHE_TTL.to_string(), "600".to_string())]);
         self.client.get_with_headers("/thorchain/inbound_addresses", headers).await.map_err(SwapperError::from)
+    }
+
+    pub async fn get_asgard_vaults(&self) -> Result<Vec<AsgardVault>, SwapperError> {
+        self.client.get("/thorchain/vaults/asgard").await.map_err(SwapperError::from)
     }
 
     pub async fn get_transaction_status(&self, hash: &str) -> Result<TransactionStatus, SwapperError> {

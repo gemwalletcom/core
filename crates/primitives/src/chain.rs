@@ -7,7 +7,7 @@ use typeshare::typeshare;
 use crate::chain_config::{ChainConfig, get_chain_config};
 use crate::{AssetId, AssetType, ChainType};
 
-#[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq, Ord, PartialOrd, Eq, Hash)]
+#[derive(Copy, Clone, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq, Ord, PartialOrd, Eq, Hash)]
 #[typeshare(swift = "Equatable, CaseIterable, Sendable, Hashable")]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
@@ -65,9 +65,14 @@ pub enum Chain {
     Stable,
 }
 
+impl fmt::Debug for Chain {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.as_ref())
+    }
+}
+
 impl fmt::Display for Chain {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // Use `self.number` to refer to each positional data point.
         write!(f, "{}", self.as_ref())
     }
 }

@@ -1,7 +1,6 @@
 use primitives::TransactionSwapMetadata;
 
 use super::chain::THORChainName;
-use super::constants::ZERO_HASH;
 use super::model::TransactionStatus;
 use crate::{SwapResult, SwapperProvider};
 
@@ -20,10 +19,7 @@ pub fn map_swap_result(response: &TransactionStatus) -> SwapResult {
     let from_asset = from_coin.and_then(|c| c.resolve_asset_id());
     let from_value = from_coin.and_then(|c| c.native_value(chain));
 
-    let out_coin = response
-        .out_txs
-        .as_ref()
-        .and_then(|out_txs| out_txs.iter().find(|t| t.id != ZERO_HASH && !t.id.is_empty()).and_then(|t| t.coins.first()));
+    let out_coin = response.destination_coin();
     let to_asset = out_coin.and_then(|c| c.resolve_asset_id());
     let to_value = out_coin.and_then(|c| to_asset.as_ref().and_then(|a| c.native_value(a.chain)));
 
@@ -103,6 +99,25 @@ mod tests {
     }
 
     #[test]
+    fn test_map_swap_result_bnb_to_tron_pending() {
+        let response = status(include_str!("testdata/tx_status_bnb_to_tron_pending.json"));
+
+        assert_eq!(
+            map_swap_result(&response),
+            SwapResult {
+                status: SwapStatus::Pending,
+                metadata: Some(TransactionSwapMetadata {
+                    from_asset: Chain::SmartChain.as_asset_id(),
+                    from_value: "20000000000000000".to_string(),
+                    to_asset: Chain::Tron.as_asset_id(),
+                    to_value: "43070556".to_string(),
+                    provider: Some("thorchain".to_string()),
+                }),
+            }
+        );
+    }
+
+    #[test]
     fn test_map_swap_result_bnb_to_eth_usdt() {
         let response = status(include_str!("testdata/tx_status_bnb_to_eth_usdt.json"));
 
@@ -115,6 +130,44 @@ mod tests {
                     from_value: "21300000000000000".to_string(),
                     to_asset: AssetId::from_token(Chain::Ethereum, ETHEREUM_USDT_TOKEN_ID),
                     to_value: "12973781".to_string(),
+                    provider: Some("thorchain".to_string()),
+                }),
+            }
+        );
+    }
+
+    #[test]
+    fn test_map_swap_result_bnb_to_tron() {
+        let response = status(include_str!("testdata/tx_status_bnb_to_tron.json"));
+
+        assert_eq!(
+            map_swap_result(&response),
+            SwapResult {
+                status: SwapStatus::Completed,
+                metadata: Some(TransactionSwapMetadata {
+                    from_asset: Chain::SmartChain.as_asset_id(),
+                    from_value: "20000000000000000".to_string(),
+                    to_asset: Chain::Tron.as_asset_id(),
+                    to_value: "43070556".to_string(),
+                    provider: Some("thorchain".to_string()),
+                }),
+            }
+        );
+    }
+
+    #[test]
+    fn test_map_swap_result_eth_usdt_to_rune() {
+        let response = status(include_str!("testdata/tx_status_eth_usdt_to_rune.json"));
+
+        assert_eq!(
+            map_swap_result(&response),
+            SwapResult {
+                status: SwapStatus::Completed,
+                metadata: Some(TransactionSwapMetadata {
+                    from_asset: AssetId::from_token(Chain::Ethereum, ETHEREUM_USDT_TOKEN_ID),
+                    from_value: "8366000000".to_string(),
+                    to_asset: Chain::Thorchain.as_asset_id(),
+                    to_value: "2096315169517".to_string(),
                     provider: Some("thorchain".to_string()),
                 }),
             }

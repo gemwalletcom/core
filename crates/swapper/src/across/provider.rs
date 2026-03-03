@@ -1,5 +1,5 @@
 use super::{
-    DEFAULT_FILL_TIMEOUT,
+    DEFAULT_FILL_TIMEOUT, FILL_LOOKBACK_BLOCKS,
     api::{ParsedDeposit, filled_relay_topic, parse_deposit_from_logs},
     config_store::{ConfigStoreClient, TokenConfig},
     hubpool::HubPoolClient,
@@ -112,7 +112,14 @@ impl Across {
         let topic2 = format!("{:#066x}", U256::from(deposit_id));
         let topics = vec![Some(topic0), Some(topic1), Some(topic2)];
 
-        let logs = client.get_logs(deployment.spoke_pool, &topics, "0x0", "latest").await.map_err(SwapperError::from)?;
+        let current_block = client.get_latest_block().await.map_err(|e| SwapperError::TransactionError(e.to_string()))?;
+        let from_block = current_block.saturating_sub(FILL_LOOKBACK_BLOCKS);
+        let from_block_hex = format!("0x{:x}", from_block);
+
+        let logs = client
+            .get_logs(deployment.spoke_pool, &topics, &from_block_hex, "latest")
+            .await
+            .map_err(SwapperError::from)?;
 
         Ok(logs.first().and_then(|l| l.transaction_hash.clone()))
     }
@@ -571,7 +578,7 @@ impl Swapper for Across {
             gas_limit,
         ))
     }
-    async fn get_vault_addresses(&self) -> Result<Vec<String>, SwapperError> {
+    async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<Vec<String>, SwapperError> {
         Ok(AcrossDeployment::vault_addresses())
     }
 

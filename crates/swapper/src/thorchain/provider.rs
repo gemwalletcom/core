@@ -13,7 +13,7 @@ use super::{
     asset::{THORChainAsset, value_to},
     chain::THORChainName,
     memo::ThorchainMemo,
-    model::RouteData,
+    model::{AsgardVault, RouteData},
     quote_data_mapper, swap_mapper,
 };
 use crate::{
@@ -105,17 +105,10 @@ where
             .collect()
     }
 
-    async fn get_vault_addresses(&self) -> Result<Vec<String>, SwapperError> {
-        let inbound = self.client.get_inbound_addresses().await?;
-        let addresses = inbound.iter().flat_map(|entry| {
-            let chain = THORChainName::from_symbol(&entry.chain);
-            let checksum = move |addr: String| chain.as_ref().map(|c| c.checksum_address(&addr)).unwrap_or(addr);
-            let addr = std::iter::once(checksum(entry.address.clone()));
-            let router = entry.router.iter().filter(|r| !r.is_empty()).map(move |r| checksum(r.clone()));
-            addr.chain(router)
-        });
+    async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<Vec<String>, SwapperError> {
+        let vaults = self.client.get_asgard_vaults().await?;
         let static_addresses = ThorchainCrossChain::static_router_addresses().into_iter().map(String::from);
-        Ok(addresses.chain(static_addresses).collect::<HashSet<_>>().into_iter().collect())
+        Ok(AsgardVault::all_addresses(&vaults).into_iter().chain(static_addresses).collect::<HashSet<_>>().into_iter().collect())
     }
 
     async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {

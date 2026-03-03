@@ -4,7 +4,7 @@ use std::error::Error;
 
 pub fn map_node_status(sync_status: &EthSyncingStatus, latest_block: u64) -> Result<NodeSyncStatus, Box<dyn Error + Sync + Send>> {
     match sync_status {
-        EthSyncingStatus::NotSyncing(_) => Ok(NodeSyncStatus::new(true, Some(latest_block), Some(latest_block))),
+        EthSyncingStatus::NotSyncing(_) => Ok(NodeSyncStatus::synced(latest_block)),
         EthSyncingStatus::Syncing(info) => {
             let latest = info.highest_block.to_string().parse::<u64>().ok();
             let current = info.current_block.to_string().parse::<u64>().ok();

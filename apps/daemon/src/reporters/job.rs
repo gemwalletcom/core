@@ -17,7 +17,7 @@ impl JobReporter {
 
 #[async_trait]
 impl JobStatusReporter for JobReporter {
-    async fn report(&self, name: &str, interval: u64, duration: u64, success: bool, error: Option<String>) {
-        self.metrics.report(name, interval, duration, success, error);
+    async fn report(&self, name: &str, interval: u64, duration: u64, success: bool) {
+        self.metrics.report(name, interval, duration, success);
     }
 }

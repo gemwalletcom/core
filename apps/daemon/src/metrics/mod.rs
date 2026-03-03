@@ -11,16 +11,6 @@ use prometheus_client::registry::Registry;
 use rocket::response::content::RawText;
 use rocket::{State, get};
 
-const MAX_ERROR_LENGTH: usize = 200;
-
-pub fn sanitize_error_message(error: &str) -> String {
-    let truncated = match error.char_indices().nth(MAX_ERROR_LENGTH) {
-        Some((idx, _)) => &error[..idx],
-        None => error,
-    };
-    truncated.replace('\n', " ").replace('\r', "")
-}
-
 pub fn now_unix() -> u64 {
     SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs()
 }

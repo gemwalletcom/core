@@ -11,7 +11,7 @@ use primitives::{
 };
 
 use crate::models::Address;
-use crate::provider::preload_mapper::{map_transaction_preload, map_transaction_preload_zcash};
+use crate::provider::preload_mapper::{map_transaction_preload, map_transaction_preload_zcash, map_utxos};
 use crate::rpc::client::BitcoinClient;
 
 #[async_trait]
@@ -52,16 +52,8 @@ impl<C: Client> ChainTransactionLoad for BitcoinClient<C> {
     }
 
     async fn get_utxos(&self, address: String) -> Result<Vec<UTXO>, Box<dyn Error + Sync + Send>> {
-        Ok(BitcoinClient::get_utxos(self, &address)
-            .await?
-            .into_iter()
-            .map(|utxo| UTXO {
-                transaction_id: utxo.txid,
-                vout: utxo.vout,
-                value: utxo.value,
-                address: address.clone(),
-            })
-            .collect())
+        let utxos = BitcoinClient::get_utxos(self, &address).await?;
+        Ok(map_utxos(utxos, address))
     }
 }
 

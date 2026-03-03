@@ -23,7 +23,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
         .job(WorkerJob::CheckRewardsAbuse, {
             let database = database.clone();
             let stream_producer = stream_producer.clone();
-            move || {
+            move |_| {
                 let database = database.clone();
                 let stream_producer = stream_producer.clone();
                 async move {

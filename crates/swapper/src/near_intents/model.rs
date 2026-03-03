@@ -96,41 +96,6 @@ pub struct Quote {
     pub time_estimate: u32,
 }
 
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ExecutionStatus {
-    #[serde(default)]
-    pub quote_response: Option<QuoteResponse>,
-    pub status: String,
-    #[serde(default)]
-    pub updated_at: String,
-    #[serde(default)]
-    pub swap_details: Option<SwapDetails>,
-}
-
-#[derive(Debug, Clone, Deserialize, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct SwapDetails {
-    #[serde(default)]
-    pub amount_in: Option<String>,
-    #[serde(default)]
-    pub amount_out: Option<String>,
-    #[serde(default)]
-    pub origin_chain_tx_hashes: Vec<TransactionDetails>,
-    #[serde(default)]
-    pub destination_chain_tx_hashes: Vec<TransactionDetails>,
-    #[serde(default)]
-    pub refunded_amount: Option<String>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TransactionDetails {
-    pub hash: String,
-    #[serde(default)]
-    pub explorer_url: Option<String>,
-}
-
 fn default_referral() -> String {
     DEFAULT_REFERRAL.to_string()
 }
@@ -153,4 +118,16 @@ fn default_slippage_tolerance() -> u32 {
 
 fn default_quote_waiting_time_ms() -> u32 {
     DEFAULT_WAIT_TIME_MS
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExplorerTransaction {
+    pub deposit_address: String,
+    pub status: String,
+    pub origin_asset: String,
+    pub destination_asset: String,
+    pub amount_in: String,
+    pub amount_out: String,
+    pub origin_chain_tx_hashes: Vec<String>,
 }

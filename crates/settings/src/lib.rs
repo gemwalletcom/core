@@ -83,11 +83,6 @@ pub struct MeiliSearch {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct KeyPublic {
-    pub public: String,
-}
-
-#[derive(Debug, Deserialize, Clone)]
 pub struct KeySecret {
     pub secret: String,
 }

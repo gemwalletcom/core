@@ -25,7 +25,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
         .job(WorkerJob::UpdateAssetsIndex, {
             let database = database.clone();
             let search_index_client = search_index_client.clone();
-            move || {
+            move |_| {
                 let updater = AssetsIndexUpdater::new(database.clone(), &search_index_client);
                 async move { updater.update().await }
             }
@@ -33,7 +33,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
         .job(WorkerJob::UpdatePerpetualsIndex, {
             let database = database.clone();
             let search_index_client = search_index_client.clone();
-            move || {
+            move |_| {
                 let updater = PerpetualsIndexUpdater::new(database.clone(), &search_index_client);
                 async move { updater.update().await }
             }
@@ -41,7 +41,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
         .job(WorkerJob::UpdateNftsIndex, {
             let database = database.clone();
             let search_index_client = search_index_client.clone();
-            move || {
+            move |_| {
                 let updater = NftsIndexUpdater::new(database.clone(), &search_index_client);
                 async move { updater.update().await }
             }

@@ -21,7 +21,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
         .jobs(WorkerJob::UpdateFiatAssets, FiatProviderName::all(), |provider, _| {
             let settings = settings.clone();
             let database = database.clone();
-            move || {
+            move |_| {
                 let settings = settings.clone();
                 let database = database.clone();
                 let provider = provider.clone();
@@ -35,7 +35,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
         .jobs(WorkerJob::UpdateFiatProviderCountries, FiatProviderName::all(), |provider, _| {
             let settings = settings.clone();
             let database = database.clone();
-            move || {
+            move |_| {
                 let settings = settings.clone();
                 let database = database.clone();
                 let provider = provider.clone();
@@ -49,7 +49,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
         .job(WorkerJob::UpdateFiatBuyableAssets, {
             let settings = settings.clone();
             let database = database.clone();
-            move || {
+            move |_| {
                 let providers = FiatProviderFactory::new_providers((*settings).clone());
                 let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
                 async move { fiat_assets_updater.update_buyable_assets().await }
@@ -58,7 +58,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
         .job(WorkerJob::UpdateFiatSellableAssets, {
             let settings = settings.clone();
             let database = database.clone();
-            move || {
+            move |_| {
                 let providers = FiatProviderFactory::new_providers((*settings).clone());
                 let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
                 async move { fiat_assets_updater.update_sellable_assets().await }
@@ -67,7 +67,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
         .job(WorkerJob::UpdateTrendingFiatAssets, {
             let settings = settings.clone();
             let database = database.clone();
-            move || {
+            move |_| {
                 let providers = FiatProviderFactory::new_providers((*settings).clone());
                 let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
                 async move { fiat_assets_updater.update_trending_fiat_assets().await }

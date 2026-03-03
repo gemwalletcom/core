@@ -1,27 +1,36 @@
+use std::collections::HashMap;
+
 use primitives::Transaction;
 
 use crate::SwapperProvider;
 use crate::across::AcrossCrossChain;
+use crate::near_intents::NearIntentsCrossChain;
 use crate::proxy::mayan::MayanCrossChain;
 use crate::thorchain::ThorchainCrossChain;
+
+pub type VaultAddressMap = HashMap<String, SwapperProvider>;
 
 pub trait CrossChainProvider: Send + Sync {
     fn provider(&self) -> SwapperProvider;
     fn is_swap(&self, transaction: &Transaction) -> bool;
 }
 
-const PROVIDERS: [&dyn CrossChainProvider; 3] = [&ThorchainCrossChain, &AcrossCrossChain, &MayanCrossChain];
+const PROVIDERS: [&dyn CrossChainProvider; 4] = [&ThorchainCrossChain, &AcrossCrossChain, &MayanCrossChain, &NearIntentsCrossChain];
 
-pub fn providers() -> Vec<SwapperProvider> {
-    PROVIDERS.iter().map(|p| p.provider()).collect()
+pub fn providers() -> Vec<primitives::CrossChainProvider> {
+    primitives::CrossChainProvider::all()
 }
 
 pub fn swap_provider(transaction: &Transaction) -> Option<SwapperProvider> {
     PROVIDERS.iter().find(|p| p.is_swap(transaction)).map(|p| p.provider())
 }
 
-pub fn is_cross_chain_swap(transaction: &Transaction) -> bool {
-    swap_provider(transaction).is_some()
+pub fn swap_provider_with_vault_addresses(transaction: &Transaction, vault_addresses: &VaultAddressMap) -> Option<SwapperProvider> {
+    swap_provider(transaction).or_else(|| vault_addresses.get(&transaction.to).copied())
+}
+
+pub fn is_cross_chain_swap(transaction: &Transaction, vault_addresses: &VaultAddressMap) -> bool {
+    swap_provider_with_vault_addresses(transaction, vault_addresses).is_some()
 }
 
 #[cfg(test)]
@@ -41,10 +50,32 @@ mod tests {
 
     #[test]
     fn test_thorchain_non_swap_memo() {
-        assert!(!is_cross_chain_swap(&Transaction {
-            memo: Some("ADD:ETH.ETH:0x123".to_string()),
+        let empty = VaultAddressMap::new();
+        assert!(!is_cross_chain_swap(
+            &Transaction {
+                memo: Some("ADD:ETH.ETH:0x123".to_string()),
+                ..Transaction::mock()
+            },
+            &empty,
+        ));
+    }
+
+    #[test]
+    fn test_vault_address_detected() {
+        let vault = "TMoD2uJiUAvB2RhLGm1BmzCVVzi5VLFDVt".to_string();
+        let vault_addresses = VaultAddressMap::from([(vault.clone(), SwapperProvider::NearIntents)]);
+        let transaction = Transaction { to: vault, ..Transaction::mock() };
+        assert_eq!(swap_provider_with_vault_addresses(&transaction, &vault_addresses), Some(SwapperProvider::NearIntents));
+    }
+
+    #[test]
+    fn test_is_swap_takes_priority_over_vault_address() {
+        let vault_addresses = VaultAddressMap::from([("0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146".to_string(), SwapperProvider::NearIntents)]);
+        let transaction = Transaction {
+            to: "0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146".to_string(),
             ..Transaction::mock()
-        }));
+        };
+        assert_eq!(swap_provider_with_vault_addresses(&transaction, &vault_addresses), Some(SwapperProvider::Thorchain));
     }
 
     #[test]
@@ -158,13 +189,5 @@ mod tests {
             };
             assert_eq!(swap_provider(&transaction), Some(SwapperProvider::Mayan));
         }
-    }
-
-    #[test]
-    fn test_providers_list() {
-        let all = providers();
-        assert!(all.contains(&SwapperProvider::Thorchain));
-        assert!(all.contains(&SwapperProvider::Across));
-        assert!(all.contains(&SwapperProvider::Mayan));
     }
 }

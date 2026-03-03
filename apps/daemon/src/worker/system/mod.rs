@@ -34,14 +34,14 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                 lookback: config.get_duration(ConfigKey::TransactionCleanupLookback)?,
             };
             let transaction_cleanup = TransactionCleanup::new(database.clone(), cleanup_config);
-            move || {
+            move |_| {
                 let transaction_cleanup = transaction_cleanup.clone();
                 async move { transaction_cleanup.cleanup().await }
             }
         })
         .job(WorkerJob::CleanupStaleDeviceSubscriptions, {
             let database = database.clone();
-            move || {
+            move |_| {
                 let device_updater = DeviceUpdater::new(database.clone());
                 async move { device_updater.update().await }
             }
@@ -51,7 +51,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
             let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
             let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
             let stream_producer = StreamProducer::new(&rabbitmq_config, "observe_inactive_devices").await?;
-            move || {
+            move |_| {
                 let database = database.clone();
                 let stream_producer = stream_producer.clone();
                 let cacher_client = cacher_client.clone();
@@ -64,7 +64,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
         .jobs(WorkerJob::UpdateStoreVersion, VersionUpdater::stores(), |store, _| {
             let store = *store;
             let database = database.clone();
-            move || {
+            move |_| {
                 let updater = VersionUpdater::new(database.clone());
                 async move { updater.update_store(store).await }
             }

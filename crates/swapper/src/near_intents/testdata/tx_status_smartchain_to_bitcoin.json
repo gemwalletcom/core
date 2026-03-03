@@ -1,0 +1,13 @@
+[
+  {
+    "originAsset": "nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g",
+    "destinationAsset": "nep141:btc.omft.near",
+    "depositAddress": "0x711FccC1b9c251BCDe08e6db6c82AB5b10590b8a",
+    "status": "SUCCESS",
+    "amountIn": "82000000000000000000",
+    "amountOut": "120496",
+    "originChainTxHashes": [
+      "0xabc123def456789012345678901234567890abcdef1234567890abcdef123456"
+    ]
+  }
+]

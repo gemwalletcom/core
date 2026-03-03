@@ -10,10 +10,6 @@ impl MagicEdenSolanaClient {
         Self { client }
     }
 
-    pub async fn get_token_owner(&self, _address: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
-        Err("Token owner lookup not implemented - use dedicated Solana client".into())
-    }
-
     pub async fn get_nfts_by_account(&self, address: &str) -> Result<Vec<Nft>, Box<dyn Error + Send + Sync>> {
         Ok(self
             .client

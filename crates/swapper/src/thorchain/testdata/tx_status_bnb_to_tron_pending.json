@@ -1,0 +1,85 @@
+{
+  "tx": {
+    "id": "BB189F94566D89A96092D986DDC51938EED45D15ECE48AB82E38EB9F9073C467",
+    "chain": "BSC",
+    "from_address": "0xba4d1d35bce0e8f28e5a3403e7a0b996c5d50ac4",
+    "to_address": "0x41dde5173b3394be9e1dd78f69fe933fcb2eb411",
+    "coins": [
+      {
+        "asset": "BSC.BNB",
+        "amount": "2000000"
+      }
+    ],
+    "gas": [
+      {
+        "asset": "BSC.BNB",
+        "amount": "130"
+      }
+    ],
+    "memo": "=:tr:TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb:0/1/0:g1:50"
+  },
+  "planned_out_txs": [
+    {
+      "chain": "TRON",
+      "to_address": "TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb",
+      "coin": {
+        "asset": "TRON.TRX",
+        "amount": "4307055600"
+      },
+      "refund": false
+    },
+    {
+      "chain": "THOR",
+      "to_address": "thor1dl7un46w7l7f3ewrnrm6nq58nerjtp0dradjtd",
+      "coin": {
+        "asset": "THOR.RUNE",
+        "amount": "15555500"
+      },
+      "refund": false
+    }
+  ],
+  "out_txs": [
+    {
+      "id": "0000000000000000000000000000000000000000000000000000000000000000",
+      "chain": "THOR",
+      "from_address": "thor1g98cy3n9mmjrpn0sxmn63lztelera37n8n67c0",
+      "to_address": "thor1dl7un46w7l7f3ewrnrm6nq58nerjtp0dradjtd",
+      "coins": [
+        {
+          "asset": "THOR.RUNE",
+          "amount": "15555500"
+        }
+      ],
+      "gas": [
+        {
+          "asset": "THOR.RUNE",
+          "amount": "2000000"
+        }
+      ],
+      "memo": "OUT:BB189F94566D89A96092D986DDC51938EED45D15ECE48AB82E38EB9F9073C467"
+    }
+  ],
+  "stages": {
+    "inbound_observed": {
+      "pre_confirmation_count": 22,
+      "final_count": 101,
+      "completed": true
+    },
+    "inbound_confirmation_counted": {
+      "remaining_confirmation_seconds": 0,
+      "completed": true
+    },
+    "inbound_finalised": {
+      "completed": true
+    },
+    "swap_status": {
+      "pending": false
+    },
+    "swap_finalised": {
+      "completed": true
+    },
+    "outbound_signed": {
+      "completed": false
+    }
+  }
+}

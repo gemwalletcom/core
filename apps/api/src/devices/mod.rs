@@ -8,7 +8,7 @@ pub mod signature;
 use crate::assets::AssetsClient;
 use crate::metrics::fiat::FiatMetrics;
 use crate::notifications::NotificationsClient;
-use crate::params::{AssetIdParam, CurrencyParam, DeviceIdParam, DeviceParam, FiatQuoteTypeParam};
+use crate::params::{AssetIdParam, CurrencyParam, DeviceIdParam, DeviceParam, FiatQuoteTypeParam, UserAgent};
 use crate::responders::{ApiError, ApiResponse};
 use crate::scan::ScanClient;
 use crate::transactions::TransactionsClient;
@@ -149,12 +149,13 @@ pub async fn use_device_referral_code_v2(
     device: AuthenticatedDevice,
     request: WalletSigned<primitives::ReferralCode>,
     ip: std::net::IpAddr,
+    user_agent: UserAgent,
     client: &State<Mutex<RewardsClient>>,
 ) -> Result<ApiResponse<Vec<RewardEvent>>, ApiError> {
     let events = client
         .lock()
         .await
-        .use_referral_code(&device.device_row, &request.address, &request.data.code, &ip.to_string())
+        .use_referral_code(&device.device_row, &request.address, &request.data.code, &ip.to_string(), &user_agent.0)
         .await?;
     Ok(events.into())
 }

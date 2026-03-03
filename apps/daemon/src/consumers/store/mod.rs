@@ -10,6 +10,7 @@ pub use store_transactions_consumer_config::StoreTransactionsConsumerConfig;
 use std::error::Error;
 use std::sync::Arc;
 
+use crate::client::SwapVaultAddressClient;
 use cacher::CacherClient;
 use pricer::PriceClient;
 use primitives::ConfigKey;
@@ -64,7 +65,7 @@ async fn run_store_transactions(
                     outdated_min_timeout: config_cacher.get_duration(ConfigKey::TransactionsOutdatedMinTimeout)?,
                     min_amount_usd: config_cacher.get_f64(ConfigKey::TransactionsMinAmountUsd)?,
                 },
-                cacher: runner.cacher.clone(),
+                vault_client: SwapVaultAddressClient::new(runner.cacher.clone()),
             };
             run_consumer::<TransactionsPayload, StoreTransactionsConsumer, usize>(
                 &name,

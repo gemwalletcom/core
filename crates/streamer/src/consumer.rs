@@ -27,7 +27,6 @@ enum ProcessResult<R> {
 #[async_trait]
 pub trait ConsumerStatusReporter: Send + Sync {
     async fn report_success(&self, name: &str, duration: u64, result: &str);
-    async fn report_error(&self, name: &str, error: &str);
 }
 
 #[async_trait]
@@ -109,8 +108,6 @@ where
         }
         ProcessResult::Error(e) => {
             error_with_fields!("error", &*e, consumer = name, payload = payload.to_string(), elapsed = DurationMs(start.elapsed()));
-            let error_msg = format!("{}", e);
-            tokio::task::block_in_place(|| tokio::runtime::Handle::current().block_on(reporter.report_error(name, &error_msg)));
             if !config.timeout_on_error.is_zero() {
                 tokio::task::block_in_place(|| tokio::runtime::Handle::current().block_on(tokio::time::sleep(config.timeout_on_error)));
             }

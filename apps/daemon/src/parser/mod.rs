@@ -122,7 +122,6 @@ impl Parser {
             }
             Err(err) => {
                 error_with_fields!("parser parse_block", &*err, chain = self.chain.as_ref(), blocks = blocks_desc);
-                self.reporter.error(&format!("block: {}", err));
                 self.sleep_or_shutdown(timeout).await;
                 return Ok(false);
             }
@@ -177,7 +176,6 @@ impl Parser {
                 Ok(block) => block,
                 Err(err) => {
                     error_with_fields!("parser latest_block", &*err, chain = self.chain.as_ref());
-                    self.reporter.error(&format!("latest_block: {}", err));
                     self.sleep_or_shutdown(self.options.error_interval).await;
                     continue;
                 }
@@ -302,7 +300,6 @@ async fn run_parser(
 
         if let Err(e) = parser.start().await {
             error_with_fields!("parser error", &*e, chain = chain.as_ref());
-            parser.reporter.error(&e.to_string());
 
             if shutdown::sleep_or_shutdown(timeout, &shutdown_rx).await {
                 break;

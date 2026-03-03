@@ -174,7 +174,14 @@ impl RewardsClient {
         Ok(self.db.rewards()?.change_username(wallet.id, new_username)?)
     }
 
-    pub async fn use_referral_code(&self, device: &DeviceRow, address: &str, code: &str, ip_address: &str) -> Result<Vec<RewardEvent>, Box<dyn Error + Send + Sync>> {
+    pub async fn use_referral_code(
+        &self,
+        device: &DeviceRow,
+        address: &str,
+        code: &str,
+        ip_address: &str,
+        user_agent: &str,
+    ) -> Result<Vec<RewardEvent>, Box<dyn Error + Send + Sync>> {
         let locale = device.locale.as_str();
         let wallet_identifier = WalletId::Multicoin(address.to_string()).id();
         let wallet = self.db.wallets()?.get_or_create_wallet(NewWalletRow {
@@ -188,7 +195,7 @@ impl RewardsClient {
             RewardsError::Referral(error.localize(locale))
         })?;
 
-        match self.validate_and_score_referral(device, address, &referrer_username, ip_address).await {
+        match self.validate_and_score_referral(device, address, &referrer_username, ip_address, user_agent).await {
             ReferralProcessResult::Success(risk_signal_id) => {
                 let events = self.db.rewards()?.use_or_verify_referral(&referrer_username, wallet.id, device.id, risk_signal_id)?;
                 Ok(events)
@@ -207,7 +214,7 @@ impl RewardsClient {
         }
     }
 
-    async fn validate_and_score_referral(&self, device: &DeviceRow, address: &str, referrer_username: &str, ip_address: &str) -> ReferralProcessResult {
+    async fn validate_and_score_referral(&self, device: &DeviceRow, address: &str, referrer_username: &str, ip_address: &str, user_agent: &str) -> ReferralProcessResult {
         if let Err(e) = self.check_referrer_limits(referrer_username) {
             return ReferralProcessResult::Failed(e);
         }
@@ -270,6 +277,7 @@ impl RewardsClient {
             device_currency: device.currency.clone(),
             ip_result,
             referrer_status,
+            user_agent: user_agent.to_string(),
         };
 
         let signal_input = scoring_input.to_signal_input();
@@ -490,6 +498,8 @@ impl RewardsClient {
             high_risk_locale_penalty: self.config.get_i64(ConfigKey::ReferralRiskScoreHighRiskLocalePenalty)?,
             high_risk_device_models: self.config.get_vec_string(ConfigKey::ReferralRiskScoreHighRiskDeviceModels)?,
             high_risk_device_model_penalty: self.config.get_i64(ConfigKey::ReferralRiskScoreHighRiskDeviceModelPenalty)?,
+            high_risk_user_agents: self.config.get_vec_string(ConfigKey::ReferralRiskScoreHighRiskUserAgents)?,
+            high_risk_user_agent_penalty: self.config.get_i64(ConfigKey::ReferralRiskScoreHighRiskUserAgentPenalty)?,
             ip_history_penalty_per_abuser: self.config.get_i64(ConfigKey::ReferralRiskScoreIpHistoryPenaltyPerAbuser)?,
             ip_history_max_penalty: self.config.get_i64(ConfigKey::ReferralRiskScoreIpHistoryMaxPenalty)?,
             velocity_window: self.config.get_duration(ConfigKey::ReferralAbuseVelocityWindow)?,

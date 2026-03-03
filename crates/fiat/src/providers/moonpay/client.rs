@@ -82,19 +82,6 @@ impl MoonPayClient {
         self.client.get(format!("{MOONPAY_API_BASE_URL}/v3/countries")).send().await?.json().await
     }
 
-    pub async fn get_transactions(&self) -> Result<Vec<String>, reqwest::Error> {
-        // let url = format!("{}/v1/transactions", MOONPAY_API_BASE_URL);
-        // let assets = self
-        //     .client
-        //     .get(&url)
-        //     .send()
-        //     .await?
-        //     .json::<Vec<Asset>>()
-        //     .await?;
-        // Ok(assets)
-        Ok(vec![])
-    }
-
     pub async fn get_transaction(&self, transaction_id: &str) -> Result<Transaction, reqwest::Error> {
         self.client
             .get(format!("{MOONPAY_API_BASE_URL}/v1/transactions/{transaction_id}"))

@@ -1,16 +1,17 @@
 use localizer::LanguageLocalizer;
 use number_formatter::BigNumberFormatter;
-use primitives::{CoreEmoji, CoreListItem, CoreListItemBadge, CoreListItemIcon, Deeplink, InAppNotification, NotificationData, NotificationType};
+use primitives::{CoreEmoji, CoreListItem, CoreListItemBadge, CoreListItemIcon, Deeplink, InAppNotification, NotificationData, NotificationType, WalletId};
 
-pub fn map_notification(notification: NotificationData, localizer: &LanguageLocalizer) -> InAppNotification {
+pub fn map_notification(notification: NotificationData, localizer: &LanguageLocalizer) -> Option<InAppNotification> {
+    let wallet_id = WalletId::from_id(&notification.wallet_id)?;
     let item = map_to_list_item(&notification, localizer);
 
-    InAppNotification {
-        wallet_id: notification.wallet_id,
+    Some(InAppNotification {
+        wallet_id,
         read_at: notification.read_at,
         created_at: notification.created_at,
         item,
-    }
+    })
 }
 
 fn notification_item(

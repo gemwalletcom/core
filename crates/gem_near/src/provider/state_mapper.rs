@@ -14,9 +14,7 @@ pub fn map_gas_price_to_priorities(gas_price: &GasPrice) -> Result<Vec<FeeRate>,
 }
 
 pub fn map_node_status(block: &Block) -> Result<NodeSyncStatus, Box<dyn Error + Sync + Send>> {
-    let current_block = Some(block.header.height);
-    let latest_block_number = Some(block.header.height);
-    Ok(NodeSyncStatus::new(true, latest_block_number, current_block))
+    Ok(NodeSyncStatus::synced(block.header.height))
 }
 
 #[cfg(test)]

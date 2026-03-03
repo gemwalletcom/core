@@ -2,9 +2,7 @@ use primitives::NodeSyncStatus;
 use std::error::Error;
 
 pub fn map_node_status(slot: u64) -> Result<NodeSyncStatus, Box<dyn Error + Sync + Send>> {
-    let current_block = Some(slot);
-    let latest_block_number = Some(slot);
-    Ok(NodeSyncStatus::new(true, latest_block_number, current_block))
+    Ok(NodeSyncStatus::synced(slot))
 }
 
 #[cfg(test)]

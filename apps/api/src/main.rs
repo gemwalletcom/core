@@ -26,6 +26,7 @@ mod websocket;
 mod websocket_prices;
 mod websocket_stream;
 
+use gem_tracing::info_with_fields;
 use std::{str::FromStr, sync::Arc};
 use strum::IntoEnumIterator;
 
@@ -318,7 +319,7 @@ async fn main() {
         None => APIService::Api,
     };
 
-    println!("api start service: {}", service.as_ref());
+    info_with_fields!("api start service", service = service.as_ref());
 
     let rocket = match service {
         APIService::Api => rocket_api(settings).await,

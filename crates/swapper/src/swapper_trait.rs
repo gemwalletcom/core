@@ -17,7 +17,7 @@ pub trait Swapper: Send + Sync + Debug {
         Ok(None)
     }
     async fn fetch_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError>;
-    async fn get_vault_addresses(&self) -> Result<Vec<String>, SwapperError> {
+    async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<Vec<String>, SwapperError> {
         Ok(vec![])
     }
     async fn get_swap_result(&self, _chain: Chain, _transaction_hash: &str) -> Result<SwapResult, SwapperError> {

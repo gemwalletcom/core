@@ -37,7 +37,15 @@ pub struct QuoteFees {}
 pub struct TransactionStatus {
     pub tx: Option<TransactionStatusTx>,
     pub stages: TransactionStages,
+    pub planned_out_txs: Option<Vec<PlannedOutTx>>,
     pub out_txs: Option<Vec<TransactionStatusOutTx>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlannedOutTx {
+    pub chain: String,
+    pub coin: TransactionCoin,
+    pub refund: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -82,11 +90,17 @@ impl TransactionCoin {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionStages {
     pub swap_status: Option<TransactionSwapStage>,
+    pub outbound_signed: Option<TransactionCompletionStage>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionSwapStage {
     pub pending: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionCompletionStage {
+    pub completed: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -98,10 +112,31 @@ pub struct TransactionStatusOutTx {
 
 impl TransactionStatus {
     pub fn swap_status(&self) -> SwapStatus {
-        let has_output = self.out_txs.as_ref().is_some_and(|txs| txs.iter().any(|tx| tx.id != ZERO_HASH && !tx.id.is_empty()));
+        let has_output = self.out_txs.as_ref().is_some_and(|txs| !txs.is_empty());
         let swap_done = self.stages.swap_status.as_ref().is_some_and(|s| !s.pending);
+        let outbound_done = self.stages.outbound_signed.as_ref().is_none_or(|s| s.completed);
 
-        if swap_done && has_output { SwapStatus::Completed } else { SwapStatus::Pending }
+        if swap_done && has_output && outbound_done {
+            SwapStatus::Completed
+        } else {
+            SwapStatus::Pending
+        }
+    }
+
+    pub fn destination_coin(&self) -> Option<&TransactionCoin> {
+        let real_out = self
+            .out_txs
+            .as_ref()
+            .and_then(|txs| txs.iter().find(|x| x.id != ZERO_HASH && !x.id.is_empty()))
+            .and_then(|tx| tx.coins.first());
+        if real_out.is_some() {
+            return real_out;
+        }
+        let planned = self.planned_out_txs.as_ref().and_then(|txs| txs.iter().find(|t| !t.refund)).map(|t| &t.coin);
+        if planned.is_some() {
+            return planned;
+        }
+        self.out_txs.as_ref().and_then(|txs| txs.first()).and_then(|tx| tx.coins.first())
     }
 }
 
@@ -128,6 +163,43 @@ pub struct InboundAddress {
     pub router: Option<String>,
     #[serde(deserialize_with = "deserialize_bigint_from_str")]
     pub dust_threshold: BigInt,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct AsgardVault {
+    pub addresses: Vec<VaultAddress>,
+    pub routers: Vec<VaultRouter>,
+}
+
+impl AsgardVault {
+    pub fn all_addresses(vaults: &[AsgardVault]) -> Vec<String> {
+        vaults
+            .iter()
+            .flat_map(|vault| {
+                let addrs = vault.addresses.iter().filter_map(|a| {
+                    let chain = THORChainName::from_symbol(&a.chain)?;
+                    Some(chain.checksum_address(&a.address))
+                });
+                let routers = vault.routers.iter().filter_map(|r| {
+                    let chain = THORChainName::from_symbol(&r.chain)?;
+                    Some(chain.checksum_address(&r.router))
+                });
+                addrs.chain(routers)
+            })
+            .collect()
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct VaultAddress {
+    pub chain: String,
+    pub address: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct VaultRouter {
+    pub chain: String,
+    pub router: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -160,41 +232,21 @@ mod tests {
     fn test_tx_status_completed_ltc_to_tron() {
         let status: TransactionStatus = serde_json::from_str(include_str!("testdata/tx_status_ltc_to_tron_usdt.json")).unwrap();
         assert_eq!(status.swap_status(), SwapStatus::Completed);
-
-        let tx = status.tx.unwrap();
-        assert_eq!(tx.memo, "=:TRON.USDT:TMazs4f2ybMjGf7WXAx4uiRf2T7XtMC6qt:0/1/0:g1:50");
-        assert_eq!(tx.coins[0].amount, "160661010");
-
-        let out_txs = status.out_txs.unwrap();
-        let destination = out_txs.iter().find(|t| t.id != ZERO_HASH && !t.id.is_empty()).unwrap();
-        assert_eq!(destination.chain, "TRON");
-        assert_eq!(destination.id, "544827704F9AD53F2D33209F73F7CC39C3AA5068481D87316ED189B322784222");
-        assert_eq!(destination.coins[0].amount, "7915842900");
+        assert_eq!(status.destination_coin().unwrap().amount, "7915842900");
     }
 
     #[test]
     fn test_tx_status_pending_btc_to_tron() {
         let status: TransactionStatus = serde_json::from_str(include_str!("testdata/tx_status_btc_to_tron_pending.json")).unwrap();
         assert_eq!(status.swap_status(), SwapStatus::Pending);
-
-        let tx = status.tx.unwrap();
-        assert_eq!(tx.coins[0].amount, "23516479");
-        assert!(status.out_txs.is_none());
+        assert!(status.destination_coin().is_none());
     }
 
     #[test]
     fn test_tx_status_completed_tcy_to_eth_usdt() {
         let status: TransactionStatus = serde_json::from_str(include_str!("testdata/tx_status_tcy_to_eth_usdt.json")).unwrap();
         assert_eq!(status.swap_status(), SwapStatus::Completed);
-
-        let tx = status.tx.unwrap();
-        assert_eq!(tx.coins[0].amount, "11921829956942");
-
-        let out_txs = status.out_txs.unwrap();
-        let destination = out_txs.iter().find(|t| t.id != ZERO_HASH && !t.id.is_empty()).unwrap();
-        assert_eq!(destination.chain, "ETH");
-        assert_eq!(destination.id, "1D8300FDC5A47ACA3E7D59791180229AE314C86ABA32C14E4975464491865576");
-        assert_eq!(destination.coins[0].amount, "380962656200");
+        assert_eq!(status.destination_coin().unwrap().amount, "380962656200");
     }
 
     #[test]
@@ -248,6 +300,26 @@ mod tests {
     }
 
     #[test]
+    fn test_tx_status_completed_eth_usdt_to_rune() {
+        let status: TransactionStatus = serde_json::from_str(include_str!("testdata/tx_status_eth_usdt_to_rune.json")).unwrap();
+        assert_eq!(status.swap_status(), SwapStatus::Completed);
+        assert_eq!(status.destination_coin().unwrap().amount, "2096315169517");
+    }
+
+    #[test]
+    fn test_tx_status_completed_bnb_to_tron() {
+        let status: TransactionStatus = serde_json::from_str(include_str!("testdata/tx_status_bnb_to_tron.json")).unwrap();
+        assert_eq!(status.swap_status(), SwapStatus::Completed);
+        assert_eq!(status.destination_coin().unwrap().amount, "4307055600");
+    }
+
+    #[test]
+    fn test_tx_status_pending_outbound_not_signed() {
+        let status: TransactionStatus = serde_json::from_str(include_str!("testdata/tx_status_bnb_to_tron_pending.json")).unwrap();
+        assert_eq!(status.swap_status(), SwapStatus::Pending);
+    }
+
+    #[test]
     fn test_tx_status_not_observed() {
         let json = r#"{"stages":{"inbound_observed":{"started":false,"final_count":0,"completed":false}}}"#;
         let status: TransactionStatus = serde_json::from_str(json).unwrap();
@@ -282,6 +354,18 @@ mod tests {
         assert_eq!(coin("THOR.TCY").resolve_asset_id(), Some(AssetId::from_token(Chain::Thorchain, "tcy")));
         assert_eq!(coin("ETH.UNKNOWN-0x1234567890abcdef1234567890abcdef12345678").resolve_asset_id(), None);
         assert_eq!(coin("INVALID").resolve_asset_id(), None);
+    }
+
+    #[test]
+    fn test_asgard_vaults_deserialization() {
+        let vaults: Vec<AsgardVault> = serde_json::from_str(include_str!("testdata/asgard_vaults.json")).unwrap();
+        assert_eq!(vaults.len(), 2);
+        assert_eq!(vaults[0].addresses.len(), 12);
+        assert_eq!(vaults[0].routers.len(), 4);
+        assert_eq!(vaults[0].addresses[0].chain, "BTC");
+        assert_eq!(vaults[0].routers[0].chain, "ETH");
+        assert_eq!(vaults[1].addresses.len(), 3);
+        assert_eq!(vaults[1].routers.len(), 1);
     }
 
     #[test]

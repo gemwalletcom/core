@@ -1,9 +1,9 @@
-use std::collections::HashSet;
 use std::time::Duration;
 
 use chrono::NaiveDateTime;
 use number_formatter::BigNumberFormatter;
 use primitives::{Asset, Chain, Price, Transaction, TransactionState, TransactionType};
+use swapper::cross_chain::VaultAddressMap;
 
 pub struct StoreTransactionsConsumerConfig {
     pub swap_outdated_timeout: Duration,
@@ -26,10 +26,10 @@ impl StoreTransactionsConsumerConfig {
         Duration::from_secs(block_time_secs * self.outdated_block_count).max(self.outdated_min_timeout)
     }
 
-    pub fn should_notify_transaction(&self, transaction: &Transaction, is_notify_devices: bool, vault_addresses: &HashSet<String>) -> bool {
+    pub fn should_notify_transaction(&self, transaction: &Transaction, is_notify_devices: bool, vault_addresses: &VaultAddressMap) -> bool {
         is_notify_devices
             && transaction.state != TransactionState::InTransit
-            && !vault_addresses.contains(&transaction.from)
+            && !vault_addresses.contains_key(&transaction.from)
             && !self.is_transaction_outdated(transaction.created_at.naive_utc(), transaction.asset_id.chain, transaction.transaction_type.clone())
     }
 
@@ -134,7 +134,7 @@ mod tests {
     #[test]
     fn test_should_notify_transaction() {
         let config = StoreTransactionsConsumerConfig::mock();
-        let empty = HashSet::new();
+        let empty = VaultAddressMap::new();
 
         assert!(config.should_notify_transaction(&Transaction::mock(), true, &empty));
     }
@@ -142,7 +142,7 @@ mod tests {
     #[test]
     fn test_should_notify_transaction_in_transit() {
         let config = StoreTransactionsConsumerConfig::mock();
-        let empty = HashSet::new();
+        let empty = VaultAddressMap::new();
         let tx = Transaction {
             state: TransactionState::InTransit,
             ..Transaction::mock()
@@ -153,7 +153,7 @@ mod tests {
     #[test]
     fn test_should_notify_transaction_no_devices() {
         let config = StoreTransactionsConsumerConfig::mock();
-        let empty = HashSet::new();
+        let empty = VaultAddressMap::new();
         assert!(!config.should_notify_transaction(&Transaction::mock(), false, &empty));
     }
 
@@ -161,7 +161,7 @@ mod tests {
     fn test_should_notify_transaction_from_vault() {
         let config = StoreTransactionsConsumerConfig::mock();
         let tx = Transaction::mock();
-        let vault_addresses = HashSet::from([tx.from.clone()]);
+        let vault_addresses = VaultAddressMap::from([(tx.from.clone(), primitives::SwapProvider::Thorchain)]);
         assert!(!config.should_notify_transaction(&tx, true, &vault_addresses));
     }
 }

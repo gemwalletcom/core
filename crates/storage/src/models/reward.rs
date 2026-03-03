@@ -220,6 +220,7 @@ pub struct RiskSignalRow {
     pub ip_isp: String,
     pub ip_abuse_score: i32,
     pub risk_score: i32,
+    pub user_agent: String,
     pub metadata: Option<serde_json::Value>,
     pub created_at: NaiveDateTime,
 }
@@ -242,5 +243,6 @@ pub struct NewRiskSignalRow {
     pub ip_isp: String,
     pub ip_abuse_score: i32,
     pub risk_score: i32,
+    pub user_agent: String,
     pub metadata: Option<serde_json::Value>,
 }

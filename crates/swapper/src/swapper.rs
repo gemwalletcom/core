@@ -232,8 +232,8 @@ impl GemSwapper {
         self.get_swapper_by_provider(&provider)?.get_swap_result(chain, transaction_hash).await
     }
 
-    pub async fn get_vault_addresses(&self, provider: &SwapperProvider) -> Result<Vec<String>, SwapperError> {
-        self.get_swapper_by_provider(provider)?.get_vault_addresses().await
+    pub async fn get_vault_addresses(&self, provider: &SwapperProvider, from_timestamp: Option<u64>) -> Result<Vec<String>, SwapperError> {
+        self.get_swapper_by_provider(provider)?.get_vault_addresses(from_timestamp).await
     }
 }
 

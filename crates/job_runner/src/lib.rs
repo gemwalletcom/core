@@ -7,7 +7,7 @@ use std::time::SystemTime;
 use async_trait::async_trait;
 use gem_tracing::{error_with_fields, human_duration, info_with_fields};
 pub mod schedule;
-pub use schedule::{JobSchedule, RunAlways, RunDecision};
+pub use schedule::{JobContext, JobSchedule, RunDecision};
 use tokio::sync::watch;
 use tokio::task::JoinHandle;
 use tokio::time::{Duration, Instant};
@@ -17,7 +17,7 @@ pub type JobError = Box<dyn std::error::Error + Send + Sync>;
 
 #[async_trait]
 pub trait JobStatusReporter: Send + Sync {
-    async fn report(&self, name: &str, interval: u64, duration: u64, success: bool, error: Option<String>);
+    async fn report(&self, name: &str, interval: u64, duration: u64, success: bool);
 }
 
 pub async fn sleep_or_shutdown(duration: Duration, shutdown_rx: &ShutdownReceiver) -> bool {
@@ -37,7 +37,7 @@ pub async fn run_job<Name, F, Fut, R>(
     job_fn: F,
 ) where
     Name: Into<String> + Send + 'static,
-    F: Fn() -> Fut + Send + Sync + 'static,
+    F: Fn(JobContext) -> Fut + Send + Sync + 'static,
     Fut: Future<Output = Result<R, JobError>> + Send + 'static,
     R: Debug + Send + Sync + 'static,
 {
@@ -49,8 +49,8 @@ pub async fn run_job<Name, F, Fut, R>(
         }
 
         let decision = schedule.evaluate(job_name.as_str(), interval_duration, SystemTime::now()).await;
-        match decision {
-            Ok(RunDecision::Run) => {}
+        let ctx = match decision {
+            Ok(RunDecision::Run(ctx)) => ctx,
             Ok(RunDecision::Wait(wait)) if wait > Duration::ZERO => {
                 info_with_fields!("job wait", job = job_name.as_str(), wait = human_duration(wait));
                 if sleep_or_shutdown(wait, &shutdown_rx).await {
@@ -58,16 +58,17 @@ pub async fn run_job<Name, F, Fut, R>(
                 }
                 continue;
             }
-            Ok(RunDecision::Wait(_)) => {}
+            Ok(RunDecision::Wait(_)) => continue,
             Err(err) => {
                 error_with_fields!("job schedule evaluation failed", &*err, job = job_name.as_str());
+                continue;
             }
-        }
+        };
 
         let now = Instant::now();
         info_with_fields!("job start", job = job_name.as_str(), interval = human_duration(interval_duration));
 
-        let result = job_fn().await;
+        let result = job_fn(ctx).await;
         let duration_ms = now.elapsed().as_millis() as u64;
         let duration_display = human_duration(Duration::from_millis(duration_ms));
 
@@ -82,12 +83,11 @@ pub async fn run_job<Name, F, Fut, R>(
                 if let Err(err) = schedule.mark_success(job_name.as_str(), SystemTime::now()).await {
                     error_with_fields!("job schedule update failed", &*err, job = job_name.as_str());
                 }
-                reporter.report(&job_name, interval_duration.as_secs(), duration_ms, true, None).await;
+                reporter.report(&job_name, interval_duration.as_secs(), duration_ms, true).await;
             }
             Err(err) => {
-                let msg = err.to_string();
                 error_with_fields!("job failed", &*err, job = job_name.as_str(), duration = duration_display.as_str());
-                reporter.report(&job_name, interval_duration.as_secs(), duration_ms, false, Some(msg)).await;
+                reporter.report(&job_name, interval_duration.as_secs(), duration_ms, false).await;
             }
         }
 
@@ -105,11 +105,7 @@ pub struct JobPlan {
 }
 
 impl JobPlan {
-    pub fn new(reporter: Arc<dyn JobStatusReporter>, shutdown_rx: ShutdownReceiver) -> Self {
-        Self::with_history(reporter, shutdown_rx, Arc::new(RunAlways))
-    }
-
-    pub fn with_history(reporter: Arc<dyn JobStatusReporter>, shutdown_rx: ShutdownReceiver, schedule: Arc<dyn JobSchedule>) -> Self {
+    pub fn new(reporter: Arc<dyn JobStatusReporter>, shutdown_rx: ShutdownReceiver, schedule: Arc<dyn JobSchedule>) -> Self {
         Self {
             reporter,
             shutdown_rx,
@@ -121,7 +117,7 @@ impl JobPlan {
     pub fn job<Name, F, Fut, R>(mut self, name: Name, interval: Duration, job_fn: F) -> Self
     where
         Name: Into<String> + Send + 'static,
-        F: Fn() -> Fut + Send + Sync + 'static,
+        F: Fn(JobContext) -> Fut + Send + Sync + 'static,
         Fut: Future<Output = Result<R, JobError>> + Send + 'static,
         R: Debug + Send + Sync + 'static,
     {

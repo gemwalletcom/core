@@ -13,30 +13,6 @@ pub struct TokenTarget {
     pub chain: Chain,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-#[serde(untagged)]
-pub enum ScanTarget {
-    Address(AddressTarget),
-    Token(TokenTarget),
-    URL(String),
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ScanRequest {
-    pub target: ScanTarget,
-    #[serde(rename = "type")]
-    pub target_type: ScanTargetType,
-}
-
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
-#[serde(rename_all = "lowercase")]
-pub enum ScanTargetType {
-    Address,
-    Token,
-    URL,
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ScanResult<T> {
     pub target: T,

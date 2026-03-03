@@ -1,4 +1,7 @@
-use crate::models::{balance::StakeBalance, token::SpotToken};
+use crate::models::{
+    balance::{Balances, StakeBalance},
+    token::SpotToken,
+};
 use num_bigint::BigUint;
 use number_formatter::BigNumberFormatter;
 use primitives::{Asset, AssetBalance, AssetId, Balance, Chain};
@@ -14,7 +17,18 @@ pub fn map_balance_token(asset_id: AssetId, balance: String, decimals: i32) -> R
     Ok(AssetBalance::new(asset_id, available))
 }
 
-pub fn map_balance_tokens(spot_balances: &crate::models::balance::Balances, spot_tokens: &[SpotToken], token_ids: &[String], chain: Chain) -> Vec<AssetBalance> {
+pub fn map_balance_assets(spot_balances: &Balances, spot_tokens: &[SpotToken], chain: Chain) -> Vec<AssetBalance> {
+    spot_balances
+        .balances
+        .iter()
+        .filter_map(|x| {
+            let token = spot_tokens.iter().find(|t| t.index as u32 == x.token)?;
+            map_balance_token(token.asset_id(chain), x.total.clone(), token.wei_decimals).ok()
+        })
+        .collect()
+}
+
+pub fn map_balance_tokens(spot_balances: &Balances, spot_tokens: &[SpotToken], token_ids: &[String], chain: Chain) -> Vec<AssetBalance> {
     token_ids
         .iter()
         .filter_map(|token_id| {
@@ -45,10 +59,7 @@ pub fn map_balance_staking(balance: &StakeBalance, chain: Chain) -> Result<Asset
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{
-        balance::{Balance, Balances, StakeBalance},
-        token::SpotToken,
-    };
+    use crate::models::balance::Balance;
     use primitives::Chain;
 
     #[test]

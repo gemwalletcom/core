@@ -3,13 +3,18 @@ use std::sync::RwLock;
 use std::time::{Duration, Instant};
 
 use chrono::{DateTime, NaiveDateTime};
-use primitives::ConfigKey;
+use primitives::{ConfigKey, ParamConfigKey};
 use serde::de::DeserializeOwned;
 
+use crate::database::config::ConfigStore;
 use crate::repositories::config_repository::ConfigRepository;
 use crate::{Database, DatabaseError};
 
 const DEFAULT_TTL_SECONDS: u64 = 60;
+
+fn parse_duration(value: &str) -> Result<Duration, DatabaseError> {
+    primitives::parse_duration(value).ok_or_else(|| DatabaseError::Error(format!("Failed to parse duration: {value}")))
+}
 
 struct CachedValue {
     value: String,
@@ -79,8 +84,17 @@ impl ConfigCacher {
     }
 
     pub fn get_duration(&self, key: ConfigKey) -> Result<Duration, DatabaseError> {
-        let value = self.get(key)?;
-        primitives::parse_duration(&value).ok_or_else(|| DatabaseError::Error(format!("Failed to parse duration: {}", value)))
+        parse_duration(&self.get(key)?)
+    }
+
+    pub fn get_param_duration(&self, param: &ParamConfigKey) -> Result<Duration, DatabaseError> {
+        let value = self
+            .database
+            .client()
+            .ok()
+            .and_then(|mut c| ConfigStore::get_config_key(&mut c, &param.key()).ok())
+            .map_or_else(|| param.default_value().to_string(), |row| row.value);
+        parse_duration(&value)
     }
 
     pub fn get_datetime(&self, key: ConfigKey) -> Result<NaiveDateTime, DatabaseError> {
@@ -105,7 +119,7 @@ impl ConfigCacher {
 
     pub fn set(&self, key: ConfigKey, value: &str) -> Result<usize, DatabaseError> {
         self.invalidate(&key);
-        self.database.client().map_err(|e| DatabaseError::Error(e.to_string()))?.set_config(key, value)
+        ConfigRepository::set_config(&mut self.database.client().map_err(|e| DatabaseError::Error(e.to_string()))?, key, value)
     }
 
     pub fn invalidate(&self, key: &ConfigKey) {

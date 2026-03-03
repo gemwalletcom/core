@@ -1,8 +1,7 @@
+use crate::{Asset, AssetLink, AssetMarket, PriceAlert};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
-
-use crate::{Asset, AssetLink, AssetMarket, PriceAlert};
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
@@ -29,15 +28,6 @@ impl Price {
     pub fn new_with_rate(&self, base_rate: f64, rate: f64) -> Self {
         self.with_rate(rate * base_rate)
     }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PriceFull {
-    pub asset_id: String,
-    pub coin_id: String,
-    pub price: f64,
-    pub price_change_percentage_24h: f64,
 }
 
 #[allow(dead_code)]

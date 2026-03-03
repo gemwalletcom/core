@@ -786,6 +786,8 @@ diesel::table! {
         ip_isp -> Varchar,
         ip_abuse_score -> Int4,
         risk_score -> Int4,
+        #[max_length = 256]
+        user_agent -> Varchar,
         metadata -> Nullable<Jsonb>,
         created_at -> Timestamp,
     }

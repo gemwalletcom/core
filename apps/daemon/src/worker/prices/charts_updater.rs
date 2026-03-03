@@ -1,4 +1,5 @@
 use coingecko::CoinGeckoClient;
+use gem_tracing::{error_with_fields, info_with_fields};
 use pricer::PriceClient;
 use primitives::ChartTimeframe;
 use std::error::Error;
@@ -42,12 +43,12 @@ impl ChartsUpdater {
                     let charts_data: Vec<_> = charts.iter().map(|c| c.as_chart_data()).collect();
                     self.stream_producer.publish_charts(ChartsPayload::new(charts_data)).await?;
 
-                    println!("update charts {}", coin_id.id.clone());
+                    info_with_fields!("update charts", coin_id = coin_id.id);
 
                     tokio::time::sleep(std::time::Duration::from_millis(250)).await;
                 }
                 Err(err) => {
-                    println!("update charts error: {err}");
+                    error_with_fields!("update charts error", err.as_ref(),);
                     continue;
                 }
             }

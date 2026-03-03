@@ -1,0 +1,34 @@
+[
+  {
+    "addresses": [
+      { "chain": "BTC", "address": "bc1qpvjacsksnqsah43v9klxx9eha0mxuaykr4p6x3" },
+      { "chain": "ETH", "address": "0xb30ec53f98ff5947ede720d32ac2da7e52a5f56b" },
+      { "chain": "DOGE", "address": "DKcKiAXpFBF6kRDRzitcGigSgzGoEDGSYB" },
+      { "chain": "LTC", "address": "ltc1q3kkgaa57scxa8vmymzyretlacnnp2m6dp5ef65" },
+      { "chain": "BCH", "address": "qz93s8d9hxhl7jaz69f3ashpwej6vclvnylpk6jqwg" },
+      { "chain": "GAIA", "address": "cosmos1exyz7eht2q6p7fptm2d9hyrp5mqjfwcfgfcgqm" },
+      { "chain": "AVAX", "address": "0xb30ec53f98ff5947ede720d32ac2da7e52a5f56b" },
+      { "chain": "BSC", "address": "0xb30ec53f98ff5947ede720d32ac2da7e52a5f56b" },
+      { "chain": "BASE", "address": "0xb30ec53f98ff5947ede720d32ac2da7e52a5f56b" },
+      { "chain": "XRP", "address": "rN5RKUMxVLJmp5SVqzTh4EsmJPMhx5CgDi" },
+      { "chain": "TRON", "address": "TGLFy29V8jPdpCFG1gKAowg4EKp7kRHprH" },
+      { "chain": "SOL", "address": "5n3VkMUZGCzk4Jr8Z6Z2jMadWBj5VjP1XfGK3EJchsi2" }
+    ],
+    "routers": [
+      { "chain": "ETH", "router": "0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146" },
+      { "chain": "AVAX", "router": "0x8F66c4AE756BEbC49Ec8B81966DD8bba9f127549" },
+      { "chain": "BSC", "router": "0xb30eC53F98ff5947EDe720D32aC2da7e52A5f56b" },
+      { "chain": "BASE", "router": "0x68208D99746b805a1Ae41421950A47b711E35681" }
+    ]
+  },
+  {
+    "addresses": [
+      { "chain": "BTC", "address": "bc1qd4jc4kp9jps56vng9ljhxntw9gqp6e2a7r5f22" },
+      { "chain": "ETH", "address": "0xa1f3e7b3e5c1d8f9a0b4c7d6e2f9a3b5c8d1e4f7" },
+      { "chain": "DOGE", "address": "DKcKiAXpFBF6kRDRzitcGigSgzGoEDGSYB" }
+    ],
+    "routers": [
+      { "chain": "ETH", "router": "0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146" }
+    ]
+  }
+]

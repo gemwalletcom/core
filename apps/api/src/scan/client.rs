@@ -1,3 +1,4 @@
+use gem_tracing::error_with_fields;
 use primitives::{ScanTransaction, ScanTransactionPayload};
 use rocket::futures::future;
 use security_provider::{AddressTarget, ScanProvider, ScanResult, TokenTarget};
@@ -53,7 +54,7 @@ impl ScanClient {
             .into_iter()
             .filter_map(|result| match result {
                 Err(e) => {
-                    println!("error scanning: {e}");
+                    error_with_fields!("error scanning", e.as_ref(),);
                     None
                 }
                 Ok(result) => Some(result),
@@ -74,7 +75,7 @@ impl ScanClient {
             .into_iter()
             .filter_map(|result| match result {
                 Err(e) => {
-                    println!("error scanning token: {e}");
+                    error_with_fields!("error scanning token", e.as_ref(),);
                     None
                 }
                 Ok(result) => Some(result),

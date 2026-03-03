@@ -2,7 +2,7 @@ use std::error::Error;
 
 use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainProvider, ChainTraits};
 use gem_client::{Client, ClientExt};
-use primitives::{Asset, Chain};
+use primitives::Chain;
 
 use crate::models::account::PolkadotAccountBalance;
 use crate::models::block::PolkadotNodeVersion;
@@ -55,10 +55,6 @@ impl<C: Client> PolkadotClient<C> {
 
     pub async fn get_block(&self, block_number: i64) -> Result<Block, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get(&format!("/blocks/{}", block_number)).await?)
-    }
-
-    pub async fn get_token_data(&self, _token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        unimplemented!()
     }
 }
 

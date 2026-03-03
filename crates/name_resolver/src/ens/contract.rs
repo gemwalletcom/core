@@ -1,5 +1,5 @@
 use alloy_ens::namehash;
-use alloy_primitives::{Address, Bytes, U256, hex};
+use alloy_primitives::{Address, Bytes, hex};
 use alloy_sol_types::{SolCall, sol};
 use gem_client::ReqwestClient;
 use gem_jsonrpc::JsonRpcClient;
@@ -50,19 +50,6 @@ impl Contract {
         } else {
             Err("Invalid resolver address format returned".into())
         }
-    }
-
-    #[allow(unused)]
-    pub async fn addr(&self, resolver_address_hex: &str, name: &str, coin_id: u32) -> Result<Bytes, Box<dyn Error + Send + Sync>> {
-        let node = namehash(name);
-        let resolver_address = Address::from_str(resolver_address_hex)?;
-        let call = ENSResolver::addr_with_coin_typeCall {
-            node,
-            coin_type: U256::from(coin_id),
-        };
-        let calldata = Bytes::from(call.abi_encode());
-
-        self.eth_call(resolver_address, calldata).await
     }
 
     pub async fn legacy_addr(&self, resolver_address_hex: &str, name: &str) -> Result<Address, Box<dyn Error + Send + Sync>> {

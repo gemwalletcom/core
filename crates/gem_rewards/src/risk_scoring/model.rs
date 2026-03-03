@@ -36,6 +36,8 @@ pub struct RiskScoreConfig {
     pub high_risk_locale_penalty: i64,
     pub high_risk_device_models: Vec<String>,
     pub high_risk_device_model_penalty: i64,
+    pub high_risk_user_agents: Vec<String>,
+    pub high_risk_user_agent_penalty: i64,
     pub velocity_window: Duration,
     pub velocity_divisor: i64,
     pub velocity_penalty: i64,
@@ -87,6 +89,14 @@ impl Default for RiskScoreConfig {
             high_risk_locale_penalty: 10,
             high_risk_device_models: vec!["sdk_gphone".to_string(), "(?i)emulator".to_string(), "(?i)simulator".to_string()],
             high_risk_device_model_penalty: 50,
+            high_risk_user_agents: vec![
+                "(?i)python".to_string(),
+                "(?i)curl".to_string(),
+                "(?i)httpie".to_string(),
+                "(?i)postman".to_string(),
+                "(?i)insomnia".to_string(),
+            ],
+            high_risk_user_agent_penalty: 100,
             velocity_window: Duration::from_secs(300),
             velocity_divisor: 2,
             velocity_penalty: 100,
@@ -122,6 +132,7 @@ pub struct RiskSignalInput {
     pub ip_isp: String,
     pub ip_abuse_score: i64,
     pub referrer_status: RewardStatus,
+    pub user_agent: String,
 }
 
 impl RiskSignalInput {
@@ -178,6 +189,8 @@ pub struct RiskScoreBreakdown {
     #[serde(skip_serializing_if = "is_zero")]
     pub high_risk_device_model_score: i64,
     #[serde(skip_serializing_if = "is_zero")]
+    pub user_agent_score: i64,
+    #[serde(skip_serializing_if = "is_zero")]
     pub velocity_score: i64,
     #[serde(skip_serializing_if = "is_zero")]
     pub ip_history_score: i64,
@@ -222,6 +235,7 @@ mod tests {
             ip_isp: "Comcast".to_string(),
             ip_abuse_score: 0,
             referrer_status: RewardStatus::Unverified,
+            user_agent: String::new(),
         };
         assert_eq!(input.generate_fingerprint().len(), 64);
     }
