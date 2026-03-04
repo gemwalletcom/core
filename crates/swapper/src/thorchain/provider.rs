@@ -61,7 +61,7 @@ impl crate::cross_chain::CrossChainProvider for ThorchainCrossChain {
             return true;
         }
         if let Some(router) = Self::router_address(&transaction.asset_id.chain) {
-            return (router == transaction.to || router == transaction.from) && transaction.transaction_type == TransactionType::Transfer;
+            return router == transaction.to && transaction.transaction_type == TransactionType::Transfer;
         }
         false
     }
