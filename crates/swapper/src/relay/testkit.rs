@@ -1,21 +1,16 @@
-use super::model::{RelayCurrency, RelayCurrencyDetail, RelayRequest, RelayRequestData, RelayRequestMetadata, RelayStatus, Step, StepData, StepItem};
+use super::model::{RelayCurrencyDetail, RelayRequest, RelayRequestMetadata, RelayStatus, Step, StepData, StepItem};
 
 impl RelayRequest {
     pub fn mock(status: RelayStatus, metadata: Option<RelayRequestMetadata>) -> Self {
-        Self {
-            status,
-            data: metadata.map(|m| RelayRequestData { metadata: Some(m) }),
-        }
+        Self { status, metadata }
     }
 }
 
 impl RelayCurrencyDetail {
-    pub fn mock(address: &str, chain_id: u64, amount: &str) -> Self {
+    pub fn mock(currency: &str, chain_id: u64, amount: &str) -> Self {
         Self {
-            currency: RelayCurrency {
-                chain_id,
-                address: address.to_string(),
-            },
+            currency: currency.to_string(),
+            chain_id,
             amount: Some(amount.to_string()),
         }
     }

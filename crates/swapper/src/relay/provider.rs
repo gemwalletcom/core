@@ -127,10 +127,6 @@ where
         let request = response.requests.first().ok_or(SwapperError::InvalidRoute)?;
         Ok(mapper::map_swap_result(request))
     }
-
-    async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<Vec<String>, SwapperError> {
-        Ok(super::RELAY_CONTRACTS.iter().map(|s| s.to_string()).collect())
-    }
 }
 
 impl<C> Relay<C>

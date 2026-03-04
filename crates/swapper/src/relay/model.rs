@@ -125,7 +125,6 @@ pub enum RelayStatus {
     Success,
     Completed,
     Failed,
-    Failure,
     Refunded,
     #[serde(other)]
     Unknown,
@@ -136,7 +135,7 @@ impl RelayStatus {
         match self {
             RelayStatus::Pending | RelayStatus::Waiting | RelayStatus::Unknown => SwapStatus::Pending,
             RelayStatus::Success | RelayStatus::Completed => SwapStatus::Completed,
-            RelayStatus::Failed | RelayStatus::Failure | RelayStatus::Refunded => SwapStatus::Failed,
+            RelayStatus::Failed | RelayStatus::Refunded => SwapStatus::Failed,
         }
     }
 }
@@ -151,12 +150,6 @@ pub struct RelayRequestsResponse {
 #[serde(rename_all = "camelCase")]
 pub struct RelayRequest {
     pub status: RelayStatus,
-    pub data: Option<RelayRequestData>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RelayRequestData {
     pub metadata: Option<RelayRequestMetadata>,
 }
 
@@ -170,13 +163,7 @@ pub struct RelayRequestMetadata {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RelayCurrencyDetail {
-    pub currency: RelayCurrency,
-    pub amount: Option<String>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RelayCurrency {
+    pub currency: String,
     pub chain_id: u64,
-    pub address: String,
+    pub amount: Option<String>,
 }

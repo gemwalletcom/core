@@ -1,15 +1,12 @@
 mod asset;
 mod chain;
 mod client;
-mod cross_chain;
 mod mapper;
 mod model;
 mod provider;
 #[cfg(test)]
 mod testkit;
 mod tx_builder;
-
-pub use cross_chain::{RELAY_CONTRACTS, RelayCrossChain};
 
 use std::sync::Arc;
 
