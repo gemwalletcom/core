@@ -5,7 +5,12 @@ use crate::{
 };
 use num_traits::ToPrimitive;
 use primitives::{AssetId, Chain, EVMChain};
-use std::{borrow::Cow, collections::HashSet, fmt::Debug, sync::Arc};
+use std::{
+    borrow::Cow,
+    collections::{BTreeSet, HashSet},
+    fmt::Debug,
+    sync::Arc,
+};
 
 #[derive(Debug)]
 pub struct GemSwapper {
@@ -184,8 +189,8 @@ impl GemSwapper {
     }
 
     pub async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Vec<Quote>, SwapperError> {
-        let providers_types = self.get_providers_for_request(request)?;
-        let providers = self.swappers.iter().filter(|x| providers_types.iter().any(|p| p.id == x.provider().id)).collect::<Vec<_>>();
+        let provider_ids: BTreeSet<_> = self.get_providers_for_request(request)?.into_iter().map(|p| p.id).collect();
+        let providers = self.swappers.iter().filter(|x| provider_ids.contains(&x.provider().id)).collect::<Vec<_>>();
 
         let request_for_quote = Self::transform_request(request);
         let quotes_futures = providers.into_iter().map(|x| x.fetch_quote(request_for_quote.as_ref()));
