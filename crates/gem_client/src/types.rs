@@ -50,7 +50,7 @@ impl fmt::Display for ClientError {
             Self::Network(msg) => write!(f, "Network error: {}", msg),
             Self::Timeout => write!(f, "Timeout error"),
             Self::Http { status, .. } => write!(f, "HTTP error: status {}", status),
-            Self::Serialization(msg) => write!(f, "Serialization error: {}", msg),
+            Self::Serialization(msg) => write!(f, "{}", msg),
         }
     }
 }
