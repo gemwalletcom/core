@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
+use crate::portfolio::ChartValuePercentage;
 use crate::{AssetId, AssetMarket, AssetPrice, Price};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -42,6 +43,8 @@ impl AssetPriceInfo {
 
     pub fn as_market_with_rate(&self, rate: f64) -> AssetMarket {
         let current_price = self.price.price;
+        let ath_percentage = self.market.all_time_high.map(|ath| (current_price - ath) / ath * 100.0);
+        let atl_percentage = self.market.all_time_low.map(|atl| (current_price - atl) / atl * 100.0);
         AssetMarket {
             market_cap: self.market.market_cap.map(|x| x * rate),
             market_cap_fdv: self.market.market_cap_fdv.map(|x| x * rate),
@@ -52,10 +55,20 @@ impl AssetPriceInfo {
             max_supply: self.market.max_supply,
             all_time_high: self.market.all_time_high.map(|x| x * rate),
             all_time_high_date: self.market.all_time_high_date,
-            all_time_high_change_percentage: self.market.all_time_high.map(|ath| (current_price - ath) / ath * 100.0),
+            all_time_high_change_percentage: ath_percentage,
             all_time_low: self.market.all_time_low.map(|x| x * rate),
             all_time_low_date: self.market.all_time_low_date,
-            all_time_low_change_percentage: self.market.all_time_low.map(|atl| (current_price - atl) / atl * 100.0),
+            all_time_low_change_percentage: atl_percentage,
+            all_time_high_value: self.market.all_time_high.zip(self.market.all_time_high_date).map(|(value, date)| ChartValuePercentage {
+                date,
+                value: (value * rate) as f32,
+                percentage: ath_percentage.unwrap_or_default() as f32,
+            }),
+            all_time_low_value: self.market.all_time_low.zip(self.market.all_time_low_date).map(|(value, date)| ChartValuePercentage {
+                date,
+                value: (value * rate) as f32,
+                percentage: atl_percentage.unwrap_or_default() as f32,
+            }),
         }
     }
 }
@@ -85,6 +98,8 @@ mod tests {
                 all_time_low: Some(40.0),
                 all_time_low_date: None,
                 all_time_low_change_percentage: None,
+                all_time_high_value: None,
+                all_time_low_value: None,
             },
         };
 

@@ -7,9 +7,9 @@ pub mod guard;
 pub mod signature;
 use crate::assets::AssetsClient;
 use crate::metrics::fiat::FiatMetrics;
-use crate::params::{AssetIdParam, ChainParam, CurrencyParam, DeviceIdParam, DeviceParam, FiatQuoteTypeParam, TransactionIdParam, UserAgent};
+use crate::params::{AssetIdParam, ChainParam, ChartPeriodParam, CurrencyParam, DeviceIdParam, DeviceParam, FiatQuoteTypeParam, TransactionIdParam, UserAgent};
 use crate::responders::{ApiError, ApiResponse};
-pub use clients::{FiatQuotesClient, NotificationsClient, RewardsClient, RewardsRedemptionClient, ScanClient, ScanProviderFactory, TransactionsClient, WalletsClient};
+pub use clients::{FiatQuotesClient, NotificationsClient, PortfolioClient, RewardsClient, RewardsRedemptionClient, ScanClient, ScanProviderFactory, TransactionsClient, WalletsClient};
 pub(crate) use clients::WalletSubscriptionInput;
 use auth_config::AuthConfig;
 pub use client::DevicesClient;
@@ -22,8 +22,8 @@ use primitives::rewards::{RedemptionRequest, RedemptionResult, RewardRedemptionO
 use name_resolver::client::Client as NameClient;
 use primitives::name::NameRecord;
 use primitives::{
-    AssetId, AuthNonce, FiatAssets, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuotes, InAppNotification, MigrateDeviceIdRequest, NFTData, PriceAlerts, ReportNft,
-    RewardEvent, Rewards, ScanTransaction, ScanTransactionPayload, Transaction, TransactionsResponse, WalletSubscriptionChains,
+    AssetId, AuthNonce, FiatAssets, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuotes, InAppNotification, MigrateDeviceIdRequest, NFTData, PortfolioAssets,
+    PortfolioAssetsRequest, PriceAlerts, ReportNft, RewardEvent, Rewards, ScanTransaction, ScanTransactionPayload, Transaction, TransactionsResponse, WalletSubscriptionChains,
 };
 use rocket::{State, delete, get, post, put, serde::json::Json, tokio::sync::Mutex};
 use std::sync::Arc;
@@ -362,4 +362,18 @@ pub async fn get_fiat_quote_url_v2(
         .await?;
     fiat_metrics.record_quote_url(&quote);
     Ok(url.into())
+}
+
+#[post("/devices/portfolio/assets?<period>", format = "json", data = "<request>")]
+pub async fn get_device_portfolio_assets_v2(
+    _device: AuthenticatedDevice,
+    period: ChartPeriodParam,
+    request: Json<PortfolioAssetsRequest>,
+    portfolio_client: &State<Mutex<PortfolioClient>>,
+) -> Result<ApiResponse<PortfolioAssets>, ApiError> {
+    Ok(portfolio_client
+        .lock()
+        .await
+        .get_portfolio_charts(request.0.assets, period.0)?
+        .into())
 }

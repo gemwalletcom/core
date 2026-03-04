@@ -1,6 +1,6 @@
 use chrono::{DateTime, NaiveDateTime};
 use diesel::prelude::*;
-use primitives::{AssetId, AssetMarket, AssetPriceInfo, FiatRate, Price, PriceData};
+use primitives::{AssetId, AssetMarket, AssetPriceInfo, ChartValuePercentage, FiatRate, Price, PriceData};
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 
@@ -8,7 +8,7 @@ use crate::models::ChartRow;
 
 use super::AssetRow;
 
-#[derive(Debug, Queryable, Selectable, Identifiable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
+#[derive(Debug, Default, Queryable, Selectable, Identifiable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::prices)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct PriceRow {
@@ -82,6 +82,10 @@ impl Hash for PriceRow {
 }
 
 impl PriceRow {
+    pub fn with_price(id: String, price: f64) -> Self {
+        PriceRow { id, price, ..Default::default() }
+    }
+
     pub fn new(
         id: String,
         price: f64,
@@ -135,6 +139,8 @@ impl PriceRow {
     }
 
     pub fn as_market_primitive(&self) -> AssetMarket {
+        let ath_percentage = (self.price - self.all_time_high) / self.all_time_high * 100.0;
+        let atl_percentage = (self.price - self.all_time_low) / self.all_time_low * 100.0;
         AssetMarket {
             market_cap: Some(self.market_cap),
             market_cap_fdv: Some(self.market_cap_fdv),
@@ -145,10 +151,20 @@ impl PriceRow {
             max_supply: Some(self.max_supply),
             all_time_high: Some(self.all_time_high),
             all_time_high_date: self.all_time_high_date.map(|d| d.and_utc()),
-            all_time_high_change_percentage: Some((self.price - self.all_time_high) / self.all_time_high * 100.0),
+            all_time_high_change_percentage: Some(ath_percentage),
             all_time_low: Some(self.all_time_low),
             all_time_low_date: self.all_time_low_date.map(|d| d.and_utc()),
-            all_time_low_change_percentage: Some((self.price - self.all_time_low) / self.all_time_low * 100.0),
+            all_time_low_change_percentage: Some(atl_percentage),
+            all_time_high_value: self.all_time_high_date.map(|d| ChartValuePercentage {
+                date: d.and_utc(),
+                value: self.all_time_high as f32,
+                percentage: ath_percentage as f32,
+            }),
+            all_time_low_value: self.all_time_low_date.map(|d| ChartValuePercentage {
+                date: d.and_utc(),
+                value: self.all_time_low as f32,
+                percentage: atl_percentage as f32,
+            }),
         }
     }
 

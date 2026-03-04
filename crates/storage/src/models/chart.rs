@@ -15,6 +15,10 @@ pub struct ChartRow {
 }
 
 impl ChartRow {
+    pub fn new(coin_id: String, price: f64, created_at: NaiveDateTime) -> Self {
+        ChartRow { coin_id, price, created_at }
+    }
+
     pub fn from_price(price: PriceRow) -> Self {
         ChartRow {
             coin_id: price.id,
@@ -40,7 +44,7 @@ impl ChartRow {
     }
 }
 
-#[derive(Debug, Clone, Queryable, Selectable)]
+#[derive(Debug, Clone, Queryable, Selectable, Insertable)]
 #[diesel(table_name = crate::schema::charts_hourly)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct HourlyChartRow {
@@ -49,7 +53,7 @@ pub struct HourlyChartRow {
     pub created_at: NaiveDateTime,
 }
 
-#[derive(Debug, Clone, Queryable, Selectable)]
+#[derive(Debug, Clone, Queryable, Selectable, Insertable)]
 #[diesel(table_name = crate::schema::charts_daily)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct DailyChartRow {
@@ -60,20 +64,24 @@ pub struct DailyChartRow {
 
 impl From<HourlyChartRow> for ChartRow {
     fn from(chart: HourlyChartRow) -> Self {
-        ChartRow {
-            coin_id: chart.coin_id,
-            price: chart.price,
-            created_at: chart.created_at,
-        }
+        ChartRow { coin_id: chart.coin_id, price: chart.price, created_at: chart.created_at }
     }
 }
 
 impl From<DailyChartRow> for ChartRow {
     fn from(chart: DailyChartRow) -> Self {
-        ChartRow {
-            coin_id: chart.coin_id,
-            price: chart.price,
-            created_at: chart.created_at,
-        }
+        ChartRow { coin_id: chart.coin_id, price: chart.price, created_at: chart.created_at }
+    }
+}
+
+impl From<ChartRow> for HourlyChartRow {
+    fn from(chart: ChartRow) -> Self {
+        HourlyChartRow { coin_id: chart.coin_id, price: chart.price, created_at: chart.created_at }
+    }
+}
+
+impl From<ChartRow> for DailyChartRow {
+    fn from(chart: ChartRow) -> Self {
+        DailyChartRow { coin_id: chart.coin_id, price: chart.price, created_at: chart.created_at }
     }
 }

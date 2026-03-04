@@ -617,6 +617,7 @@ dependencies = [
  "metrics",
  "name_resolver",
  "nft",
+ "portfolio",
  "pricer",
  "primitives",
  "prometheus-client",
@@ -5220,6 +5221,16 @@ name = "portable-atomic"
 version = "1.13.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c33a9471896f1c69cecef8d20cbe2f7accd12527ce60845ff44c153bb2a21b49"
+
+[[package]]
+name = "portfolio"
+version = "1.0.0"
+dependencies = [
+ "chrono",
+ "number_formatter",
+ "primitives",
+ "storage",
+]
 
 [[package]]
 name = "potential_utf"

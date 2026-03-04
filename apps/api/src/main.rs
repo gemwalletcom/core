@@ -37,7 +37,7 @@ use metrics::fiat::FiatMetrics;
 use model::APIService;
 use name_resolver::NameProviderFactory;
 use name_resolver::client::{Client as NameClient, NameConfig};
-use devices::{FiatQuotesClient, NotificationsClient, RewardsClient, RewardsRedemptionClient, ScanClient, ScanProviderFactory, TransactionsClient, WalletsClient};
+use devices::{FiatQuotesClient, NotificationsClient, PortfolioClient, RewardsClient, RewardsRedemptionClient, ScanClient, ScanProviderFactory, TransactionsClient, WalletsClient};
 use pricer::{ChartClient, MarketsClient, PriceAlertClient, PriceClient};
 use rocket::tokio::sync::Mutex;
 use rocket::{Build, Rocket, catchers, routes};
@@ -134,6 +134,7 @@ fn mount_routes(rocket: Rocket<Build>, metrics_path: &str) -> Rocket<Build> {
                 devices::delete_device_price_alerts_v2,
                 devices::get_auth_nonce_v2,
                 devices::get_device_token_v2,
+                devices::get_device_portfolio_assets_v2,
             ],
         )
         .mount(metrics_path, routes![metrics::get_metrics])
@@ -159,6 +160,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let name_client = NameClient::new(providers, name_config);
 
     let chain_client = chain::ChainClient::new(ChainProviders::new(ProviderFactory::new_providers(&settings)));
+    let portfolio_client = PortfolioClient::new(database.clone());
     let endpoints = ProviderFactory::get_chain_endpoints(&settings);
     let swapper = Arc::new(GemSwapper::new(Arc::new(swapper::NativeProvider::new_with_endpoints(endpoints))));
 
@@ -233,6 +235,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(wallets_client))
         .manage(Mutex::new(notifications_client))
         .manage(Mutex::new(near_intents_client))
+        .manage(Mutex::new(portfolio_client))
         .manage(auth_client);
 
     mount_routes(rocket, &settings.metrics.path)

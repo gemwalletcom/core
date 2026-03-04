@@ -46,6 +46,7 @@ members = [
     "crates/serde_serializers",
     "crates/number_formatter",
     "crates/prices_dex",
+    "crates/portfolio",
     "crates/streamer",
     "crates/swapper",
     "crates/tracing",

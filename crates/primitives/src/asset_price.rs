@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
+use crate::portfolio::ChartValuePercentage;
 use crate::{AssetId, Price};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -36,12 +37,20 @@ pub struct AssetMarket {
     pub circulating_supply: Option<f64>,
     pub total_supply: Option<f64>,
     pub max_supply: Option<f64>,
+    #[typeshare(skip)]
     pub all_time_high: Option<f64>,
+    #[typeshare(skip)]
     pub all_time_high_date: Option<DateTime<Utc>>,
+    #[typeshare(skip)]
     pub all_time_high_change_percentage: Option<f64>,
+    #[typeshare(skip)]
     pub all_time_low: Option<f64>,
+    #[typeshare(skip)]
     pub all_time_low_date: Option<DateTime<Utc>>,
+    #[typeshare(skip)]
     pub all_time_low_change_percentage: Option<f64>,
+    pub all_time_high_value: Option<ChartValuePercentage>,
+    pub all_time_low_value: Option<ChartValuePercentage>,
 }
 
 impl AssetMarket {
@@ -60,6 +69,8 @@ impl AssetMarket {
             all_time_low: self.all_time_low.map(|x| x * rate),
             all_time_low_date: self.all_time_low_date,
             all_time_low_change_percentage: self.all_time_low_change_percentage,
+            all_time_high_value: self.all_time_high_value.map(|v| v.with_rate(rate)),
+            all_time_low_value: self.all_time_low_value.map(|v| v.with_rate(rate)),
         }
     }
 }
