@@ -1,0 +1,38 @@
+{
+  "requests": [
+    {
+      "id": "0xd2bcbf6c8e155411f6633067a29b1ee511d3d98b25db49393dd4ce58b00ee0f8",
+      "status": "success",
+      "data": {
+        "metadata": {
+          "sender": "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
+          "recipient": "A21o4asMbFHYadqXdLusT9Bvx9xaC5YV9gcaidjqtdXC",
+          "currencyIn": {
+            "currency": {
+              "chainId": 56,
+              "address": "0x55d398326f99059ff775485246999027b3197955",
+              "symbol": "USDT",
+              "name": "Tether USD",
+              "decimals": 18
+            },
+            "amount": "6000000000000000000",
+            "amountFormatted": "6.0",
+            "amountUsd": "6.000000"
+          },
+          "currencyOut": {
+            "currency": {
+              "chainId": 792703809,
+              "address": "So11111111111111111111111111111111111111112",
+              "symbol": "WSOL",
+              "name": "Wrapped SOL",
+              "decimals": 9
+            },
+            "amount": "74432990",
+            "amountFormatted": "0.07443299",
+            "amountUsd": "5.806518"
+          }
+        }
+      }
+    }
+  ]
+}
