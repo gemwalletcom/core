@@ -37,6 +37,10 @@ impl GemSwapper {
         self.inner.get_providers()
     }
 
+    pub fn get_providers_for_request(&self, request: &SwapperQuoteRequest) -> Result<Vec<SwapperProviderType>, SwapperError> {
+        self.inner.get_providers_for_request(request)
+    }
+
     pub async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<Vec<SwapperQuote>, SwapperError> {
         self.inner.fetch_quote(request).await
     }

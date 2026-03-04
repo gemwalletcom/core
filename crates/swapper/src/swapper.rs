@@ -162,24 +162,30 @@ impl GemSwapper {
         self.swappers.iter().map(|x| x.provider().clone()).collect()
     }
 
-    pub async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Vec<Quote>, SwapperError> {
+    pub fn get_providers_for_request(&self, request: &QuoteRequest) -> Result<Vec<ProviderType>, SwapperError> {
         if request.from_asset.id == request.to_asset.id {
             return Err(SwapperError::NoQuoteAvailable);
         }
         let from_chain = request.from_asset.chain();
         let to_chain = request.to_asset.chain();
         let preferred_providers = &request.options.preferred_providers;
-        let providers = self
+        let providers: Vec<ProviderType> = self
             .swappers
             .iter()
             .filter(|x| Self::filter_by_provider_mode(&x.provider().mode, from_chain, to_chain))
             .filter(|x| Self::filter_by_supported_chains(x.supported_chains(), from_chain, to_chain))
             .filter(|x| Self::filter_by_preferred_providers(preferred_providers, &x.provider().id))
-            .collect::<Vec<_>>();
-
+            .map(|x| x.provider().clone())
+            .collect();
         if providers.is_empty() {
             return Err(SwapperError::NoAvailableProvider);
         }
+        Ok(providers)
+    }
+
+    pub async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Vec<Quote>, SwapperError> {
+        let providers_types = self.get_providers_for_request(request)?;
+        let providers = self.swappers.iter().filter(|x| providers_types.iter().any(|p| p.id == x.provider().id)).collect::<Vec<_>>();
 
         let request_for_quote = Self::transform_request(request);
         let quotes_futures = providers.into_iter().map(|x| x.fetch_quote(request_for_quote.as_ref()));
