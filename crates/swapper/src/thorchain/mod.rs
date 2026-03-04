@@ -5,9 +5,8 @@ mod constants;
 pub mod memo;
 pub mod model;
 mod provider;
-mod swap_mapper;
-pub use provider::ThorchainCrossChain;
 mod quote_data_mapper;
+mod swap_mapper;
 
 use primitives::Chain;
 use std::sync::Arc;

@@ -1,12 +1,10 @@
 mod assets;
 mod client;
 mod config;
-mod cross_chain_provider;
 mod model;
 mod provider;
 
 pub use client::base_url;
-pub use cross_chain_provider::NearIntentsCrossChain;
 pub use model::{QuoteResponse, QuoteResponseError, QuoteResponseResult};
 pub use provider::NearIntents;
 

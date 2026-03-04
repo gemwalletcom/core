@@ -13,8 +13,9 @@ use crate::{
     asset::*,
     config::{DEFAULT_SWAP_FEE_BPS, get_swap_api_url},
     models::{ApprovalType, SwapperChainAsset},
+    relay,
 };
-use gem_client::Client;
+use gem_client::{Client, ClientExt};
 use primitives::{
     Chain, ChainType, TransactionSwapMetadata,
     swap::{ApprovalData, ProxyQuote, ProxyQuoteRequest, SwapQuoteData},
@@ -266,6 +267,14 @@ where
 
                 Ok(SwapResult { status, metadata })
             }
+            SwapperProvider::Relay => {
+                let base_url = get_swap_api_url("relay");
+                let client = RpcClient::new(base_url, self.rpc_provider.clone());
+                let path = format!("/requests/v2?hash={}", transaction_hash);
+                let response: relay::model::RelayRequestsResponse = ClientExt::get(&client, &path).await.map_err(SwapperError::from)?;
+                let request = response.requests.first().ok_or(SwapperError::InvalidRoute)?;
+                Ok(relay::map_swap_result(request))
+            }
             _ => {
                 if self.provider.mode == SwapperProviderMode::OnChain {
                     Ok(SwapResult {
@@ -281,6 +290,12 @@ where
 
     async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<Vec<String>, SwapperError> {
         match self.provider.id {
+            SwapperProvider::Relay => {
+                let base_url = get_swap_api_url("relay");
+                let client = RpcClient::new(base_url, self.rpc_provider.clone());
+                let chains: relay::model::RelayChainsResponse = ClientExt::get(&client, "/chains").await.map_err(SwapperError::from)?;
+                Ok(chains.solver_addresses())
+            }
             SwapperProvider::Mayan => {
                 let static_addresses: BTreeSet<String> = MAYAN_CONTRACTS.iter().map(|s| s.to_string()).collect();
                 let base_url = get_swap_api_url("mayan/price");

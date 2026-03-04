@@ -97,6 +97,7 @@ fn mount_routes(rocket: Rocket<Build>, metrics_path: &str) -> Rocket<Build> {
                 chain::block::get_block_transactions,
                 chain::block::get_block_transactions_finalize,
                 chain::swap::get_swap_result,
+                chain::swap::get_vault_addresses,
                 swap::get_swap_assets,
                 nft::get_nft_assets_by_chain,
                 nft::get_nft_collection,

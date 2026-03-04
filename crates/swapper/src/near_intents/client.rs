@@ -60,5 +60,4 @@ impl<C: Client + Send + Sync + Debug> NearIntentsExplorer<C> {
         let transactions = self.get_transactions(&format!("search={hash}&numberOfTransactions=10")).await?;
         Ok(transactions.into_iter().find(|tx| tx.origin_chain_tx_hashes.iter().any(|h| h.eq_ignore_ascii_case(hash))))
     }
-
 }
