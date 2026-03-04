@@ -31,7 +31,7 @@ public protocol GemAPIAssetsService: Sendable {
 }
 
 public protocol GemAPINameService: Sendable {
-    func getName(name: String, chain: String) async throws -> NameRecord
+    func getName(name: String, chain: String) async throws -> NameRecord?
 }
 
 public protocol GemAPIChartService: Sendable {
@@ -152,10 +152,10 @@ extension GemAPIService: GemAPIConfigService {
 }
 
 extension GemAPIService: GemAPINameService {
-    public func getName(name: String, chain: String) async throws -> NameRecord {
-        try await provider
+    public func getName(name: String, chain: String) async throws -> NameRecord? {
+        try await deviceProvider
             .request(.getNameRecord(name: name, chain: chain))
-            .mapResponse(as: NameRecord.self)
+            .mapResponse(as: NameRecord?.self)
     }
 }
 
@@ -248,13 +248,13 @@ extension GemAPIService: GemAPIAssetsListService {
     }
 
     public func getBuyableFiatAssets() async throws -> FiatAssets {
-        try await provider
+        try await deviceProvider
             .request(.getFiatAssets(.buy))
             .mapResponse(as: FiatAssets.self)
     }
 
     public func getSellableFiatAssets() async throws -> FiatAssets {
-        try await provider
+        try await deviceProvider
             .request(.getFiatAssets(.sell))
             .mapResponse(as: FiatAssets.self)
     }

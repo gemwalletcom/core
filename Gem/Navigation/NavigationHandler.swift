@@ -115,6 +115,8 @@ extension NavigationHandler {
             presenter.isPresentingSupport.wrappedValue = true
         case .rewards:
             navigationState.settings.append(Scenes.Referral(code: nil))
+        case .stake: break
+            //TODO: Select wallet and open stake screen of an asset
         case .test, .unknown: break
         }
 
@@ -205,7 +207,7 @@ private extension URLAction {
 private extension PushNotification {
     var selectTab: TabItem? {
         switch self {
-        case .transaction, .asset, .priceAlert: .wallet
+        case .transaction, .asset, .priceAlert, .stake: .wallet
         case .buyAsset, .swapAsset: nil
         case .support, .rewards: .settings
         case .test, .unknown: nil

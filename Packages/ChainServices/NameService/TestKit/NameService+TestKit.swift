@@ -23,10 +23,7 @@ public struct MockNameService: NameServiceable {
         self.nameRecord = nameRecord
     }
     
-    public func getName(name: String, chain: String) async throws -> NameRecord {
-        if let nameRecord {
-            return nameRecord
-        }
-        return NameRecord.mock()
+    public func getName(name: String, chain: String) async throws -> NameRecord? {
+        nameRecord ?? NameRecord.mock()
     }
 }

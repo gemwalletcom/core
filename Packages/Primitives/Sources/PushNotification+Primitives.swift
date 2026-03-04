@@ -10,6 +10,7 @@ public enum PushNotification: Equatable, Sendable {
     case swapAsset(AssetId, AssetId?)
     case support
     case rewards
+    case stake(WalletId, AssetId)
     case test
     case unknown
 
@@ -49,6 +50,9 @@ public enum PushNotification: Equatable, Sendable {
             self = .support
         case .rewards:
             self = .rewards
+        case .stake:
+            let value = try decoder.decode(PushNotificationStake.self, from: data)
+            self = .stake(value.walletId, value.assetId)
         case .test:
             self = .test
         }

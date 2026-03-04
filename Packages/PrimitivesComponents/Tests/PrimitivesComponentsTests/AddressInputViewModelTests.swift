@@ -47,7 +47,7 @@ struct AddressInputViewModelTests {
 }
 
 private struct NameServiceMock: NameServiceable {
-    func getName(name: String, chain: String) async throws -> NameRecord {
+    func getName(name: String, chain: String) async throws -> NameRecord? {
         .mock()
     }
 }

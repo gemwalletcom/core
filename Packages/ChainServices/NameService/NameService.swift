@@ -13,7 +13,7 @@ public final class NameService: NameServiceable, Sendable {
         self.provider = provider
     }
     
-    public func getName(name: String, chain: String) async throws -> NameRecord {
+    public func getName(name: String, chain: String) async throws -> NameRecord? {
         try await provider.getName(name: name, chain: chain)
     }
 }

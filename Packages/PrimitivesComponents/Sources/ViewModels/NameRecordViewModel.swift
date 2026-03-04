@@ -27,8 +27,11 @@ public final class NameRecordViewModel {
         resolveTask = Task {
             do {
                 try await Task.sleep(for: .debounce)
-                let record = try await nameService.getName(name: name, chain: chain.rawValue)
-                state = .complete(record)
+                if let record = try await nameService.getName(name: name, chain: chain.rawValue) {
+                    state = .complete(record)
+                } else {
+                    state = .error
+                }
             } catch {
                 if !error.isCancelled {
                     state = .error
