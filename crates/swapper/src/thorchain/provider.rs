@@ -4,7 +4,7 @@ use std::sync::Arc;
 use alloy_primitives::U256;
 use async_trait::async_trait;
 use gem_client::Client;
-use primitives::{Chain, Transaction, TransactionType, hex::decode_hex_utf8, swap::ApprovalData};
+use primitives::{Chain, swap::ApprovalData};
 
 use num_bigint::BigInt;
 
@@ -12,13 +12,12 @@ use super::{
     DUST_THRESHOLD_MULTIPLIER, QUOTE_INTERVAL, QUOTE_MINIMUM, QUOTE_QUANTITY, ThorChain,
     asset::{THORChainAsset, value_to},
     chain::THORChainName,
-    memo::ThorchainMemo,
     model::{AsgardVault, RouteData},
     quote_data_mapper, swap_mapper,
 };
 use crate::{
-    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider,
-    SwapperQuoteData, approval::check_approval_erc20, asset::*, thorchain::client::ThorChainSwapClient,
+    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperQuoteData,
+    approval::check_approval_erc20, asset::*, thorchain::client::ThorChainSwapClient,
 };
 
 pub struct ThorchainCrossChain;
@@ -36,34 +35,6 @@ impl ThorchainCrossChain {
 
     pub fn static_router_addresses() -> Vec<&'static str> {
         Chain::all().iter().filter_map(|chain| Self::router_address(chain)).collect()
-    }
-
-    fn has_swap_memo(transaction: &primitives::Transaction) -> bool {
-        if transaction.memo.as_deref().is_some_and(ThorchainMemo::is_swap) {
-            return true;
-        }
-        if let Some(decoded) = transaction.data.as_deref().and_then(decode_hex_utf8)
-            && ThorchainMemo::is_swap(&decoded)
-        {
-            return true;
-        }
-        false
-    }
-}
-
-impl crate::cross_chain::CrossChainProvider for ThorchainCrossChain {
-    fn provider(&self) -> SwapperProvider {
-        SwapperProvider::Thorchain
-    }
-
-    fn is_swap(&self, transaction: &Transaction) -> bool {
-        if Self::has_swap_memo(transaction) {
-            return true;
-        }
-        if let Some(router) = Self::router_address(&transaction.asset_id.chain) {
-            return router == transaction.to && transaction.transaction_type == TransactionType::Transfer;
-        }
-        false
     }
 }
 
@@ -108,7 +79,12 @@ where
     async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<Vec<String>, SwapperError> {
         let vaults = self.client.get_asgard_vaults().await?;
         let static_addresses = ThorchainCrossChain::static_router_addresses().into_iter().map(String::from);
-        Ok(AsgardVault::all_addresses(&vaults).into_iter().chain(static_addresses).collect::<HashSet<_>>().into_iter().collect())
+        Ok(AsgardVault::all_addresses(&vaults)
+            .into_iter()
+            .chain(static_addresses)
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect())
     }
 
     async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {

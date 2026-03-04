@@ -6,11 +6,9 @@ pub use explorer::MayanExplorer;
 pub use model::{MayanChain, MayanClientStatus, MayanTransactionResult};
 pub use price::MayanPrice;
 
-use crate::SwapperProvider;
 use crate::asset::EVM_ZERO_ADDRESS;
-use crate::cross_chain::CrossChainProvider;
 use gem_evm::ethereum_address_checksum;
-use primitives::{AssetId, Chain, ChainType, Transaction};
+use primitives::{AssetId, Chain, ChainType};
 
 const MAYAN_FORWARDER: &str = "0x337685fdaB40D39bd02028545a4FfA7D287cC3E2";
 const MAYAN_MCTP: &str = "0x875d6d37EC55c8cF220B9E5080717549d8Aa8EcA";
@@ -18,18 +16,6 @@ const MAYAN_SWIFT: &str = "0xC38e4e6A15593f908255214653d3D947CA1c2338";
 const MAYAN_FULFILL_HELPER: &str = "0xBC0663ef502F0Ee9676626ED5B418037252eFeb2";
 
 pub const MAYAN_CONTRACTS: [&str; 4] = [MAYAN_FORWARDER, MAYAN_MCTP, MAYAN_SWIFT, MAYAN_FULFILL_HELPER];
-
-pub struct MayanCrossChain;
-
-impl CrossChainProvider for MayanCrossChain {
-    fn provider(&self) -> SwapperProvider {
-        SwapperProvider::Mayan
-    }
-
-    fn is_swap(&self, transaction: &Transaction) -> bool {
-        MAYAN_CONTRACTS.contains(&transaction.to.as_str())
-    }
-}
 
 /// https://wormhole.com/docs/products/reference/chain-ids
 pub fn wormhole_chain_id_to_chain(chain_id: u16) -> Option<Chain> {

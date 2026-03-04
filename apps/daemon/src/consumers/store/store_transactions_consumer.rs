@@ -202,12 +202,10 @@ mod tests {
 
     #[test]
     fn test_set_cross_chain_in_transit_cross_chain() {
-        let memo = "=:ETH.USDT:0x858734a6353C9921a78fB3c937c8E20Ba6f36902:1635978e6/1/0";
-        let tx = Transaction {
-            memo: Some(memo.to_string()),
-            ..Transaction::mock()
-        };
-        let result = set_cross_chain_in_transit(vec![tx], &VaultAddressMap::new());
+        let vault = "0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146".to_string();
+        let vault_addresses = VaultAddressMap::from([(vault.clone(), SwapProvider::Thorchain)]);
+        let tx = Transaction { to: vault, ..Transaction::mock() };
+        let result = set_cross_chain_in_transit(vec![tx], &vault_addresses);
         assert_eq!(result[0].state, TransactionState::InTransit);
     }
 

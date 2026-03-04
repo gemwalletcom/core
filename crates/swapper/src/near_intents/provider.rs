@@ -20,6 +20,22 @@ use std::{fmt::Debug, sync::Arc};
 
 const DEFAULT_DEADLINE_MINUTES: i64 = 30;
 
+// https://docs.near-intents.org/security-compliance/treasury-addresses
+const TREASURY_ADDRESSES: [&str; 12] = [
+    "0x2CfF890f0378a11913B6129B2E97417a2c302680",                         // EVM
+    "1C6XJtNXiuXvk4oUAVMkKF57CRpaTrN5Ra",                                 // Bitcoin
+    "1LxByjYMdnogW9Nc73srT4NCbS8oPVaXvZ",                                 // Bitcoin Cash
+    "DRmCnxzL9U11EJzLmWkm2ikaZikPFbLuQD",                                 // Dogecoin
+    "LQjEMkuiA2pCwFeUPwsu6ktzUubBVLsahX",                                 // Litecoin
+    "t1Ku2KLyndDPsR32jwnrTMd3yvi9tfFP8ML",                                // Zcash
+    "intents.near",                                                       // NEAR
+    "HWjmoUNYckccg9Qrwi43JTzBcGcM1nbdAtATf9GXmz16",                       // Solana
+    "UQAfoBd_f0pIvNpUPAkOguUrFWpGWV9TWBeZs_5TXE95_trZ",                   // TON
+    "GDJ4JZXZELZD737NVFORH4PSSQDWFDZTKW3AIDKHYQG23ZXBPDGGQBJK",           // Stellar
+    "0xd5b41e30268042a7875e40a40671fc5a022f2b4b06528ec6b788eaa9b0023beb", // Sui
+    "rMxRcHcbw2RgPaSMLqdZbY2EUxwFEMpEAF",                                 // XRP
+];
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DepositData {
     pub to: String,
@@ -356,7 +372,7 @@ where
     }
 
     async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<Vec<String>, SwapperError> {
-        Ok(vec![])
+        Ok(TREASURY_ADDRESSES.iter().map(|s| s.to_string()).collect())
     }
 }
 

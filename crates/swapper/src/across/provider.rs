@@ -50,18 +50,6 @@ fn resolve_token_asset(chain: Chain, token_address: &str) -> Option<AssetId> {
     Some(AssetId::from_token(chain, &address))
 }
 
-pub struct AcrossCrossChain;
-
-impl crate::cross_chain::CrossChainProvider for AcrossCrossChain {
-    fn provider(&self) -> SwapperProvider {
-        SwapperProvider::Across
-    }
-
-    fn is_swap(&self, transaction: &primitives::Transaction) -> bool {
-        AcrossDeployment::deployment_by_chain(&transaction.asset_id.chain).is_some_and(|d| d.spoke_pool == transaction.to)
-    }
-}
-
 #[derive(Debug)]
 pub struct Across {
     pub provider: ProviderType,
