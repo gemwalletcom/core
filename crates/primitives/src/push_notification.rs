@@ -15,7 +15,7 @@ pub enum PushNotificationTypes {
     SwapAsset,  // PushNotificationSwapAsset payload
     Support,    // PushNotificationSupport payload
     Rewards,    // PushNotificationReward payload
-    Stake,      // PushNotificationStaking payload
+    Stake,      // PushNotificationStake payload
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -36,7 +36,7 @@ impl PushNotification {
     pub fn new_stake(wallet_id: WalletId, asset_id: AssetId) -> Self {
         Self {
             notification_type: PushNotificationTypes::Stake,
-            data: serde_json::to_value(PushNotificationStaking { wallet_id, asset_id }).ok(),
+            data: serde_json::to_value(PushNotificationStake { wallet_id, asset_id }).ok(),
         }
     }
 }
@@ -90,7 +90,7 @@ pub struct PushNotificationReward {
 #[typeshare(swift = "Equatable, Sendable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct PushNotificationStaking {
+pub struct PushNotificationStake {
     pub wallet_id: WalletId,
     pub asset_id: AssetId,
 }
