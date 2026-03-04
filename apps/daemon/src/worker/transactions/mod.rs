@@ -4,14 +4,13 @@ mod vault_addresses_updater;
 use cacher::CacherClient;
 use in_transit_updater::{InTransitConfig, InTransitUpdater};
 use job_runner::{JobHandle, ShutdownReceiver};
-use primitives::{ConfigKey, ParamConfigKey};
+use primitives::{ConfigKey, ParamConfigKey, SwapProvider};
 use settings_chain::ProviderFactory;
 use std::error::Error;
 use std::sync::Arc;
 use storage::ConfigCacher;
 use streamer::{StreamProducer, StreamProducerConfig};
 use swapper::NativeProvider;
-use swapper::cross_chain;
 use swapper::swapper::GemSwapper;
 use vault_addresses_updater::VaultAddressesUpdater;
 
@@ -53,7 +52,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
         })
         .jobs_with_config(
             WorkerJob::UpdateSwapVaultAddresses,
-            cross_chain::providers(),
+            SwapProvider::cross_chain_providers(),
             ParamConfigKey::SwapperVaultAddresses,
             |provider, _| {
                 let updater = Arc::new(VaultAddressesUpdater::new(swapper.clone(), cacher.clone()));

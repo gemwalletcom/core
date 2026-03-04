@@ -8,6 +8,7 @@ pub use price::MayanPrice;
 
 use crate::asset::EVM_ZERO_ADDRESS;
 use gem_evm::ethereum_address_checksum;
+use gem_solana::WSOL_TOKEN_ADDRESS;
 use primitives::{AssetId, Chain, ChainType};
 
 const MAYAN_FORWARDER: &str = "0x337685fdaB40D39bd02028545a4FfA7D287cC3E2";
@@ -46,7 +47,8 @@ pub fn wormhole_chain_id_to_chain(chain_id: u16) -> Option<Chain> {
 }
 
 pub fn resolve_asset_id(chain: Chain, token_address: &str) -> Option<AssetId> {
-    let is_native = token_address == EVM_ZERO_ADDRESS || chain.config().denom.is_some_and(|d| d == token_address);
+    let is_native =
+        token_address == EVM_ZERO_ADDRESS || token_address == WSOL_TOKEN_ADDRESS || chain.config().denom.is_some_and(|d| d == token_address);
     if is_native {
         return Some(AssetId::from_chain(chain));
     }
@@ -77,6 +79,12 @@ mod tests {
     #[test]
     fn test_resolve_asset_id_native_solana_zero_address() {
         let result = resolve_asset_id(Chain::Solana, EVM_ZERO_ADDRESS);
+        assert_eq!(result, Some(AssetId::from_chain(Chain::Solana)));
+    }
+
+    #[test]
+    fn test_resolve_asset_id_native_solana_wsol() {
+        let result = resolve_asset_id(Chain::Solana, WSOL_TOKEN_ADDRESS);
         assert_eq!(result, Some(AssetId::from_chain(Chain::Solana)));
     }
 

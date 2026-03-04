@@ -6,10 +6,6 @@ use crate::SwapperProvider;
 
 pub type VaultAddressMap = HashMap<String, SwapperProvider>;
 
-pub fn providers() -> Vec<primitives::CrossChainProvider> {
-    primitives::CrossChainProvider::all()
-}
-
 pub fn swap_provider_with_vault_addresses(transaction: &Transaction, vault_addresses: &VaultAddressMap) -> Option<SwapperProvider> {
     vault_addresses.get(&transaction.to).copied()
 }

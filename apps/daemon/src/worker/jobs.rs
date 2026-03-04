@@ -78,7 +78,7 @@ impl JobLabel for PlatformStore {
     }
 }
 
-impl JobLabel for primitives::CrossChainProvider {
+impl JobLabel for primitives::SwapProvider {
     fn job_label(&self) -> String {
         self.as_ref().to_string()
     }

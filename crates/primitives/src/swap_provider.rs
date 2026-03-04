@@ -38,6 +38,29 @@ impl SwapProvider {
         Self::iter().collect::<Vec<_>>()
     }
 
+    pub fn is_cross_chain(&self) -> bool {
+        match self {
+            Self::Thorchain | Self::Across | Self::Mayan | Self::Chainflip | Self::NearIntents | Self::Relay | Self::Hyperliquid => true,
+            Self::UniswapV3
+            | Self::UniswapV4
+            | Self::PancakeswapV3
+            | Self::Panora
+            | Self::Jupiter
+            | Self::Okx
+            | Self::Oku
+            | Self::Wagmi
+            | Self::Cetus
+            | Self::CetusAggregator
+            | Self::StonfiV2
+            | Self::Aerodrome
+            | Self::Orca => false,
+        }
+    }
+
+    pub fn cross_chain_providers() -> Vec<Self> {
+        Self::all().into_iter().filter(Self::is_cross_chain).collect()
+    }
+
     pub fn name(&self) -> &str {
         match self {
             Self::UniswapV3 | Self::UniswapV4 => "Uniswap",
@@ -84,5 +107,21 @@ impl SwapProvider {
             | Self::Hyperliquid
             | Self::Orca => self.name(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_cross_chain() {
+        assert!(SwapProvider::Thorchain.is_cross_chain());
+        assert!(SwapProvider::Across.is_cross_chain());
+        assert!(SwapProvider::Mayan.is_cross_chain());
+        assert!(SwapProvider::NearIntents.is_cross_chain());
+        assert!(SwapProvider::Relay.is_cross_chain());
+        assert!(!SwapProvider::UniswapV3.is_cross_chain());
+        assert!(!SwapProvider::Jupiter.is_cross_chain());
     }
 }

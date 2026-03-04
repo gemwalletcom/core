@@ -1,15 +1,15 @@
-use crate::CrossChainProvider;
+use crate::SwapProvider;
 use strum::AsRefStr;
 
 #[derive(Debug, AsRefStr)]
 #[strum(serialize_all = "camelCase")]
 pub enum ParamConfigKey {
-    SwapperVaultAddresses(CrossChainProvider),
+    SwapperVaultAddresses(SwapProvider),
 }
 
 impl ParamConfigKey {
     pub fn all() -> Vec<Self> {
-        CrossChainProvider::all().into_iter().map(Self::SwapperVaultAddresses).collect()
+        SwapProvider::cross_chain_providers().into_iter().map(Self::SwapperVaultAddresses).collect()
     }
 
     pub fn key(&self) -> String {
@@ -20,11 +20,7 @@ impl ParamConfigKey {
 
     pub fn default_value(&self) -> &str {
         match self {
-            Self::SwapperVaultAddresses(provider) => match provider {
-                CrossChainProvider::NearIntents => "5s",
-                CrossChainProvider::Thorchain => "5m",
-                CrossChainProvider::Across | CrossChainProvider::Mayan => "1h",
-            },
+            Self::SwapperVaultAddresses(_) => "5m",
         }
     }
 }

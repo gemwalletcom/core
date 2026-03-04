@@ -166,6 +166,10 @@ impl CacherClient {
     }
 
     pub async fn get_set_members_cached(&self, keys: Vec<String>) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
+        Ok(self.get_set_members_grouped(keys).await?.into_iter().flatten().collect())
+    }
+
+    pub async fn get_set_members_grouped(&self, keys: Vec<String>) -> Result<Vec<Vec<String>>, Box<dyn Error + Send + Sync>> {
         if keys.is_empty() {
             return Ok(vec![]);
         }
@@ -173,8 +177,7 @@ impl CacherClient {
         for key in &keys {
             pipe.cmd("SMEMBERS").arg(key);
         }
-        let results: Vec<Vec<String>> = pipe.query_async(&mut self.connection.clone()).await?;
-        Ok(results.into_iter().flatten().collect())
+        Ok(pipe.query_async(&mut self.connection.clone()).await?)
     }
 
     pub async fn can_process_cached(&self, key: CacheKey<'_>) -> Result<bool, Box<dyn Error + Send + Sync>> {
