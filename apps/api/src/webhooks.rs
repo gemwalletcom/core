@@ -1,6 +1,7 @@
+use crate::devices::FiatQuotesClient;
 use crate::responders::{ApiError, ApiResponse};
 use rocket::{State, post, serde::json::Json, tokio::sync::Mutex};
-use streamer::{QueueName, StreamProducer, SupportWebhookPayload};
+use streamer::{FiatWebhook, QueueName, StreamProducer, SupportWebhookPayload};
 
 pub struct WebhooksClient {
     stream_producer: StreamProducer,
@@ -29,4 +30,9 @@ pub async fn create_support_bot_webhook(
     webhooks_client: &State<Mutex<WebhooksClient>>,
 ) -> Result<ApiResponse<SupportWebhookPayload>, ApiError> {
     Ok(webhooks_client.lock().await.process_support_webhook(webhook_data.0).await?.into())
+}
+
+#[post("/fiat/webhooks/<provider>", data = "<webhook_data>")]
+pub async fn create_fiat_webhook(provider: &str, webhook_data: Json<serde_json::Value>, client: &State<Mutex<FiatQuotesClient>>) -> Result<ApiResponse<FiatWebhook>, ApiError> {
+    Ok(client.lock().await.process_and_publish_webhook(provider, webhook_data.0).await?.payload.into())
 }

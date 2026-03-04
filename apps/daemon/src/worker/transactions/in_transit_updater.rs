@@ -99,7 +99,7 @@ impl InTransitUpdater {
             return Ok(false);
         };
 
-        info_with_fields!("in_transit updated", chain = chain.as_ref(), hash = row.hash, state = state.as_ref(), elapsed = elapsed);
+        info_with_fields!("in_transit confirmed", chain = chain.as_ref(), hash = row.hash, state = state.as_ref(), elapsed = elapsed);
 
         let metadata = metadata.and_then(|m| serde_json::to_value(m).ok());
         self.save_and_publish(chain, row, &state, metadata).await?;

@@ -1,37 +1,34 @@
 pub mod auth_config;
-pub mod cacher;
 pub mod client;
+pub mod clients;
 pub mod constants;
 pub mod error;
 pub mod guard;
 pub mod signature;
 use crate::assets::AssetsClient;
 use crate::metrics::fiat::FiatMetrics;
-use crate::notifications::NotificationsClient;
-use crate::params::{AssetIdParam, CurrencyParam, DeviceIdParam, DeviceParam, FiatQuoteTypeParam, UserAgent};
+use crate::params::{AssetIdParam, ChainParam, CurrencyParam, DeviceIdParam, DeviceParam, FiatQuoteTypeParam, TransactionIdParam, UserAgent};
 use crate::responders::{ApiError, ApiResponse};
-use crate::scan::ScanClient;
-use crate::transactions::TransactionsClient;
-use crate::wallets::WalletsClient;
-use crate::wallets::client::WalletSubscriptionInput;
+pub use clients::{FiatQuotesClient, NotificationsClient, RewardsClient, RewardsRedemptionClient, ScanClient, ScanProviderFactory, TransactionsClient, WalletsClient};
+pub(crate) use clients::WalletSubscriptionInput;
 use auth_config::AuthConfig;
-pub use cacher::DeviceCacher;
 pub use client::DevicesClient;
 use gem_auth::AuthClient;
 use guard::{AuthenticatedDevice, AuthenticatedDeviceWallet, VerifiedDeviceId};
 use nft::NFTClient;
 use primitives::DeviceToken;
 use primitives::device::Device;
-use primitives::rewards::{RedemptionRequest, RedemptionResult};
+use primitives::rewards::{RedemptionRequest, RedemptionResult, RewardRedemptionOption};
+use name_resolver::client::Client as NameClient;
+use primitives::name::NameRecord;
 use primitives::{
-    AssetId, AuthNonce, FiatQuoteRequest, FiatQuoteUrl, FiatQuotes, InAppNotification, MigrateDeviceIdRequest, NFTData, PriceAlerts, ReportNft, RewardEvent, Rewards,
-    ScanTransaction, ScanTransactionPayload, TransactionsResponse, WalletSubscriptionChains,
+    AssetId, AuthNonce, FiatAssets, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuotes, InAppNotification, MigrateDeviceIdRequest, NFTData, PriceAlerts, ReportNft,
+    RewardEvent, Rewards, ScanTransaction, ScanTransactionPayload, Transaction, TransactionsResponse, WalletSubscriptionChains,
 };
 use rocket::{State, delete, get, post, put, serde::json::Json, tokio::sync::Mutex};
 use std::sync::Arc;
 
 use crate::auth::WalletSigned;
-use crate::referral::{RewardsClient, RewardsRedemptionClient};
 
 #[post("/devices", format = "json", data = "<device>")]
 pub async fn add_device(device: DeviceParam, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<Device>, ApiError> {
@@ -107,6 +104,11 @@ pub async fn get_device_transactions_v2(
         .into())
 }
 
+#[get("/devices/transactions/<id>")]
+pub async fn get_device_transaction_by_id_v2(_device: AuthenticatedDevice, id: TransactionIdParam, client: &State<Mutex<TransactionsClient>>) -> Result<ApiResponse<Transaction>, ApiError> {
+    Ok(client.lock().await.get_transaction_by_id(&id.0)?.into())
+}
+
 #[get("/devices/nft_assets")]
 pub async fn get_device_nft_assets_v2(device: AuthenticatedDeviceWallet, client: &State<Mutex<NFTClient>>) -> Result<ApiResponse<Vec<NFTData>>, ApiError> {
     Ok(client.lock().await.get_nft_assets_by_wallet_id(device.device_row.id, device.wallet_id).await?.into())
@@ -120,6 +122,11 @@ pub async fn get_device_rewards_v2(device: AuthenticatedDeviceWallet, client: &S
 #[get("/devices/rewards/events")]
 pub async fn get_device_rewards_events_v2(device: AuthenticatedDeviceWallet, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<Vec<RewardEvent>>, ApiError> {
     Ok(client.lock().await.get_rewards_events_by_wallet_id(device.wallet_id)?.into())
+}
+
+#[get("/devices/rewards/redemptions/<code>")]
+pub async fn get_device_rewards_redemption_v2(_device: AuthenticatedDevice, code: &str, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<RewardRedemptionOption>, ApiError> {
+    Ok(client.lock().await.get_rewards_redemption_option(code)?.into())
 }
 
 #[post("/devices/rewards/referrals/create", format = "json", data = "<request>")]
@@ -205,6 +212,15 @@ pub async fn report_device_nft_v2(device: AuthenticatedDevice, request: Json<Rep
         .into())
 }
 
+#[get("/devices/name/resolve/<name>?<chain>")]
+pub async fn get_device_name_resolve_v2(_device: AuthenticatedDevice, name: &str, chain: ChainParam, client: &State<Mutex<NameClient>>) -> Result<ApiResponse<Option<NameRecord>>, ApiError> {
+    let result = client.lock().await.resolve(name, chain.0).await;
+    match result {
+        Ok(record) => Ok(Some(record).into()),
+        Err(_) => Ok(None.into()),
+    }
+}
+
 #[post("/devices/scan/transaction", data = "<request>")]
 pub async fn scan_device_transaction_v2(
     _device: AuthenticatedDevice,
@@ -230,7 +246,7 @@ pub async fn mark_device_notifications_read_v2(device: AuthenticatedDevice, clie
 
 #[get("/devices/subscriptions")]
 pub async fn get_device_subscriptions_v2(device: AuthenticatedDevice, client: &State<Mutex<WalletsClient>>) -> Result<ApiResponse<Vec<WalletSubscriptionChains>>, ApiError> {
-    Ok(client.lock().await.get_subscriptions(&device.device_row.device_id).await?.into())
+    Ok(client.lock().await.get_subscriptions(device.device_row.id)?.into())
 }
 
 #[post("/devices/subscriptions", format = "json", data = "<subscriptions>")]
@@ -240,7 +256,7 @@ pub async fn add_device_subscriptions_v2(
     client: &State<Mutex<WalletsClient>>,
 ) -> Result<ApiResponse<usize>, ApiError> {
     let wallet_subscriptions = subscriptions.0.into_iter().map(|x| x.into_wallet_subscription()).collect();
-    Ok(client.lock().await.add_subscriptions(&device.device_row.device_id, wallet_subscriptions).await?.into())
+    Ok(client.lock().await.add_subscriptions(device.device_row.id, wallet_subscriptions).await?.into())
 }
 
 #[delete("/devices/subscriptions", format = "json", data = "<subscriptions>")]
@@ -266,7 +282,7 @@ pub async fn get_device_token_v2(device: AuthenticatedDevice, config: &State<Aut
 pub async fn get_device_price_alerts_v2(
     device: AuthenticatedDevice,
     asset_id: Option<&str>,
-    client: &State<Mutex<crate::price_alerts::PriceAlertClient>>,
+    client: &State<Mutex<pricer::PriceAlertClient>>,
 ) -> Result<ApiResponse<PriceAlerts>, ApiError> {
     Ok(client.lock().await.get_price_alerts(&device.device_row.device_id, asset_id).await?.into())
 }
@@ -275,7 +291,7 @@ pub async fn get_device_price_alerts_v2(
 pub async fn add_device_price_alerts_v2(
     device: AuthenticatedDevice,
     price_alerts: Json<PriceAlerts>,
-    client: &State<Mutex<crate::price_alerts::PriceAlertClient>>,
+    client: &State<Mutex<pricer::PriceAlertClient>>,
 ) -> Result<ApiResponse<usize>, ApiError> {
     Ok(client.lock().await.add_price_alerts(&device.device_row.device_id, price_alerts.0).await?.into())
 }
@@ -284,9 +300,23 @@ pub async fn add_device_price_alerts_v2(
 pub async fn delete_device_price_alerts_v2(
     device: AuthenticatedDevice,
     price_alerts: Json<PriceAlerts>,
-    client: &State<Mutex<crate::price_alerts::PriceAlertClient>>,
+    client: &State<Mutex<pricer::PriceAlertClient>>,
 ) -> Result<ApiResponse<usize>, ApiError> {
     Ok(client.lock().await.delete_price_alerts(&device.device_row.device_id, price_alerts.0).await?.into())
+}
+
+#[get("/devices/fiat/orders/<provider>/<order_id>")]
+pub async fn get_device_fiat_order_v2(_device: AuthenticatedDevice, provider: &str, order_id: &str, client: &State<Mutex<FiatQuotesClient>>) -> Result<ApiResponse<primitives::FiatTransaction>, ApiError> {
+    Ok(client.lock().await.get_order_status(provider, order_id).await?.into())
+}
+
+#[get("/devices/fiat/assets/<quote_type>")]
+pub async fn get_device_fiat_assets_v2(_device: AuthenticatedDevice, quote_type: FiatQuoteTypeParam, client: &State<Mutex<FiatQuotesClient>>) -> Result<ApiResponse<FiatAssets>, ApiError> {
+    let assets = match quote_type.0 {
+        FiatQuoteType::Buy => client.lock().await.get_on_ramp_assets().await?,
+        FiatQuoteType::Sell => client.lock().await.get_off_ramp_assets().await?,
+    };
+    Ok(assets.into())
 }
 
 #[get("/devices/fiat/quotes/<quote_type>/<asset_id>?<amount>&<currency>&<provider>", rank = 2)]
@@ -298,10 +328,10 @@ pub async fn get_fiat_quotes_v2(
     currency: CurrencyParam,
     provider: Option<&str>,
     ip: std::net::IpAddr,
-    client: &State<Mutex<crate::fiat::FiatQuotesClient>>,
+    client: &State<Mutex<FiatQuotesClient>>,
     fiat_metrics: &State<Arc<FiatMetrics>>,
 ) -> Result<ApiResponse<FiatQuotes>, ApiError> {
-    let ip_address = if cfg!(debug_assertions) { crate::fiat::DEBUG_FIAT_IP } else { &ip.to_string() };
+    let ip_address = if cfg!(debug_assertions) { constants::DEBUG_FIAT_IP } else { &ip.to_string() };
     let quote_request = FiatQuoteRequest {
         asset_id: asset_id.0,
         quote_type: quote_type.0,
@@ -320,10 +350,10 @@ pub async fn get_fiat_quote_url_v2(
     device: AuthenticatedDeviceWallet,
     quote_id: &str,
     ip: std::net::IpAddr,
-    client: &State<Mutex<crate::fiat::FiatQuotesClient>>,
+    client: &State<Mutex<FiatQuotesClient>>,
     fiat_metrics: &State<Arc<FiatMetrics>>,
 ) -> Result<ApiResponse<FiatQuoteUrl>, ApiError> {
-    let ip_address = if cfg!(debug_assertions) { crate::fiat::DEBUG_FIAT_IP } else { &ip.to_string() };
+    let ip_address = if cfg!(debug_assertions) { constants::DEBUG_FIAT_IP } else { &ip.to_string() };
     let locale = device.device_row.locale.as_str();
     let (url, quote) = client
         .lock()

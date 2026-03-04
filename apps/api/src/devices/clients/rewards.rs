@@ -55,15 +55,6 @@ impl RewardsClient {
         }
     }
 
-    pub fn get_rewards(&self, wallet_identifier: &str) -> Result<Rewards, Box<dyn Error + Send + Sync>> {
-        let wallet = match self.db.wallets()?.get_wallet(wallet_identifier) {
-            Ok(w) => w,
-            Err(storage::DatabaseError::NotFound) => return Ok(Rewards::default()),
-            Err(e) => return Err(e.into()),
-        };
-        self.get_rewards_by_wallet_id(wallet.id)
-    }
-
     fn calculate_referral_allowance(&self, wallet_id: i32, status: &primitives::rewards::RewardStatus) -> Result<ReferralAllowance, Box<dyn Error + Send + Sync>> {
         let multiplier = if *status == RewardStatus::Trusted {
             self.config.get_i32(ConfigKey::ReferralTrustedMultiplier)?
@@ -115,11 +106,6 @@ impl RewardsClient {
         Ok(rewards)
     }
 
-    pub fn get_rewards_events(&self, wallet_identifier: &str) -> Result<Vec<RewardEvent>, Box<dyn Error + Send + Sync>> {
-        let wallet = self.db.wallets()?.get_wallet(wallet_identifier)?;
-        self.get_rewards_events_by_wallet_id(wallet.id)
-    }
-
     pub fn get_rewards_events_by_wallet_id(&self, wallet_id: i32) -> Result<Vec<RewardEvent>, Box<dyn Error + Send + Sync>> {
         Ok(self.db.rewards()?.get_reward_events_by_wallet_id(wallet_id)?)
     }
@@ -166,12 +152,6 @@ impl RewardsClient {
         self.ip_security_client.record_username_creation(&ip_result.country_code, ip_address, device_id).await?;
         self.publish_events(vec![event_id]).await?;
         Ok(rewards)
-    }
-
-    #[allow(dead_code)]
-    pub fn change_username(&self, wallet_identifier: &str, new_username: &str) -> Result<Rewards, Box<dyn Error + Send + Sync>> {
-        let wallet = self.db.wallets()?.get_wallet(wallet_identifier)?;
-        Ok(self.db.rewards()?.change_username(wallet.id, new_username)?)
     }
 
     pub async fn use_referral_code(

@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use cacher::CacherClient;
+use cacher::{CacheKey, CacherClient};
 use primitives::{AssetId, AssetTag, Markets, MarketsAssets};
 use storage::{Database, PricesRepository, TagRepository};
 
@@ -10,19 +10,17 @@ pub struct MarketsClient {
     cacher: CacherClient,
 }
 
-const MARKETS_KEY: &str = "markets";
-
 impl MarketsClient {
     pub fn new(database: Database, cacher: CacherClient) -> Self {
         Self { database, cacher }
     }
 
     pub async fn get_markets(&self) -> Result<Markets, Box<dyn Error + Send + Sync>> {
-        self.cacher.get_value::<Markets>(MARKETS_KEY).await
+        self.cacher.get_cached(CacheKey::Markets).await
     }
 
     pub async fn set_markets(&self, markets: Markets) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.cacher.set_value(MARKETS_KEY, &markets).await
+        self.cacher.set_cached(CacheKey::Markets, &markets).await
     }
 
     pub async fn get_asset_ids_for_prices_ids(&self, price_ids: Vec<String>) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {

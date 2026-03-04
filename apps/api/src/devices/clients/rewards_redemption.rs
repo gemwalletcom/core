@@ -1,7 +1,7 @@
 use gem_rewards::{RewardsRedemptionError, redeem_points};
 use primitives::rewards::{RedemptionResult, Rewards};
 use primitives::{ConfigKey, NaiveDateTimeExt, now};
-use storage::{ConfigCacher, Database, RewardsRedemptionsRepository, RewardsRepository, WalletsRepository};
+use storage::{ConfigCacher, Database, RewardsRedemptionsRepository, RewardsRepository};
 use streamer::{StreamProducer, StreamProducerQueue};
 
 pub struct RewardsRedemptionClient {
@@ -18,11 +18,6 @@ impl RewardsRedemptionClient {
             config,
             stream_producer,
         }
-    }
-
-    pub async fn redeem(&self, wallet_identifier: &str, id: &str, device_id: i32) -> Result<RedemptionResult, Box<dyn std::error::Error + Send + Sync>> {
-        let wallet = self.database.wallets()?.get_wallet(wallet_identifier)?;
-        self.redeem_by_wallet_id(wallet.id, id, device_id).await
     }
 
     pub async fn redeem_by_wallet_id(&self, wallet_id: i32, id: &str, device_id: i32) -> Result<RedemptionResult, Box<dyn std::error::Error + Send + Sync>> {

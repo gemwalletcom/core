@@ -1,10 +1,34 @@
+use gem_client::ReqwestClient;
 use gem_tracing::error_with_fields;
 use primitives::{ScanTransaction, ScanTransactionPayload};
 use rocket::futures::future;
+use security_provider::providers::goplus::GoPlusProvider;
+use security_provider::providers::hashdit::HashDitProvider;
 use security_provider::{AddressTarget, ScanProvider, ScanResult, TokenTarget};
+use settings::Settings;
 use std::error::Error;
 use std::sync::Arc;
 use storage::{Database, ScanAddressesRepository};
+
+pub struct ScanProviderFactory {}
+
+impl ScanProviderFactory {
+    pub fn create_providers(settings: &Settings) -> Vec<Box<dyn ScanProvider + Send + Sync>> {
+        let client = gem_client::builder().timeout(settings.scan.timeout).build().unwrap();
+
+        vec![
+            Box::new(GoPlusProvider::new(
+                ReqwestClient::new(settings.scan.goplus.url.clone(), client.clone()),
+                &settings.scan.goplus.key.public,
+            )),
+            Box::new(HashDitProvider::new(
+                ReqwestClient::new(settings.scan.hashdit.url.clone(), client.clone()),
+                &settings.scan.hashdit.key.public,
+                &settings.scan.hashdit.key.secret,
+            )),
+        ]
+    }
+}
 
 #[derive(Clone)]
 pub struct ScanClient {
@@ -82,10 +106,5 @@ impl ScanClient {
             })
             .collect();
         Ok(results)
-    }
-
-    pub async fn get_scan_address(&self, address: &str) -> Result<Vec<primitives::ScanAddress>, Box<dyn Error + Send + Sync>> {
-        let scan_addresses = self.database.scan_addresses()?.get_scan_addresses_by_addresses(vec![address.to_string()])?;
-        Ok(scan_addresses.into_iter().map(|addr| addr.as_scan_address_primitive()).collect())
     }
 }

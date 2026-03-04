@@ -87,8 +87,6 @@ name:
 
 metrics:
   path: /metrics
-  redis:
-    url: "redis://default:@localhost:6379/1?protocol=resp3"
 chains:
   solana:
     url: https://solana-rpc.publicnode.com
