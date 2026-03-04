@@ -11,7 +11,7 @@ pub async fn new_stream(redis_url: &str, observer: &mut StreamObserverClient, st
         return;
     };
 
-    info_with_fields!("websocket device stream connected", device_id = observer.device_id(), status = "ok");
+    info_with_fields!("websocket device stream connected", status = "ok");
 
     if let Err(e) = observer.subscribe_device_channel(&mut redis_connection).await {
         error_fields!("websocket failed to subscribe device channel", message = format!("{e:?}"));
@@ -69,5 +69,5 @@ pub async fn new_stream(redis_url: &str, observer: &mut StreamObserverClient, st
             }
         }
     }
-    info_with_fields!("websocket device stream disconnected", device_id = observer.device_id(), status = "ok");
+    info_with_fields!("websocket device stream disconnected", status = "ok");
 }
