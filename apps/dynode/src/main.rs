@@ -130,6 +130,7 @@ fn resolve_chain(path: &str) -> Option<Chain> {
 
 #[rocket::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    gem_tracing::init();
     let (config, chains) = load_config()?;
 
     let node_address = IpAddr::from_str(config.address.as_str())?;
