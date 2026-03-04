@@ -552,7 +552,6 @@ mod swap_integration_tests {
     use primitives::{
         AssetId, Chain,
         asset_constants::{USDC_ARB_ASSET_ID, USDC_BASE_ASSET_ID},
-        swap::SwapStatus,
     };
     use std::sync::Arc;
 

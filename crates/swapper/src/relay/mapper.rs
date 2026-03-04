@@ -1,7 +1,50 @@
-use primitives::TransactionSwapMetadata;
+use primitives::{TransactionSwapMetadata, swap::ApprovalData};
 
-use super::{asset::map_currency_to_asset_id, chain::RelayChain, model::RelayRequest};
-use crate::{SwapResult, SwapperProvider};
+use super::{
+    DEFAULT_GAS_LIMIT,
+    asset::map_currency_to_asset_id,
+    chain::RelayChain,
+    model::{RelayFees, RelayRequest, Step, StepData},
+};
+use crate::{SwapResult, SwapperError, SwapperProvider, SwapperQuoteData};
+
+pub const STEP_SWAP: &str = "swap";
+pub const STEP_DEPOSIT: &str = "deposit";
+pub const STEP_APPROVE: &str = "approve";
+
+pub fn get_step_data(steps: &[Step]) -> Result<&StepData, SwapperError> {
+    steps
+        .iter()
+        .find(|s| s.id == STEP_SWAP || s.id == STEP_DEPOSIT)
+        .or_else(|| steps.iter().find(|s| s.kind == "transaction" && s.id != STEP_APPROVE))
+        .or_else(|| steps.iter().find(|s| s.step_data().is_some()))
+        .and_then(|s| s.step_data())
+        .ok_or(SwapperError::InvalidRoute)
+}
+
+pub fn gas_fee_amount(fees: &Option<RelayFees>) -> Option<String> {
+    fees.as_ref()?.gas.as_ref()?.amount.clone()
+}
+
+pub fn map_quote_data(chain: &RelayChain, steps: &[Step], value: &str, fees: &Option<RelayFees>, approval: Option<ApprovalData>) -> Result<SwapperQuoteData, SwapperError> {
+    let step_data = get_step_data(steps)?;
+
+    let (to, tx_value, data, gas_limit) = match chain {
+        RelayChain::Bitcoin => {
+            let psbt = step_data.psbt.as_ref().ok_or(SwapperError::InvalidRoute)?;
+            (String::new(), value.to_string(), psbt.clone(), gas_fee_amount(fees))
+        }
+        _ if chain.is_evm() => {
+            let to = step_data.to.clone().unwrap_or_default();
+            let data = step_data.data.clone().unwrap_or_default();
+            let gas_limit = approval.as_ref().map(|_| DEFAULT_GAS_LIMIT.to_string());
+            (to, step_data.value.clone(), data, gas_limit)
+        }
+        _ => return Err(SwapperError::NotSupportedChain),
+    };
+
+    Ok(SwapperQuoteData::new_contract(to, tx_value, data, approval, gas_limit))
+}
 
 pub fn map_swap_result(request: &RelayRequest) -> SwapResult {
     let metadata = request.data.as_ref().and_then(|d| d.metadata.as_ref()).and_then(|m| {
@@ -27,8 +70,39 @@ pub fn map_swap_result(request: &RelayRequest) -> SwapResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::relay::model::{RelayCurrencyDetail, RelayRequest, RelayRequestMetadata, RelayRequestsResponse, RelayStatus};
+    use crate::relay::model::{RelayCurrencyDetail, RelayRequest, RelayRequestMetadata, RelayRequestsResponse, RelayStatus, Step};
     use primitives::{AssetId, Chain, swap::SwapStatus};
+
+    #[test]
+    fn test_map_evm_quote_data() {
+        let steps = vec![Step::mock_transaction("swap", "0xrouter", "1000000000000000000", "0xabcdef")];
+        let chain = RelayChain::from_chain(&Chain::Ethereum).unwrap();
+
+        let result = map_quote_data(&chain, &steps, "1000000000000000000", &None, None).unwrap();
+
+        assert_eq!(result.to, "0xrouter");
+        assert_eq!(result.value, "1000000000000000000");
+        assert_eq!(result.data, "0xabcdef");
+        assert!(result.approval.is_none());
+        assert!(result.gas_limit.is_none());
+    }
+
+    #[test]
+    fn test_map_evm_quote_data_with_approval() {
+        let steps = vec![Step::mock_transaction("swap", "0xrouter", "0", "0xabcdef")];
+        let chain = RelayChain::from_chain(&Chain::Ethereum).unwrap();
+        let approval = ApprovalData {
+            token: "0xtoken".to_string(),
+            spender: "0xrouter".to_string(),
+            value: "1000".to_string(),
+        };
+
+        let result = map_quote_data(&chain, &steps, "1000000000000000000", &None, Some(approval.clone())).unwrap();
+
+        assert_eq!(result.to, "0xrouter");
+        assert_eq!(result.approval, Some(approval));
+        assert_eq!(result.gas_limit, Some(DEFAULT_GAS_LIMIT.to_string()));
+    }
 
     #[test]
     fn test_map_swap_result_evm_to_evm() {
@@ -89,5 +163,30 @@ mod tests {
         assert_eq!(metadata.from_value, "6000000000000000000");
         assert_eq!(metadata.to_asset, AssetId::from_chain(Chain::Solana));
         assert_eq!(metadata.to_value, "74432990");
+    }
+
+    #[test]
+    fn test_get_step_data_by_id() {
+        let steps = vec![Step::mock_empty("approve", "transaction"), Step::mock_transaction("swap", "0xrouter", "0", "0xdata")];
+        let data = get_step_data(&steps).unwrap();
+        assert_eq!(data.to.as_deref(), Some("0xrouter"));
+    }
+
+    #[test]
+    fn test_get_step_data_fallback_transaction_kind() {
+        let steps = vec![Step::mock_empty("approve", "transaction"), Step::mock_transaction("send", "0xto", "100", "0xdata")];
+        let data = get_step_data(&steps).unwrap();
+        assert_eq!(data.to.as_deref(), Some("0xto"));
+    }
+
+    #[test]
+    fn test_get_step_data_empty_steps() {
+        assert!(get_step_data(&[]).is_err());
+    }
+
+    #[test]
+    fn test_get_step_data_no_usable_steps() {
+        let steps = vec![Step::mock_empty("approve", "transaction")];
+        assert!(get_step_data(&steps).is_err());
     }
 }

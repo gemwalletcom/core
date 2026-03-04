@@ -1,4 +1,4 @@
-use super::model::{RelayCurrency, RelayCurrencyDetail, RelayRequest, RelayRequestData, RelayRequestMetadata, RelayStatus};
+use super::model::{RelayCurrency, RelayCurrencyDetail, RelayRequest, RelayRequestData, RelayRequestMetadata, RelayStatus, Step, StepData, StepItem};
 
 impl RelayRequest {
     pub fn mock(status: RelayStatus, metadata: Option<RelayRequestMetadata>) -> Self {
@@ -17,6 +17,31 @@ impl RelayCurrencyDetail {
                 address: address.to_string(),
             },
             amount: Some(amount.to_string()),
+        }
+    }
+}
+
+impl Step {
+    pub fn mock_transaction(id: &str, to: &str, value: &str, data: &str) -> Self {
+        Self {
+            id: id.to_string(),
+            kind: "transaction".to_string(),
+            items: Some(vec![StepItem {
+                data: Some(StepData {
+                    to: Some(to.to_string()),
+                    data: Some(data.to_string()),
+                    value: value.to_string(),
+                    psbt: None,
+                }),
+            }]),
+        }
+    }
+
+    pub fn mock_empty(id: &str, kind: &str) -> Self {
+        Self {
+            id: id.to_string(),
+            kind: kind.to_string(),
+            items: None,
         }
     }
 }
