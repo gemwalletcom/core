@@ -56,8 +56,8 @@ where
         let from_asset_id = request.from_asset.asset_id();
         let to_asset_id = request.to_asset.asset_id();
 
-        let origin_currency = asset_to_currency(&from_asset_id, &from_chain)?;
-        let destination_currency = asset_to_currency(&to_asset_id, &to_chain)?;
+        let origin_currency = asset_to_currency(&from_asset_id)?;
+        let destination_currency = asset_to_currency(&to_asset_id)?;
         let app_fees = resolve_app_fees(request);
         let amount = resolve_max_quote_amount(request)?;
 
@@ -89,7 +89,7 @@ where
                 routes: vec![Route {
                     input: from_asset_id,
                     output: to_asset_id,
-                    route_data: serde_json::to_string(&quote_response).unwrap_or_default(),
+                    route_data: serde_json::to_string(&quote_response).map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))?,
                     gas_limit: None,
                 }],
                 slippage_bps: quote_response.details.slippage_bps().unwrap_or(request.options.slippage.bps),

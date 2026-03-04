@@ -10,7 +10,6 @@ use primitives::{
     },
 };
 
-use super::chain::RelayChain;
 use crate::{SwapperChainAsset, SwapperError, asset::*};
 
 fn is_native_currency(chain: Chain, currency: &str) -> bool {
@@ -87,10 +86,7 @@ pub static SUPPORTED_CHAINS: LazyLock<Vec<SwapperChainAsset>> = LazyLock::new(||
     ]
 });
 
-pub fn asset_to_currency(asset_id: &AssetId, relay_chain: &RelayChain) -> Result<String, SwapperError> {
-    if !relay_chain.is_evm() {
-        return Err(SwapperError::NotSupportedChain);
-    }
+pub fn asset_to_currency(asset_id: &AssetId) -> Result<String, SwapperError> {
     if asset_id.is_native() {
         Ok(EVM_ZERO_ADDRESS.to_string())
     } else {
@@ -105,14 +101,14 @@ mod tests {
 
     #[test]
     fn test_evm_native_asset() {
-        let result = asset_to_currency(&AssetId::from_chain(Chain::Ethereum), &RelayChain::from_chain(&Chain::Ethereum).unwrap()).unwrap();
+        let result = asset_to_currency(&AssetId::from_chain(Chain::Ethereum)).unwrap();
         assert_eq!(result, EVM_ZERO_ADDRESS);
     }
 
     #[test]
     fn test_evm_token_asset() {
         let token_address = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
-        let result = asset_to_currency(&AssetId::from_token(Chain::Ethereum, token_address), &RelayChain::from_chain(&Chain::Ethereum).unwrap()).unwrap();
+        let result = asset_to_currency(&AssetId::from_token(Chain::Ethereum, token_address)).unwrap();
         assert_eq!(result, token_address);
     }
 }
