@@ -60,7 +60,10 @@ pub async fn new_stream(redis_url: &str, observer: &mut StreamObserverClient, st
                         }
                     }
                     Some(Err(e)) => {
-                        error_fields!("websocket stream error", message = format!("{e:?}"));
+                        if !crate::websocket::is_disconnect_error(&e) {
+                            error_fields!("websocket stream error", message = format!("{e:?}"));
+                        }
+                        break;
                     }
                     None => {
                         break;

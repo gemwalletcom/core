@@ -2,6 +2,7 @@ use std::error::Error;
 
 use redis::aio::MultiplexedConnection;
 use redis::{PushInfo, PushKind};
+use rocket_ws::result::Error as WsError;
 use rocket_ws::stream::DuplexStream;
 use tokio::sync::mpsc::UnboundedReceiver;
 
@@ -9,6 +10,14 @@ pub fn decode_push_message(message: &PushInfo) -> Option<(&str, &[u8])> {
     match (&message.kind, message.data.as_slice()) {
         (PushKind::Message, [redis::Value::BulkString(channel), redis::Value::BulkString(value)]) => Some((std::str::from_utf8(channel).ok()?, value)),
         _ => None,
+    }
+}
+
+#[allow(clippy::match_like_matches_macro)]
+pub fn is_disconnect_error(error: &WsError) -> bool {
+    match error {
+        WsError::Protocol(_) | WsError::ConnectionClosed | WsError::AlreadyClosed => true,
+        _ => false,
     }
 }
 

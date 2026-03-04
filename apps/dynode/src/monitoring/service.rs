@@ -96,7 +96,7 @@ impl NodeService {
         };
 
         Self::sync_current_node_metric(metrics, chain_config.chain, selected);
-        metrics.add_node_switch(chain_config.chain.as_ref(), &old_host, &new_host, reason.as_str(), &reason.to_string());
+        metrics.add_node_switch(chain_config.chain.as_ref(), &old_host, &new_host, reason.as_str());
         Some((old_host, new_host))
     }
 
