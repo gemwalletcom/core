@@ -72,9 +72,9 @@ pub fn error_with_fields_impl<E: std::error::Error + ?Sized>(message: &str, erro
     tracing::subscriber::with_default(subscriber, || {
         let pairs = format_fields(fields);
         if pairs.is_empty() {
-            tracing::error!("{}: {}", message, error);
+            tracing::error!("{} error={}", message, error);
         } else {
-            tracing::error!("{}: {} {}", message, pairs, error);
+            tracing::error!("{} {} error={}", message, pairs, error);
         }
     });
 }
