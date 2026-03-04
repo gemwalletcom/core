@@ -44,14 +44,16 @@ pub struct PerpetualPortfolio {
     pub account_summary: Option<PerpetualAccountSummary>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct PortfolioAsset {
     pub asset_id: AssetId,
     pub value: String,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct PortfolioAssetsRequest {
     pub assets: Vec<PortfolioAsset>,
