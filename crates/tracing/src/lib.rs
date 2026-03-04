@@ -39,18 +39,30 @@ impl std::fmt::Display for DurationMs {
     }
 }
 
+fn format_fields(fields: &[(&str, &dyn std::fmt::Display)]) -> String {
+    fields.iter().map(|(key, value)| format!("{key}={value}")).collect::<Vec<_>>().join(" ")
+}
+
 pub fn info_with_fields_impl(message: &str, fields: &[(&str, &dyn std::fmt::Display)]) {
     let subscriber = get_subscriber();
     tracing::subscriber::with_default(subscriber, || {
-        let mut field_pairs = vec![];
-        for (key, value) in fields {
-            field_pairs.push(format!("{}={}", key, value));
-        }
-
-        if field_pairs.is_empty() {
+        let pairs = format_fields(fields);
+        if pairs.is_empty() {
             tracing::info!("{}", message);
         } else {
-            tracing::info!("{} {}", message, field_pairs.join(" "));
+            tracing::info!("{} {}", message, pairs);
+        }
+    });
+}
+
+pub fn error_fields_impl(message: &str, fields: &[(&str, &dyn std::fmt::Display)]) {
+    let subscriber = get_subscriber();
+    tracing::subscriber::with_default(subscriber, || {
+        let pairs = format_fields(fields);
+        if pairs.is_empty() {
+            tracing::error!("{}", message);
+        } else {
+            tracing::error!("{} {}", message, pairs);
         }
     });
 }
@@ -58,22 +70,18 @@ pub fn info_with_fields_impl(message: &str, fields: &[(&str, &dyn std::fmt::Disp
 pub fn error_with_fields_impl<E: std::error::Error + ?Sized>(message: &str, error: &E, fields: &[(&str, &dyn std::fmt::Display)]) {
     let subscriber = get_subscriber();
     tracing::subscriber::with_default(subscriber, || {
-        let mut field_pairs = vec![];
-        for (key, value) in fields {
-            field_pairs.push(format!("{}={}", key, value));
-        }
-
-        if field_pairs.is_empty() {
+        let pairs = format_fields(fields);
+        if pairs.is_empty() {
             tracing::error!("{}: {}", message, error);
         } else {
-            tracing::error!("{}: {} {}", message, field_pairs.join(" "), error);
+            tracing::error!("{}: {} {}", message, pairs, error);
         }
     });
 }
 
 #[macro_export]
 macro_rules! info_with_fields {
-    ($message:expr, $($field:ident = $value:expr),* $(,)?) => {
+    ($message:expr $(, $field:ident = $value:expr)* $(,)?) => {
         {
             let fields: &[(&str, &dyn std::fmt::Display)] = &[
                 $((stringify!($field), &$value),)*
@@ -84,8 +92,20 @@ macro_rules! info_with_fields {
 }
 
 #[macro_export]
+macro_rules! error_fields {
+    ($message:expr $(, $field:ident = $value:expr)* $(,)?) => {
+        {
+            let fields: &[(&str, &dyn std::fmt::Display)] = &[
+                $((stringify!($field), &$value),)*
+            ];
+            $crate::error_fields_impl($message, fields);
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! error_with_fields {
-    ($message:expr, $error:expr, $($field:ident = $value:expr),* $(,)?) => {
+    ($message:expr, $error:expr $(, $field:ident = $value:expr)* $(,)?) => {
         {
             let fields: &[(&str, &dyn std::fmt::Display)] = &[
                 $((stringify!($field), &$value),)*
@@ -96,8 +116,5 @@ macro_rules! error_with_fields {
 }
 
 pub fn error<E: std::error::Error + ?Sized>(message: &str, error: &E) {
-    let subscriber = get_subscriber();
-    tracing::subscriber::with_default(subscriber, || {
-        tracing::error!("{}: {}", message, error);
-    });
+    error_with_fields_impl(message, error, &[]);
 }

@@ -1,4 +1,4 @@
-use gem_tracing::info_with_fields;
+use gem_tracing::error_fields;
 use primitives::WebSocketPricePayload;
 use rocket::futures::StreamExt;
 use rocket_ws::stream::DuplexStream;
@@ -7,7 +7,7 @@ use super::client::PriceObserverClient;
 
 pub async fn new_stream(redis_url: &str, observer: &mut PriceObserverClient, stream: DuplexStream) {
     let Ok((mut stream, mut redis_connection, mut rx)) = crate::websocket::setup_ws_resources(redis_url, stream).await else {
-        info_with_fields!("websocket failed to setup redis connection", status = "error");
+        error_fields!("websocket failed to setup redis connection");
         return;
     };
 
@@ -27,18 +27,18 @@ pub async fn new_stream(redis_url: &str, observer: &mut PriceObserverClient, str
             }
             Some(message) = rx.recv() => {
                 if let Err(e) = observer.handle_redis_message(&message) {
-                    info_with_fields!("websocket redis message handler error", message = format!("{e:?}"), status = "error");
+                    error_fields!("websocket redis message handler error", message = format!("{e:?}"));
                 }
             }
             message = stream.next() => {
                 match message {
                     Some(Ok(message)) => {
                         if let Err(e) = observer.handle_ws_message(message, &mut redis_connection, &mut stream).await {
-                            info_with_fields!("websocket message handler error", message = format!("{e:?}"), status = "error");
+                            error_fields!("websocket message handler error", message = format!("{e:?}"));
                         }
                     }
                     Some(Err(e)) => {
-                        info_with_fields!("websocket stream error", message = format!("{e:?}"), status = "error");
+                        error_fields!("websocket stream error", message = format!("{e:?}"));
                     }
                     None => {
                         break;
