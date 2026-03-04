@@ -205,9 +205,22 @@ mod tests {
     fn test_set_cross_chain_in_transit_cross_chain() {
         let vault = "0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146".to_string();
         let vault_addresses = DepositAddressMap::from([(vault.clone(), SwapProvider::Thorchain)]);
-        let tx = Transaction { to: vault, ..Transaction::mock() };
+        let tx = Transaction {
+            to: vault,
+            memo: Some("=:BTC:bc1qaddress:0/1/0".to_string()),
+            ..Transaction::mock()
+        };
         let result = set_cross_chain_in_transit(vec![tx], &vault_addresses);
         assert_eq!(result[0].state, TransactionState::InTransit);
+    }
+
+    #[test]
+    fn test_set_cross_chain_in_transit_thorchain_no_memo() {
+        let vault = "bc1qvault".to_string();
+        let vault_addresses = DepositAddressMap::from([(vault.clone(), SwapProvider::Thorchain)]);
+        let tx = Transaction { to: vault, ..Transaction::mock() };
+        let result = set_cross_chain_in_transit(vec![tx], &vault_addresses);
+        assert_eq!(result[0].state, TransactionState::Confirmed);
     }
 
     #[test]

@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use primitives::Transaction;
 
 use crate::SwapperProvider;
+use crate::thorchain::memo::ThorchainMemo;
 
 #[derive(Debug, serde::Serialize)]
 pub struct VaultAddresses {
@@ -18,6 +19,14 @@ pub fn swap_provider_with_vault_addresses(transaction: &Transaction, deposit_add
         .get(&transaction.to)
         .copied()
         .or_else(|| transaction.output_addresses().into_iter().find_map(|addr| deposit_addresses.get(&addr).copied()))
+        .filter(|provider| is_valid_swap_transaction(provider, transaction))
+}
+
+fn is_valid_swap_transaction(provider: &SwapperProvider, transaction: &Transaction) -> bool {
+    match provider {
+        SwapperProvider::Thorchain => transaction.memo.as_deref().is_some_and(ThorchainMemo::is_swap),
+        _ => true,
+    }
 }
 
 pub fn is_cross_chain_swap(transaction: &Transaction, deposit_addresses: &DepositAddressMap) -> bool {
@@ -48,10 +57,46 @@ mod tests {
     }
 
     #[test]
-    fn test_is_cross_chain_swap() {
-        let vault = "0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146".to_string();
+    fn test_thorchain_vault_with_swap_memo() {
+        let vault = "bc1qvault".to_string();
+        let deposit_addresses = DepositAddressMap::from([(vault.clone(), SwapperProvider::Thorchain)]);
+        let transaction = Transaction {
+            to: vault,
+            memo: Some("=:ETH.USDT:0x858734a6353C9921a78fB3c937c8E20Ba6f36902:1635978e6/1/0".to_string()),
+            ..Transaction::mock()
+        };
+        assert!(is_cross_chain_swap(&transaction, &deposit_addresses));
+    }
+
+    #[test]
+    fn test_thorchain_vault_without_memo() {
+        let vault = "bc1qvault".to_string();
         let deposit_addresses = DepositAddressMap::from([(vault.clone(), SwapperProvider::Thorchain)]);
         let transaction = Transaction { to: vault, ..Transaction::mock() };
+        assert!(!is_cross_chain_swap(&transaction, &deposit_addresses));
+    }
+
+    #[test]
+    fn test_thorchain_vault_with_non_swap_memo() {
+        let vault = "bc1qvault".to_string();
+        let deposit_addresses = DepositAddressMap::from([(vault.clone(), SwapperProvider::Thorchain)]);
+        let transaction = Transaction {
+            to: vault,
+            memo: Some("ADD:ETH.ETH:0x123".to_string()),
+            ..Transaction::mock()
+        };
+        assert!(!is_cross_chain_swap(&transaction, &deposit_addresses));
+    }
+
+    #[test]
+    fn test_thorchain_router_with_swap_memo() {
+        let vault = "0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146".to_string();
+        let deposit_addresses = DepositAddressMap::from([(vault.clone(), SwapperProvider::Thorchain)]);
+        let transaction = Transaction {
+            to: vault,
+            memo: Some("=:BTC:bc1qaddress:0/1/0:affiliate:150".to_string()),
+            ..Transaction::mock()
+        };
         assert!(is_cross_chain_swap(&transaction, &deposit_addresses));
     }
 
