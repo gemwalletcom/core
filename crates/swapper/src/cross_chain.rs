@@ -6,6 +6,7 @@ use crate::SwapperProvider;
 use crate::across::AcrossCrossChain;
 use crate::near_intents::NearIntentsCrossChain;
 use crate::proxy::mayan::MayanCrossChain;
+use crate::relay::RelayCrossChain;
 use crate::thorchain::ThorchainCrossChain;
 
 pub type VaultAddressMap = HashMap<String, SwapperProvider>;
@@ -15,7 +16,7 @@ pub trait CrossChainProvider: Send + Sync {
     fn is_swap(&self, transaction: &Transaction) -> bool;
 }
 
-const PROVIDERS: [&dyn CrossChainProvider; 4] = [&ThorchainCrossChain, &AcrossCrossChain, &MayanCrossChain, &NearIntentsCrossChain];
+const PROVIDERS: [&dyn CrossChainProvider; 5] = [&ThorchainCrossChain, &AcrossCrossChain, &MayanCrossChain, &RelayCrossChain, &NearIntentsCrossChain];
 
 pub fn providers() -> Vec<primitives::CrossChainProvider> {
     primitives::CrossChainProvider::all()
@@ -189,5 +190,41 @@ mod tests {
             };
             assert_eq!(swap_provider(&transaction), Some(SwapperProvider::Mayan));
         }
+    }
+
+    #[test]
+    fn test_relay_swap_detected() {
+        let transaction = Transaction {
+            to: "0x4cD00E387622C35bDDB9b4c962C136462338BC31".to_string(),
+            ..Transaction::mock()
+        };
+        assert_eq!(swap_provider(&transaction), Some(SwapperProvider::Relay));
+    }
+
+    #[test]
+    fn test_relay_swap_case_insensitive() {
+        let transaction = Transaction {
+            to: "0x4cd00e387622c35bddb9b4c962c136462338bc31".to_string(),
+            ..Transaction::mock()
+        };
+        assert_eq!(swap_provider(&transaction), Some(SwapperProvider::Relay));
+    }
+
+    #[test]
+    fn test_relay_alt_depository_detected() {
+        let transaction = Transaction {
+            to: "0x59916DA825D2D2eC1BF878D71c88826F6633ecca".to_string(),
+            ..Transaction::mock()
+        };
+        assert_eq!(swap_provider(&transaction), Some(SwapperProvider::Relay));
+    }
+
+    #[test]
+    fn test_relay_from_detected() {
+        let transaction = Transaction {
+            from: "0xf70da97812CB96acDF810712Aa562db8dfA3dbEF".to_string(),
+            ..Transaction::mock()
+        };
+        assert_eq!(swap_provider(&transaction), Some(SwapperProvider::Relay));
     }
 }

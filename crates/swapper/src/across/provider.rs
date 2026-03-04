@@ -58,7 +58,8 @@ impl crate::cross_chain::CrossChainProvider for AcrossCrossChain {
     }
 
     fn is_swap(&self, transaction: &primitives::Transaction) -> bool {
-        AcrossDeployment::deployment_by_chain(&transaction.asset_id.chain).is_some_and(|d| d.spoke_pool == transaction.to)
+        AcrossDeployment::deployment_by_chain(&transaction.asset_id.chain)
+            .is_some_and(|d| d.spoke_pool == transaction.to || d.spoke_pool == transaction.from)
     }
 }
 

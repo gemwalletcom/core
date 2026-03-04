@@ -27,7 +27,7 @@ impl CrossChainProvider for MayanCrossChain {
     }
 
     fn is_swap(&self, transaction: &Transaction) -> bool {
-        MAYAN_CONTRACTS.contains(&transaction.to.as_str())
+        MAYAN_CONTRACTS.iter().any(|x| x.eq_ignore_ascii_case(&transaction.to) || x.eq_ignore_ascii_case(&transaction.from))
     }
 }
 
