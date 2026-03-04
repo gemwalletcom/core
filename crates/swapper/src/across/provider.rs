@@ -13,6 +13,7 @@ use crate::{
     chainlink::ChainlinkPriceFeed,
     client_factory::create_eth_client,
     config::ReferralFee,
+    cross_chain::VaultAddresses,
     eth_address,
     models::*,
 };
@@ -566,8 +567,11 @@ impl Swapper for Across {
             gas_limit,
         ))
     }
-    async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<Vec<String>, SwapperError> {
-        Ok(AcrossDeployment::vault_addresses())
+    async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<VaultAddresses, SwapperError> {
+        Ok(VaultAddresses {
+            deposit: AcrossDeployment::deposit_addresses(),
+            send: AcrossDeployment::send_addresses(),
+        })
     }
 
     async fn get_swap_result(&self, chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {

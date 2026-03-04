@@ -40,7 +40,8 @@ pub enum CacheKey<'a> {
     // Price WebSocket observed assets
     ObservedAssets,
 
-    SwapVaultAddresses(&'a str),
+    SwapDepositAddresses(&'a str),
+    SwapSendAddresses(&'a str),
 
     // Alerter keys
     AlerterStakeRewards(&'a str, &'a str),
@@ -73,7 +74,8 @@ impl CacheKey<'_> {
             Self::ConsumerStatus(name) => format!("consumers:status:{}", name),
             Self::ParserStatus(chain) => format!("parser:status:{}", chain),
             Self::ObservedAssets => "observed_assets".to_string(),
-            Self::SwapVaultAddresses(provider) => format!("swap:vault_addresses:{}", provider),
+            Self::SwapDepositAddresses(provider) => format!("swap:deposit_addresses:{}", provider),
+            Self::SwapSendAddresses(provider) => format!("swap:send_addresses:{}", provider),
             Self::AlerterStakeRewards(chain, address) => format!("alerter:stake_rewards:{}:{}", chain, address),
         }
     }
@@ -100,7 +102,8 @@ impl CacheKey<'_> {
             Self::ConsumerStatus(_) => 7 * SECONDS_PER_DAY,
             Self::ParserStatus(_) => 7 * SECONDS_PER_DAY,
             Self::ObservedAssets => 2 * SECONDS_PER_MINUTE,
-            Self::SwapVaultAddresses(_) => SECONDS_PER_DAY,
+            Self::SwapDepositAddresses(_) => SECONDS_PER_DAY,
+            Self::SwapSendAddresses(_) => SECONDS_PER_DAY,
             Self::AlerterStakeRewards(_, _) => 30 * SECONDS_PER_DAY,
         }
     }

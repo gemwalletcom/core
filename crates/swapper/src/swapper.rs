@@ -1,7 +1,7 @@
 use crate::{
     AssetList, FetchQuoteData, Permit2ApprovalData, ProviderType, Quote, QuoteRequest, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderMode,
-    SwapperQuoteData, across, alien::RpcProvider, chainflip, config::DEFAULT_STABLE_SWAP_REFERRAL_BPS, hyperliquid, jupiter, near_intents, proxy::provider_factory, thorchain,
-    uniswap,
+    SwapperQuoteData, across, alien::RpcProvider, chainflip, config::DEFAULT_STABLE_SWAP_REFERRAL_BPS, cross_chain::VaultAddresses, hyperliquid, jupiter, near_intents,
+    proxy::provider_factory, thorchain, uniswap,
 };
 use num_traits::ToPrimitive;
 use primitives::{AssetId, Chain, EVMChain};
@@ -232,7 +232,7 @@ impl GemSwapper {
         self.get_swapper_by_provider(&provider)?.get_swap_result(chain, transaction_hash).await
     }
 
-    pub async fn get_vault_addresses(&self, provider: &SwapperProvider, from_timestamp: Option<u64>) -> Result<Vec<String>, SwapperError> {
+    pub async fn get_vault_addresses(&self, provider: &SwapperProvider, from_timestamp: Option<u64>) -> Result<VaultAddresses, SwapperError> {
         self.get_swapper_by_provider(provider)?.get_vault_addresses(from_timestamp).await
     }
 }

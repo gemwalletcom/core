@@ -9,7 +9,7 @@ use primitives::{Chain, TransactionSwapMetadata, TransactionType};
 use storage::models::TransactionRow;
 use storage::{Database, TransactionFilter, TransactionState, TransactionUpdate, TransactionsRepository};
 use streamer::{StreamProducer, StreamProducerQueue, TransactionsPayload};
-use swapper::cross_chain::{self, VaultAddressMap};
+use swapper::cross_chain::{self, DepositAddressMap};
 use swapper::swapper::GemSwapper;
 
 use crate::client::SwapVaultAddressClient;
@@ -49,7 +49,7 @@ impl InTransitUpdater {
             return Ok(0);
         }
 
-        let vault_addresses = self.vault_client.get_address_map().await?;
+        let vault_addresses = self.vault_client.get_deposit_address_map().await?;
         let cutoff = (Utc::now() - self.config.timeout).naive_utc();
         let mut updated = 0;
 
@@ -62,7 +62,7 @@ impl InTransitUpdater {
         Ok(updated)
     }
 
-    async fn process_transaction(&self, row: &TransactionRow, cutoff: NaiveDateTime, vault_addresses: &VaultAddressMap) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    async fn process_transaction(&self, row: &TransactionRow, cutoff: NaiveDateTime, vault_addresses: &DepositAddressMap) -> Result<bool, Box<dyn Error + Send + Sync>> {
         let chain = row.chain();
         let transaction = row.as_primitive(row.get_addresses());
         let elapsed = DurationMs((Utc::now().naive_utc() - row.created_at).to_std().unwrap_or_default());
