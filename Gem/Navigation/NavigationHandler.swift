@@ -105,8 +105,7 @@ extension NavigationHandler {
         case .transaction(let walletId, let assetId, let transaction):
             try await navigateToTransaction(walletId: walletId, assetId: assetId, transaction: transaction)
         case .priceAlert(let assetId):
-            let asset = try await assetsService.getOrFetchAsset(for: assetId)
-            navigationState.wallet.append(Scenes.AssetPriceAlert(asset: asset, price: nil))
+            try await navigateToAsset(assetId)
         case .buyAsset(let assetId, let amount):
             try await presentBuy(assetId: assetId, amount: amount)
         case .swapAsset(let fromId, let toId):
