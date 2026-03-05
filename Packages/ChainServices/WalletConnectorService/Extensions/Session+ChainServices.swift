@@ -6,11 +6,15 @@ import ReownWalletKit
 
 extension Session {
     var asSession: Primitives.WalletConnectionSession {
-        WalletConnectionSession(
+        let sessionChains = namespaces.values
+            .flatMap { $0.accounts.map(\.blockchain) }
+            .compactMap(\.chain)
+
+        return WalletConnectionSession(
             id: topic,
             sessionId: topic,
             state: .active,
-            chains: [],
+            chains: sessionChains,
             createdAt: .now,
             expireAt: expiryDate,
             metadata: peer.metadata

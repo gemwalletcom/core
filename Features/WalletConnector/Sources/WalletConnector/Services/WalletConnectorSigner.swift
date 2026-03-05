@@ -246,10 +246,7 @@ public final class WalletConnectorSigner: WalletConnectorSignable {
     }
 
     private func validate(chain: Chain, session: WalletConnectionSession) throws {
-        if session.chains.isEmpty {
-            return
-        }
-        guard session.chains.contains(chain) else {
+        if !session.chains.contains(chain) {
             throw WalletConnectorServiceError.unresolvedChainId(chain.rawValue)
         }
     }
