@@ -92,7 +92,7 @@ extension WalletConnectionRecord {
             id: sessionId,
             sessionId: sessionId,
             state: state,
-            chains: chains,
+            chains: chains ?? [],
             createdAt: createdAt,
             expireAt: expireAt,
             metadata: WalletConnectionSessionAppMetadata(
