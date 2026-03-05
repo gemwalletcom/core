@@ -77,13 +77,26 @@ pub struct StepItem {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum StepData {
+    Evm(EvmStepData),
+}
+
+impl StepData {
+    pub fn get_to(&self) -> Option<String> {
+        match self {
+            Self::Evm(evm) => Some(evm.to.clone()),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct StepData {
-    pub to: Option<String>,
+pub struct EvmStepData {
+    pub to: String,
     pub data: Option<String>,
     #[serde(default, deserialize_with = "deserialize_string_from_value")]
     pub value: String,
-    pub psbt: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

@@ -105,10 +105,9 @@ where
         let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
         let quote_response: RelayQuoteResponse = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
 
-        let from_chain = RelayChain::from_chain(&quote.request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
         let from_asset_id = quote.request.from_asset.asset_id();
         let approval = self.check_evm_approval(quote, &quote_response, &from_asset_id).await?;
-        mapper::map_quote_data(&from_chain, &quote_response.steps, &quote.from_value, &quote_response.fees, approval)
+        mapper::map_quote_data(&quote_response.steps, approval)
     }
 
     async fn get_swap_result(&self, _chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
@@ -134,7 +133,7 @@ where
                     .steps
                     .iter()
                     .filter(|s| s.id != mapper::STEP_APPROVE)
-                    .find_map(|s| s.items.as_ref()?.first().and_then(|item| item.data.as_ref().and_then(|d| d.to.clone())))
+                    .find_map(|s| s.items.as_ref()?.first().and_then(|item| item.data.as_ref().and_then(|d| d.get_to())))
                     .ok_or(SwapperError::InvalidRoute)?;
 
                 let token = from_asset_id.token_id.clone().ok_or(SwapperError::NotSupportedAsset)?;
@@ -182,9 +181,45 @@ mod swap_integration_tests {
         let quote = relay.fetch_quote(&request).await?;
         let quote_data = relay.fetch_quote_data(&quote, FetchQuoteData::None).await?;
 
+        println!("quote: from_value={}, to_value={}", quote.from_value, quote.to_value);
+        println!("quote_data: to={}, value={}, data_len={}", quote_data.to, quote_data.value, quote_data.data.len());
+
         assert_eq!(quote.from_value, request.value);
         assert!(!quote.to_value.is_empty());
         assert!(!quote_data.data.is_empty());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_relay_usdt_eth_to_base() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        use primitives::asset_constants::USDT_ETH_ASSET_ID;
+
+        let provider = Arc::new(NativeProvider::default());
+        let relay = Relay::new(provider);
+
+        let request = QuoteRequest {
+            from_asset: SwapperQuoteAsset::from(AssetId::new(USDT_ETH_ASSET_ID).unwrap()),
+            to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Base)),
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
+            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
+            value: "5000000".to_string(),
+            mode: SwapperMode::ExactIn,
+            options: Options::new_with_slippage(100.into()),
+        };
+
+        let quote = relay.fetch_quote(&request).await?;
+        let quote_data = relay.fetch_quote_data(&quote, FetchQuoteData::None).await?;
+
+        println!("quote: from_value={}, to_value={}", quote.from_value, quote.to_value);
+        println!("quote_data: to={}, value={}, data_len={}", quote_data.to, quote_data.value, quote_data.data.len());
+        println!("approval: {:?}", quote_data.approval);
+
+        assert_eq!(quote.from_value, request.value);
+        assert!(!quote.to_value.is_empty());
+        assert!(!quote_data.data.is_empty());
+        assert!(!quote_data.to.is_empty());
+        assert!(quote_data.approval.is_some());
 
         Ok(())
     }

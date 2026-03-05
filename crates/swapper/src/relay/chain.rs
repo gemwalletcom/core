@@ -44,13 +44,6 @@ impl RelayChain {
             }
         }
     }
-
-    pub fn is_evm(&self) -> bool {
-        match self {
-            Self::Evm(_) => true,
-            Self::Bitcoin | Self::Solana => false,
-        }
-    }
 }
 
 #[cfg(test)]
