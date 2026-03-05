@@ -3,7 +3,7 @@
 import SwiftUI
 import Style
 
-public struct HeaderNavigationLinkView<Destination: Hashable>: View {
+public struct HeaderNavigationLinkView<Destination: Hashable & Codable>: View {
     private let title: String
     private let destination: Destination
 

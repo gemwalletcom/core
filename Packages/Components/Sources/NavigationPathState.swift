@@ -57,9 +57,7 @@ extension NavigationPathState {
     }
 
     private func isLastElement<T: Hashable & Codable>(_ value: T) -> Bool {
-        guard !path.isEmpty, let currentCodable = path.codable else {
-            return false
-        }
+        guard !path.isEmpty, let currentCodable = path.codable else { return false }
 
         let currentElements = encodedElements(currentCodable)
 
