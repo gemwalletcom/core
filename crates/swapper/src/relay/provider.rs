@@ -6,7 +6,6 @@ use gem_client::Client;
 use primitives::{AssetId, Chain, ChainType, swap::ApprovalData};
 
 use super::{
-    Relay,
     asset::{SUPPORTED_CHAINS, asset_to_currency},
     chain::RelayChain,
     client::RelayClient,
@@ -14,9 +13,31 @@ use super::{
     model::{RelayAppFee, RelayQuoteRequest, RelayQuoteResponse, relay_trade_type},
 };
 use crate::{
-    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperQuoteData,
-    approval::check_approval_erc20, config::get_swap_api_url, cross_chain::VaultAddresses, fees::resolve_max_quote_amount, referrer::DEFAULT_REFERRER,
+    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider,
+    SwapperQuoteData, approval::check_approval_erc20, config::get_swap_api_url, cross_chain::VaultAddresses, fees::resolve_max_quote_amount, referrer::DEFAULT_REFERRER,
 };
+
+#[derive(Debug)]
+pub struct Relay<C>
+where
+    C: Client + Clone + Send + Sync + std::fmt::Debug + 'static,
+{
+    provider: ProviderType,
+    rpc_provider: Arc<dyn RpcProvider>,
+    client: RelayClient<C>,
+}
+
+impl Relay<RpcClient> {
+    pub fn new(rpc_provider: Arc<dyn RpcProvider>) -> Self {
+        let url = get_swap_api_url("relay");
+        let client = RelayClient::new(RpcClient::new(url, rpc_provider.clone()));
+        Self {
+            provider: ProviderType::new(SwapperProvider::Relay),
+            rpc_provider,
+            client,
+        }
+    }
+}
 
 fn resolve_app_fees(request: &QuoteRequest) -> Vec<RelayAppFee> {
     let Some(fee) = request.options.fee.as_ref().map(|f| &f.evm) else {
@@ -26,14 +47,6 @@ fn resolve_app_fees(request: &QuoteRequest) -> Vec<RelayAppFee> {
         recipient: fee.address.clone(),
         fee: fee.bps.to_string(),
     }]
-}
-
-impl Relay<RpcClient> {
-    pub fn new(rpc_provider: Arc<dyn RpcProvider>) -> Self {
-        let url = get_swap_api_url("relay");
-        let client = RelayClient::new(RpcClient::new(url, rpc_provider.clone()));
-        Self::with_client(client, rpc_provider)
-    }
 }
 
 #[async_trait]
