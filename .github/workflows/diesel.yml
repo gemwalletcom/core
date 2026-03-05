@@ -47,7 +47,7 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.9
 
       - name: Install just
-        uses: extractions/setup-just@v2
+        uses: extractions/setup-just@v3
       
       - name: Install diesel
         run: just install-diesel
