@@ -15,7 +15,7 @@ use super::{
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperQuoteData,
-    approval::check_approval_erc20, config::get_swap_api_url, fees::resolve_max_quote_amount, referrer::DEFAULT_REFERRER,
+    approval::check_approval_erc20, config::get_swap_api_url, cross_chain::VaultAddresses, fees::resolve_max_quote_amount, referrer::DEFAULT_REFERRER,
 };
 
 fn resolve_app_fees(request: &QuoteRequest) -> Vec<RelayAppFee> {
@@ -116,9 +116,13 @@ where
         Ok(mapper::map_swap_result(request))
     }
 
-    async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<Vec<String>, SwapperError> {
+    async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<VaultAddresses, SwapperError> {
         let response = self.client.get_chains().await?;
-        Ok(response.solver_addresses())
+        let addresses = response.solver_addresses();
+        Ok(VaultAddresses {
+            deposit: addresses.clone(),
+            send: addresses,
+        })
     }
 }
 

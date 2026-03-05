@@ -1,7 +1,7 @@
 use crate::{
     AssetList, FetchQuoteData, Permit2ApprovalData, ProviderType, Quote, QuoteRequest, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderMode,
     SwapperQuoteData, across, alien::RpcProvider, chainflip, config::DEFAULT_STABLE_SWAP_REFERRAL_BPS, cross_chain::VaultAddresses, hyperliquid, jupiter, near_intents,
-    proxy::provider_factory, thorchain, uniswap,
+    proxy::provider_factory, relay, thorchain, uniswap,
 };
 use num_traits::ToPrimitive;
 use primitives::{AssetId, Chain, EVMChain};

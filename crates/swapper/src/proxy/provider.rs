@@ -273,17 +273,7 @@ where
 
     async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<VaultAddresses, SwapperError> {
         match self.provider.id {
-            SwapperProvider::Relay => {
-                let base_url = get_swap_api_url("relay");
-                let client = RpcClient::new(base_url, self.rpc_provider.clone());
-                let chains: relay::model::RelayChainsResponse = ClientExt::get(&client, "/chains").await.map_err(SwapperError::from)?;
-                let addresses = chains.solver_addresses();
-                Ok(VaultAddresses {
-                    deposit: addresses.clone(),
-                    send: addresses,
-                })
-            }
-            SwapperProvider::Mayan => {
+SwapperProvider::Mayan => {
                 let base_url = get_swap_api_url("mayan/price");
                 let client = MayanPrice::new(base_url, self.rpc_provider.clone());
                 let api_addresses = client.get_chains().await.map(MayanChain::unique_addresses).unwrap_or_default();
