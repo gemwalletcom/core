@@ -98,6 +98,11 @@ pub fn get_uniswap_router_deployment_by_chain(chain: &Chain) -> Option<V3Deploym
             permit2,
             universal_router: "0x5Be52b52f3d1dbC324d2959637471a4208626144",
         }),
+        Chain::Rootstock => Some(V3Deployment {
+            quoter_v2: "0xb51727c996c68e60f598a923a5006853cd2feb31",
+            permit2: "0xfcf5986450e4a014ffe7ad4ae24921b589d039b5",
+            universal_router: "0x244f68e77357f86a8522323ebf80b5fc2f814d3e",
+        }),
         _ => None,
     }
 }

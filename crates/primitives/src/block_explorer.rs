@@ -66,6 +66,7 @@ pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
         Chain::Blast => vec![EtherScan::boxed(EVMChain::Blast)],
         Chain::Linea => vec![EtherScan::boxed(EVMChain::Linea), blockchair::new_linea()],
         Chain::Celo => vec![BlockScout::new_celo(), EtherScan::boxed(EVMChain::Celo)],
+        Chain::Rootstock => vec![BlockScout::new_rootstock(), EtherScan::boxed(EVMChain::Rootstock)],
         Chain::ZkSync => vec![ZkSync::boxed(), EtherScan::boxed(EVMChain::ZkSync)],
         Chain::World => vec![EtherScan::boxed(EVMChain::World)],
         Chain::Plasma => vec![EtherScan::boxed(EVMChain::Plasma)],

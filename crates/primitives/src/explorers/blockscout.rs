@@ -8,6 +8,10 @@ impl BlockScout {
         Explorer::boxed(Metadata::with_token("BlockScout", "https://celo.blockscout.com"))
     }
 
+    pub fn new_rootstock() -> Box<dyn BlockExplorer> {
+        Explorer::boxed(Metadata::with_token("BlockScout", "https://rootstock.blockscout.com"))
+    }
+
     pub fn new_manta() -> Box<dyn BlockExplorer> {
         Explorer::boxed(Metadata::with_token("Pacific Explorer", "https://pacific-explorer.manta.network"))
     }

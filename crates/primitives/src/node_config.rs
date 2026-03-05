@@ -163,5 +163,9 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
             Node::new("https://xlayerrpc.okx.com", NodePriority::High),
         ],
         Chain::Stable => vec![Node::new("https://rpc.stable.xyz", NodePriority::High)],
+        Chain::Rootstock => vec![
+            Node::new("https://public-node.rsk.co", NodePriority::High),
+            Node::new("https://mycrypto.rsk.co", NodePriority::High),
+        ],
     }
 }
