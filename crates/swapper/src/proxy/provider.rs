@@ -4,7 +4,7 @@ use std::{collections::BTreeSet, fmt::Debug, str::FromStr, sync::Arc};
 
 use super::{
     client::ProxyClient,
-    mayan::{MAYAN_DEPOSIT_CONTRACTS, MAYAN_SEND_CONTRACTS, MayanChain, MayanClientStatus, MayanExplorer, MayanPrice, resolve_asset_id, wormhole_chain_id_to_chain},
+    mayan::{MAYAN_DEPOSIT_CONTRACTS, MAYAN_SEND_CONTRACTS, MayanChain, MayanExplorer, MayanPrice, map_swap_result},
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperError, SwapperProvider, SwapperProviderMode, SwapperQuoteData,
@@ -18,7 +18,7 @@ use crate::{
 };
 use gem_client::{Client, ClientExt};
 use primitives::{
-    Chain, ChainType, TransactionSwapMetadata,
+    Chain, ChainType,
     swap::{ApprovalData, ProxyQuote, ProxyQuoteRequest, SwapQuoteData},
 };
 
@@ -244,29 +244,7 @@ where
                 let base_url = get_swap_api_url("mayan/explorer");
                 let client = MayanExplorer::new(base_url, self.rpc_provider.clone());
                 let result = client.get_transaction_status(transaction_hash).await?;
-                let status = result.client_status.swap_status();
-
-                let metadata = if result.client_status == MayanClientStatus::Completed {
-                    let from_chain = result.from_token_chain.parse::<u16>().ok().and_then(wormhole_chain_id_to_chain);
-                    let to_chain = result.to_token_chain.parse::<u16>().ok().and_then(wormhole_chain_id_to_chain);
-                    from_chain.zip(to_chain).and_then(|(fc, tc)| {
-                        let from_asset = resolve_asset_id(fc, &result.from_token_address)?;
-                        let to_asset = resolve_asset_id(tc, &result.to_token_address)?;
-                        let from_value = result.from_amount64.as_ref()?;
-                        let to_value = result.to_amount64.as_ref()?;
-                        Some(TransactionSwapMetadata {
-                            from_asset,
-                            from_value: from_value.clone(),
-                            to_asset,
-                            to_value: to_value.clone(),
-                            provider: Some(SwapperProvider::Mayan.as_ref().to_string()),
-                        })
-                    })
-                } else {
-                    None
-                };
-
-                Ok(SwapResult { status, metadata })
+                Ok(map_swap_result(&result))
             }
             SwapperProvider::Relay => {
                 let base_url = get_swap_api_url("relay");
