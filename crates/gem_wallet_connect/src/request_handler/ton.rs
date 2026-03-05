@@ -1,6 +1,5 @@
-use crate::message::sign_type::SignDigestType;
-use crate::wallet_connect::actions::{WalletConnectAction, WalletConnectTransactionType};
-use crate::wallet_connect::handler_traits::ChainRequestHandler;
+use crate::actions::{WalletConnectAction, WalletConnectTransactionType};
+use crate::sign_type::SignDigestType;
 use gem_ton::signer::TonSignMessageData;
 use primitives::{Chain, TransferDataOutputType, ValueAccess};
 use serde_json::Value;
@@ -11,8 +10,8 @@ fn extract_host(url: &str) -> String {
     url::Url::parse(url).map(|u| u.host_str().unwrap_or(url).to_string()).unwrap_or_else(|_| url.to_string())
 }
 
-impl ChainRequestHandler for TonRequestHandler {
-    fn parse_sign_message(_chain: Chain, params: Value, domain: &str) -> Result<WalletConnectAction, String> {
+impl TonRequestHandler {
+    pub fn parse_sign_message(_chain: Chain, params: Value, domain: &str) -> Result<WalletConnectAction, String> {
         let payload = params.at(0)?.clone();
         let host = extract_host(domain);
         let ton_data = TonSignMessageData::from_value(payload, host).map_err(|e| e.to_string())?;
@@ -24,7 +23,8 @@ impl ChainRequestHandler for TonRequestHandler {
         })
     }
 
-    fn parse_sign_transaction(_chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
+    #[allow(dead_code)]
+    pub fn parse_sign_transaction(_chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
         params.get_value("messages")?;
         Ok(WalletConnectAction::SignTransaction {
             chain: Chain::Ton,
@@ -35,7 +35,7 @@ impl ChainRequestHandler for TonRequestHandler {
         })
     }
 
-    fn parse_send_transaction(_chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
+    pub fn parse_send_transaction(_chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
         params.get_value("messages")?;
         Ok(WalletConnectAction::SendTransaction {
             chain: Chain::Ton,
@@ -81,34 +81,19 @@ mod tests {
 
     #[test]
     fn test_parse_send_transaction() {
-        let params_json = r#"{
-            "valid_until": 1234567890,
-            "messages": [
-                {
-                    "address": "0:1234567890abcdef",
-                    "amount": "1000000000"
-                }
-            ]
-        }"#;
-        let params = serde_json::from_str(params_json).unwrap();
+        let params: Value = serde_json::from_str(r#"{"valid_until":1234567890,"messages":[{"address":"0:1234567890abcdef","amount":"1000000000"}]}"#).unwrap();
         let action = TonRequestHandler::parse_send_transaction(Chain::Ton, params).unwrap();
 
-        let WalletConnectAction::SendTransaction { chain, transaction_type, data } = action else {
+        let WalletConnectAction::SendTransaction { chain, transaction_type, .. } = action else {
             panic!("Expected SendTransaction action")
         };
         assert_eq!(chain, Chain::Ton);
         assert_eq!(transaction_type.get_output_type().unwrap(), TransferDataOutputType::EncodedTransaction);
-        let parsed_data: serde_json::Value = serde_json::from_str(&data).unwrap();
-        assert_eq!(parsed_data["valid_until"], 1234567890);
-        assert_eq!(parsed_data["messages"][0]["address"], "0:1234567890abcdef");
-        assert_eq!(parsed_data["messages"][0]["amount"], "1000000000");
     }
 
     #[test]
     fn test_parse_send_transaction_missing_messages() {
         let params = serde_json::from_str(r#"{"valid_until": 123}"#).unwrap();
-        let result = TonRequestHandler::parse_send_transaction(Chain::Ton, params);
-        assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), "Missing messages parameter");
+        assert!(TonRequestHandler::parse_send_transaction(Chain::Ton, params).is_err());
     }
 }

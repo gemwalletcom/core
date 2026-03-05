@@ -1,0 +1,19 @@
+[package]
+name = "gem_wallet_connect"
+edition = { workspace = true }
+version = { workspace = true }
+
+[dependencies]
+primitives = { path = "../primitives" }
+gem_evm = { path = "../gem_evm" }
+gem_ton = { path = "../gem_ton", features = ["signer"] }
+gem_bitcoin = { path = "../gem_bitcoin", features = ["signer"] }
+
+hex = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+url = { workspace = true }
+
+[dev-dependencies]
+primitives = { path = "../primitives", features = ["testkit"] }
+gem_evm = { path = "../gem_evm", features = ["testkit"] }

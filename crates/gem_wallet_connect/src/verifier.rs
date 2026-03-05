@@ -1,14 +1,6 @@
 use gem_evm::domain::host;
 use primitives::WalletConnectionVerificationStatus;
 
-#[uniffi::remote(Enum)]
-pub enum WalletConnectionVerificationStatus {
-    Verified,
-    Unknown,
-    Invalid,
-    Malicious,
-}
-
 pub struct WalletConnectVerifier;
 
 impl WalletConnectVerifier {

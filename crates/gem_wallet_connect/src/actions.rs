@@ -1,33 +1,7 @@
-use crate::message::sign_type::SignDigestType;
+use crate::sign_type::SignDigestType;
 use primitives::{Chain, TransferDataOutputType, WCEthereumTransaction};
 
-#[derive(Debug, Clone, uniffi::Record)]
-pub struct WCEthereumTransactionData {
-    pub chain_id: Option<String>,
-    pub from: String,
-    pub to: String,
-    pub value: Option<String>,
-    pub gas: Option<String>,
-    pub gas_limit: Option<String>,
-    pub gas_price: Option<String>,
-    pub max_fee_per_gas: Option<String>,
-    pub max_priority_fee_per_gas: Option<String>,
-    pub nonce: Option<String>,
-    pub data: Option<String>,
-}
-
-#[derive(Debug, Clone, uniffi::Record)]
-pub struct WCSolanaTransactionData {
-    pub transaction: String,
-}
-
-#[derive(Debug, Clone, uniffi::Record)]
-pub struct WCSuiTransactionData {
-    pub transaction: String,
-    pub wallet_address: String,
-}
-
-#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum WalletConnectAction {
     SignMessage {
         chain: Chain,
@@ -52,7 +26,7 @@ pub enum WalletConnectAction {
     },
 }
 
-#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum WalletConnectTransactionType {
     Ethereum,
     Solana { output_type: TransferDataOutputType },
@@ -73,7 +47,40 @@ impl WalletConnectTransactionType {
     }
 }
 
-#[derive(Debug, Clone, uniffi::Enum)]
+#[derive(Debug, Clone, PartialEq)]
+pub enum WalletConnectChainOperation {
+    AddChain,
+    SwitchChain,
+    GetChainId,
+}
+
+#[derive(Debug, Clone)]
+pub struct WCEthereumTransactionData {
+    pub chain_id: Option<String>,
+    pub from: String,
+    pub to: String,
+    pub value: Option<String>,
+    pub gas: Option<String>,
+    pub gas_limit: Option<String>,
+    pub gas_price: Option<String>,
+    pub max_fee_per_gas: Option<String>,
+    pub max_priority_fee_per_gas: Option<String>,
+    pub nonce: Option<String>,
+    pub data: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct WCSolanaTransactionData {
+    pub transaction: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct WCSuiTransactionData {
+    pub transaction: String,
+    pub wallet_address: String,
+}
+
+#[derive(Debug, Clone)]
 #[allow(clippy::large_enum_variant)]
 pub enum WalletConnectTransaction {
     Ethereum {
@@ -101,11 +108,10 @@ pub enum WalletConnectTransaction {
     },
 }
 
-#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
-pub enum WalletConnectChainOperation {
-    AddChain,
-    SwitchChain,
-    GetChainId,
+#[derive(Debug, Clone, PartialEq)]
+pub enum WalletConnectResponseType {
+    String { value: String },
+    Object { json: String },
 }
 
 impl From<WCEthereumTransaction> for WCEthereumTransactionData {
