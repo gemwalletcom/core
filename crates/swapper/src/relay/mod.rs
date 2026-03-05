@@ -21,9 +21,9 @@ pub struct Relay<C>
 where
     C: Client + Clone + Send + Sync + std::fmt::Debug + 'static,
 {
-    pub provider: ProviderType,
-    pub rpc_provider: Arc<dyn RpcProvider>,
-    pub(crate) client: client::RelayClient<C>,
+    provider: ProviderType,
+    rpc_provider: Arc<dyn RpcProvider>,
+    client: client::RelayClient<C>,
 }
 
 impl<C> Relay<C>

@@ -137,7 +137,7 @@ where
                     .steps
                     .iter()
                     .filter(|s| s.id != mapper::STEP_APPROVE)
-                    .find_map(|s| s.items.as_ref()?.first().and_then(|item| item.data.as_ref().and_then(|d| d.get_to())))
+                    .find_map(|s| s.step_data()?.get_to())
                     .ok_or(SwapperError::InvalidRoute)?;
 
                 let token = from_asset_id.token_id.clone().ok_or(SwapperError::NotSupportedAsset)?;
