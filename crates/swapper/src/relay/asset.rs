@@ -58,7 +58,6 @@ pub static SUPPORTED_CHAINS: LazyLock<Vec<SwapperChainAsset>> = LazyLock::new(||
         SwapperChainAsset::Assets(Chain::Manta, vec![]),
         SwapperChainAsset::Assets(Chain::Sonic, vec![]),
         SwapperChainAsset::Assets(Chain::Abstract, vec![]),
-        SwapperChainAsset::Assets(Chain::Mantle, vec![]),
         SwapperChainAsset::Assets(Chain::Celo, vec![]),
         SwapperChainAsset::Assets(Chain::Stable, vec![]),
     ]

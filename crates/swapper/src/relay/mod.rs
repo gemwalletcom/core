@@ -14,7 +14,7 @@ use gem_client::Client;
 
 use super::{ProviderType, SwapperProvider};
 
-const DEFAULT_GAS_LIMIT: u64 = 750_000;
+const DEFAULT_SWAP_GAS_LIMIT: u64 = 150_000;
 
 #[derive(Debug)]
 pub struct Relay<C>

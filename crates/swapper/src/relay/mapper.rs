@@ -1,11 +1,6 @@
 use primitives::{TransactionSwapMetadata, swap::ApprovalData};
 
-use super::{
-    DEFAULT_GAS_LIMIT,
-    asset::map_currency_to_asset_id,
-    chain::RelayChain,
-    model::{RelayRequest, Step, StepData},
-};
+use super::{DEFAULT_SWAP_GAS_LIMIT, asset::map_currency_to_asset_id, chain::RelayChain, model::{RelayRequest, Step, StepData}};
 use crate::{SwapResult, SwapperError, SwapperProvider, SwapperQuoteData};
 
 pub const STEP_SWAP: &str = "swap";
@@ -27,7 +22,7 @@ pub fn map_quote_data(steps: &[Step], approval: Option<ApprovalData>) -> Result<
 
     match step_data {
         StepData::Evm(evm) => {
-            let gas_limit = approval.as_ref().map(|_| DEFAULT_GAS_LIMIT.to_string());
+            let gas_limit = approval.as_ref().map(|_| DEFAULT_SWAP_GAS_LIMIT.to_string());
             let data = evm.data.clone().unwrap_or_default();
             Ok(SwapperQuoteData::new_contract(evm.to.clone(), evm.value.clone(), data, approval, gas_limit))
         }
@@ -87,7 +82,7 @@ mod tests {
 
         assert_eq!(result.to, "0xrouter");
         assert_eq!(result.approval, Some(approval));
-        assert_eq!(result.gas_limit, Some(DEFAULT_GAS_LIMIT.to_string()));
+        assert_eq!(result.gas_limit, Some(DEFAULT_SWAP_GAS_LIMIT.to_string()));
     }
 
     #[test]
