@@ -75,6 +75,7 @@ extension WalletConnection {
             sessionId: session.sessionId,
             walletId: wallet.id,
             state: session.state,
+            chains: session.chains,
             createdAt: Date(),
             expireAt: session.expireAt,
             appName: session.metadata.name,
@@ -91,7 +92,7 @@ extension WalletConnectionRecord {
             id: sessionId,
             sessionId: sessionId,
             state: state,
-            chains: chains ?? [],
+            chains: chains,
             createdAt: createdAt,
             expireAt: expireAt,
             metadata: WalletConnectionSessionAppMetadata(
