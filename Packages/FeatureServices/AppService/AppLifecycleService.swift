@@ -3,7 +3,7 @@
 import Foundation
 import SwiftUI
 import DeviceService
-import PriceService
+import StreamService
 import PerpetualService
 import ConnectionsService
 import Primitives
@@ -13,7 +13,8 @@ public actor AppLifecycleService: Sendable {
     private let preferences: Preferences
     private let connectionsService: ConnectionsService
     private let deviceObserverService: DeviceObserverService
-    private let priceObserverService: PriceObserverService
+    private let streamObserverService: StreamObserverService
+    private let streamSubscriptionService: StreamSubscriptionService
     private let hyperliquidObserverService: any PerpetualObservable<HyperliquidSubscription>
 
     private var currentWallet: Wallet?
@@ -22,13 +23,15 @@ public actor AppLifecycleService: Sendable {
         preferences: Preferences,
         connectionsService: ConnectionsService,
         deviceObserverService: DeviceObserverService,
-        priceObserverService: PriceObserverService,
+        streamObserverService: StreamObserverService,
+        streamSubscriptionService: StreamSubscriptionService,
         hyperliquidObserverService: any PerpetualObservable<HyperliquidSubscription>
     ) {
         self.preferences = preferences
         self.connectionsService = connectionsService
         self.deviceObserverService = deviceObserverService
-        self.priceObserverService = priceObserverService
+        self.streamObserverService = streamObserverService
+        self.streamSubscriptionService = streamSubscriptionService
         self.hyperliquidObserverService = hyperliquidObserverService
     }
 
@@ -88,14 +91,14 @@ extension AppLifecycleService {
 
     private func setupPriceAssets(wallet: Wallet) async {
         do {
-            try await priceObserverService.setupAssets(walletId: wallet.walletId)
+            try await streamSubscriptionService.setupAssets(walletId: wallet.walletId)
         } catch {
             debugLog("AppLifecycleService setupPriceAssets error: \(error)")
         }
     }
 
     private func connectObservers() async {
-        async let price: () = priceObserverService.connect()
+        async let price: () = streamObserverService.connect()
         async let perpetual: () = connectPerpetual()
         async let authToken: () = deviceObserverService.startAuthTokenRefresh()
         _ = await (price, perpetual, authToken)
@@ -110,7 +113,7 @@ extension AppLifecycleService {
     }
 
     private func disconnectObservers() async {
-        async let price: () = priceObserverService.disconnect()
+        async let price: () = streamObserverService.disconnect()
         async let perpetual: () = hyperliquidObserverService.disconnect()
         async let authToken: () = deviceObserverService.stopAuthTokenRefresh()
         _ = await (price, perpetual, authToken)

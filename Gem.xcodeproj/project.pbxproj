@@ -19,6 +19,7 @@
 		833931A52D2D5B1D0063BB6A /* PriceAlerts in Frameworks */ = {isa = PBXBuildFile; productRef = 833931A42D2D5B1D0063BB6A /* PriceAlerts */; };
 		B604C2E82F3F538000CBAFDC /* Contacts in Frameworks */ = {isa = PBXBuildFile; productRef = B604C2E92F3F538100CBAFDC /* Contacts */; };
 		833931A82D2D663C0063BB6A /* PriceService in Frameworks */ = {isa = PBXBuildFile; productRef = 833931A72D2D663C0063BB6A /* PriceService */; };
+		B6STREAM02F5000000000001 /* StreamService in Frameworks */ = {isa = PBXBuildFile; productRef = B6STREAM02F5000000000002 /* StreamService */; };
 		833CDFD02D10622D00DAABEE /* ServicesFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 833CDFCF2D10622D00DAABEE /* ServicesFactory.swift */; };
 		8342EA032DB67EE3001B3780 /* WalletService in Frameworks */ = {isa = PBXBuildFile; productRef = 8342EA022DB67EE3001B3780 /* WalletService */; };
 		8349F1472D5E4FF4003A0A93 /* ManageWallets in Frameworks */ = {isa = PBXBuildFile; productRef = 8349F1462D5E4FF4003A0A93 /* ManageWallets */; };
@@ -320,6 +321,7 @@
 				D8D83C842CECFA610083AA53 /* Swap in Frameworks */,
 				8342EA032DB67EE3001B3780 /* WalletService in Frameworks */,
 				833931A82D2D663C0063BB6A /* PriceService in Frameworks */,
+				B6STREAM02F5000000000001 /* StreamService in Frameworks */,
 				839C794B2D1C42A500E32072 /* PrimitivesComponents in Frameworks */,
 				C3E99BBF2A71E932005DF35F /* WalletCorePrimitives in Frameworks */,
 				83D0114F2EFB6341009274B8 /* TransactionStateService in Frameworks */,
@@ -831,6 +833,7 @@
 				B604C2E92F3F538100CBAFDC /* Contacts */,
 				D9F015752F10654000000002 /* InAppNotifications */,
 				833931A72D2D663C0063BB6A /* PriceService */,
+				B6STREAM02F5000000000002 /* StreamService */,
 				83385DDD2D27147900D76803 /* WalletConnectorService */,
 				83FE37B32D273CC80048D54C /* WalletConnector */,
 				83EB5E2F2D2ECF00006A7CFB /* Onboarding */,
@@ -1857,6 +1860,10 @@
 		833931A72D2D663C0063BB6A /* PriceService */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = PriceService;
+		};
+		B6STREAM02F5000000000002 /* StreamService */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = StreamService;
 		};
 		8342EA022DB67EE3001B3780 /* WalletService */ = {
 			isa = XCSwiftPackageProductDependency;

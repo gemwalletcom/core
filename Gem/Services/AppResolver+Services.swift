@@ -8,6 +8,7 @@ import PriceAlertService
 import StakeService
 import NodeService
 import PriceService
+import StreamService
 import WalletConnector
 import ConnectionsService
 import ExplorerService
@@ -47,7 +48,8 @@ extension AppResolver {
         let navigationPresenter: NavigationPresenter
         let priceAlertService: PriceAlertService
         let priceService: PriceService
-        let priceObserverService: PriceObserverService
+        let streamObserverService: StreamObserverService
+        let streamSubscriptionService: StreamSubscriptionService
         let stakeService: StakeService
         let transactionsService: TransactionsService
         let transactionStateService: TransactionStateService
@@ -96,7 +98,8 @@ extension AppResolver {
             navigationHandler: NavigationHandler,
             navigationPresenter: NavigationPresenter,
             priceAlertService: PriceAlertService,
-            priceObserverService: PriceObserverService,
+            streamObserverService: StreamObserverService,
+            streamSubscriptionService: StreamSubscriptionService,
             priceService: PriceService,
             stakeService: StakeService,
             transactionsService: TransactionsService,
@@ -146,7 +149,8 @@ extension AppResolver {
             self.navigationPresenter = navigationPresenter
             self.priceAlertService = priceAlertService
             self.priceService = priceService
-            self.priceObserverService = priceObserverService
+            self.streamObserverService = streamObserverService
+            self.streamSubscriptionService = streamSubscriptionService
             self.stakeService = stakeService
             self.transactionsService = transactionsService
             self.transactionStateService = transactionStateService

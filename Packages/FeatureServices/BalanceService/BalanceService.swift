@@ -50,16 +50,6 @@ extension BalanceService {
 // MARK: - BalanceUpdater
 
 extension BalanceService: BalanceUpdater {
-    @discardableResult
-    public func updateBalance(walletId: WalletId, asset: AssetId, address: String) async throws -> [AssetBalanceChange] {
-        switch asset.type {
-        case .native:
-            await updateCoinBalance(walletId: walletId, asset: asset, address: address)
-        case .token:
-            await updateTokenBalances(walletId: walletId, chain: asset.chain, tokenIds: [asset], address: address)
-        }
-    }
-
     public func updateBalance(for wallet: Wallet, assetIds: [AssetId]) async {
         let walletId = wallet.walletId
 

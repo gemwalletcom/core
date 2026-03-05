@@ -1,13 +1,12 @@
 // Copyright (c). Gem Wallet. All rights reserved.
 
 import Foundation
-import Primitives
 import Preferences
 import PreferencesTestKit
 import DeviceService
 import DeviceServiceTestKit
-import PriceService
-import PriceServiceTestKit
+import StreamService
+import StreamServiceTestKit
 import PerpetualService
 import PerpetualServiceTestKit
 import ConnectionsService
@@ -19,14 +18,16 @@ public extension AppLifecycleService {
         preferences: Preferences = .mock(),
         connectionsService: ConnectionsService = .mock(),
         deviceObserverService: DeviceObserverService = .mock(),
-        priceObserverService: PriceObserverService = .mock(),
+        streamObserverService: StreamObserverService = .mock(),
+        streamSubscriptionService: StreamSubscriptionService = .mock(),
         hyperliquidObserverService: PerpetualObserverMock = PerpetualObserverMock()
     ) -> AppLifecycleService {
         AppLifecycleService(
             preferences: preferences,
             connectionsService: connectionsService,
             deviceObserverService: deviceObserverService,
-            priceObserverService: priceObserverService,
+            streamObserverService: streamObserverService,
+            streamSubscriptionService: streamSubscriptionService,
             hyperliquidObserverService: hyperliquidObserverService
         )
     }

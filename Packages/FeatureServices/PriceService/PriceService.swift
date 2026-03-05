@@ -2,7 +2,6 @@
 
 import Foundation
 import Primitives
-import GemAPI
 import Store
 
 public struct PriceService: Sendable {
@@ -17,7 +16,7 @@ public struct PriceService: Sendable {
         self.fiatRateStore = fiatRateStore
     }
 
-    func updatePrices(_ prices: [AssetPrice], currency: String) throws {
+    public func updatePrices(_ prices: [AssetPrice], currency: String) throws {
         try priceStore.updatePrices(prices: prices, currency: currency)
     }
 
@@ -53,7 +52,7 @@ public struct PriceService: Sendable {
         try priceStore.getRate(currency: currency).rate
     }
     
-    func addRates(_ rates: [FiatRate]) throws {
+    public func addRates(_ rates: [FiatRate]) throws {
         guard rates.isNotEmpty else { return }
         
         try fiatRateStore.add(rates)

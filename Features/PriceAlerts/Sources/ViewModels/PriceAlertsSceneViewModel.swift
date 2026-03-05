@@ -87,15 +87,6 @@ extension PriceAlertsSceneViewModel {
         await deviceUpdate()
     }
 
-    private func addPriceAlert(assetId: AssetId) async {
-        do {
-            try await priceAlertService
-                .add(priceAlert: .default(for: assetId, currency: preferences.preferences.currency))
-        } catch {
-            debugLog("addPriceAlert error: \(error)")
-        }
-    }
-
     private func updateNotifications() async {
         do {
             preferences.preferences.isPushNotificationsEnabled = try await requestPermissions()

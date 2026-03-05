@@ -73,6 +73,16 @@ public struct PerpetualService: PerpetualServiceable {
         try store.setPinned(for: [perpetualId], value: isPinned)
     }
 
+    public func fetchPositions(walletId: WalletId, address: String) async throws {
+        let summary = try await provider.getPositions(address: address)
+        let existingPositionIds = Set(try store.getPositions(walletId: walletId, provider: .hypercore).map(\.id))
+        let newPositionIds = Set(summary.positions.map(\.id))
+        let deleteIds = Array(existingPositionIds.subtracting(newPositionIds))
+
+        try store.diffPositions(deleteIds: deleteIds, positions: summary.positions, walletId: walletId)
+        try syncProviderBalances(walletId: walletId, balance: summary.balance)
+    }
+
     public func clear() throws {
         try store.clear()
     }
@@ -152,15 +162,5 @@ extension PerpetualService: HyperliquidPerpetualServiceable {
         guard preferences.perpetualPricesUpdatedAt.isOutdated(by: 5) else { return }
         try store.updatePrices(prices)
         preferences.perpetualPricesUpdatedAt = .now
-    }
-
-    public func fetchPositions(walletId: WalletId, address: String) async throws {
-        let summary = try await provider.getPositions(address: address)
-        let existingPositionIds = Set(try store.getPositions(walletId: walletId, provider: .hypercore).map(\.id))
-        let newPositionIds = Set(summary.positions.map(\.id))
-        let deleteIds = Array(existingPositionIds.subtracting(newPositionIds))
-
-        try store.diffPositions(deleteIds: deleteIds, positions: summary.positions, walletId: walletId)
-        try syncProviderBalances(walletId: walletId, balance: summary.balance)
     }
 }

@@ -6,10 +6,10 @@ import StoreTestKit
 import Store
 import DeviceService
 import DeviceServiceTestKit
-import PriceService
-import PriceServiceTestKit
 import GemAPITestKit
 import GemAPI
+import PriceService
+import PriceServiceTestKit
 import Preferences
 import PreferencesTestKit
 
@@ -18,14 +18,14 @@ public extension PriceAlertService {
         store: PriceAlertStore = .mock(),
         apiService: any GemAPIPriceAlertService = GemAPIPriceAlertServiceMock(),
         deviceService: any DeviceServiceable = DeviceServiceMock(),
-        priceObserverService: PriceObserverService = .mock(),
+        priceUpdater: any PriceUpdater = .mock(),
         preferences: Preferences = .mock()
     ) -> PriceAlertService {
         PriceAlertService(
             store: store,
             apiService: apiService,
             deviceService: deviceService,
-            priceObserverService: priceObserverService,
+            priceUpdater: priceUpdater,
             preferences: preferences
         )
     }

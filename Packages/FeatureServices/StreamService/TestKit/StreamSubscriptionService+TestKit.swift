@@ -1,21 +1,19 @@
 // Copyright (c). Gem Wallet. All rights reserved.
 
 import Foundation
+import StreamService
 import PriceService
-import Preferences
-import PreferencesTestKit
+import PriceServiceTestKit
 import WebSocketClient
 import WebSocketClientTestKit
 
-public extension PriceObserverService {
+public extension StreamSubscriptionService {
     static func mock(
         priceService: PriceService = .mock(),
-        preferences: Preferences = .mock(),
         webSocket: any WebSocketConnectable = WebSocketConnectionMock()
-    ) -> PriceObserverService {
-        PriceObserverService(
+    ) -> StreamSubscriptionService {
+        StreamSubscriptionService(
             priceService: priceService,
-            preferences: preferences,
             webSocket: webSocket
         )
     }

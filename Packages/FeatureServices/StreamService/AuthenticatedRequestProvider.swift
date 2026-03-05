@@ -7,14 +7,14 @@ import WebSocketClient
 import GemAPI
 import DeviceService
 
-struct AuthenticatedRequestProvider: WebSocketRequestProvider {
+public struct AuthenticatedRequestProvider: WebSocketRequestProvider {
     private let securePreferences: SecurePreferences
 
-    init(securePreferences: SecurePreferences) {
+    public init(securePreferences: SecurePreferences) {
         self.securePreferences = securePreferences
     }
 
-    func makeRequest() throws -> URLRequest {
+    public func makeRequest() throws -> URLRequest {
         let keyPair = try DeviceService.getOrCreateKeyPair(securePreferences: securePreferences)
         let signer = try DeviceRequestSigner(privateKey: keyPair.privateKey)
 

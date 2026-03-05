@@ -10,5 +10,4 @@ public protocol HyperliquidPerpetualServiceable: PerpetualServiceable {
     func updateBalance(walletId: WalletId, balance: GemPerpetualBalance) throws
     func diffPositions(deleteIds: [String], positions: [GemPerpetualPosition], walletId: WalletId) throws
     func updatePrices(_ prices: [String: Double]) throws
-    func fetchPositions(walletId: WalletId, address: String) async throws
 }

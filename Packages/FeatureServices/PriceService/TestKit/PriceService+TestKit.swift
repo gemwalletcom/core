@@ -2,8 +2,6 @@
 
 import Foundation
 import PriceService
-import GemAPI
-import GemAPITestKit
 import Store
 import StoreTestKit
 

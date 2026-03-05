@@ -6,9 +6,6 @@ import Primitives
 
 public struct BalanceUpdaterMock: BalanceUpdater {
     public init() {}
-    public func updateBalance(walletId: WalletId, asset: AssetId, address: String) async throws -> [AssetBalanceChange] {
-        []
-    }
     public func updateBalance(for wallet: Wallet, assetIds: [AssetId]) async {}
 }
 

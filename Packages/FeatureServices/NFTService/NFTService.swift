@@ -21,6 +21,7 @@ public struct NFTService: Sendable {
         self.deviceService = deviceService
     }
 
+    @discardableResult
     public func updateAssets(wallet: Wallet) async throws -> Int {
         _ = try await deviceService.getSubscriptionsDeviceId()
         let nfts = try await apiService.getDeviceNFTAssets(walletId: wallet.id)

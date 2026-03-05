@@ -14,6 +14,7 @@ import ChainService
 import StakeService
 import NodeService
 import PriceService
+import StreamService
 import WalletConnector
 import ConnectionsService
 import ExplorerService
@@ -41,7 +42,7 @@ extension EnvironmentValues {
     @Entry var keystore: any Keystore = AppResolver.main.storages.keystore
     @Entry var nodeService: NodeService = AppResolver.main.services.nodeService
     @Entry var priceService: PriceService = AppResolver.main.services.priceService
-    @Entry var priceObserverService: PriceObserverService = AppResolver.main.services.priceObserverService
+    @Entry var streamSubscriptionService: StreamSubscriptionService = AppResolver.main.services.streamSubscriptionService
     @Entry var explorerService: ExplorerService = AppResolver.main.services.explorerService
     @Entry var assetsEnabler: any AssetsEnabler = AppResolver.main.services.assetsEnabler
     @Entry var assetDiscoveryService: any AssetDiscoverable = AppResolver.main.services.assetDiscoveryService

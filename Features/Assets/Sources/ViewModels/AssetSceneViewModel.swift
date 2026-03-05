@@ -24,7 +24,7 @@ public final class AssetSceneViewModel: Sendable {
     private let balanceService: BalanceService
     private let assetsService: AssetsService
     private let transactionsService: TransactionsService
-    private let priceObserverService: PriceObserverService
+    private let priceUpdater: any PriceUpdater
     private let bannerService: BannerService
 
     private let preferences: ObservablePreferences = .default
@@ -54,7 +54,7 @@ public final class AssetSceneViewModel: Sendable {
         balanceService: BalanceService,
         assetsService: AssetsService,
         transactionsService: TransactionsService,
-        priceObserverService: PriceObserverService,
+        priceUpdater: any PriceUpdater,
         priceAlertService: PriceAlertService,
         bannerService: BannerService,
         input: AssetSceneInput,
@@ -64,7 +64,7 @@ public final class AssetSceneViewModel: Sendable {
         self.balanceService = balanceService
         self.assetsService = assetsService
         self.transactionsService = transactionsService
-        self.priceObserverService = priceObserverService
+        self.priceUpdater = priceUpdater
         self.priceAlertService = priceAlertService
         self.bannerService = bannerService
 
@@ -472,9 +472,9 @@ extension AssetSceneViewModel {
 
         Task {
             do {
-                try await priceObserverService.addAssets(assets: [assetModel.asset.id])
+                try await priceUpdater.addPrices(assetIds: [assetModel.asset.id])
             } catch {
-                debugLog("asset scene: priceObserverService.addAssets error \(error)")
+                debugLog("asset scene: addPrices error \(error)")
             }
         }
     }

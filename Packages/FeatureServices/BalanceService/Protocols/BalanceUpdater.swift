@@ -4,6 +4,5 @@ import Foundation
 import Primitives
 
 public protocol BalanceUpdater: Sendable {
-    func updateBalance(walletId: WalletId, asset: AssetId, address: String) async throws -> [AssetBalanceChange]
     func updateBalance(for wallet: Wallet, assetIds: [AssetId]) async
 }
