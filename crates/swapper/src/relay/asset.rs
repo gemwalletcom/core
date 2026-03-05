@@ -37,47 +37,23 @@ pub static SUPPORTED_CHAINS: LazyLock<Vec<SwapperChainAsset>> = LazyLock::new(||
     vec![
         SwapperChainAsset::Assets(
             Chain::Ethereum,
-            vec![
-                AssetId::from_chain(Chain::Ethereum),
-                AssetId::from_token(Chain::Ethereum, ETHEREUM_USDC_TOKEN_ID),
-                AssetId::from_token(Chain::Ethereum, ETHEREUM_USDT_TOKEN_ID),
-            ],
+            vec![AssetId::from_token(Chain::Ethereum, ETHEREUM_USDC_TOKEN_ID), AssetId::from_token(Chain::Ethereum, ETHEREUM_USDT_TOKEN_ID)],
         ),
         SwapperChainAsset::Assets(
             Chain::SmartChain,
-            vec![
-                AssetId::from_chain(Chain::SmartChain),
-                AssetId::from_token(Chain::SmartChain, SMARTCHAIN_USDC_TOKEN_ID),
-                AssetId::from_token(Chain::SmartChain, SMARTCHAIN_USDT_TOKEN_ID),
-            ],
+            vec![AssetId::from_token(Chain::SmartChain, SMARTCHAIN_USDC_TOKEN_ID), AssetId::from_token(Chain::SmartChain, SMARTCHAIN_USDT_TOKEN_ID)],
         ),
-        SwapperChainAsset::Assets(Chain::Base, vec![AssetId::from_chain(Chain::Base), AssetId::from_token(Chain::Base, BASE_USDC_TOKEN_ID)]),
-        SwapperChainAsset::Assets(
-            Chain::Arbitrum,
-            vec![AssetId::from_chain(Chain::Arbitrum), USDC_ARB_ASSET_ID.into(), USDT_ARB_ASSET_ID.into()],
-        ),
-        SwapperChainAsset::Assets(
-            Chain::Optimism,
-            vec![AssetId::from_chain(Chain::Optimism), USDC_OP_ASSET_ID.into(), USDT_OP_ASSET_ID.into()],
-        ),
-        SwapperChainAsset::Assets(
-            Chain::Polygon,
-            vec![AssetId::from_chain(Chain::Polygon), USDC_POLYGON_ASSET_ID.into(), USDT_POLYGON_ASSET_ID.into()],
-        ),
+        SwapperChainAsset::Assets(Chain::Base, vec![AssetId::from_token(Chain::Base, BASE_USDC_TOKEN_ID)]),
+        SwapperChainAsset::Assets(Chain::Arbitrum, vec![USDC_ARB_ASSET_ID.into(), USDT_ARB_ASSET_ID.into()]),
+        SwapperChainAsset::Assets(Chain::Optimism, vec![USDC_OP_ASSET_ID.into(), USDT_OP_ASSET_ID.into()]),
+        SwapperChainAsset::Assets(Chain::Polygon, vec![USDC_POLYGON_ASSET_ID.into(), USDT_POLYGON_ASSET_ID.into()]),
         SwapperChainAsset::Assets(
             Chain::AvalancheC,
-            vec![
-                AssetId::from_chain(Chain::AvalancheC),
-                AssetId::from_token(Chain::AvalancheC, AVALANCHE_USDC_TOKEN_ID),
-                AssetId::from_token(Chain::AvalancheC, AVALANCHE_USDT_TOKEN_ID),
-            ],
+            vec![AssetId::from_token(Chain::AvalancheC, AVALANCHE_USDC_TOKEN_ID), AssetId::from_token(Chain::AvalancheC, AVALANCHE_USDT_TOKEN_ID)],
         ),
-        SwapperChainAsset::Assets(Chain::Linea, vec![AssetId::from_chain(Chain::Linea), USDT_LINEA_ASSET_ID.into()]),
-        SwapperChainAsset::Assets(Chain::ZkSync, vec![AssetId::from_chain(Chain::ZkSync), USDT_ZKSYNC_ASSET_ID.into()]),
-        SwapperChainAsset::Assets(
-            Chain::Hyperliquid,
-            vec![AssetId::from_chain(Chain::Hyperliquid), USDC_HYPEREVM_ASSET_ID.into(), USDT_HYPEREVM_ASSET_ID.into()],
-        ),
+        SwapperChainAsset::Assets(Chain::Linea, vec![USDT_LINEA_ASSET_ID.into()]),
+        SwapperChainAsset::Assets(Chain::ZkSync, vec![USDT_ZKSYNC_ASSET_ID.into()]),
+        SwapperChainAsset::Assets(Chain::Hyperliquid, vec![USDC_HYPEREVM_ASSET_ID.into(), USDT_HYPEREVM_ASSET_ID.into()]),
         SwapperChainAsset::Assets(Chain::Berachain, vec![]),
         SwapperChainAsset::Assets(Chain::Manta, vec![]),
         SwapperChainAsset::Assets(Chain::Sonic, vec![]),
