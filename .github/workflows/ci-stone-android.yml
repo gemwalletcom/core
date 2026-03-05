@@ -62,7 +62,7 @@ jobs:
         uses: extractions/setup-just@v2
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Cache AVD
         uses: actions/cache@v4
