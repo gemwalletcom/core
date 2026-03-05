@@ -56,7 +56,7 @@ public final class GemSwapperMock: GemSwapperProtocol {
         permit2ForQuote
     }
 
-    public func fetchQuote(request: SwapperQuoteRequest) async throws -> [SwapperQuote] {
+    public func getQuote(request: SwapperQuoteRequest) async throws -> [SwapperQuote] {
         if let delay = fetchQuoteDelay {
             try await Task.sleep(for: delay)
         }
@@ -70,11 +70,15 @@ public final class GemSwapperMock: GemSwapperProtocol {
         quoteByProvider
     }
 
-    public func fetchQuoteData(quote: SwapperQuote, data: FetchQuoteData) async throws -> GemSwapQuoteData {
+    public func getQuoteData(quote: SwapperQuote, data: FetchQuoteData) async throws -> GemSwapQuoteData {
         quoteData
     }
 
     public func getProviders() -> [SwapperProviderType] {
+        providers
+    }
+
+    public func getProvidersForRequest(request: SwapperQuoteRequest) throws -> [SwapperProviderType] {
         providers
     }
 

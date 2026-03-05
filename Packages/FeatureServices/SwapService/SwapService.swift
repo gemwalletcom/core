@@ -66,13 +66,13 @@ public final class SwapService: Sendable, SwappableChainsProvider {
                 useMaxAmount: useMaxAmount
             )
         )
-        let quotes = try await swapper.fetchQuote(request: swapRequest)
+        let quotes = try await swapper.getQuote(request: swapRequest)
         try Task.checkCancellation()
         return quotes
     }
 
     public func getQuoteData(_ request: SwapperQuote, data: FetchQuoteData) async throws -> GemSwapQuoteData {
-        let quoteData = try await swapper.fetchQuoteData(quote: request, data: data)
+        let quoteData = try await swapper.getQuoteData(quote: request, data: data)
         try Task.checkCancellation()
         return quoteData
     }
