@@ -8,6 +8,8 @@ import StoreTestKit
 import PreferencesTestKit
 import WalletSessionServiceTestKit
 import WalletSessionService
+import WalletConnectorService
+import struct Gemstone.SignMessage
 
 @testable import WalletConnector
 
@@ -85,6 +87,58 @@ struct WalletConnectorSignerTests {
 
         #expect(wallets.count == 1)
         #expect(wallets.first?.walletId == cosmosWallet.walletId)
+    }
+
+    @Test
+    func validateChainPresent() async throws {
+        let db = DB.mock()
+        let walletStore = WalletStore(db: db)
+        let connectionsStore = ConnectionsStore(db: db)
+
+        let wallet = Wallet.mock(id: "multicoin_0x1", accounts: [.mock(chain: .ethereum)])
+        try walletStore.addWallet(wallet)
+
+        let signer = WalletConnectorSigner.mock(
+            connectionsStore: connectionsStore,
+            walletSessionService: WalletSessionService.mock(store: walletStore)
+        )
+
+        let sessionId = "session-chain-test"
+        try signer.addConnection(connection: WalletConnection(
+            session: .mock(id: sessionId, sessionId: sessionId, chains: [.ethereum]),
+            wallet: wallet
+        ))
+
+        let message = SignMessage(chain: "ethereum", signType: .eip191, data: Data())
+        await #expect(throws: WalletConnectorServiceError.unresolvedChainId(Chain.polygon.rawValue)) {
+            try await signer.signMessage(sessionId: sessionId, chain: .polygon, message: message)
+        }
+    }
+
+    @Test
+    func validateChainEmptyChains() async throws {
+        let db = DB.mock()
+        let walletStore = WalletStore(db: db)
+        let connectionsStore = ConnectionsStore(db: db)
+
+        let wallet = Wallet.mock(id: "multicoin_0x1", accounts: [.mock(chain: .ethereum)])
+        try walletStore.addWallet(wallet)
+
+        let signer = WalletConnectorSigner.mock(
+            connectionsStore: connectionsStore,
+            walletSessionService: WalletSessionService.mock(store: walletStore)
+        )
+
+        let sessionId = "session-empty-chains"
+        try signer.addConnection(connection: WalletConnection(
+            session: .mock(id: sessionId, sessionId: sessionId, chains: []),
+            wallet: wallet
+        ))
+
+        let message = SignMessage(chain: "ethereum", signType: .eip191, data: Data())
+        await #expect(throws: WalletConnectorServiceError.unresolvedChainId(Chain.ethereum.rawValue)) {
+            try await signer.signMessage(sessionId: sessionId, chain: .ethereum, message: message)
+        }
     }
 
     @Test
