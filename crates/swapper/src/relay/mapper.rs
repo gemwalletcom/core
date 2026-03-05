@@ -170,4 +170,32 @@ mod tests {
         let steps = vec![Step::mock_empty("approve", "transaction")];
         assert!(get_step_data(&steps).is_err());
     }
+
+    #[test]
+    fn test_map_swap_result_base_usdc_to_eth_usdc() {
+        let response: RelayRequestsResponse = serde_json::from_str(include_str!("testdata/request_base_usdc_to_eth_usdc.json")).unwrap();
+        let request = response.requests.first().unwrap();
+        let result = map_swap_result(request);
+
+        assert_eq!(result.status, SwapStatus::Completed);
+        let metadata = result.metadata.unwrap();
+        assert_eq!(metadata.from_asset, AssetId::from_token(Chain::Base, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"));
+        assert_eq!(metadata.from_value, "11911543");
+        assert_eq!(metadata.to_asset, AssetId::from_token(Chain::Ethereum, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"));
+        assert_eq!(metadata.to_value, "11707349");
+    }
+
+    #[test]
+    fn test_map_swap_result_base_usdc_to_sol_usdt() {
+        let response: RelayRequestsResponse = serde_json::from_str(include_str!("testdata/request_base_usdc_to_sol_usdt.json")).unwrap();
+        let request = response.requests.first().unwrap();
+        let result = map_swap_result(request);
+
+        assert_eq!(result.status, SwapStatus::Completed);
+        let metadata = result.metadata.unwrap();
+        assert_eq!(metadata.from_asset, AssetId::from_token(Chain::Base, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"));
+        assert_eq!(metadata.from_value, "3000000");
+        assert_eq!(metadata.to_asset, AssetId::from_token(Chain::Solana, "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"));
+        assert_eq!(metadata.to_value, "2960498");
+    }
 }
