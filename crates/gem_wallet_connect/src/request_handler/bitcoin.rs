@@ -1,6 +1,5 @@
-use crate::message::sign_type::SignDigestType;
-use crate::wallet_connect::actions::{WalletConnectAction, WalletConnectTransactionType};
-use crate::wallet_connect::handler_traits::ChainRequestHandler;
+use crate::actions::{WalletConnectAction, WalletConnectTransactionType};
+use crate::sign_type::SignDigestType;
 use gem_bitcoin::signer::BitcoinSignMessageData;
 use primitives::wallet_connect::WCBitcoinTransfer;
 use primitives::{Chain, TransferDataOutputType, ValueAccess};
@@ -8,8 +7,8 @@ use serde_json::Value;
 
 pub struct BitcoinRequestHandler;
 
-impl ChainRequestHandler for BitcoinRequestHandler {
-    fn parse_sign_message(chain: Chain, params: Value, _domain: &str) -> Result<WalletConnectAction, String> {
+impl BitcoinRequestHandler {
+    pub fn parse_sign_message(chain: Chain, params: Value, _domain: &str) -> Result<WalletConnectAction, String> {
         let message = params.get_value("message")?.string()?;
         let address = params.get_value("address")?.string()?;
 
@@ -23,11 +22,12 @@ impl ChainRequestHandler for BitcoinRequestHandler {
         })
     }
 
-    fn parse_sign_transaction(_chain: Chain, _params: Value) -> Result<WalletConnectAction, String> {
+    #[allow(dead_code)]
+    pub fn parse_sign_transaction(_chain: Chain, _params: Value) -> Result<WalletConnectAction, String> {
         Err("Bitcoin signTransaction not supported, use sendTransfer instead".to_string())
     }
 
-    fn parse_send_transaction(chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
+    pub fn parse_send_transaction(chain: Chain, params: Value) -> Result<WalletConnectAction, String> {
         let transfer: WCBitcoinTransfer = serde_json::from_value(params).map_err(|e| e.to_string())?;
         let data = serde_json::to_string(&transfer).map_err(|e| e.to_string())?;
 

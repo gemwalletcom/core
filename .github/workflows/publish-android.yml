@@ -48,7 +48,7 @@ jobs:
           ref: ${{ inputs.ref_name }}
 
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v5
         with:
           java-version: "17"
           distribution: "zulu"
@@ -65,10 +65,10 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.9
 
       - name: Install just
-        uses: extractions/setup-just@v2
+        uses: extractions/setup-just@v3
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
 
       - name: Validate version
         run: |

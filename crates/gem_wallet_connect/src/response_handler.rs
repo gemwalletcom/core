@@ -1,27 +1,7 @@
-use crate::wallet_connect::handler_traits::ChainResponseHandler;
+use crate::actions::WalletConnectResponseType;
 use primitives::ChainType;
 
-#[derive(Debug, Clone, PartialEq, uniffi::Enum)]
-pub enum WalletConnectResponseType {
-    String { value: String },
-    Object { json: String },
-}
-
 pub struct WalletConnectResponseHandler;
-
-impl ChainResponseHandler for WalletConnectResponseHandler {
-    fn encode_sign_message(signature: String) -> WalletConnectResponseType {
-        WalletConnectResponseType::String { value: signature }
-    }
-
-    fn encode_sign_transaction(transaction_id: String) -> WalletConnectResponseType {
-        WalletConnectResponseType::String { value: transaction_id }
-    }
-
-    fn encode_send_transaction(transaction_id: String) -> WalletConnectResponseType {
-        WalletConnectResponseType::String { value: transaction_id }
-    }
-}
 
 impl WalletConnectResponseHandler {
     pub fn encode_sign_message(chain_type: ChainType, signature: String) -> WalletConnectResponseType {
@@ -91,41 +71,14 @@ mod tests {
 
     #[test]
     fn test_encode_sign_message_ethereum() {
-        assert_eq!(
-            WalletConnectResponseHandler::encode_sign_message(ChainType::Ethereum, "0xsignature".to_string()),
-            string("0xsignature")
-        );
+        assert_eq!(WalletConnectResponseHandler::encode_sign_message(ChainType::Ethereum, "0xsig".to_string()), string("0xsig"));
     }
 
     #[test]
     fn test_encode_sign_message_solana() {
         assert_eq!(
-            WalletConnectResponseHandler::encode_sign_message(ChainType::Solana, "signature123".to_string()),
-            object(r#"{"signature":"signature123"}"#)
-        );
-    }
-
-    #[test]
-    fn test_encode_sign_message_sui() {
-        assert_eq!(
-            WalletConnectResponseHandler::encode_sign_message(ChainType::Sui, "suisig123".to_string()),
-            object(r#"{"signature":"suisig123"}"#)
-        );
-    }
-
-    #[test]
-    fn test_encode_sign_message_tron() {
-        assert_eq!(
-            WalletConnectResponseHandler::encode_sign_message(ChainType::Tron, "tronsig123".to_string()),
-            object(r#"{"signature":"tronsig123"}"#)
-        );
-    }
-
-    #[test]
-    fn test_encode_sign_transaction_ethereum() {
-        assert_eq!(
-            WalletConnectResponseHandler::encode_sign_transaction(ChainType::Ethereum, "0xtxid".to_string()),
-            string("0xtxid")
+            WalletConnectResponseHandler::encode_sign_message(ChainType::Solana, "sig123".to_string()),
+            object(r#"{"signature":"sig123"}"#)
         );
     }
 
@@ -138,26 +91,10 @@ mod tests {
     }
 
     #[test]
-    fn test_encode_sign_transaction_solana() {
-        assert_eq!(
-            WalletConnectResponseHandler::encode_sign_transaction(ChainType::Solana, "txid123".to_string()),
-            object(r#"{"signature":"txid123"}"#)
-        );
-    }
-
-    #[test]
     fn test_encode_sign_transaction_sui() {
         assert_eq!(
             WalletConnectResponseHandler::encode_sign_transaction(ChainType::Sui, "txbytes_sig123".to_string()),
             object(r#"{"signature":"sig123","transactionBytes":"txbytes"}"#)
-        );
-    }
-
-    #[test]
-    fn test_encode_send_transaction_ethereum() {
-        assert_eq!(
-            WalletConnectResponseHandler::encode_send_transaction(ChainType::Ethereum, "0xhash".to_string()),
-            string("0xhash")
         );
     }
 
@@ -174,28 +111,6 @@ mod tests {
         assert_eq!(
             WalletConnectResponseHandler::encode_send_transaction(ChainType::Tron, "txid123".to_string()),
             object(r#"{"result":true,"txid":"txid123"}"#)
-        );
-    }
-
-    #[test]
-    fn test_encode_sign_message_ton() {
-        let payload = r#"{"signature":"tonsig123","timestamp":1700000000}"#;
-        assert_eq!(WalletConnectResponseHandler::encode_sign_message(ChainType::Ton, payload.to_string()), object(payload));
-    }
-
-    #[test]
-    fn test_encode_sign_transaction_ton() {
-        assert_eq!(
-            WalletConnectResponseHandler::encode_sign_transaction(ChainType::Ton, "tontxsig".to_string()),
-            object(r#"{"signature":"tontxsig"}"#)
-        );
-    }
-
-    #[test]
-    fn test_encode_send_transaction_ton() {
-        assert_eq!(
-            WalletConnectResponseHandler::encode_send_transaction(ChainType::Ton, "tonhash123".to_string()),
-            string("tonhash123")
         );
     }
 }

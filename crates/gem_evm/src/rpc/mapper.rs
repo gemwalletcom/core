@@ -9,7 +9,9 @@ use crate::{
     registry::ContractRegistry,
     rpc::model::{Block, Transaction, TransactionReciept, TransactionReplayTrace},
 };
-use primitives::{AssetId, NFTAssetId, TransactionType, chain::Chain, hex::decode_hex_utf8, transaction_metadata_types::TransactionNFTTransferMetadata};
+use primitives::{
+    AssetId, NFTAssetId, Transaction as PrimitivesTransaction, TransactionType, chain::Chain, hex::decode_hex_utf8, transaction_metadata_types::TransactionNFTTransferMetadata,
+};
 
 pub const INPUT_0X: &str = "0x";
 pub const FUNCTION_ERC20_TRANSFER: &str = "0xa9059cbb";
@@ -25,12 +27,7 @@ pub static CONTRACT_REGISTRY: LazyLock<ContractRegistry> = LazyLock::new(Contrac
 pub struct EthereumMapper;
 
 impl EthereumMapper {
-    pub fn map_transactions(
-        chain: Chain,
-        block: Block,
-        transactions_reciepts: Vec<TransactionReciept>,
-        traces: Option<Vec<TransactionReplayTrace>>,
-    ) -> Vec<primitives::Transaction> {
+    pub fn map_transactions(chain: Chain, block: Block, transactions_reciepts: Vec<TransactionReciept>, traces: Option<Vec<TransactionReplayTrace>>) -> Vec<PrimitivesTransaction> {
         match traces {
             Some(traces) => block
                 .transactions
@@ -57,7 +54,7 @@ impl EthereumMapper {
         trace: Option<&TransactionReplayTrace>,
         timestamp: &BigUint,
         contract_registry: Option<&ContractRegistry>,
-    ) -> Option<primitives::Transaction> {
+    ) -> Option<PrimitivesTransaction> {
         let state = transaction_reciept.get_state();
         let hash = transaction.hash.clone();
         let value = transaction.value.to_string();
@@ -72,28 +69,6 @@ impl EthereumMapper {
         let is_native_transfer_with_data = transaction.input.len() > 2
             && transaction.gas > TRANSFER_GAS_LIMIT
             && Self::get_data_cost(&transaction.input).is_some_and(|data_cost| transaction_reciept.gas_used <= BigUint::from(TRANSFER_GAS_LIMIT + data_cost));
-
-        if is_native_transfer || is_native_transfer_with_data {
-            let data = if is_native_transfer_with_data { Some(transaction.input.clone()) } else { None };
-            let memo = data.as_deref().and_then(decode_hex_utf8).filter(|m| !m.is_empty());
-            let transaction = primitives::Transaction::new(
-                hash,
-                chain.as_asset_id(),
-                from,
-                to,
-                None,
-                TransactionType::Transfer,
-                state,
-                fee.to_string(),
-                fee_asset_id,
-                value,
-                memo,
-                None,
-                created_at,
-            )
-            .with_data(data);
-            return Some(transaction);
-        }
 
         // Try to decode Uniswap V3 or V4 transaction
         if transaction.to.is_some()
@@ -117,7 +92,7 @@ impl EthereumMapper {
             let contract_address = ethereum_address_checksum(&log.address).ok()?;
             let metadata = TransactionNFTTransferMetadata::from_asset_id(NFTAssetId::new(chain, &contract_address, &token_id.to_string()));
 
-            let transaction = primitives::Transaction::new(
+            let transaction = PrimitivesTransaction::new(
                 hash,
                 AssetId::from_chain(chain),
                 from.clone(),
@@ -149,7 +124,7 @@ impl EthereumMapper {
             let contract_address = ethereum_address_checksum(&log.address).ok()?;
             let metadata = TransactionNFTTransferMetadata::from_asset_id(NFTAssetId::new(chain, &contract_address, &token_id.to_string()));
 
-            let transaction = primitives::Transaction::new(
+            let transaction = PrimitivesTransaction::new(
                 hash,
                 AssetId::from_chain(chain),
                 from.clone(),
@@ -179,7 +154,7 @@ impl EthereumMapper {
             let value = BigUint::from_str_radix(&log.data.replace("0x", ""), 16).ok()?;
             let token_id = ethereum_address_checksum(&log.address).ok()?;
 
-            return Some(primitives::Transaction::new(
+            return Some(PrimitivesTransaction::new(
                 hash,
                 AssetId::from_token(chain, &token_id),
                 from.clone(),
@@ -212,7 +187,7 @@ impl EthereumMapper {
             let is_direct_transfer = transaction.input.starts_with(FUNCTION_ERC20_TRANSFER);
 
             if is_direct_transfer || (is_smart_contract_call && (from_address_in_log == from || from_address_in_log == to)) && transaction_reciept.logs.len() <= 2 {
-                return Some(primitives::Transaction::new(
+                return Some(PrimitivesTransaction::new(
                     hash,
                     AssetId::from_token(chain, &token_id),
                     from.clone(),
@@ -235,7 +210,35 @@ impl EthereumMapper {
             return Some(tx);
         }
 
-        None
+        let (transaction_type, memo, data) = if is_native_transfer {
+            (TransactionType::Transfer, None, None)
+        } else if is_native_transfer_with_data {
+            let memo = decode_hex_utf8(&transaction.input).filter(|m| !m.is_empty());
+            (TransactionType::Transfer, memo, Some(transaction.input.clone()))
+        } else if is_smart_contract_call {
+            (TransactionType::SmartContractCall, None, None)
+        } else {
+            return None;
+        };
+
+        Some(
+            PrimitivesTransaction::new(
+                hash,
+                chain.as_asset_id(),
+                from,
+                to,
+                None,
+                transaction_type,
+                state,
+                fee,
+                fee_asset_id,
+                value,
+                memo,
+                None,
+                created_at,
+            )
+            .with_data(data),
+        )
     }
 
     fn get_data_cost(input: &str) -> Option<u64> {
@@ -244,7 +247,6 @@ impl EthereumMapper {
 
         Some(data_cost)
     }
-
 }
 
 #[cfg(test)]
@@ -256,18 +258,15 @@ mod tests {
 
     #[test]
     fn test_map_smart_contract_call() {
-        let contract_call_tx_json: serde_json::Value = serde_json::from_str(include_str!("../../testdata/contract_call_tx.json")).unwrap();
-        let contract_call_tx: Transaction = serde_json::from_value::<JsonRpcResult<Transaction>>(contract_call_tx_json).unwrap().result;
+        let contract_call_tx = load_json_rpc_result::<Transaction>(include_str!("../../testdata/contract_call_tx.json"));
+        let contract_call_receipt = load_json_rpc_result::<TransactionReciept>(include_str!("../../testdata/contract_call_tx_receipt.json"));
 
-        let contract_call_receipt_json: serde_json::Value = serde_json::from_str(include_str!("../../testdata/contract_call_tx_receipt.json")).unwrap();
-        let contract_call_receipt = serde_json::from_value::<JsonRpcResult<TransactionReciept>>(contract_call_receipt_json).unwrap().result;
+        let transaction = EthereumMapper::map_transaction(Chain::Ethereum, &contract_call_tx, &contract_call_receipt, None, &BigUint::from(1735671600u64), None).unwrap();
 
-        let _transaction = EthereumMapper::map_transaction(Chain::Ethereum, &contract_call_tx, &contract_call_receipt, None, &BigUint::from(1735671600u64), None);
-
-        // assert_eq!(transaction.transaction_type, TransactionType::SmartContractCall);
-        // assert_eq!(transaction.hash, "0x876707912c2d625723aa14bf268d83ede36c2657c70da500628e40e6b51577c9");
-        // assert_eq!(transaction.from, "0x39ab5f6f1269590225EdAF9ad4c5967B09243747");
-        // assert_eq!(transaction.to, "0xB907Dcc926b5991A149d04Cb7C0a4a25dC2D8f9a");
+        assert_eq!(transaction.transaction_type, TransactionType::SmartContractCall);
+        assert_eq!(transaction.hash, "0x876707912c2d625723aa14bf268d83ede36c2657c70da500628e40e6b51577c9");
+        assert_eq!(transaction.from, "0x39ab5f6f1269590225EdAF9ad4c5967B09243747");
+        assert_eq!(transaction.to, "0xB907Dcc926b5991A149d04Cb7C0a4a25dC2D8f9a");
     }
 
     #[test]
@@ -434,6 +433,34 @@ mod tests {
         assert_eq!(tx.to, "0xd34403249B2d82AAdDB14e778422c966265e5Fb5");
         assert_eq!(tx.contract.unwrap(), "0x0000000000000000000000000000000000002002");
         assert!(tx.metadata.is_none());
+    }
+
+    #[test]
+    fn test_mayan_native_swap() {
+        let transaction = load_json_rpc_result::<Transaction>(include_str!("../../testdata/mayan_native_swap_tx.json"));
+        let receipt = load_json_rpc_result::<TransactionReciept>(include_str!("../../testdata/mayan_native_swap_tx_receipt.json"));
+
+        let tx = EthereumMapper::map_transaction(Chain::Polygon, &transaction, &receipt, None, &BigUint::from(1735671600u64), None).unwrap();
+
+        assert_eq!(tx.transaction_type, TransactionType::SmartContractCall);
+        assert_eq!(tx.asset_id, AssetId::from_chain(Chain::Polygon));
+        assert_eq!(tx.from, "0x551Ac3629eC87F3957b1074FaF48d22A5a26ecec");
+        assert_eq!(tx.to, "0x337685fdaB40D39bd02028545a4FfA7D287cC3E2");
+        assert_eq!(tx.value, "124798001816181500204");
+    }
+
+    #[test]
+    fn test_mayan_token_swap() {
+        let transaction = load_json_rpc_result::<Transaction>(include_str!("../../testdata/mayan_token_swap_tx.json"));
+        let receipt = load_json_rpc_result::<TransactionReciept>(include_str!("../../testdata/mayan_token_swap_tx_receipt.json"));
+
+        let tx = EthereumMapper::map_transaction(Chain::Polygon, &transaction, &receipt, None, &BigUint::from(1735671600u64), None).unwrap();
+
+        assert_eq!(tx.transaction_type, TransactionType::SmartContractCall);
+        assert_eq!(tx.asset_id, AssetId::from_chain(Chain::Polygon));
+        assert_eq!(tx.from, "0x0DC153E9225a0d74460d806C08c961a3EC0ef17D");
+        assert_eq!(tx.to, "0x337685fdaB40D39bd02028545a4FfA7D287cC3E2");
+        assert_eq!(tx.value, "0");
     }
 
     #[test]

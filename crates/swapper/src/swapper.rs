@@ -5,7 +5,12 @@ use crate::{
 };
 use num_traits::ToPrimitive;
 use primitives::{AssetId, Chain, EVMChain};
-use std::{borrow::Cow, collections::HashSet, fmt::Debug, sync::Arc};
+use std::{
+    borrow::Cow,
+    collections::{BTreeSet, HashSet},
+    fmt::Debug,
+    sync::Arc,
+};
 
 #[derive(Debug)]
 pub struct GemSwapper {
@@ -162,24 +167,30 @@ impl GemSwapper {
         self.swappers.iter().map(|x| x.provider().clone()).collect()
     }
 
-    pub async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Vec<Quote>, SwapperError> {
+    pub fn get_providers_for_request(&self, request: &QuoteRequest) -> Result<Vec<ProviderType>, SwapperError> {
         if request.from_asset.id == request.to_asset.id {
             return Err(SwapperError::NoQuoteAvailable);
         }
         let from_chain = request.from_asset.chain();
         let to_chain = request.to_asset.chain();
         let preferred_providers = &request.options.preferred_providers;
-        let providers = self
+        let providers: Vec<ProviderType> = self
             .swappers
             .iter()
             .filter(|x| Self::filter_by_provider_mode(&x.provider().mode, from_chain, to_chain))
             .filter(|x| Self::filter_by_supported_chains(x.supported_chains(), from_chain, to_chain))
             .filter(|x| Self::filter_by_preferred_providers(preferred_providers, &x.provider().id))
-            .collect::<Vec<_>>();
-
+            .map(|x| x.provider().clone())
+            .collect();
         if providers.is_empty() {
             return Err(SwapperError::NoAvailableProvider);
         }
+        Ok(providers)
+    }
+
+    pub async fn get_quote(&self, request: &QuoteRequest) -> Result<Vec<Quote>, SwapperError> {
+        let provider_ids: BTreeSet<_> = self.get_providers_for_request(request)?.into_iter().map(|p| p.id).collect();
+        let providers = self.swappers.iter().filter(|x| provider_ids.contains(&x.provider().id)).collect::<Vec<_>>();
 
         let request_for_quote = Self::transform_request(request);
         let quotes_futures = providers.into_iter().map(|x| x.fetch_quote(request_for_quote.as_ref()));
@@ -219,7 +230,7 @@ impl GemSwapper {
         provider.fetch_permit2_for_quote(quote).await
     }
 
-    pub async fn fetch_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    pub async fn get_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let provider = self.get_swapper_by_provider(&quote.data.provider.id)?;
         let mut quote_data = provider.fetch_quote_data(quote, data).await?;
         if let Some(gas_limit) = quote_data.gas_limit.take() {
@@ -436,7 +447,7 @@ mod tests {
                 Box::new(MockSwapper::new(SwapperProvider::Jupiter, || Err(SwapperError::NoQuoteAvailable))),
             ],
         };
-        assert_eq!(gem_swapper.fetch_quote(&request).await, Err(SwapperError::InputAmountError { min_amount: None }));
+        assert_eq!(gem_swapper.get_quote(&request).await, Err(SwapperError::InputAmountError { min_amount: None }));
 
         let gem_swapper = GemSwapper {
             rpc_provider: Arc::new(NativeProvider::default()),
@@ -459,7 +470,7 @@ mod tests {
             ],
         };
         assert_eq!(
-            gem_swapper.fetch_quote(&request).await,
+            gem_swapper.get_quote(&request).await,
             Err(SwapperError::InputAmountError {
                 min_amount: Some("1390400".into())
             })

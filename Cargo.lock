@@ -3396,6 +3396,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "gem_wallet_connect"
+version = "1.0.0"
+dependencies = [
+ "gem_bitcoin",
+ "gem_evm",
+ "gem_ton",
+ "hex",
+ "primitives",
+ "serde",
+ "serde_json",
+ "url",
+]
+
+[[package]]
 name = "gem_xrp"
 version = "1.0.0"
 dependencies = [
@@ -3445,6 +3459,7 @@ dependencies = [
  "gem_sui",
  "gem_ton",
  "gem_tron",
+ "gem_wallet_connect",
  "gem_xrp",
  "hex",
  "num-bigint",
