@@ -69,12 +69,12 @@ public struct PriceStore: Sendable {
                     PriceRecord.Columns.circulatingSupply.set(to: market.circulatingSupply),
                     PriceRecord.Columns.totalSupply.set(to: market.totalSupply),
                     PriceRecord.Columns.maxSupply.set(to: market.maxSupply),
-                    PriceRecord.Columns.allTimeHigh.set(to: market.allTimeHigh),
-                    PriceRecord.Columns.allTimeHighDate.set(to: market.allTimeHighDate),
-                    PriceRecord.Columns.allTimeHighChangePercentage.set(to: market.allTimeHighChangePercentage),
-                    PriceRecord.Columns.allTimeLow.set(to: market.allTimeLow),
-                    PriceRecord.Columns.allTimeLowDate.set(to: market.allTimeLowDate),
-                    PriceRecord.Columns.allTimeLowChangePercentage.set(to: market.allTimeLowChangePercentage)
+                    PriceRecord.Columns.allTimeHigh.set(to: market.allTimeHighValue.map { Double($0.value) }),
+                    PriceRecord.Columns.allTimeHighDate.set(to: market.allTimeHighValue?.date),
+                    PriceRecord.Columns.allTimeHighChangePercentage.set(to: market.allTimeHighValue.map { Double($0.percentage) }),
+                    PriceRecord.Columns.allTimeLow.set(to: market.allTimeLowValue.map { Double($0.value) }),
+                    PriceRecord.Columns.allTimeLowDate.set(to: market.allTimeLowValue?.date),
+                    PriceRecord.Columns.allTimeLowChangePercentage.set(to: market.allTimeLowValue.map { Double($0.percentage) })
                 )
         }
     }

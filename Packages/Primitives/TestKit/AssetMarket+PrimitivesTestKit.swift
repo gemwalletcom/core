@@ -12,12 +12,8 @@ extension AssetMarket {
         circulatingSupply: Double? = 100_000,
         totalSupply: Double? = 200_000,
         maxSupply: Double? = 300_000,
-        allTimeHigh: Double? = 100,
-        allTimeHighDate: Date? = .now,
-        allTimeHighChangePercentage: Double? = -10,
-        allTimeLow: Double? = 1,
-        allTimeLowDate: Date? = .now,
-        allTimeLowChangePercentage: Double? = 100
+        allTimeHighValue: ChartValuePercentage? = ChartValuePercentage(date: .now, value: 100, percentage: -10),
+        allTimeLowValue: ChartValuePercentage? = ChartValuePercentage(date: .now, value: 1, percentage: 100)
     ) -> AssetMarket {
         AssetMarket(
             marketCap: marketCap,
@@ -27,12 +23,8 @@ extension AssetMarket {
             circulatingSupply: circulatingSupply,
             totalSupply: totalSupply,
             maxSupply: maxSupply,
-            allTimeHigh: allTimeHigh,
-            allTimeHighDate: allTimeHighDate,
-            allTimeHighChangePercentage: allTimeHighChangePercentage,
-            allTimeLow: allTimeLow,
-            allTimeLowDate: allTimeLowDate,
-            allTimeLowChangePercentage: allTimeLowChangePercentage
+            allTimeHighValue: allTimeHighValue,
+            allTimeLowValue: allTimeLowValue
         )
     }
 }

@@ -46,6 +46,8 @@ public enum GemDeviceAPI: TargetType {
 
     case getNameRecord(name: String, chain: String)
 
+    case getPortfolioAssets(period: ChartPeriod, request: PortfolioAssetsRequest)
+
     public var baseUrl: URL {
         Constants.apiURL
     }
@@ -79,7 +81,8 @@ public enum GemDeviceAPI: TargetType {
             .createDeviceReferral,
             .useDeviceReferralCode,
             .redeemDeviceRewards,
-            .markNotificationsRead:
+            .markNotificationsRead,
+            .getPortfolioAssets:
             return .POST
         case .updateDevice:
             return .PUT
@@ -151,6 +154,8 @@ public enum GemDeviceAPI: TargetType {
             return "/v2/devices/fiat/quotes/\(quoteId)/url"
         case .getNameRecord(let name, let chain):
             return "/v2/devices/name/resolve/\(name)?chain=\(chain)"
+        case .getPortfolioAssets(let period, _):
+            return "/v2/devices/portfolio/assets?period=\(period.rawValue)"
         }
     }
 
@@ -228,6 +233,8 @@ public enum GemDeviceAPI: TargetType {
         case .useDeviceReferralCode(_, let request):
             return .encodable(request)
         case .redeemDeviceRewards(_, let request):
+            return .encodable(request)
+        case .getPortfolioAssets(_, let request):
             return .encodable(request)
         }
     }

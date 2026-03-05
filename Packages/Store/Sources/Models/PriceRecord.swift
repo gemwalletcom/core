@@ -126,12 +126,12 @@ extension PriceRecord {
             circulatingSupply: circulatingSupply,
             totalSupply: totalSupply,
             maxSupply: maxSupply,
-            allTimeHigh: allTimeHigh,
-            allTimeHighDate: allTimeHighDate,
-            allTimeHighChangePercentage: allTimeHighChangePercentage,
-            allTimeLow: allTimeLow,
-            allTimeLowDate: allTimeLowDate,
-            allTimeLowChangePercentage: allTimeLowChangePercentage
+            allTimeHighValue: allTimeHigh.flatMap { value in
+                allTimeHighDate.map { ChartValuePercentage(date: $0, value: Float(value), percentage: Float(allTimeHighChangePercentage ?? 0)) }
+            },
+            allTimeLowValue: allTimeLow.flatMap { value in
+                allTimeLowDate.map { ChartValuePercentage(date: $0, value: Float(value), percentage: Float(allTimeLowChangePercentage ?? 0)) }
+            }
         )
     }
 }

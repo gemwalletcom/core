@@ -4,6 +4,18 @@
 
 import Foundation
 
+public struct ChartValuePercentage: Codable, Equatable, Hashable, Sendable {
+	public let date: Date
+	public let value: Float
+	public let percentage: Float
+
+	public init(date: Date, value: Float, percentage: Float) {
+		self.date = date
+		self.value = value
+		self.percentage = percentage
+	}
+}
+
 public struct PerpetualAccountSummary: Codable, Equatable, Hashable, Sendable {
 	public let accountValue: Double
 	public let accountLeverage: Double
@@ -43,6 +55,52 @@ public struct PerpetualPortfolio: Codable, Equatable, Hashable, Sendable {
 		self.month = month
 		self.allTime = allTime
 		self.accountSummary = accountSummary
+	}
+}
+
+public struct PortfolioAllocation: Codable, Equatable, Hashable, Sendable {
+	public let assetId: AssetId
+	public let percentage: Float
+	public let value: Float
+
+	public init(assetId: AssetId, percentage: Float, value: Float) {
+		self.assetId = assetId
+		self.percentage = percentage
+		self.value = value
+	}
+}
+
+public struct PortfolioAsset: Codable, Sendable {
+	public let assetId: AssetId
+	public let value: String
+
+	public init(assetId: AssetId, value: String) {
+		self.assetId = assetId
+		self.value = value
+	}
+}
+
+public struct PortfolioAssets: Codable, Equatable, Hashable, Sendable {
+	public let totalValue: Float
+	public let values: [ChartValue]
+	public let allTimeHigh: ChartValuePercentage?
+	public let allTimeLow: ChartValuePercentage?
+	public let allocation: [PortfolioAllocation]
+
+	public init(totalValue: Float, values: [ChartValue], allTimeHigh: ChartValuePercentage?, allTimeLow: ChartValuePercentage?, allocation: [PortfolioAllocation]) {
+		self.totalValue = totalValue
+		self.values = values
+		self.allTimeHigh = allTimeHigh
+		self.allTimeLow = allTimeLow
+		self.allocation = allocation
+	}
+}
+
+public struct PortfolioAssetsRequest: Codable, Sendable {
+	public let assets: [PortfolioAsset]
+
+	public init(assets: [PortfolioAsset]) {
+		self.assets = assets
 	}
 }
 

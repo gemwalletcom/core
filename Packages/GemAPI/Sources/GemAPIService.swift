@@ -94,6 +94,10 @@ public protocol GemAPISearchService: Sendable {
     func search(query: String, chains: [Chain], tags: [AssetTag]) async throws -> SearchResponse
 }
 
+public protocol GemAPIPortfolioService: Sendable {
+    func getPortfolioAssets(period: ChartPeriod, request: PortfolioAssetsRequest) async throws -> PortfolioAssets
+}
+
 public protocol GemAPINotificationService: Sendable {
     func getNotifications(fromTimestamp: Int) async throws -> [Primitives.InAppNotification]
     func markNotificationsRead() async throws
@@ -407,6 +411,14 @@ extension GemAPIService: GemAPINotificationService {
     public func markNotificationsRead() async throws {
         _ = try await deviceProvider
             .request(.markNotificationsRead)
+    }
+}
+
+extension GemAPIService: GemAPIPortfolioService {
+    public func getPortfolioAssets(period: ChartPeriod, request: PortfolioAssetsRequest) async throws -> PortfolioAssets {
+        try await deviceProvider
+            .request(.getPortfolioAssets(period: period, request: request))
+            .mapResponse(as: PortfolioAssets.self)
     }
 }
 

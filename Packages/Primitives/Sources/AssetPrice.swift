@@ -12,14 +12,10 @@ public struct AssetMarket: Codable, Equatable, Sendable {
 	public let circulatingSupply: Double?
 	public let totalSupply: Double?
 	public let maxSupply: Double?
-	public let allTimeHigh: Double?
-	public let allTimeHighDate: Date?
-	public let allTimeHighChangePercentage: Double?
-	public let allTimeLow: Double?
-	public let allTimeLowDate: Date?
-	public let allTimeLowChangePercentage: Double?
+	public let allTimeHighValue: ChartValuePercentage?
+	public let allTimeLowValue: ChartValuePercentage?
 
-	public init(marketCap: Double?, marketCapFdv: Double?, marketCapRank: Int32?, totalVolume: Double?, circulatingSupply: Double?, totalSupply: Double?, maxSupply: Double?, allTimeHigh: Double?, allTimeHighDate: Date?, allTimeHighChangePercentage: Double?, allTimeLow: Double?, allTimeLowDate: Date?, allTimeLowChangePercentage: Double?) {
+	public init(marketCap: Double?, marketCapFdv: Double?, marketCapRank: Int32?, totalVolume: Double?, circulatingSupply: Double?, totalSupply: Double?, maxSupply: Double?, allTimeHighValue: ChartValuePercentage?, allTimeLowValue: ChartValuePercentage?) {
 		self.marketCap = marketCap
 		self.marketCapFdv = marketCapFdv
 		self.marketCapRank = marketCapRank
@@ -27,12 +23,8 @@ public struct AssetMarket: Codable, Equatable, Sendable {
 		self.circulatingSupply = circulatingSupply
 		self.totalSupply = totalSupply
 		self.maxSupply = maxSupply
-		self.allTimeHigh = allTimeHigh
-		self.allTimeHighDate = allTimeHighDate
-		self.allTimeHighChangePercentage = allTimeHighChangePercentage
-		self.allTimeLow = allTimeLow
-		self.allTimeLowDate = allTimeLowDate
-		self.allTimeLowChangePercentage = allTimeLowChangePercentage
+		self.allTimeHighValue = allTimeHighValue
+		self.allTimeLowValue = allTimeLowValue
 	}
 }
 
@@ -70,7 +62,7 @@ public struct AssetPricesRequest: Codable, Equatable, Sendable {
 	}
 }
 
-public struct ChartValue: Codable, Sendable {
+public struct ChartValue: Codable, Equatable, Hashable, Sendable {
 	public let timestamp: Int32
 	public let value: Float
 
