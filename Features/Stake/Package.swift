@@ -55,6 +55,7 @@ let package = Package(
             dependencies: [
                 "Stake",
                 .product(name: "PrimitivesTestKit", package: "Primitives"),
+                .product(name: "StakeServiceTestKit", package: "ChainServices"),
             ],
             path: "TestKit"
         ),

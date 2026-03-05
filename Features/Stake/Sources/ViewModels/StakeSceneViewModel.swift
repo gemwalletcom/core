@@ -107,8 +107,8 @@ public final class StakeSceneViewModel {
     }
     
     var recommendedCurrentValidator: DelegationValidator? {
-        guard let validatorId = recommendedValidators.randomValidatorId(chain: chain.chain) else { return .none }
-        return try? stakeService.getValidator(assetId: asset.id, validatorId: validatorId)
+        let ids = recommendedValidators.validatorsSet(chain: chain.chain)
+        return validators.first { ids.contains($0.id) }
     }
 
     var emptyContentModel: EmptyContentTypeViewModel {

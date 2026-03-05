@@ -2,12 +2,13 @@
 
 import Foundation
 import Testing
-import Store
 import StakeService
 import StakeServiceTestKit
+import StakeTestKit
 import PrimitivesTestKit
 import Primitives
 
+@testable import Store
 @testable import Stake
 
 @MainActor
@@ -35,20 +36,14 @@ struct StakeSceneViewModelTests {
         #expect(StakeSceneViewModel.mock(wallet: .mock(type: .multicoin)).showManage == true)
         #expect(StakeSceneViewModel.mock(wallet: .mock(type: .view)).showManage == false)
     }
-}
 
-//TODO: Move to staking test kit
-extension StakeSceneViewModel {
-    static func mock(
-        wallet: Wallet = .mock(),
-        chain: StakeChain = .tron,
-        stakeService: any StakeServiceable = MockStakeService(stakeApr: 13.5)
-    ) -> StakeSceneViewModel {
-        StakeSceneViewModel(
-            wallet: wallet,
-            chain: chain,
-            currencyCode: "USD",
-            stakeService: stakeService
-        )
+    @Test
+    func recommendedCurrentValidator() throws {
+        let model = StakeSceneViewModel.mock(chain: .cosmos)
+        let recommendedId = try #require(StakeRecommendedValidators().validatorsSet(chain: .cosmos).first)
+
+        model.validatorsQuery.value = [.mock(.cosmos, id: "other"), .mock(.cosmos, id: recommendedId)]
+
+        #expect(model.recommendedCurrentValidator?.id == recommendedId)
     }
 }
