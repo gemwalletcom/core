@@ -1,0 +1,11 @@
+[package]
+name = "portfolio"
+edition = { workspace = true }
+version = { workspace = true }
+
+[dependencies]
+chrono = { workspace = true }
+
+primitives = { path = "../primitives" }
+number_formatter = { path = "../number_formatter" }
+storage = { path = "../storage" }

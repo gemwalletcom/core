@@ -8,9 +8,6 @@ use rocket::outcome::Outcome::{Error, Success};
 use rocket::{Data, Request, State};
 use serde::de::DeserializeOwned;
 use std::sync::Arc;
-use storage::Database;
-use storage::database::devices::DevicesStore;
-use storage::models::DeviceRow;
 
 fn error_outcome<'r, T>(req: &'r Request<'_>, status: Status, message: &str) -> Outcome<'r, T, String> {
     cache_error(req, message);
@@ -18,7 +15,6 @@ fn error_outcome<'r, T>(req: &'r Request<'_>, status: Status, message: &str) -> 
 }
 
 struct VerifiedBody<T> {
-    device_id: String,
     address: String,
     data: T,
 }
@@ -66,50 +62,9 @@ async fn verify_wallet_signature<'r, T: DeserializeOwned + Send, O>(req: &'r Req
     }
 
     Ok(VerifiedBody {
-        device_id: body.auth.device_id,
         address: body.auth.address,
         data: body.data,
     })
-}
-
-pub struct VerifiedAuth {
-    pub device: DeviceRow,
-    pub address: String,
-}
-
-pub struct Authenticated<T> {
-    pub auth: VerifiedAuth,
-    pub data: T,
-}
-
-#[rocket::async_trait]
-impl<'r, T: DeserializeOwned + Send> FromData<'r> for Authenticated<T> {
-    type Error = String;
-
-    async fn from_data(req: &'r Request<'_>, data: Data<'r>) -> Outcome<'r, Self> {
-        let verified = match verify_wallet_signature(req, data).await {
-            Ok(v) => v,
-            Err(outcome) => return outcome,
-        };
-
-        let Success(database) = req.guard::<&State<Database>>().await else {
-            return error_outcome(req, Status::InternalServerError, "Database not available");
-        };
-        let Ok(mut db_client) = database.client() else {
-            return error_outcome(req, Status::InternalServerError, "Database error");
-        };
-        let Ok(device) = DevicesStore::get_device(&mut db_client, &verified.device_id) else {
-            return error_outcome(req, Status::Unauthorized, "Device not found");
-        };
-
-        Success(Authenticated {
-            auth: VerifiedAuth {
-                device,
-                address: verified.address,
-            },
-            data: verified.data,
-        })
-    }
 }
 
 pub struct WalletSigned<T> {

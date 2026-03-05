@@ -1,5 +1,5 @@
 use primitives::currency::Currency;
-use primitives::{AssetId, Chain, ChartPeriod, Device, FiatQuoteType, NFTAssetId, NFTCollectionId, SwapProvider, TransactionId, WalletId};
+use primitives::{AssetId, Chain, ChartPeriod, Device, FiatQuoteType, NFTAssetId, NFTCollectionId, SwapProvider, TransactionId};
 use rocket::data::{FromData, Outcome, ToByteUnit};
 use rocket::form::{self, FromFormField, ValueField};
 use rocket::http::Status;
@@ -85,37 +85,6 @@ impl<'r> FromFormField<'r> for AddressParam {
             return Err(form::Error::validation(format!("Invalid address: {}", field.value)).into());
         }
         Ok(AddressParam(field.value.to_string()))
-    }
-}
-
-// Accepts either:
-// - Full wallet_id format: "multicoin_0x123" (parsed as WalletId::Multicoin)
-// - Raw address: "0x123" (wrapped in WalletId::Multicoin for backwards compatibility)
-// TODO: Remove raw address support once all clients send wallet_id format
-pub struct MulticoinParam(pub WalletId);
-
-impl MulticoinParam {
-    pub fn id(&self) -> String {
-        self.0.id()
-    }
-}
-
-impl<'r> FromParam<'r> for MulticoinParam {
-    type Error = &'r str;
-
-    fn from_param(param: &'r str) -> Result<Self, Self::Error> {
-        if param.is_empty() || param.len() > MAX_ADDRESS_LENGTH {
-            return Err(param);
-        }
-
-        if let Some(wallet_id) = WalletId::from_id(param) {
-            match wallet_id {
-                WalletId::Multicoin(_) => return Ok(MulticoinParam(wallet_id)),
-                _ => return Err(param),
-            }
-        }
-
-        Ok(MulticoinParam(WalletId::Multicoin(param.to_string())))
     }
 }
 

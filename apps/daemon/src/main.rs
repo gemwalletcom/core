@@ -81,7 +81,7 @@ async fn run_worker_services(settings: settings::Settings, services: &[WorkerSer
     let (shutdown_tx, shutdown_rx) = shutdown::channel();
     let shutdown_timeout = settings.daemon.shutdown.timeout;
 
-    let scheduler_cacher = CacherClient::new(&settings.metrics.redis.url).await;
+    let scheduler_cacher = CacherClient::new(&settings.redis.url).await;
     let database = storage::Database::new(&settings.postgres.url, settings.postgres.pool);
 
     let service_name = services.first().map(|s| s.as_ref()).unwrap_or("worker");

@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use futures::StreamExt;
-use gem_tracing::{error_with_fields, info_with_fields};
+use gem_tracing::{error_fields, error_with_fields, info_with_fields};
 use lapin::{Channel, Connection, ConnectionProperties, options::*, types::FieldTable};
 use serde::de::DeserializeOwned;
 use tokio::sync::watch;
@@ -141,7 +141,7 @@ impl StreamReader {
             let mut consumer = match consumer_result {
                 Ok(c) => c,
                 Err(e) => {
-                    info_with_fields!("consumer setup failed", connection = self.config.name.as_str(), error = format!("{e}"));
+                    error_fields!("consumer setup failed", connection = self.config.name.as_str(), error = format!("{e}"));
                     if !self.reconnect(&shutdown_rx).await? {
                         break;
                     }

@@ -14,7 +14,6 @@ pub struct PriceClient {
 }
 
 const PRICES_INSERT_BATCH_LIMIT: usize = 1000;
-const FIAT_RATES_KEY: &str = "fiat_rates";
 
 impl PriceClient {
     pub fn new(database: Database, cacher_client: CacherClient) -> Self {
@@ -83,26 +82,29 @@ impl PriceClient {
     }
 
     pub async fn set_cache_fiat_rates(&self, rates: Vec<FiatRate>) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.cacher_client.set_value(FIAT_RATES_KEY, &rates).await
+        self.cacher_client.set_cached(CacheKey::FiatRates, &rates).await
     }
 
     pub async fn get_cache_fiat_rates(&self) -> Result<Vec<FiatRate>, Box<dyn Error + Send + Sync>> {
-        self.cacher_client.get_value(FIAT_RATES_KEY).await
+        self.cacher_client.get_cached(CacheKey::FiatRates).await
     }
 
     pub async fn set_cache_prices(&self, prices: Vec<AssetPriceInfo>, ttl_seconds: i64) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let values: Vec<(String, String)> = prices.iter().map(|x| (x.asset_id.to_string().clone(), serde_json::to_string(&x).unwrap())).collect();
+        let values: Vec<(String, String)> = prices
+            .iter()
+            .map(|x| (CacheKey::Price(&x.asset_id.to_string()).key(), serde_json::to_string(&x).unwrap()))
+            .collect();
 
         self.cacher_client.set_values_with_publish(values, ttl_seconds).await
     }
 
     pub async fn get_cache_prices(&self, asset_ids: Vec<String>) -> Result<Vec<AssetPriceInfo>, Box<dyn Error + Send + Sync>> {
-        let keys: Vec<String> = asset_ids.iter().map(|x| x.to_string()).collect();
+        let keys: Vec<String> = asset_ids.iter().map(|x| CacheKey::Price(x).key()).collect();
         self.cacher_client.get_values(keys).await
     }
 
     pub async fn get_cache_price(&self, asset_id: &str) -> Result<AssetPriceInfo, Box<dyn Error + Send + Sync>> {
-        self.cacher_client.get_value(asset_id).await
+        self.cacher_client.get_cached(CacheKey::Price(asset_id)).await
     }
 
     pub async fn get_asset_prices(&self, currency: &str, asset_ids: Vec<String>) -> Result<AssetPrices, Box<dyn Error + Send + Sync>> {

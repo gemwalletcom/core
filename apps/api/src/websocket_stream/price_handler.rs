@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::sync::Arc;
 
+use cacher::CacheKey;
 use pricer::PriceClient;
 use primitives::{AssetId, AssetPrice, AssetPriceInfo, StreamEvent, StreamMessage, WebSocketPricePayload, asset::AssetHashSetExt};
 use redis::aio::MultiplexedConnection;
@@ -33,7 +34,7 @@ impl PriceHandler {
     }
 
     fn get_channel_ids(&self) -> Vec<String> {
-        self.assets.iter().map(|id| id.to_string()).collect()
+        self.assets.iter().map(|id| CacheKey::Price(&id.to_string()).key()).collect()
     }
 
     pub fn handle_price_message(&mut self, value: &[u8]) -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -58,7 +59,7 @@ impl PriceHandler {
                 (assets_set, false, false)
             }
             StreamMessage::UnsubscribePrices(msg) => {
-                let removed_channels: Vec<String> = msg.assets.iter().map(|id| id.to_string()).collect();
+                let removed_channels: Vec<String> = msg.assets.iter().map(|id| CacheKey::Price(&id.to_string()).key()).collect();
                 for asset in &msg.assets {
                     self.assets.remove(asset);
                 }

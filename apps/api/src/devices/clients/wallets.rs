@@ -1,7 +1,6 @@
 use std::collections::{BTreeMap, HashMap};
 use std::error::Error;
 
-use crate::devices::DeviceCacher;
 use primitives::{Chain, WalletId, WalletSource, WalletSubscription, WalletSubscriptionChains, WalletSubscriptionLegacy};
 use serde::Deserialize;
 use storage::models::NewWalletRow;
@@ -28,21 +27,15 @@ impl WalletSubscriptionInput {
 #[derive(Clone)]
 pub struct WalletsClient {
     database: Database,
-    device_cacher: DeviceCacher,
     stream_producer: StreamProducer,
 }
 
 impl WalletsClient {
-    pub fn new(database: Database, device_cacher: DeviceCacher, stream_producer: StreamProducer) -> Self {
-        Self {
-            database,
-            device_cacher,
-            stream_producer,
-        }
+    pub fn new(database: Database, stream_producer: StreamProducer) -> Self {
+        Self { database, stream_producer }
     }
 
-    pub async fn get_subscriptions(&self, device_id: &str) -> Result<Vec<WalletSubscriptionChains>, Box<dyn Error + Send + Sync>> {
-        let device_row_id = self.device_cacher.get_device_row_id(device_id).await?;
+    pub fn get_subscriptions(&self, device_row_id: i32) -> Result<Vec<WalletSubscriptionChains>, Box<dyn Error + Send + Sync>> {
         let rows = self.database.wallets()?.get_subscriptions(device_row_id)?;
 
         Ok(rows
@@ -63,12 +56,11 @@ impl WalletsClient {
             .collect())
     }
 
-    pub async fn add_subscriptions(&self, device_id: &str, wallet_subscriptions: Vec<WalletSubscription>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    pub async fn add_subscriptions(&self, device_row_id: i32, wallet_subscriptions: Vec<WalletSubscription>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         if wallet_subscriptions.is_empty() {
             return Ok(0);
         }
 
-        let device_row_id = self.device_cacher.get_device_row_id(device_id).await?;
         let mut store = self.database.wallets()?;
 
         let identifiers: Vec<String> = wallet_subscriptions.iter().map(|x| x.wallet_id.id()).collect();

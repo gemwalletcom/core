@@ -85,8 +85,11 @@ impl ReqwestClient {
             ClientError::Timeout
         } else if e.is_connect() {
             ClientError::Network(format!("Connection error: {e}"))
+        } else if e.is_builder() {
+            ClientError::Network(format!("Request builder error: {e:?}"))
         } else {
-            ClientError::Network(e.to_string())
+            let url = e.url().map(|u| u.as_str()).unwrap_or("unknown");
+            ClientError::Network(format!("{e} url={url}"))
         }
     }
 }

@@ -16,7 +16,8 @@ const MAYAN_MCTP: &str = "0x875d6d37EC55c8cF220B9E5080717549d8Aa8EcA";
 const MAYAN_SWIFT: &str = "0xC38e4e6A15593f908255214653d3D947CA1c2338";
 const MAYAN_FULFILL_HELPER: &str = "0xBC0663ef502F0Ee9676626ED5B418037252eFeb2";
 
-pub const MAYAN_CONTRACTS: [&str; 4] = [MAYAN_FORWARDER, MAYAN_MCTP, MAYAN_SWIFT, MAYAN_FULFILL_HELPER];
+pub const MAYAN_DEPOSIT_CONTRACTS: [&str; 3] = [MAYAN_FORWARDER, MAYAN_MCTP, MAYAN_SWIFT];
+pub const MAYAN_SEND_CONTRACTS: [&str; 1] = [MAYAN_FULFILL_HELPER];
 
 /// https://wormhole.com/docs/products/reference/chain-ids
 pub fn wormhole_chain_id_to_chain(chain_id: u16) -> Option<Chain> {
@@ -47,8 +48,7 @@ pub fn wormhole_chain_id_to_chain(chain_id: u16) -> Option<Chain> {
 }
 
 pub fn resolve_asset_id(chain: Chain, token_address: &str) -> Option<AssetId> {
-    let is_native =
-        token_address == EVM_ZERO_ADDRESS || token_address == WSOL_TOKEN_ADDRESS || chain.config().denom.is_some_and(|d| d == token_address);
+    let is_native = token_address == EVM_ZERO_ADDRESS || token_address == WSOL_TOKEN_ADDRESS || chain.config().denom.is_some_and(|d| d == token_address);
     if is_native {
         return Some(AssetId::from_chain(chain));
     }

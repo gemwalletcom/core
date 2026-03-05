@@ -4,23 +4,16 @@ mod catchers;
 mod chain;
 mod config;
 mod devices;
-mod fiat;
 mod markets;
 mod metrics;
 mod model;
-mod name;
 mod nft;
-mod notifications;
 mod params;
-mod price_alerts;
 mod prices;
 mod referral;
 mod responders;
-mod scan;
 mod status;
 mod swap;
-mod transactions;
-mod wallets;
 mod webhooks;
 mod websocket;
 mod websocket_prices;
@@ -36,19 +29,18 @@ use api_connector::PusherClient;
 use assets::{AssetsClient, SearchClient};
 use cacher::CacherClient;
 use config::ConfigClient;
-use devices::{DeviceCacher, DevicesClient};
-use fiat::FiatProviderFactory;
+use devices::DevicesClient;
+use ::fiat::FiatProviderFactory;
 use gem_auth::AuthClient;
 use gem_rewards::{AbuseIPDBClient, IpApiClient, IpCheckProvider, IpSecurityClient};
 use metrics::fiat::FiatMetrics;
 use model::APIService;
 use name_resolver::NameProviderFactory;
 use name_resolver::client::{Client as NameClient, NameConfig};
-use notifications::NotificationsClient;
+use devices::{FiatQuotesClient, NotificationsClient, PortfolioClient, RewardsClient, RewardsRedemptionClient, ScanClient, ScanProviderFactory, TransactionsClient, WalletsClient};
 use pricer::{ChartClient, MarketsClient, PriceAlertClient, PriceClient};
 use rocket::tokio::sync::Mutex;
 use rocket::{Build, Rocket, catchers, routes};
-use scan::{ScanClient, ScanProviderFactory};
 use search_index::SearchIndexClient;
 use settings::Settings;
 use settings_chain::{ChainProviders, ProviderFactory};
@@ -56,8 +48,6 @@ use storage::Database;
 use streamer::{StreamProducer, StreamProducerConfig};
 use swap::SwapClient;
 use swapper::swapper::GemSwapper;
-use transactions::TransactionsClient;
-use wallets::WalletsClient;
 use webhooks::WebhooksClient;
 use websocket_prices::PriceObserverConfig;
 
@@ -71,28 +61,17 @@ fn mount_routes(rocket: Rocket<Build>, metrics_path: &str) -> Rocket<Build> {
                 prices::get_assets_prices,
                 prices::get_charts,
                 prices::get_fiat_rates,
-                fiat::get_fiat_quotes_by_type,
-                fiat::get_fiat_quotes,
-                fiat::get_fiat_on_ramp_quotes,
-                fiat::get_fiat_assets,
-                fiat::get_fiat_on_ramp_assets,
-                fiat::get_fiat_off_ramp_assets,
-                fiat::create_fiat_webhook,
-                fiat::get_fiat_order,
-                fiat::get_fiat_quote_url,
+                webhooks::create_fiat_webhook,
                 config::get_config,
-                name::get_name_resolve,
                 devices::add_device,
                 devices::get_device,
                 devices::update_device,
                 devices::delete_device,
-                auth::get_auth_nonce,
                 assets::get_asset,
                 assets::get_assets,
                 assets::add_asset,
                 assets::get_assets_search,
                 assets::get_search,
-                transactions::get_transaction_by_id,
                 chain::block::get_latest_block_number,
                 chain::block::get_block_transactions,
                 chain::block::get_block_transactions_finalize,
@@ -105,12 +84,6 @@ fn mount_routes(rocket: Rocket<Build>, metrics_path: &str) -> Rocket<Build> {
                 nft::get_nft_asset_image_preview,
                 nft::update_nft_collection,
                 nft::update_nft_asset,
-                nft::report_nft,
-                price_alerts::get_price_alerts,
-                price_alerts::add_price_alerts,
-                price_alerts::delete_price_alerts,
-                scan::scan_transaction,
-                scan::get_scan_address,
                 markets::get_markets,
                 chain::staking::get_validators,
                 chain::staking::get_staking_apy,
@@ -120,25 +93,17 @@ fn mount_routes(rocket: Rocket<Build>, metrics_path: &str) -> Rocket<Build> {
                 chain::address::get_transactions,
                 webhooks::create_support_webhook,
                 webhooks::create_support_bot_webhook,
-                fiat::get_ip_address,
                 referral::get_rewards_leaderboard,
-                referral::get_rewards_redemption_option,
-                referral::get_rewards_events,
-                referral::get_rewards,
-                referral::create_referral,
-                referral::use_referral_code,
-                referral::redeem_rewards,
-                notifications::get_notifications,
-                notifications::mark_notifications_read,
                 swap::near_intents::post_quote,
             ],
         )
         .mount(
             "/v2",
             routes![
+                devices::get_device_fiat_order_v2,
+                devices::get_device_fiat_assets_v2,
                 devices::get_fiat_quotes_v2,
                 devices::get_fiat_quote_url_v2,
-                scan::scan_transaction_v2,
                 devices::add_device_v2,
                 devices::get_device_v2,
                 devices::delete_device_v2,
@@ -149,10 +114,13 @@ fn mount_routes(rocket: Rocket<Build>, metrics_path: &str) -> Rocket<Build> {
                 devices::report_device_nft_v2,
                 devices::scan_device_transaction_v2,
                 devices::get_device_assets_v2,
+                devices::get_device_name_resolve_v2,
+                devices::get_device_transaction_by_id_v2,
                 devices::get_device_transactions_v2,
                 devices::get_device_nft_assets_v2,
                 devices::get_device_rewards_v2,
                 devices::get_device_rewards_events_v2,
+                devices::get_device_rewards_redemption_v2,
                 devices::create_device_referral_v2,
                 devices::use_device_referral_code_v2,
                 devices::redeem_device_rewards_v2,
@@ -166,9 +134,7 @@ fn mount_routes(rocket: Rocket<Build>, metrics_path: &str) -> Rocket<Build> {
                 devices::delete_device_price_alerts_v2,
                 devices::get_auth_nonce_v2,
                 devices::get_device_token_v2,
-                wallets::get_subscriptions,
-                wallets::add_subscriptions,
-                wallets::delete_subscriptions,
+                devices::get_device_portfolio_assets_v2,
             ],
         )
         .mount(metrics_path, routes![metrics::get_metrics])
@@ -194,6 +160,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let name_client = NameClient::new(providers, name_config);
 
     let chain_client = chain::ChainClient::new(ChainProviders::new(ProviderFactory::new_providers(&settings)));
+    let portfolio_client = PortfolioClient::new(database.clone());
     let endpoints = ProviderFactory::get_chain_endpoints(&settings);
     let swapper = Arc::new(GemSwapper::new(Arc::new(swapper::NativeProvider::new_with_endpoints(endpoints))));
 
@@ -203,8 +170,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let devices_client = DevicesClient::new(database.clone(), pusher_client.clone());
     let transactions_client = TransactionsClient::new(database.clone());
     let stream_producer = StreamProducer::new(&rabbitmq_config, "api").await.unwrap();
-    let device_cacher = DeviceCacher::new(database.clone(), cacher_client.clone());
-    let wallets_client = WalletsClient::new(database.clone(), device_cacher, stream_producer.clone());
+    let wallets_client = WalletsClient::new(database.clone(), stream_producer.clone());
     let fiat_metrics = Arc::new(FiatMetrics::new());
 
     let security_providers = ScanProviderFactory::create_providers(&settings_clone);
@@ -222,7 +188,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         fiat_ip_check_client.clone(),
         stream_producer.clone(),
     );
-    let fiat_quotes_client = fiat::FiatQuotesClient::new(fiat_client);
+    let fiat_quotes_client = FiatQuotesClient::new(fiat_client);
     let nft_config = NFTProviderConfig::new(settings.nft.opensea.key.secret.clone(), settings.nft.magiceden.key.secret.clone());
     let nft_client = NFTClient::new(database.clone(), nft_config);
     let auth_client = Arc::new(AuthClient::new(cacher_client.clone()));
@@ -233,8 +199,8 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         Arc::new(IpApiClient::new(settings.ip.ipapi.url.clone(), settings.ip.ipapi.key.secret.clone())),
     ];
     let ip_security_client = IpSecurityClient::new(ip_check_providers, cacher_client.clone());
-    let rewards_client = referral::RewardsClient::new(database.clone(), stream_producer.clone(), ip_security_client, pusher_client.clone());
-    let redemption_client = referral::RewardsRedemptionClient::new(database.clone(), stream_producer.clone());
+    let rewards_client = RewardsClient::new(database.clone(), stream_producer.clone(), ip_security_client, pusher_client.clone());
+    let redemption_client = RewardsRedemptionClient::new(database.clone(), stream_producer.clone());
     let notifications_client = NotificationsClient::new(database.clone());
     let near_intents_client = swap::NearIntentsProxyClient::new(cacher_client.clone());
     let jwt_config = devices::auth_config::JwtConfig {
@@ -264,12 +230,12 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(swapper)
         .manage(Mutex::new(markets_client))
         .manage(Mutex::new(webhooks_client))
-        .manage(Mutex::new(fiat_ip_check_client))
         .manage(Mutex::new(rewards_client))
         .manage(Mutex::new(redemption_client))
         .manage(Mutex::new(wallets_client))
         .manage(Mutex::new(notifications_client))
         .manage(Mutex::new(near_intents_client))
+        .manage(Mutex::new(portfolio_client))
         .manage(auth_client);
 
     mount_routes(rocket, &settings.metrics.path)

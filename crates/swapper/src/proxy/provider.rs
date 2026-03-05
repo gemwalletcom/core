@@ -4,7 +4,7 @@ use std::{collections::BTreeSet, fmt::Debug, str::FromStr, sync::Arc};
 
 use super::{
     client::ProxyClient,
-    mayan::{MAYAN_CONTRACTS, MayanChain, MayanClientStatus, MayanExplorer, MayanPrice, resolve_asset_id, wormhole_chain_id_to_chain},
+    mayan::{MAYAN_DEPOSIT_CONTRACTS, MAYAN_SEND_CONTRACTS, MayanChain, MayanClientStatus, MayanExplorer, MayanPrice, resolve_asset_id, wormhole_chain_id_to_chain},
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperError, SwapperProvider, SwapperProviderMode, SwapperQuoteData,
@@ -12,6 +12,7 @@ use crate::{
     approval::evm::check_approval_erc20,
     asset::*,
     config::{DEFAULT_SWAP_FEE_BPS, get_swap_api_url},
+    cross_chain::VaultAddresses,
     models::{ApprovalType, SwapperChainAsset},
 };
 use gem_client::Client;
@@ -270,17 +271,32 @@ where
         }
     }
 
-    async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<Vec<String>, SwapperError> {
+    async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<VaultAddresses, SwapperError> {
         match self.provider.id {
+            SwapperProvider::Relay => {
+                let base_url = get_swap_api_url("relay");
+                let client = RpcClient::new(base_url, self.rpc_provider.clone());
+                let chains: relay::model::RelayChainsResponse = ClientExt::get(&client, "/chains").await.map_err(SwapperError::from)?;
+                let addresses = chains.solver_addresses();
+                Ok(VaultAddresses {
+                    deposit: addresses.clone(),
+                    send: addresses,
+                })
+            }
             SwapperProvider::Mayan => {
-                let static_addresses: BTreeSet<String> = MAYAN_CONTRACTS.iter().map(|s| s.to_string()).collect();
                 let base_url = get_swap_api_url("mayan/price");
                 let client = MayanPrice::new(base_url, self.rpc_provider.clone());
                 let api_addresses = client.get_chains().await.map(MayanChain::unique_addresses).unwrap_or_default();
-                let addresses = static_addresses.into_iter().chain(api_addresses).collect::<BTreeSet<_>>();
-                Ok(addresses.into_iter().collect())
+
+                let deposit: BTreeSet<String> = MAYAN_DEPOSIT_CONTRACTS.iter().map(|s| s.to_string()).chain(api_addresses.iter().cloned()).collect();
+                let send: BTreeSet<String> = MAYAN_SEND_CONTRACTS.iter().map(|s| s.to_string()).chain(api_addresses).collect();
+
+                Ok(VaultAddresses {
+                    deposit: deposit.into_iter().collect(),
+                    send: send.into_iter().collect(),
+                })
             }
-            _ => Ok(vec![]),
+            _ => Ok(VaultAddresses { deposit: vec![], send: vec![] }),
         }
     }
 }

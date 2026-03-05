@@ -107,7 +107,7 @@ where
             Ok(())
         }
         ProcessResult::Error(e) => {
-            error_with_fields!("error", &*e, consumer = name, payload = payload.to_string(), elapsed = DurationMs(start.elapsed()));
+            error_with_fields!("failed", &*e, consumer = name, payload = payload.to_string(), elapsed = DurationMs(start.elapsed()));
             if !config.timeout_on_error.is_zero() {
                 tokio::task::block_in_place(|| tokio::runtime::Handle::current().block_on(tokio::time::sleep(config.timeout_on_error)));
             }

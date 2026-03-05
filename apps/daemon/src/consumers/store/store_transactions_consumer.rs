@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use primitives::{AssetAddress, AssetIdVecExt, Transaction, TransactionId, TransactionState, TransactionType, WalletId};
 use storage::{AssetsAddressesRepository, AssetsRepository, Database, TransactionsRepository, WalletsRepository};
 use streamer::{AssetId, DeviceStreamEvent, DeviceStreamPayload, NotificationsPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
-use swapper::cross_chain::{self, VaultAddressMap};
+use swapper::cross_chain::{self, DepositAddressMap};
 
 use crate::client::SwapVaultAddressClient;
 use crate::consumers::store::StoreTransactionsConsumerConfig;
@@ -15,13 +15,13 @@ const TRANSACTION_BATCH_SIZE: usize = 100;
 
 const IN_TRANSIT_TYPES: [TransactionType; 2] = [TransactionType::Transfer, TransactionType::SmartContractCall];
 
-fn set_cross_chain_in_transit(transactions: Vec<Transaction>, vault_addresses: &VaultAddressMap) -> Vec<Transaction> {
+fn set_cross_chain_in_transit(transactions: Vec<Transaction>, deposit_addresses: &DepositAddressMap) -> Vec<Transaction> {
     transactions
         .into_iter()
         .map(|mut transaction| {
             if transaction.state == TransactionState::Confirmed
                 && IN_TRANSIT_TYPES.contains(&transaction.transaction_type)
-                && cross_chain::is_cross_chain_swap(&transaction, vault_addresses)
+                && cross_chain::is_cross_chain_swap(&transaction, deposit_addresses)
             {
                 transaction.state = TransactionState::InTransit;
             }
@@ -54,8 +54,9 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
     async fn process(&self, payload: TransactionsPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let chain = payload.chain;
         let is_notify_devices = !payload.blocks.is_empty();
-        let vault_addresses = self.vault_client.get_address_map().await?;
-        let transactions = set_cross_chain_in_transit(payload.transactions, &vault_addresses);
+        let deposit_addresses = self.vault_client.get_deposit_address_map().await?;
+        let send_addresses = self.vault_client.get_send_address_map().await?;
+        let transactions = set_cross_chain_in_transit(payload.transactions, &deposit_addresses);
 
         let min_amount = self.config.min_amount_usd;
 
@@ -119,7 +120,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
                 txn_ids.insert(transaction.id.clone());
                 asset_ids.extend(transaction_asset_ids.iter().cloned());
 
-                let should_notify = self.config.should_notify_transaction(transaction, is_notify_devices, &vault_addresses);
+                let should_notify = self.config.should_notify_transaction(transaction, is_notify_devices, &send_addresses);
 
                 if should_notify {
                     let assets: Vec<primitives::Asset> = transaction_asset_ids
@@ -203,15 +204,28 @@ mod tests {
     #[test]
     fn test_set_cross_chain_in_transit_cross_chain() {
         let vault = "0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146".to_string();
-        let vault_addresses = VaultAddressMap::from([(vault.clone(), SwapProvider::Thorchain)]);
-        let tx = Transaction { to: vault, ..Transaction::mock() };
+        let vault_addresses = DepositAddressMap::from([(vault.clone(), SwapProvider::Thorchain)]);
+        let tx = Transaction {
+            to: vault,
+            memo: Some("=:BTC:bc1qaddress:0/1/0".to_string()),
+            ..Transaction::mock()
+        };
         let result = set_cross_chain_in_transit(vec![tx], &vault_addresses);
         assert_eq!(result[0].state, TransactionState::InTransit);
     }
 
     #[test]
+    fn test_set_cross_chain_in_transit_thorchain_no_memo() {
+        let vault = "bc1qvault".to_string();
+        let vault_addresses = DepositAddressMap::from([(vault.clone(), SwapProvider::Thorchain)]);
+        let tx = Transaction { to: vault, ..Transaction::mock() };
+        let result = set_cross_chain_in_transit(vec![tx], &vault_addresses);
+        assert_eq!(result[0].state, TransactionState::Confirmed);
+    }
+
+    #[test]
     fn test_set_cross_chain_in_transit_regular_transfer() {
-        let result = set_cross_chain_in_transit(vec![Transaction::mock()], &VaultAddressMap::new());
+        let result = set_cross_chain_in_transit(vec![Transaction::mock()], &DepositAddressMap::new());
         assert_eq!(result[0].state, TransactionState::Confirmed);
     }
 
@@ -223,7 +237,7 @@ mod tests {
             memo: Some(memo.to_string()),
             ..Transaction::mock()
         };
-        let result = set_cross_chain_in_transit(vec![tx], &VaultAddressMap::new());
+        let result = set_cross_chain_in_transit(vec![tx], &DepositAddressMap::new());
         assert_eq!(result[0].state, TransactionState::Confirmed);
     }
 
@@ -234,7 +248,7 @@ mod tests {
             to: "0x337685fdaB40D39bd02028545a4FfA7D287cC3E2".to_string(),
             ..Transaction::mock()
         };
-        let result = set_cross_chain_in_transit(vec![tx], &VaultAddressMap::new());
+        let result = set_cross_chain_in_transit(vec![tx], &DepositAddressMap::new());
         assert_eq!(result[0].state, TransactionState::Confirmed);
     }
 
@@ -246,7 +260,7 @@ mod tests {
             memo: Some(memo.to_string()),
             ..Transaction::mock()
         };
-        let result = set_cross_chain_in_transit(vec![tx], &VaultAddressMap::new());
+        let result = set_cross_chain_in_transit(vec![tx], &DepositAddressMap::new());
         assert_eq!(result[0].state, TransactionState::Pending);
     }
 
@@ -257,7 +271,7 @@ mod tests {
             to: vault.clone(),
             ..Transaction::mock()
         };
-        let vault_addresses = VaultAddressMap::from([(vault, SwapProvider::NearIntents)]);
+        let vault_addresses = DepositAddressMap::from([(vault, SwapProvider::NearIntents)]);
         let result = set_cross_chain_in_transit(vec![tx], &vault_addresses);
         assert_eq!(result[0].state, TransactionState::InTransit);
     }

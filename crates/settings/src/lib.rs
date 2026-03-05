@@ -177,7 +177,6 @@ pub struct URL {
 #[derive(Debug, Deserialize, Clone)]
 pub struct Metrics {
     pub path: String,
-    pub redis: Redis,
 }
 
 #[derive(Debug, Deserialize, Clone)]

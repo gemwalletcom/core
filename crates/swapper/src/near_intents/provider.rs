@@ -8,6 +8,7 @@ use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperMode,
     SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, amount_to_value,
     client_factory::create_client_with_chain,
+    cross_chain::VaultAddresses,
     fees::resolve_max_quote_amount,
     near_intents::client::{base_url, explorer_url},
     referrer::DEFAULT_REFERRER,
@@ -371,8 +372,11 @@ where
         Ok(SwapResult { status, metadata })
     }
 
-    async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<Vec<String>, SwapperError> {
-        Ok(TREASURY_ADDRESSES.iter().map(|s| s.to_string()).collect())
+    async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<VaultAddresses, SwapperError> {
+        Ok(VaultAddresses {
+            deposit: vec![],
+            send: TREASURY_ADDRESSES.iter().map(|s| s.to_string()).collect(),
+        })
     }
 }
 

@@ -7,11 +7,11 @@ use primitives::{
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
 use storage::Database;
-use storage::models::{ConfigRow, FiatAssetRow, FiatProviderCountryRow, FiatRateRow, UpdateDeviceRow};
+use storage::models::{ChartRow, ConfigRow, FiatAssetRow, FiatProviderCountryRow, FiatRateRow, PriceAssetRow, PriceRow, UpdateDeviceRow};
 use storage::sql_types::{Platform, PlatformStore};
 use storage::{
-    AssetsRepository, ChainsRepository, ConfigRepository, DevicesRepository, MigrationsRepository, NewNotificationRow, NewWalletRow, NotificationsRepository,
-    PriceAlertsRepository, PricesDexRepository, ReleasesRepository, RewardsRepository, TagRepository, WalletSource, WalletType, WalletsRepository,
+    AssetsRepository, ChartsRepository, ChainsRepository, ConfigRepository, DevicesRepository, MigrationsRepository, NewNotificationRow, NewWalletRow, NotificationsRepository,
+    PriceAlertsRepository, PricesDexRepository, PricesRepository, ReleasesRepository, RewardsRepository, TagRepository, WalletSource, WalletType, WalletsRepository,
 };
 use streamer::{ExchangeKind, ExchangeName, QueueName, StreamProducer, StreamProducerConfig};
 
@@ -366,6 +366,47 @@ fn setup_dev_assets(database: &Database) -> Result<(), Box<dyn std::error::Error
 
     let result = database.fiat()?.add_fiat_providers_countries(fiat_countries)?;
     info_with_fields!("setup_dev", step = "fiat provider countries added", count = result);
+
+    info_with_fields!("setup_dev", step = "add prices and charts");
+    let now = chrono::Utc::now().naive_utc();
+    let bitcoin_asset_id = AssetId::from_chain(Chain::Bitcoin).to_string();
+    let coins: Vec<(&str, &str, f64)> = vec![
+        (Chain::Bitcoin.as_ref(), &bitcoin_asset_id, 60000.0),
+        (Chain::Ethereum.as_ref(), &ethereum_asset_id, 2000.0),
+    ];
+
+    let prices: Vec<PriceRow> = coins
+        .iter()
+        .map(|(coin_id, _, base_price)| PriceRow::with_price(coin_id.to_string(), *base_price))
+        .collect();
+
+    let price_assets: Vec<PriceAssetRow> = coins
+        .iter()
+        .map(|(coin_id, asset_id, _)| PriceAssetRow::new(asset_id.to_string(), coin_id.to_string()))
+        .collect();
+
+    let result = database.prices()?.set_prices(prices)?;
+    info_with_fields!("setup_dev", step = "prices added", count = result);
+
+    let result = database.prices()?.set_prices_assets(price_assets)?;
+    info_with_fields!("setup_dev", step = "prices_assets added", count = result);
+
+    for (idx, (coin_id, _, base_price)) in coins.iter().enumerate() {
+        let seed = (idx + 1) as f64;
+        let gen_price = |i: f64, scale: f64| (base_price + ((i * 0.3 + seed * 7.0).sin() + (i * 0.07).cos()) * base_price * scale).max(base_price * 0.1);
+
+        let hourly: Vec<ChartRow> = (0i64..720)
+            .map(|h| ChartRow::new(coin_id.to_string(), gen_price(h as f64, 0.1), now - chrono::Duration::hours(h)))
+            .collect();
+
+        let daily: Vec<ChartRow> = (30i64..1825)
+            .map(|d| ChartRow::new(coin_id.to_string(), gen_price(d as f64, 0.15), now - chrono::Duration::days(d)))
+            .collect();
+
+        database.charts()?.add_charts_hourly(hourly)?;
+        database.charts()?.add_charts_daily(daily)?;
+    }
+    info_with_fields!("setup_dev", step = "charts added");
 
     Ok(())
 }

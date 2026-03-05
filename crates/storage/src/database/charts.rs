@@ -1,5 +1,5 @@
 use crate::DatabaseClient;
-use crate::models::ChartRow;
+use crate::models::chart::{ChartRow, DailyChartRow, HourlyChartRow};
 use crate::schema::charts::dsl::{charts, coin_id};
 use crate::schema::charts_daily::dsl::{charts_daily, coin_id as daily_coin_id, created_at as daily_created_at};
 use crate::schema::charts_hourly::dsl::{charts_hourly, coin_id as hourly_coin_id, created_at as hourly_created_at};
@@ -21,6 +21,8 @@ pub type ChartResult = (chrono::NaiveDateTime, f64);
 
 pub(crate) trait ChartsStore {
     fn add_charts(&mut self, values: Vec<ChartRow>) -> Result<usize, Error>;
+    fn add_charts_hourly(&mut self, values: Vec<ChartRow>) -> Result<usize, Error>;
+    fn add_charts_daily(&mut self, values: Vec<ChartRow>) -> Result<usize, Error>;
     fn get_charts(&mut self, target_coin_id: String, period: &ChartPeriod) -> Result<Vec<ChartResult>, Error>;
     fn aggregate_charts(&mut self, timeframe: ChartTimeframe) -> Result<usize, Error>;
     fn cleanup_charts(&mut self, timeframe: ChartTimeframe) -> Result<usize, Error>;
@@ -29,6 +31,16 @@ pub(crate) trait ChartsStore {
 impl ChartsStore for DatabaseClient {
     fn add_charts(&mut self, values: Vec<ChartRow>) -> Result<usize, Error> {
         diesel::insert_into(charts).values(values).on_conflict_do_nothing().execute(&mut self.connection)
+    }
+
+    fn add_charts_hourly(&mut self, values: Vec<ChartRow>) -> Result<usize, Error> {
+        let rows: Vec<HourlyChartRow> = values.into_iter().map(Into::into).collect();
+        diesel::insert_into(charts_hourly).values(rows).on_conflict_do_nothing().execute(&mut self.connection)
+    }
+
+    fn add_charts_daily(&mut self, values: Vec<ChartRow>) -> Result<usize, Error> {
+        let rows: Vec<DailyChartRow> = values.into_iter().map(Into::into).collect();
+        diesel::insert_into(charts_daily).values(rows).on_conflict_do_nothing().execute(&mut self.connection)
     }
 
     fn get_charts(&mut self, target_coin_id: String, period: &ChartPeriod) -> Result<Vec<ChartResult>, Error> {

@@ -6,6 +6,8 @@ use primitives::{ChartPeriod, ChartTimeframe};
 
 pub trait ChartsRepository {
     fn add_charts(&mut self, values: Vec<crate::models::ChartRow>) -> Result<usize, DatabaseError>;
+    fn add_charts_hourly(&mut self, values: Vec<crate::models::ChartRow>) -> Result<usize, DatabaseError>;
+    fn add_charts_daily(&mut self, values: Vec<crate::models::ChartRow>) -> Result<usize, DatabaseError>;
     fn get_charts(&mut self, target_coin_id: String, period: &ChartPeriod) -> Result<Vec<ChartResult>, DatabaseError>;
     fn aggregate_charts(&mut self, timeframe: ChartTimeframe) -> Result<usize, DatabaseError>;
     fn cleanup_charts(&mut self, timeframe: ChartTimeframe) -> Result<usize, DatabaseError>;
@@ -14,6 +16,14 @@ pub trait ChartsRepository {
 impl ChartsRepository for DatabaseClient {
     fn add_charts(&mut self, values: Vec<crate::models::ChartRow>) -> Result<usize, DatabaseError> {
         Ok(ChartsStore::add_charts(self, values)?)
+    }
+
+    fn add_charts_hourly(&mut self, values: Vec<crate::models::ChartRow>) -> Result<usize, DatabaseError> {
+        Ok(ChartsStore::add_charts_hourly(self, values)?)
+    }
+
+    fn add_charts_daily(&mut self, values: Vec<crate::models::ChartRow>) -> Result<usize, DatabaseError> {
+        Ok(ChartsStore::add_charts_daily(self, values)?)
     }
 
     fn get_charts(&mut self, target_coin_id: String, period: &ChartPeriod) -> Result<Vec<ChartResult>, DatabaseError> {

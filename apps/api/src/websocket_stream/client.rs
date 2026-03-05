@@ -20,7 +20,6 @@ pub struct StreamObserverConfig {
 }
 
 pub struct StreamObserverClient {
-    device_id: String,
     device_channel: String,
     price_handler: PriceHandler,
 }
@@ -29,14 +28,9 @@ impl StreamObserverClient {
     pub fn new(device_id: String, price_client: Arc<Mutex<PriceClient>>) -> Self {
         let device_channel = device_stream_channel(&device_id);
         Self {
-            device_id,
             device_channel,
             price_handler: PriceHandler::new(price_client),
         }
-    }
-
-    pub fn device_id(&self) -> &str {
-        &self.device_id
     }
 
     pub async fn next_price_interval(&mut self) {

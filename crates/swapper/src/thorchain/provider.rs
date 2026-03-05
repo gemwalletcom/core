@@ -17,7 +17,7 @@ use super::{
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperQuoteData,
-    approval::check_approval_erc20, asset::*, thorchain::client::ThorChainSwapClient,
+    approval::check_approval_erc20, asset::*, cross_chain::VaultAddresses, thorchain::client::ThorChainSwapClient,
 };
 
 pub struct ThorchainCrossChain;
@@ -76,15 +76,15 @@ where
             .collect()
     }
 
-    async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<Vec<String>, SwapperError> {
+    async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<VaultAddresses, SwapperError> {
         let vaults = self.client.get_asgard_vaults().await?;
-        let static_addresses = ThorchainCrossChain::static_router_addresses().into_iter().map(String::from);
-        Ok(AsgardVault::all_addresses(&vaults)
-            .into_iter()
-            .chain(static_addresses)
-            .collect::<HashSet<_>>()
-            .into_iter()
-            .collect())
+        let asgard_addresses: HashSet<String> = AsgardVault::all_addresses(&vaults).into_iter().collect();
+        let router_addresses: HashSet<String> = ThorchainCrossChain::static_router_addresses().into_iter().map(String::from).collect();
+
+        let deposit: Vec<String> = asgard_addresses.union(&router_addresses).cloned().collect();
+        let send: Vec<String> = asgard_addresses.into_iter().collect();
+
+        Ok(VaultAddresses { deposit, send })
     }
 
     async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {

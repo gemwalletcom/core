@@ -2,6 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::sync::Arc;
 
+use cacher::CacheKey;
 use pricer::PriceClient;
 use primitives::{AssetId, AssetPrice, AssetPriceInfo, WebSocketPriceAction, WebSocketPriceActionType, WebSocketPricePayload, asset::AssetHashSetExt};
 use redis::PushInfo;
@@ -44,7 +45,7 @@ impl PriceObserverClient {
     }
 
     fn get_channel_ids(&self) -> Vec<String> {
-        self.assets.iter().map(|id| id.to_string()).collect()
+        self.assets.iter().map(|id| CacheKey::Price(&id.to_string()).key()).collect()
     }
 
     async fn fetch_payload(&self, fetch_rates: bool) -> Result<WebSocketPricePayload, Box<dyn Error + Send + Sync>> {

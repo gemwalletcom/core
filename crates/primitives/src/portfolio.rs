@@ -1,6 +1,9 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
+use crate::asset_id::AssetId;
+use crate::asset_price::ChartValue;
 use crate::chart::ChartDateValue;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
@@ -39,4 +42,58 @@ pub struct PerpetualPortfolio {
     pub month: Option<PerpetualPortfolioTimeframeData>,
     pub all_time: Option<PerpetualPortfolioTimeframeData>,
     pub account_summary: Option<PerpetualAccountSummary>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct PortfolioAsset {
+    pub asset_id: AssetId,
+    pub value: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct PortfolioAssetsRequest {
+    pub assets: Vec<PortfolioAsset>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(rename_all = "camelCase")]
+pub struct PortfolioAllocation {
+    pub asset_id: AssetId,
+    pub percentage: f32,
+    pub value: f32,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(rename_all = "camelCase")]
+pub struct ChartValuePercentage {
+    pub date: DateTime<Utc>,
+    pub value: f32,
+    pub percentage: f32,
+}
+
+impl ChartValuePercentage {
+    pub fn with_rate(&self, rate: f64) -> Self {
+        Self {
+            date: self.date,
+            value: self.value * rate as f32,
+            percentage: self.percentage,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(rename_all = "camelCase")]
+pub struct PortfolioAssets {
+    pub total_value: f32,
+    pub values: Vec<ChartValue>,
+    pub all_time_high: Option<ChartValuePercentage>,
+    pub all_time_low: Option<ChartValuePercentage>,
+    pub allocation: Vec<PortfolioAllocation>,
 }

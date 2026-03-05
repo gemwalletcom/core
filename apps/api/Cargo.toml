@@ -31,6 +31,7 @@ name_resolver = { path = "../../crates/name_resolver" }
 in_app_notifications = { path = "../../crates/in_app_notifications" }
 localizer = { path = "../../crates/localizer" }
 primitives = { path = "../../crates/primitives" }
+portfolio = { path = "../../crates/portfolio" }
 api_connector = { path = "../../crates/api_connector" }
 search_index = { path = "../../crates/search_index" }
 nft = { path = "../../crates/nft" }

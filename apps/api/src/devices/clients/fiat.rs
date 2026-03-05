@@ -1,9 +1,7 @@
 use std::error::Error;
-use std::str::FromStr;
 
 use fiat::FiatClient;
-use primitives::currency::Currency;
-use primitives::{FiatQuote, FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuotes, FiatQuotesOld};
+use primitives::{FiatQuote, FiatQuoteRequest, FiatQuoteUrl, FiatQuotes};
 
 pub struct FiatQuotesClient {
     fiat_client: FiatClient,
@@ -14,47 +12,8 @@ impl FiatQuotesClient {
         Self { fiat_client }
     }
 
-    pub async fn get_quotes_old(
-        &self,
-        asset_id: &str,
-        fiat_amount: Option<f64>,
-        crypto_value: Option<&str>,
-        quote_type: FiatQuoteType,
-        currency: &str,
-        wallet_address: &str,
-        ip_address: &str,
-        provider: Option<&str>,
-    ) -> Result<FiatQuotesOld, Box<dyn Error + Send + Sync>> {
-        if fiat_amount.is_none() && crypto_value.is_none() {
-            return Err("Either fiat_amount or crypto_value is required".into());
-        }
-
-        let request = FiatQuoteOldRequest {
-            asset_id: asset_id.to_string(),
-            quote_type,
-            ip_address: ip_address.to_string(),
-            fiat_amount,
-            fiat_currency: Currency::from_str(currency).unwrap_or(Currency::USD),
-            crypto_value: crypto_value.map(|x| x.to_string()),
-            wallet_address: wallet_address.to_string(),
-            provider_id: provider.map(|x| x.to_string()),
-        };
-
-        self.fiat_client.get_quotes_old(request).await
-    }
-
     pub async fn get_quotes(&self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
         self.fiat_client.get_quotes(request).await
-    }
-
-    pub async fn get_quote_url_legacy(
-        &self,
-        quote_id: &str,
-        wallet_address: &str,
-        ip_address: &str,
-        device_id: &str,
-    ) -> Result<(FiatQuoteUrl, FiatQuote), Box<dyn Error + Send + Sync>> {
-        self.fiat_client.get_quote_url_legacy(quote_id, wallet_address, ip_address, device_id).await
     }
 
     pub async fn get_quote_url(
