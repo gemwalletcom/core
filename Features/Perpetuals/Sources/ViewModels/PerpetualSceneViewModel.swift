@@ -125,12 +125,13 @@ public final class PerpetualSceneViewModel {
 
 public extension PerpetualSceneViewModel {
     func fetch() {
-        Task {
-            await observerService.update(for: wallet)
-        }
+        Task { await observerService.update(for: wallet) }
+        Task { try await perpetualService.updateMarket(symbol: perpetual.name) }
+        Task { await updateCandlesticks() }
     }
 
     func onAppear() async {
+        fetch()
         await subscribeCandles(currentChartSubscription)
         observeTask = Task {
             await observeCandles()
@@ -143,15 +144,21 @@ public extension PerpetualSceneViewModel {
         await unsubscribeCandles(currentChartSubscription)
     }
 
+    func onScenePhaseChange(_ oldPhase: ScenePhase, _ newPhase: ScenePhase) {
+        switch newPhase {
+        case .active:
+            Task { try? await perpetualService.updateMarket(symbol: perpetual.name) }
+            Task { await updateCandlesticks() }
+        case .inactive, .background: break
+        @unknown default: break
+        }
+    }
+
     func onPeriodChange(_ oldPeriod: ChartPeriod, _ newPeriod: ChartPeriod) {
         Task {
-            do {
-                await unsubscribeCandles(ChartSubscription(coin: perpetual.name, period: oldPeriod))
-                await subscribeCandles(ChartSubscription(coin: perpetual.name, period: newPeriod))
-                try await fetchCandlesticks()
-            } catch {
-                state = .error(error)
-            }
+            await unsubscribeCandles(ChartSubscription(coin: perpetual.name, period: oldPeriod))
+            await updateCandlesticks()
+            await subscribeCandles(ChartSubscription(coin: perpetual.name, period: newPeriod))
         }
     }
 
@@ -272,13 +279,17 @@ public extension PerpetualSceneViewModel {
 // MARK: - Private
 
 private extension PerpetualSceneViewModel {
-    func fetchCandlesticks() async throws {
+    func updateCandlesticks() async {
         state = .loading
-        let candlesticks = try await perpetualService.candlesticks(
-            symbol: perpetual.name,
-            period: currentPeriod
-        )
-        state = .data(candlesticks)
+        do {
+            let candlesticks = try await perpetualService.candlesticks(
+                symbol: perpetual.name,
+                period: currentPeriod
+            )
+            state = .data(candlesticks)
+        } catch {
+            state = .error(error)
+        }
     }
 
     func subscribeCandles(_ subscription: ChartSubscription) async {

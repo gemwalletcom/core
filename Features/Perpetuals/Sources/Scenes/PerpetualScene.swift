@@ -8,7 +8,8 @@ import InfoSheet
 import Localization
 
 public struct PerpetualScene: View {
-    
+    @Environment(\.scenePhase) private var scenePhase
+
     @Bindable var model: PerpetualSceneViewModel
     
     public init(model: PerpetualSceneViewModel) {
@@ -166,15 +167,13 @@ public struct PerpetualScene: View {
         .refreshable {
             model.fetch()
         }
-        .taskOnce {
-            model.fetch()
-        }
         .onAppear {
             Task { await model.onAppear() }
         }
         .onDisappear {
             Task { await model.onDisappear() }
         }
-        .onChange(of: model.currentPeriod, initial: true, model.onPeriodChange)
+        .onChange(of: scenePhase, model.onScenePhaseChange)
+        .onChange(of: model.currentPeriod, model.onPeriodChange)
     }
 }
