@@ -41,8 +41,8 @@ impl GemSwapper {
         self.inner.get_providers_for_request(request)
     }
 
-    pub async fn fetch_quote(&self, request: &SwapperQuoteRequest) -> Result<Vec<SwapperQuote>, SwapperError> {
-        self.inner.fetch_quote(request).await
+    pub async fn get_quote(&self, request: &SwapperQuoteRequest) -> Result<Vec<SwapperQuote>, SwapperError> {
+        self.inner.get_quote(request).await
     }
 
     pub async fn fetch_quote_by_provider(&self, provider: SwapperProvider, request: SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
@@ -53,8 +53,8 @@ impl GemSwapper {
         self.inner.fetch_permit2_for_quote(quote).await
     }
 
-    pub async fn fetch_quote_data(&self, quote: &SwapperQuote, data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
-        self.inner.fetch_quote_data(quote, data).await
+    pub async fn get_quote_data(&self, quote: &SwapperQuote, data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {
+        self.inner.get_quote_data(quote, data).await
     }
 
     pub async fn get_swap_result(&self, chain: Chain, provider: SwapperProvider, transaction_hash: &str) -> Result<SwapperSwapResult, SwapperError> {

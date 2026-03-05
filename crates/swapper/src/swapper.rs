@@ -188,7 +188,7 @@ impl GemSwapper {
         Ok(providers)
     }
 
-    pub async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Vec<Quote>, SwapperError> {
+    pub async fn get_quote(&self, request: &QuoteRequest) -> Result<Vec<Quote>, SwapperError> {
         let provider_ids: BTreeSet<_> = self.get_providers_for_request(request)?.into_iter().map(|p| p.id).collect();
         let providers = self.swappers.iter().filter(|x| provider_ids.contains(&x.provider().id)).collect::<Vec<_>>();
 
@@ -230,7 +230,7 @@ impl GemSwapper {
         provider.fetch_permit2_for_quote(quote).await
     }
 
-    pub async fn fetch_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    pub async fn get_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let provider = self.get_swapper_by_provider(&quote.data.provider.id)?;
         let mut quote_data = provider.fetch_quote_data(quote, data).await?;
         if let Some(gas_limit) = quote_data.gas_limit.take() {
@@ -447,7 +447,7 @@ mod tests {
                 Box::new(MockSwapper::new(SwapperProvider::Jupiter, || Err(SwapperError::NoQuoteAvailable))),
             ],
         };
-        assert_eq!(gem_swapper.fetch_quote(&request).await, Err(SwapperError::InputAmountError { min_amount: None }));
+        assert_eq!(gem_swapper.get_quote(&request).await, Err(SwapperError::InputAmountError { min_amount: None }));
 
         let gem_swapper = GemSwapper {
             rpc_provider: Arc::new(NativeProvider::default()),
@@ -470,7 +470,7 @@ mod tests {
             ],
         };
         assert_eq!(
-            gem_swapper.fetch_quote(&request).await,
+            gem_swapper.get_quote(&request).await,
             Err(SwapperError::InputAmountError {
                 min_amount: Some("1390400".into())
             })
