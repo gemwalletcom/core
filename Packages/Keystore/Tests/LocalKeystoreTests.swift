@@ -269,8 +269,25 @@ struct LocalKeystoreTests {
     }
 
     @Test
+    func passwordCreatedOnFirstImport() async throws {
+        let mockPassword = MockKeystorePassword()
+        let keystore = LocalKeystore.mock(keystorePassword: mockPassword)
+
+        #expect(try mockPassword.getPassword().isEmpty)
+
+        let _ = try await keystore.importWallet(
+            name: "First Wallet",
+            type: .phrase(words: LocalKeystore.words, chains: [.ethereum]),
+            isWalletsEmpty: true,
+            source: .import
+        )
+
+        #expect(try mockPassword.getPassword().count == 64)
+    }
+
+    @Test
     func concurrentImportAndDelete() async throws {
-        let keystore = LocalKeystore.mock()
+        let keystore = LocalKeystore.mock(keystorePassword: MockKeystorePassword(memoryPassword: "test-password"))
 
         let wallets = try await withThrowingTaskGroup(of: Primitives.Wallet.self) { group in
             for index in 0 ..< 5 {
@@ -278,7 +295,7 @@ struct LocalKeystoreTests {
                     try await keystore.importWallet(
                         name: "Wallet \(index)",
                         type: .phrase(words: LocalKeystore.words, chains: [.ethereum]),
-                        isWalletsEmpty: index == 0 ? true : false,
+                        isWalletsEmpty: false,
                         source: .import
                     )
                 }
