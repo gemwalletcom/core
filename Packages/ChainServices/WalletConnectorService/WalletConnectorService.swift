@@ -196,7 +196,7 @@ extension WalletConnectorService {
 
             debugLog("parse request result: \(action)")
 
-            let response = try await handleAction(action: action, sessionId: request.topic)
+            let response = try await handleAction(action: action, sessionId: request.topic, sessionDomain: session.peer.metadata.url)
 
             debugLog("handle method result: \(request.method) \(response)")
             try await WalletKit.instance.respond(topic: request.topic, requestId: request.id, response: response)
@@ -206,10 +206,10 @@ extension WalletConnectorService {
         }
     }
 
-    private func handleAction(action: WalletConnectAction, sessionId: String) async throws -> RPCResult {
+    private func handleAction(action: WalletConnectAction, sessionId: String, sessionDomain: String) async throws -> RPCResult {
         switch action {
         case .signMessage(let chain, let signType, let data):
-            try walletConnect.validateSignMessage(chain: chain, signType: signType, data: data)
+            try walletConnect.validateSignMessage(chain: chain, signType: signType, data: data, sessionDomain: sessionDomain)
             let message = walletConnect.decodeSignMessage(chain: chain, signType: signType, data: data)
             let signature = try await signer.signMessage(
                 sessionId: sessionId,
