@@ -57,8 +57,6 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
         Chain::Stellar => {
             if let Some((issuer, symbol)) = token_id.split_once("::") {
                 (issuer.len() == 56 && issuer.starts_with('G') && !symbol.is_empty()).then_some(token_id)
-            } else if token_id.len() == 56 && token_id.starts_with('G') {
-                Some(token_id)
             } else {
                 None
             }
@@ -151,7 +149,7 @@ mod tests {
         );
         assert_eq!(
             format_token_id(chain, "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN".to_string()),
-            Some("GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN".to_string())
+            None
         );
         assert_eq!(format_token_id(chain, "invalid".to_string()), None);
         assert_eq!(format_token_id(chain, "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN::".to_string()), None);
