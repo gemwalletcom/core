@@ -116,8 +116,7 @@ impl TonSignDataResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    const TEST_ADDRESS: &str = "UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg";
+    use crate::signer::testkit::TEST_ADDRESS;
 
     #[test]
     fn test_parse_payload_text() {

@@ -9,7 +9,10 @@ pub struct TonChainSigner;
 
 impl ChainSigner for TonChainSigner {
     fn sign_message(&self, message: &[u8], private_key: &[u8]) -> Result<String, SignerError> {
-        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_err(|e| SignerError::InvalidInput(e.to_string()))?
+            .as_secs();
         let result = sign_personal(message, private_key, timestamp)?;
         Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, result.signature))
     }

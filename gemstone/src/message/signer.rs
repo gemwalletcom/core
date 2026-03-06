@@ -21,8 +21,11 @@ use gem_bitcoin::signer::{BitcoinSignMessageData, sign_personal as bitcoin_sign_
 use gem_tron::signer::tron_hash_message;
 use zeroize::Zeroizing;
 
-fn current_timestamp() -> u64 {
-    SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)
+fn current_timestamp() -> Result<u64, GemstoneError> {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .map_err(|e| GemstoneError::from(e.to_string()))
 }
 
 #[derive(Debug, PartialEq, uniffi::Enum)]
@@ -119,7 +122,7 @@ impl MessageSigner {
             SignDigestType::TonPersonal => {
                 let string = String::from_utf8(self.message.data.clone())?;
                 let ton_data = TonSignMessageData::from_bytes(string.as_bytes())?;
-                let timestamp = current_timestamp();
+                let timestamp = current_timestamp()?;
                 Ok(ton_data.hash(timestamp)?)
             }
             SignDigestType::TronPersonal => Ok(tron_hash_message(&self.message.data).to_vec()),
@@ -161,7 +164,7 @@ impl MessageSigner {
         match &self.message.sign_type {
             SignDigestType::SuiPersonal => sui_signer::sign_digest(&hash, &private_key).map_err(GemstoneError::from),
             SignDigestType::TonPersonal => {
-                let timestamp = current_timestamp();
+                let timestamp = current_timestamp()?;
                 let result = ton_sign_personal(&self.message.data, &private_key, timestamp)?;
                 self.get_ton_result(&result)
             }
@@ -181,16 +184,16 @@ impl MessageSigner {
 impl MessageSigner {
     fn get_ton_result(&self, result: &TonSignResult) -> Result<String, GemstoneError> {
         let string = String::from_utf8(self.message.data.clone())?;
-        let ton_data = TonSignMessageData::from_bytes(string.as_bytes())?;
-        let raw_address = base64_to_hex_address(ton_data.address.clone())?;
+        let data = TonSignMessageData::from_bytes(string.as_bytes())?;
+        let raw_address = base64_to_hex_address(data.address.clone())?;
 
         let response = TonSignDataResponse::new(
             BASE64.encode(&result.signature),
             hex::encode(&result.public_key),
             raw_address,
             result.timestamp,
-            ton_data.domain,
-            ton_data.payload,
+            data.domain,
+            data.payload,
         );
 
         Ok(response.to_json()?)
