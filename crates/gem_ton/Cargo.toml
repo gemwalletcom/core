@@ -11,7 +11,7 @@ rpc = [
     "dep:chain_traits",
     "dep:futures",
 ]
-signer = ["dep:signer"]
+signer = ["dep:signer", "dep:gem_hash"]
 reqwest = ["gem_client/reqwest"]
 chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 
@@ -35,6 +35,7 @@ futures = { workspace = true, optional = true }
 
 # Optional signer dependencies
 signer = { path = "../signer", optional = true }
+gem_hash = { path = "../gem_hash", optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }

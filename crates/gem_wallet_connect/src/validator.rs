@@ -176,7 +176,11 @@ mod tests {
         );
 
         // Valid: text payload
-        let ton_data = TonSignMessageData::new(TonSignDataPayload::Text { text: "Hello".to_string() }, "example.com".to_string());
+        let ton_data = TonSignMessageData::new(
+            TonSignDataPayload::Text { text: "Hello".to_string() },
+            "example.com".to_string(),
+            "UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg".to_string(),
+        );
         assert!(
             validate_sign_message(&sign_validation(
                 Chain::Ton,
@@ -188,7 +192,11 @@ mod tests {
         );
 
         // Valid: binary payload
-        let ton_data = TonSignMessageData::new(TonSignDataPayload::Binary { bytes: "SGVsbG8=".to_string() }, "example.com".to_string());
+        let ton_data = TonSignMessageData::new(
+            TonSignDataPayload::Binary { bytes: "SGVsbG8=".to_string() },
+            "example.com".to_string(),
+            "UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg".to_string(),
+        );
         assert!(
             validate_sign_message(&sign_validation(
                 Chain::Ton,
@@ -200,7 +208,11 @@ mod tests {
         );
 
         // Valid: cell payload
-        let ton_data = TonSignMessageData::new(TonSignDataPayload::Cell { cell: "te6c".to_string() }, "example.com".to_string());
+        let ton_data = TonSignMessageData::new(
+            TonSignDataPayload::Cell { cell: "te6c".to_string() },
+            "example.com".to_string(),
+            "UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg".to_string(),
+        );
         assert!(
             validate_sign_message(&sign_validation(
                 Chain::Ton,

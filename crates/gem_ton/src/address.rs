@@ -1,4 +1,4 @@
-use base64::prelude::{BASE64_URL_SAFE_NO_PAD, Engine};
+use base64::prelude::{BASE64_STANDARD_NO_PAD, BASE64_URL_SAFE_NO_PAD, Engine};
 use crc::Crc;
 
 type Workchain = i32;
@@ -34,8 +34,28 @@ impl Address {
         Self { workchain, hash_part }
     }
 
+    pub fn workchain(&self) -> Workchain {
+        self.workchain
+    }
+
     pub fn get_hash_part(&self) -> &HashPart {
         &self.hash_part
+    }
+
+    pub fn from_base64_url(base64: &str) -> Result<Self, ParseError> {
+        let bytes = BASE64_URL_SAFE_NO_PAD
+            .decode(base64)
+            .or_else(|_| BASE64_STANDARD_NO_PAD.decode(base64))
+            .map_err(|_| ParseError("Invalid base64".to_string()))?;
+
+        if bytes.len() != 36 {
+            return Err(ParseError("Invalid base64 address length".to_string()));
+        }
+
+        let workchain = bytes[1] as i8 as i32;
+        let hash_part: HashPart = bytes[2..34].try_into().map_err(|_| ParseError("Invalid hash length".to_string()))?;
+
+        Ok(Self { workchain, hash_part })
     }
 
     pub fn from_hex_str<S>(hex_str: S) -> Result<Self, ParseError>
@@ -73,21 +93,8 @@ pub fn hex_to_base64_address(hex_str: String) -> Result<String, Box<dyn std::err
 }
 
 pub fn base64_to_hex_address(base64_str: String) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    use base64::prelude::{BASE64_STANDARD_NO_PAD, BASE64_URL_SAFE_NO_PAD};
-
-    let bytes = BASE64_URL_SAFE_NO_PAD
-        .decode(&base64_str)
-        .or_else(|_| BASE64_STANDARD_NO_PAD.decode(&base64_str))
-        .map_err(|_| ParseError("Invalid base64".to_string()))?;
-
-    if bytes.len() != 36 {
-        return Err(ParseError("Invalid base64 length".to_string()).into());
-    }
-
-    let workchain = bytes[1] as i32;
-    let hash = &bytes[2..34];
-
-    Ok(format!("{}:{}", workchain, hex::encode(hash)))
+    let address = Address::from_base64_url(&base64_str)?;
+    Ok(format!("{}:{}", address.workchain(), hex::encode(address.get_hash_part())))
 }
 
 impl std::error::Error for ParseError {}
@@ -162,6 +169,14 @@ mod tests {
         let hex = base64_to_hex_address(base64.to_string()).unwrap();
 
         assert_eq!(hex, "0:8e874b7ad9bbebbfc48810b8939c98f50580246f19982040dbcb253c4c3daf78");
+    }
+
+    #[test]
+    fn test_from_base64_url() {
+        let addr = Address::from_base64_url("UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg").unwrap();
+
+        assert_eq!(addr.workchain(), 0);
+        assert_eq!(hex::encode(addr.get_hash_part()), "58d5c54fbb8488af7eaad0cdc759ca8f6ff79fc9555106c1339b037ec0a40347");
     }
 
     #[test]

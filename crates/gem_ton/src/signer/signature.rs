@@ -1,41 +1,48 @@
 use primitives::SignerError;
 use signer::Signer;
 
-use super::types::TonSignMessageData;
+use super::types::{TonSignMessageData, TonSignResult};
 
-pub fn sign_personal(data: &[u8], private_key: &[u8]) -> Result<(Vec<u8>, Vec<u8>), SignerError> {
+pub fn sign_personal(data: &[u8], private_key: &[u8], timestamp: u64) -> Result<TonSignResult, SignerError> {
     let ton_data = TonSignMessageData::from_bytes(data)?;
-    let digest = ton_data.payload.hash();
+    let digest = ton_data.hash(timestamp)?;
 
-    Signer::sign_ed25519_with_public_key(&digest, private_key).map_err(|e| SignerError::InvalidInput(e.to_string()))
+    let (signature, public_key) = Signer::sign_ed25519_with_public_key(&digest, private_key).map_err(|e| SignerError::InvalidInput(e.to_string()))?;
+    Ok(TonSignResult { signature, public_key, timestamp })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::signer::TonSignDataPayload;
+    use crate::signer::testkit::TEST_ADDRESS;
 
     #[test]
     fn test_sign_ton_personal() {
         let payload = TonSignDataPayload::Text { text: "Hello TON".to_string() };
-        let ton_data = TonSignMessageData::new(payload, "example.com".to_string());
+        let ton_data = TonSignMessageData::new(payload, "example.com".to_string(), TEST_ADDRESS.to_string());
         let data = ton_data.to_bytes();
 
-        let private_key = hex::decode("1e9d38b5274152a78dff1a86fa464ceadc1f4238ca2c17060c3c507349424a34").expect("valid hex");
+        let private_key = hex::decode("1e9d38b5274152a78dff1a86fa464ceadc1f4238ca2c17060c3c507349424a34").unwrap();
+        let timestamp = 1234567890u64;
 
-        let (signature, public_key) = sign_personal(&data, &private_key).expect("signing succeeds");
+        let result = sign_personal(&data, &private_key, timestamp).unwrap();
 
-        assert_eq!(signature.len(), 64, "Ed25519 signature should be 64 bytes");
-        assert_eq!(public_key.len(), 32, "Ed25519 public key should be 32 bytes");
+        assert_eq!(
+            hex::encode(&result.signature),
+            "3fe42db1d77534ba52d43240cf6b84b36eb1c53a28e3370c5872f37558cee9b758b9f93a8740c84ee4190b99de83901dcb9d5b42b1c7826b3836236ef5cd3a0f"
+        );
+        assert_eq!(hex::encode(&result.public_key), "d369452197c2a56481e5e2d3e8bf03de2349f67a63151956822208c2334adee2");
+        assert_eq!(result.timestamp, timestamp);
     }
 
     #[test]
     fn test_sign_ton_personal_rejects_invalid_key() {
         let payload = TonSignDataPayload::Text { text: "Hello TON".to_string() };
-        let ton_data = TonSignMessageData::new(payload, "example.com".to_string());
+        let ton_data = TonSignMessageData::new(payload, "example.com".to_string(), TEST_ADDRESS.to_string());
         let data = ton_data.to_bytes();
 
-        let result = sign_personal(&data, &[0u8; 16]);
+        let result = sign_personal(&data, &[0u8; 16], 1234567890);
         assert!(result.is_err());
     }
 }

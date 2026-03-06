@@ -3348,6 +3348,7 @@ dependencies = [
  "crc",
  "futures",
  "gem_client",
+ "gem_hash",
  "hex",
  "num-bigint",
  "primitives",
