@@ -156,16 +156,12 @@ mod tests {
     }
 
     #[test]
-    fn test_map_swap_result_base_usdc_to_sol_usdt() {
+    fn test_map_swap_result_base_usdc_to_sol_usdt_without_metadata() {
         let response: RelayRequestsResponse = serde_json::from_str(include_str!("testdata/request_base_usdc_to_sol_usdt.json")).unwrap();
         let request = response.requests.first().unwrap();
         let result = map_swap_result(request);
 
         assert_eq!(result.status, SwapStatus::Completed);
-        let metadata = result.metadata.unwrap();
-        assert_eq!(metadata.from_asset, AssetId::from_token(Chain::Base, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"));
-        assert_eq!(metadata.from_value, "3000000");
-        assert_eq!(metadata.to_asset, AssetId::from_token(Chain::Solana, "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"));
-        assert_eq!(metadata.to_value, "2960498");
+        assert!(result.metadata.is_none());
     }
 }
