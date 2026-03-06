@@ -44,9 +44,7 @@ pub fn map_swap_result(request: &RelayRequest) -> SwapResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::relay::model::{
-        CurrencyAmount, QuoteDetails, RelayCurrencyDetail, RelayQuoteResponse, RelayRequest, RelayRequestMetadata, RelayRequestsResponse, RelayStatus, Step,
-    };
+    use crate::relay::model::{CurrencyAmount, QuoteDetails, RelayCurrencyDetail, RelayQuoteResponse, RelayRequest, RelayRequestMetadata, RelayStatus, Step};
     use primitives::{AssetId, Chain, swap::SwapStatus};
 
     #[test]
@@ -139,29 +137,5 @@ mod tests {
         };
 
         assert!(map_quote_data(&quote_response, None).is_err());
-    }
-
-    #[test]
-    fn test_map_swap_result_base_usdc_to_eth_usdc() {
-        let response: RelayRequestsResponse = serde_json::from_str(include_str!("testdata/request_base_usdc_to_eth_usdc.json")).unwrap();
-        let request = response.requests.first().unwrap();
-        let result = map_swap_result(request);
-
-        assert_eq!(result.status, SwapStatus::Completed);
-        let metadata = result.metadata.unwrap();
-        assert_eq!(metadata.from_asset, AssetId::from_token(Chain::Base, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"));
-        assert_eq!(metadata.from_value, "11911543");
-        assert_eq!(metadata.to_asset, AssetId::from_token(Chain::Ethereum, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"));
-        assert_eq!(metadata.to_value, "11707349");
-    }
-
-    #[test]
-    fn test_map_swap_result_base_usdc_to_sol_usdt_without_metadata() {
-        let response: RelayRequestsResponse = serde_json::from_str(include_str!("testdata/request_base_usdc_to_sol_usdt.json")).unwrap();
-        let request = response.requests.first().unwrap();
-        let result = map_swap_result(request);
-
-        assert_eq!(result.status, SwapStatus::Completed);
-        assert!(result.metadata.is_none());
     }
 }

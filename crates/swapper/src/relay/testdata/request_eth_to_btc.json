@@ -1,0 +1,42 @@
+{
+  "requests": [
+    {
+      "id": "0x66dfacf8279d88615a013041f7bb19e7a634b367e6d80d54c96b33339a55078f",
+      "status": "success",
+      "user": "0x514bcb1f9aabb904e6106bd1052b66d2706dbbb7",
+      "recipient": "bc1qe7qlndxgfv76c0ulnfhh7j0vdwkqdkkl4yf9gm",
+      "data": {
+        "metadata": {
+          "sender": "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7",
+          "recipient": "bc1qe7qlndxgfv76c0ulnfhh7j0vdwkqdkkl4yf9gm",
+          "currencyIn": {
+            "currency": {
+              "chainId": 1,
+              "address": "0x0000000000000000000000000000000000000000",
+              "symbol": "ETH",
+              "name": "Ether",
+              "decimals": 18
+            },
+            "amount": "10000000000000000",
+            "amountFormatted": "0.01",
+            "amountUsd": "19.937560"
+          },
+          "currencyOut": {
+            "currency": {
+              "chainId": 8253038,
+              "address": "bc1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqmql8k8",
+              "symbol": "BTC",
+              "name": "Bitcoin",
+              "decimals": 8
+            },
+            "amount": "28619",
+            "amountFormatted": "0.00028619",
+            "amountUsd": "19.445550"
+          }
+        }
+      },
+      "createdAt": "2026-03-03T06:28:25.979Z",
+      "updatedAt": "2026-03-03T07:11:36.416Z"
+    }
+  ]
+}
