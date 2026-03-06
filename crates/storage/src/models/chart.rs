@@ -64,24 +64,40 @@ pub struct DailyChartRow {
 
 impl From<HourlyChartRow> for ChartRow {
     fn from(chart: HourlyChartRow) -> Self {
-        ChartRow { coin_id: chart.coin_id, price: chart.price, created_at: chart.created_at }
+        ChartRow {
+            coin_id: chart.coin_id,
+            price: chart.price,
+            created_at: chart.created_at,
+        }
     }
 }
 
 impl From<DailyChartRow> for ChartRow {
     fn from(chart: DailyChartRow) -> Self {
-        ChartRow { coin_id: chart.coin_id, price: chart.price, created_at: chart.created_at }
+        ChartRow {
+            coin_id: chart.coin_id,
+            price: chart.price,
+            created_at: chart.created_at,
+        }
     }
 }
 
 impl From<ChartRow> for HourlyChartRow {
     fn from(chart: ChartRow) -> Self {
-        HourlyChartRow { coin_id: chart.coin_id, price: chart.price, created_at: chart.created_at }
+        HourlyChartRow {
+            coin_id: chart.coin_id,
+            price: chart.price,
+            created_at: chart.created_at,
+        }
     }
 }
 
 impl From<ChartRow> for DailyChartRow {
     fn from(chart: ChartRow) -> Self {
-        DailyChartRow { coin_id: chart.coin_id, price: chart.price, created_at: chart.created_at }
+        DailyChartRow {
+            coin_id: chart.coin_id,
+            price: chart.price,
+            created_at: chart.created_at,
+        }
     }
 }

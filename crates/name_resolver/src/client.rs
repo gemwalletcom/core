@@ -54,9 +54,7 @@ impl Client {
     pub async fn resolve(&self, name: &str, chain: Chain) -> Result<NameRecord, Box<dyn Error + Send + Sync>> {
         let query = NameQuery::new(name);
         if query.name.len() > self.config.max_name_length {
-            return Err(
-                NameError::new(format!("name '{}' exceeds maximum length of {}", query.name, self.config.max_name_length)).into(),
-            );
+            return Err(NameError::new(format!("name '{}' exceeds maximum length of {}", query.name, self.config.max_name_length)).into());
         }
 
         let provider = self.matched_provider(name, chain)?;

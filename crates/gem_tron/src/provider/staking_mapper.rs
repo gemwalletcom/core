@@ -15,7 +15,14 @@ pub fn map_staking_validators(witnesses: WitnessesList, apy: Option<f64>) -> Vec
         .witnesses
         .into_iter()
         .filter_map(|witness| {
-            Some(DelegationValidator::stake(Chain::Tron, TronAddress::from_hex(&witness.address)?, String::new(), witness.is_jobs.unwrap_or(false), 0.0, default_apy))
+            Some(DelegationValidator::stake(
+                Chain::Tron,
+                TronAddress::from_hex(&witness.address)?,
+                String::new(),
+                witness.is_jobs.unwrap_or(false),
+                0.0,
+                default_apy,
+            ))
         })
         .collect();
 

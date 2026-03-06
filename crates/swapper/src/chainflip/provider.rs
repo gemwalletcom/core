@@ -18,10 +18,10 @@ use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData,
     alien::RpcProvider,
     amount_to_value,
-    cross_chain::VaultAddresses,
     approval::check_approval_erc20,
     asset::{ARBITRUM_USDC, ETHEREUM_FLIP, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
     config::DEFAULT_CHAINFLIP_FEE_BPS,
+    cross_chain::VaultAddresses,
     slippage,
 };
 use primitives::{ChainType, chain::Chain, swap::QuoteAsset};
@@ -375,7 +375,7 @@ mod tests {
                 estimated_price: "40.83388759199201533512".to_string(),
                 dca_parameters: Some(DcaParameters {
                     number_of_chunks: 3,
-                    chunk_interval: 2,
+                    chunk_interval: 2
                 }),
             }
         );

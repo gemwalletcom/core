@@ -1,11 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    UTXO,
-    solana_token_program::SolanaTokenProgramId,
-    contract_call_data::ContractCallData,
-    stake_type::TronStakeData,
-};
+use crate::{UTXO, contract_call_data::ContractCallData, solana_token_program::SolanaTokenProgramId, stake_type::TronStakeData};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HyperliquidOrder {

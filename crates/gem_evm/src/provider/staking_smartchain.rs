@@ -30,7 +30,16 @@ impl<C: Client + Clone> EthereumClient<C> {
 
         Ok(validators
             .into_iter()
-            .map(|v| DelegationValidator::stake(Chain::SmartChain, v.operator_address.clone(), v.moniker, !v.jailed, v.commission as f64 / 10000.0, v.apy as f64 / 100.0))
+            .map(|v| {
+                DelegationValidator::stake(
+                    Chain::SmartChain,
+                    v.operator_address.clone(),
+                    v.moniker,
+                    !v.jailed,
+                    v.commission as f64 / 10000.0,
+                    v.apy as f64 / 100.0,
+                )
+            })
             .collect())
     }
 

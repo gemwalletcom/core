@@ -22,11 +22,7 @@ impl PortfolioClient {
         Self { database }
     }
 
-    pub fn get_portfolio_charts(
-        &self,
-        assets: Vec<PortfolioAsset>,
-        period: ChartPeriod,
-    ) -> Result<PortfolioAssets, Box<dyn Error + Send + Sync>> {
+    pub fn get_portfolio_charts(&self, assets: Vec<PortfolioAsset>, period: ChartPeriod) -> Result<PortfolioAssets, Box<dyn Error + Send + Sync>> {
         let assets: Vec<ResolvedAsset> = assets.into_iter().filter_map(|input| self.resolve_asset(input)).collect();
         let chart_data = self.get_chart_values(&assets, &period);
         Ok(Self::build_portfolio(assets, chart_data))
@@ -53,7 +49,10 @@ impl PortfolioClient {
     fn build_portfolio(assets: Vec<ResolvedAsset>, chart_data: BTreeMap<i64, f64>) -> PortfolioAssets {
         let values: Vec<ChartValue> = chart_data
             .into_iter()
-            .map(|(ts, value)| ChartValue { timestamp: ts as i32, value: value as f32 })
+            .map(|(ts, value)| ChartValue {
+                timestamp: ts as i32,
+                value: value as f32,
+            })
             .collect();
 
         let cmp = |a: &&ChartValue, b: &&ChartValue| a.value.partial_cmp(&b.value).unwrap_or(Ordering::Equal);
@@ -66,7 +65,11 @@ impl PortfolioClient {
         let to_percentage = |cv: &ChartValue| ChartValuePercentage {
             date: chrono::DateTime::from_timestamp(cv.timestamp as i64, 0).unwrap_or_default(),
             value: cv.value,
-            percentage: if total_value_f32 > 0.0 { (cv.value - total_value_f32) / total_value_f32 * 100.0 } else { 0.0 },
+            percentage: if total_value_f32 > 0.0 {
+                (cv.value - total_value_f32) / total_value_f32 * 100.0
+            } else {
+                0.0
+            },
         };
 
         let allocation: Vec<PortfolioAllocation> = assets

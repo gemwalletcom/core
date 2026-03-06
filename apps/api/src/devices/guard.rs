@@ -70,10 +70,7 @@ async fn authenticate<T>(req: &Request<'_>) -> Result<AuthResult, Outcome<T, Str
         Error((status, msg))
     })?;
 
-    let wallet_id = components
-        .wallet_id
-        .clone()
-        .or_else(|| req.headers().get_one(HEADER_WALLET_ID).map(|s| s.to_string()));
+    let wallet_id = components.wallet_id.clone().or_else(|| req.headers().get_one(HEADER_WALLET_ID).map(|s| s.to_string()));
 
     Ok(AuthResult {
         device_id: components.device_id,

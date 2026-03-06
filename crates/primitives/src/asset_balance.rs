@@ -166,5 +166,4 @@ impl Balance {
             metadata,
         }
     }
-
 }

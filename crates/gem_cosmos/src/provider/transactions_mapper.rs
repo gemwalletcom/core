@@ -46,11 +46,7 @@ pub fn map_transactions(chain: CosmosChain, transactions: Vec<TransactionRespons
 }
 
 fn asset_id_from_denom(chain: primitives::Chain, denom: &str, default_denom: &str) -> AssetId {
-    if denom == default_denom {
-        chain.as_asset_id()
-    } else {
-        AssetId::token(chain, denom)
-    }
+    if denom == default_denom { chain.as_asset_id() } else { AssetId::token(chain, denom) }
 }
 
 pub fn map_transaction(cosmos_chain: CosmosChain, body: TransactionBody, auth_info: Option<AuthInfo>, transaction: TransactionResponse) -> Option<Transaction> {
@@ -60,10 +56,7 @@ pub fn map_transaction(cosmos_chain: CosmosChain, body: TransactionBody, auth_in
     let native_asset_id = chain.as_asset_id();
 
     let fee_coin = auth_info.and_then(|info| info.fee.amount.into_iter().next());
-    let fee = fee_coin
-        .as_ref()
-        .map(|f| f.amount.clone())
-        .unwrap_or_else(|| get_base_fee(cosmos_chain).to_string());
+    let fee = fee_coin.as_ref().map(|f| f.amount.clone()).unwrap_or_else(|| get_base_fee(cosmos_chain).to_string());
     let fee_asset_id = fee_coin
         .as_ref()
         .map(|coin| asset_id_from_denom(chain, &coin.denom, &default_denom))

@@ -42,26 +42,11 @@ fn decode_siwe_message(chain: Chain, raw_text: &str, message_data: &[u8]) -> Opt
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn sample_siwe_message() -> String {
-        [
-            "login.xyz wants you to sign in with your Ethereum account:",
-            "0x6dD7802E6d44bE89a789C4bD60bD511B68F41c7c",
-            "",
-            "Sign in with Ethereum to the app.",
-            "",
-            "URI: https://login.xyz",
-            "Version: 1",
-            "Chain ID: 1",
-            "Nonce: 8hK9pX32",
-            "Issued At: 2024-04-01T12:00:00Z",
-        ]
-        .join("\n")
-    }
+    use gem_evm::testkit::siwe_mock::mock_siwe_message;
 
     #[test]
     fn test_decode_sign_message_detects_siwe() {
-        let message = sample_siwe_message();
+        let message = mock_siwe_message("login.xyz", 1);
         let decoded = decode_sign_message(Chain::Ethereum, SignDigestType::Eip191, message.clone());
 
         assert_eq!(decoded.sign_type, SignDigestType::Siwe);
@@ -79,7 +64,7 @@ mod tests {
 
     #[test]
     fn test_decode_sign_message_siwe_chain_mismatch() {
-        let message = sample_siwe_message();
+        let message = mock_siwe_message("login.xyz", 1);
         let decoded = decode_sign_message(Chain::Polygon, SignDigestType::Eip191, message);
 
         assert_eq!(decoded.sign_type, SignDigestType::Eip191);

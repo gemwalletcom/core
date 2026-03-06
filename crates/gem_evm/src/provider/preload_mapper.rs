@@ -8,7 +8,8 @@ use num_bigint::BigInt;
 use num_traits::Num;
 use primitives::swap::SwapQuoteDataType;
 use primitives::{
-    AssetSubtype, Chain, EVMChain, FeeRate, NFTType, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, decode_hex, fee::FeePriority, fee::GasPriceType,
+    AssetSubtype, Chain, EVMChain, FeeRate, NFTType, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, decode_hex, fee::FeePriority,
+    fee::GasPriceType,
 };
 
 use crate::contracts::{IERC20, IERC721, IERC1155};
@@ -100,11 +101,7 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
                         BigInt::from_str_radix(&swap_data.data.value, 10)?,
                     )),
                     AssetSubtype::TOKEN => match swap_data.data.data_type {
-                        SwapQuoteDataType::Contract => Ok(TransactionParams::new(
-                            swap_data.data.to.clone(),
-                            hex::decode(swap_data.data.data.clone())?,
-                            BigInt::ZERO,
-                        )),
+                        SwapQuoteDataType::Contract => Ok(TransactionParams::new(swap_data.data.to.clone(), hex::decode(swap_data.data.data.clone())?, BigInt::ZERO)),
                         SwapQuoteDataType::Transfer => {
                             let to = from_asset.token_id.clone().ok_or("Missing token ID")?.clone();
                             let data = encode_erc20_transfer(&swap_data.data.to.clone(), &BigInt::from_str_radix(&input.value, 10)?)?;
@@ -153,7 +150,11 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
             if let Some(approval) = &earn_data.approval {
                 Ok(TransactionParams::new_approval(approval.token.clone(), encode_erc20_approve(&approval.spender)?))
             } else {
-                Ok(TransactionParams::new(earn_data.contract_address.clone(), decode_hex(&earn_data.call_data)?, BigInt::from(0)))
+                Ok(TransactionParams::new(
+                    earn_data.contract_address.clone(),
+                    decode_hex(&earn_data.call_data)?,
+                    BigInt::from(0),
+                ))
             }
         }
         _ => Err("Unsupported transfer type".into()),
@@ -195,7 +196,9 @@ pub fn get_extra_fee_gas_limit(input: &TransactionLoadInput) -> Result<BigInt, B
             }
         }
         TransactionInputType::Earn(_, _, earn_data) => {
-            if earn_data.approval.is_some() && let Some(gas_limit) = &earn_data.gas_limit {
+            if earn_data.approval.is_some()
+                && let Some(gas_limit) = &earn_data.gas_limit
+            {
                 return Ok(BigInt::from_str_radix(gas_limit, 10)?);
             }
             Ok(BigInt::from(0))
@@ -431,7 +434,14 @@ mod tests {
 
     #[test]
     fn test_encode_stake_hub_delegate() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let validator = DelegationValidator::stake(Chain::SmartChain, "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(), "Test Validator".to_string(), true, 5.0, 10.0);
+        let validator = DelegationValidator::stake(
+            Chain::SmartChain,
+            "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(),
+            "Test Validator".to_string(),
+            true,
+            5.0,
+            10.0,
+        );
 
         let stake_type = StakeType::Stake(validator);
         let amount = BigInt::from(1_000_000_000_000_000_000u64); // 1 BNB
@@ -460,7 +470,14 @@ mod tests {
                 delegation_id: "test".to_string(),
                 validator_id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
             },
-            validator: DelegationValidator::stake(Chain::SmartChain, "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(), "Test Validator".to_string(), true, 5.0, 10.0),
+            validator: DelegationValidator::stake(
+                Chain::SmartChain,
+                "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
+                "Test Validator".to_string(),
+                true,
+                5.0,
+                10.0,
+            ),
             price: None,
         };
 
@@ -490,11 +507,25 @@ mod tests {
                 delegation_id: "test".to_string(),
                 validator_id: "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(),
             },
-            validator: DelegationValidator::stake(Chain::SmartChain, "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(), "Source Validator".to_string(), true, 5.0, 10.0),
+            validator: DelegationValidator::stake(
+                Chain::SmartChain,
+                "0x773760b0708a5Cc369c346993a0c225D8e4043B1".to_string(),
+                "Source Validator".to_string(),
+                true,
+                5.0,
+                10.0,
+            ),
             price: None,
         };
 
-        let to_validator = DelegationValidator::stake(Chain::SmartChain, "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(), "Target Validator".to_string(), true, 3.0, 12.0);
+        let to_validator = DelegationValidator::stake(
+            Chain::SmartChain,
+            "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
+            "Target Validator".to_string(),
+            true,
+            3.0,
+            12.0,
+        );
 
         let redelegate_data = RedelegateData { delegation, to_validator };
 
@@ -524,7 +555,14 @@ mod tests {
                 delegation_id: "test".to_string(),
                 validator_id: "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
             },
-            validator: DelegationValidator::stake(Chain::SmartChain, "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(), "Test Validator".to_string(), true, 5.0, 10.0),
+            validator: DelegationValidator::stake(
+                Chain::SmartChain,
+                "0x343dA7Ff0446247ca47AA41e2A25c5Bbb230ED0A".to_string(),
+                "Test Validator".to_string(),
+                true,
+                5.0,
+                10.0,
+            ),
             price: None,
         };
 

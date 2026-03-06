@@ -120,7 +120,10 @@ mod tests {
 
     #[test]
     fn test_resolve_asset_id_evm_token_checksummed() {
-        assert_eq!(resolve_asset_id(Chain::Ethereum, "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"), Some(AssetId::from_token(Chain::Ethereum, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")));
+        assert_eq!(
+            resolve_asset_id(Chain::Ethereum, "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"),
+            Some(AssetId::from_token(Chain::Ethereum, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"))
+        );
     }
 
     #[test]
@@ -141,11 +144,20 @@ mod tests {
         // native: uses chain decimals (9 for SUI)
         assert_eq!(resolve_value(Chain::Sui, "0x2::sui::SUI", "7.534906306"), Some("7534906306".to_string()));
         // token: infers 6 decimals from amount string
-        assert_eq!(resolve_value(Chain::Polygon, "0xc2132d05d31c914a87c6611c10748aeb04b58e8f", "35.243141"), Some("35243141".to_string()));
+        assert_eq!(
+            resolve_value(Chain::Polygon, "0xc2132d05d31c914a87c6611c10748aeb04b58e8f", "35.243141"),
+            Some("35243141".to_string())
+        );
         // token: infers 18 decimals from amount string
-        assert_eq!(resolve_value(Chain::Base, "0xef5997c2cf2f6c138196f8a6203afc335206b3c1", "398.724622644505839482"), Some("398724622644505839482".to_string()));
+        assert_eq!(
+            resolve_value(Chain::Base, "0xef5997c2cf2f6c138196f8a6203afc335206b3c1", "398.724622644505839482"),
+            Some("398724622644505839482".to_string())
+        );
         // token: infers 9 decimals from amount string
-        assert_eq!(resolve_value(Chain::Solana, "CzFvsLdUazabdiu9TYXujj4EY495fG7VgJJ3vQs6bonk", "278080.608518046"), Some("278080608518046".to_string()));
+        assert_eq!(
+            resolve_value(Chain::Solana, "CzFvsLdUazabdiu9TYXujj4EY495fG7VgJJ3vQs6bonk", "278080.608518046"),
+            Some("278080608518046".to_string())
+        );
     }
 
     #[test]

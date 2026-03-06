@@ -13,9 +13,9 @@ use chain_traits::ChainTransactionLoad;
 use gem_client::Client;
 #[cfg(feature = "rpc")]
 use num_bigint::BigInt;
-use primitives::GasPriceType;
 #[cfg(feature = "rpc")]
 use primitives::ContractCallData;
+use primitives::GasPriceType;
 #[cfg(feature = "rpc")]
 use primitives::{FeeRate, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput};
 #[cfg(feature = "rpc")]

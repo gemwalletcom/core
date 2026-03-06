@@ -5,8 +5,8 @@ use primitives::chain::Chain;
 use primitives::name::NameProvider;
 
 use crate::client::NameClient;
-use crate::model::NameQuery;
 use crate::error::NameError;
+use crate::model::NameQuery;
 
 pub struct TestProvider {
     provider: NameProvider,

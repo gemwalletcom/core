@@ -266,5 +266,4 @@ mod tests {
         assert_eq!(m.truncate_method("/api/v1/blocks/by_height/12345"), "/api/v1/blocks/by_height/:number");
         assert_eq!(m.truncate_method("/v1/verylongsegmentthatisgreaterthan20characters"), "/v1/:value");
     }
-
 }

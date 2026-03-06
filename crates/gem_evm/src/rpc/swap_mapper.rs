@@ -275,7 +275,7 @@ mod tests {
             metadata.from_asset,
             AssetId {
                 chain: Chain::Unichain,
-                token_id: None,
+                token_id: None
             }
         );
         assert_eq!(metadata.from_value, "995000000000000");
@@ -320,7 +320,7 @@ mod tests {
             metadata.to_asset,
             AssetId {
                 chain: Chain::Unichain,
-                token_id: None,
+                token_id: None
             }
         );
         assert_eq!(metadata.to_value, "1155057703771482");
@@ -350,7 +350,7 @@ mod tests {
             metadata.from_asset,
             AssetId {
                 chain: Chain::Ethereum,
-                token_id: None,
+                token_id: None
             }
         );
         assert_eq!(metadata.from_value, "17910000000000000");
@@ -426,7 +426,7 @@ mod tests {
             metadata.from_asset,
             AssetId {
                 chain: Chain::Polygon,
-                token_id: None,
+                token_id: None
             }
         );
         assert_eq!(metadata.from_value, "372000000000000000000");
@@ -522,7 +522,7 @@ mod tests {
             metadata.to_asset,
             AssetId {
                 chain: Chain::Ethereum,
-                token_id: None,
+                token_id: None
             }
         );
         assert_eq!(metadata.to_value, "158035947652936307");

@@ -2,7 +2,7 @@ use chrono::DateTime;
 use num_bigint::Sign;
 
 use crate::{
-    COMPUTE_BUDGET_PROGRAM_ID, JUPITER_PROGRAM_ID, SYSTEM_PROGRAMS, SYSTEM_PROGRAM_ID, TOKEN_PROGRAM,
+    COMPUTE_BUDGET_PROGRAM_ID, JUPITER_PROGRAM_ID, SYSTEM_PROGRAM_ID, SYSTEM_PROGRAMS, TOKEN_PROGRAM,
     models::{BlockTransaction, BlockTransactions, Signature},
 };
 use primitives::{AssetId, Chain, SwapProvider, Transaction, TransactionState, TransactionSwapMetadata, TransactionType};
@@ -35,7 +35,11 @@ pub fn map_transaction(transaction: &BlockTransaction, block_time: i64) -> Optio
     let account_keys = transaction.transaction.message.account_keys.clone();
     let hash = transaction.transaction.signatures.first()?.to_string();
     let fee = transaction.meta.fee;
-    let state = if transaction.meta.err.is_some() { TransactionState::Failed } else { TransactionState::Confirmed };
+    let state = if transaction.meta.err.is_some() {
+        TransactionState::Failed
+    } else {
+        TransactionState::Confirmed
+    };
     let fee_asset_id = chain.as_asset_id();
     let created_at = DateTime::from_timestamp(block_time, 0)?;
 

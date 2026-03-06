@@ -131,7 +131,12 @@ mod tests {
     fn test_unsupported_method() {
         let request = WalletConnectRequest::mock("unknown_method", "{}", None);
         let action = WalletConnectRequestHandler::parse_request(request).unwrap();
-        assert_eq!(action, WalletConnectAction::Unsupported { method: "unknown_method".to_string() });
+        assert_eq!(
+            action,
+            WalletConnectAction::Unsupported {
+                method: "unknown_method".to_string()
+            }
+        );
     }
 
     #[test]

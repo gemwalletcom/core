@@ -91,7 +91,9 @@ mod tests {
 
     #[test]
     fn test_unexpected_callback_error_converts_to_platform_error() {
-        let unexpected = uniffi::UnexpectedUniFFICallbackError { reason: "SomeSwiftError: something went wrong".to_string() };
+        let unexpected = uniffi::UnexpectedUniFFICallbackError {
+            reason: "SomeSwiftError: something went wrong".to_string(),
+        };
         let gateway_error: GatewayError = unexpected.into();
 
         match gateway_error {

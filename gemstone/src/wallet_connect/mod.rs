@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::str::FromStr;
 
 use gem_wallet_connect::{
-    WalletConnectRequestHandler, WalletConnectResponseHandler, WalletConnectVerifier, config_session_properties, decode_sign_message, validate_send_transaction,
-    validate_sign_message,
+    SignMessageValidation, WalletConnectRequestHandler, WalletConnectResponseHandler, WalletConnectVerifier, config_session_properties, decode_sign_message,
+    validate_send_transaction, validate_sign_message,
 };
 use primitives::{Chain, TransferDataOutputType, WCEthereumTransaction, WalletConnectRequest, WalletConnectionVerificationStatus};
 
@@ -346,9 +346,15 @@ impl WalletConnect {
         WalletConnectResponseHandler::encode_send_transaction(chain.chain_type(), transaction_id).into()
     }
 
-    pub fn validate_sign_message(&self, chain: Chain, sign_type: SignDigestType, data: String) -> Result<(), GemstoneError> {
+    pub fn validate_sign_message(&self, chain: Chain, sign_type: SignDigestType, data: String, session_domain: String) -> Result<(), GemstoneError> {
         let crate_sign_type: gem_wallet_connect::SignDigestType = sign_type.into();
-        validate_sign_message(chain, &crate_sign_type, &data).map_err(|e| GemstoneError::AnyError { msg: e })
+        let input = SignMessageValidation {
+            chain,
+            sign_type: &crate_sign_type,
+            data: &data,
+            session_domain: &session_domain,
+        };
+        validate_sign_message(&input).map_err(|e| GemstoneError::AnyError { msg: e })
     }
 
     pub fn validate_send_transaction(&self, transaction_type: WalletConnectTransactionType, data: String) -> Result<(), GemstoneError> {

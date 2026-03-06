@@ -9,8 +9,8 @@ use crate::{
 use gem_evm::uniswap::{
     FeeTier,
     deployment::v3::{
-        V3Deployment, get_aerodrome_router_deployment_by_chain, get_oku_deployment_by_chain, get_pancakeswap_router_deployment_by_chain,
-        get_uniswap_router_deployment_by_chain, get_wagmi_router_deployment_by_chain,
+        V3Deployment, get_aerodrome_router_deployment_by_chain, get_oku_deployment_by_chain, get_pancakeswap_router_deployment_by_chain, get_uniswap_router_deployment_by_chain,
+        get_wagmi_router_deployment_by_chain,
     },
 };
 use primitives::Chain;

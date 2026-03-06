@@ -26,10 +26,7 @@ mod tests {
     #[tokio::test]
     async fn test_resolver_ens_imported_name() {
         let nodes = get_nodes_for_chain(Chain::Ethereum);
-        let client = name_resolver::client::Client::new(
-            vec![Box::new(ENSClient::new(nodes[0].url.clone()))],
-            NameConfig { max_name_length: 20 },
-        );
+        let client = name_resolver::client::Client::new(vec![Box::new(ENSClient::new(nodes[0].url.clone()))], NameConfig { max_name_length: 20 });
         let address = client.resolve("farcaster.xyz", Chain::Ethereum).await.unwrap().address;
         assert_eq!(address, "0xF12E89805E10d96c0CDf22da88aED361eD9329cA");
     }

@@ -9,18 +9,20 @@ use crate::assets::AssetsClient;
 use crate::metrics::fiat::FiatMetrics;
 use crate::params::{AssetIdParam, ChainParam, ChartPeriodParam, CurrencyParam, DeviceIdParam, DeviceParam, FiatQuoteTypeParam, TransactionIdParam, UserAgent};
 use crate::responders::{ApiError, ApiResponse};
-pub use clients::{FiatQuotesClient, NotificationsClient, PortfolioClient, RewardsClient, RewardsRedemptionClient, ScanClient, ScanProviderFactory, TransactionsClient, WalletsClient};
-pub(crate) use clients::WalletSubscriptionInput;
 use auth_config::AuthConfig;
 pub use client::DevicesClient;
+pub(crate) use clients::WalletSubscriptionInput;
+pub use clients::{
+    FiatQuotesClient, NotificationsClient, PortfolioClient, RewardsClient, RewardsRedemptionClient, ScanClient, ScanProviderFactory, TransactionsClient, WalletsClient,
+};
 use gem_auth::AuthClient;
 use guard::{AuthenticatedDevice, AuthenticatedDeviceWallet, VerifiedDeviceId};
+use name_resolver::client::Client as NameClient;
 use nft::NFTClient;
 use primitives::DeviceToken;
 use primitives::device::Device;
-use primitives::rewards::{RedemptionRequest, RedemptionResult, RewardRedemptionOption};
-use name_resolver::client::Client as NameClient;
 use primitives::name::NameRecord;
+use primitives::rewards::{RedemptionRequest, RedemptionResult, RewardRedemptionOption};
 use primitives::{
     AssetId, AuthNonce, FiatAssets, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuotes, InAppNotification, MigrateDeviceIdRequest, NFTData, PortfolioAssets,
     PortfolioAssetsRequest, PriceAlerts, ReportNft, RewardEvent, Rewards, ScanTransaction, ScanTransactionPayload, Transaction, TransactionsResponse, WalletSubscriptionChains,
@@ -105,7 +107,11 @@ pub async fn get_device_transactions_v2(
 }
 
 #[get("/devices/transactions/<id>")]
-pub async fn get_device_transaction_by_id_v2(_device: AuthenticatedDevice, id: TransactionIdParam, client: &State<Mutex<TransactionsClient>>) -> Result<ApiResponse<Transaction>, ApiError> {
+pub async fn get_device_transaction_by_id_v2(
+    _device: AuthenticatedDevice,
+    id: TransactionIdParam,
+    client: &State<Mutex<TransactionsClient>>,
+) -> Result<ApiResponse<Transaction>, ApiError> {
     Ok(client.lock().await.get_transaction_by_id(&id.0)?.into())
 }
 
@@ -125,7 +131,11 @@ pub async fn get_device_rewards_events_v2(device: AuthenticatedDeviceWallet, cli
 }
 
 #[get("/devices/rewards/redemptions/<code>")]
-pub async fn get_device_rewards_redemption_v2(_device: AuthenticatedDevice, code: &str, client: &State<Mutex<RewardsClient>>) -> Result<ApiResponse<RewardRedemptionOption>, ApiError> {
+pub async fn get_device_rewards_redemption_v2(
+    _device: AuthenticatedDevice,
+    code: &str,
+    client: &State<Mutex<RewardsClient>>,
+) -> Result<ApiResponse<RewardRedemptionOption>, ApiError> {
     Ok(client.lock().await.get_rewards_redemption_option(code)?.into())
 }
 
@@ -213,7 +223,12 @@ pub async fn report_device_nft_v2(device: AuthenticatedDevice, request: Json<Rep
 }
 
 #[get("/devices/name/resolve/<name>?<chain>")]
-pub async fn get_device_name_resolve_v2(_device: AuthenticatedDevice, name: &str, chain: ChainParam, client: &State<Mutex<NameClient>>) -> Result<ApiResponse<Option<NameRecord>>, ApiError> {
+pub async fn get_device_name_resolve_v2(
+    _device: AuthenticatedDevice,
+    name: &str,
+    chain: ChainParam,
+    client: &State<Mutex<NameClient>>,
+) -> Result<ApiResponse<Option<NameRecord>>, ApiError> {
     let result = client.lock().await.resolve(name, chain.0).await;
     match result {
         Ok(record) => Ok(Some(record).into()),
@@ -306,12 +321,21 @@ pub async fn delete_device_price_alerts_v2(
 }
 
 #[get("/devices/fiat/orders/<provider>/<order_id>")]
-pub async fn get_device_fiat_order_v2(_device: AuthenticatedDevice, provider: &str, order_id: &str, client: &State<Mutex<FiatQuotesClient>>) -> Result<ApiResponse<primitives::FiatTransaction>, ApiError> {
+pub async fn get_device_fiat_order_v2(
+    _device: AuthenticatedDevice,
+    provider: &str,
+    order_id: &str,
+    client: &State<Mutex<FiatQuotesClient>>,
+) -> Result<ApiResponse<primitives::FiatTransaction>, ApiError> {
     Ok(client.lock().await.get_order_status(provider, order_id).await?.into())
 }
 
 #[get("/devices/fiat/assets/<quote_type>")]
-pub async fn get_device_fiat_assets_v2(_device: AuthenticatedDevice, quote_type: FiatQuoteTypeParam, client: &State<Mutex<FiatQuotesClient>>) -> Result<ApiResponse<FiatAssets>, ApiError> {
+pub async fn get_device_fiat_assets_v2(
+    _device: AuthenticatedDevice,
+    quote_type: FiatQuoteTypeParam,
+    client: &State<Mutex<FiatQuotesClient>>,
+) -> Result<ApiResponse<FiatAssets>, ApiError> {
     let assets = match quote_type.0 {
         FiatQuoteType::Buy => client.lock().await.get_on_ramp_assets().await?,
         FiatQuoteType::Sell => client.lock().await.get_off_ramp_assets().await?,
@@ -371,9 +395,5 @@ pub async fn get_device_portfolio_assets_v2(
     request: Json<PortfolioAssetsRequest>,
     portfolio_client: &State<Mutex<PortfolioClient>>,
 ) -> Result<ApiResponse<PortfolioAssets>, ApiError> {
-    Ok(portfolio_client
-        .lock()
-        .await
-        .get_portfolio_charts(request.0.assets, period.0)?
-        .into())
+    Ok(portfolio_client.lock().await.get_portfolio_charts(request.0.assets, period.0)?.into())
 }

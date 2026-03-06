@@ -1,4 +1,3 @@
-use crate::{COMMITMENT_CONFIRMED, STAKE_PROGRAM_ID};
 use crate::models::{
     EpochInfo, InflationRate, ResultTokenInfo, Signature, TokenAccountInfo, ValueResult, VoteAccounts,
     balances::SolanaBalance,
@@ -6,6 +5,7 @@ use crate::models::{
     prioritization_fee::SolanaPrioritizationFee,
     transaction::{BlockTransactions, SolanaTransaction},
 };
+use crate::{COMMITMENT_CONFIRMED, STAKE_PROGRAM_ID};
 use chain_traits::ChainProvider;
 #[cfg(feature = "rpc")]
 use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainTraits};

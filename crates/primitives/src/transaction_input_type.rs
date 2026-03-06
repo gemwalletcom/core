@@ -1,5 +1,5 @@
-use crate::earn_type::EarnType;
 use crate::contract_call_data::ContractCallData;
+use crate::earn_type::EarnType;
 use crate::stake_type::StakeType;
 use crate::swap::{ApprovalData, SwapData};
 use crate::transaction_fee::TransactionFee;

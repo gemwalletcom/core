@@ -10,7 +10,7 @@ use storage::Database;
 use storage::models::{ChartRow, ConfigRow, FiatAssetRow, FiatProviderCountryRow, FiatRateRow, PriceAssetRow, PriceRow, UpdateDeviceRow};
 use storage::sql_types::{Platform, PlatformStore};
 use storage::{
-    AssetsRepository, ChartsRepository, ChainsRepository, ConfigRepository, DevicesRepository, MigrationsRepository, NewNotificationRow, NewWalletRow, NotificationsRepository,
+    AssetsRepository, ChainsRepository, ChartsRepository, ConfigRepository, DevicesRepository, MigrationsRepository, NewNotificationRow, NewWalletRow, NotificationsRepository,
     PriceAlertsRepository, PricesDexRepository, PricesRepository, ReleasesRepository, RewardsRepository, TagRepository, WalletSource, WalletType, WalletsRepository,
 };
 use streamer::{ExchangeKind, ExchangeName, QueueName, StreamProducer, StreamProducerConfig};
