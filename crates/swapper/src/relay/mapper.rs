@@ -44,7 +44,9 @@ pub fn map_swap_result(request: &RelayRequest) -> SwapResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::relay::model::{CurrencyAmount, QuoteDetails, RelayCurrencyDetail, RelayQuoteResponse, RelayRequest, RelayRequestMetadata, RelayStatus, Step};
+    use crate::relay::model::{
+        CurrencyAmount, QuoteDetails, RelayCurrencyDetail, RelayQuoteResponse, RelayRequest, RelayRequestMetadata, RelayRequestsResponse, RelayStatus, Step,
+    };
     use primitives::{AssetId, Chain, swap::SwapStatus};
 
     #[test]
