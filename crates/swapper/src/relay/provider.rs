@@ -14,7 +14,7 @@ use super::{
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider,
-    SwapperQuoteData, approval::check_approval_erc20, config::get_swap_api_url, cross_chain::VaultAddresses, fees::resolve_max_quote_amount, referrer::DEFAULT_REFERRER,
+    SwapperQuoteData, approval::check_approval_erc20, config::get_swap_api_url, cross_chain::VaultAddresses, fees::resolve_max_quote_value, referrer::DEFAULT_REFERRER,
 };
 
 #[derive(Debug)]
@@ -72,7 +72,7 @@ where
         let origin_currency = asset_to_currency(&from_asset_id)?;
         let destination_currency = asset_to_currency(&to_asset_id)?;
         let app_fees = resolve_app_fees(request);
-        let amount = resolve_max_quote_amount(request)?;
+        let from_value = resolve_max_quote_value(request)?;
 
         let relay_request = RelayQuoteRequest {
             user: request.wallet_address.clone(),
@@ -80,12 +80,12 @@ where
             destination_chain_id: to_chain.chain_id(),
             origin_currency,
             destination_currency,
-            amount: amount.clone(),
+            amount: from_value.clone(),
             recipient: request.destination_address.clone(),
             trade_type: relay_trade_type(&request.mode).to_string(),
             referrer: if app_fees.is_empty() { None } else { Some(DEFAULT_REFERRER.to_string()) },
             app_fees,
-            refund_to: Some(request.wallet_address.clone()),
+            refund_to: request.wallet_address.clone(),
             max_route_length: 6,
         };
 
@@ -95,7 +95,7 @@ where
         let eta_in_seconds = quote_response.details.time_estimate_u32();
 
         let quote = Quote {
-            from_value: amount,
+            from_value,
             to_value,
             data: ProviderData {
                 provider: self.provider().clone(),
@@ -120,7 +120,7 @@ where
 
         let from_asset_id = quote.request.from_asset.asset_id();
         let approval = self.check_evm_approval(quote, &quote_response, &from_asset_id).await?;
-        mapper::map_quote_data(&quote_response.steps, approval)
+        mapper::map_quote_data(&quote_response, approval)
     }
 
     async fn get_swap_result(&self, _chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
@@ -131,10 +131,9 @@ where
 
     async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<VaultAddresses, SwapperError> {
         let response = self.client.get_chains().await?;
-        let addresses = response.solver_addresses();
         Ok(VaultAddresses {
-            deposit: addresses.clone(),
-            send: addresses,
+            deposit: response.deposit_addresses(),
+            send: response.send_addresses(),
         })
     }
 }
@@ -146,12 +145,7 @@ where
     async fn check_evm_approval(&self, quote: &Quote, quote_response: &RelayQuoteResponse, from_asset_id: &AssetId) -> Result<Option<ApprovalData>, SwapperError> {
         match from_asset_id.chain.chain_type() {
             ChainType::Ethereum if !from_asset_id.is_native() => {
-                let router_address = quote_response
-                    .steps
-                    .iter()
-                    .filter(|s| s.id != mapper::STEP_APPROVE)
-                    .find_map(|s| s.step_data()?.get_to())
-                    .ok_or(SwapperError::InvalidRoute)?;
+                let spender = quote_response.router_address().ok_or(SwapperError::InvalidRoute)?;
 
                 let token = from_asset_id.token_id.clone().ok_or(SwapperError::NotSupportedAsset)?;
                 let amount: U256 = quote.from_value.parse().map_err(SwapperError::from)?;
@@ -159,7 +153,7 @@ where
                 Ok(check_approval_erc20(
                     quote.request.wallet_address.clone(),
                     token,
-                    router_address,
+                    spender,
                     amount,
                     self.rpc_provider.clone(),
                     &from_asset_id.chain,

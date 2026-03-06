@@ -37,11 +37,17 @@ pub static SUPPORTED_CHAINS: LazyLock<Vec<SwapperChainAsset>> = LazyLock::new(||
     vec![
         SwapperChainAsset::Assets(
             Chain::Ethereum,
-            vec![AssetId::from_token(Chain::Ethereum, ETHEREUM_USDC_TOKEN_ID), AssetId::from_token(Chain::Ethereum, ETHEREUM_USDT_TOKEN_ID)],
+            vec![
+                AssetId::from_token(Chain::Ethereum, ETHEREUM_USDC_TOKEN_ID),
+                AssetId::from_token(Chain::Ethereum, ETHEREUM_USDT_TOKEN_ID),
+            ],
         ),
         SwapperChainAsset::Assets(
             Chain::SmartChain,
-            vec![AssetId::from_token(Chain::SmartChain, SMARTCHAIN_USDC_TOKEN_ID), AssetId::from_token(Chain::SmartChain, SMARTCHAIN_USDT_TOKEN_ID)],
+            vec![
+                AssetId::from_token(Chain::SmartChain, SMARTCHAIN_USDC_TOKEN_ID),
+                AssetId::from_token(Chain::SmartChain, SMARTCHAIN_USDT_TOKEN_ID),
+            ],
         ),
         SwapperChainAsset::Assets(Chain::Base, vec![AssetId::from_token(Chain::Base, BASE_USDC_TOKEN_ID)]),
         SwapperChainAsset::Assets(Chain::Arbitrum, vec![USDC_ARB_ASSET_ID.into(), USDT_ARB_ASSET_ID.into()]),
@@ -49,7 +55,10 @@ pub static SUPPORTED_CHAINS: LazyLock<Vec<SwapperChainAsset>> = LazyLock::new(||
         SwapperChainAsset::Assets(Chain::Polygon, vec![USDC_POLYGON_ASSET_ID.into(), USDT_POLYGON_ASSET_ID.into()]),
         SwapperChainAsset::Assets(
             Chain::AvalancheC,
-            vec![AssetId::from_token(Chain::AvalancheC, AVALANCHE_USDC_TOKEN_ID), AssetId::from_token(Chain::AvalancheC, AVALANCHE_USDT_TOKEN_ID)],
+            vec![
+                AssetId::from_token(Chain::AvalancheC, AVALANCHE_USDC_TOKEN_ID),
+                AssetId::from_token(Chain::AvalancheC, AVALANCHE_USDT_TOKEN_ID),
+            ],
         ),
         SwapperChainAsset::Assets(Chain::Linea, vec![USDT_LINEA_ASSET_ID.into()]),
         SwapperChainAsset::Assets(Chain::ZkSync, vec![USDT_ZKSYNC_ASSET_ID.into()]),
@@ -64,10 +73,15 @@ pub static SUPPORTED_CHAINS: LazyLock<Vec<SwapperChainAsset>> = LazyLock::new(||
 });
 
 pub fn asset_to_currency(asset_id: &AssetId) -> Result<String, SwapperError> {
-    if asset_id.is_native() {
-        Ok(EVM_ZERO_ADDRESS.to_string())
-    } else {
-        asset_id.token_id.clone().ok_or(SwapperError::NotSupportedAsset)
+    match asset_id.chain.chain_type() {
+        ChainType::Ethereum => {
+            if asset_id.is_native() {
+                Ok(EVM_ZERO_ADDRESS.to_string())
+            } else {
+                asset_id.token_id.clone().ok_or(SwapperError::NotSupportedAsset)
+            }
+        }
+        _ => Err(SwapperError::NotSupportedChain),
     }
 }
 
@@ -87,5 +101,10 @@ mod tests {
         let token_address = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
         let result = asset_to_currency(&AssetId::from_token(Chain::Ethereum, token_address)).unwrap();
         assert_eq!(result, token_address);
+    }
+
+    #[test]
+    fn test_non_evm_asset_not_supported() {
+        assert_eq!(asset_to_currency(&AssetId::from_chain(Chain::Solana)), Err(SwapperError::NotSupportedChain));
     }
 }
