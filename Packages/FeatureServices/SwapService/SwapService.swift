@@ -78,6 +78,6 @@ public final class SwapService: Sendable, SwappableChainsProvider {
     }
 
     public func getPermit2Approval(quote: SwapperQuote) async throws -> Permit2ApprovalData? {
-        try await swapper.fetchPermit2ForQuote(quote: quote)
+        try await swapper.getPermit2ForQuote(quote: quote)
     }
 }
