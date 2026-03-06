@@ -89,10 +89,10 @@ where
             max_route_length: 6,
         };
 
-        let quote_response = self.client.get_quote(relay_request).await?;
+        let response = self.client.get_quote(relay_request).await?;
 
-        let to_value = quote_response.details.currency_out.amount.clone();
-        let eta_in_seconds = quote_response.details.time_estimate_u32();
+        let to_value = response.details.currency_out.amount.clone();
+        let eta_in_seconds = response.details.time_estimate_u32();
 
         let quote = Quote {
             from_value,
@@ -102,10 +102,10 @@ where
                 routes: vec![Route {
                     input: from_asset_id,
                     output: to_asset_id,
-                    route_data: serde_json::to_string(&quote_response).map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))?,
+                    route_data: serde_json::to_string(&response).map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))?,
                     gas_limit: None,
                 }],
-                slippage_bps: quote_response.details.slippage_bps().unwrap_or(request.options.slippage.bps),
+                slippage_bps: response.details.slippage_bps().unwrap_or(request.options.slippage.bps),
             },
             request: request.clone(),
             eta_in_seconds,
@@ -116,11 +116,11 @@ where
 
     async fn get_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
-        let quote_response: RelayQuoteResponse = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
+        let response: RelayQuoteResponse = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
 
         let from_asset_id = quote.request.from_asset.asset_id();
-        let approval = self.check_evm_approval(quote, &quote_response, &from_asset_id).await?;
-        mapper::map_quote_data(&quote_response, approval)
+        let approval = self.check_evm_approval(quote, &response, &from_asset_id).await?;
+        mapper::map_quote_data(&response, approval)
     }
 
     async fn get_swap_result(&self, _chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
