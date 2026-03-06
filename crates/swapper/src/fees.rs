@@ -40,7 +40,7 @@ pub fn reserved_tx_fees(chain: Chain) -> Option<&'static str> {
     RESERVED_NATIVE_FEES.get(&chain).copied()
 }
 
-pub fn resolve_max_quote_amount(request: &QuoteRequest) -> Result<String, SwapperError> {
+pub fn resolve_max_quote_value(request: &QuoteRequest) -> Result<String, SwapperError> {
     if !request.options.use_max_amount || !request.from_asset.asset_id().is_native() {
         return Ok(request.value.clone());
     }

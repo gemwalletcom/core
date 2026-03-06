@@ -45,12 +45,12 @@ impl GemSwapper {
         self.inner.get_quote(request).await
     }
 
-    pub async fn fetch_quote_by_provider(&self, provider: SwapperProvider, request: SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
-        self.inner.fetch_quote_by_provider(provider, request).await
+    pub async fn get_quote_by_provider(&self, provider: SwapperProvider, request: SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
+        self.inner.get_quote_by_provider(provider, request).await
     }
 
-    pub async fn fetch_permit2_for_quote(&self, quote: &SwapperQuote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
-        self.inner.fetch_permit2_for_quote(quote).await
+    pub async fn get_permit2_for_quote(&self, quote: &SwapperQuote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
+        self.inner.get_permit2_for_quote(quote).await
     }
 
     pub async fn get_quote_data(&self, quote: &SwapperQuote, data: FetchQuoteData) -> Result<GemSwapQuoteData, SwapperError> {

@@ -362,7 +362,7 @@ impl Swapper for Across {
         ]
     }
 
-    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
+    async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         if request.from_asset.chain() == request.to_asset.chain() {
             return Err(SwapperError::NoQuoteAvailable);
         }
@@ -506,7 +506,7 @@ impl Swapper for Across {
         })
     }
 
-    async fn fetch_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn get_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let from_chain = quote.request.from_asset.chain();
         let deployment = AcrossDeployment::deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
         let dst_chain_id: u32 = quote.request.to_asset.chain().network_id().parse().unwrap();
@@ -835,14 +835,14 @@ mod tests {
             };
 
             let now = SystemTime::now();
-            let quote = swap_provider.fetch_quote(&request).await?;
+            let quote = swap_provider.get_quote(&request).await?;
             let elapsed = SystemTime::now().duration_since(now).unwrap();
 
             println!("<== elapsed: {:?}", elapsed);
             println!("<== quote: {:?}", quote);
             assert!(quote.to_value.parse::<u64>().unwrap() > 0);
 
-            let quote_data = swap_provider.fetch_quote_data(&quote, FetchQuoteData::EstimateGas).await?;
+            let quote_data = swap_provider.get_quote_data(&quote, FetchQuoteData::EstimateGas).await?;
             println!("<== quote_data: {:?}", quote_data);
 
             Ok(())
@@ -873,14 +873,14 @@ mod tests {
             };
 
             let now = SystemTime::now();
-            let quote = swap_provider.fetch_quote(&request).await?;
+            let quote = swap_provider.get_quote(&request).await?;
             let elapsed = SystemTime::now().duration_since(now).unwrap();
 
             println!("<== elapsed: {:?}", elapsed);
             println!("<== quote: {:?}", quote);
             assert!(quote.to_value.parse::<u64>().unwrap() > 0);
 
-            let quote_data = swap_provider.fetch_quote_data(&quote, FetchQuoteData::EstimateGas).await?;
+            let quote_data = swap_provider.get_quote_data(&quote, FetchQuoteData::EstimateGas).await?;
             println!("<== quote_data: {:?}", quote_data);
 
             Ok(())

@@ -9,7 +9,7 @@ use crate::{
     SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, amount_to_value,
     client_factory::create_client_with_chain,
     cross_chain::VaultAddresses,
-    fees::resolve_max_quote_amount,
+    fees::resolve_max_quote_value,
     near_intents::client::{base_url, explorer_url},
     referrer::DEFAULT_REFERRER,
 };
@@ -282,13 +282,13 @@ where
         self.supported_assets.clone()
     }
 
-    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
+    async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let mode = match request.mode {
             SwapperMode::ExactIn => SwapType::FlexInput,
             SwapperMode::ExactOut => return Err(SwapperError::NotSupportedAsset),
         };
 
-        let amount = resolve_max_quote_amount(request)?;
+        let amount = resolve_max_quote_value(request)?;
         let quote_request = self.build_quote_request(request, mode, amount.clone(), true)?;
         let response = Self::extract_quote(self.client.fetch_quote(&quote_request).await?, request.from_asset.decimals)?;
         let amount_out = Self::parse_amount(&response.quote.amount_out, "amountOut")?;
@@ -314,7 +314,7 @@ where
         })
     }
 
-    async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn get_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
         let mut quote_request: NearQuoteRequest = serde_json::from_str(&route.route_data)?;
         let request_deposit_mode = quote_request.deposit_mode.clone();
@@ -425,7 +425,7 @@ mod tests {
         let amount = (reserve + U256::from(500u64)).to_string();
 
         let request = build_quote_request(&amount, true, Chain::Ethereum);
-        let result = resolve_max_quote_amount(&request).expect("expected amount to resolve");
+        let result = resolve_max_quote_value(&request).expect("expected amount to resolve");
 
         assert_eq!(result, (U256::from_str(&amount).unwrap() - reserve).to_string());
     }
@@ -434,7 +434,7 @@ mod tests {
     fn resolve_quote_amount_without_use_max_keeps_amount() {
         let amount = "123456";
         let request = build_quote_request(amount, false, Chain::Ethereum);
-        let result = resolve_max_quote_amount(&request).expect("expected amount to resolve");
+        let result = resolve_max_quote_value(&request).expect("expected amount to resolve");
 
         assert_eq!(result, amount);
     }
@@ -444,7 +444,7 @@ mod tests {
         let reserve = U256::from_str(reserved_tx_fees(Chain::Ethereum).unwrap()).unwrap();
         let request = build_quote_request(&reserve.to_string(), true, Chain::Ethereum);
 
-        let err = resolve_max_quote_amount(&request).expect_err("expected error");
+        let err = resolve_max_quote_value(&request).expect_err("expected error");
 
         assert!(matches!(err, SwapperError::InputAmountError { .. }));
     }
@@ -556,7 +556,6 @@ mod swap_integration_tests {
     use primitives::{
         AssetId, Chain,
         asset_constants::{USDC_ARB_ASSET_ID, USDC_BASE_ASSET_ID},
-        swap::SwapStatus,
     };
     use std::sync::Arc;
 
@@ -588,10 +587,10 @@ mod swap_integration_tests {
             options,
         };
 
-        let quote = provider.fetch_quote(&request).await?;
+        let quote = provider.get_quote(&request).await?;
         assert!(!quote.to_value.is_empty());
 
-        let quote_data = provider.fetch_quote_data(&quote, FetchQuoteData::None).await?;
+        let quote_data = provider.get_quote_data(&quote, FetchQuoteData::None).await?;
         assert!(!quote_data.to.is_empty());
 
         Ok(())
@@ -617,12 +616,12 @@ mod swap_integration_tests {
             options,
         };
 
-        let quote = match provider.fetch_quote(&request).await {
+        let quote = match provider.get_quote(&request).await {
             Ok(quote) => quote,
             Err(SwapperError::ComputeQuoteError(_)) => return Ok(()),
             Err(error) => return Err(error),
         };
-        let quote_data = match provider.fetch_quote_data(&quote, FetchQuoteData::None).await {
+        let quote_data = match provider.get_quote_data(&quote, FetchQuoteData::None).await {
             Ok(data) => data,
             Err(SwapperError::TransactionError(_)) => return Ok(()),
             Err(error) => return Err(error),

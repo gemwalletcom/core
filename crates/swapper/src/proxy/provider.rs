@@ -14,9 +14,8 @@ use crate::{
     config::{DEFAULT_SWAP_FEE_BPS, get_swap_api_url},
     cross_chain::VaultAddresses,
     models::{ApprovalType, SwapperChainAsset},
-    relay,
 };
-use gem_client::{Client, ClientExt};
+use gem_client::Client;
 use primitives::{
     Chain, ChainType,
     swap::{ApprovalData, ProxyQuote, ProxyQuoteRequest, SwapQuoteData},
@@ -172,15 +171,6 @@ impl ProxyProvider<RpcClient> {
 
         Self::new_with_path(SwapperProvider::Mayan, "mayan", assets, rpc_provider)
     }
-
-    pub fn new_relay(rpc_provider: Arc<dyn RpcProvider>) -> Self {
-        Self::new_with_path(
-            SwapperProvider::Relay,
-            "relay",
-            vec![SwapperChainAsset::All(Chain::Hyperliquid), SwapperChainAsset::All(Chain::Berachain)],
-            rpc_provider,
-        )
-    }
 }
 
 #[async_trait]
@@ -196,7 +186,7 @@ where
         self.assets.clone()
     }
 
-    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
+    async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let quote_request = ProxyQuoteRequest {
             from_address: request.wallet_address.clone(),
             to_address: request.destination_address.clone(),
@@ -228,7 +218,7 @@ where
         })
     }
 
-    async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn get_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
         let route_data: ProxyQuote = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
 
@@ -246,14 +236,6 @@ where
                 let result = client.get_transaction_status(transaction_hash).await?;
                 Ok(map_swap_result(&result))
             }
-            SwapperProvider::Relay => {
-                let base_url = get_swap_api_url("relay");
-                let client = RpcClient::new(base_url, self.rpc_provider.clone());
-                let path = format!("/requests/v2?hash={}", transaction_hash);
-                let response: relay::model::RelayRequestsResponse = ClientExt::get(&client, &path).await.map_err(SwapperError::from)?;
-                let request = response.requests.first().ok_or(SwapperError::InvalidRoute)?;
-                Ok(relay::map_swap_result(request))
-            }
             _ => {
                 if self.provider.mode == SwapperProviderMode::OnChain {
                     Ok(SwapResult {
@@ -269,16 +251,6 @@ where
 
     async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<VaultAddresses, SwapperError> {
         match self.provider.id {
-            SwapperProvider::Relay => {
-                let base_url = get_swap_api_url("relay");
-                let client = RpcClient::new(base_url, self.rpc_provider.clone());
-                let chains: relay::model::RelayChainsResponse = ClientExt::get(&client, "/chains").await.map_err(SwapperError::from)?;
-                let addresses = chains.solver_addresses();
-                Ok(VaultAddresses {
-                    deposit: addresses.clone(),
-                    send: addresses,
-                })
-            }
             SwapperProvider::Mayan => {
                 let base_url = get_swap_api_url("mayan/price");
                 let client = MayanPrice::new(base_url, self.rpc_provider.clone());
@@ -349,7 +321,7 @@ mod swap_integration_tests {
         alien::reqwest_provider::NativeProvider,
         {SwapperMode, SwapperQuoteAsset, asset::SUI_USDC_TOKEN_ID, models::Options},
     };
-    use primitives::{AssetId, TransactionSwapMetadata, swap::SwapStatus};
+    use primitives::{AssetId, swap::SwapStatus};
 
     #[tokio::test]
     async fn test_mayan_provider_fetch_quote() -> Result<(), SwapperError> {
@@ -368,7 +340,7 @@ mod swap_integration_tests {
             options,
         };
 
-        let quote = provider.fetch_quote(&request).await?;
+        let quote = provider.get_quote(&request).await?;
 
         assert_eq!(quote.from_value, request.value);
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
@@ -402,7 +374,7 @@ mod swap_integration_tests {
             options,
         };
 
-        let quote = provider.fetch_quote(&request).await?;
+        let quote = provider.get_quote(&request).await?;
 
         assert_eq!(quote.from_value, request.value);
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
@@ -455,7 +427,7 @@ mod swap_integration_tests {
             options,
         };
 
-        let result = provider.fetch_quote(&request).await;
+        let result = provider.get_quote(&request).await;
 
         assert!(result.is_err(), "Expected error for tiny swap amount");
         let err = result.unwrap_err();
@@ -485,12 +457,12 @@ mod swap_integration_tests {
             options,
         };
 
-        let quote = provider.fetch_quote(&request).await?;
+        let quote = provider.get_quote(&request).await?;
 
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
         println!("Quote: from={} to={}", quote.from_value, quote.to_value);
 
-        let quote_data = provider.fetch_quote_data(&quote, FetchQuoteData::None).await?;
+        let quote_data = provider.get_quote_data(&quote, FetchQuoteData::None).await?;
 
         assert!(!quote_data.to.is_empty(), "Expected non-empty 'to' address");
         assert!(!quote_data.data.is_empty(), "Expected non-empty calldata");

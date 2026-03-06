@@ -130,7 +130,7 @@ impl Swapper for HyperCoreSpot {
         )]
     }
 
-    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
+    async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let client = self.client()?;
         let meta = self.load_spot_meta().await?;
         let from_token = self.resolve_token(&meta, &request.from_asset)?;
@@ -239,7 +239,7 @@ impl Swapper for HyperCoreSpot {
         Ok(quote)
     }
 
-    async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn get_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
         let order: PlaceOrder = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let order_json = serde_json::to_string(&order).map_err(|err| SwapperError::TransactionError(err.to_string()))?;
@@ -270,13 +270,13 @@ mod tests {
         request.options.preferred_providers = vec![SwapperProvider::Hyperliquid];
         request.value = "2000000000".into();
 
-        let quote = spot.fetch_quote(&request).await.unwrap();
+        let quote = spot.get_quote(&request).await.unwrap();
 
         let order: PlaceOrder = serde_json::from_str(&quote.data.routes[0].route_data).unwrap();
         assert_eq!(order.r#type, "order");
         assert!(order.orders[0].asset >= SPOT_ASSET_OFFSET);
 
-        let quote_data = spot.fetch_quote_data(&quote, FetchQuoteData::None).await.unwrap();
+        let quote_data = spot.get_quote_data(&quote, FetchQuoteData::None).await.unwrap();
         assert_eq!(quote.data.provider.id, SwapperProvider::Hyperliquid);
         assert!(!quote.to_value.is_empty());
         assert!(matches!(quote_data.data_type, SwapQuoteDataType::Contract));

@@ -30,7 +30,7 @@ public struct ViewModel: Sendable {
 
     public func fetchQuoteById(_ request: SwapperQuoteRequest, provider: SwapProvider) async throws {
         let swapper = GemSwapper(rpcProvider: self.provider)
-        let quote = try await swapper.fetchQuoteByProvider(provider: provider, request: request)
+        let quote = try await swapper.getQuoteByProvider(provider: provider, request: request)
         self.dumpQuote(quote)
 
         try await self.fetchQuoteData(quote: quote)
@@ -39,7 +39,7 @@ public struct ViewModel: Sendable {
     public func fetchQuoteData(quote: SwapperQuote) async throws {
         let swapper = GemSwapper(rpcProvider: self.provider)
 
-        if let permit2 = try await swapper.fetchPermit2ForQuote(quote: quote) {
+        if let permit2 = try await swapper.getPermit2ForQuote(quote: quote) {
             print("<== permit2", permit2)
         }
 

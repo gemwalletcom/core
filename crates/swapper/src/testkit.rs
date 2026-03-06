@@ -94,11 +94,11 @@ impl Swapper for MockSwapper {
         self.supported_assets.clone()
     }
 
-    async fn fetch_quote(&self, _request: &QuoteRequest) -> Result<Quote, SwapperError> {
+    async fn get_quote(&self, _request: &QuoteRequest) -> Result<Quote, SwapperError> {
         (self.response)()
     }
 
-    async fn fetch_quote_data(&self, _quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn get_quote_data(&self, _quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         todo!("MockSwapper fetch_quote_data not implemented")
     }
 }

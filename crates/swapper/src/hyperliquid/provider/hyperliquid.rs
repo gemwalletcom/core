@@ -54,24 +54,24 @@ impl Swapper for Hyperliquid {
         assets
     }
 
-    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
+    async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         if Self::is_spot_request(request) {
-            return self.spot.fetch_quote(request).await;
+            return self.spot.get_quote(request).await;
         }
 
         if Self::is_bridge_request(request) {
-            return self.bridge.fetch_quote(request).await;
+            return self.bridge.get_quote(request).await;
         }
 
         Err(SwapperError::NoQuoteAvailable)
     }
 
-    async fn fetch_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn get_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         if Self::is_spot_request(&quote.request) {
-            return self.spot.fetch_quote_data(quote, data).await;
+            return self.spot.get_quote_data(quote, data).await;
         }
         if Self::is_bridge_request(&quote.request) {
-            return self.bridge.fetch_quote_data(quote, data).await;
+            return self.bridge.get_quote_data(quote, data).await;
         }
         Err(SwapperError::NoQuoteAvailable)
     }
