@@ -193,7 +193,7 @@ impl GemSwapper {
         let providers = self.swappers.iter().filter(|x| provider_ids.contains(&x.provider().id)).collect::<Vec<_>>();
 
         let request_for_quote = Self::transform_request(request);
-        let quotes_futures = providers.into_iter().map(|x| x.fetch_quote(request_for_quote.as_ref()));
+        let quotes_futures = providers.into_iter().map(|x| x.get_quote(request_for_quote.as_ref()));
 
         let quote_results = futures::future::join_all(quotes_futures).await;
 
@@ -219,20 +219,20 @@ impl GemSwapper {
         Ok(quotes)
     }
 
-    pub async fn fetch_quote_by_provider(&self, provider: SwapperProvider, request: QuoteRequest) -> Result<Quote, SwapperError> {
+    pub async fn get_quote_by_provider(&self, provider: SwapperProvider, request: QuoteRequest) -> Result<Quote, SwapperError> {
         let provider = self.get_swapper_by_provider(&provider)?;
         let request_for_quote = Self::transform_request(&request);
-        provider.fetch_quote(request_for_quote.as_ref()).await
+        provider.get_quote(request_for_quote.as_ref()).await
     }
 
-    pub async fn fetch_permit2_for_quote(&self, quote: &Quote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
+    pub async fn get_permit2_for_quote(&self, quote: &Quote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         let provider = self.get_swapper_by_provider(&quote.data.provider.id)?;
-        provider.fetch_permit2_for_quote(quote).await
+        provider.get_permit2_for_quote(quote).await
     }
 
     pub async fn get_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let provider = self.get_swapper_by_provider(&quote.data.provider.id)?;
-        let mut quote_data = provider.fetch_quote_data(quote, data).await?;
+        let mut quote_data = provider.get_quote_data(quote, data).await?;
         if let Some(gas_limit) = quote_data.gas_limit.take() {
             quote_data.gas_limit = Some(Self::apply_gas_limit_multiplier(&quote.request.from_asset.chain(), gas_limit));
         }

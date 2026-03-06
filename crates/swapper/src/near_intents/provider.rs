@@ -282,7 +282,7 @@ where
         self.supported_assets.clone()
     }
 
-    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
+    async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let mode = match request.mode {
             SwapperMode::ExactIn => SwapType::FlexInput,
             SwapperMode::ExactOut => return Err(SwapperError::NotSupportedAsset),
@@ -314,7 +314,7 @@ where
         })
     }
 
-    async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn get_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
         let mut quote_request: NearQuoteRequest = serde_json::from_str(&route.route_data)?;
         let request_deposit_mode = quote_request.deposit_mode.clone();
@@ -587,10 +587,10 @@ mod swap_integration_tests {
             options,
         };
 
-        let quote = provider.fetch_quote(&request).await?;
+        let quote = provider.get_quote(&request).await?;
         assert!(!quote.to_value.is_empty());
 
-        let quote_data = provider.fetch_quote_data(&quote, FetchQuoteData::None).await?;
+        let quote_data = provider.get_quote_data(&quote, FetchQuoteData::None).await?;
         assert!(!quote_data.to.is_empty());
 
         Ok(())
@@ -616,12 +616,12 @@ mod swap_integration_tests {
             options,
         };
 
-        let quote = match provider.fetch_quote(&request).await {
+        let quote = match provider.get_quote(&request).await {
             Ok(quote) => quote,
             Err(SwapperError::ComputeQuoteError(_)) => return Ok(()),
             Err(error) => return Err(error),
         };
-        let quote_data = match provider.fetch_quote_data(&quote, FetchQuoteData::None).await {
+        let quote_data = match provider.get_quote_data(&quote, FetchQuoteData::None).await {
             Ok(data) => data,
             Err(SwapperError::TransactionError(_)) => return Ok(()),
             Err(error) => return Err(error),

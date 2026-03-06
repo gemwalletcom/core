@@ -13,11 +13,11 @@ use primitives::{Chain, swap::SwapStatus};
 pub trait Swapper: Send + Sync + Debug {
     fn provider(&self) -> &ProviderType;
     fn supported_assets(&self) -> Vec<SwapperChainAsset>;
-    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError>;
-    async fn fetch_permit2_for_quote(&self, _quote: &Quote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
+    async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError>;
+    async fn get_permit2_for_quote(&self, _quote: &Quote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         Ok(None)
     }
-    async fn fetch_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError>;
+    async fn get_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError>;
     async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<VaultAddresses, SwapperError> {
         Ok(VaultAddresses { deposit: vec![], send: vec![] })
     }

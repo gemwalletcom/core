@@ -87,7 +87,7 @@ where
         Ok(VaultAddresses { deposit, send })
     }
 
-    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
+    async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let from_asset = THORChainAsset::from_asset_id(&request.from_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
         let to_asset = THORChainAsset::from_asset_id(&request.to_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
 
@@ -151,7 +151,7 @@ where
         Ok(quote)
     }
 
-    async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn get_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let fee = quote.request.options.clone().fee.unwrap_or_default().thorchain;
         let from_asset = THORChainAsset::from_asset_id(&quote.request.from_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
         let to_asset = THORChainAsset::from_asset_id(&quote.request.to_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
@@ -233,7 +233,7 @@ mod swap_integration_tests {
         let to_asset = SwapperQuoteAsset::from(Chain::SmartChain.as_asset_id());
         let request = mock_quote(from_asset, to_asset);
 
-        let quote = swapper.fetch_quote(&request).await?;
+        let quote = swapper.get_quote(&request).await?;
 
         assert_eq!(quote.from_value, request.value);
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
@@ -253,7 +253,7 @@ mod swap_integration_tests {
         let mut request = mock_quote(from_asset, to_asset);
         request.value = "100000000".to_string();
 
-        let quote = swapper.fetch_quote(&request).await?;
+        let quote = swapper.get_quote(&request).await?;
 
         assert_eq!(quote.from_value, request.value);
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
@@ -273,7 +273,7 @@ mod swap_integration_tests {
         let mut request = mock_quote(from_asset, to_asset);
         request.value = "1".to_string();
 
-        let err = swapper.fetch_quote(&request).await.expect_err("expected error");
+        let err = swapper.get_quote(&request).await.expect_err("expected error");
         assert!(matches!(err, SwapperError::InputAmountError { .. }));
 
         Ok(())

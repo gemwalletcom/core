@@ -148,7 +148,7 @@ where
         ]
     }
 
-    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
+    async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         if request.from_asset.chain().chain_type() == ChainType::Bitcoin {
             return Err(SwapperError::NoQuoteAvailable);
         }
@@ -196,7 +196,7 @@ where
         })
     }
 
-    async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn get_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let from_asset = quote.request.from_asset.asset_id();
         let source_asset = Self::map_asset_id(&quote.request.from_asset);
         let destination_asset = Self::map_asset_id(&quote.request.to_asset);

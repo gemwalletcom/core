@@ -122,7 +122,7 @@ where
         vec![SwapperChainAsset::All(Chain::Solana)]
     }
 
-    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
+    async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let input_mint = self.get_asset_address(&request.from_asset.id)?;
         let output_mint = self.get_asset_address(&request.to_asset.id)?;
         let swap_options = request.options.clone();
@@ -162,7 +162,7 @@ where
         Ok(quote)
     }
 
-    async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn get_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         if quote.data.routes.is_empty() {
             return Err(SwapperError::InvalidRoute);
         }
@@ -220,7 +220,7 @@ mod swap_integration_tests {
             options,
         };
 
-        let quote = provider.fetch_quote(&request).await?;
+        let quote = provider.get_quote(&request).await?;
 
         assert_eq!(quote.from_value, request.value);
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
@@ -236,7 +236,7 @@ mod swap_integration_tests {
         assert_eq!(quote_response.input_mint, "So11111111111111111111111111111111111111112");
         assert_eq!(quote_response.output_mint, USDC_TOKEN_MINT);
 
-        let quote_data = provider.fetch_quote_data(&quote, FetchQuoteData::None).await?;
+        let quote_data = provider.get_quote_data(&quote, FetchQuoteData::None).await?;
         assert_eq!(quote_data.to, PROGRAM_ADDRESS);
         assert!(!quote_data.data.is_empty());
 

@@ -48,7 +48,7 @@ impl Swapper for HyperCoreBridge {
         ]
     }
 
-    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
+    async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let to_value = scale_quote_value(&request.value, request.from_asset.decimals, request.to_asset.decimals)?;
 
         let quote = Quote {
@@ -71,7 +71,7 @@ impl Swapper for HyperCoreBridge {
         Ok(quote)
     }
 
-    async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn get_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         match quote.request.from_asset.asset_id().chain {
             Chain::HyperCore => {
                 let decimals: i32 = quote.request.from_asset.decimals.try_into().unwrap();

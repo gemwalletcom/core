@@ -186,7 +186,7 @@ where
         self.assets.clone()
     }
 
-    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
+    async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let quote_request = ProxyQuoteRequest {
             from_address: request.wallet_address.clone(),
             to_address: request.destination_address.clone(),
@@ -218,7 +218,7 @@ where
         })
     }
 
-    async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn get_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
         let route_data: ProxyQuote = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
 
@@ -362,7 +362,7 @@ mod swap_integration_tests {
             options,
         };
 
-        let quote = provider.fetch_quote(&request).await?;
+        let quote = provider.get_quote(&request).await?;
 
         assert_eq!(quote.from_value, request.value);
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
@@ -396,7 +396,7 @@ mod swap_integration_tests {
             options,
         };
 
-        let quote = provider.fetch_quote(&request).await?;
+        let quote = provider.get_quote(&request).await?;
 
         assert_eq!(quote.from_value, request.value);
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
@@ -449,7 +449,7 @@ mod swap_integration_tests {
             options,
         };
 
-        let result = provider.fetch_quote(&request).await;
+        let result = provider.get_quote(&request).await;
 
         assert!(result.is_err(), "Expected error for tiny swap amount");
         let err = result.unwrap_err();
@@ -479,12 +479,12 @@ mod swap_integration_tests {
             options,
         };
 
-        let quote = provider.fetch_quote(&request).await?;
+        let quote = provider.get_quote(&request).await?;
 
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
         println!("Quote: from={} to={}", quote.from_value, quote.to_value);
 
-        let quote_data = provider.fetch_quote_data(&quote, FetchQuoteData::None).await?;
+        let quote_data = provider.get_quote_data(&quote, FetchQuoteData::None).await?;
 
         assert!(!quote_data.to.is_empty(), "Expected non-empty 'to' address");
         assert!(!quote_data.data.is_empty(), "Expected non-empty calldata");

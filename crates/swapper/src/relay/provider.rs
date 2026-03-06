@@ -62,7 +62,7 @@ where
         SUPPORTED_CHAINS.clone()
     }
 
-    async fn fetch_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
+    async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let from_chain = RelayChain::from_chain(&request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
         let to_chain = RelayChain::from_chain(&request.to_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
 
@@ -114,7 +114,7 @@ where
         Ok(quote)
     }
 
-    async fn fetch_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
+    async fn get_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
         let quote_response: RelayQuoteResponse = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
 
@@ -189,8 +189,8 @@ mod swap_integration_tests {
             options: Options::new_with_slippage(100.into()),
         };
 
-        let quote = relay.fetch_quote(&request).await?;
-        let quote_data = relay.fetch_quote_data(&quote, FetchQuoteData::None).await?;
+        let quote = relay.get_quote(&request).await?;
+        let quote_data = relay.get_quote_data(&quote, FetchQuoteData::None).await?;
 
         println!("quote: from_value={}, to_value={}", quote.from_value, quote.to_value);
         println!("quote_data: to={}, value={}, data_len={}", quote_data.to, quote_data.value, quote_data.data.len());
@@ -219,8 +219,8 @@ mod swap_integration_tests {
             options: Options::new_with_slippage(100.into()),
         };
 
-        let quote = relay.fetch_quote(&request).await?;
-        let quote_data = relay.fetch_quote_data(&quote, FetchQuoteData::None).await?;
+        let quote = relay.get_quote(&request).await?;
+        let quote_data = relay.get_quote_data(&quote, FetchQuoteData::None).await?;
 
         println!("quote: from_value={}, to_value={}", quote.from_value, quote.to_value);
         println!("quote_data: to={}, value={}, data_len={}", quote_data.to, quote_data.value, quote_data.data.len());
