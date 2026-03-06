@@ -7,8 +7,8 @@ pub struct TonChainSigner;
 
 impl ChainSigner for TonChainSigner {
     fn sign_message(&self, message: &[u8], private_key: &[u8]) -> Result<String, SignerError> {
-        let (signature, _public_key) = sign_personal(message, private_key)?;
-        Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, signature))
+        let result = sign_personal(message, private_key)?;
+        Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, result.signature))
     }
 
     fn sign_transfer(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {

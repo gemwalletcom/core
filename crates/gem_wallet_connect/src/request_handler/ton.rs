@@ -13,8 +13,9 @@ fn extract_host(url: &str) -> String {
 impl TonRequestHandler {
     pub fn parse_sign_message(_chain: Chain, params: Value, domain: &str) -> Result<WalletConnectAction, String> {
         let payload = params.at(0)?.clone();
+        let from = payload.get_value("from")?.string()?.to_string();
         let host = extract_host(domain);
-        let ton_data = TonSignMessageData::from_value(payload, host).map_err(|e| e.to_string())?;
+        let ton_data = TonSignMessageData::from_value(payload, host, from).map_err(|e| e.to_string())?;
         let data = String::from_utf8(ton_data.to_bytes()).map_err(|e| format!("Failed to encode TonSignMessageData: {}", e))?;
         Ok(WalletConnectAction::SignMessage {
             chain: Chain::Ton,
@@ -54,7 +55,7 @@ mod tests {
 
     #[test]
     fn test_parse_sign_message() {
-        let params = serde_json::from_str(r#"[{"type":"text","text":"Hello TON"}]"#).unwrap();
+        let params = serde_json::from_str(r#"[{"type":"text","text":"Hello TON","from":"UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg"}]"#).unwrap();
         let action = TonRequestHandler::parse_sign_message(Chain::Ton, params, "https://react-app.walletconnect.com").unwrap();
         let WalletConnectAction::SignMessage { chain, sign_type, data } = action else {
             panic!("Expected SignMessage action")
@@ -64,12 +65,13 @@ mod tests {
 
         let parsed: TonSignMessageData = serde_json::from_str(&data).unwrap();
         assert_eq!(parsed.domain, "react-app.walletconnect.com");
+        assert_eq!(parsed.address, "UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg");
         assert_eq!(parsed.payload, TonSignDataPayload::Text { text: "Hello TON".to_string() });
     }
 
     #[test]
     fn test_parse_sign_message_extracts_host() {
-        let params = serde_json::from_str(r#"[{"type":"text","text":"Test"}]"#).unwrap();
+        let params = serde_json::from_str(r#"[{"type":"text","text":"Test","from":"UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg"}]"#).unwrap();
         let action = TonRequestHandler::parse_sign_message(Chain::Ton, params, "https://example.com/path?query=1").unwrap();
         let WalletConnectAction::SignMessage { data, .. } = action else {
             panic!("Expected SignMessage action")

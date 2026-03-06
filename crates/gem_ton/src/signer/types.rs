@@ -1,5 +1,12 @@
+use base64::Engine;
+use base64::engine::general_purpose::STANDARD as BASE64;
+use gem_hash::sha2::sha256;
 use primitives::SignerError;
 use serde::{Deserialize, Serialize};
+
+use crate::address::Address;
+
+const SIGN_DATA_PREFIX: &[u8] = b"\xff\xffton-connect/sign-data/";
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "lowercase")]
@@ -18,8 +25,12 @@ impl TonSignDataPayload {
         }
     }
 
-    pub fn hash(&self) -> Vec<u8> {
-        self.data().as_bytes().to_vec()
+    pub fn encode_for_signing(&self) -> Result<(&str, Vec<u8>), SignerError> {
+        match self {
+            Self::Text { text } => Ok(("txt", text.as_bytes().to_vec())),
+            Self::Binary { bytes } => Ok(("bin", BASE64.decode(bytes).map_err(|e| SignerError::InvalidInput(e.to_string()))?)),
+            Self::Cell { .. } => Err(SignerError::InvalidInput("Cell payload not supported for sign-data".to_string())),
+        }
     }
 }
 
@@ -28,6 +39,7 @@ impl TonSignDataPayload {
 pub struct TonSignDataResponse {
     signature: String,
     public_key: String,
+    address: String,
     timestamp: u64,
     domain: String,
     payload: TonSignDataPayload,
@@ -37,16 +49,17 @@ pub struct TonSignDataResponse {
 pub struct TonSignMessageData {
     pub payload: TonSignDataPayload,
     pub domain: String,
+    pub address: String,
 }
 
 impl TonSignMessageData {
-    pub fn new(payload: TonSignDataPayload, domain: String) -> Self {
-        Self { payload, domain }
+    pub fn new(payload: TonSignDataPayload, domain: String, address: String) -> Self {
+        Self { payload, domain, address }
     }
 
-    pub fn from_value(payload: serde_json::Value, domain: String) -> Result<Self, SignerError> {
+    pub fn from_value(payload: serde_json::Value, domain: String, address: String) -> Result<Self, SignerError> {
         let payload: TonSignDataPayload = serde_json::from_value(payload).map_err(SignerError::from)?;
-        Ok(Self { payload, domain })
+        Ok(Self { payload, domain, address })
     }
 
     pub fn from_bytes(data: &[u8]) -> Result<Self, SignerError> {
@@ -56,13 +69,39 @@ impl TonSignMessageData {
     pub fn to_bytes(&self) -> Vec<u8> {
         serde_json::to_vec(self).unwrap_or_default()
     }
+
+    pub fn build_sign_data_hash(&self, timestamp: u64) -> Result<Vec<u8>, SignerError> {
+        let address = Address::from_base64_url(&self.address).map_err(|e| SignerError::InvalidInput(e.to_string()))?;
+        let domain_bytes = self.domain.as_bytes();
+        let (type_prefix, payload_bytes) = self.payload.encode_for_signing()?;
+
+        let mut msg = Vec::new();
+        msg.extend_from_slice(SIGN_DATA_PREFIX);
+        msg.extend_from_slice(&address.workchain().to_be_bytes());
+        msg.extend_from_slice(address.get_hash_part());
+        msg.extend_from_slice(&(domain_bytes.len() as u32).to_be_bytes());
+        msg.extend_from_slice(domain_bytes);
+        msg.extend_from_slice(&timestamp.to_be_bytes());
+        msg.extend_from_slice(type_prefix.as_bytes());
+        msg.extend_from_slice(&(payload_bytes.len() as u32).to_be_bytes());
+        msg.extend_from_slice(&payload_bytes);
+
+        Ok(sha256(&msg).to_vec())
+    }
+}
+
+pub struct TonSignResult {
+    pub signature: Vec<u8>,
+    pub public_key: Vec<u8>,
+    pub timestamp: u64,
 }
 
 impl TonSignDataResponse {
-    pub fn new(signature: String, public_key: String, timestamp: u64, domain: String, payload: TonSignDataPayload) -> Self {
+    pub fn new(signature: String, public_key: String, address: String, timestamp: u64, domain: String, payload: TonSignDataPayload) -> Self {
         Self {
             signature,
             public_key,
+            address,
             timestamp,
             domain,
             payload,
@@ -78,13 +117,14 @@ impl TonSignDataResponse {
 mod tests {
     use super::*;
 
+    const TEST_ADDRESS: &str = "UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg";
+
     #[test]
     fn test_parse_payload_text() {
         let json = r#"{"type":"text","text":"Hello TON"}"#;
         let parsed: TonSignDataPayload = serde_json::from_str(json).unwrap();
 
         assert_eq!(parsed, TonSignDataPayload::Text { text: "Hello TON".to_string() });
-        assert_eq!(b"Hello TON".to_vec(), parsed.hash());
     }
 
     #[test]
@@ -93,7 +133,6 @@ mod tests {
         let parsed: TonSignDataPayload = serde_json::from_str(json).unwrap();
 
         assert_eq!(parsed, TonSignDataPayload::Binary { bytes: "SGVsbG8=".to_string() });
-        assert_eq!("SGVsbG8=".as_bytes().to_vec(), parsed.hash());
     }
 
     #[test]
@@ -102,20 +141,27 @@ mod tests {
         let parsed: TonSignDataPayload = serde_json::from_str(json).unwrap();
 
         assert_eq!(parsed, TonSignDataPayload::Cell { cell: "te6c".to_string() });
-        assert_eq!("te6c".as_bytes().to_vec(), parsed.hash());
     }
 
     #[test]
     fn test_response_to_json() {
         let payload = TonSignDataPayload::Text { text: "Hello TON".to_string() };
 
-        let response = TonSignDataResponse::new("c2lnbmF0dXJl".to_string(), "cHVibGljS2V5".to_string(), 1234567890, "example.com".to_string(), payload);
+        let response = TonSignDataResponse::new(
+            "c2lnbmF0dXJl".to_string(),
+            "abcdef01".to_string(),
+            "0:58d5c54fbb8488af7eaad0cdc759ca8f6ff79fc9555106c1339b037ec0a40347".to_string(),
+            1234567890,
+            "example.com".to_string(),
+            payload,
+        );
 
         let json = response.to_json().unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
 
         assert_eq!(parsed["signature"], "c2lnbmF0dXJl");
-        assert_eq!(parsed["publicKey"], "cHVibGljS2V5");
+        assert_eq!(parsed["publicKey"], "abcdef01");
+        assert_eq!(parsed["address"], "0:58d5c54fbb8488af7eaad0cdc759ca8f6ff79fc9555106c1339b037ec0a40347");
         assert_eq!(parsed["timestamp"], 1234567890);
         assert_eq!(parsed["domain"], "example.com");
         assert_eq!(parsed["payload"]["type"], "text");
@@ -125,20 +171,31 @@ mod tests {
     #[test]
     fn test_ton_sign_message_data() {
         let payload = TonSignDataPayload::Text { text: "Hello TON".to_string() };
-        let data = TonSignMessageData::new(payload.clone(), "example.com".to_string());
+        let data = TonSignMessageData::new(payload.clone(), "example.com".to_string(), TEST_ADDRESS.to_string());
 
         let bytes = data.to_bytes();
         let parsed = TonSignMessageData::from_bytes(&bytes).unwrap();
 
         assert_eq!(parsed.payload, payload);
         assert_eq!(parsed.domain, "example.com");
+        assert_eq!(parsed.address, TEST_ADDRESS);
     }
 
     #[test]
-    fn test_ton_sign_message_data_get_payload() {
+    fn test_build_sign_data_hash() {
         let payload = TonSignDataPayload::Text { text: "Hello TON".to_string() };
-        let data = TonSignMessageData::new(payload, "example.com".to_string());
+        let data = TonSignMessageData::new(payload, "example.com".to_string(), TEST_ADDRESS.to_string());
 
-        assert_eq!(data.payload, TonSignDataPayload::Text { text: "Hello TON".to_string() });
+        let hash = data.build_sign_data_hash(1234567890).unwrap();
+
+        assert_eq!(hash.len(), 32);
+    }
+
+    #[test]
+    fn test_build_sign_data_hash_cell_unsupported() {
+        let payload = TonSignDataPayload::Cell { cell: "te6c".to_string() };
+        let data = TonSignMessageData::new(payload, "example.com".to_string(), TEST_ADDRESS.to_string());
+
+        assert!(data.build_sign_data_hash(1234567890).is_err());
     }
 }
