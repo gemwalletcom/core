@@ -9,6 +9,7 @@ use gem_ton::address::base64_to_hex_address;
 use gem_ton::signer::{TonSignDataResponse, TonSignMessageData, TonSignResult, sign_personal as ton_sign_personal};
 use primitives::hex::encode_with_0x;
 use signer::{SignatureScheme, Signer, hash_eip712};
+use std::time::{SystemTime, UNIX_EPOCH};
 use sui_types::PersonalMessage;
 
 use super::{
@@ -19,6 +20,10 @@ use crate::{GemstoneError, siwe::SiweMessage};
 use gem_bitcoin::signer::{BitcoinSignMessageData, sign_personal as bitcoin_sign_personal};
 use gem_tron::signer::tron_hash_message;
 use zeroize::Zeroizing;
+
+fn current_timestamp() -> u64 {
+    SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)
+}
 
 #[derive(Debug, PartialEq, uniffi::Enum)]
 pub enum MessagePreview {
@@ -114,8 +119,8 @@ impl MessageSigner {
             SignDigestType::TonPersonal => {
                 let string = String::from_utf8(self.message.data.clone())?;
                 let ton_data = TonSignMessageData::from_bytes(string.as_bytes())?;
-                let timestamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
-                Ok(ton_data.build_sign_data_hash(timestamp)?)
+                let timestamp = current_timestamp();
+                Ok(ton_data.hash(timestamp)?)
             }
             SignDigestType::TronPersonal => Ok(tron_hash_message(&self.message.data).to_vec()),
             SignDigestType::Eip191 | SignDigestType::Siwe => Ok(eip191_hash_message(&self.message.data).to_vec()),
@@ -156,7 +161,8 @@ impl MessageSigner {
         match &self.message.sign_type {
             SignDigestType::SuiPersonal => sui_signer::sign_digest(&hash, &private_key).map_err(GemstoneError::from),
             SignDigestType::TonPersonal => {
-                let result = ton_sign_personal(&self.message.data, &private_key)?;
+                let timestamp = current_timestamp();
+                let result = ton_sign_personal(&self.message.data, &private_key, timestamp)?;
                 self.get_ton_result(&result)
             }
             SignDigestType::Eip191 | SignDigestType::Eip712 | SignDigestType::Siwe | SignDigestType::TronPersonal => {

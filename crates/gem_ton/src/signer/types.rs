@@ -25,7 +25,7 @@ impl TonSignDataPayload {
         }
     }
 
-    pub fn encode_for_signing(&self) -> Result<(&str, Vec<u8>), SignerError> {
+    pub fn encode(&self) -> Result<(&str, Vec<u8>), SignerError> {
         match self {
             Self::Text { text } => Ok(("txt", text.as_bytes().to_vec())),
             Self::Binary { bytes } => Ok(("bin", BASE64.decode(bytes).map_err(|e| SignerError::InvalidInput(e.to_string()))?)),
@@ -70,10 +70,10 @@ impl TonSignMessageData {
         serde_json::to_vec(self).unwrap_or_default()
     }
 
-    pub fn build_sign_data_hash(&self, timestamp: u64) -> Result<Vec<u8>, SignerError> {
+    pub fn hash(&self, timestamp: u64) -> Result<Vec<u8>, SignerError> {
         let address = Address::from_base64_url(&self.address).map_err(|e| SignerError::InvalidInput(e.to_string()))?;
         let domain_bytes = self.domain.as_bytes();
-        let (type_prefix, payload_bytes) = self.payload.encode_for_signing()?;
+        let (type_prefix, payload_bytes) = self.payload.encode()?;
 
         let mut msg = Vec::new();
         msg.extend_from_slice(SIGN_DATA_PREFIX);
@@ -186,7 +186,7 @@ mod tests {
         let payload = TonSignDataPayload::Text { text: "Hello TON".to_string() };
         let data = TonSignMessageData::new(payload, "example.com".to_string(), TEST_ADDRESS.to_string());
 
-        let hash = data.build_sign_data_hash(1234567890).unwrap();
+        let hash = data.hash(1234567890).unwrap();
 
         assert_eq!(hash.len(), 32);
     }
@@ -196,6 +196,6 @@ mod tests {
         let payload = TonSignDataPayload::Cell { cell: "te6c".to_string() };
         let data = TonSignMessageData::new(payload, "example.com".to_string(), TEST_ADDRESS.to_string());
 
-        assert!(data.build_sign_data_hash(1234567890).is_err());
+        assert!(data.hash(1234567890).is_err());
     }
 }

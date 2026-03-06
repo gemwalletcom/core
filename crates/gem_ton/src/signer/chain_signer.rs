@@ -1,3 +1,5 @@
+use std::time::{SystemTime, UNIX_EPOCH};
+
 use primitives::{ChainSigner, SignerError, TransactionLoadInput};
 
 use super::signature::sign_personal;
@@ -7,7 +9,8 @@ pub struct TonChainSigner;
 
 impl ChainSigner for TonChainSigner {
     fn sign_message(&self, message: &[u8], private_key: &[u8]) -> Result<String, SignerError> {
-        let result = sign_personal(message, private_key)?;
+        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+        let result = sign_personal(message, private_key, timestamp)?;
         Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, result.signature))
     }
 

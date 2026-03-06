@@ -1,4 +1,4 @@
-use base64::prelude::{BASE64_URL_SAFE_NO_PAD, Engine};
+use base64::prelude::{BASE64_STANDARD_NO_PAD, BASE64_URL_SAFE_NO_PAD, Engine};
 use crc::Crc;
 
 type Workchain = i32;
@@ -43,8 +43,6 @@ impl Address {
     }
 
     pub fn from_base64_url(base64: &str) -> Result<Self, ParseError> {
-        use base64::prelude::BASE64_STANDARD_NO_PAD;
-
         let bytes = BASE64_URL_SAFE_NO_PAD
             .decode(base64)
             .or_else(|_| BASE64_STANDARD_NO_PAD.decode(base64))
