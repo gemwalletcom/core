@@ -4,7 +4,7 @@ Follow the existing code style patterns unless explicitly asked to change.
 
 ## Formatting
 
-- Line length: 160 characters maximum (configured in `rustfmt.toml`)
+- Line length: 180 characters maximum (configured in `rustfmt.toml`)
 - Indentation: 4 spaces (Rust standard)
 - Imports: Automatically reordered with rustfmt
 - Only format files you modified: `rustfmt --edition 2024 <file1> <file2> ...`
