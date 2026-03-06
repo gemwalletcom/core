@@ -1,4 +1,4 @@
-use crate::COMMITMENT_CONFIRMED;
+use crate::{COMMITMENT_CONFIRMED, STAKE_PROGRAM_ID};
 use crate::models::{
     EpochInfo, InflationRate, ResultTokenInfo, Signature, TokenAccountInfo, ValueResult, VoteAccounts,
     balances::SolanaBalance,
@@ -108,9 +108,8 @@ impl<C: Client + Clone> SolanaClient<C> {
     }
 
     pub async fn get_staking_balance(&self, address: &str) -> Result<Vec<TokenAccountInfo>, JsonRpcError> {
-        let stake_program_id = "Stake11111111111111111111111111111111111111";
         let params = serde_json::json!([
-            stake_program_id,
+            STAKE_PROGRAM_ID,
             {
                 "encoding": "jsonParsed",
                 "filters": [

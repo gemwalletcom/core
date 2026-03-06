@@ -9,7 +9,7 @@ use super::{
     ChainflipRouteData,
     broker::{BrokerClient, ChainflipAsset, DcaParameters, RefundParameters, VaultSwapBtcExtras, VaultSwapEvmExtras, VaultSwapExtras, VaultSwapResponse, VaultSwapSolanaExtras},
     capitalize::capitalize_first_letter,
-    client::{ChainflipClient, QuoteRequest as ChainflipQuoteRequest, QuoteResponse},
+    client::{ChainflipClient, QuoteRequest as ChainflipQuoteRequest, QuoteResponse, map_swap_result},
     price::{apply_slippage, price_to_hex_price},
     seed::generate_random_seed,
     tx_builder,
@@ -18,6 +18,7 @@ use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData,
     alien::RpcProvider,
     amount_to_value,
+    cross_chain::VaultAddresses,
     approval::check_approval_erc20,
     asset::{ARBITRUM_USDC, ETHEREUM_FLIP, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
     config::DEFAULT_CHAINFLIP_FEE_BPS,
@@ -26,6 +27,10 @@ use crate::{
 use primitives::{ChainType, chain::Chain, swap::QuoteAsset};
 
 const DEFAULT_SWAP_ERC20_GAS_LIMIT: u64 = 100_000;
+
+const VAULT_ETH: &str = "0xF5e10380213880111522dd0efD3dbb45b9f62Bcc";
+const VAULT_ARB: &str = "0x79001a5e762f3bEFC8e5871b42F6734e00498920";
+const VAULT_SOL: &str = "J88B7gmadHzTNGiy54c9Ms8BsEXNdB2fntFyhKpk3qoT";
 
 #[derive(Debug)]
 pub struct ChainflipProvider<CX, BR>
@@ -299,13 +304,14 @@ where
         }
     }
 
-    async fn get_swap_result(&self, _chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
-        let status = self.chainflip_client.get_tx_status(transaction_hash).await?;
+    async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<VaultAddresses, SwapperError> {
+        let deposit = vec![VAULT_ETH.to_string(), VAULT_ARB.to_string(), VAULT_SOL.to_string()];
+        Ok(VaultAddresses { deposit, send: vec![] })
+    }
 
-        Ok(SwapResult {
-            status: status.swap_status(),
-            metadata: None,
-        })
+    async fn get_swap_result(&self, _chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
+        let response = self.chainflip_client.get_tx_status(transaction_hash).await?;
+        Ok(map_swap_result(&response))
     }
 }
 

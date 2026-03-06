@@ -1,0 +1,13 @@
+{
+  "state": "COMPLETED",
+  "srcAsset": "SOL",
+  "srcChain": "Solana",
+  "destAsset": "BTC",
+  "destChain": "Bitcoin",
+  "deposit": {
+    "amount": "150000000"
+  },
+  "swap": {
+    "swappedOutputAmount": "17567"
+  }
+}

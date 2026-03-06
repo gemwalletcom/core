@@ -1,0 +1,13 @@
+{
+  "state": "COMPLETED",
+  "srcAsset": "USDC",
+  "srcChain": "Ethereum",
+  "destAsset": "SOL",
+  "destChain": "Solana",
+  "deposit": {
+    "amount": "100000000"
+  },
+  "swap": {
+    "swappedOutputAmount": "1143469990"
+  }
+}

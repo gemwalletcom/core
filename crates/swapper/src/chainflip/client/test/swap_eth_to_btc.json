@@ -1,0 +1,13 @@
+{
+  "state": "COMPLETED",
+  "srcAsset": "ETH",
+  "srcChain": "Ethereum",
+  "destAsset": "BTC",
+  "destChain": "Bitcoin",
+  "deposit": {
+    "amount": "140000000000000000"
+  },
+  "swap": {
+    "swappedOutputAmount": "405772"
+  }
+}

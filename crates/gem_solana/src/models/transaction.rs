@@ -23,6 +23,7 @@ pub struct SolanaTransactionError {}
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Meta {
+    pub err: Option<serde_json::Value>,
     pub fee: u64,
     pub pre_balances: Vec<u64>,
     pub post_balances: Vec<u64>,
@@ -112,8 +113,16 @@ pub struct Signature {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct Instruction {
+    pub program_id_index: usize,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct TransactionMessage {
     pub account_keys: Vec<String>,
+    #[serde(default)]
+    pub instructions: Vec<Instruction>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -126,6 +135,18 @@ pub struct BlockTransaction {
 impl BlockTransaction {
     pub fn fee(&self) -> BigUint {
         BigUint::from(self.meta.fee)
+    }
+
+    pub fn get_balance_change(&self, address: &str) -> u64 {
+        let index = self.transaction.message.account_keys.iter().position(|k| k == address);
+        match index {
+            Some(i) => {
+                let pre = self.meta.pre_balances.get(i).copied().unwrap_or(0);
+                let post = self.meta.post_balances.get(i).copied().unwrap_or(0);
+                pre.saturating_sub(post).saturating_sub(self.meta.fee)
+            }
+            None => 0,
+        }
     }
 
     pub fn get_balance_changes_by_owner(&self, owner: &str) -> TokenBalanceChange {
@@ -175,4 +196,53 @@ pub struct SingleTransaction {
     pub block_time: i64,
     pub meta: Meta,
     pub transaction: Transaction,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn block_transaction(fee: u64, keys: Vec<&str>, pre: Vec<u64>, post: Vec<u64>) -> BlockTransaction {
+        BlockTransaction {
+            meta: Meta {
+                err: None,
+                fee,
+                pre_balances: pre,
+                post_balances: post,
+                pre_token_balances: vec![],
+                post_token_balances: vec![],
+            },
+            transaction: Transaction {
+                message: TransactionMessage {
+                    account_keys: keys.into_iter().map(String::from).collect(),
+                    instructions: vec![],
+                },
+                signatures: vec![],
+            },
+        }
+    }
+
+    #[test]
+    fn test_balance_change() {
+        let tx = block_transaction(5000, vec!["sender", "recipient"], vec![100_000, 0], vec![85_000, 10_000]);
+        assert_eq!(tx.get_balance_change("sender"), 10_000);
+    }
+
+    #[test]
+    fn test_balance_change_no_change() {
+        let tx = block_transaction(5000, vec!["sender"], vec![100_000], vec![95_000]);
+        assert_eq!(tx.get_balance_change("sender"), 0);
+    }
+
+    #[test]
+    fn test_balance_change_received() {
+        let tx = block_transaction(5000, vec!["sender"], vec![100_000], vec![200_000]);
+        assert_eq!(tx.get_balance_change("sender"), 0);
+    }
+
+    #[test]
+    fn test_balance_change_unknown_address() {
+        let tx = block_transaction(5000, vec!["sender"], vec![100_000], vec![85_000]);
+        assert_eq!(tx.get_balance_change("unknown"), 0);
+    }
 }

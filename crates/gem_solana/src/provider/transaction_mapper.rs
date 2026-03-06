@@ -2,7 +2,7 @@ use chrono::DateTime;
 use num_bigint::Sign;
 
 use crate::{
-    COMPUTE_BUDGET_PROGRAM_ID, JUPITER_PROGRAM_ID, SYSTEM_PROGRAM_ID, TOKEN_PROGRAM,
+    COMPUTE_BUDGET_PROGRAM_ID, JUPITER_PROGRAM_ID, SYSTEM_PROGRAMS, SYSTEM_PROGRAM_ID, TOKEN_PROGRAM,
     models::{BlockTransaction, BlockTransactions, Signature},
 };
 use primitives::{AssetId, Chain, SwapProvider, Transaction, TransactionState, TransactionSwapMetadata, TransactionType};
@@ -26,19 +26,18 @@ pub fn map_signatures_transactions(transactions: Vec<BlockTransaction>, signatur
 }
 
 pub fn map_transaction(transaction: &BlockTransaction, block_time: i64) -> Option<primitives::Transaction> {
-    let chain = CHAIN;
-    let account_keys = transaction.transaction.message.account_keys.clone();
-    let signatures = transaction.transaction.signatures.clone();
-    let hash = transaction.transaction.signatures.first()?.to_string();
-    let fee = transaction.meta.fee;
-    let state = TransactionState::Confirmed;
-    let fee_asset_id = chain.as_asset_id();
-    let created_at = DateTime::from_timestamp(block_time, 0)?;
-
     // only accept single signature transactions
-    if signatures.len() != 1 {
+    if transaction.transaction.signatures.len() != 1 {
         return None;
     }
+
+    let chain = CHAIN;
+    let account_keys = transaction.transaction.message.account_keys.clone();
+    let hash = transaction.transaction.signatures.first()?.to_string();
+    let fee = transaction.meta.fee;
+    let state = if transaction.meta.err.is_some() { TransactionState::Failed } else { TransactionState::Confirmed };
+    let fee_asset_id = chain.as_asset_id();
+    let created_at = DateTime::from_timestamp(block_time, 0)?;
 
     // system transfer
     if (account_keys.len() == 3) && account_keys.last()? == SYSTEM_PROGRAM_ID
@@ -47,7 +46,7 @@ pub fn map_transaction(transaction: &BlockTransaction, block_time: i64) -> Optio
         let from = account_keys.first()?.clone();
         let to = account_keys[1].clone();
 
-        let value = transaction.meta.pre_balances[0] - transaction.meta.post_balances[0] - fee;
+        let value = transaction.get_balance_change(&from);
 
         let transaction = Transaction::new(
             hash,
@@ -168,7 +167,32 @@ pub fn map_transaction(transaction: &BlockTransaction, block_time: i64) -> Optio
         return Some(transaction);
     }
 
-    None
+    // smart contract call
+    let contract = transaction
+        .transaction
+        .message
+        .instructions
+        .iter()
+        .map(|ix| &account_keys[ix.program_id_index])
+        .find(|key| !SYSTEM_PROGRAMS.contains(&key.as_str()))?;
+    let sender = account_keys.first()?.clone();
+    let value = transaction.get_balance_change(&sender);
+
+    Some(Transaction::new(
+        hash,
+        chain.as_asset_id(),
+        sender.clone(),
+        sender,
+        Some(contract.to_string()),
+        TransactionType::SmartContractCall,
+        state,
+        fee.to_string(),
+        fee_asset_id,
+        value.to_string(),
+        None,
+        None,
+        created_at,
+    ))
 }
 
 #[cfg(test)]
@@ -321,6 +345,17 @@ mod tests {
 
         assert_eq!(state, TransactionState::Confirmed);
         assert_eq!(transaction.slot, 361169359);
+    }
+
+    #[test]
+    fn test_transaction_chainflip_vault_swap() {
+        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(include_str!("../../testdata/chainflip_vault_swap.json")).unwrap();
+        let transaction = map_transaction(&result.result, 1772283531).unwrap();
+
+        assert_eq!(transaction.transaction_type, TransactionType::SmartContractCall);
+        assert_eq!(transaction.from, "CabroWmzUzcqqGvprUoC7RnJznuwX6qf5W1tSSaomri7");
+        assert_eq!(transaction.contract, Some("J88B7gmadHzTNGiy54c9Ms8BsEXNdB2fntFyhKpk3qoT".to_string()));
+        assert_eq!(transaction.value, "152686560");
     }
 
     #[test]

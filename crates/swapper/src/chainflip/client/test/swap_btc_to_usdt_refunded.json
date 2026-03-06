@@ -1,0 +1,16 @@
+{
+  "state": "COMPLETED",
+  "srcAsset": "BTC",
+  "srcChain": "Bitcoin",
+  "destAsset": "USDT",
+  "destChain": "Ethereum",
+  "deposit": {
+    "amount": "1508475"
+  },
+  "swap": {
+    "swappedOutputAmount": "0"
+  },
+  "refundEgress": {
+    "amount": "1506979"
+  }
+}

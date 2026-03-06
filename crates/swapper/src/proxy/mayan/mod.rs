@@ -76,7 +76,7 @@ pub fn map_swap_result(result: &MayanTransactionResult) -> SwapResult {
     let from_chain = result.from_token_chain.parse::<u16>().ok().and_then(wormhole_chain_id_to_chain);
     let to_chain = result.to_token_chain.parse::<u16>().ok().and_then(wormhole_chain_id_to_chain);
 
-    let metadata = if result.client_status == MayanClientStatus::Completed {
+    let metadata = if result.client_status != MayanClientStatus::InProgress {
         from_chain.zip(to_chain).and_then(|(from_chain, to_chain)| {
             Some(TransactionSwapMetadata {
                 from_asset: resolve_asset_id(from_chain, &result.from_token_address)?,
@@ -225,8 +225,18 @@ mod tests {
 
     #[test]
     fn test_map_swap_result_refunded() {
-        let result = map_swap_result(&result(include_str!("../test/swift_refunded.json")));
-        assert_eq!(result.status, SwapStatus::Failed);
-        assert!(result.metadata.is_none());
+        assert_eq!(
+            map_swap_result(&result(include_str!("../test/swift_refunded.json"))),
+            SwapResult {
+                status: SwapStatus::Failed,
+                metadata: Some(TransactionSwapMetadata {
+                    from_asset: AssetId::from_chain(Chain::Ethereum),
+                    from_value: "4000000000000000".to_string(),
+                    to_asset: AssetId::from_chain(Chain::Solana),
+                    to_value: "3342230".to_string(),
+                    provider: Some("mayan".to_string()),
+                }),
+            }
+        );
     }
 }

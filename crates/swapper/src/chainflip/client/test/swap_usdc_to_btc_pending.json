@@ -1,0 +1,13 @@
+{
+  "state": "SENDING",
+  "srcAsset": "USDC",
+  "srcChain": "Solana",
+  "destAsset": "BTC",
+  "destChain": "Bitcoin",
+  "deposit": {
+    "amount": "495625000"
+  },
+  "swap": {
+    "swappedOutputAmount": "695407"
+  }
+}

@@ -119,10 +119,7 @@ impl InTransitUpdater {
         }
         self.database.transactions()?.update_transaction(chain.as_ref(), &row.hash, updates)?;
 
-        let mut transaction = row.as_primitive(row.get_addresses());
-        transaction.state = state.clone().into();
-        transaction.transaction_type = TransactionType::Swap;
-        transaction.metadata = metadata;
+        let transaction = row.as_primitive(row.get_addresses()).with_swap_state(state.clone().into(), metadata.clone());
         self.stream_producer
             .publish_transactions(TransactionsPayload::new(chain, vec![0], vec![transaction]))
             .await?;
