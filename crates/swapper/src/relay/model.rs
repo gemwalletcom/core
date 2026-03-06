@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 const STEP_SWAP: &str = "swap";
 const STEP_DEPOSIT: &str = "deposit";
 const STEP_APPROVE: &str = "approve";
+const STEP_TRANSACTION: &str = "transaction";
 
 pub fn relay_trade_type(mode: &SwapMode) -> &'static str {
     match mode {
@@ -65,7 +66,7 @@ impl RelayQuoteResponse {
         self.steps
             .iter()
             .find(|step| step.id == STEP_SWAP || step.id == STEP_DEPOSIT)
-            .or_else(|| self.steps.iter().find(|step| step.kind == "transaction" && step.id != STEP_APPROVE))
+            .or_else(|| self.steps.iter().find(|step| step.kind == STEP_TRANSACTION && step.id != STEP_APPROVE))
             .or_else(|| self.steps.iter().find(|step| step.step_data().is_some()))
             .and_then(Step::step_data)
     }
