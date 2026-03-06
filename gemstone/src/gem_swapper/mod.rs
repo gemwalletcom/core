@@ -49,7 +49,7 @@ impl GemSwapper {
         self.inner.get_quote_by_provider(provider, request).await
     }
 
-    pub async fn fetch_permit2_for_quote(&self, quote: &SwapperQuote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
+    pub async fn get_permit2_for_quote(&self, quote: &SwapperQuote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         self.inner.get_permit2_for_quote(quote).await
     }
 
