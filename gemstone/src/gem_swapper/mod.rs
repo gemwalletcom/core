@@ -45,7 +45,7 @@ impl GemSwapper {
         self.inner.get_quote(request).await
     }
 
-    pub async fn fetch_quote_by_provider(&self, provider: SwapperProvider, request: SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
+    pub async fn get_quote_by_provider(&self, provider: SwapperProvider, request: SwapperQuoteRequest) -> Result<SwapperQuote, SwapperError> {
         self.inner.get_quote_by_provider(provider, request).await
     }
 
