@@ -69,20 +69,22 @@ public final class StakeSceneViewModel {
 
     var resourcesTitle: String { Localized.Asset.resources }
 
-    var energyTitle: String { ResourceViewModel(resource: .energy).title }
-    var energyText: String { balanceModel.energyText }
+    var energyField: ListItemField {
+        ListItemField(title: ResourceViewModel(resource: .energy).title, value: balanceModel.energyText)
+    }
 
-    var bandwidthTitle: String { ResourceViewModel(resource: .bandwidth).title }
-    var bandwidthText: String { balanceModel.bandwidthText }
+    var bandwidthField: ListItemField {
+        ListItemField(title: ResourceViewModel(resource: .bandwidth).title, value: balanceModel.bandwidthText)
+    }
 
     var freezeTitle: String { Localized.Transfer.Freeze.title }
     var unfreezeTitle: String { Localized.Transfer.Unfreeze.title }
 
-    var lockTimeTitle: String { Localized.Stake.lockTime }
-    var lockTimeValue: String {
+    var lockTimeField: ListItemField {
         let now = Date.now
         let date = now.addingTimeInterval(chain.lockTime)
-        return Self.lockTimeFormatter.string(from: now, to: date) ?? .empty
+        let value = Self.lockTimeFormatter.string(from: now, to: date) ?? .empty
+        return ListItemField(title: Localized.Stake.lockTime, value: value)
     }
     var lockTimeInfoSheet: InfoSheetType {
         InfoSheetType.stakeLockTime(assetModel.assetImage.placeholder)
@@ -92,10 +94,10 @@ public final class StakeSceneViewModel {
         InfoSheetType.stakeApr(assetModel.assetImage.placeholder)
     }
 
-    var minAmountTitle: String { Localized.Stake.minimumAmount }
-    var minAmountValue: String? {
+    var minAmountField: ListItemField? {
         guard chain.minAmount != 0 else { return .none }
-        return formatter.string(chain.minAmount, decimals: Int(asset.decimals), currency: asset.symbol)
+        let value = formatter.string(chain.minAmount, decimals: Int(asset.decimals), currency: asset.symbol)
+        return ListItemField(title: Localized.Stake.minimumAmount, value: value)
     }
 
     var delegationsErrorTitle: String { Localized.Errors.errorOccured }

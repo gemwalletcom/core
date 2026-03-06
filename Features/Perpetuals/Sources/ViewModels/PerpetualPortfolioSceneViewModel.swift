@@ -83,26 +83,31 @@ final class PerpetualPortfolioSceneViewModel {
 // MARK: - Stats
 
 extension PerpetualPortfolioSceneViewModel {
-    var unrealizedPnlTitle: String { Localized.Perpetual.unrealizedPnl }
-    var unrealizedPnlValue: TextValue { TextValue(text: unrealizedPnlModel.text ?? "-", style: unrealizedPnlModel.textStyle) }
-
-    var accountLeverageTitle: String { Localized.Perpetual.accountLeverage }
-    var accountLeverageText: String { portfolio?.accountSummary.map { String(format: "%.2fx", $0.accountLeverage) } ?? "-" }
-
-    var marginUsageTitle: String { Localized.Perpetual.marginUsage }
-    var marginUsageText: String {
-        portfolio?.accountSummary.map {
-            let marginValue = currencyFormatter.string($0.accountValue * $0.marginUsage)
-            let marginPercent = CurrencyFormatter.percentSignLess.string($0.marginUsage * 100)
-            return "\(marginValue) (\(marginPercent))"
-        } ?? "-"
+    var unrealizedPnlField: ListItemField {
+        ListItemField(
+            title: TextValue(text: Localized.Perpetual.unrealizedPnl, style: ListItemModel.StyleDefaults.titleStyle),
+            value: TextValue(text: unrealizedPnlModel.text ?? "-", style: unrealizedPnlModel.textStyle)
+        )
     }
 
-    var allTimePnlTitle: String { Localized.Perpetual.allTimePnl }
-    var allTimePnlValue: TextValue { TextValue(text: allTimePnlModel.text ?? "-", style: allTimePnlModel.textStyle) }
+    var accountLeverageField: ListItemField {
+        ListItemField(title: Localized.Perpetual.accountLeverage, value: accountLeverageText)
+    }
 
-    var volumeTitle: String { Localized.Perpetual.volume }
-    var volumeText: String { portfolio.map { currencyFormatter.string($0.allTime?.volume ?? 0) } ?? "-" }
+    var marginUsageField: ListItemField {
+        ListItemField(title: Localized.Perpetual.marginUsage, value: marginUsageText)
+    }
+
+    var allTimePnlField: ListItemField {
+        ListItemField(
+            title: TextValue(text: Localized.Perpetual.allTimePnl, style: ListItemModel.StyleDefaults.titleStyle),
+            value: TextValue(text: allTimePnlModel.text ?? "-", style: allTimePnlModel.textStyle)
+        )
+    }
+
+    var volumeField: ListItemField {
+        ListItemField(title: Localized.Perpetual.volume, value: volumeText)
+    }
 }
 
 // MARK: - Private
@@ -110,6 +115,16 @@ extension PerpetualPortfolioSceneViewModel {
 extension PerpetualPortfolioSceneViewModel {
     private var unrealizedPnlModel: PriceChangeViewModel { priceChangeModel(value: portfolio?.accountSummary?.unrealizedPnl) }
     private var allTimePnlModel: PriceChangeViewModel { priceChangeModel(value: portfolio?.allTime?.pnlHistory.last?.value) }
+
+    private var accountLeverageText: String { portfolio?.accountSummary.map { String(format: "%.2fx", $0.accountLeverage) } ?? "-" }
+    private var marginUsageText: String {
+        portfolio?.accountSummary.map {
+            let marginValue = currencyFormatter.string($0.accountValue * $0.marginUsage)
+            let marginPercent = CurrencyFormatter.percentSignLess.string($0.marginUsage * 100)
+            return "\(marginValue) (\(marginPercent))"
+        } ?? "-"
+    }
+    private var volumeText: String { portfolio.map { currencyFormatter.string($0.allTime?.volume ?? 0) } ?? "-" }
 
     private func priceChangeModel(value: Double?) -> PriceChangeViewModel {
         PriceChangeViewModel(value: value, currencyFormatter: currencyFormatter)

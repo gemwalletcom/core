@@ -41,14 +41,13 @@ public struct DelegationSceneViewModel {
         }
     }
 
-    public var providerTitle: String {
-        switch providerType {
+    public var providerField: ListItemField {
+        let title: String = switch providerType {
         case .stake: Localized.Stake.validator
         case .earn: Localized.Common.provider
         }
+        return ListItemField(title: title, value: model.validatorText)
     }
-
-    public var providerText: String { model.validatorText }
     public var aprModel: AprViewModel {
         AprViewModel(apr: model.delegation.validator.apr)
     }
@@ -67,8 +66,8 @@ public struct DelegationSceneViewModel {
         }
     }
 
-    public var completionDateTitle: String? {
-        switch providerType {
+    public var completionDateField: ListItemField? {
+        let title: String? = switch providerType {
         case .stake:
             switch model.state {
             case .pending, .deactivating: Localized.Stake.availableIn
@@ -77,13 +76,12 @@ public struct DelegationSceneViewModel {
             }
         case .earn: .none
         }
-    }
-
-    public var completionDateText: String? {
-        switch providerType {
+        let text: String? = switch providerType {
         case .stake: model.completionDateText
         case .earn: .none
         }
+        guard let title, let text else { return nil }
+        return ListItemField(title: title, value: text)
     }
 
     public var assetImageStyle: ListItemImageStyle? {
@@ -167,6 +165,8 @@ extension DelegationSceneViewModel {
             value: model.delegation.base.balanceValue
         )
     }
+
+    private var providerText: String { model.validatorText }
 
     private var providerType: StakeProviderType {
         model.delegation.validator.providerType

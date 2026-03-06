@@ -80,16 +80,16 @@ struct PerpetualPortfolioSceneViewModelTests {
 
     @Test
     @MainActor
-    func marginUsageText() {
+    func marginUsageField() {
         let model = PerpetualPortfolioSceneViewModel.mock()
 
-        #expect(model.marginUsageText == "-")
+        #expect(model.marginUsageField.value.text == "-")
 
         model.state = .data(.mock(accountSummary: .mock(accountValue: 100, marginUsage: 0.168)))
-        #expect(model.marginUsageText == "$16.80 (16.80%)")
+        #expect(model.marginUsageField.value.text == "$16.80 (16.80%)")
 
         model.state = .data(.mock(accountSummary: .mock(accountValue: 0, marginUsage: 0)))
-        #expect(model.marginUsageText == "$0.00 (0.00%)")
+        #expect(model.marginUsageField.value.text == "$0.00 (0.00%)")
     }
 
     @Test

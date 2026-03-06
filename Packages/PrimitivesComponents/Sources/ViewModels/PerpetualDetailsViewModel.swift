@@ -56,11 +56,13 @@ public struct PerpetualDetailsViewModel: Sendable, Identifiable {
         )
     }
 
-    var positionTitle: String { Localized.Perpetual.position }
-    var positionText: String { "\(directionViewModel.title) \(leverageText)" }
-    var positionTextStyle: TextStyle {
-        TextStyle(font: .callout, color: directionViewModel.color)
+    var positionField: ListItemField {
+        ListItemField(
+            title: TextValue(text: Localized.Perpetual.position, style: .body),
+            value: TextValue(text: positionText, style: TextStyle(font: .callout, color: directionViewModel.color))
+        )
     }
+    var positionText: String { "\(directionViewModel.title) \(leverageText)" }
 
     var directionViewModel: PerpetualDirectionViewModel {
         let direction = switch type {
@@ -73,16 +75,17 @@ public struct PerpetualDetailsViewModel: Sendable, Identifiable {
     var leverageTitle: String { Localized.Perpetual.leverage}
     var leverageText: String { "\(data.leverage)x" }
 
-    var slippageTitle: String { Localized.Swap.slippage }
-    var slippageText: String { percentSignLessFormatter.string(data.slippage) }
+    var slippageField: ListItemField {
+        ListItemField(title: Localized.Swap.slippage, value: percentSignLessFormatter.string(data.slippage))
+    }
 
-    var marketPriceTitle: String { Localized.PriceAlerts.SetAlert.currentPrice }
-    var marketPriceText: String { currencyFormatter.string(data.marketPrice) }
+    var marketPriceField: ListItemField {
+        ListItemField(title: Localized.PriceAlerts.SetAlert.currentPrice, value: currencyFormatter.string(data.marketPrice))
+    }
 
-    var entryPriceTitle: String { Localized.Perpetual.entryPrice }
-    var entryPriceText: String? {
+    var entryPriceField: ListItemField? {
         guard let price = data.entryPrice else { return nil }
-        return currencyFormatter.string(price)
+        return ListItemField(title: Localized.Perpetual.entryPrice, value: currencyFormatter.string(price))
     }
 
     var pnlViewModel: PnLViewModel {
@@ -93,15 +96,23 @@ public struct PerpetualDetailsViewModel: Sendable, Identifiable {
             percentFormatter: percentFormatter
         )
     }
-    var pnlTitle: String { pnlViewModel.title }
+    var pnlField: ListItemField? {
+        guard let text = pnlViewModel.text else { return nil }
+        return ListItemField(
+            title: TextValue(text: pnlViewModel.title, style: .body),
+            value: TextValue(text: text, style: pnlViewModel.textStyle)
+        )
+    }
     var pnlText: String? { pnlViewModel.text }
     var pnlTextStyle: TextStyle { pnlViewModel.textStyle }
 
-    var marginTitle: String { Localized.Perpetual.margin }
-    var marginText: String { currencyFormatter.string(data.marginAmount) }
+    var marginField: ListItemField {
+        ListItemField(title: Localized.Perpetual.margin, value: currencyFormatter.string(data.marginAmount))
+    }
 
-    var sizeTitle: String { Localized.Perpetual.size }
-    var sizeText: String { currencyFormatter.string(data.fiatValue) }
+    var sizeField: ListItemField {
+        ListItemField(title: Localized.Perpetual.size, value: currencyFormatter.string(data.fiatValue))
+    }
 
     var autocloseTitle: String { Localized.Perpetual.autoClose }
     var autocloseText: (subtitle: String, subtitleExtra: String?) {

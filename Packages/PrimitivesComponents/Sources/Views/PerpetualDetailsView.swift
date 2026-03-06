@@ -16,31 +16,16 @@ public struct PerpetualDetailsView: View {
     public var body: some View {
         List {
             Section {
-                ListItemView(
-                    title: model.positionTitle,
-                    subtitle: model.positionText,
-                    subtitleStyle: model.positionTextStyle
-                )
+                ListItemView(field: model.positionField)
 
-                if let pnlText = model.pnlText {
-                    ListItemView(
-                        title: model.pnlTitle,
-                        subtitle: pnlText,
-                        subtitleStyle: model.pnlTextStyle
-                    )
+                if let pnlField = model.pnlField {
+                    ListItemView(field: pnlField)
                 }
             }
 
             Section {
-                ListItemView(
-                    title: model.marginTitle,
-                    subtitle: model.marginText
-                )
-
-                ListItemView(
-                    title: model.sizeTitle,
-                    subtitle: model.sizeText
-                )
+                ListItemView(field: model.marginField)
+                ListItemView(field: model.sizeField)
             }
 
             if model.showAutoclose {
@@ -54,22 +39,13 @@ public struct PerpetualDetailsView: View {
             }
 
             Section {
-                ListItemView(
-                    title: model.marketPriceTitle,
-                    subtitle: model.marketPriceText
-                )
+                ListItemView(field: model.marketPriceField)
 
-                if let entryPriceText = model.entryPriceText {
-                    ListItemView(
-                        title: model.entryPriceTitle,
-                        subtitle: entryPriceText
-                    )
+                if let entryPriceField = model.entryPriceField {
+                    ListItemView(field: entryPriceField)
                 }
 
-                ListItemView(
-                    title: model.slippageTitle,
-                    subtitle: model.slippageText
-                )
+                ListItemView(field: model.slippageField)
             }
         }
         .toolbarDismissItem(type: .close, placement: .topBarLeading)

@@ -9,17 +9,17 @@ struct CandleTooltipView: View {
 
     var body: some View {
         Grid(alignment: .leading, horizontalSpacing: Spacing.small, verticalSpacing: Spacing.extraSmall) {
-            GridItemView(title: model.openTitle, value: model.openValue)
-            GridItemView(title: model.highTitle, value: model.highValue)
-            GridItemView(title: model.lowTitle, value: model.lowValue)
-            GridItemView(title: model.closeTitle, value: model.closeValue)
+            GridItemView(field: model.openField)
+            GridItemView(field: model.highField)
+            GridItemView(field: model.lowField)
+            GridItemView(field: model.closeField)
 
             Divider()
                 .gridCellColumns(2)
                 .padding(.vertical, Spacing.tiny)
 
-            GridItemView(title: model.changeTitle, value: model.changeValue)
-            GridItemView(title: model.volumeTitle, value: model.volumeValue)
+            GridItemView(field: model.changeField)
+            GridItemView(field: model.volumeField)
         }
         .padding(Spacing.small)
         .background(.thickMaterial)

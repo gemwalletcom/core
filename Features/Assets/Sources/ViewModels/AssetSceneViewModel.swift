@@ -84,14 +84,18 @@ public final class AssetSceneViewModel: Sendable {
     public var title: String { assetModel.name }
 
     var balancesTitle: String { Localized.Asset.balances }
-    var networkTitle: String { Localized.Transfer.network }
 
+    var networkField: ListItemField {
+        ListItemField(title: Localized.Transfer.network, value: assetModel.networkFullName)
+    }
 
     var resourcesTitle: String { Localized.Asset.resources }
-    var energyTitle: String { ResourceViewModel(resource: .energy).title }
-    var bandwidthTitle: String { ResourceViewModel(resource: .bandwidth).title }
-    var energyText: String { feeAssetDataModel.energyText }
-    var bandwidthText: String { feeAssetDataModel.bandwidthText }
+    var energyField: ListItemField {
+        ListItemField(title: ResourceViewModel(resource: .energy).title, value: feeAssetDataModel.energyText)
+    }
+    var bandwidthField: ListItemField {
+        ListItemField(title: ResourceViewModel(resource: .bandwidth).title, value: feeAssetDataModel.bandwidthText)
+    }
 
     var canOpenNetwork: Bool { assetDataModel.asset.type != .native }
 
@@ -126,8 +130,6 @@ public final class AssetSceneViewModel: Sendable {
     }
     
     var reservedBalanceUrl: URL? { assetModel.asset.chain.accountActivationFeeUrl }
-
-    var networkText: String { assetModel.networkFullName }
 
     var showEarnButton: Bool {
         #if DEBUG

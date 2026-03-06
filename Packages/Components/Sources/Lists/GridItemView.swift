@@ -18,6 +18,10 @@ public struct GridItemView: View {
         self.valueAlignment = valueAlignment
     }
 
+    public init(field: ListItemField, valueAlignment: HorizontalAlignment = .trailing) {
+        self.init(title: field.title, value: field.value, valueAlignment: valueAlignment)
+    }
+
     public var body: some View {
         GridRow {
             Text(title.text)

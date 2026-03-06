@@ -28,10 +28,10 @@ public struct DelegationScene: View {
             Section {
                 if let url = model.providerUrl {
                     SafariNavigationLink(url: url) {
-                        ListItemView(title: model.providerTitle, subtitle: model.providerText)
+                        ListItemView(field: model.providerField)
                     }
                 } else {
-                    ListItemView(title: model.providerTitle, subtitle: model.providerText)
+                    ListItemView(field: model.providerField)
                 }
 
                 if model.aprModel.showApr {
@@ -40,8 +40,8 @@ public struct DelegationScene: View {
 
                 ListItemView(title: model.stateTitle, subtitle: model.stateModel.title, subtitleStyle: model.stateModel.textStyle)
 
-                if let title = model.completionDateTitle, let subtitle = model.completionDateText {
-                    ListItemView(title: title, subtitle: subtitle)
+                if let completionDateField = model.completionDateField {
+                    ListItemView(field: completionDateField)
                 }
             }
 

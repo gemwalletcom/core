@@ -104,28 +104,19 @@ extension StakeScene {
                 infoAction: model.onAprInfo
             )
             ListItemView(
-                title: model.lockTimeTitle,
-                subtitle: model.lockTimeValue,
+                field: model.lockTimeField,
                 infoAction: model.onLockTimeInfo
             )
-            if let minAmountValue = model.minAmountValue {
-                ListItemView(title: model.minAmountTitle, subtitle: minAmountValue)
+            if let minAmountField = model.minAmountField {
+                ListItemView(field: minAmountField)
             }
         }
     }
 
     private var resourcesSection: some View {
         Section(model.resourcesTitle) {
-            ListItemView(
-                title: model.energyTitle,
-                subtitle: model.energyText
-            )
-
-            ListItemView(
-                title: model.bandwidthTitle,
-                subtitle: model.bandwidthText
-            )
+            ListItemView(field: model.energyField)
+            ListItemView(field: model.bandwidthField)
         }
-        
     }
 }

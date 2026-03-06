@@ -14,24 +14,24 @@ struct PerpetualDetailsViewModelTests {
     }
 
     @Test
-    func slippageText() {
-        #expect(PerpetualDetailsViewModel.mock(.open(.mock(slippage: 2.0))).slippageText == "2.00%")
+    func slippageField() {
+        #expect(PerpetualDetailsViewModel.mock(.open(.mock(slippage: 2.0))).slippageField.value.text == "2.00%")
     }
 
     @Test
-    func entryPriceText() {
-        #expect(PerpetualDetailsViewModel.mock(.open(.mock(entryPrice: 48000.0))).entryPriceText == "$48,000.00")
-        #expect(PerpetualDetailsViewModel.mock(.open(.mock(entryPrice: nil))).entryPriceText == nil)
+    func entryPriceField() {
+        #expect(PerpetualDetailsViewModel.mock(.open(.mock(entryPrice: 48000.0))).entryPriceField?.value.text == "$48,000.00")
+        #expect(PerpetualDetailsViewModel.mock(.open(.mock(entryPrice: nil))).entryPriceField == nil)
     }
 
     @Test
-    func marginText() {
-        #expect(PerpetualDetailsViewModel.mock(.open(.mock(marginAmount: 1000.0))).marginText == "$1,000.00")
+    func marginField() {
+        #expect(PerpetualDetailsViewModel.mock(.open(.mock(marginAmount: 1000.0))).marginField.value.text == "$1,000.00")
     }
 
     @Test
-    func sizeText() {
-        #expect(PerpetualDetailsViewModel.mock(.open(.mock(fiatValue: 5000.0))).sizeText == "$5,000.00")
+    func sizeField() {
+        #expect(PerpetualDetailsViewModel.mock(.open(.mock(fiatValue: 5000.0))).sizeField.value.text == "$5,000.00")
     }
 
     @Test

@@ -74,23 +74,19 @@ public struct SwapDetailsView: View {
                     )
                 }
 
-                if let swapEstimation = model.swapEstimationText {
-                    ListItemView(title: model.swapEstimationTitle, subtitle: swapEstimation)
+                if let swapEstimationField = model.swapEstimationField {
+                    ListItemView(field: swapEstimationField)
                 }
-                
+
                 PriceImpactView(
                     model: model.priceImpactModel,
                     infoAction: model.onSelectPriceImpactInfoSheet
                 )
-                
-                ListItemView(
-                    title: model.minReceiveTitle,
-                    subtitle: model.minReceiveText
-                )
+
+                ListItemView(field: model.minReceiveField)
 
                 ListItemView(
-                    title: model.slippageTitle,
-                    subtitle: model.slippageText,
+                    field: model.slippageField,
                     infoAction: model.onSelectSlippageInfoSheet
                 )
             }

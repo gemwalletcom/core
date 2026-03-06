@@ -25,10 +25,10 @@ public struct AutocloseScene: View {
             }
 
             Section {
-                if let entryPriceText = model.entryPriceText {
-                    ListItemView(title: model.entryPriceTitle, subtitle: entryPriceText)
+                if let entryPriceField = model.entryPriceField {
+                    ListItemView(field: entryPriceField)
                 }
-                ListItemView(title: model.marketPriceTitle, subtitle: model.marketPriceText)
+                ListItemView(field: model.marketPriceField)
             }
 
             AutocloseInputSection(

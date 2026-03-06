@@ -34,22 +34,22 @@ public struct PerpetualViewModel {
         AssetIdViewModel(assetId: perpetual.assetId).assetImage
     }
     
-    public var volumeTitle: String { Localized.Markets.dailyVolume }
-    public var volumeText: String {
-        currencyFormatter.string(perpetual.volume24h)
+    public var volumeField: ListItemField {
+        ListItemField(title: Localized.Markets.dailyVolume, value: currencyFormatter.string(perpetual.volume24h))
     }
-    
-    public var openInterestTitle: String { Localized.Info.OpenInterest.title }
-    public var openInterestText: String {
-        currencyFormatter.string(perpetual.openInterest)
+
+    public var openInterestField: ListItemField {
+        ListItemField(title: Localized.Info.OpenInterest.title, value: currencyFormatter.string(perpetual.openInterest))
     }
-    
-    public var fundingRateTitle: String { Localized.Info.FundingRate.title }
-    public var fundingRateText: String {
+
+    public var fundingRateField: ListItemField {
+        let text: String
         if let formattedNumber = fundingRateFormatter.string(from: NSNumber(value: perpetual.funding)) {
-            return "\(formattedNumber)%"
+            text = "\(formattedNumber)%"
+        } else {
+            text = percentFormatter.string(perpetual.funding)
         }
-        return percentFormatter.string(perpetual.funding)
+        return ListItemField(title: Localized.Info.FundingRate.title, value: text)
     }
     
     public var priceText: String {

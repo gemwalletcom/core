@@ -92,22 +92,19 @@ extension CollectibleScene {
 
     private var assetInfoSectionView: some View {
         Section {
-            ListItemView(
-                title: model.collectionTitle,
-                subtitle: model.collectionText
-            )
+            ListItemView(field: model.collectionField)
 
             ListItemImageView(
-                title: model.networkTitle,
-                subtitle: model.networkText,
+                title: model.networkField.title.text,
+                subtitle: model.networkField.value.text,
                 assetImage: model.networkAssetImage
             )
 
-            if let text = model.contractText {
-                ListItemView(title: model.contractTitle, subtitle: text)
+            if let contractField = model.contractField {
+                ListItemView(field: contractField)
                     .contextMenu(model.contractContextMenu)
             }
-            ListItemView(title: model.tokenIdTitle, subtitle: model.tokenIdText)
+            ListItemView(field: model.tokenIdField)
                 .contextMenu(model.tokenIdContextMenu)
         }
     }

@@ -96,10 +96,10 @@ extension AddNodeScene {
             EmptyView()
         case let .data(result):
             Section {
-                ListItemView(title: result.chainIdTitle, subtitle: result.chainIdValue)
-                ListItemView(title: result.inSyncTitle, subtitle: result.inSyncValue)
-                ListItemView(title: result.latestBlockTitle, subtitle: result.latestBlockValue)
-                ListItemView(title: result.latencyTitle, subtitle: result.latecyValue)
+                ListItemView(field: result.chainIdField)
+                ListItemView(field: result.inSyncField)
+                ListItemView(field: result.latestBlockField)
+                ListItemView(field: result.latencyField)
             }
             warningSection
         }

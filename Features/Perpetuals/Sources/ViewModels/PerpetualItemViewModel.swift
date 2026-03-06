@@ -42,7 +42,7 @@ struct PerpetualItemViewModel: ListAssetItemViewable {
     var rightView: ListAssetItemRightView {
         .balance(
             balance: TextValue(
-                text: model.volumeText,
+                text: model.volumeField.value.text,
                 style: TextStyle(font: .body, color: .primary, fontWeight: .semibold)
             ),
             totalFiat: TextValue(

@@ -71,15 +71,14 @@ public final class SwapDetailsViewModel {
     }
     
     // MARK: - Estimation
-    var swapEstimationTitle: String { Localized.Swap.EstimatedTime.title }
-    var swapEstimationText: String? {
+    var swapEstimationField: ListItemField? {
         guard
             let estimation = selectedQuote.etaInSeconds, estimation > 60,
             let estimationTime = Self.timeFormatter.string(from: TimeInterval(estimation))
         else {
             return nil
         }
-        return String(format: "%@ %@", "≈", estimationTime)
+        return ListItemField(title: Localized.Swap.EstimatedTime.title, value: String(format: "%@ %@", "≈", estimationTime))
     }
     
     // MARK: - Rate
@@ -117,14 +116,17 @@ public final class SwapDetailsViewModel {
     }
     
     // MARK: - Slippage
-    var slippageTitle: String { Localized.Swap.slippage }
     var slippageValue: UInt32 { selectedQuote.slippageBps / 100 }
-    var slippageText: String { percentSignLessFormatter.string(Double(slippageValue).rounded(toPlaces: 2)) }
-    
+    var slippageField: ListItemField {
+        ListItemField(title: Localized.Swap.slippage, value: percentSignLessFormatter.string(Double(slippageValue).rounded(toPlaces: 2)))
+    }
+
     // MARK: - Min receive
-    var minReceiveTitle: String { Localized.Swap.minReceive }
-    var minReceiveText: String {
-        valueFormatter.string(selectedQuote.toValueBigInt.decrease(byPercent: Int(slippageValue)), asset: toAssetPrice.asset)
+    var minReceiveField: ListItemField {
+        ListItemField(
+            title: Localized.Swap.minReceive,
+            value: valueFormatter.string(selectedQuote.toValueBigInt.decrease(byPercent: Int(slippageValue)), asset: toAssetPrice.asset)
+        )
     }
 
     var fromAsset: Asset { fromAssetPrice.asset }

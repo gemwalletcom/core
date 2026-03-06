@@ -22,13 +22,13 @@ struct StakeSceneViewModelTests {
     }
     
     @Test
-    func testLockTimeValue() throws {
-        #expect(StakeSceneViewModel.mock(chain: .tron).lockTimeValue == "14 days")
+    func testLockTimeField() throws {
+        #expect(StakeSceneViewModel.mock(chain: .tron).lockTimeField.value.text == "14 days")
     }
-    
+
     @Test
     func minimumStakeAmount() throws {
-        #expect(StakeSceneViewModel.mock(chain: .tron).minAmountValue == "1.00 TRX")
+        #expect(StakeSceneViewModel.mock(chain: .tron).minAmountField?.value.text == "1.00 TRX")
     }
     
     @Test

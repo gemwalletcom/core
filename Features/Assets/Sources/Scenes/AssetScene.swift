@@ -165,15 +165,8 @@ public struct AssetScene: View {
 
             if model.showResources {
                 Section(model.resourcesTitle) {
-                    ListItemView(
-                        title: model.energyTitle,
-                        subtitle: model.energyText
-                    )
-
-                    ListItemView(
-                        title: model.bandwidthTitle,
-                        subtitle: model.bandwidthText
-                    )
+                    ListItemView(field: model.energyField)
+                    ListItemView(field: model.bandwidthField)
                 }
             }
 
@@ -208,8 +201,8 @@ public struct AssetScene: View {
 extension AssetScene {
     private var networkView: some View {
         ListItemImageView(
-            title: model.networkTitle,
-            subtitle: model.networkText,
+            title: model.networkField.title.text,
+            subtitle: model.networkField.value.text,
             assetImage: model.networkAssetImage,
             imageSize: .list.image
         )

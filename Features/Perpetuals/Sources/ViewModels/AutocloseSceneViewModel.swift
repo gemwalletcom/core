@@ -33,8 +33,9 @@ public final class AutocloseSceneViewModel {
     }
 
     public var title: String { Localized.Perpetual.autoClose }
-    public var marketPriceTitle: String { Localized.Perpetual.marketPrice }
-    public var marketPriceText: String { currencyFormatter.string(marketPrice) }
+    public var marketPriceField: ListItemField {
+        ListItemField(title: Localized.Perpetual.marketPrice, value: currencyFormatter.string(marketPrice))
+    }
 
     public var takeProfitModel: AutocloseViewModel { autocloseModel(type: .takeProfit, price: takeProfitPrice) }
     public var stopLossModel: AutocloseViewModel { autocloseModel(type: .stopLoss, price: stopLossPrice) }
@@ -46,11 +47,10 @@ public final class AutocloseSceneViewModel {
         }
     }
 
-    public var entryPriceTitle: String { Localized.Perpetual.entryPrice }
-
-    public var entryPriceText: String? {
+    public var entryPriceField: ListItemField? {
         switch type {
-        case let .modify(position, _): currencyFormatter.string(position.position.entryPrice)
+        case let .modify(position, _):
+            ListItemField(title: Localized.Perpetual.entryPrice, value: currencyFormatter.string(position.position.entryPrice))
         case .open: nil
         }
     }

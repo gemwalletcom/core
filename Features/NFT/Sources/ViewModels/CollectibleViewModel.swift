@@ -51,34 +51,37 @@ public final class CollectibleViewModel {
     var title: String { assetData.asset.name }
     var description: String? { assetData.asset.description }
 
-    var collectionTitle: String { Localized.Nft.collection }
-    var collectionText: String { assetData.collection.name }
+    var collectionField: ListItemField {
+        ListItemField(title: Localized.Nft.collection, value: assetData.collection.name)
+    }
 
-    var networkTitle: String { Localized.Transfer.network }
-    var networkText: String { assetData.asset.chain.asset.name }
+    var networkField: ListItemField {
+        ListItemField(title: Localized.Transfer.network, value: assetData.asset.chain.asset.name)
+    }
 
-    var contractTitle: String { Localized.Asset.contract }
     var contractValue: String { assetData.collection.contractAddress }
-    var contractText: String? {
+    var contractField: ListItemField? {
         if contractValue.isEmpty || contractValue == assetData.asset.tokenId {
             return .none
         }
-        return AddressFormatter(address: contractValue, chain: assetData.asset.chain).value()
+        let text = AddressFormatter(address: contractValue, chain: assetData.asset.chain).value()
+        return ListItemField(title: Localized.Asset.contract, value: text)
     }
-    
+
     var contractContextMenu: [ContextMenuItemType] {
         [.copy(value: contractValue, onCopy: { [weak self] value in
             self?.isPresentingToast = .copied(value)
         })]
     }
 
-    var tokenIdTitle: String { Localized.Asset.tokenId }
     var tokenIdValue: String { assetData.asset.tokenId }
-    var tokenIdText: String {
-        if assetData.asset.tokenId.count > 16 {
-            return assetData.asset.tokenId
+    var tokenIdField: ListItemField {
+        let text = if assetData.asset.tokenId.count > 16 {
+            assetData.asset.tokenId
+        } else {
+            "#\(assetData.asset.tokenId)"
         }
-        return "#\(assetData.asset.tokenId)"
+        return ListItemField(title: Localized.Asset.tokenId, value: text)
     }
 
     var attributesTitle: String { Localized.Nft.properties }

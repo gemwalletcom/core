@@ -3,6 +3,7 @@
 import Testing
 import Primitives
 import Style
+import Components
 import PerpetualsTestKit
 @testable import Perpetuals
 
@@ -25,31 +26,31 @@ struct PerpetualPositionViewModelTests {
     }
     
     @Test
-    func marginText() {
-        #expect(createPositionViewModel(.mock(marginAmount: 1000)).marginText == "$1,000.00 (isolated)")
+    func marginField() {
+        #expect(createPositionViewModel(.mock(marginAmount: 1000)).marginField.value.text == "$1,000.00 (isolated)")
     }
-    
+
     @Test
-    func pnlWithPercentText() {
-        #expect(createPositionViewModel(.mock(marginAmount: 1000, pnl: 500)).pnlWithPercentText == "+$500.00 (+50.00%)")
-        #expect(createPositionViewModel(.mock(marginAmount: 1000, pnl: -200)).pnlWithPercentText == "-$200.00 (-20.00%)")
+    func pnlField() {
+        #expect(createPositionViewModel(.mock(marginAmount: 1000, pnl: 500)).pnlField.value.text == "+$500.00 (+50.00%)")
+        #expect(createPositionViewModel(.mock(marginAmount: 1000, pnl: -200)).pnlField.value.text == "-$200.00 (-20.00%)")
     }
 
     @Test
     func pnlPercent() {
         #expect(createPositionViewModel(.mock(marginAmount: 1000, pnl: 100)).pnlPercent == 10.0)
     }
-    
+
     @Test
-    func entryPriceText() {
-        #expect(createPositionViewModel(.mock(entryPrice: 42000)).entryPriceText == "$42,000.00")
+    func entryPriceField() {
+        #expect(createPositionViewModel(.mock(entryPrice: 42000)).entryPriceField.value.text == "$42,000.00")
     }
-    
+
     @Test
-    func liquidationPriceText() {
-        #expect(createPositionViewModel(.mock(liquidationPrice: 35000)).liquidationPriceText == "$35,000.00")
-        #expect(createPositionViewModel(.mock(liquidationPrice: 0)).liquidationPriceText == nil)
-        #expect(createPositionViewModel(.mock(liquidationPrice: nil)).liquidationPriceText == nil)
+    func liquidationPriceField() {
+        #expect(createPositionViewModel(.mock(liquidationPrice: 35000)).liquidationPriceField?.value.text == "$35,000.00")
+        #expect(createPositionViewModel(.mock(liquidationPrice: 0)).liquidationPriceField == nil)
+        #expect(createPositionViewModel(.mock(liquidationPrice: nil)).liquidationPriceField == nil)
     }
     
     @Test

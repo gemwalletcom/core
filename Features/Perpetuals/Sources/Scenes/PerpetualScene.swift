@@ -45,12 +45,8 @@ public struct PerpetualScene: View {
                         model: PerpetualPositionItemViewModel(model: position)
                     )
                     
-                    ListItemView(
-                        title: position.pnlTitle,
-                        subtitle: position.pnlWithPercentText,
-                        subtitleStyle: position.pnlTextStyle
-                    )
-                    .numericTransition(for: position.pnlWithPercentText)
+                    ListItemView(field: position.pnlField)
+                        .numericTransition(for: position.pnlWithPercentText)
 
                     NavigationCustomLink(
                         with: ListItemView(
@@ -61,35 +57,21 @@ public struct PerpetualScene: View {
                         ),
                         action: model.onSelectAutoclose
                     )
-                    
-                    ListItemView(
-                        title: position.sizeTitle,
-                        subtitle: position.sizeValueText
-                    )
-                    
-                    ListItemView(
-                        title: position.entryPriceTitle,
-                        subtitle: position.entryPriceText
-                    )
-                    
-                    if let text = position.liquidationPriceText {
+
+                    ListItemView(field: position.sizeField)
+                    ListItemView(field: position.entryPriceField)
+
+                    if let liquidationPriceField = position.liquidationPriceField {
                         ListItemView(
-                            title: position.liquidationPriceTitle,
-                            subtitle: text,
-                            subtitleStyle: position.liquidationPriceTextStyle,
+                            field: liquidationPriceField,
                             infoAction: model.onSelectLiquidationPriceInfo
                         )
                     }
-                    
+
+                    ListItemView(field: position.marginField)
+
                     ListItemView(
-                        title: position.marginTitle,
-                        subtitle: position.marginText
-                    )
-                    
-                    ListItemView(
-                        title: position.fundingPaymentsTitle,
-                        subtitle: position.fundingPaymentsText,
-                        subtitleStyle: position.fundingPaymentsTextStyle,
+                        field: position.fundingPaymentsField,
                         infoAction: model.onSelectFundingPaymentsInfo
                     )
                 } header: {
@@ -122,20 +104,15 @@ public struct PerpetualScene: View {
             }
             
             Section(header: Text(model.infoSectionTitle)) {
+                ListItemView(field: model.perpetualViewModel.volumeField)
+
                 ListItemView(
-                    title: model.perpetualViewModel.volumeTitle,
-                    subtitle: model.perpetualViewModel.volumeText
-                )
-                
-                ListItemView(
-                    title: model.perpetualViewModel.openInterestTitle,
-                    subtitle: model.perpetualViewModel.openInterestText,
+                    field: model.perpetualViewModel.openInterestField,
                     infoAction: model.onSelectOpenInterestInfo
                 )
-                
+
                 ListItemView(
-                    title: model.perpetualViewModel.fundingRateTitle,
-                    subtitle: model.perpetualViewModel.fundingRateText,
+                    field: model.perpetualViewModel.fundingRateField,
                     infoAction: model.onSelectFundingRateInfo
                 )
             }

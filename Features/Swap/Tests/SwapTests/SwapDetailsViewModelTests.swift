@@ -15,13 +15,13 @@ import struct Gemstone.SwapperQuote
 @MainActor
 struct SwapDetailsViewModelTests {
     @Test
-    func swapEstimationText() throws {
+    func swapEstimationField() throws {
         #expect(
             SwapDetailsViewModel
-                .mock(selectedQuote: try SwapperQuote.mock(etaInSeconds: nil).map()).swapEstimationText == nil
+                .mock(selectedQuote: try SwapperQuote.mock(etaInSeconds: nil).map()).swapEstimationField == nil
         )
-        #expect(SwapDetailsViewModel.mock(selectedQuote: try SwapperQuote.mock(etaInSeconds: 30).map()).swapEstimationText == nil)
-        #expect(SwapDetailsViewModel.mock(selectedQuote: try SwapperQuote.mock(etaInSeconds: 180).map()).swapEstimationText == "≈ 3 min")
+        #expect(SwapDetailsViewModel.mock(selectedQuote: try SwapperQuote.mock(etaInSeconds: 30).map()).swapEstimationField == nil)
+        #expect(SwapDetailsViewModel.mock(selectedQuote: try SwapperQuote.mock(etaInSeconds: 180).map()).swapEstimationField?.value.text == "≈ 3 min")
     }
 
     @Test

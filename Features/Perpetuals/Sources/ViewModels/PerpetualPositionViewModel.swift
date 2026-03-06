@@ -61,13 +61,16 @@ public struct PerpetualPositionViewModel {
             percentFormatter: percentFormatter
         )
     }
-    public var pnlTitle: String { pnlViewModel.title }
+    public var pnlField: ListItemField {
+        ListItemField(
+            title: TextValue(text: pnlViewModel.title, style: .body),
+            value: TextValue(text: pnlViewModel.text ?? "", style: pnlViewModel.textStyle)
+        )
+    }
     public var pnlColor: Color { pnlViewModel.color }
-    public var pnlTextStyle: TextStyle { pnlViewModel.textStyle }
     public var pnlPercent: Double { pnlViewModel.percent }
     public var pnlWithPercentText: String { pnlViewModel.text ?? "" }
 
-    public var marginTitle: String { Localized.Perpetual.margin }
     public var marginAmountText: String {
         currencyFormatter.string(data.position.marginAmount)
     }
@@ -80,55 +83,45 @@ public struct PerpetualPositionViewModel {
         )
     }
 
-    public var marginText: String {
+    public var marginField: ListItemField {
         let marginAmount = currencyFormatter.string(data.position.marginAmount)
-        return "\(marginAmount) (\(data.position.marginType.displayText))"
+        return ListItemField(title: Localized.Perpetual.margin, value: "\(marginAmount) (\(data.position.marginType.displayText))")
     }
-    
-    public var fundingPaymentsTitle: String { Localized.Info.FundingPayments.title }
+
+    public var fundingPaymentsField: ListItemField {
+        ListItemField(
+            title: TextValue(text: Localized.Info.FundingPayments.title, style: .body),
+            value: TextValue(text: fundingPaymentsModel.text ?? "-", style: fundingPaymentsModel.textStyle)
+        )
+    }
+    public var fundingPaymentsColor: Color { fundingPaymentsModel.color }
+
+    public var sizeField: ListItemField {
+        ListItemField(title: Localized.Perpetual.size, value: currencyFormatter.string(data.position.sizeValue))
+    }
+
+    public var entryPriceField: ListItemField {
+        ListItemField(title: Localized.Perpetual.entryPrice, value: currencyFormatter.string(data.position.entryPrice))
+    }
+
+    public var liquidationPriceField: ListItemField? {
+        guard let price = data.position.liquidationPrice, price > 0 else { return .none }
+        return ListItemField(
+            title: TextValue(text: Localized.Info.LiquidationPrice.title, style: .body),
+            value: TextValue(text: currencyFormatter.string(price), style: liquidationPriceTextStyle)
+        )
+    }
+}
+
+// MARK: - Private
+
+extension PerpetualPositionViewModel {
     private var fundingPaymentsModel: PriceChangeViewModel {
         PriceChangeViewModel(value: data.position.funding.map { Double($0) }, currencyFormatter: currencyFormatter)
     }
-    public var fundingPaymentsText: String { fundingPaymentsModel.text ?? "-" }
-    public var fundingPaymentsColor: Color { fundingPaymentsModel.color }
-    public var fundingPaymentsTextStyle: TextStyle { fundingPaymentsModel.textStyle }
-    
-    public var sizeTitle: String { Localized.Perpetual.size }
-    public var sizeValueText: String {
-        currencyFormatter.string(data.position.sizeValue)
-    }
-    
-    public var entryPriceTitle: String { Localized.Perpetual.entryPrice }
-    public var entryPriceText: String { currencyFormatter.string(data.position.entryPrice) }
 
-    public var liquidationPriceTitle: String { Localized.Info.LiquidationPrice.title }
-    public var liquidationPriceText: String? {
-        guard let price = data.position.liquidationPrice, price > 0 else { return .none }
-        return currencyFormatter.string(price)
-    }
-    
-    public var liquidationPriceColor: Color {
-//        guard let entryPrice = data.position.entryPrice,
-//              let liquidationPrice = data.position.liquidationPrice,
-//              let currentPrice = data.position.currencyPrice,
-//              entryPrice > 0, liquidationPrice > 0, currentPrice > 0 else {
-//            return Colors.secondaryText
-//        }
-//        
-//        let priceRange = abs(entryPrice - liquidationPrice)
-//        let distance = abs(currentPrice - entryPrice)
-//        let progress = distance / priceRange
-//        
-//        return switch progress {
-//        case 0.8...: Colors.red
-//        case 0.5..<0.8: Colors.orange
-//        default: Colors.secondaryText
-//        }
-        Colors.secondaryText
-    }
-    
-    public var liquidationPriceTextStyle: TextStyle {
-        TextStyle(font: .callout, color: liquidationPriceColor)
+    private var liquidationPriceTextStyle: TextStyle {
+        TextStyle(font: .callout, color: Colors.secondaryText)
     }
 }
 

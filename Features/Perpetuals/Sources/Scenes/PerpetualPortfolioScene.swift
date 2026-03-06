@@ -26,11 +26,11 @@ struct PerpetualPortfolioScene: View {
                 .cleanListRow()
 
                 Section(header: Text(model.infoSectionTitle)) {
-                    ListItemView(title: model.unrealizedPnlTitle, subtitle: model.unrealizedPnlValue.text, subtitleStyle: model.unrealizedPnlValue.style)
-                    ListItemView(title: model.accountLeverageTitle, subtitle: model.accountLeverageText)
-                    ListItemView(title: model.marginUsageTitle, subtitle: model.marginUsageText)
-                    ListItemView(title: model.allTimePnlTitle, subtitle: model.allTimePnlValue.text, subtitleStyle: model.allTimePnlValue.style)
-                    ListItemView(title: model.volumeTitle, subtitle: model.volumeText)
+                    ListItemView(field: model.unrealizedPnlField)
+                    ListItemView(field: model.accountLeverageField)
+                    ListItemView(field: model.marginUsageField)
+                    ListItemView(field: model.allTimePnlField)
+                    ListItemView(field: model.volumeField)
                 }
             }
             .navigationTitle(model.navigationTitle)
