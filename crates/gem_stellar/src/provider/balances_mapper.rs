@@ -61,7 +61,7 @@ pub fn map_all_balances(chain: Chain, account: Account) -> Vec<AssetBalance> {
             "credit_alphanum4" | "credit_alphanum12" => {
                 // Token balances
                 if let (Some(asset_issuer), Some(asset_code)) = (&balance.asset_issuer, &balance.asset_code) {
-                    let token_id = format!("{}-{}", asset_code, asset_issuer);
+                    let token_id = AssetId::sub_token_id(&[asset_issuer.clone(), asset_code.clone()]);
                     let asset_id = AssetId::from_token(chain, &token_id);
                     if let Ok(value) = BigNumberFormatter::value_from_amount_biguint(&balance.balance, STELLAR_DECIMALS) {
                         let balance_obj = Balance::coin_balance(value);
@@ -78,30 +78,6 @@ pub fn map_all_balances(chain: Chain, account: Account) -> Vec<AssetBalance> {
     balances
 }
 
-pub fn map_token_balances_by_ids(chain: Chain, account: &Account, token_ids: &[String]) -> Vec<AssetBalance> {
-    let mut result = Vec::new();
-    for token_id in token_ids {
-        if let Some(balance) = account.balances.iter().find(|b| {
-            if let (Some(asset_issuer), Some(asset_code)) = (&b.asset_issuer, &b.asset_code) {
-                let balance_token_id = format!("{}-{}", asset_code, asset_issuer);
-                balance_token_id == *token_id && b.asset_type != "native"
-            } else {
-                false
-            }
-        }) {
-            if let Ok(amount) = BigNumberFormatter::value_from_amount_biguint(&balance.balance, STELLAR_DECIMALS) {
-                let asset_id = AssetId::from_token(chain, token_id);
-                let balance_obj = Balance::coin_balance(amount);
-                result.push(AssetBalance::new_with_active(asset_id, balance_obj, true));
-            }
-        } else {
-            let asset_id = AssetId::from_token(chain, token_id);
-            let balance_obj = Balance::coin_balance(BigUint::from(0u32));
-            result.push(AssetBalance::new_with_active(asset_id, balance_obj, false));
-        }
-    }
-    result
-}
 
 #[cfg(test)]
 mod tests {
