@@ -127,6 +127,17 @@ impl RequestAdaptiveMonitor {
         Some(snapshot)
     }
 
+    pub async fn is_switch_on_cooldown(&self, chain: Chain) -> bool {
+        let now = Instant::now();
+        let state = self.state.read().await;
+        let Some(chain_state) = state.get(&chain) else {
+            return false;
+        };
+        chain_state
+            .last_switch_at
+            .is_some_and(|t| now.duration_since(t) < self.config.min_switch_interval)
+    }
+
     pub async fn mark_switch(&self, chain: Chain) {
         if !self.config.enabled {
             return;
@@ -337,5 +348,17 @@ mod tests {
         assert_eq!(reordered[0].url, urls[0].url);
         assert_eq!(reordered[1].url, urls[1].url);
         assert!(monitor.record_attempt(Chain::Ethereum, "a.example.com", true).await.is_none());
+    }
+
+    #[tokio::test]
+    async fn is_switch_on_cooldown_respects_min_switch_interval() {
+        let monitor = RequestAdaptiveMonitor::new(config());
+        let chain = Chain::Ethereum;
+
+        assert!(!monitor.is_switch_on_cooldown(chain).await);
+
+        monitor.mark_switch(chain).await;
+
+        assert!(monitor.is_switch_on_cooldown(chain).await);
     }
 }

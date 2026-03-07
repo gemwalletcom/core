@@ -98,6 +98,10 @@ impl NodeMonitor {
 
         NodeTelemetry::log_node_unhealthy(chain_config, &current_observation);
 
+        if adaptive_monitor.is_switch_on_cooldown(chain_config.chain).await {
+            return Ok(());
+        }
+
         let fallback_urls: Vec<Url> = chain_config.urls.iter().filter(|&url| *url != current_node.url).cloned().collect();
 
         if fallback_urls.is_empty() {
