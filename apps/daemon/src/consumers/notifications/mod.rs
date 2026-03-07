@@ -34,30 +34,35 @@ pub async fn run(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Ar
     futures::future::try_join_all(vec![
         tokio::spawn(run_notification_consumer(
             settings.clone(),
+            database.clone(),
             QueueName::NotificationsPriceAlerts,
             shutdown_rx.clone(),
             reporter.clone(),
         )),
         tokio::spawn(run_notification_consumer(
             settings.clone(),
+            database.clone(),
             QueueName::NotificationsTransactions,
             shutdown_rx.clone(),
             reporter.clone(),
         )),
         tokio::spawn(run_notification_consumer(
             settings.clone(),
+            database.clone(),
             QueueName::NotificationsObservers,
             shutdown_rx.clone(),
             reporter.clone(),
         )),
         tokio::spawn(run_notification_consumer(
             settings.clone(),
+            database.clone(),
             QueueName::NotificationsSupport,
             shutdown_rx.clone(),
             reporter.clone(),
         )),
         tokio::spawn(run_notification_consumer(
             settings.clone(),
+            database.clone(),
             QueueName::NotificationsRewards,
             shutdown_rx.clone(),
             reporter.clone(),
@@ -78,6 +83,7 @@ pub async fn run(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Ar
 
 async fn run_notification_consumer(
     settings: Arc<Settings>,
+    database: Arc<Database>,
     queue: QueueName,
     shutdown_rx: ShutdownReceiver,
     reporter: Arc<dyn ConsumerStatusReporter>,
@@ -88,7 +94,7 @@ async fn run_notification_consumer(
     let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
     let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
     let stream_producer = StreamProducer::new(&rabbitmq_config, &name).await?;
-    let consumer = NotificationsConsumer::new(pusher_client, stream_producer);
+    let consumer = NotificationsConsumer::new(pusher_client, stream_producer, (*database).clone());
 
     run_consumer::<NotificationsPayload, NotificationsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx, reporter)
         .await

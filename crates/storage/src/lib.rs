@@ -24,13 +24,14 @@ pub use self::models::{AssetUsageRankRow, NewNotificationRow, NewWalletRow, Rewa
 pub use self::repositories::{
     assets_addresses_repository::AssetsAddressesRepository, assets_links_repository::AssetsLinksRepository, assets_repository::AssetsRepository,
     assets_usage_ranks_repository::AssetsUsageRanksRepository, chains_repository::ChainsRepository, charts_repository::ChartsRepository, config_repository::ConfigRepository,
-    devices_repository::DevicesRepository, fiat_repository::FiatRepository, migrations_repository::MigrationsRepository, nft_repository::NftRepository,
-    notifications_repository::NotificationsRepository, parser_state_repository::ParserStateRepository, perpetuals_repository::PerpetualsRepository,
-    price_alerts_repository::PriceAlertsRepository, prices_dex_repository::PricesDexRepository, prices_repository::PricesRepository, releases_repository::ReleasesRepository,
-    rewards_redemptions_repository::RewardsRedemptionsRepository, rewards_repository::RewardsRepository, risk_signals_repository::RiskSignalsRepository,
-    scan_addresses_repository::ScanAddressesRepository, tag_repository::TagRepository, transactions_repository::TransactionsRepository, wallets_repository::WalletsRepository,
+    devices_notifications_repository::DevicesNotificationsRepository, devices_repository::DevicesRepository, fiat_repository::FiatRepository,
+    migrations_repository::MigrationsRepository, nft_repository::NftRepository, notifications_repository::NotificationsRepository, parser_state_repository::ParserStateRepository,
+    perpetuals_repository::PerpetualsRepository, price_alerts_repository::PriceAlertsRepository, prices_dex_repository::PricesDexRepository, prices_repository::PricesRepository,
+    releases_repository::ReleasesRepository, rewards_redemptions_repository::RewardsRedemptionsRepository, rewards_repository::RewardsRepository,
+    risk_signals_repository::RiskSignalsRepository, scan_addresses_repository::ScanAddressesRepository, tag_repository::TagRepository,
+    transactions_repository::TransactionsRepository, wallets_repository::WalletsRepository,
 };
-pub use self::sql_types::{NotificationType, TransactionState, TransactionType, WalletSource, WalletType};
+pub use self::sql_types::{NotificationType, PushNotificationType, TransactionState, TransactionType, WalletSource, WalletType};
 pub use diesel::OptionalExtension;
 
 #[derive(Clone)]
@@ -72,6 +73,10 @@ impl Database {
     }
 
     pub fn devices(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
+        self.client()
+    }
+
+    pub fn devices_notifications(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
         self.client()
     }
 

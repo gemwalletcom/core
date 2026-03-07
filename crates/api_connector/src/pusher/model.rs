@@ -15,21 +15,17 @@ pub struct PushResult {
 }
 
 impl PushResult {
-    pub fn failures(self) -> Vec<FailedNotification> {
-        let token_to_notification: HashMap<String, GorushNotification> = self
-            .notifications
-            .into_iter()
-            .flat_map(|n| n.tokens.clone().into_iter().map(move |t| (t, n.clone())).collect::<Vec<_>>())
-            .collect();
+    pub fn failures(&self) -> Vec<FailedNotification> {
+        let token_to_notification: HashMap<&str, &GorushNotification> = self.notifications.iter().flat_map(|n| n.tokens.iter().map(move |t| (t.as_str(), n))).collect();
 
         self.response
             .logs
-            .into_iter()
+            .iter()
             .filter(|log| !log.error.is_empty())
             .filter_map(|error| {
-                token_to_notification.get(&error.token).map(|notification| FailedNotification {
-                    notification: notification.clone(),
-                    error,
+                token_to_notification.get(error.token.as_str()).map(|notification| FailedNotification {
+                    notification: (*notification).clone(),
+                    error: error.clone(),
                 })
             })
             .collect()
