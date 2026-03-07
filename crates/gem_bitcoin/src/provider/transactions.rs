@@ -13,7 +13,7 @@ impl<C: Client> ChainTransactions for BitcoinClient<C> {
         let result = self.broadcast_transaction(data).await?;
 
         if let Some(error) = result.error {
-            return Err(error.message.into());
+            return Err(error.message().into());
         }
 
         result.result.ok_or_else(|| "unknown hash".into())
