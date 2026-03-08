@@ -1,7 +1,6 @@
 use std::sync::LazyLock;
 
 use gem_evm::address::ethereum_address_checksum;
-use gem_solana::{SYSTEM_PROGRAM_ID, WSOL_TOKEN_ADDRESS};
 use primitives::{
     AssetId, Chain, ChainType,
     asset_constants::{
@@ -10,31 +9,27 @@ use primitives::{
     },
 };
 
+use super::chain::{BITCOIN_CURRENCY, RelayChain};
 use crate::{SwapperChainAsset, SwapperError, asset::*};
 
-fn is_native_currency(chain: Chain, currency: &str) -> bool {
-    match chain {
-        Chain::Bitcoin => true,
-        Chain::Solana => currency == SYSTEM_PROGRAM_ID || currency == WSOL_TOKEN_ADDRESS,
-        _ if currency == EVM_ZERO_ADDRESS => true,
-        _ => false,
-    }
-}
-
 pub fn map_currency_to_asset_id(chain: Chain, currency: &str) -> AssetId {
-    if is_native_currency(chain, currency) {
-        return AssetId::from_chain(chain);
+    match chain {
+        Chain::Bitcoin => AssetId::from_chain(Chain::Bitcoin),
+        _ if currency == EVM_ZERO_ADDRESS => AssetId::from_chain(chain),
+        _ => {
+            if let ChainType::Ethereum = chain.chain_type()
+                && let Ok(address) = ethereum_address_checksum(currency)
+            {
+                return AssetId::from_token(chain, &address);
+            }
+            AssetId::from_token(chain, currency)
+        }
     }
-    if let ChainType::Ethereum = chain.chain_type()
-        && let Ok(address) = ethereum_address_checksum(currency)
-    {
-        return AssetId::from_token(chain, &address);
-    }
-    AssetId::from_token(chain, currency)
 }
 
 pub static SUPPORTED_CHAINS: LazyLock<Vec<SwapperChainAsset>> = LazyLock::new(|| {
     vec![
+        SwapperChainAsset::Assets(Chain::Bitcoin, vec![AssetId::from_chain(Chain::Bitcoin)]),
         SwapperChainAsset::Assets(
             Chain::Ethereum,
             vec![
@@ -72,9 +67,10 @@ pub static SUPPORTED_CHAINS: LazyLock<Vec<SwapperChainAsset>> = LazyLock::new(||
     ]
 });
 
-pub fn asset_to_currency(asset_id: &AssetId) -> Result<String, SwapperError> {
-    match asset_id.chain.chain_type() {
-        ChainType::Ethereum => {
+pub fn asset_to_currency(asset_id: &AssetId, relay_chain: &RelayChain) -> Result<String, SwapperError> {
+    match relay_chain {
+        RelayChain::Bitcoin => Ok(BITCOIN_CURRENCY.to_string()),
+        _ if relay_chain.is_evm() => {
             if asset_id.is_native() {
                 Ok(EVM_ZERO_ADDRESS.to_string())
             } else {
@@ -92,19 +88,30 @@ mod tests {
 
     #[test]
     fn test_evm_native_asset() {
-        let result = asset_to_currency(&AssetId::from_chain(Chain::Ethereum)).unwrap();
+        let result = asset_to_currency(&AssetId::from_chain(Chain::Ethereum), &RelayChain::Evm(primitives::chain_evm::EVMChain::Ethereum)).unwrap();
         assert_eq!(result, EVM_ZERO_ADDRESS);
     }
 
     #[test]
     fn test_evm_token_asset() {
         let token_address = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
-        let result = asset_to_currency(&AssetId::from_token(Chain::Ethereum, token_address)).unwrap();
+        let result = asset_to_currency(
+            &AssetId::from_token(Chain::Ethereum, token_address),
+            &RelayChain::Evm(primitives::chain_evm::EVMChain::Ethereum),
+        )
+        .unwrap();
         assert_eq!(result, token_address);
     }
 
     #[test]
-    fn test_non_evm_asset_not_supported() {
-        assert_eq!(asset_to_currency(&AssetId::from_chain(Chain::Solana)), Err(SwapperError::NotSupportedChain));
+    fn test_bitcoin_asset() {
+        let result = asset_to_currency(&AssetId::from_chain(Chain::Bitcoin), &RelayChain::Bitcoin).unwrap();
+        assert_eq!(result, BITCOIN_CURRENCY);
+    }
+
+    #[test]
+    fn test_non_supported_chain() {
+        // RelayChain can't represent Solana, so this is tested at the from_chain level
+        assert!(RelayChain::from_chain(&Chain::Solana).is_none());
     }
 }

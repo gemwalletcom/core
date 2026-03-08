@@ -186,7 +186,7 @@ pub fn get_extra_fee_gas_limit(input: &TransactionLoadInput) -> Result<BigInt, B
     match &input.input_type {
         TransactionInputType::Swap(_, _, swap_data) => {
             if swap_data.data.approval.is_some() {
-                if let Some(ref gas_limit) = swap_data.data.gas_limit {
+                if let Some(ref gas_limit) = swap_data.data.limit {
                     Ok(BigInt::from_str_radix(gas_limit, 10)?)
                 } else {
                     Ok(BigInt::from(0))

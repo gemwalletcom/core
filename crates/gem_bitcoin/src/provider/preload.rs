@@ -7,7 +7,9 @@ use std::error::Error;
 
 use gem_client::Client;
 use primitives::{
-    BitcoinChain, FeePriority, FeeRate, GasPriceType, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, UTXO,
+    BitcoinChain, FeePriority, FeeRate, GasPriceType, SwapProvider, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
+    TransactionPreloadInput, UTXO,
+    swap::{SwapData, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteDataType},
 };
 
 use crate::models::Address;
@@ -32,10 +34,28 @@ impl<C: Client> ChainTransactionLoad for BitcoinClient<C> {
     }
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
-        Ok(TransactionLoadData {
-            fee: input.default_fee(),
-            metadata: input.metadata,
-        })
+        let fee = match input.input_type.get_swap_data() {
+            Ok(SwapData {
+                data:
+                    SwapQuoteData {
+                        data_type: SwapQuoteDataType::Contract,
+                        limit: Some(gas_limit),
+                        ..
+                    },
+                quote:
+                    SwapQuote {
+                        provider_data: SwapProviderData {
+                            provider: SwapProvider::Relay, ..
+                        },
+                        ..
+                    },
+            }) => {
+                let fee = gas_limit.parse::<BigInt>().map_err(|_| "invalid swap fee")?;
+                TransactionFee::new_from_fee(fee)
+            }
+            _ => input.default_fee(),
+        };
+        Ok(TransactionLoadData { fee, metadata: input.metadata })
     }
 
     async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {

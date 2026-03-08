@@ -49,7 +49,7 @@ where
 
     pub async fn check_approval_and_limit(&self, quote: &Quote, quote_data: &SwapQuoteData) -> Result<(Option<ApprovalData>, Option<String>), SwapperError> {
         if let Some(ref approval) = quote_data.approval {
-            return Ok((Some(approval.clone()), quote_data.gas_limit.clone()));
+            return Ok((Some(approval.clone()), quote_data.limit.clone()));
         }
 
         let request = &quote.request;
@@ -71,7 +71,7 @@ where
                     .await
                 }
             }
-            _ => Ok((None, quote_data.gas_limit.clone())),
+            _ => Ok((None, quote_data.limit.clone())),
         }
     }
 
@@ -285,14 +285,14 @@ mod tests {
     async fn test_solana_preserves_provider_gas_limit() {
         let provider = mock_provider(SwapperProvider::Okx);
         let quote = Quote::mock(Chain::Solana, None);
-        let data = SwapQuoteData::mock_with_gas_limit(Some("550000".to_string()));
+        let data = SwapQuoteData::mock_with_limit(Some("550000".to_string()));
 
         let (approval, gas_limit) = provider.check_approval_and_limit(&quote, &data).await.unwrap();
 
         assert!(approval.is_none());
         assert_eq!(gas_limit, Some("550000".to_string()));
 
-        let data = SwapQuoteData::mock_with_gas_limit(None);
+        let data = SwapQuoteData::mock_with_limit(None);
 
         let (approval, gas_limit) = provider.check_approval_and_limit(&quote, &data).await.unwrap();
 
@@ -304,7 +304,7 @@ mod tests {
     async fn test_evm_native_ignores_provider_gas_limit() {
         let provider = mock_provider(SwapperProvider::Mayan);
         let quote = Quote::mock(Chain::Ethereum, None);
-        let data = SwapQuoteData::mock_with_gas_limit(Some("550000".to_string()));
+        let data = SwapQuoteData::mock_with_limit(Some("550000".to_string()));
 
         let (approval, gas_limit) = provider.check_approval_and_limit(&quote, &data).await.unwrap();
 

@@ -12,7 +12,7 @@ impl ChainSigner for SolanaChainSigner {
         let tx_base64 = &swap_data.data.data;
 
         let unit_price: u64 = input.gas_price.unit_price().to_u64().unwrap_or(0);
-        let gas_limit = swap_data.data.gas_limit_as_u32().map_err(SignerError::invalid_input)?;
+        let gas_limit = swap_data.data.limit_as_u32().map_err(SignerError::invalid_input)?;
 
         let signed = Self::sign_transaction(tx_base64, private_key, unit_price, gas_limit)?;
 

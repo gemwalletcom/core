@@ -48,7 +48,7 @@ pub struct GemSwapQuoteData {
     pub data: String,
     pub memo: Option<String>,
     pub approval: Option<GemApprovalData>,
-    pub gas_limit: Option<String>,
+    pub limit: Option<String>,
 }
 
 #[uniffi::remote(Record)]

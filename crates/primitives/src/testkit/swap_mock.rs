@@ -56,12 +56,12 @@ impl SwapQuoteData {
             data: "0x".to_string(),
             memo: None,
             approval: None,
-            gas_limit: Some("21000".to_string()),
+            limit: Some("21000".to_string()),
         }
     }
 
-    pub fn mock_with_gas_limit(gas_limit: Option<String>) -> Self {
-        SwapQuoteData { gas_limit, ..Self::mock() }
+    pub fn mock_with_limit(limit: Option<String>) -> Self {
+        SwapQuoteData { limit, ..Self::mock() }
     }
 }
 

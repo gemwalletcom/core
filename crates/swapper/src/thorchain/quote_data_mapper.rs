@@ -84,7 +84,7 @@ mod tests {
         assert_eq!(result.value, "0");
         assert!(result.data.starts_with("0x"));
         assert_eq!(result.memo, None);
-        assert_eq!(result.gas_limit, None);
+        assert_eq!(result.limit, None);
     }
 
     #[test]
@@ -102,7 +102,7 @@ mod tests {
         assert_eq!(result.value, "1000");
         assert_eq!(result.data, "0x6d656d6f");
         assert_eq!(result.memo, None);
-        assert_eq!(result.gas_limit, None);
+        assert_eq!(result.limit, None);
     }
 
     #[test]
@@ -113,7 +113,7 @@ mod tests {
         assert_eq!(result.value, "1000");
         assert_eq!(result.data, "");
         assert_eq!(result.memo, Some("memo".to_string()));
-        assert_eq!(result.gas_limit, None);
+        assert_eq!(result.limit, None);
     }
 
     #[test]
@@ -136,7 +136,7 @@ mod tests {
         assert_eq!(result.to, "0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146");
         assert_eq!(result.value, "0");
         assert_eq!(result.approval, approval);
-        assert_eq!(result.gas_limit, Some("90000".to_string()));
+        assert_eq!(result.limit, Some("90000".to_string()));
     }
 
     #[test]
@@ -152,6 +152,6 @@ mod tests {
 
         assert_eq!(result.to, "0xinbound");
         assert_eq!(result.value, "1000");
-        assert_eq!(result.gas_limit, None);
+        assert_eq!(result.limit, None);
     }
 }

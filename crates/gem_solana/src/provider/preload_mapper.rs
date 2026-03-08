@@ -44,7 +44,7 @@ fn get_gas_limit(input_type: &TransactionInputType) -> BigInt {
         | TransactionInputType::Earn(_, _, _) => BigInt::from(100_000),
         TransactionInputType::Swap(_, _, swap_data) => swap_data
             .data
-            .gas_limit
+            .limit
             .as_ref()
             .and_then(|x| x.parse::<u64>().ok())
             .map(BigInt::from)
@@ -122,7 +122,7 @@ mod tests {
 
     fn mock_swap_data_with_gas_limit(provider: SwapProvider, gas_limit: Option<&str>) -> SwapData {
         let mut data = SwapData::mock_with_provider(provider);
-        data.data.gas_limit = gas_limit.map(|s| s.to_string());
+        data.data.limit = gas_limit.map(|s| s.to_string());
         data
     }
 

@@ -30,15 +30,16 @@ pub struct SwapQuoteData {
     pub data: String,
     pub memo: Option<String>,
     pub approval: Option<ApprovalData>,
-    pub gas_limit: Option<String>,
+    #[serde(alias = "gasLimit")]
+    pub limit: Option<String>,
 }
 
 impl SwapQuoteData {
-    pub fn gas_limit_as_u32(&self) -> Result<u32, &'static str> {
-        self.gas_limit.as_ref().ok_or("gas_limit is required")?.parse().map_err(|_| "invalid gas_limit")
+    pub fn limit_as_u32(&self) -> Result<u32, &'static str> {
+        self.limit.as_ref().ok_or("limit is required")?.parse().map_err(|_| "invalid limit")
     }
 
-    pub fn new_contract(to: String, value: String, data: String, approval: Option<ApprovalData>, gas_limit: Option<String>) -> Self {
+    pub fn new_contract(to: String, value: String, data: String, approval: Option<ApprovalData>, limit: Option<String>) -> Self {
         Self {
             to,
             data_type: SwapQuoteDataType::Contract,
@@ -46,7 +47,7 @@ impl SwapQuoteData {
             data,
             memo: None,
             approval,
-            gas_limit,
+            limit,
         }
     }
 
@@ -58,7 +59,7 @@ impl SwapQuoteData {
             data: "".to_string(),
             memo,
             approval: None,
-            gas_limit: None,
+            limit: None,
         }
     }
 }

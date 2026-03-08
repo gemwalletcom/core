@@ -226,7 +226,7 @@ fn gas_unit_price(input: &TransactionLoadInput) -> Result<u64, SignerError> {
 
 fn resolve_max_gas_amount(input: &TransactionLoadInput) -> u64 {
     if let TransactionInputType::Swap(_, _, swap_data) = &input.input_type
-        && let Some(limit) = &swap_data.data.gas_limit
+        && let Some(limit) = &swap_data.data.limit
         && let Ok(parsed) = limit.parse::<u64>()
     {
         return parsed;
