@@ -121,6 +121,11 @@ pub fn get_pancakeswap_router_deployment_by_chain(chain: &Chain) -> Option<V3Dep
             universal_router: "0xFE6508f0015C778Bdcc1fB5465bA5ebE224C9912",
             permit2: "0x31c2F6fcFf4F8759b3Bd5Bf0e1084A055615c768",
         }),
+        Chain::ZkSync => Some(V3Deployment {
+            quoter_v2: "0x3d146FcE6c1006857750cBe8aF44f76a28041CCc",
+            universal_router: "0xdAee41E335322C85ff2c5a6745c98e1351806e98",
+            permit2: "0x686FD50007EaA636F01154d660b96110B6bFe351",
+        }),
         _ => None,
     }
 }
