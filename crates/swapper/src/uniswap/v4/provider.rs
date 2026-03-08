@@ -148,7 +148,6 @@ impl Swapper for UniswapV4 {
 
         let fee_tier_idx = quote_result.fee_tier_idx;
         let batch_idx = quote_result.batch_idx;
-        let gas_estimate = quote_result.gas_estimate;
 
         let to_value = if fee_preference.is_input_token {
             quote_result.amount_out
@@ -171,7 +170,7 @@ impl Swapper for UniswapV4 {
             fee_tier: fee_tier.to_string(),
             min_amount_out: to_min_value.to_string(),
         };
-        let routes = build_swap_route(&asset_id_in, asset_id_intermediary.as_ref(), &asset_id_out, &route_data, gas_estimate);
+        let routes = build_swap_route(&asset_id_in, asset_id_intermediary.as_ref(), &asset_id_out, &route_data);
 
         Ok(Quote {
             from_value: request.value.clone(),

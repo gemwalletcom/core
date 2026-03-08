@@ -193,7 +193,6 @@ where
                     input: request.from_asset.asset_id(),
                     output: request.to_asset.asset_id(),
                     route_data: serde_json::to_string(&route_data).unwrap(),
-                    gas_limit: None,
                 }],
             },
             eta_in_seconds: Some(eta_in_seconds),

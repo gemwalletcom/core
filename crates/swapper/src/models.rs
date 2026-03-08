@@ -142,7 +142,6 @@ pub struct Route {
     pub input: AssetId,
     pub output: AssetId,
     pub route_data: String,
-    pub gas_limit: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq)]

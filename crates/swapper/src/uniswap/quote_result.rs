@@ -7,7 +7,6 @@ pub struct QuoteResult {
     pub amount_out: U256,
     pub fee_tier_idx: usize,
     pub batch_idx: usize,
-    pub gas_estimate: Option<String>,
 }
 
 pub fn get_best_quote<F>(batch_results: &[Result<JsonRpcResults<String>, JsonRpcError>], decoder: F) -> Result<QuoteResult, SwapperError>
@@ -28,7 +27,6 @@ where
                             amount_out: quoter_tuple.0,
                             fee_tier_idx: fee_idx,
                             batch_idx,
-                            gas_estimate: Some(quoter_tuple.1.to_string()),
                         }),
                         _ => None,
                     })

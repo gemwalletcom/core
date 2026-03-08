@@ -89,7 +89,6 @@ pub struct SwapperRoute {
     pub input: AssetId,
     pub output: AssetId,
     pub route_data: String,
-    pub gas_limit: Option<String>,
 }
 
 #[uniffi::remote(Record)]

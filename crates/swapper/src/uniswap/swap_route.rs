@@ -23,7 +23,7 @@ pub fn get_intermediaries_by_array(token_in: &Address, token_out: &Address, arra
         .collect()
 }
 
-pub fn build_swap_route(token_in: &AssetId, intermediary: Option<&AssetId>, token_out: &AssetId, route_data: &RouteData, gas_estimate: Option<String>) -> Vec<Route> {
+pub fn build_swap_route(token_in: &AssetId, intermediary: Option<&AssetId>, token_out: &AssetId, route_data: &RouteData) -> Vec<Route> {
     let data = serde_json::to_string(route_data).unwrap();
     if let Some(intermediary) = intermediary {
         vec![
@@ -31,13 +31,11 @@ pub fn build_swap_route(token_in: &AssetId, intermediary: Option<&AssetId>, toke
                 input: token_in.clone(),
                 output: intermediary.clone(),
                 route_data: data.clone(),
-                gas_limit: gas_estimate.clone(),
             },
             Route {
                 input: intermediary.clone(),
                 output: token_out.clone(),
                 route_data: data,
-                gas_limit: None,
             },
         ]
     } else {
@@ -45,7 +43,6 @@ pub fn build_swap_route(token_in: &AssetId, intermediary: Option<&AssetId>, toke
             input: token_in.clone(),
             output: token_out.clone(),
             route_data: data,
-            gas_limit: gas_estimate.clone(),
         }]
     }
 }
