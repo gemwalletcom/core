@@ -126,6 +126,11 @@ pub fn get_pancakeswap_router_deployment_by_chain(chain: &Chain) -> Option<V3Dep
             universal_router: "0xdAee41E335322C85ff2c5a6745c98e1351806e98",
             permit2: "0x686FD50007EaA636F01154d660b96110B6bFe351",
         }),
+        Chain::Monad => Some(V3Deployment {
+            quoter_v2: "0xB048Bbc1Ee6b733FFfCFb9e9CeF7375518e25997",
+            universal_router: "0x23682a588CF2601ACa977dF200938634c9F7d552",
+            permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+        }),
         _ => None,
     }
 }
