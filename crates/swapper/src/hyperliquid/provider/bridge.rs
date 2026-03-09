@@ -61,7 +61,6 @@ impl Swapper for HyperCoreBridge {
                     input: request.from_asset.asset_id(),
                     output: request.to_asset.asset_id(),
                     route_data: "".to_string(),
-                    gas_limit: None,
                 }],
             },
             request: request.clone(),

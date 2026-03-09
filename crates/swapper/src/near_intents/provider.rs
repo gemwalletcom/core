@@ -306,7 +306,6 @@ where
                     input: request.from_asset.asset_id(),
                     output: request.to_asset.asset_id(),
                     route_data,
-                    gas_limit: None,
                 }],
             },
             request: request.clone(),

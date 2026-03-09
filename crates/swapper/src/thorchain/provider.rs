@@ -140,7 +140,6 @@ where
                     input: request.from_asset.asset_id(),
                     output: request.to_asset.asset_id(),
                     route_data: serde_json::to_string(&route_data).unwrap_or_default(),
-                    gas_limit: None,
                 }],
                 slippage_bps: request.options.slippage.bps,
             },

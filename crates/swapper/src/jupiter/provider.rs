@@ -152,7 +152,6 @@ where
                     input: AssetId::from(Chain::Solana, Some(input_mint)),
                     output: AssetId::from(Chain::Solana, Some(output_mint)),
                     route_data: serde_json::to_string(&swap_quote).unwrap_or_default(),
-                    gas_limit: None,
                 }],
                 slippage_bps: swap_quote.slippage_bps,
             },

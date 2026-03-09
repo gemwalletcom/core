@@ -229,7 +229,6 @@ impl Swapper for HyperCoreSpot {
                         }),
                     ))
                     .map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))?,
-                    gas_limit: None,
                 }],
             },
             request: request.clone(),

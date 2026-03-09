@@ -498,7 +498,6 @@ impl Swapper for Across {
                     input: input_asset.clone(),
                     output: output_asset.clone(),
                     route_data,
-                    gas_limit: Some(DEFAULT_DEPOSIT_GAS_LIMIT.to_string()),
                 }],
             },
             request: request.clone(),
@@ -551,7 +550,7 @@ impl Swapper for Across {
         };
 
         let to: String = deployment.spoke_pool.into();
-        let mut gas_limit = if approval.is_some() { route.gas_limit.clone() } else { None };
+        let mut gas_limit = if approval.is_some() { Some(DEFAULT_DEPOSIT_GAS_LIMIT.to_string()) } else { None };
 
         if matches!(data, FetchQuoteData::EstimateGas) {
             let hex_value = format!("{:#x}", U256::from_str(value).unwrap());
