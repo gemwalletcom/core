@@ -13,8 +13,8 @@ pub fn map_quote_data(quote_response: &RelayQuoteResponse, from_value: &str, app
 
     match step_data {
         StepData::Bitcoin(btc) => {
-            let gas_limit = gas_fee_amount(&quote_response.fees);
-            Ok(SwapperQuoteData::new_contract(String::new(), from_value.to_string(), btc.psbt.clone(), None, gas_limit))
+            let fee_limit = gas_fee_amount(&quote_response.fees);
+            Ok(SwapperQuoteData::new_contract(String::new(), from_value.to_string(), btc.psbt.clone(), None, fee_limit))
         }
         StepData::Evm(evm) => {
             let gas_limit = approval.as_ref().map(|_| DEFAULT_SWAP_GAS_LIMIT.to_string());
@@ -28,8 +28,8 @@ pub fn map_swap_result(request: &RelayRequest) -> SwapResult {
     let metadata = request.data.as_ref().and_then(|d| d.metadata.as_ref()).and_then(|m| {
         let currency_in = m.currency_in.as_ref()?;
         let currency_out = m.currency_out.as_ref()?;
-        let from_chain = RelayChain::from_chain_id(currency_in.currency.chain_id)?.to_chain();
-        let to_chain = RelayChain::from_chain_id(currency_out.currency.chain_id)?.to_chain();
+        let from_chain = RelayChain::from_chain_id(currency_in.currency.chain_id)?;
+        let to_chain = RelayChain::from_chain_id(currency_out.currency.chain_id)?;
         Some(TransactionSwapMetadata {
             from_asset: map_currency_to_asset_id(from_chain, &currency_in.currency.address),
             from_value: currency_in.amount.clone()?,

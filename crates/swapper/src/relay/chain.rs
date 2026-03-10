@@ -37,10 +37,6 @@ impl RelayChain {
         }
         Some(Self::Evm(EVMChain::all().into_iter().find(|chain| chain.chain_id() == chain_id)?))
     }
-
-    pub fn is_evm(&self) -> bool {
-        matches!(self, Self::Evm(_))
-    }
 }
 
 #[cfg(test)]

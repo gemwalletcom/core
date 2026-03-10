@@ -2,7 +2,7 @@ use std::sync::LazyLock;
 
 use gem_evm::address::ethereum_address_checksum;
 use primitives::{
-    AssetId, Chain, ChainType,
+    AssetId, Chain,
     asset_constants::{
         USDC_ARB_ASSET_ID, USDC_HYPEREVM_ASSET_ID, USDC_OP_ASSET_ID, USDC_POLYGON_ASSET_ID, USDT_ARB_ASSET_ID, USDT_HYPEREVM_ASSET_ID, USDT_LINEA_ASSET_ID, USDT_OP_ASSET_ID,
         USDT_POLYGON_ASSET_ID, USDT_ZKSYNC_ASSET_ID,
@@ -12,17 +12,17 @@ use primitives::{
 use super::chain::{BITCOIN_CURRENCY, RelayChain};
 use crate::{SwapperChainAsset, SwapperError, asset::*};
 
-pub fn map_currency_to_asset_id(chain: Chain, currency: &str) -> AssetId {
-    match chain {
-        Chain::Bitcoin => AssetId::from_chain(Chain::Bitcoin),
-        _ if currency == EVM_ZERO_ADDRESS => AssetId::from_chain(chain),
-        _ => {
-            if let ChainType::Ethereum = chain.chain_type()
-                && let Ok(address) = ethereum_address_checksum(currency)
-            {
-                return AssetId::from_token(chain, &address);
+pub fn map_currency_to_asset_id(relay_chain: RelayChain, currency: &str) -> AssetId {
+    let chain = relay_chain.to_chain();
+    match relay_chain {
+        RelayChain::Bitcoin => AssetId::from_chain(chain),
+        RelayChain::Evm(_) => {
+            if currency == EVM_ZERO_ADDRESS {
+                AssetId::from_chain(chain)
+            } else {
+                let address = ethereum_address_checksum(currency).unwrap_or(currency.to_string());
+                AssetId::from_token(chain, &address)
             }
-            AssetId::from_token(chain, currency)
         }
     }
 }
@@ -70,14 +70,13 @@ pub static SUPPORTED_CHAINS: LazyLock<Vec<SwapperChainAsset>> = LazyLock::new(||
 pub fn asset_to_currency(asset_id: &AssetId, relay_chain: &RelayChain) -> Result<String, SwapperError> {
     match relay_chain {
         RelayChain::Bitcoin => Ok(BITCOIN_CURRENCY.to_string()),
-        _ if relay_chain.is_evm() => {
+        RelayChain::Evm(_) => {
             if asset_id.is_native() {
                 Ok(EVM_ZERO_ADDRESS.to_string())
             } else {
                 asset_id.token_id.clone().ok_or(SwapperError::NotSupportedAsset)
             }
         }
-        _ => Err(SwapperError::NotSupportedChain),
     }
 }
 
