@@ -1,5 +1,6 @@
 // Copyright (c). Gem Wallet. All rights reserved.
 
+import Observation
 import Testing
 import Primitives
 import Keystore
@@ -211,5 +212,27 @@ struct WalletServiceTests {
         #expect(mnemonicWallet.id != privateKeyWallet.id)
         #expect(mnemonicWallet.type == WalletType.multicoin)
         #expect(privateKeyWallet.type == WalletType.privateKey)
+    }
+
+    @Test
+    func deleteLastWalletNotifiesObservers() async throws {
+        let preferences = ObservablePreferences.mock()
+        let service = WalletService.mock(preferences: preferences)
+
+        let wallet = try await service.loadOrCreateWallet(
+            name: "Wallet",
+            type: .phrase(words: LocalKeystore.words, chains: [.ethereum]),
+            source: .import
+        )
+        try await service.setCurrent(wallet: wallet)
+
+        try await confirmation { confirm in
+            withObservationTracking {
+                _ = preferences.currentWalletId
+            } onChange: {
+                confirm()
+            }
+            try await service.delete(wallet)
+        }
     }
 }

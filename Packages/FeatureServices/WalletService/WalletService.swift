@@ -104,14 +104,15 @@ public struct WalletService: Sendable {
         try walletStore.deleteWallet(for: wallet.walletId)
         try avatarService.remove(for: wallet)
         WalletPreferences(walletId: wallet.walletId).clear()
-        if wallets.isEmpty {
-            Preferences.standard.clear()
-        }
 
         await MainActor.run {
             if currentWalletId == wallet.walletId {
                 walletSessionService.setCurrent(walletId: wallets.first?.walletId)
             }
+        }
+
+        if wallets.isEmpty {
+            preferences.preferences.clear()
         }
     }
 
