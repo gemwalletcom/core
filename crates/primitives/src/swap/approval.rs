@@ -12,7 +12,7 @@ pub struct ApprovalData {
     pub value: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "lowercase")]
 pub enum SwapQuoteDataType {
