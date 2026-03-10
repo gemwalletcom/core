@@ -25,10 +25,11 @@ extension TransferAmountCalculatorError: LocalizedError {
     }
 
     static private func title(asset: Asset) -> String {
-        asset.name == asset.symbol ? asset.name : String(format: "%@ (%@)", asset.name, asset.symbol)
+        let title = asset.name == asset.symbol ? asset.name : String(format: "%@ (%@)", asset.name, asset.symbol)
+        return title.boldMarkdown()
     }
 
     static private func formattedValue(_ value: BigInt, asset: Asset) -> String {
-        ValueFormatter(style: .full).string(value, asset: asset)
+        ValueFormatter(style: .full).string(value, asset: asset).boldMarkdown()
     }
 }

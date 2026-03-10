@@ -25,7 +25,7 @@ public struct InfoSheetModelFactory {
         case let .insufficientBalance(asset, image):
             return InfoSheetModel(
                 title: Localized.Info.InsufficientBalance.title,
-                description: Localized.Info.InsufficientBalance.description(asset.symbol),
+                description: Localized.Info.InsufficientBalance.description(asset.symbol.boldMarkdown()),
                 image: .assetImage(image)
             )
         case let .insufficientNetworkFee(asset, image, required, action):
@@ -179,13 +179,13 @@ public struct InfoSheetModelFactory {
         case let .memoRequired(symbol):
             return InfoSheetModel(
                 title: Localized.Common.warning,
-                description: Localized.Errors.ScanTransaction.memoRequired(symbol),
+                description: Localized.Errors.ScanTransaction.memoRequired(symbol.boldMarkdown()),
                 image: .image(Images.Logo.logo)
             )
         case let .dustThreshold(chain, image):
             return InfoSheetModel(
                 title: Localized.Errors.transferError,
-                description: Localized.Errors.dustThreshold(chain.asset.name),
+                description: Localized.Errors.dustThreshold(chain.asset.name.boldMarkdown()),
                 image: .assetImage(image),
                 button: .url(Docs.url(.dust))
             )

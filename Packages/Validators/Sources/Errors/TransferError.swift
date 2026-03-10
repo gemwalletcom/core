@@ -16,11 +16,9 @@ extension TransferError: LocalizedError {
         case .invalidAmount:
             Localized.Errors.invalidAmount
         case let .minimumAmount(asset, required):
-            Localized.Transfer.minimumAmount(
-                ValueFormatter(style: .auto).string(required, asset: asset)
-            )
+            Localized.Transfer.minimumAmount(ValueFormatter(style: .auto).string(required, asset: asset).boldMarkdown())
         case .invalidAddress(let asset):
-            Localized.Errors.invalidAssetAddress(asset.name)
+            Localized.Errors.invalidAssetAddress(asset.name.boldMarkdown())
         }
     }
 }

@@ -13,7 +13,7 @@ extension ScanTransactionError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .malicious: Localized.Errors.ScanTransaction.Malicious.description
-        case .memoRequired(let symbol): Localized.Errors.ScanTransaction.memoRequired(symbol)
+        case .memoRequired(let symbol): Localized.Errors.ScanTransaction.memoRequired(symbol.boldMarkdown())
         }
     }
 }
