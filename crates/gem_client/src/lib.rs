@@ -15,9 +15,9 @@ pub mod client_config;
 
 pub mod query;
 
-pub use content_type::{ContentType, CONTENT_TYPE};
+pub use content_type::{CONTENT_TYPE, ContentType};
 pub use query::build_path_with_query;
-pub use types::{decode_json_byte_array, deserialize_response, ClientError, Response};
+pub use types::{ClientError, Response, decode_json_byte_array, deserialize_response};
 
 #[cfg(feature = "reqwest")]
 pub use reqwest_client::ReqwestClient;
@@ -29,7 +29,7 @@ pub use retry::{default_should_retry, retry, retry_policy};
 pub use client_config::builder;
 
 use async_trait::async_trait;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 use std::{collections::HashMap, fmt::Debug};
 
 pub type Data = Vec<u8>;
@@ -38,6 +38,10 @@ pub const X_CACHE_TTL: &str = "x-cache-ttl";
 #[async_trait]
 pub trait Client: Send + Sync + Debug {
     async fn get_with<R>(&self, path: &str, query: &[(String, String)], headers: HashMap<String, String>) -> Result<R, ClientError>
+    where
+        R: DeserializeOwned;
+
+    async fn get_url<R>(&self, url: &str) -> Result<R, ClientError>
     where
         R: DeserializeOwned;
 

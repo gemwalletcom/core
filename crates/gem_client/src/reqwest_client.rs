@@ -1,8 +1,8 @@
-use crate::{deserialize_response, retry_policy, Client, ClientError, ContentType, Response, CONTENT_TYPE};
+use crate::{CONTENT_TYPE, Client, ClientError, ContentType, Response, deserialize_response, retry_policy};
 use async_trait::async_trait;
-use reqwest::header::USER_AGENT;
 use reqwest::RequestBuilder;
-use serde::{de::DeserializeOwned, Serialize};
+use reqwest::header::USER_AGENT;
+use serde::{Serialize, de::DeserializeOwned};
 use std::{collections::HashMap, str::FromStr, time::Duration};
 
 #[derive(Debug, Clone)]
@@ -103,6 +103,15 @@ impl Client for ReqwestClient {
         let url = self.build_url(path);
         let request = self.build_request(self.client.get(&url).query(query), headers);
 
+        let response = request.send().await.map_err(Self::map_reqwest_error)?;
+        self.send_request(response).await
+    }
+
+    async fn get_url<R>(&self, url: &str) -> Result<R, ClientError>
+    where
+        R: DeserializeOwned,
+    {
+        let request = self.build_request(self.client.get(url), HashMap::new());
         let response = request.send().await.map_err(Self::map_reqwest_error)?;
         self.send_request(response).await
     }
