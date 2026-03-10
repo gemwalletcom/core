@@ -50,6 +50,7 @@ public actor WebSocketConnection: WebSocketConnectable {
         cancelReconnect()
         cancelTask()
         cancelPendingMessages()
+        invalidateSession()
 
         continuation?.yield(.disconnected(nil))
         continuation?.finish()
@@ -107,6 +108,11 @@ public actor WebSocketConnection: WebSocketConnectable {
         reconnectTask = nil
     }
 
+    private func invalidateSession() {
+        session?.invalidateAndCancel()
+        session = nil
+    }
+
     private func setupStream(_ continuation: AsyncStream<WebSocketEvent>.Continuation) {
         self.continuation = continuation
 
@@ -126,6 +132,7 @@ public actor WebSocketConnection: WebSocketConnectable {
         cancelTask()
         cancelReconnect()
         cancelPendingMessages()
+        invalidateSession()
 
         state = .disconnected
     }
@@ -243,7 +250,7 @@ public actor WebSocketConnection: WebSocketConnectable {
         guard state == .reconnecting, task == nil else { return }
         startConnection()
     }
-    
+
     private func resetReconnectionAttempt() {
         reconnectAttempt = 0
     }
