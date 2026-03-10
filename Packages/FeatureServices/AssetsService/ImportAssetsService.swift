@@ -14,7 +14,7 @@ public struct ImportAssetsService: Sendable {
     let preferences: Preferences
     
     public init(
-        assetListService: any GemAPIAssetsListService = GemAPIService(),
+        assetListService: any GemAPIAssetsListService,
         assetsService: AssetsService,
         assetStore: AssetStore,
         preferences: Preferences

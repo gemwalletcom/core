@@ -305,6 +305,7 @@ let package = Package(
             name: "TransactionsServiceTestKit",
             dependencies: [
                 .product(name: "StoreTestKit", package: "Store"),
+                .product(name: "GemAPITestKit", package: "GemAPI"),
                 .product(name: "PreferencesTestKit", package: "Preferences"),
                 "AssetsServiceTestKit",
                 "TransactionsService",

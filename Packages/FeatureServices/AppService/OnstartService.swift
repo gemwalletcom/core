@@ -5,6 +5,7 @@ import Store
 import Primitives
 import NodeService
 import AssetsService
+import GemAPI
 import Preferences
 import WalletService
 import UIKit
@@ -13,6 +14,7 @@ import UIKit
 // See OnstartAsyncService for any background tasks to run after start
 public struct OnstartService: Sendable {
 
+    private let assetListService: any GemAPIAssetsListService
     private let assetsService: AssetsService
     private let assetStore: AssetStore
     private let nodeStore: NodeStore
@@ -20,12 +22,14 @@ public struct OnstartService: Sendable {
     private let walletService: WalletService
 
     public init(
+        assetListService: any GemAPIAssetsListService,
         assetsService: AssetsService,
         assetStore: AssetStore,
         nodeStore: NodeStore,
         preferences: Preferences,
         walletService: WalletService
     ) {
+        self.assetListService = assetListService
         self.assetsService = assetsService
         self.assetStore = assetStore
         self.nodeStore = nodeStore
@@ -58,6 +62,7 @@ extension OnstartService {
     private func migrations() throws {
         try walletService.setup(chains: AssetConfiguration.allChains)
         try ImportAssetsService(
+            assetListService: assetListService,
             assetsService: assetsService,
             assetStore: assetStore,
             preferences: preferences

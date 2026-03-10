@@ -226,6 +226,7 @@ struct ServicesFactory {
         let rateService = RateService(preferences: preferences)
 
         let onStartService = Self.makeOnstartService(
+            assetListService: apiService,
             assetStore: storeManager.assetStore,
             nodeStore: storeManager.nodeStore,
             preferences: preferences,
@@ -254,7 +255,7 @@ struct ServicesFactory {
             perpetualService: perpetualService
         )
 
-        let nameService = NameService()
+        let nameService = NameService(provider: apiService)
         let scanService = ScanService(gatewayService: gatewayService)
         let addressNameService = AddressNameService(addressStore: storeManager.addressStore)
         let activityService = ActivityService(store: storeManager.recentActivityStore)
@@ -541,6 +542,7 @@ extension ServicesFactory {
     }
 
     private static func makeOnstartService(
+        assetListService: any GemAPIAssetsListService,
         assetStore: AssetStore,
         nodeStore: NodeStore,
         preferences: Preferences,
@@ -548,6 +550,7 @@ extension ServicesFactory {
         walletService: WalletService
     ) -> OnstartService {
         OnstartService(
+            assetListService: assetListService,
             assetsService: assetsService,
             assetStore: assetStore,
             nodeStore: nodeStore,

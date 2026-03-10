@@ -17,7 +17,7 @@ public final class TransactionsService: Sendable {
     private let addressStore: AddressStore
     
     public init(
-        provider: any GemAPITransactionService = GemAPIService(),
+        provider: any GemAPITransactionService,
         transactionStore: TransactionStore,
         assetsService: AssetsService,
         walletStore: WalletStore,

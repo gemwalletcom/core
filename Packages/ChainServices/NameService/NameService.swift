@@ -7,9 +7,7 @@ import Primitives
 public final class NameService: NameServiceable, Sendable {
     private let provider: any GemAPINameService
 
-    public init(
-        provider: any GemAPINameService = GemAPIService()
-    ) {
+    public init(provider: any GemAPINameService) {
         self.provider = provider
     }
     

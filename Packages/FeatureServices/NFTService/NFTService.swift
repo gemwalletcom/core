@@ -12,7 +12,7 @@ public struct NFTService: Sendable {
     private let deviceService: any DeviceServiceable
 
     public init(
-        apiService: any GemAPINFTService = GemAPIService(),
+        apiService: any GemAPINFTService,
         nftStore: NFTStore,
         deviceService: any DeviceServiceable
     ) {

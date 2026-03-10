@@ -12,7 +12,7 @@ public actor ConfigService {
 
     public init(
         configPreferences: ConfigPreferences = .standard,
-        apiService: any GemAPIConfigService = GemAPIService()
+        apiService: any GemAPIConfigService
     ) {
         self.configPreferences = configPreferences
         self.apiService = apiService

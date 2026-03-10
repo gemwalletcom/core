@@ -20,7 +20,7 @@ public struct PriceAlertService: Sendable {
 
     public init(
         store: PriceAlertStore,
-        apiService: any GemAPIPriceAlertService = GemAPIService(),
+        apiService: any GemAPIPriceAlertService,
         deviceService: any DeviceServiceable,
         priceUpdater: any PriceUpdater,
         preferences: Preferences = .standard
