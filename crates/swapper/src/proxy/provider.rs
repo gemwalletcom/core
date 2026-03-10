@@ -209,7 +209,6 @@ where
                     input: request.from_asset.asset_id(),
                     output: request.to_asset.asset_id(),
                     route_data: serde_json::to_string(&quote).map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))?,
-                    gas_limit: None,
                 }],
                 slippage_bps: request.options.slippage.bps,
             },

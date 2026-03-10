@@ -25,7 +25,6 @@ extension SwapperQuote: @retroactive CustomStringConvertible {
                 "input": route.input,
                 "output": route.output,
                 "routeData": route.routeData,
-                "gasLimit": route.gasLimit ?? "",
             ]
         }
         let json: [String: Any] = [
@@ -51,7 +50,6 @@ extension GemSwapQuoteData: @retroactive CustomStringConvertible {
             "data": data,
             "memo": memo ?? NSNull(),
             "approval": NSNull(),
-            "gasLimit": gasLimit ?? NSNull(),
         ]
         if let approvalData = approval {
             json["approval"] = [
