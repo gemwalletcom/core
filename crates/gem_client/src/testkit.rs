@@ -1,6 +1,6 @@
 use crate::{Client, ClientError};
 use async_trait::async_trait;
-use serde::{de::DeserializeOwned, Serialize};
+use serde::{Serialize, de::DeserializeOwned};
 use std::{
     collections::HashMap,
     fmt::{Debug, Formatter},
@@ -53,6 +53,13 @@ impl Client for MockClient {
         let handler = self.get_handler.as_ref().ok_or(ClientError::Http { status: 404, body: vec![] })?;
         let bytes = handler(path)?;
         serde_json::from_slice(&bytes).map_err(|e| ClientError::Serialization(e.to_string()))
+    }
+
+    async fn get_url<R>(&self, url: &str) -> Result<R, ClientError>
+    where
+        R: DeserializeOwned,
+    {
+        self.get_with(url, &[], HashMap::new()).await
     }
 
     async fn post_with<T, R>(&self, path: &str, body: &T, _headers: HashMap<String, String>) -> Result<R, ClientError>
