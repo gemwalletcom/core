@@ -1,3 +1,4 @@
+use crate::PrioritizedProvider;
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
@@ -33,6 +34,20 @@ impl FiatProvider {
 
     pub fn is_sell_enabled(&self) -> bool {
         self.enabled && self.sell_enabled
+    }
+}
+
+impl PrioritizedProvider for FiatProvider {
+    fn provider_id(&self) -> &str {
+        &self.id
+    }
+
+    fn priority(&self) -> Option<i32> {
+        self.priority
+    }
+
+    fn threshold_bps(&self) -> Option<i32> {
+        self.threshold_bps
     }
 }
 

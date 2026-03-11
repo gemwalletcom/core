@@ -114,6 +114,7 @@ impl ProxyProvider<RpcClient> {
             "okx",
             vec![
                 SwapperChainAsset::All(Chain::Solana),
+                SwapperChainAsset::All(Chain::Base),
                 SwapperChainAsset::All(Chain::Manta),
                 SwapperChainAsset::All(Chain::Mantle),
                 SwapperChainAsset::All(Chain::XLayer),

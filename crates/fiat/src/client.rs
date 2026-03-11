@@ -531,69 +531,22 @@ fn precision(val: f64, precision: usize) -> f64 {
     format!("{val:.precision$}").parse::<f64>().unwrap()
 }
 
-fn sort_by_priority_then_amount(a_provider_id: &str, b_provider_id: &str, a_amount: f64, b_amount: f64, providers: &[PrimitiveFiatProvider]) -> std::cmp::Ordering {
-    sort_by_priority_then_amount_order(a_provider_id, b_provider_id, a_amount, b_amount, providers, false)
-}
-
-fn sort_by_priority_then_amount_order(
-    a_provider_id: &str,
-    b_provider_id: &str,
-    a_amount: f64,
-    b_amount: f64,
-    providers: &[PrimitiveFiatProvider],
-    ascending: bool,
-) -> std::cmp::Ordering {
-    let a_priority = providers.iter().find(|p| p.id == a_provider_id).and_then(|p| p.priority).unwrap_or(0);
-    let b_priority = providers.iter().find(|p| p.id == b_provider_id).and_then(|p| p.priority).unwrap_or(0);
-
-    let compare_amounts = |a: f64, b: f64| {
-        if ascending {
-            a.partial_cmp(&b).unwrap_or(std::cmp::Ordering::Equal)
-        } else {
-            b.partial_cmp(&a).unwrap_or(std::cmp::Ordering::Equal)
-        }
-    };
-
-    match (a_priority, b_priority) {
-        (0, 0) => compare_amounts(a_amount, b_amount),
-        (0, _) => std::cmp::Ordering::Greater,
-        (_, 0) => std::cmp::Ordering::Less,
-        (a_pri, b_pri) if a_pri != b_pri => {
-            let better_amount = if ascending { b_amount.min(a_amount) } else { b_amount.max(a_amount) };
-            let worse_amount = if ascending { b_amount.max(a_amount) } else { b_amount.min(a_amount) };
-
-            let higher_priority_id = if a_pri < b_pri { a_provider_id } else { b_provider_id };
-            let threshold_bps = providers.iter().find(|p| p.id == higher_priority_id).and_then(|p| p.threshold_bps);
-
-            if let Some(threshold_bps) = threshold_bps {
-                let threshold = threshold_bps as f64 / 10000.0;
-                let diff_percent = (worse_amount - better_amount).abs() / better_amount;
-
-                if diff_percent > threshold {
-                    return compare_amounts(a_amount, b_amount);
-                }
-            }
-
-            a_pri.cmp(&b_pri)
-        }
-        _ => compare_amounts(a_amount, b_amount),
-    }
-}
+use primitives::sort_by_priority_then_amount;
 
 fn sort_by_crypto_amount(a: &primitives::FiatQuoteOld, b: &primitives::FiatQuoteOld, providers: &[PrimitiveFiatProvider]) -> std::cmp::Ordering {
-    sort_by_priority_then_amount(&a.provider.id, &b.provider.id, a.crypto_amount, b.crypto_amount, providers)
+    sort_by_priority_then_amount(&a.provider.id, &b.provider.id, a.crypto_amount, b.crypto_amount, providers, false)
 }
 
 fn sort_by_fiat_amount(a: &primitives::FiatQuoteOld, b: &primitives::FiatQuoteOld, providers: &[PrimitiveFiatProvider]) -> std::cmp::Ordering {
-    sort_by_priority_then_amount(&a.provider.id, &b.provider.id, a.fiat_amount, b.fiat_amount, providers)
+    sort_by_priority_then_amount(&a.provider.id, &b.provider.id, a.fiat_amount, b.fiat_amount, providers, false)
 }
 
 fn sort_quotes_by_crypto_amount_desc(a: &FiatQuote, b: &FiatQuote, providers: &[PrimitiveFiatProvider]) -> std::cmp::Ordering {
-    sort_by_priority_then_amount_order(&a.provider.id, &b.provider.id, a.crypto_amount, b.crypto_amount, providers, false)
+    sort_by_priority_then_amount(&a.provider.id, &b.provider.id, a.crypto_amount, b.crypto_amount, providers, false)
 }
 
 fn sort_quotes_by_crypto_amount_asc(a: &FiatQuote, b: &FiatQuote, providers: &[PrimitiveFiatProvider]) -> std::cmp::Ordering {
-    sort_by_priority_then_amount_order(&a.provider.id, &b.provider.id, a.crypto_amount, b.crypto_amount, providers, true)
+    sort_by_priority_then_amount(&a.provider.id, &b.provider.id, a.crypto_amount, b.crypto_amount, providers, true)
 }
 
 #[cfg(test)]
