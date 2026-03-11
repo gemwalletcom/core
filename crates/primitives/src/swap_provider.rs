@@ -116,7 +116,7 @@ impl SwapProvider {
     }
 
     pub fn threshold_bps(&self) -> Option<i32> {
-        Some(300)
+        Some(200)
     }
 }
 
@@ -160,7 +160,7 @@ mod tests {
 
     #[test]
     fn test_threshold_bps() {
-        assert_eq!(SwapProvider::UniswapV3.threshold_bps(), Some(100));
-        assert_eq!(SwapProvider::Okx.threshold_bps(), Some(100));
+        assert_eq!(SwapProvider::UniswapV3.threshold_bps(), Some(200));
+        assert_eq!(SwapProvider::Okx.threshold_bps(), Some(200));
     }
 }

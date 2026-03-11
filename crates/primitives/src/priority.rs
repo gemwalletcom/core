@@ -6,14 +6,7 @@ pub trait PrioritizedProvider {
     fn threshold_bps(&self) -> Option<i32>;
 }
 
-pub fn sort_by_priority_then_amount<P: PrioritizedProvider>(
-    a_id: &str,
-    b_id: &str,
-    a_amount: f64,
-    b_amount: f64,
-    providers: &[P],
-    ascending: bool,
-) -> Ordering {
+pub fn sort_by_priority_then_amount<P: PrioritizedProvider>(a_id: &str, b_id: &str, a_amount: f64, b_amount: f64, providers: &[P], ascending: bool) -> Ordering {
     let a_provider = providers.iter().find(|p| p.provider_id() == a_id);
     let b_provider = providers.iter().find(|p| p.provider_id() == b_id);
     let a_pri = a_provider.and_then(|p| p.priority());
@@ -59,10 +52,18 @@ mod tests {
     }
 
     impl MockProvider {
-        fn new(id: &str, priority: Option<i32>, threshold_bps: Option<i32>) -> Self {
+        fn mock_id(id: &str) -> Self {
             Self {
                 id: id.to_string(),
-                priority,
+                priority: None,
+                threshold_bps: None,
+            }
+        }
+
+        fn mock_id_priority(id: &str, priority: i32, threshold_bps: Option<i32>) -> Self {
+            Self {
+                id: id.to_string(),
+                priority: Some(priority),
                 threshold_bps,
             }
         }
@@ -89,39 +90,28 @@ mod tests {
 
     #[test]
     fn test_priority_wins_over_amount() {
-        let providers = vec![
-            MockProvider::new("a", Some(1), None),
-            MockProvider::new("b", Some(2), None),
-        ];
+        let providers = vec![MockProvider::mock_id_priority("a", 1, None), MockProvider::mock_id_priority("b", 2, None)];
         let result = sort_by_priority_then_amount("a", "b", 100.0, 200.0, &providers, false);
         assert_eq!(result, Ordering::Less);
     }
 
     #[test]
     fn test_threshold_override() {
-        let providers = vec![
-            MockProvider::new("a", Some(1), Some(500)),
-            MockProvider::new("b", Some(2), None),
-        ];
-        // b has 100% more than a, exceeds 5% threshold → amount wins
+        let providers = vec![MockProvider::mock_id_priority("a", 1, Some(500)), MockProvider::mock_id_priority("b", 2, None)];
         let result = sort_by_priority_then_amount("a", "b", 100.0, 200.0, &providers, false);
         assert_eq!(result, Ordering::Greater);
     }
 
     #[test]
     fn test_threshold_not_exceeded() {
-        let providers = vec![
-            MockProvider::new("a", Some(1), Some(5000)),
-            MockProvider::new("b", Some(2), None),
-        ];
-        // b has 10% more than a, within 50% threshold → priority wins
+        let providers = vec![MockProvider::mock_id_priority("a", 1, Some(5000)), MockProvider::mock_id_priority("b", 2, None)];
         let result = sort_by_priority_then_amount("a", "b", 100.0, 110.0, &providers, false);
         assert_eq!(result, Ordering::Less);
     }
 
     #[test]
     fn test_unprioritized_sorted_after_prioritized() {
-        let providers = vec![MockProvider::new("a", Some(1), None)];
+        let providers = vec![MockProvider::mock_id_priority("a", 1, None)];
         let result = sort_by_priority_then_amount("a", "b", 50.0, 200.0, &providers, false);
         assert_eq!(result, Ordering::Less);
     }
@@ -135,10 +125,7 @@ mod tests {
 
     #[test]
     fn test_same_priority_sorts_by_amount() {
-        let providers = vec![
-            MockProvider::new("a", Some(1), None),
-            MockProvider::new("b", Some(1), None),
-        ];
+        let providers = vec![MockProvider::mock_id_priority("a", 1, None), MockProvider::mock_id_priority("b", 1, None)];
         let result = sort_by_priority_then_amount("a", "b", 200.0, 100.0, &providers, false);
         assert_eq!(result, Ordering::Less);
     }
