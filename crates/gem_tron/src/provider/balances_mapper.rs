@@ -66,6 +66,25 @@ pub fn map_staking_balance(account: &TronAccount, reward: &TronReward, usage: &T
     ))
 }
 
+pub fn map_balance_staking(account: &TronAccount, reward: &TronReward, usage: &TronAccountUsage) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
+    if account.is_staking() {
+        map_staking_balance(account, reward, usage)
+    } else {
+        let metadata = map_metadata_from_usage(usage, 0);
+        Ok(AssetBalance::new_balance(
+            AssetId::from_chain(Chain::Tron),
+            new_stake_balance(
+                BigUint::from(0u32),
+                BigUint::from(0u32),
+                BigUint::from(0u32),
+                BigUint::from(0u32),
+                BigUint::from(0u32),
+                metadata,
+            ),
+        ))
+    }
+}
+
 pub(crate) fn format_address_parameter(address: &str) -> Result<String, Box<dyn Error + Sync + Send>> {
     let owner_bytes = bs58::decode(address).into_vec().map_err(|e| format!("Invalid owner address {}: {}", address, e))?;
 
@@ -379,6 +398,35 @@ mod tests {
         assert_eq!(metadata.energy_total, 0);
         assert_eq!(metadata.bandwidth_available, 0);
         assert_eq!(metadata.bandwidth_total, 0);
+    }
+
+    #[test]
+    fn test_map_balance_staking_non_staker() {
+        let account = TronAccount {
+            balance: Some(1000),
+            address: Some("TEB39Rt69QkgD1BKhqaRNqGxfQzCarkRCb".to_string()),
+            owner_permission: None,
+            active_permission: None,
+            votes: None,
+            frozen_v2: None,
+            unfrozen_v2: None,
+        };
+        let reward = TronReward { reward: 0 };
+        let usage = TronAccountUsage {
+            energy_limit: 0,
+            energy_used: 0,
+            free_net_limit: 600,
+            free_net_used: 100,
+            net_used: 0,
+            net_limit: 0,
+        };
+
+        let balance = map_balance_staking(&account, &reward, &usage).unwrap();
+        let metadata = balance.balance.metadata.unwrap();
+
+        assert_eq!(metadata.bandwidth_available, 500);
+        assert_eq!(metadata.bandwidth_total, 600);
+        assert_eq!(metadata.votes, 0);
     }
 
     #[test]

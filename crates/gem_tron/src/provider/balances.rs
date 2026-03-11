@@ -1,14 +1,14 @@
 use async_trait::async_trait;
 use chain_traits::ChainBalances;
 use futures::future::join_all;
-use num_bigint::BigUint;
 use std::error::Error;
 
 use gem_client::Client;
+use num_bigint::BigUint;
 use primitives::{AssetBalance, AssetId, Chain, asset_balance::BalanceMetadata};
 
 use crate::{
-    provider::balances_mapper::{format_address_parameter, map_coin_balance, map_metadata_from_usage, map_staking_balance, map_token_balance},
+    provider::balances_mapper::{format_address_parameter, map_balance_staking, map_coin_balance, map_token_balance},
     rpc::{client::TronClient, trongrid::mapper::TronGridMapper},
 };
 
@@ -39,20 +39,8 @@ impl<C: Client> ChainBalances for TronClient<C> {
     async fn get_balance_staking(&self, address: String) -> Result<Option<AssetBalance>, Box<dyn Error + Sync + Send>> {
         let account = self.get_account(&address).await?;
         if let Some(address) = account.clone().address {
-            if account.is_staking() {
-                let (reward, usage) = futures::try_join!(self.get_reward(&address), self.get_account_usage(&address))?;
-                Ok(Some(map_staking_balance(&account, &reward, &usage)?))
-            } else {
-                let usage = self.get_account_usage(&address).await?;
-                let metadata = map_metadata_from_usage(&usage, 0);
-                Ok(Some(AssetBalance::new_staking_with_metadata(
-                    AssetId::from_chain(Chain::Tron),
-                    BigUint::from(0u32),
-                    BigUint::from(0u32),
-                    BigUint::from(0u32),
-                    metadata,
-                )))
-            }
+            let (reward, usage) = futures::try_join!(self.get_reward(&address), self.get_account_usage(&address))?;
+            Ok(Some(map_balance_staking(&account, &reward, &usage)?))
         } else {
             Ok(Some(AssetBalance::new_staking_with_metadata(
                 AssetId::from_chain(Chain::Tron),
