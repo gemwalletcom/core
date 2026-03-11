@@ -120,7 +120,7 @@ mod tests {
     use primitives::swap::SwapData;
     use primitives::{Asset, AssetId, AssetType, Chain, SwapProvider};
 
-    fn mock_swap_data_with_gas_limit(provider: SwapProvider, gas_limit: Option<&str>) -> SwapData {
+    fn mock_swap_data_with_unit_limit(provider: SwapProvider, gas_limit: Option<&str>) -> SwapData {
         let mut data = SwapData::mock_with_provider(provider);
         data.data.limit = gas_limit.map(|s| s.to_string());
         data
@@ -151,7 +151,7 @@ mod tests {
     #[test]
     fn test_calculate_transaction_fee_swap() {
         let gas_price_type = GasPriceType::solana(5000u64, 30000u64, 100u64);
-        let input_type = TransactionInputType::Swap(Asset::mock_sol(), Asset::mock_spl_token(), mock_swap_data_with_gas_limit(SwapProvider::Jupiter, None));
+        let input_type = TransactionInputType::Swap(Asset::mock_sol(), Asset::mock_spl_token(), mock_swap_data_with_unit_limit(SwapProvider::Jupiter, None));
 
         let fee = calculate_transaction_fee(&input_type, &gas_price_type, Some("recipient_token_address".to_string()));
 
@@ -162,7 +162,11 @@ mod tests {
     #[test]
     fn test_calculate_transaction_fee_swap_with_provider_gas_limit() {
         let gas_price_type = GasPriceType::solana(5000u64, 30000u64, 100u64);
-        let input_type = TransactionInputType::Swap(Asset::mock_sol(), Asset::mock_spl_token(), mock_swap_data_with_gas_limit(SwapProvider::Okx, Some("550000")));
+        let input_type = TransactionInputType::Swap(
+            Asset::mock_sol(),
+            Asset::mock_spl_token(),
+            mock_swap_data_with_unit_limit(SwapProvider::Okx, Some("550000")),
+        );
 
         let fee = calculate_transaction_fee(&input_type, &gas_price_type, Some("recipient_token_address".to_string()));
 
@@ -275,7 +279,7 @@ mod tests {
     #[test]
     fn test_calculate_fee_rates_swap() {
         let fees = vec![SolanaPrioritizationFee { prioritization_fee: 150_000 }];
-        let input_type = TransactionInputType::Swap(Asset::mock_sol(), Asset::mock_spl_token(), mock_swap_data_with_gas_limit(SwapProvider::Jupiter, None));
+        let input_type = TransactionInputType::Swap(Asset::mock_sol(), Asset::mock_spl_token(), mock_swap_data_with_unit_limit(SwapProvider::Jupiter, None));
 
         let rates = calculate_fee_rates(&input_type, &fees);
         assert_eq!(rates.len(), 3);
