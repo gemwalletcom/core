@@ -43,6 +43,7 @@ gem_wallet_connect = { path = "../crates/gem_wallet_connect" }
 chain_traits = { path = "../crates/chain_traits" }
 signer = { path = "../crates/signer" }
 number_formatter = { path = "../crates/number_formatter" }
+yielder = { path = "../crates/yielder" }
 
 reqwest = { workspace = true, optional = true }
 sui-types = { workspace = true }
