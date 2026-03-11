@@ -8,7 +8,7 @@ pub use preferences::EmptyPreferences;
 pub use preferences::GemPreferences;
 use preferences::PreferencesWrapper;
 
-use crate::alien::{AlienProvider, new_alien_client};
+use crate::alien::{AlienProvider, AlienProviderWrapper, new_alien_client};
 use crate::api_client::GemApiClient;
 use crate::models::*;
 use crate::network::JsonRpcClient;
@@ -31,6 +31,7 @@ use gem_tron::rpc::{client::TronClient, trongrid::client::TronGridClient};
 use gem_xrp::rpc::client::XRPClient;
 use std::future::Future;
 use std::sync::Arc;
+use yielder::Yielder;
 
 use primitives::{AssetId, BitcoinChain, Chain, ChartPeriod, EVMChain, ScanAddressTarget, ScanTransactionPayload, TransactionPreloadInput, chain_cosmos::CosmosChain};
 
@@ -47,6 +48,7 @@ pub struct GemGateway {
     pub preferences: Arc<dyn GemPreferences>,
     pub secure_preferences: Arc<dyn GemPreferences>,
     pub api_client: GemApiClient,
+    yielder: Yielder,
 }
 
 impl std::fmt::Debug for GemGateway {
@@ -151,11 +153,14 @@ impl GemGateway {
     #[uniffi::constructor]
     pub fn new(provider: Arc<dyn AlienProvider>, preferences: Arc<dyn GemPreferences>, secure_preferences: Arc<dyn GemPreferences>, api_url: String) -> Self {
         let api_client = GemApiClient::new(api_url, provider.clone());
+        let wrapper = AlienProviderWrapper { provider: provider.clone() };
+        let yielder = Yielder::new(Arc::new(wrapper));
         Self {
             provider,
             preferences,
             secure_preferences,
             api_client,
+            yielder,
         }
     }
 
@@ -299,22 +304,20 @@ impl GemGateway {
         Ok(self.provider(chain).await?.get_is_token_address(&token_id))
     }
 
-    pub async fn get_balance_earn(&self, _chain: Chain, _address: String) -> Result<Vec<GemAssetBalance>, GatewayError> {
-        Ok(vec![])
+    pub async fn get_balance_earn(&self, chain: Chain, address: String) -> Result<Vec<GemAssetBalance>, GatewayError> {
+        Ok(self.yielder.balance(chain, &address).await)
     }
 
-    pub async fn get_earn_data(&self, _asset_id: AssetId, _address: String, _value: String, _earn_type: GemEarnType) -> Result<GemContractCallData, GatewayError> {
-        Err(GatewayError::NetworkError {
-            msg: "Earn provider not available".to_string(),
-        })
+    pub async fn get_earn_data(&self, asset_id: AssetId, address: String, value: String, earn_type: GemEarnType) -> Result<GemContractCallData, GatewayError> {
+        self.yielder.get_earn_data(&asset_id, &address, &value, &earn_type).await.map_err(|e| GatewayError::NetworkError { msg: e.to_string() })
     }
 
-    pub fn get_earn_providers(&self, _asset_id: AssetId) -> Vec<GemDelegationValidator> {
-        vec![]
+    pub fn get_earn_providers(&self, asset_id: AssetId) -> Vec<GemDelegationValidator> {
+        self.yielder.providers(&asset_id)
     }
 
-    pub async fn get_earn_positions(&self, _chain: Chain, _address: String, _asset_ids: Vec<AssetId>) -> Result<Vec<GemDelegationBase>, GatewayError> {
-        Ok(vec![])
+    pub async fn get_earn_positions(&self, chain: Chain, address: String, asset_ids: Vec<AssetId>) -> Result<Vec<GemDelegationBase>, GatewayError> {
+        Ok(self.yielder.positions(chain, &address, &asset_ids).await)
     }
 
     pub async fn get_node_status(&self, chain: Chain, url: &str) -> Result<GemNodeStatus, GatewayError> {
