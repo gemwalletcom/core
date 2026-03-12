@@ -100,8 +100,8 @@ struct PerpetualPortfolioSceneViewModelTests {
         model.state = .data(.mock(day: .mock(accountValueHistory: ChartDateValue.mockHistory(values: [0, 50, 30, 100]))))
 
         if case .data(let chartModel) = model.chartState {
-            #expect(chartModel.price?.price == 100)
-            #expect(chartModel.price?.priceChangePercentage24h == 0)
+            #expect(chartModel.price?.price == 50)
+            #expect(chartModel.price?.priceChangePercentage24h == 100)
         }
 
         model.state = .data(.mock(day: .mock(accountValueHistory: ChartDateValue.mockHistory(values: [50, 100, 75]))))

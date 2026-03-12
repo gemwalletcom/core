@@ -20,7 +20,7 @@ public struct ChartView: View {
 
     private let model: ChartValuesViewModel
 
-    @State private var selectedValue: ChartPriceViewModel?
+    @State private var selectedElement: ChartDateValue?
 
     public init(model: ChartValuesViewModel) {
         self.model = model
@@ -39,10 +39,10 @@ public struct ChartView: View {
 extension ChartView {
     private var priceHeader: some View {
         Group {
-            if let selectedValue {
-                ChartPriceView(model: selectedValue)
-            } else if let chartPriceViewModel = model.chartPriceViewModel {
-                ChartPriceView(model: chartPriceViewModel)
+            if let element = selectedElement {
+                ChartHeaderView(model: model.headerViewModel(for: element))
+            } else if let chartHeaderViewModel = model.chartHeaderViewModel {
+                ChartHeaderView(model: chartHeaderViewModel)
             }
         }
         .padding(.top, Spacing.small)
@@ -69,12 +69,12 @@ extension ChartView {
                 .interpolationMethod(.catmullRom)
             }
 
-            if let selectedValue, let date = selectedValue.date {
-                RuleMark(x: .value(ChartKey.date, date))
+            if let selectedElement {
+                RuleMark(x: .value(ChartKey.date, selectedElement.date))
                     .foregroundStyle(model.lineColor.opacity(.medium))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
 
-                PointMark(x: .value(ChartKey.date, date), y: .value(ChartKey.value, selectedValue.price))
+                PointMark(x: .value(ChartKey.date, selectedElement.date), y: .value(ChartKey.value, selectedElement.value))
                     .symbol {
                         Circle()
                             .fill(
@@ -113,8 +113,8 @@ extension ChartView {
                     let origin = geometry[plotFrame].origin
                     PulsingDotView(color: model.lineColor)
                         .position(x: origin.x + xPos, y: origin.y + yPos)
-                        .opacity(selectedValue == nil ? 1 : 0)
-                        .animation(.easeInOut(duration: .AnimationDuration.normal), value: selectedValue == nil)
+                        .opacity(selectedElement == nil ? 1 : 0)
+                        .animation(.easeInOut(duration: .AnimationDuration.normal), value: selectedElement == nil)
                 }
             }
         }
@@ -182,14 +182,13 @@ extension ChartView {
             return
         }
 
-        let newValue = model.priceViewModel(for: element)
-        if newValue.date != selectedValue?.date {
+        if element.date != selectedElement?.date {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         }
-        selectedValue = newValue
+        selectedElement = element
     }
 
     private func onDragEnd() {
-        selectedValue = nil
+        selectedElement = nil
     }
 }

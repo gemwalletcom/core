@@ -120,6 +120,6 @@ public struct BalanceViewModel: Sendable {
     }
 
     var total: BigInt {
-        balance.available + balance.frozen + balance.locked + balance.staked + balance.pending + balance.rewards + balance.earn
+        balance.total
     }
 }

@@ -2,7 +2,6 @@
 
 import SwiftUI
 import Primitives
-import Store
 import Localization
 import Style
 import NFT

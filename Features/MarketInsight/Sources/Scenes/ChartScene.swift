@@ -1,9 +1,7 @@
 // Copyright (c). Gem Wallet. All rights reserved.
 
 import SwiftUI
-import Charts
 import Primitives
-import Style
 import Components
 import Store
 import PrimitivesComponents
@@ -18,15 +16,7 @@ public struct ChartScene: View {
     }
     
     public var body: some View {
-        List {
-            Section { } header: {
-                ChartStateView(
-                    state: model.state,
-                    selectedPeriod: $model.selectedPeriod
-                )
-            }
-            .cleanListRow()
-            
+        ChartListView(model: model) {
             if model.showPriceAlerts, let asset = model.priceData?.asset {
                 NavigationLink(
                     value: Scenes.AssetPriceAlert(asset: asset),
@@ -60,13 +50,6 @@ public struct ChartScene: View {
             }
         }
         .bindQuery(model.priceQuery)
-        .refreshableTimer(every: .minutes(1)) {
-            await model.fetch()
-        }
-        .task {
-            await model.fetch()
-        }
-        .listSectionSpacing(.compact)
         .navigationTitle(model.title)
         .sheet(item: $model.isPresentingInfoSheet) {
             InfoSheetScene(type: $0)

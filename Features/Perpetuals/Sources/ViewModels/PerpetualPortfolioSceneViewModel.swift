@@ -1,10 +1,8 @@
 // Copyright (c). Gem Wallet. All rights reserved.
 
 import Foundation
-import SwiftUI
 import Primitives
 import Components
-import Style
 import Formatters
 import PerpetualService
 import PrimitivesComponents
@@ -12,7 +10,7 @@ import Localization
 
 @Observable
 @MainActor
-final class PerpetualPortfolioSceneViewModel {
+final class PerpetualPortfolioSceneViewModel: ChartListViewable {
     private let wallet: Wallet
     private let perpetualService: PerpetualServiceable
     private let currencyFormatter = CurrencyFormatter(type: .currency, currencyCode: Currency.usd.rawValue)
@@ -26,7 +24,7 @@ final class PerpetualPortfolioSceneViewModel {
             }
         }
     }
-    var selectedPeriod: ChartPeriod = .day
+    public var selectedPeriod: ChartPeriod = .day
     var selectedChartType: PerpetualPortfolioChartType = .pnl
 
     private var portfolio: PerpetualPortfolio?
@@ -42,14 +40,14 @@ final class PerpetualPortfolioSceneViewModel {
     var navigationTitle: String { Localized.Perpetuals.title }
     var infoSectionTitle: String { Localized.Common.info }
 
-    var periods: [ChartPeriod] {
+    public var periods: [ChartPeriod] {
         guard let periods = portfolio?.availablePeriods, !periods.isEmpty else {
             return [.day, .week, .month, .all]
         }
         return periods
     }
 
-    var chartState: StateViewType<ChartValuesViewModel> {
+    public var chartState: StateViewType<ChartValuesViewModel> {
         switch state {
         case .loading: .loading
         case .noData: .noData
@@ -65,7 +63,7 @@ final class PerpetualPortfolioSceneViewModel {
         }
     }
 
-    func fetch() async {
+    public func fetch() async {
         guard let address = wallet.hyperliquidAccount?.address else { return }
         state = .loading
         do {
@@ -135,25 +133,10 @@ extension PerpetualPortfolioSceneViewModel {
             return nil
         }
         let charts: [ChartDateValue] = switch selectedChartType {
-        case .value: timeframe.accountValueHistory
+        case .value:
+            Array(timeframe.accountValueHistory.drop(while: { $0.value == .zero }))
         case .pnl: timeframe.pnlHistory
         }
-        guard let values = try? ChartValues.from(charts: charts), values.hasVariation else {
-            return nil
-        }
-        let valueChange = values.lastValue - values.firstValue
-        let price = Price(
-            price: valueChange,
-            priceChangePercentage24h: PriceChangeCalculator.calculate(.percentage(from: values.firstValue, to: values.lastValue)),
-            updatedAt: .now
-        )
-        return ChartValuesViewModel(
-            period: selectedPeriod,
-            price: price,
-            values: values,
-            lineColor: Colors.blue,
-            formatter: currencyFormatter,
-            type: .priceChange
-        )
+        return .priceChange(charts: charts, period: selectedPeriod, formatter: currencyFormatter, showHeaderValue: selectedChartType == .value)
     }
 }

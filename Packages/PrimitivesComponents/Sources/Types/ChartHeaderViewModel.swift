@@ -7,11 +7,12 @@ import Style
 import Formatters
 import Components
 
-public struct ChartPriceViewModel {
+public struct ChartHeaderViewModel {
     public let period: ChartPeriod
     public let date: Date?
     public let price: Double
     public let priceChangePercentage: Double
+    public let headerValue: Double?
     public let type: ChartValueType
 
     private let formatter: CurrencyFormatter
@@ -21,6 +22,7 @@ public struct ChartPriceViewModel {
         date: Date?,
         price: Double,
         priceChangePercentage: Double,
+        headerValue: Double? = nil,
         formatter: CurrencyFormatter,
         type: ChartValueType = .price
     ) {
@@ -28,6 +30,7 @@ public struct ChartPriceViewModel {
         self.date = date
         self.price = price
         self.priceChangePercentage = priceChangePercentage
+        self.headerValue = headerValue
         self.type = type
         self.formatter = formatter
     }
@@ -50,6 +53,10 @@ public struct ChartPriceViewModel {
         }
     }
 
+    public var headerValueText: String? {
+        headerValue.map { formatter.string($0) }
+    }
+
     public var priceText: String {
         valueChange?.text ?? formatter.string(price)
     }
@@ -59,11 +66,25 @@ public struct ChartPriceViewModel {
     }
 
     public var priceChangeText: String? {
-        guard type == .price, price != 0 else { return nil }
-        return CurrencyFormatter.percent.string(priceChangePercentage)
+        guard price != 0 else { return nil }
+        switch type {
+        case .priceChange:
+            guard headerValue != nil, priceChangePercentage != 0 else { return nil }
+            return "(\(CurrencyFormatter.percentSignLess.string(priceChangePercentage)))"
+        case .price:
+            return CurrencyFormatter.percent.string(priceChangePercentage)
+        }
     }
 
     public var priceChangeTextColor: Color {
         PriceChangeColor.color(for: priceChangePercentage)
+    }
+
+    public var priceFont: Font {
+        headerValue != nil ? .app.headline : .title2
+    }
+
+    public var priceChangeFont: Font {
+        headerValue != nil ? .app.headline : .callout
     }
 }

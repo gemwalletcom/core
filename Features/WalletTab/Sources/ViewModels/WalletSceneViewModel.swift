@@ -7,8 +7,8 @@ import Primitives
 import BalanceService
 import BannerService
 import DiscoverAssetsService
-import Store
 import Preferences
+import Store
 import Localization
 import PrimitivesComponents
 import InfoSheet
@@ -50,6 +50,7 @@ public final class WalletSceneViewModel: Sendable {
     public var isPresentingToastMessage: ToastMessage?
     public var isPresentingSearch = false
     public var isPresentingAddToken: Bool = false
+    public var isPresentingPortfolio = false
 
     public var isLoadingAssets: Bool = false
 
@@ -122,6 +123,7 @@ public final class WalletSceneViewModel: Sendable {
             totalFiatValue: totalFiatValue.value
         )
     }
+
 }
 
 // MARK: - Business Logic
@@ -149,6 +151,10 @@ extension WalletSceneViewModel {
 
     public func onSelectAddCustomToken() {
         isPresentingAddToken = true
+    }
+
+    func onSelectPortfolio() {
+        isPresentingPortfolio = true
     }
 
     func onHeaderAction(type: HeaderButtonType) {

@@ -4,24 +4,34 @@ import Components
 import SwiftUI
 import Style
 
-public struct ChartPriceView: View {
-    let model: ChartPriceViewModel
+public struct ChartHeaderView: View {
+    let model: ChartHeaderViewModel
 
-    public init(model: ChartPriceViewModel) {
+    public init(model: ChartHeaderViewModel) {
         self.model = model
     }
 
     public var body: some View {
         VStack(spacing: Spacing.tiny) {
+            if let headerValueText = model.headerValueText {
+                Text(headerValueText)
+                    .font(.app.largeTitle)
+                    .foregroundStyle(Colors.black)
+                    .numericTransition(for: headerValueText)
+                    .minimumScaleFactor(0.5)
+                    .lineLimit(1)
+                    .padding(.bottom, Spacing.space10)
+            }
+
             HStack(alignment: .center, spacing: Spacing.tiny) {
                 Text(model.priceText)
-                    .font(.title2)
+                    .font(model.priceFont)
                     .foregroundStyle(model.priceColor)
                     .numericTransition(for: model.priceText)
 
                 if let priceChange = model.priceChangeText {
                     Text(priceChange)
-                        .font(.callout)
+                        .font(model.priceChangeFont)
                         .foregroundStyle(model.priceChangeTextColor)
                         .numericTransition(for: priceChange)
                 }

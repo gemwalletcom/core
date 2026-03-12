@@ -39,13 +39,8 @@ extension WalletHeaderViewModel: HeaderViewModel {
     }
     public var subtitleColor: Color { totalValueViewModel.pnlColor }
 
-    public var subtitleImageOffset: CGFloat { 1 }
     public var subtitleImage: Image? {
-        switch totalValue.pnlAmount {
-        case _ where totalValue.pnlAmount > 0: Images.System.arrowTriangleUp
-        case _ where totalValue.pnlAmount < 0: Images.System.arrowTriangleDown
-        default: nil
-        }
+        Image(systemName: SystemImage.chartLineUptrendXyaxis)
     }
 
     public var buttons: [HeaderButton] {

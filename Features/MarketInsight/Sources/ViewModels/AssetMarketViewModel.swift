@@ -2,6 +2,7 @@
 
 import Foundation
 import Primitives
+import Components
 import Formatters
 import Localization
 import PrimitivesComponents
@@ -12,8 +13,7 @@ struct AssetMarketViewModel {
     private let market: AssetMarket
     private let assetSymbol: String
     private let currencyFormatter: CurrencyFormatter
-    private let priceFormatter: CurrencyFormatter
-    private let percentFormatter: CurrencyFormatter
+    private let currency: String
 
     init(
         market: AssetMarket,
@@ -22,9 +22,8 @@ struct AssetMarketViewModel {
     ) {
         self.market = market
         self.assetSymbol = assetSymbol
+        self.currency = currency
         self.currencyFormatter = CurrencyFormatter(type: .abbreviated, currencyCode: currency)
-        self.priceFormatter = CurrencyFormatter(currencyCode: currency)
-        self.percentFormatter = CurrencyFormatter(type: .percent, currencyCode: currency)
     }
 
     // MARK: - Market
@@ -82,25 +81,33 @@ struct AssetMarketViewModel {
     // MARK: - All Time
 
     var allTimeHigh: MarketValueViewModel {
-        allTimeViewModel(title: Localized.Asset.allTimeHigh, chartValue: market.allTimeHighValue)
+        marketValueViewModel(Localized.Asset.allTimeHigh, chartValue: market.allTimeHighValue)
     }
 
     var allTimeLow: MarketValueViewModel {
-        allTimeViewModel(title: Localized.Asset.allTimeLow, chartValue: market.allTimeLowValue)
+        marketValueViewModel(Localized.Asset.allTimeLow, chartValue: market.allTimeLowValue)
     }
 
     // MARK: - Private
 
-    private func allTimeViewModel(title: String, chartValue: ChartValuePercentage?) -> MarketValueViewModel {
+    private var allTime: AllTimeValueViewModel {
+        AllTimeValueViewModel(
+            priceFormatter: CurrencyFormatter(currencyCode: currency),
+            percentFormatter: CurrencyFormatter(type: .percent, currencyCode: currency)
+        )
+    }
+
+    private func marketValueViewModel(_ title: String, chartValue: ChartValuePercentage?) -> MarketValueViewModel {
         guard let chartValue else {
             return MarketValueViewModel(title: title, subtitle: nil)
         }
+        let item = allTime.model(title: title, chartValue: chartValue)
         return MarketValueViewModel(
             title: title,
-            titleExtra: formatDate(chartValue.date),
-            subtitle: formatPrice(Double(chartValue.value)),
-            subtitleExtra: percentFormatter.string(Double(chartValue.percentage)),
-            subtitleExtraStyle: TextStyle(font: .callout, color: PriceViewModel.priceChangeTextColor(value: Double(chartValue.percentage)))
+            titleExtra: item.titleExtra,
+            subtitle: item.subtitle,
+            subtitleExtra: item.subtitleExtra,
+            subtitleExtraStyle: item.subtitleStyleExtra
         )
     }
 
@@ -108,15 +115,7 @@ struct AssetMarketViewModel {
         value.map { currencyFormatter.string($0) }
     }
 
-    private func formatPrice(_ value: Double?) -> String? {
-        value.map { priceFormatter.string($0) }
-    }
-
     private func formatSupply(_ value: Double?) -> String? {
         value.map { currencyFormatter.string(double: $0, symbol: assetSymbol) }
-    }
-
-    private func formatDate(_ date: Date?) -> String? {
-        date.map { TransactionDateFormatter(date: $0).section }
     }
 }

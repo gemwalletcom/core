@@ -13,6 +13,7 @@ public struct WalletHeaderView: View {
 
     private let balanceActionType: BalanceActionType
     private let onHeaderAction: HeaderButtonAction?
+    private let onSubtitleAction: VoidAction
     private let onInfoAction: VoidAction
 
     public init(
@@ -20,12 +21,14 @@ public struct WalletHeaderView: View {
         isPrivacyEnabled: Binding<Bool>,
         balanceActionType: BalanceActionType,
         onHeaderAction: HeaderButtonAction?,
+        onSubtitleAction: VoidAction = nil,
         onInfoAction: VoidAction
     ) {
         self.model = model
         _isPrivacyEnabled = isPrivacyEnabled
         self.balanceActionType = balanceActionType
         self.onHeaderAction = onHeaderAction
+        self.onSubtitleAction = onSubtitleAction
         self.onInfoAction = onInfoAction
     }
 
@@ -47,16 +50,9 @@ public struct WalletHeaderView: View {
             .padding(.bottom, .space10)
 
             if let subtitle = model.subtitle {
-                HStack(spacing: Spacing.space6) {
-                    PrivacyText(
-                        subtitle,
-                        isEnabled: $isPrivacyEnabled
-                    )
-                    .font(.app.headline)
-                    .foregroundStyle(model.subtitleColor)
-                }
-                .numericTransition(for: model.subtitle)
-                .padding(.bottom, .space10)
+                subtitleView(subtitle)
+                    .numericTransition(for: model.subtitle)
+                    .padding(.bottom, .space10)
             }
 
             switch model.isWatchWallet {
@@ -84,6 +80,32 @@ public struct WalletHeaderView: View {
                 HeaderButtonsView(buttons: model.buttons, action: onHeaderAction)
                     .padding(.top, .space8)
             }
+        }
+    }
+
+    @ViewBuilder
+    private func subtitleView(_ subtitle: String) -> some View {
+        let content = HStack(spacing: Spacing.space6) {
+            PrivacyText(
+                subtitle,
+                isEnabled: $isPrivacyEnabled
+            )
+            .font(.app.headline)
+            .foregroundStyle(model.subtitleColor)
+
+            if let subtitleImage = model.subtitleImage {
+                subtitleImage
+                    .font(.footnote)
+                    .foregroundStyle(Colors.secondaryText)
+            }
+        }
+
+        if let onSubtitleAction {
+            Button(action: onSubtitleAction) {
+                content
+            }
+        } else {
+            content
         }
     }
 

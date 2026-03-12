@@ -18,7 +18,7 @@ public extension ConfigResponse {
 
 public extension Release {
     static func mock(
-        version: String = "16.1",
+        version: String = "99.0",
         upgradeRequired: Bool = false
     ) -> Self {
         Release(

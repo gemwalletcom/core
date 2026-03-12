@@ -15,12 +15,14 @@ import Transfer
 import StakeService
 import PriceAlerts
 import AssetsService
+import PriceService
 
 struct WalletNavigationStack: View {
     @Environment(\.assetsEnabler) private var assetsEnabler
     @Environment(\.balanceService) private var balanceService
     @Environment(\.navigationState) private var navigationState
     @Environment(\.priceService) private var priceService
+    @Environment(\.portfolioService) private var portfolioService
     @Environment(\.priceAlertService) private var priceAlertService
     @Environment(\.assetsService) private var assetsService
     @Environment(\.transactionsService) private var transactionsService
@@ -217,6 +219,16 @@ struct WalletNavigationStack: View {
                 AddTokenNavigationStack(
                     wallet: model.wallet,
                     isPresenting: $model.isPresentingAddToken
+                )
+            }
+            .sheet(isPresented: $model.isPresentingPortfolio) {
+                WalletPortfolioScene(
+                    model: WalletPortfolioSceneViewModel(
+                        wallet: model.wallet,
+                        portfolioService: portfolioService,
+                        priceService: priceService,
+                        currencyCode: preferences.preferences.currency
+                    )
                 )
             }
             .safariSheet(url: $model.isPresentingUrl)

@@ -5,19 +5,21 @@ import Formatters
 import Primitives
 @testable import PrimitivesComponents
 
-public extension ChartPriceViewModel {
+public extension ChartHeaderViewModel {
     static func mock(
         period: ChartPeriod = .day,
         date: Date? = nil,
         price: Double = 100,
         priceChangePercentage: Double = 5,
+        headerValue: Double? = nil,
         type: ChartValueType = .price
-    ) -> ChartPriceViewModel {
-        ChartPriceViewModel(
+    ) -> ChartHeaderViewModel {
+        ChartHeaderViewModel(
             period: period,
             date: date,
             price: price,
             priceChangePercentage: priceChangePercentage,
+            headerValue: headerValue,
             formatter: CurrencyFormatter(type: .currency, currencyCode: "USD"),
             type: type
         )

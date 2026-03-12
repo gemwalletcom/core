@@ -75,5 +75,6 @@ extension EnvironmentValues {
     @Entry var walletSearchService: WalletSearchService = AppResolver.main.services.walletSearchService
     @Entry var assetSearchService: AssetSearchService = AppResolver.main.services.assetSearchService
     @Entry var inAppNotificationService: InAppNotificationService = AppResolver.main.services.inAppNotificationService
+    @Entry var portfolioService: PortfolioService = AppResolver.main.services.portfolioService
     @Entry var contactService: ContactService = AppResolver.main.services.contactService
 }

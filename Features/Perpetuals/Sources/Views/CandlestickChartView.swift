@@ -56,9 +56,9 @@ struct CandlestickChartView: View {
     private var priceHeader: some View {
         VStack {
             if let selectedPriceModel {
-                ChartPriceView(model: selectedPriceModel)
+                ChartHeaderView(model: selectedPriceModel)
             } else if let currentPriceModel {
-                ChartPriceView(model: currentPriceModel)
+                ChartHeaderView(model: currentPriceModel)
             }
         }
         .padding(.top, Spacing.small)
@@ -215,19 +215,19 @@ struct CandlestickChartView: View {
         }
     }
 
-    private var currentPriceModel: ChartPriceViewModel? {
+    private var currentPriceModel: ChartHeaderViewModel? {
         guard let lastCandle = data.last, let base = basePrice else { return nil }
         return priceModel(for: lastCandle, base: base)
     }
 
-    private var selectedPriceModel: ChartPriceViewModel? {
+    private var selectedPriceModel: ChartHeaderViewModel? {
         guard let selectedCandle else { return nil }
         let base = basePrice ?? data.first?.close ?? selectedCandle.close
         return priceModel(for: selectedCandle, base: base, date: selectedCandle.date)
     }
 
-    private func priceModel(for candle: ChartCandleStick, base: Double, date: Date? = nil) -> ChartPriceViewModel {
-        ChartPriceViewModel(
+    private func priceModel(for candle: ChartCandleStick, base: Double, date: Date? = nil) -> ChartHeaderViewModel {
+        ChartHeaderViewModel(
             period: period,
             date: date,
             price: candle.close,

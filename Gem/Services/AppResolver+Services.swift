@@ -84,6 +84,7 @@ extension AppResolver {
         let assetSearchService: AssetSearchService
         let appLifecycleService: AppLifecycleService
         let inAppNotificationService: InAppNotificationService
+        let portfolioService: PortfolioService
         let fiatService: any GemAPIFiatService
         let contactService: ContactService
 
@@ -135,6 +136,7 @@ extension AppResolver {
             assetSearchService: AssetSearchService,
             appLifecycleService: AppLifecycleService,
             inAppNotificationService: InAppNotificationService,
+            portfolioService: PortfolioService,
             fiatService: any GemAPIFiatService,
             contactService: ContactService
         ) {
@@ -186,6 +188,7 @@ extension AppResolver {
             self.assetSearchService = assetSearchService
             self.appLifecycleService = appLifecycleService
             self.inAppNotificationService = inAppNotificationService
+            self.portfolioService = portfolioService
             self.fiatService = fiatService
             self.contactService = contactService
         }

@@ -26,6 +26,7 @@ public struct WalletScene: View {
                     isPrivacyEnabled: $preferences.isHideBalanceEnabled,
                     balanceActionType: .privacyToggle,
                     onHeaderAction: model.onHeaderAction,
+                    onSubtitleAction: model.onSelectPortfolio,
                     onInfoAction: model.onSelectWatchWalletInfo
                 )
                 .padding(.top, .space6)

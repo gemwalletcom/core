@@ -3,7 +3,6 @@
 import SwiftUI
 import Primitives
 import Components
-import Style
 import PrimitivesComponents
 
 struct PerpetualPortfolioScene: View {
@@ -15,16 +14,7 @@ struct PerpetualPortfolioScene: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section { } header: {
-                    ChartStateView(
-                        state: model.chartState,
-                        selectedPeriod: $model.selectedPeriod,
-                        periods: model.periods
-                    )
-                }
-                .cleanListRow()
-
+            ChartListView(model: model) {
                 Section(header: Text(model.infoSectionTitle)) {
                     ListItemView(field: model.unrealizedPnlField)
                     ListItemView(field: model.accountLeverageField)
@@ -50,13 +40,6 @@ struct PerpetualPortfolioScene: View {
                 }
             }
             .toolbarDismissItem(type: .close, placement: .cancellationAction)
-            .task {
-                await model.fetch()
-            }
-            .refreshableTimer(every: .minutes(1)) {
-                await model.fetch()
-            }
-            .listSectionSpacing(.compact)
         }
     }
 }
