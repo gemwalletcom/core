@@ -24,7 +24,7 @@ extension NFTCollectionRecordInfo {
                         mimeType: collection.previewImageMimeType
                     )
                 ),
-                isVerified: collection.isVerified,
+                status: collection.status,
                 links: collection.links ?? []
             ),
             assets: assets.map { $0.mapToAsset() }

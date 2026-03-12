@@ -550,3 +550,10 @@
 "charts.price.low" = "Low";
 "charts.price.change" = "Change";
 "contacts.add_to_contacts" = "Add to Contacts";
+"common.method" = "Method";
+"simulation.header.unlimited_asset" = "Unlimited %@";
+"common.token" = "Token";
+"common.suspicious_address" = "Suspicious address";
+"simulation.warning.unlimited_token_approval.description" = "This gives the spender access to use this token until you revoke the approval or it expires.";
+"simulation.warning.nft_collection_approval.title" = "Full NFT collection access requested";
+"simulation.warning.unlimited_token_approval.title" = "Unlimited token approval";

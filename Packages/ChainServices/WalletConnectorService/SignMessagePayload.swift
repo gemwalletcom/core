@@ -9,17 +9,20 @@ public struct SignMessagePayload: Sendable {
     public let session: WalletConnectionSession
     public let wallet: Wallet
     public let message: SignMessage
+    public let simulation: SimulationResult
 
     public init(
         chain: Chain,
         session: WalletConnectionSession,
         wallet: Wallet,
-        message: SignMessage
+        message: SignMessage,
+        simulation: SimulationResult
     ) {
         self.chain = chain
         self.wallet = wallet
         self.session = session
         self.message = message
+        self.simulation = simulation
     }
 }
 

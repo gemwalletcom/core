@@ -33,6 +33,7 @@ struct WalletConnectorNavigationStack: View {
                             wallet: data.payload.wallet,
                             data: data.payload.tranferData,
                             confirmTransferDelegate: data.delegate,
+                            simulation: data.payload.simulation,
                             onComplete: { presenter.complete(type: type) }
                         )
                     )
@@ -41,14 +42,16 @@ struct WalletConnectorNavigationStack: View {
                         model: viewModelFactory.signMessageScene(
                             payload: data.payload,
                             confirmTransferDelegate: data.delegate
-                        )
+                        ),
+                        onComplete: { presenter.complete(type: type) }
                     )
                 case .connectionProposal(let data):
                     ConnectionProposalScene(
                         model: ConnectionProposalViewModel(
                             confirmTransferDelegate: data.delegate,
                             pairingProposal: data.payload
-                        )
+                        ),
+                        onComplete: { presenter.complete(type: type) }
                     )
                 }
             }

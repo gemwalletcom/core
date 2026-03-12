@@ -378,7 +378,7 @@
 "info.asset_status.unverified.description" = "โทเค็นที่ไม่ได้รับการตรวจสอบนั้นไม่ได้รับการตรวจสอบอย่างเพียงพอโดยบริการบุคคลที่สามที่เชื่อถือได้ โทเค็นเหล่านี้อาจปรากฏในกระเป๋าเงินของคุณเนื่องจากการส่งทางอากาศ การโอน หรือการนำเข้าด้วยตนเอง";
 "info.asset_status.suspicious.description" = "โทเค็นที่น่าสงสัยหรือเป็นสแปมจะถูกระบุว่าเป็นการหลอกลวงหรือทรัพย์สินที่เป็นอันตราย โทเค็นเหล่านี้อาจปรากฏในกระเป๋าเงินของคุณเนื่องจากการส่งทางอากาศ การโอน หรือการนำเข้าด้วยตนเอง";
 "info.insufficient_network_fee_balance.title" = "%@ จำเป็น";
-"info.insufficient_network_fee_balance.description" = "ธุรกรรมนี้ต้องการ %@ เพื่อชดเชยค่าธรรมเนียมเครือข่ายที่จ่ายไป %@ ไม่ใช่คนงานเหมือง Gem Walletตรวจสอบให้แน่ใจว่าคุณมีเพียงพอ %@-";
+"info.insufficient_network_fee_balance.description" = "ธุรกรรมนี้ต้องการ %@ เพื่อชดเชยค่าธรรมเนียมเครือข่ายที่จ่ายไป %@ ไม่ใช่คนงานเหมือง Gem Walletตรวจสอบให้แน่ใจว่าคุณมีเพียงพอ %@.";
 "brand_name" = "Gem Wallet";
 "info.insufficient_balance.title" = "ยอดเงินคงเหลือไม่เพียงพอ";
 "info.insufficient_balance.description" = "คุณมี %@ ไม่เพียงพอสำหรับการทำธุรกรรมนี้ โปรดเติมเงิน รับ หรือแลกเปลี่ยนในกระเป๋าสตางค์ของคุณแล้วลองอีกครั้ง";
@@ -550,3 +550,10 @@
 "charts.price.low" = "ต่ำ";
 "charts.price.change" = "เปลี่ยน";
 "contacts.add_to_contacts" = "เพิ่มลงในรายชื่อติดต่อ";
+"common.method" = "วิธี";
+"simulation.header.unlimited_asset" = "ไม่จำกัด %@";
+"common.token" = "โทเค็น";
+"common.suspicious_address" = "ที่อยู่น่าสงสัย";
+"simulation.warning.unlimited_token_approval.description" = "これにより ผู้ใช้สามารถใช้โทเค็นนี้ได้จนกว่าคุณจะเพิกถอนการอนุมัติหรือโทเค็นหมดอายุ";
+"simulation.warning.nft_collection_approval.title" = "ขอสิทธิ์เข้าถึงคอลเลกชัน NFT ทั้งหมด";
+"simulation.warning.unlimited_token_approval.title" = "อนุมัติโทเค็นได้ไม่จำกัดจำนวน";

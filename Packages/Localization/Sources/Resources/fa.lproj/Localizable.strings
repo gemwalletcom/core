@@ -550,3 +550,10 @@
 "charts.price.low" = "کم";
 "charts.price.change" = "تغییر";
 "contacts.add_to_contacts" = "اضافه کردن به مخاطبین";
+"common.method" = "روش";
+"simulation.header.unlimited_asset" = "نامحدود %@";
+"common.token" = "توکن";
+"common.suspicious_address" = "آدرس مشکوک";
+"simulation.warning.unlimited_token_approval.description" = "این به خرج‌کننده دسترسی می‌دهد تا زمانی که تأییدیه را لغو کنید یا منقضی شود، از این توکن استفاده کند.";
+"simulation.warning.nft_collection_approval.title" = "دسترسی کامل به مجموعه NFT درخواست شد";
+"simulation.warning.unlimited_token_approval.title" = "تایید نامحدود توکن";

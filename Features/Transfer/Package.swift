@@ -74,6 +74,7 @@ let package = Package(
                 .product(name: "TransactionStateService", package: "FeatureServices"),
                 .product(name: "ScanService", package: "ChainServices"),
                 .product(name: "BalanceService", package: "FeatureServices"),
+                .product(name: "AssetsService", package: "FeatureServices"),
                 .product(name: "PriceService", package: "FeatureServices"),
                 .product(name: "EarnService", package: "FeatureServices"),
                 .product(name: "PerpetualService", package: "FeatureServices"),

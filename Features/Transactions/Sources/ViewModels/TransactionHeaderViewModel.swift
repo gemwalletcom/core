@@ -33,7 +33,7 @@ struct TransactionHeaderViewModel: Sendable {
 
     var showClearHeader: Bool {
         switch headerType {
-        case .amount, .nft: true
+        case .amount, .nft, .asset, .assetValue: true
         case .swap: false
         }
     }

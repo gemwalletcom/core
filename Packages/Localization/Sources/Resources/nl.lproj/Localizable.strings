@@ -550,3 +550,10 @@
 "charts.price.low" = "Laag";
 "charts.price.change" = "Wijziging";
 "contacts.add_to_contacts" = "Toevoegen aan contacten";
+"common.method" = "Methode";
+"simulation.header.unlimited_asset" = "Onbeperkt %@";
+"common.token" = "Token";
+"common.suspicious_address" = "Verdacht adres";
+"simulation.warning.unlimited_token_approval.description" = "Dit geeft de gebruiker toegang tot het gebruik van dit token totdat u de goedkeuring intrekt of het token verloopt.";
+"simulation.warning.nft_collection_approval.title" = "Volledige toegang tot de NFT-collectie aangevraagd";
+"simulation.warning.unlimited_token_approval.title" = "Onbeperkte tokengoedkeuring";

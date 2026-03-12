@@ -550,3 +550,10 @@
 "charts.price.low" = "Chini";
 "charts.price.change" = "Badilisha";
 "contacts.add_to_contacts" = "Ongeza kwenye Anwani";
+"common.method" = "Mbinu";
+"simulation.header.unlimited_asset" = "Isiyo na kikomo %@";
+"common.token" = "Tokeni";
+"common.suspicious_address" = "Anwani ya kutiliwa shaka";
+"simulation.warning.unlimited_token_approval.description" = "Hii inampa mtumiaji uwezo wa kutumia tokeni hii hadi utakapobatilisha idhini au itakapoisha muda wake.";
+"simulation.warning.nft_collection_approval.title" = "Ufikiaji kamili wa ukusanyaji wa NFT umeombwa";
+"simulation.warning.unlimited_token_approval.title" = "Idhini ya tokeni isiyo na kikomo";

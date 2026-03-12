@@ -6,6 +6,7 @@ import Primitives
 import PrimitivesTestKit
 import TransferTestKit
 import PrimitivesComponents
+import AssetsServiceTestKit
 import BlockchainTestKit
 import ScanServiceTestKit
 import KeystoreTestKit
@@ -130,6 +131,35 @@ struct ConfirmTransferSceneViewModelTests {
         if case .recipient(let addressViewModel) = recipientItem?.itemModel {
             #expect(addressViewModel.account.address == address)
             #expect(addressViewModel.account.name == "Bitcoin")
+        } else {
+            Issue.record("Expected recipient item model")
+        }
+    }
+
+    @Test
+    func recipientNameItemModelUsesStoredAddress() throws {
+        let db = DB.mockAssets()
+        let addressStore = AddressStore.mock(db: db)
+        let checksummedAddress = "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4"
+        try addressStore.addAddressNames([
+            .mock(
+                chain: .ethereum,
+                address: checksummedAddress,
+                name: "Uniswap"
+            )
+        ])
+        let model = ConfirmTransferSceneViewModel.mock(
+            data: .mock(
+                type: .transfer(.mockEthereum()),
+                recipient: RecipientData.mock(recipient: .mock(address: checksummedAddress))
+            ),
+            addressNameService: .mock(addressStore: addressStore)
+        )
+        let recipientItem = model.itemModel(for: .recipient) as? ConfirmRecipientViewModel
+
+        if case .recipient(let addressViewModel) = recipientItem?.itemModel {
+            #expect(addressViewModel.account.address == checksummedAddress)
+            #expect(addressViewModel.account.name == "Uniswap")
         } else {
             Issue.record("Expected recipient item model")
         }
@@ -292,9 +322,95 @@ struct ConfirmTransferSceneViewModelTests {
         #expect(sections[3].id == "error")
 
         #expect(sections[0].values == [.header])
-        #expect(sections[1].values == [.app, .network, .sender, .recipient, .memo, .details])
+        #expect(sections[1].values == [.app, .sender, .network, .recipient, .memo, .details])
         #expect(sections[2].values == [.networkFee])
         #expect(sections[3].values == [.error])
+    }
+
+    @Test
+    func walletConnectSectionsStructure() {
+        let model = ConfirmTransferSceneViewModel.mock(
+            data: .mock(type: .generic(asset: .mockEthereum(), metadata: .mock(), extra: .mock(to: "0x1111111111111111111111111111111111111111"))),
+            simulation: .mock(
+                warnings: [SimulationWarning(
+                    severity: .warning,
+                    warning: .tokenApproval(assetId: AssetId(chain: .ethereum, tokenId: "0x1111111111111111111111111111111111111111"), value: BigInt(1000)),
+                    message: nil
+                )],
+                payload: [
+                    SimulationPayloadField.standard(kind: .contract, value: "0x1111111111111111111111111111111111111111", fieldType: .address, display: .primary),
+                    SimulationPayloadField.standard(kind: .method, value: "Approve", fieldType: .text, display: .primary)
+                ]
+            )
+        )
+        let sections = model.sections
+
+        #expect(sections.count == 6)
+        #expect(sections[0].id == "header")
+        #expect(sections[1].id == "details")
+        #expect(sections[2].id == "warnings")
+        #expect(sections[3].id == "payload")
+        #expect(sections[4].id == "fee")
+        #expect(sections[5].id == "error")
+
+        #expect(sections[1].values == [.app, .sender, .network])
+        #expect(sections[2].values == [.warnings])
+        #expect(sections[3].values == [.payload])
+    }
+
+    @Test
+    func buttonDisabledWithCriticalWarnings() {
+        let model = ConfirmTransferSceneViewModel.mock(
+            simulation: .mock(warnings: [SimulationWarning(severity: .critical, warning: .suspiciousSpender, message: nil)])
+        )
+        #expect(model.isButtonDisabled)
+    }
+
+    @Test
+    func buttonEnabledWithNoWarnings() {
+        #expect(!ConfirmTransferSceneViewModel.mock().isButtonDisabled)
+    }
+
+    @Test
+    func simulationWarningsPassThroughExternallyOwnedSpenderWarnings() {
+        let model = ConfirmTransferSceneViewModel.mock(
+            simulation: .mock(warnings: [
+                SimulationWarning(
+                    severity: .warning,
+                    warning: .permitApproval(assetId: AssetId(chain: .ethereum, tokenId: "0x123"), value: BigInt(1000)),
+                    message: nil
+                ),
+                SimulationWarning(
+                    severity: .critical,
+                    warning: .externallyOwnedSpender,
+                    message: nil
+                ),
+            ])
+        )
+
+        #expect(model.simulationWarnings.count == 2)
+        #expect(model.simulationWarnings.last?.warning == .externallyOwnedSpender)
+    }
+
+    @Test
+    func simulationWarningsPassThroughValidationWarnings() {
+        let model = ConfirmTransferSceneViewModel.mock(
+            simulation: .mock(warnings: [
+                SimulationWarning(
+                    severity: .warning,
+                    warning: .permitApproval(assetId: AssetId(chain: .ethereum, tokenId: "0x123"), value: BigInt(1000)),
+                    message: nil
+                ),
+                SimulationWarning(
+                    severity: .critical,
+                    warning: .validationError,
+                    message: "Unable to verify spender is a contract"
+                ),
+            ])
+        )
+
+        #expect(model.simulationWarnings.count == 2)
+        #expect(model.simulationWarnings.last?.warning == .validationError)
     }
 
     @Test
@@ -331,7 +447,8 @@ private extension ConfirmTransferSceneViewModel {
     static func mock(
         wallet: Wallet = .mock(),
         data: TransferData = .mock(),
-        addressNameService: AddressNameService = .mock(addressStore: .mock())
+        addressNameService: AddressNameService = .mock(addressStore: .mock()),
+        simulation: SimulationResult? = nil
     ) -> ConfirmTransferSceneViewModel {
         ConfirmTransferSceneViewModel(
             wallet: wallet,
@@ -342,6 +459,7 @@ private extension ConfirmTransferSceneViewModel {
                 assetsEnabler: .mock(),
                 scanService: .mock(),
                 balanceService: .mock(),
+                assetsService: .mock(),
                 priceService: .mock(),
                 transactionStateService: .mock(),
                 addressNameService: addressNameService,
@@ -349,6 +467,11 @@ private extension ConfirmTransferSceneViewModel {
                 eventPresenterService: .mock(),
                 chain: data.chain
             ),
+            simulationService: ConfirmSimulationServiceFactory.create(
+                addressNameService: addressNameService,
+                assetsService: .mock()
+            ),
+            simulation: simulation,
             onComplete: {}
         )
     }

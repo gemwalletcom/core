@@ -20,11 +20,9 @@ extension ConfirmSenderViewModel: ItemModelProvidable {
         let walletViewModel = WalletViewModel(wallet: wallet)
         return .sender(
             ListItemModel(
-                title: Localized.Wallet.title,
+                title: Localized.Common.wallet,
                 subtitle: wallet.name,
-                imageStyle: ListItemImageStyle.list(
-                    assetImage: walletViewModel.hasAvatar ? walletViewModel.avatarImage : nil
-                )
+                imageStyle: ListItemImageStyle.list(assetImage: walletViewModel.avatarImage)
             )
         )
     }

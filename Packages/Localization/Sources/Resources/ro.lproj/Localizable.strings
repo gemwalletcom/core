@@ -550,3 +550,10 @@
 "charts.price.low" = "Scăzut";
 "charts.price.change" = "Schimba";
 "contacts.add_to_contacts" = "Adăugați la Contacte";
+"common.method" = "Metodă";
+"simulation.header.unlimited_asset" = "Nelimitat %@";
+"common.token" = "Jeton";
+"common.suspicious_address" = "Adresă suspectă";
+"simulation.warning.unlimited_token_approval.description" = "Aceasta îi oferă utilizatorului acces la utilizarea acestui token până când îi revocați aprobarea sau expiră.";
+"simulation.warning.nft_collection_approval.title" = "Acces complet la colecția NFT solicitat";
+"simulation.warning.unlimited_token_approval.title" = "Aprobare nelimitată de tokenuri";

@@ -86,6 +86,7 @@ public struct TransactionInfoViewModel: Sendable {
             to: swapAmountField(input: swapInput.to)
         )
         case .symbol: .amount(.symbol(asset: asset))
+        case .assetImage: .asset(image: AssetViewModel(asset: asset).assetImage)
         }
     }
 }

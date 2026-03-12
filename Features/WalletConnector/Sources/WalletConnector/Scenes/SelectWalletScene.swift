@@ -19,8 +19,8 @@ struct SelectWalletScene: View {
         SelectableListView(
             model: $model,
             onFinishSelection: onSelect,
-            listContent: { item in
-                SimpleListItemView(model: item)
+            listContent: {
+                SimpleListItemView(model: $0)
             }
         )
         .navigationTitle(model.title)

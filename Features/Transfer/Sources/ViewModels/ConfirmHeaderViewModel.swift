@@ -2,18 +2,9 @@
 
 import Components
 import PrimitivesComponents
-import Primitives
 
 struct ConfirmHeaderViewModel {
-    private let inputModel: TransactionInputViewModel?
-    private let metadata: TransferDataMetadata?
-    private let data: TransferData
-
-    init(inputModel: TransactionInputViewModel?, metadata: TransferDataMetadata?, data: TransferData) {
-        self.inputModel = inputModel
-        self.metadata = metadata
-        self.data = data
-    }
+    let headerType: TransactionHeaderType
 }
 
 // MARK: - ItemModelProvidable
@@ -31,17 +22,10 @@ extension ConfirmHeaderViewModel: ItemModelProvidable {
 
 // MARK: - Private
 
-extension ConfirmHeaderViewModel {
-    private var headerType: TransactionHeaderType {
-        guard let inputModel else {
-            return TransactionInputViewModel(data: data, transactionData: nil, metaData: metadata, transferAmount: nil).headerType
-        }
-        return inputModel.headerType
-    }
-
-    private var showClearHeader: Bool {
+private extension ConfirmHeaderViewModel {
+    var showClearHeader: Bool {
         switch headerType {
-        case .amount, .nft: true
+        case .amount, .nft, .asset, .assetValue: true
         case .swap: false
         }
     }

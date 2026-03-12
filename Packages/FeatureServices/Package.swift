@@ -515,6 +515,7 @@ let package = Package(
         .target(
             name: "AddressNameService",
             dependencies: [
+                "GemAPI",
                 "Primitives",
                 "Store"
             ],
@@ -525,6 +526,7 @@ let package = Package(
             name: "AddressNameServiceTestKit",
             dependencies: [
                 "AddressNameService",
+                .product(name: "GemAPITestKit", package: "GemAPI"),
                 .product(name: "StoreTestKit", package: "Store")
             ],
             path: "AddressNameService/TestKit"

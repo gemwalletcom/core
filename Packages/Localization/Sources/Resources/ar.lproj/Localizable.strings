@@ -378,7 +378,7 @@
 "info.asset_status.unverified.description" = "لم يتم التحقق من الرموز غير المُوثَّقة بشكل كافٍ من قِبل خدمات خارجية موثوقة. قد تظهر في محفظتك نتيجةً لعمليات الإنزال الجوي، أو التحويلات، أو الاستيراد اليدوي.";
 "info.asset_status.suspicious.description" = "يتم تحديد الرموز المشبوهة أو غير المرغوب فيها على أنها عمليات احتيال محتملة أو أصول ضارة. قد تظهر في محفظتك نتيجةً لعمليات الإنزال الجوي أو التحويلات أو الاستيراد اليدوي.";
 "info.insufficient_network_fee_balance.title" = "%@ مطلوب";
-"info.insufficient_network_fee_balance.description" = "تتطلب هذه المعاملة %@ لتغطية رسوم الشبكة المدفوعة إلى %@ عمال المناجم، وليس Gem Walletتأكد من أن لديك ما يكفي %@.";
+"info.insufficient_network_fee_balance.description" = "تتطلب هذه المعاملة %@ لتغطية رسوم الشبكة المدفوعة لعمال التعدين %@ ، وليس Gem Wallet. تأكد من أن لديك ما يكفي %@.";
 "brand_name" = "Gem Wallet";
 "info.insufficient_balance.title" = "رصيد غير كاف";
 "info.insufficient_balance.description" = "ليس لديك رصيد كافٍ %@ لإتمام هذه المعاملة. يُرجى شحن رصيدك أو استلامه أو استبداله في محفظتك والمحاولة مرة أخرى.";
@@ -550,3 +550,10 @@
 "charts.price.low" = "قليل";
 "charts.price.change" = "يتغير";
 "contacts.add_to_contacts" = "أضف إلى جهات الاتصال";
+"common.method" = "طريقة";
+"simulation.header.unlimited_asset" = "غير محدود %@";
+"common.token" = "رمز مميز";
+"common.suspicious_address" = "عنوان مشبوه";
+"simulation.warning.unlimited_token_approval.description" = "يمنح هذا المنفق إمكانية استخدام هذا الرمز المميز حتى تقوم بإلغاء الموافقة أو تنتهي صلاحيته.";
+"simulation.warning.nft_collection_approval.title" = "تم طلب الوصول الكامل إلى مجموعة NFT";
+"simulation.warning.unlimited_token_approval.title" = "الموافقة على الرموز المميزة غير محدودة";

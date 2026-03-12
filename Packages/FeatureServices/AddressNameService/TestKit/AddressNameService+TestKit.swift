@@ -2,11 +2,15 @@
 
 import Foundation
 import AddressNameService
+import GemAPITestKit
 import Store
 import StoreTestKit
 
 public extension AddressNameService {
-    static func mock(addressStore: AddressStore = .mock()) -> AddressNameService {
-        AddressNameService(addressStore: addressStore)
+    static func mock(
+        addressStore: AddressStore = .mock(),
+        apiService: GemAPIAddressNamesServiceMock = GemAPIAddressNamesServiceMock()
+    ) -> AddressNameService {
+        AddressNameService(addressStore: addressStore, apiService: apiService)
     }
 }

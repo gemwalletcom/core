@@ -4,10 +4,13 @@ import Foundation
 @preconcurrency import WalletConnectPairing
 @preconcurrency import ReownWalletKit
 import Primitives
+import Gemstone
 import GemstonePrimitives
+import NativeProviderService
 import struct Gemstone.SignMessage
 import enum Gemstone.SignDigestType
 import class Gemstone.WalletConnect
+import class Gemstone.WalletConnectSimulationClient
 import enum Gemstone.WalletConnectAction
 import enum Gemstone.WalletConnectTransaction
 import enum Gemstone.WalletConnectTransactionType
@@ -19,8 +22,11 @@ public final class WalletConnectorService {
     private let signer: WalletConnectorSignable
     private let messageTracker = MessageTracker()
     private let walletConnect = WalletConnect()
-    public init(signer: WalletConnectorSignable) {
+    private let simulationClient: WalletConnectSimulationClient
+
+    public init(signer: WalletConnectorSignable, nodeProvider: any NodeURLFetchable) {
         self.signer = signer
+        self.simulationClient = WalletConnectSimulationClient(provider: NativeProvider(nodeProvider: nodeProvider))
     }
 }
 
@@ -83,6 +89,22 @@ extension WalletConnectorService: WalletConnectorServiceable {
 // MARK: - Private
 
 extension WalletConnectorService {
+    private func simulateSignMessage(chain: Gemstone.Chain, signType: SignDigestType, data: String, sessionDomain: String) async throws -> Primitives.SimulationResult {
+        return try await simulationClient
+            .simulateSignMessage(chain: chain, signType: signType, data: data, sessionDomain: sessionDomain)
+            .map()
+    }
+
+    private func simulateSendTransaction(
+        chain: Gemstone.Chain,
+        transactionType: WalletConnectTransactionType,
+        data: String
+    ) async throws -> Primitives.SimulationResult {
+        return try await simulationClient
+            .simulateSendTransaction(chain: chain, transactionType: transactionType, data: data)
+            .map()
+    }
+
     private func handleSessions() async {
         for await sessions in interactor.sessionsStream {
             updateSessions(sessions)
@@ -190,28 +212,30 @@ extension WalletConnectorService {
     private func handleAction(action: WalletConnectAction, sessionId: String, sessionDomain: String) async throws -> RPCResult {
         switch action {
         case .signMessage(let chain, let signType, let data):
-            try walletConnect.validateSignMessage(chain: chain, signType: signType, data: data, sessionDomain: sessionDomain)
+            let simulation = try await simulateSignMessage(chain: chain, signType: signType, data: data, sessionDomain: sessionDomain)
             let message = walletConnect.decodeSignMessage(chain: chain, signType: signType, data: data)
             let signature = try await signer.signMessage(
                 sessionId: sessionId,
                 chain: chain.map(),
-                message: message
+                message: message,
+                simulation: simulation
             )
             let response = walletConnect.encodeSignMessage(chain: chain, signature: signature)
             return .response(response.map())
         case .signTransaction(let chain, let type, let data):
-            try walletConnect.validateSendTransaction(transactionType: type, data: data)
+            let simulation = try await simulateSendTransaction(chain: chain, transactionType: type, data: data)
             let transaction = try walletConnect.decodeSendTransaction(transactionType: type, data: data)
-            let transactionId = try await signer.signTransaction(sessionId: sessionId, chain: chain.map(), transaction: transaction.map())
+            let transactionId = try await signer.signTransaction(sessionId: sessionId, chain: chain.map(), transaction: transaction.map(), simulation: simulation)
             let response = walletConnect.encodeSignTransaction(chain: chain, transactionId: transactionId)
             return .response(response.map())
         case .sendTransaction(let chain, let type, let data):
-            try walletConnect.validateSendTransaction(transactionType: type, data: data)
+            let simulation = try await simulateSendTransaction(chain: chain, transactionType: type, data: data)
             let transaction = try walletConnect.decodeSendTransaction(transactionType: type, data: data)
             let transactionId = try await signer.sendTransaction(
                 sessionId: sessionId,
                 chain: chain.map(),
-                transaction: transaction.map()
+                transaction: transaction.map(),
+                simulation: simulation
             )
             let response = walletConnect.encodeSendTransaction(chain: chain, transactionId: transactionId)
             return .response(response.map())

@@ -378,7 +378,7 @@
 "info.asset_status.unverified.description" = "Неперевірені токени не були достатньо перевірені надійними сторонніми сервісами. Вони можуть з'явитися у вашому гаманці через аїрдропи, перекази або ручний імпорт.";
 "info.asset_status.suspicious.description" = "Підозрілі або спам-токени ідентифікуються як потенційні шахрайські або шкідливі активи. Вони можуть з'явитися у вашому гаманці через аїрдропи, перекази або ручний імпорт.";
 "info.insufficient_network_fee_balance.title" = "Потрібно %@";
-"info.insufficient_network_fee_balance.description" = "Ця транзакція вимагає %@ для покриття сплаченої мережевої плати %@ шахтарі, а не Gem WalletПереконайтеся, що у вас достатньо %@.";
+"info.insufficient_network_fee_balance.description" = "Ця транзакція вимагає %@ для покриття мережевої комісії, що виплачується майнерам %@ , а не Gem Wallet. Переконайтеся, що у вас достатньо %@.";
 "brand_name" = "Gem Wallet";
 "info.insufficient_balance.title" = "Недостатній баланс";
 "info.insufficient_balance.description" = "У вас недостатньо %@ для завершення цієї транзакції. Будь ласка, поповніть, отримайте або обміняйте свій гаманець і спробуйте ще раз.";
@@ -550,3 +550,10 @@
 "charts.price.low" = "Мінімум";
 "charts.price.change" = "Зміна";
 "contacts.add_to_contacts" = "Додати до контактів";
+"common.method" = "Метод";
+"simulation.header.unlimited_asset" = "Безлімітний %@";
+"common.token" = "Токен";
+"common.suspicious_address" = "Підозріла адреса";
+"simulation.warning.unlimited_token_approval.description" = "Це надає споживачеві доступ до використання цього токена, доки ви не скасуєте схвалення або термін його дії не закінчиться.";
+"simulation.warning.nft_collection_approval.title" = "Запитується повний доступ до колекції NFT";
+"simulation.warning.unlimited_token_approval.title" = "Необмежене схвалення токенів";

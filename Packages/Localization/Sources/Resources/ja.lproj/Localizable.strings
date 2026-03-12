@@ -550,3 +550,10 @@
 "charts.price.low" = "低い";
 "charts.price.change" = "変化";
 "contacts.add_to_contacts" = "連絡先に追加";
+"common.method" = "方法";
+"simulation.header.unlimited_asset" = "無制限 %@";
+"common.token" = "トークン";
+"common.suspicious_address" = "不審な住所";
+"simulation.warning.unlimited_token_approval.description" = "これにより、承認を取り消すか期限が切れるまで、支出者はこのトークンを使用できるようになります。";
+"simulation.warning.nft_collection_approval.title" = "NFTコレクションへのフルアクセスをリクエスト";
+"simulation.warning.unlimited_token_approval.title" = "無制限のトークン承認";

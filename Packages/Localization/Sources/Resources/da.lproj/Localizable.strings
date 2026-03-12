@@ -550,3 +550,10 @@
 "charts.price.low" = "Lav";
 "charts.price.change" = "Forandring";
 "contacts.add_to_contacts" = "Føj til Kontakter";
+"common.method" = "Metode";
+"simulation.header.unlimited_asset" = "Ubegrænset %@";
+"common.token" = "Token";
+"common.suspicious_address" = "Mistænkelig adresse";
+"simulation.warning.unlimited_token_approval.description" = "Dette giver brugeren adgang til at bruge denne token, indtil du tilbagekalder godkendelsen, eller den udløber.";
+"simulation.warning.nft_collection_approval.title" = "Fuld adgang til NFT-samling anmodes";
+"simulation.warning.unlimited_token_approval.title" = "Ubegrænset tokengodkendelse";

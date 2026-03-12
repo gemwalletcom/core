@@ -9,6 +9,7 @@ import PrimitivesComponents
 import FiatConnect
 import Swap
 import Preferences
+import Primitives
 
 public struct ConfirmTransferScene: View {
     @Environment(\.fiatService) private var fiatService
@@ -47,6 +48,17 @@ public struct ConfirmTransferScene: View {
                 SFSafariView(url: url)
             case .networkFeeSelector:
                 NetworkFeeSheet(model: model.feeModel)
+            case .payloadDetails:
+                NavigationStack {
+                    SimulationPayloadDetailsScene(
+                        primaryFields: model.primaryPayloadFields,
+                        secondaryFields: model.secondaryPayloadFields,
+                        fieldViewModel: model.payloadFieldViewModel(for:),
+                        contextMenuItems: model.contextMenuItems(for:)
+                    )
+                    .presentationDetents([.large])
+                    .presentationBackground(Colors.grayBackground)
+                }
             case .fiatConnect(let assetAddress, let walletId):
                 NavigationStack {
                     FiatConnectNavigationView(
@@ -97,7 +109,7 @@ extension ConfirmTransferScene {
                     .url(title: self.model.websiteTitle, onOpen: self.model.onSelectOpenWebsiteURL)
                 )
         case let .sender(model):
-            ListItemImageView(model:model)
+            ListItemImageView(model: model)
                 .contextMenu([
                     .copy(value: self.model.senderAddress),
                     .url(title: self.model.senderExplorerText, onOpen: self.model.onSelectOpenSenderAddressURL)
@@ -129,6 +141,23 @@ extension ConfirmTransferScene {
                 )
             } else {
                 ListItemView(model: model)
+            }
+        case let .warnings(warnings):
+            SimulationWarningsContent(warnings: warnings)
+        case let .payload(fields):
+            Group {
+                SimulationPayloadFieldsContent(
+                    fields: fields,
+                    fieldViewModel: self.model.payloadFieldViewModel(for:),
+                    contextMenuItems: self.model.contextMenuItems(for:)
+                )
+
+                if self.model.hasPayloadDetails {
+                    NavigationCustomLink(
+                        with: ListItemView(title: Localized.Common.details),
+                        action: self.model.onSelectPayloadDetails
+                    )
+                }
             }
         case let .error(title, error, onInfoAction):
             ListItemErrorView(

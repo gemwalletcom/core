@@ -11,7 +11,6 @@ import WalletConnectSign
 import WalletSessionService
 import struct Gemstone.SignMessage
 import class Gemstone.MessageSigner
-import enum Gemstone.MessagePreview
 import GemstonePrimitives
 
 public final class WalletConnectorSigner: WalletConnectorSignable {
@@ -78,14 +77,15 @@ public final class WalletConnectorSigner: WalletConnectorSignable {
         try await walletConnectorInteractor.sessionApproval(payload: payload)
     }
 
-    public func signMessage(sessionId: String, chain: Chain, message: SignMessage) async throws -> String {
+    public func signMessage(sessionId: String, chain: Chain, message: SignMessage, simulation: SimulationResult) async throws -> String {
         let session = try connectionsStore.getConnection(id: sessionId)
         try validate(chain: chain, session: session.session)
         let payload = SignMessagePayload(
             chain: chain,
             session: session.session,
             wallet: session.wallet,
-            message: message
+            message: message,
+            simulation: simulation
         )
         return try await walletConnectorInteractor.signMessage(payload: payload)
     }
@@ -150,7 +150,7 @@ public final class WalletConnectorSigner: WalletConnectorSignable {
         )
     }
 
-    public func signTransaction(sessionId: String, chain: Chain, transaction: WalletConnectorTransaction) async throws -> String {
+    public func signTransaction(sessionId: String, chain: Chain, transaction: WalletConnectorTransaction, simulation: SimulationResult) async throws -> String {
         let session = try connectionsStore.getConnection(id: sessionId)
         try validate(chain: chain, session: session.session)
         let wallet = try getWallet(id: session.wallet.walletId)
@@ -169,11 +169,11 @@ public final class WalletConnectorSigner: WalletConnectorSignable {
                 outputType: outputType,
                 outputAction: .sign
             )
-            return try await walletConnectorInteractor.signTransaction(transferData: WCTransferData(tranferData: transferData, wallet: wallet))
+            return try await walletConnectorInteractor.signTransaction(transferData: WCTransferData(tranferData: transferData, wallet: wallet, simulation: simulation))
         }
     }
 
-    public func sendTransaction(sessionId: String, chain: Chain, transaction: WalletConnectorTransaction) async throws -> String {
+    public func sendTransaction(sessionId: String, chain: Chain, transaction: WalletConnectorTransaction, simulation: SimulationResult) async throws -> String {
         let session = try connectionsStore.getConnection(id: sessionId)
         try validate(chain: chain, session: session.session)
         let wallet = try getWallet(id: session.wallet.walletId)
@@ -222,7 +222,7 @@ public final class WalletConnectorSigner: WalletConnectorSignable {
                 value: value
             )
 
-            return try await walletConnectorInteractor.sendTransaction(transferData: WCTransferData(tranferData: transferData, wallet: wallet))
+            return try await walletConnectorInteractor.sendTransaction(transferData: WCTransferData(tranferData: transferData, wallet: wallet, simulation: simulation))
         case .solana(let transaction, let outputType),
              .sui(let transaction, let outputType),
              .ton(let transaction, let outputType),
@@ -234,11 +234,37 @@ public final class WalletConnectorSigner: WalletConnectorSignable {
                 outputType: outputType,
                 outputAction: .send
             )
-            return try await walletConnectorInteractor.sendTransaction(transferData: WCTransferData(tranferData: transferData, wallet: wallet))
+            return try await walletConnectorInteractor.sendTransaction(transferData: WCTransferData(tranferData: transferData, wallet: wallet, simulation: simulation))
         case .bitcoin(let transaction, _):
             let transferData = try buildBitcoinTransferData(chain: chain, transaction: transaction)
-            return try await walletConnectorInteractor.sendTransaction(transferData: WCTransferData(tranferData: transferData, wallet: wallet))
+            return try await walletConnectorInteractor.sendTransaction(transferData: WCTransferData(tranferData: transferData, wallet: wallet, simulation: simulation))
         }
+    }
+
+    public func sendRawTransaction(sessionId: String, chain: Chain, transaction: String) async throws -> String {
+        let session = try connectionsStore.getConnection(id: sessionId)
+        try validate(chain: chain, session: session.session)
+        let wallet = try getWallet(id: session.wallet.walletId)
+        let transferData = buildTransferData(
+            chain: chain,
+            metadata: session.session.metadata,
+            transaction: transaction,
+            outputType: .encodedTransaction,
+            outputAction: .send
+        )
+        let simulation = SimulationResult(
+            warnings: [],
+            balanceChanges: [],
+            payload: [],
+            header: nil
+        )
+        return try await walletConnectorInteractor.sendRawTransaction(
+            transferData: WCTransferData(
+                tranferData: transferData,
+                wallet: wallet,
+                simulation: simulation
+            )
+        )
     }
 
     private func validate(chain: Chain, session: WalletConnectionSession) throws {

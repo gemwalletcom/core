@@ -77,7 +77,9 @@ extension StakeService {
         }
         try store.updateValidators(updateValidators)
         
-        let addressNames = updateValidators.map { AddressName(chain: $0.chain, address: $0.id, name: $0.name, type: .validator) }
+        let addressNames = updateValidators.map {
+            AddressName(chain: $0.chain, address: $0.id, name: $0.name, type: .validator, status: .verified)
+        }
         try addressStore.addAddressNames(addressNames)
     }
 

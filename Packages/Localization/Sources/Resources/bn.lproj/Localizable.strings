@@ -550,3 +550,10 @@
 "charts.price.low" = "কম";
 "charts.price.change" = "পরিবর্তন";
 "contacts.add_to_contacts" = "পরিচিতিতে যোগ করুন";
+"common.method" = "পদ্ধতি";
+"simulation.header.unlimited_asset" = "সীমাহীন %@";
+"common.token" = "টোকেন";
+"common.suspicious_address" = "সন্দেহজনক ঠিকানা";
+"simulation.warning.unlimited_token_approval.description" = "এটি ব্যয়কারীকে এই টোকেনটি ব্যবহার করার অনুমতি দেয় যতক্ষণ না আপনি অনুমোদন প্রত্যাহার করেন অথবা এটির মেয়াদ শেষ হয়ে যায়।";
+"simulation.warning.nft_collection_approval.title" = "সম্পূর্ণ NFT সংগ্রহের অ্যাক্সেসের অনুরোধ করা হয়েছে";
+"simulation.warning.unlimited_token_approval.title" = "সীমাহীন টোকেন অনুমোদন";

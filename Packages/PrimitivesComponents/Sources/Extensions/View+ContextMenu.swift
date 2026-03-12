@@ -7,8 +7,8 @@ import Localization
 public extension View {
     func contextMenu(_ items: [ContextMenuItemType]) -> some View {
         self.contextMenu {
-            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-                build(item)
+            ForEach(Array(items.enumerated()), id: \.offset) {
+                build($0.element)
             }
         }
     }

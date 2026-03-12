@@ -378,7 +378,7 @@
 "info.asset_status.unverified.description" = "Doğrulanmamış token'lar güvenilir üçüncü taraf hizmetleri tarafından yeterince doğrulanmamıştır. Airdrop'lar, transferler veya manuel içe aktarmalar nedeniyle cüzdanınızda görünebilirler.";
 "info.asset_status.suspicious.description" = "Şüpheli veya spam token'lar potansiyel dolandırıcılık veya zararlı varlıklar olarak tanımlanır. Airdrop'lar, transferler veya manuel ithalatlar nedeniyle cüzdanınızda görünebilirler.";
 "info.insufficient_network_fee_balance.title" = "%@ gerekli";
-"info.insufficient_network_fee_balance.description" = "Bu işlem gerektirir %@ ödenen ağ ücretini karşılamak için %@ madenciler, değil Gem WalletYeterli miktarda olduğundan emin olun. %@.";
+"info.insufficient_network_fee_balance.description" = "Bu işlem %@ 'un %@ madencilerine ödenen ağ ücretini karşılamasını gerektirir, Gem Walletdeğil. Yeterli %@olduğundan emin olun.";
 "brand_name" = "Gem Wallet";
 "info.insufficient_balance.title" = "Yetersiz Bakiye";
 "info.insufficient_balance.description" = "Bu işlemi tamamlamak için yeterli %@ iniz yok. Lütfen cüzdanınıza para yükleyin, alın veya takas edin ve tekrar deneyin.";
@@ -550,3 +550,10 @@
 "charts.price.low" = "Düşük";
 "charts.price.change" = "Değiştirmek";
 "contacts.add_to_contacts" = "Kişilere Ekle";
+"common.method" = "Yöntem";
+"simulation.header.unlimited_asset" = "Sınırsız %@";
+"common.token" = "Token";
+"common.suspicious_address" = "Şüpheli adres";
+"simulation.warning.unlimited_token_approval.description" = "Bu, harcama yapan kişiye, siz onayı iptal edene veya süresi dolana kadar bu belirteci kullanma erişimi sağlar.";
+"simulation.warning.nft_collection_approval.title" = "NFT koleksiyonunun tamamına erişim talep edildi.";
+"simulation.warning.unlimited_token_approval.title" = "Sınırsız token onayı";

@@ -17,5 +17,6 @@ struct ConfirmNetworkViewModelTests {
         guard case .network(let item) = model.itemModel else { return }
         #expect(item.title == Localized.Transfer.network)
         #expect(item.subtitle != nil)
+        #expect(item.imageStyle != nil)
     }
 }

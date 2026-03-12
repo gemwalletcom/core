@@ -550,3 +550,10 @@
 "charts.price.low" = "Faible";
 "charts.price.change" = "Changement";
 "contacts.add_to_contacts" = "Ajouter aux contacts";
+"common.method" = "Méthode";
+"simulation.header.unlimited_asset" = "Illimité %@";
+"common.token" = "Jeton";
+"common.suspicious_address" = "Adresse suspecte";
+"simulation.warning.unlimited_token_approval.description" = "Cela donne au détenteur du jeton l'accès à utiliser jusqu'à ce que vous révoquiez l'autorisation ou que celle-ci expire.";
+"simulation.warning.nft_collection_approval.title" = "Demande d'accès à l'intégralité de la collection NFT";
+"simulation.warning.unlimited_token_approval.title" = "Approbation illimitée des jetons";

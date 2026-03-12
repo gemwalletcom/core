@@ -1,12 +1,6 @@
 // Copyright (c). Gem Wallet. All rights reserved.
-
-import Foundation
-import BalanceService
-import PriceService
-import TransactionStateService
 import ExplorerService
 import Keystore
-import ScanService
 import Primitives
 import BigInt
 import Blockchain
@@ -14,6 +8,7 @@ import ChainService
 import AddressNameService
 import ActivityService
 import EventPresenterService
+import PrimitivesComponents
 
 public struct ConfirmService: Sendable {
     private let metadataProvider: any TransferMetadataProvidable

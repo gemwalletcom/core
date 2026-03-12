@@ -30,4 +30,13 @@ public extension Asset {
             }
         }
     }
+
+    var defaultBasic: AssetBasic {
+        AssetBasic(
+            asset: self,
+            properties: .defaultValue(assetId: id),
+            score: .defaultValue(assetId: id),
+            price: nil
+        )
+    }
 }

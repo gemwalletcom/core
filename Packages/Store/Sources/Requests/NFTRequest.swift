@@ -34,7 +34,7 @@ public struct NFTRequest: DatabaseQueryable {
 
         switch filter {
         case .all: break
-        case .unverified: request = request.filter(NFTCollectionRecord.Columns.isVerified == false)
+        case .unverified: request = request.filter(NFTCollectionRecord.Columns.status != VerificationStatus.verified.rawValue)
         case .collection(let id): request = request.filter(NFTCollectionRecord.Columns.id == id)
         }
 

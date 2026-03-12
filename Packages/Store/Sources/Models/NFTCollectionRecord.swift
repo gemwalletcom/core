@@ -14,7 +14,7 @@ struct NFTCollectionRecord: Codable, FetchableRecord, PersistableRecord {
         static let description = Column("description")
         static let chain = Column("chain")
         static let contractAddress = Column("contractAddress")
-        static let isVerified = Column("isVerified")
+        static let status = Column("status")
         static let links = Column("links")
         static let previewImageUrl = Column("previewImageUrl")
         static let previewImageMimeType = Column("previewImageMimeType")
@@ -25,7 +25,7 @@ struct NFTCollectionRecord: Codable, FetchableRecord, PersistableRecord {
     var description: String?
     var chain: Chain
     var contractAddress: String
-    var isVerified: Bool
+    var status: VerificationStatus
     var links: [AssetLink]?
     
     var previewImageUrl: String
@@ -47,7 +47,9 @@ extension NFTCollectionRecord: CreateTable {
                 .indexed()
                 .references(AssetRecord.databaseTableName, onDelete: .cascade, onUpdate: .cascade)
             $0.column(Columns.contractAddress.name, .text).notNull()
-            $0.column(Columns.isVerified.name, .boolean).notNull()
+            $0.column(Columns.status.name, .text)
+                .notNull()
+                .defaults(to: VerificationStatus.unverified.rawValue)
             $0.column(Columns.links.name, .jsonText)
             $0.column(Columns.previewImageUrl.name, .text)
                 .notNull()
@@ -65,7 +67,7 @@ extension NFTCollection {
             description: description,
             chain: chain,
             contractAddress: contractAddress,
-            isVerified: isVerified,
+            status: status,
             links: links,
             previewImageUrl: images.preview.url,
             previewImageMimeType: images.preview.mimeType

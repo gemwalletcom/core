@@ -1,3 +1,5 @@
+// Copyright (c). Gem Wallet. All rights reserved.
+
 import Testing
 import Primitives
 import Foundation
@@ -111,7 +113,7 @@ struct WalletConnectorSignerTests {
 
         let message = SignMessage(chain: "ethereum", signType: .eip191, data: Data())
         await #expect(throws: WalletConnectorServiceError.unresolvedChainId(Chain.polygon.rawValue)) {
-            try await signer.signMessage(sessionId: sessionId, chain: .polygon, message: message)
+            try await signer.signMessage(sessionId: sessionId, chain: .polygon, message: message, simulation: .mock())
         }
     }
 
@@ -137,7 +139,7 @@ struct WalletConnectorSignerTests {
 
         let message = SignMessage(chain: "ethereum", signType: .eip191, data: Data())
         await #expect(throws: WalletConnectorServiceError.unresolvedChainId(Chain.ethereum.rawValue)) {
-            try await signer.signMessage(sessionId: sessionId, chain: .ethereum, message: message)
+            try await signer.signMessage(sessionId: sessionId, chain: .ethereum, message: message, simulation: .mock())
         }
     }
 

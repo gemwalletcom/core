@@ -52,12 +52,12 @@ public final class CollectionsViewModel: CollectionsViewable, Sendable {
 
     private var verifiedItems: [GridPosterViewItem] {
         nftDataList
-            .filter { $0.collection.isVerified }
+            .filter { $0.collection.status == .verified }
             .map { buildGridItem(from: $0) }
     }
 
     private var unverifiedCount: String? {
-        let unverified = nftDataList.filter { !$0.collection.isVerified }
+        let unverified = nftDataList.filter { $0.collection.status != .verified }
         guard unverified.isNotEmpty else { return nil }
         return unverified.count.asString
     }
@@ -73,4 +73,3 @@ public final class CollectionsViewModel: CollectionsViewable, Sendable {
         }
     }
 }
-

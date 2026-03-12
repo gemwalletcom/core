@@ -16,26 +16,19 @@ public final class WalletConnectorPresenter: Sendable {
 
     @MainActor
     public func complete(type: WalletConnectorSheetType) {
-        switch type {
-        case .transferData:
-            isPresentingSheet = nil
-        case .connectionProposal, .signMessage:
-            break
+        guard isPresentingSheet?.id == type.id else {
+            return
         }
+        isPresentingSheet = nil
     }
 
     @MainActor
     public func cancelSheet(type: WalletConnectorSheetType) {
-        let error = ConnectionsError.userCancelled
-        switch type {
-        case .transferData(let transferDataCallback):
-            transferDataCallback.delegate(.failure(error))
-        case .signMessage(let transferDataCallback):
-            transferDataCallback.delegate(.failure(error))
-        case .connectionProposal(let transferDataCallback):
-            transferDataCallback.delegate(.failure(error))
+        guard isPresentingSheet?.id == type.id else {
+            return
         }
 
+        type.reject(ConnectionsError.userCancelled)
         self.isPresentingSheet = nil
     }
 }

@@ -9,6 +9,8 @@ public enum TransactionHeaderType {
     case amount(AmountDisplay)
     case swap(from: SwapAmountField, to: SwapAmountField)
     case nft(name: String?, image: AssetImage)
+    case asset(image: AssetImage)
+    case assetValue(AssetValueHeaderData)
 }
 
 public struct TransactionHeaderView: View {
@@ -40,6 +42,17 @@ public struct TransactionHeaderView: View {
                         Text(name)
                     }
                 }
+            case .asset(let image):
+                AssetImageView(assetImage: image, size: .image.large)
+                    .padding(.bottom, .space12)
+            case .assetValue(let data):
+                WalletHeaderView(
+                    model: AssetValueHeaderViewModel(data: data),
+                    isPrivacyEnabled: .constant(false),
+                    balanceActionType: .none,
+                    onHeaderAction: nil,
+                    onInfoAction: nil
+                )
             }
         }
         .frame(maxWidth: .infinity)

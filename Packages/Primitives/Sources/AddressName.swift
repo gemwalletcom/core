@@ -9,11 +9,13 @@ public struct AddressName: Codable, Equatable, Hashable, Sendable {
 	public let address: String
 	public let name: String
 	public let type: AddressType?
+	public let status: VerificationStatus
 
-	public init(chain: Chain, address: String, name: String, type: AddressType?) {
+	public init(chain: Chain, address: String, name: String, type: AddressType?, status: VerificationStatus) {
 		self.chain = chain
 		self.address = address
 		self.name = name
 		self.type = type
+		self.status = status
 	}
 }

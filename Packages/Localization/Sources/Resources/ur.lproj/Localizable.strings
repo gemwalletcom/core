@@ -550,3 +550,10 @@
 "charts.price.low" = "کم";
 "charts.price.change" = "تبدیلی";
 "contacts.add_to_contacts" = "رابطوں میں شامل کریں۔";
+"common.method" = "طریقہ";
+"simulation.header.unlimited_asset" = "لا محدود %@";
+"common.token" = "ٹوکن";
+"common.suspicious_address" = "مشکوک پتہ";
+"simulation.warning.unlimited_token_approval.description" = "یہ خرچ کرنے والے کو اس ٹوکن کو استعمال کرنے تک رسائی دیتا ہے جب تک کہ آپ منظوری منسوخ نہیں کرتے یا اس کی میعاد ختم نہیں ہوجاتی۔";
+"simulation.warning.nft_collection_approval.title" = "مکمل NFT جمع کرنے تک رسائی کی درخواست کی گئی۔";
+"simulation.warning.unlimited_token_approval.title" = "لامحدود ٹوکن کی منظوری";

@@ -22,7 +22,8 @@ public struct WalletConnectorSignableMock: WalletConnectorSignable {
     public func getMethods() -> [WalletConnectionMethods] { [] }
     public func getEvents() -> [WalletConnectionEvents] { [] }
     public func sessionApproval(payload: WCPairingProposal) async throws -> WalletId { throw AnyError("not implemented") }
-    public func signMessage(sessionId: String, chain: Chain, message: SignMessage) async throws -> String { "" }
-    public func signTransaction(sessionId: String, chain: Chain, transaction: WalletConnectorTransaction) async throws -> String { "" }
-    public func sendTransaction(sessionId: String, chain: Chain, transaction: WalletConnectorTransaction) async throws -> String { "" }
+    public func signMessage(sessionId: String, chain: Chain, message: SignMessage, simulation: SimulationResult) async throws -> String { "" }
+    public func signTransaction(sessionId: String, chain: Chain, transaction: WalletConnectorTransaction, simulation: SimulationResult) async throws -> String { "" }
+    public func sendTransaction(sessionId: String, chain: Chain, transaction: WalletConnectorTransaction, simulation: SimulationResult) async throws -> String { "" }
+    public func sendRawTransaction(sessionId: String, chain: Chain, transaction: String) async throws -> String { "" }
 }

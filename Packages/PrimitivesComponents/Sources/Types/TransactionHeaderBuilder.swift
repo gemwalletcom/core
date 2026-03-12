@@ -30,11 +30,7 @@ public struct TransactionHeaderTypeBuilder {
             case .assetActivation:
                 return .symbol
             case .tokenApproval:
-                if infoModel.isZero {
-                    return .amount(showFiat: false)
-                } else {
-                    return .symbol
-                }
+                return .assetImage
             case .transferNFT:
                 guard let metadata = transaction.metadata?.decode(TransactionNFTTransferMetadata.self) else {
                     return .amount(showFiat: false)
@@ -59,12 +55,13 @@ public struct TransactionHeaderTypeBuilder {
             case .transfer,
                     .deposit,
                     .withdrawal,
-                    .generic,
                     .stake,
-                    .tokenApprove:
+                    .generic:
                 return .amount(
                     showFiat: true
                 )
+            case .tokenApprove:
+                return .assetImage
             case .transferNft(let asset):
                 return .nft(name: asset.name, id: asset.id)
             case .account(_, let type):

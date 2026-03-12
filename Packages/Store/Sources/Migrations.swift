@@ -1,3 +1,5 @@
+// Copyright (c). Gem Wallet. All rights reserved.
+
 import Foundation
 import GRDB
 import Primitives
@@ -424,6 +426,20 @@ struct Migrations {
             try? db.alter(table: StakeValidatorRecord.databaseTableName) {
                 $0.add(column: StakeValidatorRecord.Columns.providerType.name, .text)
                     .defaults(to: StakeProviderType.stake.rawValue)
+            }
+        }
+
+        migrator.registerMigration("Add status to \(AddressRecord.databaseTableName) and \(NFTCollectionRecord.databaseTableName)") { db in
+            try? db.alter(table: AddressRecord.databaseTableName) {
+                $0.add(column: AddressRecord.Columns.status.name, .text)
+                    .notNull()
+                    .defaults(to: VerificationStatus.unverified.rawValue)
+            }
+
+            try? db.alter(table: NFTCollectionRecord.databaseTableName) {
+                $0.add(column: NFTCollectionRecord.Columns.status.name, .text)
+                    .notNull()
+                    .defaults(to: VerificationStatus.unverified.rawValue)
             }
         }
 

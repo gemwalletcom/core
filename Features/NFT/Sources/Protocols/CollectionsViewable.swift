@@ -59,7 +59,7 @@ extension CollectionsViewable {
                 assetImage: AssetImage(type: data.collection.name, imageURL: data.collection.images.preview.url.asURL),
                 title: data.collection.name,
                 count: data.assets.count,
-                isVerified: data.collection.isVerified
+                isVerified: data.collection.status == .verified
             )
         )
     }
@@ -71,7 +71,7 @@ extension CollectionsViewable {
             model: GridPosterViewModel(
                 assetImage: AssetImage(type: collection.name, imageURL: asset.images.preview.url.asURL),
                 title: asset.name,
-                isVerified: collection.isVerified
+                isVerified: collection.status == .verified
             )
         )
     }

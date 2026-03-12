@@ -9,8 +9,7 @@ extension SwapperRoute {
         SwapperRoute(
             input: "ethereum_0x0000000000000000000000000000000000000000",
             output: "ethereum_0xdac17f958d2ee523a2206206994597c13d831ec7",
-            routeData: "0x",
-            gasLimit: "150000"
+            routeData: "0x"
         )
     }
 } 

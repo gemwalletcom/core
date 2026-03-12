@@ -81,11 +81,15 @@ extension ConfirmRecipientViewModel {
                 .swap,
                 .perpetual,
                 .earn: false
+        case .generic:
+            switch model.type.outputAction {
+            case .sign: false
+            case .send: true
+            }
         case .transfer,
                 .transferNft,
                 .deposit,
                 .withdrawal,
-                .generic,
                 .tokenApprove: true
         }
     }

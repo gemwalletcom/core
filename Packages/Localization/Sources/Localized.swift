@@ -283,6 +283,8 @@ public enum Localized {
     public static let loading = Localized.tr("Localizable", "common.loading", fallback: "Loading")
     /// Manage
     public static let manage = Localized.tr("Localizable", "common.manage", fallback: "Manage")
+    /// Method
+    public static let method = Localized.tr("Localizable", "common.method", fallback: "Method")
     /// Next
     public static let next = Localized.tr("Localizable", "common.next", fallback: "Next")
     /// No
@@ -329,6 +331,10 @@ public enum Localized {
     public static let skip = Localized.tr("Localizable", "common.skip", fallback: "Skip")
     /// Style
     public static let style = Localized.tr("Localizable", "common.style", fallback: "Style")
+    /// Suspicious address
+    public static let suspiciousAddress = Localized.tr("Localizable", "common.suspicious_address", fallback: "Suspicious address")
+    /// Token
+    public static let token = Localized.tr("Localizable", "common.token", fallback: "Token")
     /// Try Again
     public static let tryAgain = Localized.tr("Localizable", "common.try_again", fallback: "Try Again")
     /// Type
@@ -1228,6 +1234,26 @@ public enum Localized {
     public static let title = Localized.tr("Localizable", "sign_message.title", fallback: "Sign Message")
     /// View Full Message
     public static let viewFullMessage = Localized.tr("Localizable", "sign_message.view_full_message", fallback: "View Full Message")
+  }
+  public enum Simulation {
+    public enum Header {
+      /// Unlimited %@
+      public static func unlimitedAsset(_ p1: Any) -> String {
+        return Localized.tr("Localizable", "simulation.header.unlimited_asset", String(describing: p1), fallback: "Unlimited %@")
+      }
+    }
+    public enum Warning {
+      public enum NftCollectionApproval {
+        /// Full NFT collection access requested
+        public static let title = Localized.tr("Localizable", "simulation.warning.nft_collection_approval.title", fallback: "Full NFT collection access requested")
+      }
+      public enum UnlimitedTokenApproval {
+        /// This gives the spender access to use this token until you revoke the approval or it expires.
+        public static let description = Localized.tr("Localizable", "simulation.warning.unlimited_token_approval.description", fallback: "This gives the spender access to use this token until you revoke the approval or it expires.")
+        /// Unlimited token approval
+        public static let title = Localized.tr("Localizable", "simulation.warning.unlimited_token_approval.title", fallback: "Unlimited token approval")
+      }
+    }
   }
   public enum Social {
     /// CoinGecko

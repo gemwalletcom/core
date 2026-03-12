@@ -32,6 +32,7 @@ let package = Package(
             dependencies: [
                 "Primitives",
                 .product(name: "WalletConnectorService", package: "ChainServices"),
+                .product(name: "ExplorerService", package: "ChainServices"),
                 "Components",
                 "Localization",
                 "Style",
@@ -39,6 +40,7 @@ let package = Package(
                 "Preferences",
                 "PrimitivesComponents",
                 "QRScanner",
+                .product(name: "AddressNameService", package: "FeatureServices"),
                 .product(name: "WalletSessionService", package: "FeatureServices"),
                 .product(name: "ConnectionsService", package: "FeatureServices"),
                 "Keystore",
@@ -55,6 +57,7 @@ let package = Package(
                 .product(name: "PreferencesTestKit", package: "Preferences"),
                 .product(name: "WalletSessionServiceTestKit", package: "FeatureServices"),
                 .product(name: "ConnectionsServiceTestKit", package: "FeatureServices"),
+                .product(name: "AddressNameServiceTestKit", package: "FeatureServices"),
                 .product(name: "WalletConnectorServiceTestKit", package: "ChainServices"),
                 .product(name: "KeystoreTestKit", package: "Keystore"),
                 "WalletConnector",

@@ -108,6 +108,7 @@ let package = Package(
                 "Primitives",
                 "Gemstone",
                 "GemstonePrimitives",
+                "NativeProviderService",
                 .product(name: "WalletConnect", package: "reown-swift"),
                 .product(name: "ReownWalletKit", package: "reown-swift"),
                 .product(name: "WalletConnectNetworking", package: "reown-swift"),

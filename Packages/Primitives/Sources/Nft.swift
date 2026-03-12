@@ -76,17 +76,17 @@ public struct NFTCollection: Codable, Equatable, Hashable, Identifiable, Sendabl
 	public let chain: Chain
 	public let contractAddress: String
 	public let images: NFTImages
-	public let isVerified: Bool
+	public let status: VerificationStatus
 	public let links: [AssetLink]
 
-	public init(id: String, name: String, description: String?, chain: Chain, contractAddress: String, images: NFTImages, isVerified: Bool, links: [AssetLink]) {
+	public init(id: String, name: String, description: String?, chain: Chain, contractAddress: String, images: NFTImages, status: VerificationStatus, links: [AssetLink]) {
 		self.id = id
 		self.name = name
 		self.description = description
 		self.chain = chain
 		self.contractAddress = contractAddress
 		self.images = images
-		self.isVerified = isVerified
+		self.status = status
 		self.links = links
 	}
 }

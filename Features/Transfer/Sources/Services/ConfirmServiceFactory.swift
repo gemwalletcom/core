@@ -13,6 +13,7 @@ import Signer
 import AddressNameService
 import ActivityService
 import EventPresenterService
+import AssetsService
 
 public struct ConfirmServiceFactory {
     public static func create(
@@ -21,6 +22,7 @@ public struct ConfirmServiceFactory {
         assetsEnabler: any AssetsEnabler,
         scanService: ScanService,
         balanceService: BalanceService,
+        assetsService: AssetsService,
         priceService: PriceService,
         transactionStateService: TransactionStateService,
         addressNameService: AddressNameService,
@@ -52,6 +54,18 @@ public struct ConfirmServiceFactory {
             addressNameService: addressNameService,
             activityService: activityService,
             eventPresenterService: eventPresenterService
+        )
+    }
+}
+
+public struct ConfirmSimulationServiceFactory {
+    public static func create(
+        addressNameService: AddressNameService,
+        assetsService: AssetsService
+    ) -> ConfirmSimulationService {
+        ConfirmSimulationService(
+            addressNameService: addressNameService,
+            assetsService: assetsService
         )
     }
 }

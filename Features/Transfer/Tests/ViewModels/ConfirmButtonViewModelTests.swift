@@ -20,5 +20,17 @@ struct ConfirmButtonViewModelTests {
         let model = ConfirmButtonViewModel(state: .error(AnyError("test")), icon: nil, onAction: {})
         #expect(model.title == Localized.Common.tryAgain)
     }
+
+    @Test
+    func disabledWhenForceDisabled() {
+        let model = ConfirmButtonViewModel(state: .data(TransactionInputViewModel.mock()), icon: nil, isDisabled: true, onAction: {})
+        #expect(model.type.isDisabled)
+    }
+
+    @Test
+    func enabledWhenNotForceDisabled() {
+        let model = ConfirmButtonViewModel(state: .data(TransactionInputViewModel.mock()), icon: nil, isDisabled: false, onAction: {})
+        #expect(!model.type.isDisabled)
+    }
 }
 

@@ -137,11 +137,11 @@ public final class CollectibleViewModel {
     }
 
     var scoreViewModel: AssetScoreTypeViewModel {
-        AssetScoreTypeViewModel(scoreType: .unverified)
+        AssetScoreTypeViewModel(scoreType: AssetScoreType(verificationStatus: assetData.collection.status))
     }
 
     var showStatus: Bool {
-        assetData.collection.isVerified == false
+        assetData.collection.status != .verified
     }
 
     var socialLinksViewModel: SocialLinksViewModel {
@@ -157,8 +157,8 @@ public final class CollectibleViewModel {
             .copy(value: tokenIdValue, onCopy: { [weak self] value in
                 self?.isPresentingToast = .copied(value)
             }),
-            tokenExplorerUrl.map { explorerLink in
-                .url(title: Localized.Transaction.viewOn(explorerLink.name), onOpen: onSelectViewTokenInExplorer)
+            tokenExplorerUrl.map {
+                .url(title: Localized.Transaction.viewOn($0.name), onOpen: onSelectViewTokenInExplorer)
             }
         ].compactMap { $0 }
         

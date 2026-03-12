@@ -15,4 +15,15 @@ public enum WalletConnectorSheetType: Sendable, Identifiable {
         case .connectionProposal(let callback): callback.id.hashValue
         }
     }
+
+    public func reject(_ error: Error) {
+        switch self {
+        case .transferData(let callback):
+            callback.delegate(.failure(error))
+        case .signMessage(let callback):
+            callback.delegate(.failure(error))
+        case .connectionProposal(let callback):
+            callback.delegate(.failure(error))
+        }
+    }
 }

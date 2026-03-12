@@ -9,4 +9,5 @@ public enum TransactionHeaderInputType: Sendable {
     case nft(name: String?, id: String)
     case swap(SwapHeaderInput)
     case symbol
+    case assetImage
 }

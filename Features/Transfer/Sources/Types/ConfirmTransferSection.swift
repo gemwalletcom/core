@@ -9,7 +9,9 @@ import Primitives
 
 enum ConfirmTransferSectionType: String, Identifiable, Equatable {
     case header
+    case warnings
     case details
+    case payload
     case fee
     case error
 
@@ -18,12 +20,14 @@ enum ConfirmTransferSectionType: String, Identifiable, Equatable {
 
 public enum ConfirmTransferItem: Identifiable, Equatable, Sendable {
     case header
+    case warnings
     case app
     case sender
     case network
     case recipient
     case memo
     case details
+    case payload
     case networkFee
     case error
 
@@ -41,8 +45,14 @@ public enum ConfirmTransferItemModel {
     case networkFee(ListItemModel, selectable: Bool)
     case perpetualDetails(PerpetualDetailsViewModel)
     case perpetualModifyPosition(PerpetualModifyViewModel)
+    case warnings([SimulationWarning])
+    case payload([SimulationPayloadField])
     case error(title: String, error: Error, onInfoAction: VoidAction)
     case empty
+}
+
+extension ConfirmTransferItemModel: ItemModelProvidable {
+    public var itemModel: ConfirmTransferItemModel { self }
 }
 
 extension ListSection where T == ConfirmTransferItem {

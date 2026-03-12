@@ -71,7 +71,7 @@ public final class ConnectionsViewModel {
         try await service.disconnect(session: connection.session)
     }
     
-    func updateSessions() {
+    func fetch() {
         service.updateSessions()
     }
     

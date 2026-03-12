@@ -37,7 +37,7 @@ public struct ContactService: Sendable {
 extension ContactService {
     private func syncAddressNames(contact: Contact, addresses: [ContactAddress]) throws {
         let addressNames = addresses.map {
-            AddressName(chain: $0.chain, address: $0.address, name: contact.name, type: .contact)
+            AddressName(chain: $0.chain, address: $0.address, name: contact.name, type: .contact, status: .verified)
         }
         try addressStore.addAddressNames(addressNames)
     }

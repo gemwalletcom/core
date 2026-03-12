@@ -550,3 +550,10 @@
 "charts.price.low" = "कम";
 "charts.price.change" = "परिवर्तन";
 "contacts.add_to_contacts" = "संपर्क के खाते में जोड़ दे";
+"common.method" = "तरीका";
+"simulation.header.unlimited_asset" = "असीमित %@";
+"common.token" = "टोकन";
+"common.suspicious_address" = "संदिग्ध पता";
+"simulation.warning.unlimited_token_approval.description" = "इससे खर्च करने वाले को इस टोकन का उपयोग तब तक करने की अनुमति मिलती है जब तक आप अनुमोदन रद्द नहीं कर देते या यह समाप्त नहीं हो जाता।";
+"simulation.warning.nft_collection_approval.title" = "संपूर्ण एनएफटी संग्रह तक पहुंच का अनुरोध किया गया है";
+"simulation.warning.unlimited_token_approval.title" = "असीमित टोकन अनुमोदन";

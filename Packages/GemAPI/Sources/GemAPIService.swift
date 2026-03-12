@@ -34,6 +34,10 @@ public protocol GemAPINameService: Sendable {
     func getName(name: String, chain: String) async throws -> NameRecord?
 }
 
+public protocol GemAPIAddressNamesService: Sendable {
+    func getAddressNames(requests: [ChainAddress]) async throws -> [AddressName]
+}
+
 public protocol GemAPIChartService: Sendable {
     func getCharts(assetId: AssetId, period: String) async throws -> Charts
 }
@@ -159,6 +163,14 @@ extension GemAPIService: GemAPINameService {
         try await deviceProvider
             .request(.getNameRecord(name: name, chain: chain))
             .mapResponse(as: NameRecord?.self)
+    }
+}
+
+extension GemAPIService: GemAPIAddressNamesService {
+    public func getAddressNames(requests: [ChainAddress]) async throws -> [AddressName] {
+        try await deviceProvider
+            .request(.getAddressNames(requests: requests))
+            .mapResponse(as: [AddressName].self)
     }
 }
 

@@ -550,3 +550,10 @@
 "charts.price.low" = "Nízký";
 "charts.price.change" = "Přeměna";
 "contacts.add_to_contacts" = "Přidat do kontaktů";
+"common.method" = "Metoda";
+"simulation.header.unlimited_asset" = "Neomezený %@";
+"common.token" = "Žeton";
+"common.suspicious_address" = "Podezřelá adresa";
+"simulation.warning.unlimited_token_approval.description" = "To dává útratě přístup k používání tohoto tokenu, dokud schválení nezrušíte nebo dokud nevyprší jeho platnost.";
+"simulation.warning.nft_collection_approval.title" = "Požadován plný přístup k NFT kolekci";
+"simulation.warning.unlimited_token_approval.title" = "Neomezené schvalování tokenů";

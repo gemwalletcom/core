@@ -550,3 +550,10 @@
 "charts.price.low" = "Thấp";
 "charts.price.change" = "Thay đổi";
 "contacts.add_to_contacts" = "Thêm vào danh bạ";
+"common.method" = "Phương pháp";
+"simulation.header.unlimited_asset" = "Không giới hạn %@";
+"common.token" = "Mã thông báo";
+"common.suspicious_address" = "Địa chỉ đáng ngờ";
+"simulation.warning.unlimited_token_approval.description" = "Điều này cho phép người chi tiêu có quyền sử dụng mã thông báo này cho đến khi bạn thu hồi sự chấp thuận hoặc mã thông báo hết hạn.";
+"simulation.warning.nft_collection_approval.title" = "Yêu cầu quyền truy cập đầy đủ vào bộ sưu tập NFT";
+"simulation.warning.unlimited_token_approval.title" = "Phê duyệt mã thông báo không giới hạn";

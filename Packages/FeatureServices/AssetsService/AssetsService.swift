@@ -1,9 +1,12 @@
+// Copyright (c). Gem Wallet. All rights reserved.
+
 import Foundation
 import Store
 import Primitives
 import GemAPI
 import ChainService
 import Blockchain
+import GemstonePrimitives
 
 public final class AssetsService: Sendable {
     public let assetStore: AssetStore
@@ -25,14 +28,7 @@ public final class AssetsService: Sendable {
 
     // Used to add new custom assets
     public func addNewAsset(walletId: WalletId, asset: Asset) throws {
-        try addAssets(assets: [
-            AssetBasic(
-                asset: asset,
-                properties: AssetProperties.defaultValue(assetId: asset.id),
-                score: AssetScore.defaultValue(assetId: asset.id),
-                price: nil
-            )
-        ])
+        try addAssets(assets: [asset.defaultBasic])
         try addBalanceIfMissing(walletId: walletId, assetId: asset.id)
         try updateEnabled(walletId: walletId, assetIds: [asset.id], enabled: true)
     }
@@ -54,6 +50,20 @@ public final class AssetsService: Sendable {
         }
         try await prefetchAssets(assetIds: [assetId])
         return try getAsset(for: assetId)
+    }
+
+    public func getOrFetchTokenAsset(for assetId: AssetId) async throws -> Asset {
+        if let asset = try assetStore.getAssets(for: [assetId.identifier]).first {
+            return asset
+        }
+
+        guard let tokenId = assetId.tokenId else {
+            return try await getOrFetchAsset(for: assetId)
+        }
+
+        let asset = try await chainServiceFactory.service(for: assetId.chain).getTokenData(tokenId: tokenId)
+        try addAssets(assets: [asset.defaultBasic])
+        return asset
     }
     
     public func getAssets(for assetIds: [AssetId]) throws -> [Asset] {
@@ -151,17 +161,15 @@ public final class AssetsService: Sendable {
                           let asset = try? await service.getTokenData(tokenId: tokenId)
                     else { return nil }
 
-                    return AssetBasic(
-                        asset: asset,
-                        properties: .defaultValue(assetId: asset.id),
-                        score: .defaultValue(assetId: asset.id),
-                        price: nil
-                    )
+                    return asset.defaultBasic
                 }
             }
             return try await group.reduce(into: [AssetBasic]()) { if let asset = $1 { $0.append(asset) } }
         }
     }
+
+
+
 
     public func setSwappableAssets(for chains: [Chain]) throws {
         try assetStore.setAssetIsSwappable(for: chains.map { $0.id }, value: true)

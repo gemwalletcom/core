@@ -27,6 +27,7 @@ import EventPresenterService
 import Preferences
 import PrimitivesComponents
 import GemAPI
+import AssetsService
 
 public struct ViewModelFactory: Sendable {
     let keystore: any Keystore
@@ -47,6 +48,7 @@ public struct ViewModelFactory: Sendable {
     let activityService: ActivityService
     let eventPresenterService: EventPresenterService
     let fiatService: any GemAPIFiatService
+    let assetsService: AssetsService
 
     public init(
         keystore: any Keystore,
@@ -66,7 +68,8 @@ public struct ViewModelFactory: Sendable {
         addressNameService: AddressNameService,
         activityService: ActivityService,
         eventPresenterService: EventPresenterService,
-        fiatService: any GemAPIFiatService
+        fiatService: any GemAPIFiatService,
+        assetsService: AssetsService
     ) {
         self.keystore = keystore
         self.chainServiceFactory = chainServiceFactory
@@ -86,6 +89,7 @@ public struct ViewModelFactory: Sendable {
         self.activityService = activityService
         self.eventPresenterService = eventPresenterService
         self.fiatService = fiatService
+        self.assetsService = assetsService
     }
     
     @MainActor
@@ -93,6 +97,7 @@ public struct ViewModelFactory: Sendable {
         wallet: Wallet,
         data: TransferData,
         confirmTransferDelegate: TransferDataCallback.ConfirmTransferDelegate? = nil,
+        simulation: SimulationResult? = nil,
         onComplete: VoidAction
     ) -> ConfirmTransferSceneViewModel {
         let confirmService = ConfirmServiceFactory.create(
@@ -101,6 +106,7 @@ public struct ViewModelFactory: Sendable {
             assetsEnabler: assetsEnabler,
             scanService: scanService,
             balanceService: balanceService,
+            assetsService: assetsService,
             priceService: priceService,
             transactionStateService: transactionStateService,
             addressNameService: addressNameService,
@@ -108,12 +114,18 @@ public struct ViewModelFactory: Sendable {
             eventPresenterService: eventPresenterService,
             chain: data.chain
         )
-        
+        let simulationService = ConfirmSimulationServiceFactory.create(
+            addressNameService: addressNameService,
+            assetsService: assetsService
+        )
+
         return ConfirmTransferSceneViewModel(
             wallet: wallet,
             data: data,
             confirmService: confirmService,
+            simulationService: simulationService,
             confirmTransferDelegate: confirmTransferDelegate,
+            simulation: simulation,
             onComplete: onComplete
         )
     }
@@ -234,6 +246,7 @@ public struct ViewModelFactory: Sendable {
     ) -> SignMessageSceneViewModel {
         SignMessageSceneViewModel(
             keystore: keystore,
+            addressNameService: addressNameService,
             payload: payload,
             confirmTransferDelegate: confirmTransferDelegate
         )

@@ -32,12 +32,13 @@ public final class ConnectionsService: Sendable {
     public convenience init(
         store: ConnectionsStore,
         signer: any WalletConnectorSignable,
+        nodeProvider: any NodeURLFetchable,
         preferences: Preferences = .standard
     ) {
         self.init(
             store: store,
             signer: signer,
-            connector: WalletConnectorService(signer: signer),
+            connector: WalletConnectorService(signer: signer, nodeProvider: nodeProvider),
             preferences: preferences
         )
     }

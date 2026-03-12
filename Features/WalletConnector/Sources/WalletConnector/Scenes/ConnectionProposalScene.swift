@@ -7,12 +7,15 @@ import Primitives
 import Localization
 
 public struct ConnectionProposalScene: View {
-    @Environment(\.dismiss) private var dismiss
-    
     @State private var model: ConnectionProposalViewModel
+    private let onComplete: () -> Void
 
-    public init(model: ConnectionProposalViewModel) {
+    public init(
+        model: ConnectionProposalViewModel,
+        onComplete: @escaping () -> Void
+    ) {
         _model = State(initialValue: model)
+        self.onComplete = onComplete
     }
 
     public var body: some View {
@@ -60,7 +63,7 @@ extension ConnectionProposalScene {
     private func onAccept() {
         do {
             try model.accept()
-            dismiss()
+            onComplete()
         } catch {
             debugLog("accept proposal error \(error)")
         }

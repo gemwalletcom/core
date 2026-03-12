@@ -550,3 +550,10 @@
 "charts.price.low" = "Rendah";
 "charts.price.change" = "Mengubah";
 "contacts.add_to_contacts" = "Tambahkan ke Kontak";
+"common.method" = "Metode";
+"simulation.header.unlimited_asset" = "Tak terbatas %@";
+"common.token" = "Token";
+"common.suspicious_address" = "Alamat mencurigakan";
+"simulation.warning.unlimited_token_approval.description" = "Ini memberi pihak yang mengeluarkan dana akses untuk menggunakan token ini hingga Anda mencabut persetujuan atau token tersebut kedaluwarsa.";
+"simulation.warning.nft_collection_approval.title" = "Akses penuh ke koleksi NFT diminta.";
+"simulation.warning.unlimited_token_approval.title" = "Persetujuan token tanpa batas";

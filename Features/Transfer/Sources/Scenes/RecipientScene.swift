@@ -62,10 +62,11 @@ public struct RecipientScene: View {
 
             ForEach(model.recipientSections) { section in
                 Section {
-                    ForEach(section.values) { item in
+                    ForEach(section.values) {
+                        let recipient = $0.value
                         NavigationCustomLink(
-                            with: ListItemView(title: item.title ?? item.value.name, subtitle: item.subtitle),
-                            action: { onSelectRecipient(item.value) }
+                            with: ListItemView(title: $0.title ?? $0.value.name, subtitle: $0.subtitle),
+                            action: { onSelectRecipient(recipient) }
                         )
                     }
                 } header: {

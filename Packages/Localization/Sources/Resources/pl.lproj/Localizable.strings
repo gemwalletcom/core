@@ -550,3 +550,10 @@
 "charts.price.low" = "Niski";
 "charts.price.change" = "Zmiana";
 "contacts.add_to_contacts" = "Dodaj do kontaktów";
+"common.method" = "Metoda";
+"simulation.header.unlimited_asset" = "Nieograniczony %@";
+"common.token" = "Znak";
+"common.suspicious_address" = "Podejrzany adres";
+"simulation.warning.unlimited_token_approval.description" = "Dzięki temu osoba wydająca token uzyskuje dostęp do jego wykorzystania do momentu odwołania zatwierdzenia lub wygaśnięcia.";
+"simulation.warning.nft_collection_approval.title" = "Zażądano pełnego dostępu do kolekcji NFT";
+"simulation.warning.unlimited_token_approval.title" = "Nieograniczone zatwierdzanie tokenów";

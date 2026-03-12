@@ -19,7 +19,8 @@ public struct AddressStore: Sendable {
                     chain: addressName.chain,
                     address: addressName.address,
                     name: addressName.name,
-                    type: addressName.type
+                    type: addressName.type,
+                    status: addressName.status
                 ).save(db, onConflict: .replace)
             }
         }

@@ -8,12 +8,15 @@ import PrimitivesComponents
 import Primitives
 
 public struct SignMessageScene: View {
-    @Environment(\.dismiss) private var dismiss
-    
     @State private var model: SignMessageSceneViewModel
+    private let onComplete: () -> Void
 
-    public init(model: SignMessageSceneViewModel) {
+    public init(
+        model: SignMessageSceneViewModel,
+        onComplete: @escaping () -> Void
+    ) {
         _model = State(wrappedValue: model)
+        self.onComplete = onComplete
     }
 
     public var body: some View {
@@ -27,65 +30,76 @@ public struct SignMessageScene: View {
                 .contextMenu(
                     .url(title: Localized.WalletConnect.website, onOpen: model.onViewWebsite)
                 )
-                ListItemView(title: Localized.Common.wallet, subtitle: model.walletText)
-                ListItemView(title: Localized.Transfer.network, subtitle: model.networkText)
+                ListItemImageView(
+                    title: Localized.Common.wallet,
+                    subtitle: model.walletText,
+                    assetImage: model.walletAssetImage
+                )
+                ListItemImageView(
+                    title: Localized.Transfer.network,
+                    subtitle: model.networkText,
+                    assetImage: model.networkAssetImage
+                )
             }
-            
-            switch model.messageDisplayType {
-            case .sections(let sections):
-                ForEach(sections) { section in
-                    Section {
-                        ForEach(section.values) { item in
-                            ListItemView(
-                                title: item.title,
-                                subtitle: item.value
-                            )
-                        }
-                    } header: {
-                        if let title = section.title {
-                            Text(title)
-                        }
+
+            if model.hasWarnings {
+                Section {
+                    SimulationWarningsContent(warnings: model.simulationWarnings)
+                }
+            }
+
+            if model.hasPayload {
+                Section {
+                    SimulationPayloadFieldsContent(
+                        fields: model.primaryPayloadFields,
+                        fieldViewModel: model.payloadFieldViewModel(for:),
+                        contextMenuItems: model.contextMenuItems(for:)
+                    )
+
+                    NavigationCustomLink(with: ListItemView(title: Localized.Common.details)) {
+                        model.onViewPayloadDetails()
                     }
                 }
-                NavigationCustomLink(with: ListItemView(title: Localized.SignMessage.viewFullMessage)) {
-                    model.onViewFullMessage()
-                }
-            case .text(let string):
+            } else if case .text(let string) = model.messageDisplayType {
                 Section(Localized.SignMessage.message) {
                     Text(string)
                 }
-            case .siwe(let message):
-                let siweViewModel = SiweMessageViewModel(message: message)
-                Section(Localized.Common.details) {
-                    ForEach(Array(siweViewModel.detailItems.enumerated()), id: \.offset) { item in
-                        ListItemView(title: item.element.title, subtitle: item.element.value)
-                    }
-                }
-                NavigationCustomLink(with: ListItemView(title: Localized.SignMessage.viewFullMessage)) {
-                    model.onViewFullMessage()
-                }
             }
         }
+        .listSectionSpacing(.compact)
+        .taskOnce { model.fetch() }
         .safeAreaButton {
             StateButton(
                 text: model.buttonTitle,
+                type: model.buttonType,
                 action: sign
             )
         }
         .navigationTitle(Localized.SignMessage.title)
         .safariSheet(url: $model.isPresentingUrl)
-        .sheet(isPresented: $model.isPresentingMessage) {
-            NavigationStack {
-                TextMessageScene(model: model.textMessageViewModel)
+        .sheet(isPresented: $model.isPresentingPayloadDetails) {
+            if model.hasPayload {
+                NavigationStack {
+                    SimulationPayloadDetailsScene(
+                        primaryFields: model.primaryPayloadFields,
+                        secondaryFields: model.secondaryPayloadFields,
+                        fieldViewModel: model.payloadFieldViewModel(for:),
+                        contextMenuItems: model.contextMenuItems(for:),
+                        actionTitle: Localized.SignMessage.viewFullMessage,
+                        actionDestination: AnyView(TextMessageScene(model: model.textMessageViewModel))
+                    )
+                    .presentationDetents([.large])
+                    .presentationBackground(Colors.grayBackground)
+                }
             }
         }
     }
-    
+
     func sign() {
         Task {
             do {
                 try await model.signMessage()
-                dismiss()
+                onComplete()
             } catch {
                 debugLog("sign message error \(error)")
             }

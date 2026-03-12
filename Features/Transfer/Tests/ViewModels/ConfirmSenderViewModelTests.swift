@@ -15,7 +15,8 @@ struct ConfirmSenderViewModelTests {
         let model = ConfirmSenderViewModel(wallet: wallet)
 
         guard case .sender(let item) = model.itemModel else { return }
-        #expect(item.title == Localized.Wallet.title)
+        #expect(item.title == Localized.Common.wallet)
         #expect(item.subtitle == wallet.name)
+        #expect(item.imageStyle != nil)
     }
 }

@@ -6,17 +6,20 @@ import Style
 public struct ListItemErrorView: View {
     let errorTitle: String?
     let errorSystemNameImage: String
+    let errorImageColor: Color
     let error: Error
     let infoAction: (() -> Void)?
 
     public init(
         errorTitle: String?,
         errorSystemNameImage: String = SystemImage.errorOccurred,
+        errorImageColor: Color = Colors.red,
         error: Error,
         infoAction: (() -> Void)? = nil
     ) {
         self.errorTitle = errorTitle
         self.errorSystemNameImage = errorSystemNameImage
+        self.errorImageColor = errorImageColor
         self.error = error
         self.infoAction = infoAction
     }
@@ -38,7 +41,7 @@ public struct ListItemErrorView: View {
             VStack(alignment: .leading, spacing: .small) {
                 HStack(spacing: .small) {
                     Image(systemName: errorSystemNameImage)
-                        .foregroundStyle(Colors.red)
+                        .foregroundStyle(errorImageColor)
                         .frame(width: .list.image, height: .list.image)
                     Text(errorTitle ?? error.localizedDescription)
                         .textStyle(.headline)

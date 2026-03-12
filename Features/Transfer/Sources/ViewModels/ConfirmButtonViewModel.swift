@@ -1,49 +1,40 @@
 // Copyright (c). Gem Wallet. All rights reserved.
 
- import Primitives
- import SwiftUI
- import Localization
- import Components
- import Style
+import Components
+import Localization
+import Primitives
+import Style
+import SwiftUI
 
- struct ConfirmButtonViewModel: StateButtonViewable {
-     private let perform: @MainActor @Sendable () -> Void
-     private let state: StateViewType<TransactionInputViewModel>
+struct ConfirmButtonViewModel: StateButtonViewable {
+    private let onAction: @MainActor @Sendable () -> Void
+    private let state: StateViewType<TransactionInputViewModel>
+    private let isDisabled: Bool
 
-     let icon: Image?
+    let icon: Image?
 
-     init(
-         state: StateViewType<TransactionInputViewModel>,
-         icon: Image?,
-         onAction: @MainActor @Sendable @escaping () -> Void
-     ) {
-         self.state = state
-         self.icon = icon
-         self.perform = { onAction() }
-     }
+    init(
+        state: StateViewType<TransactionInputViewModel>,
+        icon: Image?,
+        isDisabled: Bool = false,
+        onAction: @MainActor @Sendable @escaping () -> Void
+    ) {
+        self.state = state
+        self.icon = icon
+        self.isDisabled = isDisabled
+        self.onAction = onAction
+    }
 
-     var title: String {
-         switch Self.actionType(for: state) {
-         case .confirm: Localized.Transfer.confirm
-         case .retry: Localized.Common.tryAgain
-         }
-     }
+    var title: String {
+        state.isError ? Localized.Common.tryAgain : Localized.Transfer.confirm
+    }
 
-     var type: ButtonType {
-        let isDisabled = state.value?.transferAmount?.isFailure ?? false
+    var type: ButtonType {
+        let isDisabled = isDisabled || (state.value?.transferAmount?.isFailure ?? false)
         return .primary(state, isDisabled: isDisabled)
     }
 
-     func action() { perform() }
- }
-
- // MARK: - Private
-
- extension ConfirmButtonViewModel {
-     private static func actionType(
-         for state: StateViewType<TransactionInputViewModel>
-     ) -> ConfrimButtonActionType {
-         if state.isError { return .retry }
-         return .confirm
-     }
- }
+    func action() {
+        onAction()
+    }
+}

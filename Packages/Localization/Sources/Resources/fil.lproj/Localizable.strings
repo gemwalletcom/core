@@ -550,3 +550,10 @@
 "charts.price.low" = "Mababa";
 "charts.price.change" = "Pagbabago";
 "contacts.add_to_contacts" = "Idagdag sa Mga Kontak";
+"common.method" = "Paraan";
+"simulation.header.unlimited_asset" = "Walang limitasyon %@";
+"common.token" = "Token";
+"common.suspicious_address" = "Kahina-hinalang address";
+"simulation.warning.unlimited_token_approval.description" = "Nagbibigay ito sa gumagastos ng access na gamitin ang token na ito hanggang sa bawiin mo ang pag-apruba o hanggang sa mag-expire ito.";
+"simulation.warning.nft_collection_approval.title" = "Hiniling ang kumpletong access sa koleksyon ng NFT";
+"simulation.warning.unlimited_token_approval.title" = "Walang limitasyong pag-apruba ng token";

@@ -40,25 +40,32 @@ public final class ConfirmTransferSceneViewModel {
     var isPresentingAlertMessage: AlertMessage?
 
     private let confirmService: ConfirmService
+    private let simulationService: ConfirmSimulationService
 
     private let wallet: Wallet
     private let onComplete: VoidAction
     private let confirmTransferDelegate: TransferDataCallback.ConfirmTransferDelegate?
+    private let simulation: SimulationResult?
+    private var simulationState: ConfirmSimulationState
 
-    private var data: TransferData
+    private let transferData: TransferData
     private var metadata: TransferDataMetadata?
 
     public init(
         wallet: Wallet,
         data: TransferData,
         confirmService: ConfirmService,
+        simulationService: ConfirmSimulationService,
         confirmTransferDelegate: TransferDataCallback.ConfirmTransferDelegate? = .none,
+        simulation: SimulationResult? = nil,
         onComplete: VoidAction
     ) {
         self.wallet = wallet
-        self.data = data
+        self.transferData = data
         self.confirmService = confirmService
+        self.simulationService = simulationService
         self.confirmTransferDelegate = confirmTransferDelegate
+        self.simulation = simulation
         self.onComplete = onComplete
 
         self.feeModel = NetworkFeeSceneViewModel(
@@ -67,6 +74,7 @@ public final class ConfirmTransferSceneViewModel {
         )
 
         self.metadata = try? confirmService.getMetadata(wallet: wallet, data: data)
+        self.simulationState = simulationService.makeState(data: data, simulation: simulation)
     }
 
     var title: String { dataModel.title }
@@ -80,10 +88,31 @@ public final class ConfirmTransferSceneViewModel {
 
     var progressMessage: String { Localized.Common.loading }
 
+    var simulationWarnings: [SimulationWarning] {
+        simulationState.warnings
+    }
+
+    var primaryPayloadFields: [SimulationPayloadField] {
+        simulationState.primaryFields
+    }
+
+    var secondaryPayloadFields: [SimulationPayloadField] {
+        simulationState.secondaryFields
+    }
+
+    var hasPayloadDetails: Bool {
+        simulationState.hasDetails
+    }
+
+    var isButtonDisabled: Bool {
+        simulationWarnings.contains(where: { $0.severity == .critical })
+    }
+
     var confirmButtonModel: ConfirmButtonViewModel {
         ConfirmButtonViewModel(
             state: state,
             icon: confirmButtonIcon,
+            isDisabled: isButtonDisabled,
             onAction: { [weak self] in
                 guard let self else { return }
                 if case .data(let data) = state, data.isReady {
@@ -96,7 +125,34 @@ public final class ConfirmTransferSceneViewModel {
     }
 
     var detailsViewModel: ConfirmDetailsViewModel {
-        ConfirmDetailsViewModel(type: data.type, metadata: metadata)
+        ConfirmDetailsViewModel(type: transferData.type, metadata: metadata)
+    }
+
+
+    private var headerType: TransactionHeaderType {
+        if let headerData = simulationState.headerData {
+            return .assetValue(headerData)
+        }
+
+        if case .tokenApprove(let asset, _) = transferData.type {
+            return .asset(image: AssetViewModel(asset: asset).assetImage)
+        }
+
+        if case .generic = transferData.type,
+           let header = simulation?.header {
+            return .asset(image: AssetIdViewModel(assetId: header.assetId).assetImage)
+        }
+
+        if let inputModel = state.value {
+            return inputModel.headerType
+        }
+
+        return TransactionInputViewModel(
+            data: transferData,
+            transactionData: nil,
+            metaData: metadata,
+            transferAmount: nil
+        ).headerType
     }
 }
 
@@ -104,24 +160,41 @@ public final class ConfirmTransferSceneViewModel {
 
 extension ConfirmTransferSceneViewModel: ListSectionProvideable {
     public var sections: [ListSection<ConfirmTransferItem>] {
-        [
-            ListSection(type: .header, [.header]),
-            ListSection(type: .details, [.app, .network, .sender, .recipient, .memo, .details]),
-            ListSection(type: .fee, [.networkFee]),
-            ListSection(type: .error, [.error])
-        ]
+        var result: [ListSection<ConfirmTransferItem>] = []
+        result.append(ListSection(type: .header, [.header]))
+        let detailItems: [ConfirmTransferItem] = {
+            if case .generic = transferData.type {
+                return [.app, .sender, .network]
+            }
+            return [.app, .sender, .network, .recipient, .memo, .details]
+        }()
+        result.append(ListSection(type: .details, detailItems))
+
+        if !simulationWarnings.isEmpty {
+            result.append(ListSection(type: .warnings, [.warnings]))
+        }
+
+        if !primaryPayloadFields.isEmpty {
+            result.append(ListSection(type: .payload, [.payload]))
+        }
+
+        result.append(ListSection(type: .fee, [.networkFee]))
+        result.append(ListSection(type: .error, [.error]))
+        return result
     }
 
     public func itemModel(for item: ConfirmTransferItem) -> any ItemModelProvidable<ConfirmTransferItemModel> {
         switch item {
         case .header:
-            ConfirmHeaderViewModel(inputModel: state.value, metadata: metadata, data: data)
+            ConfirmHeaderViewModel(headerType: headerType)
+        case .warnings:
+            ConfirmTransferItemModel.warnings(simulationWarnings)
         case .app:
-            ConfirmAppViewModel(type: data.type)
+            ConfirmAppViewModel(type: transferData.type)
         case .sender:
             ConfirmSenderViewModel(wallet: wallet)
         case .network:
-            ConfirmNetworkViewModel(type: data.type)
+            ConfirmNetworkViewModel(type: transferData.type)
         case .recipient:
             ConfirmRecipientViewModel(
                 model: dataModel,
@@ -129,9 +202,11 @@ extension ConfirmTransferSceneViewModel: ListSectionProvideable {
                 addressLink: confirmService.getExplorerLink(chain: dataModel.chain, address: dataModel.recipient.address)
             )
         case .memo:
-            ConfirmMemoViewModel(type: data.type, recipientData: data.recipientData)
+            ConfirmMemoViewModel(type: transferData.type, recipientData: transferData.recipientData)
         case .details:
             detailsViewModel
+        case .payload:
+            ConfirmTransferItemModel.payload(primaryPayloadFields)
         case .networkFee:
             ConfirmNetworkFeeViewModel(
                 state: state,
@@ -187,6 +262,31 @@ extension ConfirmTransferSceneViewModel {
         isPresentingSheet = .info(.networkFee(dataModel.chain))
     }
 
+    func contextMenuItems(for field: SimulationPayloadField) -> [ContextMenuItemType] {
+        var items = payloadFieldViewModel(for: field).contextMenuItems
+        if field.fieldType == .address {
+            let link = confirmService.getExplorerLink(chain: transferData.chain, address: field.value)
+            items.append(.url(title: Localized.Transaction.viewOn(link.name), onOpen: { [weak self] in
+                if let url = URL(string: link.link) {
+                    self?.isPresentingSheet = .url(url)
+                }
+            }))
+        }
+        return items
+    }
+
+    func payloadFieldViewModel(for field: SimulationPayloadField) -> SimulationPayloadFieldViewModel {
+        SimulationPayloadFieldViewModel(
+            field: field,
+            chain: transferData.chain,
+            addressName: simulationState.addressName(chain: transferData.chain, for: field)
+        )
+    }
+
+    func onSelectPayloadDetails() {
+        isPresentingSheet = .payloadDetails
+    }
+
     func onSelectOpenWebsiteURL() {
         if let websiteURL {
             isPresentingSheet = .url(websiteURL)
@@ -209,13 +309,13 @@ extension ConfirmTransferSceneViewModel {
         isPresentingSheet = .perpetualDetails(model)
     }
 
-    func onChangeFeePriority(_ priority: FeePriority) async {
-        await fetch()
+    func onChangeFeePriority(_: FeePriority) async {
+        await fetchData()
     }
 
     func fetch() {
         Task {
-            await fetch()
+            await fetchData()
         }
     }
 }
@@ -223,6 +323,48 @@ extension ConfirmTransferSceneViewModel {
 // MARK: - Private
 
 extension ConfirmTransferSceneViewModel {
+    private func fetchData() async {
+        state = .loading
+        feeModel.reset()
+        async let nextSimulationState = simulationService.updateState(
+            data: transferData,
+            simulation: simulation
+        )
+
+        do {
+            let metadata = try confirmService.getMetadata(wallet: wallet, data: transferData)
+            try TransferAmountCalculator().validateNetworkFee(metadata.feeAvailable, feeAssetId: metadata.feeAssetId)
+
+            let transferTransactionData = try await confirmService.loadTransferTransactionData(
+                wallet: wallet, data: transferData,
+                priority: feeModel.priority,
+                available: metadata.available
+            )
+            let transferAmount = calculateTransferAmount(
+                assetBalance: metadata.assetBalance,
+                assetFeeBalance: metadata.assetFeeBalance,
+                fee: transferTransactionData.transactionData.fee.fee
+            )
+
+            self.simulationState = await nextSimulationState
+            self.metadata = metadata
+            self.feeModel.update(rates: transferTransactionData.rates)
+            self.updateState(
+                with: transactionInputViewModel(
+                    transferAmount: transferAmount,
+                    input: transferTransactionData.transactionData,
+                    metaData: metadata
+                )
+            )
+        } catch {
+            self.simulationState = await nextSimulationState
+            if !error.isCancelled {
+                state = .error(error)
+                debugLog("preload transaction error: \(error)")
+            }
+        }
+    }
+
     private func onStateChange(state: StateViewType<TransactionInputViewModel>) {
         switch state {
         case .data(let data):
@@ -263,42 +405,6 @@ extension ConfirmTransferSceneViewModel {
             )
             if case .data(_) = confirmingState {
                 onComplete?()
-            }
-        }
-    }
-
-    private func fetch() async {
-        state = .loading
-        feeModel.reset()
-
-        do {
-            let metadata = try confirmService.getMetadata(wallet: wallet, data: data)
-            try TransferAmountCalculator().validateNetworkFee(metadata.feeAvailable, feeAssetId: metadata.feeAssetId)
-
-            let transferTransactionData = try await confirmService.loadTransferTransactionData(
-                wallet: wallet, data: data,
-                priority: feeModel.priority,
-                available: metadata.available
-            )
-            let transferAmount = calculateTransferAmount(
-                assetBalance: metadata.assetBalance,
-                assetFeeBalance: metadata.assetFeeBalance,
-                fee: transferTransactionData.transactionData.fee.fee
-            )
-
-            self.metadata = metadata
-            self.feeModel.update(rates: transferTransactionData.rates)
-            self.updateState(
-                with: transactionInputViewModel(
-                    transferAmount: transferAmount,
-                    input: transferTransactionData.transactionData,
-                    metaData: metadata
-                )
-            )
-        } catch {
-            if !error.isCancelled {
-                state = .error(error)
-                debugLog("preload transaction error: \(error)")
             }
         }
     }
@@ -345,7 +451,7 @@ extension ConfirmTransferSceneViewModel {
             assetFee: dataModel.asset.feeAsset,
             assetFeeBalance: assetFeeBalance,
             fee: fee,
-            transferData: data
+            transferData: transferData
         ))
     }
 
@@ -355,14 +461,13 @@ extension ConfirmTransferSceneViewModel {
         metaData: TransferDataMetadata? = nil
     ) -> TransactionInputViewModel {
         TransactionInputViewModel(
-            data: data,
+            data: transferData,
             transactionData: input,
             metaData: metaData,
             transferAmount: transferAmount
         )
     }
 
-    private var dataModel: TransferDataViewModel { TransferDataViewModel(data: data) }
     private var availableValue: BigInt { dataModel.availableValue(metadata: metadata) }
     private var senderLink: BlockExplorerLink { confirmService.getExplorerLink(chain: dataModel.chain, address: senderAddress) }
     private var feeAssetAddress: AssetAddress { AssetAddress(asset: dataModel.asset.feeAsset, address: senderAddress)}
@@ -373,4 +478,6 @@ extension ConfirmTransferSceneViewModel {
         else { return nil }
         return Image(systemName: systemName)
     }
+
+    private var dataModel: TransferDataViewModel { TransferDataViewModel(data: transferData) }
 }

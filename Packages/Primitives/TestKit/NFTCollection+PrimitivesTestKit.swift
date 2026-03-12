@@ -11,7 +11,7 @@ public extension NFTCollection {
         chain: Chain = .mock(),
         contractAddress: String = "0x123456789abcdef",
         images: NFTImages = NFTImages(preview: .mock()),
-        isVerified: Bool = true,
+        status: VerificationStatus = .verified,
         links: [AssetLink] = []
     ) -> NFTCollection {
         NFTCollection(
@@ -21,7 +21,7 @@ public extension NFTCollection {
             chain: chain,
             contractAddress: contractAddress,
             images: images,
-            isVerified: isVerified,
+            status: status,
             links: links
         )
     }

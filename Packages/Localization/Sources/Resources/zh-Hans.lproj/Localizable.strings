@@ -550,3 +550,10 @@
 "charts.price.low" = "低的";
 "charts.price.change" = "改变";
 "contacts.add_to_contacts" = "添加到联系人";
+"common.method" = "方法";
+"simulation.header.unlimited_asset" = "无限 %@";
+"common.token" = "令牌";
+"common.suspicious_address" = "可疑地址";
+"simulation.warning.unlimited_token_approval.description" = "这样，消费者就可以一直使用该代币，直到你撤销授权或代币过期为止。";
+"simulation.warning.nft_collection_approval.title" = "请求访问完整的NFT收藏集";
+"simulation.warning.unlimited_token_approval.title" = "无限代币批准";

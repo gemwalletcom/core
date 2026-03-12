@@ -19,7 +19,8 @@ public protocol WalletConnectorSignable: Sendable {
     func getMethods() -> [WalletConnectionMethods]
     func getEvents() -> [WalletConnectionEvents]
     func sessionApproval(payload: WCPairingProposal) async throws -> WalletId
-    func signMessage(sessionId: String, chain: Chain, message: SignMessage) async throws -> String
-    func signTransaction(sessionId: String, chain: Chain, transaction: WalletConnectorTransaction) async throws -> String
-    func sendTransaction(sessionId: String, chain: Chain, transaction: WalletConnectorTransaction) async throws -> String
+    func signMessage(sessionId: String, chain: Chain, message: SignMessage, simulation: SimulationResult) async throws -> String
+    func signTransaction(sessionId: String, chain: Chain, transaction: WalletConnectorTransaction, simulation: SimulationResult) async throws -> String
+    func sendTransaction(sessionId: String, chain: Chain, transaction: WalletConnectorTransaction, simulation: SimulationResult) async throws -> String
+    func sendRawTransaction(sessionId: String, chain: Chain, transaction: String) async throws -> String
 }
