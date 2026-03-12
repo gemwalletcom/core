@@ -94,6 +94,12 @@ impl From<&BlockParameter> for serde_json::Value {
     }
 }
 
+impl From<BlockParameter> for serde_json::Value {
+    fn from(val: BlockParameter) -> Self {
+        serde_json::Value::from(&val)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum EthereumRpc {
     Call(TransactionObject, BlockParameter),
@@ -139,7 +145,11 @@ impl JsonRpcRequestConvert for EthereumRpc {
                 vec![value, block.into()]
             }
             EthereumRpc::FeeHistory { blocks, reward_percentiles } => {
-                vec![json!(blocks), json!("latest"), json!(reward_percentiles.iter().map(|x| json!(x)).collect::<Vec<_>>())]
+                vec![
+                    json!(blocks),
+                    serde_json::Value::from(BlockParameter::Latest),
+                    json!(reward_percentiles.iter().map(|x| json!(x)).collect::<Vec<_>>()),
+                ]
             }
             EthereumRpc::TraceRawTransaction(raw_tx) => {
                 vec![json!(raw_tx), json!(vec!["stateDiff"])]

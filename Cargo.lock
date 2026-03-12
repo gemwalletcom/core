@@ -3196,6 +3196,7 @@ dependencies = [
  "reqwest 0.13.2",
  "serde",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]
@@ -3470,6 +3471,7 @@ dependencies = [
  "serde",
  "serde_json",
  "signer",
+ "simulation",
  "sui-sdk-types",
  "swapper",
  "tokio",
@@ -6877,6 +6879,23 @@ dependencies = [
  "num-traits",
  "thiserror 2.0.17",
  "time",
+]
+
+[[package]]
+name = "simulation"
+version = "1.0.0"
+dependencies = [
+ "alloy-primitives",
+ "alloy-sol-types",
+ "gem_client",
+ "gem_evm",
+ "gem_jsonrpc",
+ "num-bigint",
+ "num-traits",
+ "primitives",
+ "serde_json",
+ "strum",
+ "tokio",
 ]
 
 [[package]]

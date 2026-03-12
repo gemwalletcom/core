@@ -4,6 +4,8 @@ pub mod types;
 pub mod client;
 #[cfg(feature = "client")]
 pub use client::*;
+#[cfg(feature = "testkit")]
+pub mod testkit;
 
 #[cfg(feature = "client")]
 pub mod rpc;

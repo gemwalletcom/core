@@ -43,15 +43,10 @@ impl MessageConsumer<ChainAddressPayload, usize> for FetchTokenAddressesConsumer
 
         for asset in all_assets {
             if asset.balance.available == BigUint::ZERO {
-                zero_balance_addresses.push(AssetAddressRow::new(
-                    asset.asset_id.chain.to_string(),
-                    asset.asset_id.to_string(),
-                    payload.value.address.clone(),
-                    None,
-                ));
+                zero_balance_addresses.push(AssetAddressRow::new(asset.asset_id.chain, asset.asset_id.to_string(), payload.value.address.clone(), None));
             } else {
                 non_zero_addresses.push(AssetAddressRow::new(
-                    payload.value.chain.to_string(),
+                    payload.value.chain,
                     asset.asset_id.to_string(),
                     payload.value.address.clone(),
                     Some(asset.balance.available.to_string()),

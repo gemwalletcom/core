@@ -133,9 +133,7 @@ impl RequestAdaptiveMonitor {
         let Some(chain_state) = state.get(&chain) else {
             return false;
         };
-        chain_state
-            .last_switch_at
-            .is_some_and(|t| now.duration_since(t) < self.config.min_switch_interval)
+        chain_state.last_switch_at.is_some_and(|t| now.duration_since(t) < self.config.min_switch_interval)
     }
 
     pub async fn mark_switch(&self, chain: Chain) {

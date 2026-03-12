@@ -51,7 +51,7 @@ impl ChainConsumerRunner {
     }
 
     pub async fn stream_producer(&self) -> Result<StreamProducer, Box<dyn Error + Send + Sync>> {
-        StreamProducer::from_connection(&self.connection).await
+        StreamProducer::from_connection(&self.connection, self.shutdown_rx.clone()).await
     }
 
     pub async fn run<F, Fut>(self, f: F) -> Result<(), Box<dyn Error + Send + Sync>>

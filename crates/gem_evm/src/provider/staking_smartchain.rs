@@ -1,3 +1,4 @@
+use crate::jsonrpc::BlockParameter;
 use crate::{constants::STAKING_VALIDATORS_LIMIT, rpc::client::EthereumClient};
 use alloy_primitives::hex;
 use chrono::{DateTime, Utc};
@@ -21,7 +22,7 @@ impl<C: Client + Clone> EthereumClient<C> {
             serde_json::json!([{
             "to": HUB_READER_ADDRESS,
             "data": hex::encode_prefixed(&call_data)
-        }, "latest"]),
+        }, serde_json::Value::from(BlockParameter::Latest)]),
         );
 
         let result: String = self.call(call.0, call.1).await?;
@@ -132,14 +133,14 @@ impl<C: Client + Clone> EthereumClient<C> {
                 serde_json::json!([{
                     "to": HUB_READER_ADDRESS,
                     "data": hex::encode_prefixed(&delegations_call_data)
-                }, "latest"]),
+                }, serde_json::Value::from(BlockParameter::Latest)]),
             ),
             (
                 "eth_call".to_string(),
                 serde_json::json!([{
                     "to": HUB_READER_ADDRESS,
                     "data": hex::encode_prefixed(&undelegations_call_data)
-                }, "latest"]),
+                }, serde_json::Value::from(BlockParameter::Latest)]),
             ),
         ];
 
@@ -160,7 +161,7 @@ impl<C: Client + Clone> EthereumClient<C> {
             serde_json::json!([{
                 "to": STAKE_HUB_ADDRESS,
                 "data": "0xc473318f"
-            }, "latest"]),
+            }, serde_json::Value::from(BlockParameter::Latest)]),
         );
 
         let result: String = self.call(call.0, call.1).await?;

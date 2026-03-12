@@ -18,7 +18,7 @@ use update_coin_info_consumer::UpdateCoinInfoConsumer;
 pub async fn run_consumer_assets(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let queue = QueueName::UpdateCoinInfo;
-    let (name, stream_reader) = reader_for_queue(&settings, &queue).await?;
+    let (name, stream_reader) = reader_for_queue(&settings, &queue, &shutdown_rx).await?;
     let cacher_client = CacherClient::new(&settings.redis.url).await;
     let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
     let processor = AssetProcessor::new(coingecko_client, database, cacher_client);
