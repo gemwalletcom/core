@@ -16,13 +16,13 @@ struct TransferDataViewModelTests {
     @Test
     func genericSendTitle() {
         let type = TransferDataType.generic(asset: .mock(), metadata: .mock(), extra: .mock(outputAction: .send))
-        #expect(TransferDataViewModel.mock(type: type).title == Localized.Transfer.Send.title)
+        #expect(TransferDataViewModel.mock(type: type).title == Localized.Transfer.reviewRequest)
     }
 
     @Test
     func genericSignTitle() {
         let type = TransferDataType.generic(asset: .mock(), metadata: .mock(), extra: .mock(outputAction: .sign))
-        #expect(TransferDataViewModel.mock(type: type).title == Localized.Transfer.SignTransaction.title)
+        #expect(TransferDataViewModel.mock(type: type).title == Localized.Transfer.reviewRequest)
     }
 }
 

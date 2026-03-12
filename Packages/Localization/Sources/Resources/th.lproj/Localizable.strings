@@ -557,3 +557,4 @@
 "simulation.warning.unlimited_token_approval.description" = "これにより ผู้ใช้สามารถใช้โทเค็นนี้ได้จนกว่าคุณจะเพิกถอนการอนุมัติหรือโทเค็นหมดอายุ";
 "simulation.warning.nft_collection_approval.title" = "ขอสิทธิ์เข้าถึงคอลเลกชัน NFT ทั้งหมด";
 "simulation.warning.unlimited_token_approval.title" = "อนุมัติโทเค็นได้ไม่จำกัดจำนวน";
+"transfer.review_request" = "คำขอตรวจสอบ";

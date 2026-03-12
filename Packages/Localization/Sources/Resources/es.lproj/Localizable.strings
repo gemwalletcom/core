@@ -557,3 +557,4 @@
 "simulation.warning.unlimited_token_approval.description" = "Esto le da al gastador acceso para usar este token hasta que revoque la aprobación o expire.";
 "simulation.warning.nft_collection_approval.title" = "Se solicita acceso completo a la colección NFT";
 "simulation.warning.unlimited_token_approval.title" = "Aprobación ilimitada de tokens";
+"transfer.review_request" = "Solicitud de revisión";

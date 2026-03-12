@@ -557,3 +557,4 @@
 "simulation.warning.unlimited_token_approval.description" = "Hii inampa mtumiaji uwezo wa kutumia tokeni hii hadi utakapobatilisha idhini au itakapoisha muda wake.";
 "simulation.warning.nft_collection_approval.title" = "Ufikiaji kamili wa ukusanyaji wa NFT umeombwa";
 "simulation.warning.unlimited_token_approval.title" = "Idhini ya tokeni isiyo na kikomo";
+"transfer.review_request" = "Ombi la Uhakiki";

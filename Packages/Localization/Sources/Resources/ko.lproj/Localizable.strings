@@ -557,3 +557,4 @@
 "simulation.warning.unlimited_token_approval.description" = "이렇게 하면 사용자가 승인을 취소하거나 만료될 때까지 해당 토큰을 사용할 수 있습니다.";
 "simulation.warning.nft_collection_approval.title" = "NFT 컬렉션 전체 접근 권한이 요청되었습니다.";
 "simulation.warning.unlimited_token_approval.title" = "무제한 토큰 승인";
+"transfer.review_request" = "검토 요청";

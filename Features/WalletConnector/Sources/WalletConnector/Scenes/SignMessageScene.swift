@@ -75,7 +75,7 @@ public struct SignMessageScene: View {
                 action: sign
             )
         }
-        .navigationTitle(Localized.SignMessage.title)
+        .navigationTitle(model.title)
         .safariSheet(url: $model.isPresentingUrl)
         .sheet(isPresented: $model.isPresentingPayloadDetails) {
             if model.hasPayload {

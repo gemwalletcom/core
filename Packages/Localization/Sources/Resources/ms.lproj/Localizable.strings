@@ -557,3 +557,4 @@
 "simulation.warning.unlimited_token_approval.description" = "Ini memberi pembeli akses untuk menggunakan token ini sehingga anda membatalkan kelulusan atau ia tamat tempoh.";
 "simulation.warning.nft_collection_approval.title" = "Akses koleksi NFT penuh diminta";
 "simulation.warning.unlimited_token_approval.title" = "Kelulusan token tanpa had";
+"transfer.review_request" = "Permintaan Semakan";

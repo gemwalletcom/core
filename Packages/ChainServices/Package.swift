@@ -118,7 +118,10 @@ let package = Package(
         ),
         .target(
             name: "WalletConnectorServiceTestKit",
-            dependencies: ["WalletConnectorService"],
+            dependencies: [
+                "WalletConnectorService",
+                .product(name: "PrimitivesTestKit", package: "Primitives"),
+            ],
             path: "WalletConnectorService/TestKit"
         ),
         .target(

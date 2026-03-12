@@ -557,3 +557,4 @@
 "simulation.warning.unlimited_token_approval.description" = "Cela donne au détenteur du jeton l'accès à utiliser jusqu'à ce que vous révoquiez l'autorisation ou que celle-ci expire.";
 "simulation.warning.nft_collection_approval.title" = "Demande d'accès à l'intégralité de la collection NFT";
 "simulation.warning.unlimited_token_approval.title" = "Approbation illimitée des jetons";
+"transfer.review_request" = "Demande de révision";

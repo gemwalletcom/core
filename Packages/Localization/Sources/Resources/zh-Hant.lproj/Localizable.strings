@@ -557,3 +557,4 @@
 "simulation.warning.unlimited_token_approval.description" = "這樣，消費者就可以一直使用該代幣，直到你撤銷授權或代幣過期為止。";
 "simulation.warning.nft_collection_approval.title" = "請求訪問完整的NFT收藏集";
 "simulation.warning.unlimited_token_approval.title" = "無限代幣批准";
+"transfer.review_request" = "審查請求";

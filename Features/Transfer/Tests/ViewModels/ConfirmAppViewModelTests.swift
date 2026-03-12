@@ -12,12 +12,15 @@ struct ConfirmAppViewModelTests {
 
     @Test
     func generic() {
-        let metadata = WalletConnectionSessionAppMetadata.mock()
+        let metadata = WalletConnectionSessionAppMetadata.mock(
+            name: "PancakeSwap - Trade",
+            url: "https://pancakeswap.finance/swap"
+        )
         let model = ConfirmAppViewModel(type: .generic(asset: .mock(), metadata: metadata, extra: .mock()))
 
         guard case .app(let item) = model.itemModel else { return }
         #expect(item.title == Localized.WalletConnect.app)
-        #expect(item.subtitle != nil)
+        #expect(item.subtitle == "PancakeSwap")
         #expect(model.websiteURL == URL(string: metadata.url))
         #expect(model.websiteTitle == Localized.Settings.website)
     }

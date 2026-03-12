@@ -557,3 +557,4 @@
 "simulation.warning.unlimited_token_approval.description" = "Aceasta îi oferă utilizatorului acces la utilizarea acestui token până când îi revocați aprobarea sau expiră.";
 "simulation.warning.nft_collection_approval.title" = "Acces complet la colecția NFT solicitat";
 "simulation.warning.unlimited_token_approval.title" = "Aprobare nelimitată de tokenuri";
+"transfer.review_request" = "Cerere de revizuire";

@@ -557,3 +557,4 @@
 "simulation.warning.unlimited_token_approval.description" = "これにより、承認を取り消すか期限が切れるまで、支出者はこのトークンを使用できるようになります。";
 "simulation.warning.nft_collection_approval.title" = "NFTコレクションへのフルアクセスをリクエスト";
 "simulation.warning.unlimited_token_approval.title" = "無制限のトークン承認";
+"transfer.review_request" = "レビューリクエスト";

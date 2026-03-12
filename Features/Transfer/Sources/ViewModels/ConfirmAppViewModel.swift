@@ -1,7 +1,6 @@
 // Copyright (c). Gem Wallet. All rights reserved.
 
 import Components
-import Formatters
 import Localization
 import Primitives
 import PrimitivesComponents
@@ -40,15 +39,10 @@ extension ConfirmAppViewModel {
     public var itemModel: ConfirmTransferItemModel {
         guard let name = appValue else { return .empty }
 
-        let subtitle = AppDisplayFormatter.format(
-            name: name,
-            host: websiteURL?.cleanHost()
-        )
-
         return .app(
             ListItemModel(
                 title: Localized.WalletConnect.app,
-                subtitle: subtitle,
+                subtitle: name,
                 imageStyle: .list(assetImage: assetImage)
             )
         )

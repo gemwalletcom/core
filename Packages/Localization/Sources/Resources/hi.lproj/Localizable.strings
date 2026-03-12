@@ -557,3 +557,4 @@
 "simulation.warning.unlimited_token_approval.description" = "इससे खर्च करने वाले को इस टोकन का उपयोग तब तक करने की अनुमति मिलती है जब तक आप अनुमोदन रद्द नहीं कर देते या यह समाप्त नहीं हो जाता।";
 "simulation.warning.nft_collection_approval.title" = "संपूर्ण एनएफटी संग्रह तक पहुंच का अनुरोध किया गया है";
 "simulation.warning.unlimited_token_approval.title" = "असीमित टोकन अनुमोदन";
+"transfer.review_request" = "समीक्षा अनुरोध";

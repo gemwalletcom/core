@@ -557,3 +557,4 @@
 "simulation.warning.unlimited_token_approval.description" = "Bu, harcama yapan kişiye, siz onayı iptal edene veya süresi dolana kadar bu belirteci kullanma erişimi sağlar.";
 "simulation.warning.nft_collection_approval.title" = "NFT koleksiyonunun tamamına erişim talep edildi.";
 "simulation.warning.unlimited_token_approval.title" = "Sınırsız token onayı";
+"transfer.review_request" = "İnceleme Talebi";

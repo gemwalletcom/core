@@ -1442,6 +1442,8 @@ public enum Localized {
     public static func reservedFees(_ p1: Any) -> String {
       return Localized.tr("Localizable", "transfer.reserved_fees", String(describing: p1), fallback: "We’ve left %@ in your balance to cover future network fees.")
     }
+    /// Review Request
+    public static let reviewRequest = Localized.tr("Localizable", "transfer.review_request", fallback: "Review Request")
     /// Transfer
     public static let title = Localized.tr("Localizable", "transfer.title", fallback: "Transfer")
     /// To

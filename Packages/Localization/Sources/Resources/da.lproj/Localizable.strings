@@ -557,3 +557,4 @@
 "simulation.warning.unlimited_token_approval.description" = "Dette giver brugeren adgang til at bruge denne token, indtil du tilbagekalder godkendelsen, eller den udløber.";
 "simulation.warning.nft_collection_approval.title" = "Fuld adgang til NFT-samling anmodes";
 "simulation.warning.unlimited_token_approval.title" = "Ubegrænset tokengodkendelse";
+"transfer.review_request" = "Anmodning om gennemgang";

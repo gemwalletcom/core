@@ -60,6 +60,10 @@ public final class SignMessageSceneViewModel {
         payload.chain.asset.name
     }
 
+    public var title: String {
+        Localized.Transfer.reviewRequest
+    }
+
     public var walletText: String {
         payload.wallet.name
     }
@@ -93,7 +97,7 @@ public final class SignMessageSceneViewModel {
     }
 
     public var appText: String {
-        AppDisplayFormatter.format(name: appName, host: connectionViewModel.hostText)
+        appName
     }
 
     var textMessageViewModel: TextMessageViewModel {

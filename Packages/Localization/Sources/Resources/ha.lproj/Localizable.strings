@@ -557,3 +557,4 @@
 "simulation.warning.unlimited_token_approval.description" = "Wannan yana ba mai kashe kuɗi damar amfani da wannan alamar har sai kun soke amincewa ko kuma ta ƙare.";
 "simulation.warning.nft_collection_approval.title" = "An nemi cikakken damar tattara NFT";
 "simulation.warning.unlimited_token_approval.title" = "Amincewa da alamar mara iyaka";
+"transfer.review_request" = "Buƙatar Bita";

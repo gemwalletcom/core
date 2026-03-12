@@ -557,3 +557,4 @@
 "simulation.warning.unlimited_token_approval.description" = "Nagbibigay ito sa gumagastos ng access na gamitin ang token na ito hanggang sa bawiin mo ang pag-apruba o hanggang sa mag-expire ito.";
 "simulation.warning.nft_collection_approval.title" = "Hiniling ang kumpletong access sa koleksyon ng NFT";
 "simulation.warning.unlimited_token_approval.title" = "Walang limitasyong pag-apruba ng token";
+"transfer.review_request" = "Kahilingan sa Pagsusuri";

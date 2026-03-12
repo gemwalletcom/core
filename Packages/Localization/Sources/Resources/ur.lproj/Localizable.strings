@@ -557,3 +557,4 @@
 "simulation.warning.unlimited_token_approval.description" = "یہ خرچ کرنے والے کو اس ٹوکن کو استعمال کرنے تک رسائی دیتا ہے جب تک کہ آپ منظوری منسوخ نہیں کرتے یا اس کی میعاد ختم نہیں ہوجاتی۔";
 "simulation.warning.nft_collection_approval.title" = "مکمل NFT جمع کرنے تک رسائی کی درخواست کی گئی۔";
 "simulation.warning.unlimited_token_approval.title" = "لامحدود ٹوکن کی منظوری";
+"transfer.review_request" = "نظرثانی کی درخواست";

@@ -72,7 +72,7 @@ struct ConfirmTransferSceneViewModelTests {
         let appItemWithWebsite = modelWithWebsite.itemModel(for: .app) as? ConfirmAppViewModel
 
         if case .app(let listItem) = appItemWithWebsite?.itemModel {
-            #expect(listItem.subtitle == "Gem Wallet (example.com)")
+            #expect(listItem.subtitle == "Gem Wallet")
         } else {
             Issue.record("Expected app item model")
         }
@@ -84,6 +84,7 @@ struct ConfirmTransferSceneViewModelTests {
         //#expect(ConfirmTransferViewModel.mock(data: .mock(type: .transferNft(.mock()))).title == Localized.Transfer.Send.title)
         #expect(ConfirmTransferSceneViewModel.mock(data: .mock(type: .swap(.mock(), .mock(), .mock()))).title == Localized.Wallet.swap)
         #expect(ConfirmTransferSceneViewModel.mock(data: .mock(type: .tokenApprove(.mock(), .mock()))).title == Localized.Wallet.swap)
+        #expect(ConfirmTransferSceneViewModel.mock(data: .mock(type: .generic(asset: .mock(), metadata: .mock(), extra: .mock()))).title == Localized.Transfer.reviewRequest)
     }
     
     @Test

@@ -557,3 +557,4 @@
 "simulation.warning.unlimited_token_approval.description" = "Это дает плательщику доступ к использованию этого токена до тех пор, пока вы не отзовете разрешение или он не истечет.";
 "simulation.warning.nft_collection_approval.title" = "Запрошен полный доступ к коллекции NFT.";
 "simulation.warning.unlimited_token_approval.title" = "Неограниченное количество одобрений токенов";
+"transfer.review_request" = "Подтвердить запрос";

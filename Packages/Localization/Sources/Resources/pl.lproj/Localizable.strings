@@ -557,3 +557,4 @@
 "simulation.warning.unlimited_token_approval.description" = "Dzięki temu osoba wydająca token uzyskuje dostęp do jego wykorzystania do momentu odwołania zatwierdzenia lub wygaśnięcia.";
 "simulation.warning.nft_collection_approval.title" = "Zażądano pełnego dostępu do kolekcji NFT";
 "simulation.warning.unlimited_token_approval.title" = "Nieograniczone zatwierdzanie tokenów";
+"transfer.review_request" = "Prośba o przegląd";

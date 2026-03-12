@@ -557,3 +557,4 @@
 "simulation.warning.unlimited_token_approval.description" = "يمنح هذا المنفق إمكانية استخدام هذا الرمز المميز حتى تقوم بإلغاء الموافقة أو تنتهي صلاحيته.";
 "simulation.warning.nft_collection_approval.title" = "تم طلب الوصول الكامل إلى مجموعة NFT";
 "simulation.warning.unlimited_token_approval.title" = "الموافقة على الرموز المميزة غير محدودة";
+"transfer.review_request" = "طلب مراجعة";

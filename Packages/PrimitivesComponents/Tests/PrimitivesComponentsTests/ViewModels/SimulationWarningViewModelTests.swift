@@ -68,12 +68,12 @@ struct SimulationWarningViewModelTests {
     }
 
     @Test
-    func suspiciousAddressUsesGenericErrorTitle() {
+    func suspiciousAddressUsesErrorOccurredTitle() {
         let model = SimulationWarningViewModel(
             warning: SimulationWarning(severity: .critical, warning: .suspiciousSpender, message: nil)
         )
 
-        #expect(model.title == Localized.Errors.error)
+        #expect(model.title == Localized.Errors.errorOccured)
         #expect(model.message == Localized.Common.suspiciousAddress)
     }
 }

@@ -557,3 +557,4 @@
 "simulation.warning.unlimited_token_approval.description" = "To dává útratě přístup k používání tohoto tokenu, dokud schválení nezrušíte nebo dokud nevyprší jeho platnost.";
 "simulation.warning.nft_collection_approval.title" = "Požadován plný přístup k NFT kolekci";
 "simulation.warning.unlimited_token_approval.title" = "Neomezené schvalování tokenů";
+"transfer.review_request" = "Žádost o kontrolu";

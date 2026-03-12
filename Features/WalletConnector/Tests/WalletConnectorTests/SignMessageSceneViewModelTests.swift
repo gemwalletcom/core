@@ -7,6 +7,7 @@ import Primitives
 import PrimitivesComponents
 import PrimitivesTestKit
 import WalletConnectorService
+import WalletConnectorServiceTestKit
 import AddressNameServiceTestKit
 import KeystoreTestKit
 import struct Gemstone.SignMessage
@@ -59,6 +60,47 @@ struct SignMessageSceneViewModelTests {
 
         #expect(viewModel.connectionViewModel.connection.wallet.id == "multicoin_0xspecific")
         #expect(viewModel.connectionViewModel.connection.wallet.name == "Test Wallet")
+    }
+
+    @Test
+    @MainActor
+    func appTextUsesShortNameWithoutDomain() {
+        let payload = SignMessagePayload.mock(
+            session: .mock(metadata: .mock(
+                name: "PancakeSwap - Trade",
+                url: "https://pancakeswap.finance/swap"
+            ))
+        )
+
+        let viewModel = SignMessageSceneViewModel(
+            keystore: KeystoreMock(),
+            addressNameService: .mock(),
+            payload: payload,
+            confirmTransferDelegate: { _ in }
+        )
+
+        #expect(viewModel.appText == "PancakeSwap")
+    }
+
+    @Test
+    @MainActor
+    func titleUsesReviewRequest() {
+        let payload = SignMessagePayload(
+            chain: .ethereum,
+            session: .mock(),
+            wallet: .mock(),
+            message: SignMessage(chain: "ethereum", signType: .eip191, data: "test".data(using: .utf8)!),
+            simulation: .mock()
+        )
+
+        let viewModel = SignMessageSceneViewModel(
+            keystore: KeystoreMock(),
+            addressNameService: .mock(),
+            payload: payload,
+            confirmTransferDelegate: { _ in }
+        )
+
+        #expect(viewModel.title == "Review Request")
     }
 
     @Test
