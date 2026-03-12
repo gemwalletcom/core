@@ -128,11 +128,14 @@ fn chainflip_asset_to_asset_id(chain: Chain, asset: &str) -> Option<AssetId> {
         (Chain::Ethereum, "ETH") => Some(AssetId::from_chain(Chain::Ethereum)),
         (Chain::Ethereum, "USDC") => Some(ETHEREUM_USDC.id.clone()),
         (Chain::Ethereum, "USDT") => Some(ETHEREUM_USDT.id.clone()),
+        (Chain::Ethereum, "WBTC") => Some(ETHEREUM_WBTC.id.clone()),
         (Chain::Ethereum, "FLIP") => Some(ETHEREUM_FLIP.id.clone()),
         (Chain::Bitcoin, "BTC") => Some(AssetId::from_chain(Chain::Bitcoin)),
         (Chain::Solana, "SOL") => Some(AssetId::from_chain(Chain::Solana)),
         (Chain::Solana, "USDC") => Some(SOLANA_USDC.id.clone()),
+        (Chain::Solana, "USDT") => Some(SOLANA_USDT.id.clone()),
         (Chain::Arbitrum, "USDC") => Some(ARBITRUM_USDC.id.clone()),
+        (Chain::Arbitrum, "USDT") => Some(ARBITRUM_USDT.id.clone()),
         _ => None,
     }
 }
