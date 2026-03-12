@@ -130,7 +130,7 @@ mod tests {
         assert!(result.is_some());
         let siwe = result.unwrap();
         assert_eq!(siwe.domain, "login.xyz");
-        assert_eq!(siwe.address, "0x6dD7802E6d44bE89a789C4bD60bD511B68F41c7c");
+        assert_eq!(siwe.address, "0x6dd7802e6D44be89a789c4Bd60bD511b68f41c7c");
         assert_eq!(siwe.uri, "https://login.xyz");
         assert_eq!(siwe.chain_id, 1);
         assert_eq!(siwe.nonce, "8hK9pX32");
