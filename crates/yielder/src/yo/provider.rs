@@ -43,9 +43,6 @@ impl YoEarnProvider {
     }
 
     async fn fetch_positions(&self, chain: Chain, address: &str, assets: &[YoAsset]) -> Result<Vec<DelegationBase>, YielderError> {
-        if assets.is_empty() {
-            return Ok(vec![]);
-        }
         let gateway = self.gateway_for_chain(chain)?;
         let owner = Address::from_str(address)?;
         let provider_id = PROVIDER.to_string();
@@ -60,14 +57,14 @@ impl YoEarnProvider {
                 }
                 let asset_id = a.asset_id();
                 Some(DelegationBase {
-                    asset_id: asset_id.clone(),
+                    delegation_id: format!("{}-{}", provider_id, asset_id),
+                    validator_id: provider_id.clone(),
+                    asset_id,
                     state: DelegationState::Active,
                     balance: u256_to_biguint(&data.asset_balance),
                     shares: u256_to_biguint(&data.share_balance),
                     rewards: BigUint::ZERO,
                     completion_date: None,
-                    delegation_id: format!("{}-{}", provider_id, asset_id),
-                    validator_id: provider_id.clone(),
                 })
             })
             .collect())
@@ -89,12 +86,7 @@ impl EarnProvider for YoEarnProvider {
     }
 
     async fn get_positions(&self, chain: Chain, address: &str, asset_ids: &[AssetId]) -> Result<Vec<DelegationBase>, YielderError> {
-        let assets: Vec<_> = self
-            .assets
-            .iter()
-            .filter(|a| a.chain == chain && asset_ids.contains(&a.asset_id()))
-            .copied()
-            .collect();
+        let assets: Vec<_> = self.assets.iter().filter(|a| a.chain == chain && asset_ids.contains(&a.asset_id())).copied().collect();
         self.fetch_positions(chain, address, &assets).await
     }
 
@@ -107,11 +99,11 @@ impl EarnProvider for YoEarnProvider {
         let approval = gateway.check_token_allowance(asset.asset_token, wallet, amount).await?;
         let expected_shares = gateway.convert_to_shares(asset.yo_token, amount).await?;
         let min_shares_out = apply_slippage(expected_shares);
-        let tx = gateway.build_deposit_transaction(wallet, asset.yo_token, amount, min_shares_out, wallet, YO_PARTNER_ID_GEM);
+        let transaction = gateway.build_deposit_transaction(wallet, asset.yo_token, amount, min_shares_out, wallet, YO_PARTNER_ID_GEM);
 
         Ok(ContractCallData {
-            contract_address: tx.to,
-            call_data: tx.data,
+            contract_address: transaction.to,
+            call_data: transaction.data,
             approval,
             gas_limit: Some(GAS_LIMIT.to_string()),
         })
@@ -133,11 +125,11 @@ impl EarnProvider for YoEarnProvider {
 
         let approval = gateway.check_token_allowance(asset.yo_token, wallet, redeem_shares).await?;
         let min_assets_out = apply_slippage(amount);
-        let tx = gateway.build_redeem_transaction(wallet, asset.yo_token, redeem_shares, min_assets_out, wallet, YO_PARTNER_ID_GEM);
+        let transaction = gateway.build_redeem_transaction(wallet, asset.yo_token, redeem_shares, min_assets_out, wallet, YO_PARTNER_ID_GEM);
 
         Ok(ContractCallData {
-            contract_address: tx.to,
-            call_data: tx.data,
+            contract_address: transaction.to,
+            call_data: transaction.data,
             approval,
             gas_limit: Some(GAS_LIMIT.to_string()),
         })
