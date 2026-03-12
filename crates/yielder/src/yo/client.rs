@@ -39,28 +39,6 @@ impl<C: Client + Clone> YoGatewayClient<C> {
             contract_address,
         }
     }
-
-    fn deposit_call_data(yo_token: Address, assets: U256, min_shares_out: U256, receiver: Address, partner_id: u32) -> Vec<u8> {
-        IYoGateway::depositCall {
-            yoVault: yo_token,
-            assets,
-            minSharesOut: min_shares_out,
-            receiver,
-            partnerId: partner_id,
-        }
-        .abi_encode()
-    }
-
-    fn redeem_call_data(yo_token: Address, shares: U256, min_assets_out: U256, receiver: Address, partner_id: u32) -> Vec<u8> {
-        IYoGateway::redeemCall {
-            yoVault: yo_token,
-            shares,
-            minAssetsOut: min_assets_out,
-            receiver,
-            partnerId: partner_id,
-        }
-        .abi_encode()
-    }
 }
 
 #[async_trait]
@@ -69,20 +47,30 @@ where
     C: Client + Clone + Send + Sync + 'static,
 {
     fn build_deposit_transaction(&self, from: Address, yo_token: Address, assets: U256, min_shares_out: U256, receiver: Address, partner_id: u32) -> TransactionObject {
-        let data = Self::deposit_call_data(yo_token, assets, min_shares_out, receiver, partner_id);
+        let data = IYoGateway::depositCall {
+            yoVault: yo_token,
+            assets,
+            minSharesOut: min_shares_out,
+            receiver,
+            partnerId: partner_id,
+        }
+        .abi_encode();
         TransactionObject::new_call_with_from(&from.to_string(), &self.contract_address.to_string(), data)
     }
 
     fn build_redeem_transaction(&self, from: Address, yo_token: Address, shares: U256, min_assets_out: U256, receiver: Address, partner_id: u32) -> TransactionObject {
-        let data = Self::redeem_call_data(yo_token, shares, min_assets_out, receiver, partner_id);
+        let data = IYoGateway::redeemCall {
+            yoVault: yo_token,
+            shares,
+            minAssetsOut: min_assets_out,
+            receiver,
+            partnerId: partner_id,
+        }
+        .abi_encode();
         TransactionObject::new_call_with_from(&from.to_string(), &self.contract_address.to_string(), data)
     }
 
     async fn get_positions_batch(&self, assets: &[YoAsset], owner: Address) -> Result<Vec<PositionData>, YielderError> {
-        if assets.is_empty() {
-            return Ok(vec![]);
-        }
-
         let calls: Vec<_> = assets
             .iter()
             .flat_map(|a| {
@@ -103,7 +91,10 @@ where
                 let total_assets = decode_call3_return::<IYoVaultToken::totalAssetsCall>(&chunk[1])?;
                 let total_supply = decode_call3_return::<IYoVaultToken::totalSupplyCall>(&chunk[2])?;
                 let asset_balance = convert_to_assets_ceil(shares, total_assets, total_supply);
-                Ok(PositionData { share_balance: shares, asset_balance })
+                Ok(PositionData {
+                    share_balance: shares,
+                    asset_balance,
+                })
             })
             .collect()
     }
