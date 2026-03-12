@@ -11,26 +11,6 @@ struct BalanceFetcher: Sendable {
         self.chainServiceFactory = chainServiceFactory
     }
     
-    func getBalance(
-        assetId: AssetId,
-        address: String
-    ) async throws -> AssetBalance  {
-        switch assetId.type {
-        case .native:
-            return try await getCoinBalance(
-                chain: assetId.chain,
-                address: address
-            )
-        case .token:
-            guard let balance = try await getTokenBalance(
-                chain: assetId.chain,
-                address: address,
-                tokenIds: [assetId.identifier]
-            ).first else { throw AnyError("no balance available") }
-            return balance
-        }
-    }
-    
     func getCoinBalance(
         chain: Chain,
         address: String

@@ -22,5 +22,4 @@ public protocol WalletConnectorSignable: Sendable {
     func signMessage(sessionId: String, chain: Chain, message: SignMessage) async throws -> String
     func signTransaction(sessionId: String, chain: Chain, transaction: WalletConnectorTransaction) async throws -> String
     func sendTransaction(sessionId: String, chain: Chain, transaction: WalletConnectorTransaction) async throws -> String
-    func sendRawTransaction(sessionId: String, chain: Chain, transaction: String) async throws -> String
 }

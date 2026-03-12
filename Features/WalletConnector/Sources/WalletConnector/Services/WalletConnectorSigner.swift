@@ -241,10 +241,6 @@ public final class WalletConnectorSigner: WalletConnectorSignable {
         }
     }
 
-    public func sendRawTransaction(sessionId: String, chain: Chain, transaction: String) async throws -> String {
-        throw AnyError("Not supported yet")
-    }
-
     private func validate(chain: Chain, session: WalletConnectionSession) throws {
         if !session.chains.contains(chain) {
             throw WalletConnectorServiceError.unresolvedChainId(chain.rawValue)

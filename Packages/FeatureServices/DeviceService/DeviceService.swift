@@ -176,13 +176,7 @@ public struct DeviceService: DeviceServiceable {
     private func getDevice() async throws -> Device? {
         try await deviceProvider.getDevice()
     }
-    
-    @discardableResult
-    private func updateDeviceId(_ deviceId: String) async throws -> Device   {
-        let device = try await currentDevice(deviceId: deviceId)
-        return try await updateDevice(device)
-    }
-    
+
     @discardableResult
     private func addDevice(_ device: Device) async throws -> Device {
         try await deviceProvider.addDevice(device: device)

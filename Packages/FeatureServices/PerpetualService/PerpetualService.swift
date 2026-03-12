@@ -91,7 +91,6 @@ public struct PerpetualService: PerpetualServiceable {
 
     private func syncProviderBalances(walletId: WalletId, balance: PerpetualBalance) throws {
         let usd = Asset.hypercoreUSDC()
-        let formatter = ValueFormatter.full
         try balanceStore.addMissingBalances(walletId: walletId, assetIds: [usd.id], isEnabled: false)
 
         let perpetuals = try store.getPerpetuals().map(\.assetId)
@@ -102,24 +101,22 @@ public struct PerpetualService: PerpetualServiceable {
              UpdateBalance(
                 assetId: usd.id,
                 type: .perpetual(UpdatePerpetualBalance(
-                    available: UpdateBalanceValue(
-                        value: try formatter.inputNumber(from: balance.available.description, decimals: 6).description,
-                        amount: balance.available
-                    ),
-                    reserved: UpdateBalanceValue(
-                        value: try formatter.inputNumber(from: balance.reserved.description, decimals: 6).description,
-                        amount: balance.reserved
-                    ),
-                    withdrawable: UpdateBalanceValue(
-                        value: try formatter.inputNumber(from: balance.withdrawable.description, decimals: 6).description,
-                        amount: balance.withdrawable
-                    )
+                    available: try perpetualBalanceValue(balance.available),
+                    reserved: try perpetualBalanceValue(balance.reserved),
+                    withdrawable: try perpetualBalanceValue(balance.withdrawable)
                 )),
                 updatedAt: .now,
                 isActive: true
              ),
             ],
             for: walletId
+        )
+    }
+
+    private func perpetualBalanceValue(_ amount: Double) throws -> UpdateBalanceValue {
+        UpdateBalanceValue(
+            value: try ValueFormatter.full.inputNumber(from: amount.description, decimals: 6).description,
+            amount: amount
         )
     }
     

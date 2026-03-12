@@ -29,8 +29,7 @@ public struct ExplorerService {
     public func transactionUrl(chain: Chain, hash: String) -> BlockExplorerLink {
         let name = explorerNameOrDefault(chain: chain)
         let explorer = Gemstone.Explorer(chain: chain.id)
-        let url = URL(string: explorer.getTransactionUrl(explorerName: name, transactionId: hash))!
-        return BlockExplorerLink(name: name, link: url.absoluteString)
+        return makeLink(name: name, url: explorer.getTransactionUrl(explorerName: name, transactionId: hash))!
     }
 
     public func swapTransactionUrl(chain: Chain, provider: String, identifier: String) -> BlockExplorerLink? {
@@ -49,28 +48,24 @@ public struct ExplorerService {
     public func addressUrl(chain: Chain, address: String) -> BlockExplorerLink {
         let name = explorerNameOrDefault(chain: chain)
         let explorer = Gemstone.Explorer(chain: chain.id)
-        let url = URL(string: explorer.getAddressUrl(explorerName: name, address: address))!
-        return BlockExplorerLink(name: name, link: url.absoluteString)
+        return makeLink(name: name, url: explorer.getAddressUrl(explorerName: name, address: address))!
     }
 
     public func tokenUrl(chain: Chain, address: String) -> BlockExplorerLink? {
         let name = explorerNameOrDefault(chain: chain)
         let explorer = Gemstone.Explorer(chain: chain.id)
-        if let tokenUrl = explorer.getTokenUrl(explorerName: name, address: address), let url = URL(string: tokenUrl) {
-            return BlockExplorerLink(name: name, link: url.absoluteString)
-        }
-        return .none
+        return makeLink(name: name, url: explorer.getTokenUrl(explorerName: name, address: address))
     }
 
     public func validatorUrl(chain: Chain, address: String) -> BlockExplorerLink? {
         let name = explorerNameOrDefault(chain: chain)
         let explorer = Gemstone.Explorer(chain: chain.id)
-        if let tokenUrl = explorer.getValidatorUrl(explorerName: name, address: address), let url = URL(
-            string: tokenUrl
-        ) {
-            return BlockExplorerLink(name: name, link: url.absoluteString)
-        }
-        return .none
+        return makeLink(name: name, url: explorer.getValidatorUrl(explorerName: name, address: address))
+    }
+
+    private func makeLink(name: String, url: String?) -> BlockExplorerLink? {
+        guard let url, let parsed = URL(string: url) else { return nil }
+        return BlockExplorerLink(name: name, link: parsed.absoluteString)
     }
 }
 

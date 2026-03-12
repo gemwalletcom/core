@@ -6,7 +6,6 @@ import Foundation
 import Primitives
 import Signer
 import TransactionStateService
-import BalanceService
 
 public protocol TransferExecutable: Sendable {
     func execute(input: TransferConfirmationInput) async throws

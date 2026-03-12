@@ -2,7 +2,6 @@
 
 import Foundation
 import BigInt
-import Foundation
 import Primitives
 
 import struct Gemstone.SwapperQuote

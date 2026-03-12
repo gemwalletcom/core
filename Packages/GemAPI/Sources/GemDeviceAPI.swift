@@ -8,7 +8,6 @@ public enum GemDeviceAPI: TargetType {
     case getDevice
     case addDevice(device: Device)
     case updateDevice(device: Device)
-    case deleteDevice
     case isDeviceRegistered
     case migrateDevice(request: MigrateDeviceIdRequest)
 
@@ -86,8 +85,7 @@ public enum GemDeviceAPI: TargetType {
             return .POST
         case .updateDevice:
             return .PUT
-        case .deleteDevice,
-            .deleteSubscriptions,
+        case .deleteSubscriptions,
             .deletePriceAlerts:
             return .DELETE
         }
@@ -97,7 +95,6 @@ public enum GemDeviceAPI: TargetType {
         switch self {
         case .addDevice,
             .getDevice,
-            .deleteDevice,
             .updateDevice:
             return "/v2/devices"
         case .isDeviceRegistered:
@@ -184,7 +181,6 @@ public enum GemDeviceAPI: TargetType {
     public var data: RequestData {
         switch self {
         case .getDevice,
-            .deleteDevice,
             .getSubscriptions,
             .getAssetsList,
             .getDeviceNFTAssets,

@@ -47,19 +47,17 @@ public struct PriceAlertService: Sendable {
     }
 
     public func update() async throws {
-        let remote = try await getPriceAlerts()
+        let remote = try await apiService.getPriceAlerts(assetId: .none)
         let local = try store.getPriceAlerts()
-        
         try syncChanges(remote: remote, local: local)
     }
-    
+
     public func update(assetId: String) async throws {
-        let remote = try await getPriceAlerts(for: assetId)
+        let remote = try await apiService.getPriceAlerts(assetId: assetId)
         let local = try store.getPriceAlerts(for: assetId)
-        
         try syncChanges(remote: remote, local: local)
     }
-    
+
     private func syncChanges(remote: [PriceAlert], local: [PriceAlert]) throws {
         let changes = SyncDiff.calculate(
             primary: .remote,
@@ -70,14 +68,6 @@ public struct PriceAlertService: Sendable {
             deleteIds: changes.toDelete.asArray(),
             alerts: remote
         )
-    }
-    
-    private func getPriceAlerts() async throws -> [PriceAlert] {
-        try await apiService.getPriceAlerts(assetId: .none)
-    }
-
-    private func getPriceAlerts(for assetId: String) async throws -> [PriceAlert] {
-        try await apiService.getPriceAlerts(assetId: assetId)
     }
 
     public func add(priceAlert: PriceAlert) async throws {

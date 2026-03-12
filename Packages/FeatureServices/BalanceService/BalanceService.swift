@@ -2,6 +2,7 @@
 
 import Foundation
 import Primitives
+import BigInt
 import Store
 import ChainService
 import Formatters
@@ -31,19 +32,8 @@ extension BalanceService {
         try balanceStore.setIsEnabled(walletId: walletId, assetIds: [assetId], value: false)
     }
 
-    public func pinAsset(walletId: WalletId, assetId: AssetId) throws {
-        try balanceStore.pinAsset(walletId: walletId, assetId: assetId, value: true)
-    }
-
-    public func unpinAsset(walletId: WalletId, assetId: AssetId) throws {
-        try balanceStore.pinAsset(walletId: walletId, assetId: assetId, value: false)
-    }
-
     public func setPinned(_ isPinned: Bool, walletId: WalletId, assetId: AssetId) throws {
-        switch isPinned {
-        case true: try pinAsset(walletId: walletId, assetId: assetId)
-        case false: try unpinAsset(walletId: walletId, assetId: assetId)
-        }
+        try balanceStore.pinAsset(walletId: walletId, assetId: assetId, value: isPinned)
     }
 }
 
@@ -95,10 +85,6 @@ extension BalanceService {
         try balanceStore.getBalance(walletId: walletId, assetId: assetId)
     }
 
-    public func getBalance(assetId: AssetId, address: String) async throws -> AssetBalance {
-        try await fetcher.getBalance(assetId: assetId, address: address)
-    }
-
     public func addAssetsBalancesIfMissing(assetIds: [AssetId], wallet: Wallet, isEnabled: Bool?) throws {
         let walletId = wallet.walletId
         let balancesAssetIds = try balanceStore
@@ -121,10 +107,6 @@ extension BalanceService {
 
     private func addBalance(walletId: WalletId, balances: [AddBalance]) throws {
         try balanceStore.addBalance(balances, for: walletId)
-    }
-
-    private func getWalletBalances(assetIds: [String]) throws -> [WalletAssetBalance] {
-        try balanceStore.getBalances(assetIds: assetIds)
     }
 
     @discardableResult
@@ -191,63 +173,29 @@ extension BalanceService {
         let decimals = asset.decimals.asInt
         switch change.type {
         case .coin(let available, let reserved, let pendingUnconfirmed):
-            let availableValue = try UpdateBalanceValue(
-                value: available.description,
-                amount: formatter.double(from: available, decimals: decimals)
-            )
-            let reservedValue = try UpdateBalanceValue(
-                value: reserved.description,
-                amount: formatter.double(from: reserved, decimals: decimals)
-            )
-            let pendingUnconfirmedValue = try UpdateBalanceValue(
-                value: pendingUnconfirmed.description,
-                amount: formatter.double(from: pendingUnconfirmed, decimals: decimals)
-            )
-            return .coin(UpdateCoinBalance(available: availableValue, reserved: reservedValue, pendingUnconfirmed: pendingUnconfirmedValue))
+            return .coin(UpdateCoinBalance(
+                available: try balanceValue(available, decimals: decimals),
+                reserved: try balanceValue(reserved, decimals: decimals),
+                pendingUnconfirmed: try balanceValue(pendingUnconfirmed, decimals: decimals)
+            ))
         case .token(let available):
-            let available = try UpdateBalanceValue(
-                value: available.description,
-                amount: formatter.double(from: available, decimals: decimals)
-            )
-            return .token(UpdateTokenBalance(available: available))
+            return .token(UpdateTokenBalance(available: try balanceValue(available, decimals: decimals)))
         case .stake(let staked, let pending, let rewards, _, let locked, let frozen, let metadata):
-            let stakedValue = try UpdateBalanceValue(
-                value: staked.description,
-                amount: formatter.double(from: staked, decimals: decimals)
-            )
-            let pendingValue = try UpdateBalanceValue(
-                value: pending.description,
-                amount: formatter.double(from: pending, decimals: decimals)
-            )
-            let frozenValue = try UpdateBalanceValue(
-                value: frozen.description,
-                amount: formatter.double(from: frozen, decimals: decimals)
-            )
-            let lockedValue = try UpdateBalanceValue(
-                value: locked.description,
-                amount: formatter.double(from: locked, decimals: decimals)
-            )
-            let rewardsValue = try UpdateBalanceValue(
-                value: rewards.description,
-                amount: formatter.double(from: rewards, decimals: decimals)
-            )
-            return .stake(
-                UpdateStakeBalance(
-                    staked: stakedValue,
-                    pending: pendingValue,
-                    frozen: frozenValue,
-                    locked: lockedValue,
-                    rewards: rewardsValue,
-                    metadata: metadata
-                )
-            )
+            return .stake(UpdateStakeBalance(
+                staked: try balanceValue(staked, decimals: decimals),
+                pending: try balanceValue(pending, decimals: decimals),
+                frozen: try balanceValue(frozen, decimals: decimals),
+                locked: try balanceValue(locked, decimals: decimals),
+                rewards: try balanceValue(rewards, decimals: decimals),
+                metadata: metadata
+            ))
         case .earn(let earn):
-            let earnValue = try UpdateBalanceValue(
-                value: earn.description,
-                amount: formatter.double(from: earn, decimals: decimals)
-            )
-            return .earn(UpdateEarnBalance(balance: earnValue))
+            return .earn(UpdateEarnBalance(balance: try balanceValue(earn, decimals: decimals)))
         }
+    }
+
+    private func balanceValue(_ value: BigInt, decimals: Int) throws -> UpdateBalanceValue {
+        UpdateBalanceValue(value: value.description, amount: try formatter.double(from: value, decimals: decimals))
     }
 
     private func storeBalances(balances: [AssetBalanceChange], walletId: WalletId) throws {
