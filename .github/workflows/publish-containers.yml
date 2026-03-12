@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           submodules: recursive
           fetch-depth: 0
@@ -37,7 +37,7 @@ jobs:
       #     fi
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v4
@@ -47,7 +47,7 @@ jobs:
           password: ${{ secrets.PACKAGES_GITHUB_TOKEN }}
 
       - name: Build and push core
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
@@ -64,7 +64,7 @@ jobs:
 
       # - name: Build and push dynode
       #   if: steps.changes.outputs.dynode == 'true' || github.event_name == 'workflow_dispatch'
-      #   uses: docker/build-push-action@v6
+      #   uses: docker/build-push-action@v7
       #   with:
       #     context: .
       #     file: ./Dockerfile
