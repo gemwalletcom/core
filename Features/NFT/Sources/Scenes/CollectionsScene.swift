@@ -63,11 +63,7 @@ extension CollectionsScene {
     private var collectionsView: some View {
         ForEach(model.content.items) { item in
             NavigationLink(value: item.destination) {
-                GridPosterView(
-                    assetImage: item.assetImage,
-                    title: item.title,
-                    count: item.count
-                )
+                GridPosterView(model: item.model)
             }
         }
     }

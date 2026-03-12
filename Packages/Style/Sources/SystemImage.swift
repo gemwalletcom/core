@@ -54,6 +54,7 @@ public struct SystemImage {
     public static let arrowTriangleDown = "arrowtriangle.down.fill"
     public static let person = "person"
     public static let personBadgePlus = "person.crop.circle.badge.plus"
+    public static let checkmarkSealFill = "checkmark.seal.fill"
 
     // specific to Gem style
     public static let errorOccurred = exclamationmarkTriangleFill

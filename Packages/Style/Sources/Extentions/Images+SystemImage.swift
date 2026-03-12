@@ -52,5 +52,6 @@ public extension Images {
         public static let arrowTriangleDown = Image(systemName: SystemImage.arrowTriangleDown)
         public static let person = Image(systemName: SystemImage.person)
         public static let personBadgePlus = Image(systemName: SystemImage.personBadgePlus)
+        public static let checkmarkSealFill = Image(systemName: SystemImage.checkmarkSealFill)
     }
 }

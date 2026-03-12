@@ -55,9 +55,12 @@ extension CollectionsViewable {
         return GridPosterViewItem(
             id: data.id,
             destination: Scenes.Collection(id: data.collection.id, name: data.collection.name),
-            assetImage: AssetImage(type: data.collection.name, imageURL: data.collection.images.preview.url.asURL),
-            title: data.collection.name,
-            count: data.assets.count
+            model: GridPosterViewModel(
+                assetImage: AssetImage(type: data.collection.name, imageURL: data.collection.images.preview.url.asURL),
+                title: data.collection.name,
+                count: data.assets.count,
+                isVerified: data.collection.isVerified
+            )
         )
     }
 
@@ -65,8 +68,11 @@ extension CollectionsViewable {
         GridPosterViewItem(
             id: asset.id,
             destination: Scenes.Collectible(assetData: NFTAssetData(collection: collection, asset: asset)),
-            assetImage: AssetImage(type: collection.name, imageURL: asset.images.preview.url.asURL),
-            title: asset.name
+            model: GridPosterViewModel(
+                assetImage: AssetImage(type: collection.name, imageURL: asset.images.preview.url.asURL),
+                title: asset.name,
+                isVerified: collection.isVerified
+            )
         )
     }
 }

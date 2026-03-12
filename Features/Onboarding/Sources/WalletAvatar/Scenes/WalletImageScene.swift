@@ -96,7 +96,7 @@ public struct WalletImageScene: View {
     
     private var nftAssetListView: some View {
         ForEach(model.buildNftAssetsItems(from: model.nftDataList)) { item in
-            let view = GridPosterView(assetImage: item.assetImage, title: nil)
+            let view = GridPosterView(model: GridPosterViewModel(assetImage: item.assetImage, title: nil))
             NavigationCustomLink(with: view) {
                 onSelectNftAsset(item)
             }
