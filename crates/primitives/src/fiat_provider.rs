@@ -42,12 +42,12 @@ impl PrioritizedProvider for FiatProvider {
         &self.id
     }
 
-    fn priority(&self) -> Option<i32> {
-        self.priority
+    fn priority(&self) -> i32 {
+        self.priority.unwrap_or(i32::MAX)
     }
 
-    fn threshold_bps(&self) -> Option<i32> {
-        self.threshold_bps
+    fn threshold_bps(&self) -> i32 {
+        self.threshold_bps.unwrap_or(0)
     }
 }
 

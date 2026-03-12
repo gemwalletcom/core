@@ -107,16 +107,19 @@ impl SwapProvider {
         }
     }
 
-    pub fn priority(&self) -> Option<i32> {
+    pub fn priority(&self) -> i32 {
         match self {
-            Self::UniswapV3 | Self::UniswapV4 | Self::PancakeswapV3 | Self::Aerodrome | Self::Oku | Self::Wagmi | Self::StonfiV2 | Self::Orca | Self::Hyperliquid => Some(1),
-            Self::Thorchain | Self::Across | Self::Mayan | Self::Chainflip | Self::NearIntents | Self::Relay => Some(2),
-            Self::Jupiter | Self::Okx | Self::CetusAggregator | Self::Panora => Some(3),
+            Self::UniswapV3 | Self::UniswapV4 | Self::PancakeswapV3 | Self::Aerodrome | Self::Oku | Self::Wagmi | Self::StonfiV2 | Self::Orca | Self::Hyperliquid => 1,
+            Self::Thorchain | Self::Across | Self::Mayan | Self::Chainflip | Self::NearIntents | Self::Relay => 2,
+            Self::Jupiter | Self::Okx | Self::CetusAggregator | Self::Panora => 3,
         }
     }
 
-    pub fn threshold_bps(&self) -> Option<i32> {
-        Some(200)
+    pub fn threshold_bps(&self) -> i32 {
+        match self.priority() {
+            1 => 0,
+            _ => 200,
+        }
     }
 }
 
@@ -125,11 +128,11 @@ impl PrioritizedProvider for SwapProvider {
         self.id()
     }
 
-    fn priority(&self) -> Option<i32> {
+    fn priority(&self) -> i32 {
         SwapProvider::priority(self)
     }
 
-    fn threshold_bps(&self) -> Option<i32> {
+    fn threshold_bps(&self) -> i32 {
         SwapProvider::threshold_bps(self)
     }
 }
@@ -151,16 +154,17 @@ mod tests {
 
     #[test]
     fn test_priority() {
-        assert_eq!(SwapProvider::UniswapV3.priority(), Some(1));
-        assert_eq!(SwapProvider::Jupiter.priority(), Some(3));
-        assert_eq!(SwapProvider::Thorchain.priority(), Some(2));
-        assert_eq!(SwapProvider::Mayan.priority(), Some(2));
-        assert_eq!(SwapProvider::Okx.priority(), Some(3));
+        assert_eq!(SwapProvider::UniswapV3.priority(), 1);
+        assert_eq!(SwapProvider::Jupiter.priority(), 3);
+        assert_eq!(SwapProvider::Thorchain.priority(), 2);
+        assert_eq!(SwapProvider::Mayan.priority(), 2);
+        assert_eq!(SwapProvider::Okx.priority(), 3);
     }
 
     #[test]
     fn test_threshold_bps() {
-        assert_eq!(SwapProvider::UniswapV3.threshold_bps(), Some(200));
-        assert_eq!(SwapProvider::Okx.threshold_bps(), Some(200));
+        assert_eq!(SwapProvider::UniswapV3.threshold_bps(), 0);
+        assert_eq!(SwapProvider::Thorchain.threshold_bps(), 200);
+        assert_eq!(SwapProvider::Okx.threshold_bps(), 200);
     }
 }
