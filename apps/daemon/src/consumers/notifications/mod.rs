@@ -89,11 +89,13 @@ async fn run_notification_consumer(
     reporter: Arc<dyn ConsumerStatusReporter>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     let name = queue.to_string();
-    let stream_reader = StreamReader::new(reader_config(&settings.rabbitmq, name.clone())).await?;
+    let stream_reader = StreamReader::new(reader_config(&settings.rabbitmq, name.clone()), &shutdown_rx)
+        .await?
+        .ok_or("shutdown during connect")?;
     let pusher_client = PusherClient::new(settings.pusher.url.clone(), settings.pusher.ios.topic.clone());
     let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
     let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
-    let stream_producer = StreamProducer::new(&rabbitmq_config, &name).await?;
+    let stream_producer = StreamProducer::new(&rabbitmq_config, &name, shutdown_rx.clone()).await?;
     let consumer = NotificationsConsumer::new(pusher_client, stream_producer, (*database).clone());
 
     run_consumer::<NotificationsPayload, NotificationsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx, reporter)
@@ -108,7 +110,9 @@ async fn run_notifications_failed_consumer(
     reporter: Arc<dyn ConsumerStatusReporter>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     let name = queue.to_string();
-    let stream_reader = StreamReader::new(reader_config(&settings.rabbitmq, name.clone())).await?;
+    let stream_reader = StreamReader::new(reader_config(&settings.rabbitmq, name.clone()), &shutdown_rx)
+        .await?
+        .ok_or("shutdown during connect")?;
     let consumer = NotificationsFailedConsumer::new((*database).clone());
 
     let consumer_config = consumer_config(&settings.consumer);
@@ -123,10 +127,12 @@ async fn run_in_app_notifications_consumer(
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     let queue = QueueName::NotificationsInApp;
     let name = queue.to_string();
-    let stream_reader = StreamReader::new(reader_config(&settings.rabbitmq, name.clone())).await?;
+    let stream_reader = StreamReader::new(reader_config(&settings.rabbitmq, name.clone()), &shutdown_rx)
+        .await?
+        .ok_or("shutdown during connect")?;
     let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
     let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
-    let stream_producer = StreamProducer::new(&rabbitmq_config, &name).await?;
+    let stream_producer = StreamProducer::new(&rabbitmq_config, &name, shutdown_rx.clone()).await?;
     let consumer = InAppNotificationsConsumer::new((*database).clone(), stream_producer);
 
     let consumer_config = consumer_config(&settings.consumer);

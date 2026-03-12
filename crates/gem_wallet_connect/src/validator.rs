@@ -2,7 +2,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::actions::WalletConnectTransactionType;
 use crate::sign_type::SignDigestType;
-use gem_evm::domain::host;
+use gem_evm::domain::host_only;
 use gem_evm::siwe::SiweMessage;
 use primitives::Chain;
 
@@ -57,11 +57,10 @@ fn decode_text(data: &str) -> Option<String> {
 }
 
 fn validate_session_domain(message: &SiweMessage, session_domain: &str) -> Result<(), String> {
-    if host(session_domain) != host(&message.domain) {
-        return Err(format!(
-            "Domain mismatch: SIWE domain '{}' does not match session origin '{}'",
-            message.domain, session_domain
-        ));
+    let session_host = host_only(session_domain).ok_or_else(|| "Invalid session origin".to_string())?;
+    let message_host = host_only(&message.domain).ok_or_else(|| "Invalid SIWE domain".to_string())?;
+    if session_host != message_host {
+        return Err(format!("Domain mismatch: SIWE domain {} does not match session origin {}", message.domain, session_domain));
     }
     Ok(())
 }
@@ -228,6 +227,9 @@ mod tests {
     fn test_validate_siwe() {
         let valid = mock_siwe_message("thepoc.xyz", 1);
         assert!(validate_sign_message(&sign_validation(Chain::Ethereum, &SignDigestType::Siwe, &valid, "https://thepoc.xyz")).is_ok());
+
+        let with_port = mock_siwe_message("thepoc.xyz:8080", 1);
+        assert!(validate_sign_message(&sign_validation(Chain::Ethereum, &SignDigestType::Siwe, &with_port, "https://thepoc.xyz")).is_ok());
 
         let chain_mismatch = mock_siwe_message("thepoc.xyz", 137);
         assert!(

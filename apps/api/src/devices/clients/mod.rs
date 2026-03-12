@@ -1,3 +1,4 @@
+mod address_names;
 mod fiat;
 mod notifications;
 mod portfolio;
@@ -7,6 +8,7 @@ mod scan;
 mod transactions;
 mod wallets;
 
+pub use address_names::AddressNamesClient;
 pub use fiat::FiatQuotesClient;
 pub use notifications::NotificationsClient;
 pub use portfolio::PortfolioClient;

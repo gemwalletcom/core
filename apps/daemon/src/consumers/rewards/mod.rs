@@ -39,8 +39,8 @@ async fn run_rewards_events(
     reporter: Arc<dyn ConsumerStatusReporter>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     let queue = QueueName::RewardsEvents;
-    let (name, stream_reader) = reader_for_queue(&settings, &queue).await?;
-    let stream_producer = producer_for_queue(&settings, &name).await?;
+    let (name, stream_reader) = reader_for_queue(&settings, &queue, &shutdown_rx).await?;
+    let stream_producer = producer_for_queue(&settings, &name, shutdown_rx.clone()).await?;
     let consumer = rewards_consumer::RewardsConsumer::new(database, stream_producer);
     let consumer_config = consumer_config(&settings.consumer);
     run_consumer::<RewardsNotificationPayload, rewards_consumer::RewardsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config, shutdown_rx, reporter).await
@@ -59,8 +59,8 @@ async fn run_rewards_redemptions(
         errors: config.get_vec_string(ConfigKey::RedemptionRetryErrors)?,
     };
     let queue = QueueName::RewardsRedemptions;
-    let (name, stream_reader) = reader_for_queue(&settings, &queue).await?;
-    let stream_producer = producer_for_queue(&settings, &name).await?;
+    let (name, stream_reader) = reader_for_queue(&settings, &queue, &shutdown_rx).await?;
+    let stream_producer = producer_for_queue(&settings, &name, shutdown_rx.clone()).await?;
     let wallets = parse_rewards_wallets(&settings)?;
     let client_provider = create_evm_client_provider((*settings).clone());
     let redemption_service = Arc::new(TransferRedemptionService::new(wallets, client_provider));

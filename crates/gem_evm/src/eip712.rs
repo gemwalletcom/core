@@ -4,6 +4,8 @@ use serde_serializers::deserialize_u64_from_str_or_int;
 use signer::hash_eip712;
 use std::collections::HashMap;
 
+use crate::address::ethereum_address_checksum;
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EIP712Domain {
     pub name: String,
@@ -93,6 +95,11 @@ pub fn validate_eip712_chain_id(data: &str, expected_chain_id: u64) -> Result<()
 pub fn parse_eip712_json(value: &Value) -> Result<EIP712Message, String> {
     let domain_value = value.get("domain").ok_or_else(|| "Invalid EIP712 JSON: missing domain".to_string())?;
     let domain: EIP712Domain = serde_json::from_value(domain_value.clone()).map_err(|e| format!("Invalid EIP712 JSON: domain parse error: {e}"))?;
+    let verifying_contract = match domain.verifying_contract.as_deref() {
+        Some(verifying_contract) => Some(ethereum_address_checksum(verifying_contract).map_err(|error| error.to_string())?),
+        None => None,
+    };
+    let domain = EIP712Domain { verifying_contract, ..domain };
 
     let types_value = value
         .get("types")
@@ -153,7 +160,9 @@ pub fn parse_value(type_name: &str, json_value: &Value, all_types: &HashMap<Stri
         match type_name {
             "address" => {
                 let s = json_value.as_str().ok_or_else(|| format!("Expected string for address, got: {json_value:?}"))?;
-                Ok(EIP712TypedValue::Address { value: s.to_string() })
+                Ok(EIP712TypedValue::Address {
+                    value: ethereum_address_checksum(s).map_err(|error| format!("Invalid address '{s}': {error}"))?,
+                })
             }
             "string" => {
                 let s = json_value.as_str().ok_or_else(|| format!("Expected string for string type, got: {json_value:?}"))?;

@@ -2,11 +2,13 @@ use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use crate::sql_types::ChainRow;
+
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::parser_state)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct ParserStateRow {
-    pub chain: String,
+    pub chain: ChainRow,
     pub current_block: i64,
     pub latest_block: i64,
     pub await_blocks: i32,

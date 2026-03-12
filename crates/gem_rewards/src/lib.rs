@@ -19,6 +19,6 @@ pub use ipapi::IpApiClient;
 pub use model::IpCheckResult;
 pub use redemption::redeem_points;
 pub use redemption_service::{RedemptionAsset, RedemptionRequest, RedemptionResult, RedemptionService};
-pub use risk_scoring::{evaluate_risk, RiskResult, RiskScoreConfig, RiskScoringInput, RiskSignalInput};
+pub use risk_scoring::{RiskResult, RiskScoreConfig, RiskScoringInput, RiskSignalInput, evaluate_risk};
 pub use transfer_provider::{EvmClientProvider, WalletConfig};
 pub use transfer_redemption_service::TransferRedemptionService;

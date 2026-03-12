@@ -40,7 +40,7 @@ fn setup_database(database: &Database) -> Result<(), Box<dyn std::error::Error +
 
     info_with_fields!("setup", step = "parser state");
     for chain in chains.clone() {
-        let _ = database.parser_state()?.add_parser_state(chain.as_ref(), chain.block_time() as i32);
+        let _ = database.parser_state()?.add_parser_state(chain, chain.block_time() as i32);
     }
 
     info_with_fields!("setup", step = "assets");
@@ -112,7 +112,7 @@ async fn setup_queues(settings: &Settings) -> Result<(), Box<dyn std::error::Err
 
     let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
     let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
-    let stream_producer = StreamProducer::new(&rabbitmq_config, "setup").await.unwrap();
+    let stream_producer = StreamProducer::new(&rabbitmq_config, "setup", streamer::no_shutdown()).await.unwrap();
     let _ = stream_producer.declare_queues(non_chain_queues).await;
     let _ = stream_producer.declare_exchanges(exchanges.clone()).await;
 

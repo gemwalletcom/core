@@ -14,11 +14,13 @@ use sui_types::PersonalMessage;
 
 use super::{
     eip712::GemEIP712Message,
+    payload::{MessagePayloadPreview, eip712_payload_preview, siwe_payload_preview},
     sign_type::{SignDigestType, SignMessage},
 };
 use crate::{GemstoneError, siwe::SiweMessage};
 use gem_bitcoin::signer::{BitcoinSignMessageData, sign_personal as bitcoin_sign_personal};
 use gem_tron::signer::tron_hash_message;
+use primitives::SimulationPayloadField;
 use zeroize::Zeroizing;
 
 fn current_timestamp() -> Result<u64, GemstoneError> {
@@ -26,6 +28,16 @@ fn current_timestamp() -> Result<u64, GemstoneError> {
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_secs())
         .map_err(|e| GemstoneError::from(e.to_string()))
+}
+
+fn siwe_or_text_preview(chain: primitives::Chain, data: &[u8]) -> MessagePreview {
+    match String::from_utf8(data.to_vec()) {
+        Ok(string) => match SiweMessage::try_parse(&string) {
+            Some(message) if message.validate(chain).is_ok() => MessagePreview::Siwe(message),
+            Some(_) | None => MessagePreview::Text(string),
+        },
+        Err(_) => MessagePreview::Text(encode_with_0x(data)),
+    }
 }
 
 #[derive(Debug, PartialEq, uniffi::Enum)]
@@ -49,11 +61,10 @@ impl MessageSigner {
 
     pub fn preview(&self) -> Result<MessagePreview, GemstoneError> {
         match self.message.sign_type {
-            SignDigestType::SuiPersonal | SignDigestType::Eip191 | SignDigestType::TronPersonal => {
-                let string = String::from_utf8(self.message.data.clone());
-                let preview = string.unwrap_or(encode_with_0x(&self.message.data));
-                Ok(MessagePreview::Text(preview))
-            }
+            SignDigestType::Eip191 | SignDigestType::Siwe => Ok(siwe_or_text_preview(self.message.chain, &self.message.data)),
+            SignDigestType::SuiPersonal | SignDigestType::TronPersonal => Ok(MessagePreview::Text(
+                String::from_utf8(self.message.data.clone()).unwrap_or(encode_with_0x(&self.message.data)),
+            )),
             SignDigestType::BitcoinPersonal => {
                 let message = BitcoinSignMessageData::from_bytes(&self.message.data)?;
                 Ok(MessagePreview::Text(message.message))
@@ -77,31 +88,36 @@ impl MessageSigner {
                 let decoded = bs58::decode(&self.message.data).into_vec().unwrap_or_default();
                 Ok(MessagePreview::Text(String::from_utf8_lossy(&decoded).to_string()))
             }
-            SignDigestType::Siwe => {
-                let string = match String::from_utf8(self.message.data.clone()) {
-                    Ok(value) => value,
-                    Err(_) => return Ok(MessagePreview::Text(encode_with_0x(&self.message.data))),
-                };
-
-                if let Some(message) = SiweMessage::try_parse(&string)
-                    && message.validate(self.message.chain).is_ok()
-                {
-                    Ok(MessagePreview::Siwe(message))
-                } else {
-                    Ok(MessagePreview::Text(string))
-                }
-            }
         }
+    }
+
+    pub fn payload_preview(&self, simulation_payload: Vec<SimulationPayloadField>) -> Result<Option<MessagePayloadPreview>, GemstoneError> {
+        let payload_preview = match self.preview()? {
+            MessagePreview::Text(_) => match self.message.sign_type {
+                SignDigestType::Eip191 | SignDigestType::Siwe => self.siwe_payload_preview(simulation_payload),
+                _ => None,
+            },
+            MessagePreview::EIP712(message) => Some(eip712_payload_preview(&message, simulation_payload)),
+            MessagePreview::Siwe(message) => Some(siwe_payload_preview(&message, simulation_payload)),
+        };
+
+        Ok(payload_preview)
     }
 
     pub fn plain_preview(&self) -> String {
         match self.message.sign_type {
-            SignDigestType::SuiPersonal
-            | SignDigestType::Eip191
-            | SignDigestType::TronPersonal
-            | SignDigestType::Base58
-            | SignDigestType::TonPersonal
-            | SignDigestType::BitcoinPersonal => match self.preview() {
+            SignDigestType::SuiPersonal | SignDigestType::Eip191 | SignDigestType::TronPersonal => {
+                String::from_utf8(self.message.data.clone()).unwrap_or_else(|_| encode_with_0x(&self.message.data))
+            }
+            SignDigestType::Base58 => match self.preview() {
+                Ok(MessagePreview::Text(preview)) => preview,
+                _ => "".to_string(),
+            },
+            SignDigestType::TonPersonal => match self.preview() {
+                Ok(MessagePreview::Text(preview)) => preview,
+                _ => String::from_utf8(self.message.data.clone()).unwrap_or_else(|_| encode_with_0x(&self.message.data)),
+            },
+            SignDigestType::BitcoinPersonal => match self.preview() {
                 Ok(MessagePreview::Text(preview)) => preview,
                 _ => "".to_string(),
             },
@@ -182,6 +198,12 @@ impl MessageSigner {
 }
 
 impl MessageSigner {
+    fn siwe_payload_preview(&self, simulation_payload: Vec<SimulationPayloadField>) -> Option<MessagePayloadPreview> {
+        let string = String::from_utf8(self.message.data.clone()).ok()?;
+        let message = SiweMessage::try_parse(&string)?;
+        Some(siwe_payload_preview(&message, simulation_payload))
+    }
+
     fn get_ton_result(&self, result: &TonSignResult) -> Result<String, GemstoneError> {
         let string = String::from_utf8(self.message.data.clone())?;
         let data = TonSignMessageData::from_bytes(string.as_bytes())?;
@@ -204,7 +226,7 @@ impl MessageSigner {
 mod tests {
     use super::*;
     use crate::message::{
-        eip712::{GemEIP712Section, GemEIP712Value},
+        eip712::{GemEIP712Section, GemEIP712Value, GemEIP712ValueType},
         sign_type::SignDigestType,
     };
     use gem_evm::EIP712Domain;
@@ -256,6 +278,27 @@ mod tests {
             Ok(MessagePreview::Text(preview)) => assert_eq!(preview, "0xdeadbeef"),
             _ => panic!("Unexpected preview result"),
         }
+    }
+
+    #[test]
+    fn test_eip191_plain_preview_for_siwe() {
+        let message = r#"thepoc.xyz wants you to sign in with your Ethereum account:
+0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4
+
+Sign in with different chain ID
+
+URI: https://thepoc.xyz
+Version: 1
+Chain ID: 137
+Nonce: byjof9dwrao97skautdxhb
+Issued At: 2026-03-09T15:48:34.458Z"#;
+        let decoder = MessageSigner::new(SignMessage {
+            chain: Chain::Ethereum,
+            sign_type: SignDigestType::Eip191,
+            data: message.as_bytes().to_vec(),
+        });
+
+        assert_eq!(decoder.plain_preview(), message);
     }
 
     #[test]
@@ -380,38 +423,47 @@ mod tests {
                         GemEIP712Value {
                             name: "offerer".to_string(),
                             value: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266".to_string(),
+                            value_type: GemEIP712ValueType::Address,
                         },
                         GemEIP712Value {
                             name: "zone".to_string(),
                             value: "0x004C00500000aD104D7DBd00e3ae0A5C00560C00".to_string(),
+                            value_type: GemEIP712ValueType::Address,
                         },
                         GemEIP712Value {
-                            name: "offer".to_string(),
-                            value: "[...]".to_string(),
+                            name: "offer.token".to_string(),
+                            value: "0xA604060890923Ff400e8c6f5290461A83AEDACec".to_string(),
+                            value_type: GemEIP712ValueType::Address,
                         },
                         GemEIP712Value {
                             name: "startTime".to_string(),
                             value: "1658645591".to_string(),
+                            value_type: GemEIP712ValueType::Text,
                         },
                         GemEIP712Value {
                             name: "endTime".to_string(),
                             value: "1659250386".to_string(),
+                            value_type: GemEIP712ValueType::Text,
                         },
                         GemEIP712Value {
                             name: "zoneHash".to_string(),
                             value: "0x0000000000000000000000000000000000000000000000000000000000000000".to_string(),
+                            value_type: GemEIP712ValueType::Text,
                         },
                         GemEIP712Value {
                             name: "salt".to_string(),
                             value: "16178208897136618".to_string(),
+                            value_type: GemEIP712ValueType::Text,
                         },
                         GemEIP712Value {
                             name: "conduitKey".to_string(),
                             value: "0x0000007b02230091a7ed01230072f7006a004d60a8d4e71d599b8104250f0000".to_string(),
+                            value_type: GemEIP712ValueType::Text,
                         },
                         GemEIP712Value {
                             name: "counter".to_string(),
                             value: "0".to_string(),
+                            value_type: GemEIP712ValueType::Text,
                         },
                     ],
                 }],
@@ -457,19 +509,23 @@ mod tests {
                     values: vec![
                         GemEIP712Value {
                             name: "address".to_string(),
-                            value: "0x514bcb1f9aabb904e6106bd1052b66d2706dbbb7".to_string(),
+                            value: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
+                            value_type: GemEIP712ValueType::Address,
                         },
                         GemEIP712Value {
                             name: "timestamp".to_string(),
                             value: "1752326774".to_string(),
+                            value_type: GemEIP712ValueType::Timestamp,
                         },
                         GemEIP712Value {
                             name: "nonce".to_string(),
                             value: "0".to_string(),
+                            value_type: GemEIP712ValueType::Text,
                         },
                         GemEIP712Value {
                             name: "message".to_string(),
                             value: "This message attests that I control the given wallet".to_string(),
+                            value_type: GemEIP712ValueType::Text,
                         },
                     ],
                 }],
@@ -506,6 +562,88 @@ mod tests {
         }
 
         assert_eq!(decoder.plain_preview(), message);
+    }
+
+    #[test]
+    fn test_siwe_preview_falls_back_to_text_when_validation_fails() {
+        let message = [
+            "login.xyz wants you to sign in with your Ethereum account:",
+            "0x6dD7802E6d44bE89a789C4bD60bD511B68F41c7c",
+            "",
+            "URI: https://login.xyz",
+            "Version: 1",
+            "Chain ID: 137",
+            "Nonce: 8hK9pX32",
+            "Issued At: 2024-04-01T12:00:00Z",
+        ]
+        .join("\n");
+
+        let decoder = MessageSigner::new(SignMessage {
+            chain: Chain::Ethereum,
+            sign_type: SignDigestType::Siwe,
+            data: message.as_bytes().to_vec(),
+        });
+
+        match decoder.preview() {
+            Ok(MessagePreview::Text(preview)) => assert_eq!(preview, message),
+            other => panic!("Unexpected result: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_eip191_siwe_preview_falls_back_to_text_on_chain_mismatch() {
+        let message = [
+            "thepoc.xyz wants you to sign in with your Ethereum account:",
+            "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4",
+            "",
+            "Sign in with different chain ID",
+            "",
+            "URI: https://thepoc.xyz",
+            "Version: 1",
+            "Chain ID: 137",
+            "Nonce: byjof9dwrao97skautdxhb",
+            "Issued At: 2026-03-09T15:48:34.458Z",
+        ]
+        .join("\n");
+
+        let decoder = MessageSigner::new(SignMessage {
+            chain: Chain::Ethereum,
+            sign_type: SignDigestType::Eip191,
+            data: message.as_bytes().to_vec(),
+        });
+
+        match decoder.preview() {
+            Ok(MessagePreview::Text(preview)) => assert_eq!(preview, message),
+            other => panic!("Expected text preview, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_eip191_siwe_payload_preview_keeps_structured_fields_on_chain_mismatch() {
+        let message = [
+            "thepoc.xyz wants you to sign in with your Ethereum account:",
+            "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4",
+            "",
+            "Sign in with different chain ID",
+            "",
+            "URI: https://thepoc.xyz",
+            "Version: 1",
+            "Chain ID: 137",
+            "Nonce: byjof9dwrao97skautdxhb",
+            "Issued At: 2026-03-09T15:48:34.458Z",
+        ]
+        .join("\n");
+
+        let decoder = MessageSigner::new(SignMessage {
+            chain: Chain::Ethereum,
+            sign_type: SignDigestType::Eip191,
+            data: message.as_bytes().to_vec(),
+        });
+
+        let payload_preview = decoder.payload_preview(vec![]).unwrap().expect("expected SIWE payload preview");
+        assert_eq!(payload_preview.primary.len(), 2);
+        assert_eq!(payload_preview.primary[0].label.as_deref(), Some("domain"));
+        assert_eq!(payload_preview.primary[1].label.as_deref(), Some("address"));
     }
 
     #[test]

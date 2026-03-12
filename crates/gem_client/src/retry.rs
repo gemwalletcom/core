@@ -1,4 +1,4 @@
-use reqwest::{retry, StatusCode};
+use reqwest::{StatusCode, retry};
 use std::future::Future;
 use std::time::Duration;
 

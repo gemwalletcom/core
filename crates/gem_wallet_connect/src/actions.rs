@@ -50,7 +50,7 @@ impl WalletConnectTransactionType {
 #[derive(Debug, Clone, PartialEq)]
 pub enum WalletConnectChainOperation {
     AddChain,
-    SwitchChain,
+    SwitchChain { chain: Chain },
     GetChainId,
 }
 
