@@ -11,7 +11,6 @@ public actor WalletConnectorServiceMock: WalletConnectorServiceable {
     public func setup() async { isSetup = true }
     public func pair(uri: String) async throws {}
     public func disconnect(sessionId: String) async throws {}
-    public func disconnectAll() async throws {}
     nonisolated public func configure() throws {}
     nonisolated public func updateSessions() {}
 }

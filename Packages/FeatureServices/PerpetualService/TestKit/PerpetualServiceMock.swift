@@ -8,14 +8,6 @@ import Primitives
 public struct PerpetualServiceMock: PerpetualServiceable {
     public init() {}
 
-    public func getPositions(walletId: WalletId) async throws -> [PerpetualPosition] {
-        []
-    }
-
-    public func getMarkets() async throws -> [Primitives.Perpetual] {
-        []
-    }
-
     public func updateMarkets() async throws {}
 
     public func updateMarket(symbol: String) async throws {}

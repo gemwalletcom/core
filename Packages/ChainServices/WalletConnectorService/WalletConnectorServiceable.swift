@@ -7,6 +7,5 @@ public protocol WalletConnectorServiceable: Sendable {
     func setup() async
     func pair(uri: String) async throws
     func disconnect(sessionId: String) async throws
-    func disconnectAll() async throws
     func updateSessions()
 }

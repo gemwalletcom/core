@@ -58,11 +58,6 @@ public struct TransactionScene: View {
                 title: title,
                 subtitle: value
             )
-        case let .size(title, value):
-            ListItemView(
-                title: title,
-                subtitle: value
-            )
         case let .explorer(url, text):
             SafariNavigationLink(url: url) {
                 Text(text)

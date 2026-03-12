@@ -76,7 +76,7 @@ extension StakeScene {
 
     private var delegationsSection: some View {
         Section(model.delegationsSectionTitle) {
-            switch model.delegationsState {
+            switch model.delegationsViewState {
             case .noData:
                 EmptyContentView(model: model.emptyContentModel)
                     .cleanListRow()

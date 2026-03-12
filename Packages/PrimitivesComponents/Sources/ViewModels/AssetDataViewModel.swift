@@ -151,10 +151,6 @@ public struct AssetDataViewModel: Sendable {
         assetData.metadata.isBuyEnabled
     }
 
-    public var isSellEnabled: Bool {
-        assetData.metadata.isSellEnabled
-    }
-
     public var isSwapEnabled: Bool {
         assetData.metadata.isSwapEnabled
     }

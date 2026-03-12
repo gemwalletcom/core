@@ -33,14 +33,6 @@ public struct PerpetualService: PerpetualServiceable {
         self.preferences = preferences
     }
     
-    public func getPositions(walletId: WalletId) async throws -> [PerpetualPosition] {
-        try store.getPositions(walletId: walletId)
-    }
-    
-    public func getMarkets() async throws -> [Perpetual] {
-        try store.getPerpetuals()
-    }
-
     public func updateMarkets() async throws {
         let perpetualsData = try await provider.getPerpetualsData()
         let perpetuals = perpetualsData.map { $0.perpetual }

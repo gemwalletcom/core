@@ -32,16 +32,6 @@ public struct PriceViewModel: Sendable {
         return currencyFormatter.string(price.price)
     }
 
-    public var priceAmountColor: Color {
-        guard let price = price else { return Colors.gray }
-        if price.price == 0 {
-            return Colors.grayLight
-        } else if price.price >= 0 {
-            return Colors.green
-        }
-        return Colors.red
-    }
-
     private var priceChange: Double? {
         price?.priceChangePercentage24h ?? .none
     }
@@ -71,13 +61,5 @@ public struct PriceViewModel: Sendable {
 
     public func fiatAmountText(amount: Double) -> String {
         currencyFormatter.string(amount)
-    }
-
-    public func amountWithFiatText(amount: String, fiatAmount: Double) -> String {
-        String(
-            format: "%@ (%@)",
-            amount,
-            fiatAmountText(amount: fiatAmount)
-        )
     }
 }

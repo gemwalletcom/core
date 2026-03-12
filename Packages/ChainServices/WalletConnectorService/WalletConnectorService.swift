@@ -75,25 +75,6 @@ extension WalletConnectorService: WalletConnectorServiceable {
         try await WalletKit.instance.disconnect(topic: sessionId)
     }
 
-    public func disconnectAll() async throws {
-        let sessions = WalletKit.instance.getSessions()
-        debugLog("sessions \(sessions)")
-
-        for session in sessions {
-            try? await WalletKit.instance.disconnect(topic: session.topic)
-            // Pairing will disconnect automatically
-        }
-
-        let pairings = Pair.instance.getPairings()
-
-        debugLog("pairings \(pairings)")
-        for pairing in pairings {
-            try? await Pair.instance.disconnect(topic: pairing.topic)
-        }
-
-        try await WalletKit.instance.cleanup()
-    }
-
     public func updateSessions() {
         updateSessions(interactor.sessions)
     }

@@ -40,7 +40,6 @@ extension AssetHeaderViewModel: HeaderViewModel {
             (HeaderButtonType.send, true, bannerEventsViewModel.isButtonsEnabled),
             (HeaderButtonType.receive, true, bannerEventsViewModel.isButtonsEnabled),
             (HeaderButtonType.buy, assetDataModel.isBuyEnabled, bannerEventsViewModel.isButtonsEnabled),
-            //(HeaderButtonType.sell, assetDataModel.isSellEnabled && assetDataModel.hasAvailableBalance, bannerEventsViewModel.isButtonsEnabled),
             (HeaderButtonType.swap, assetDataModel.isSwapEnabled, bannerEventsViewModel.isButtonsEnabled),
         ]
         return values.compactMap {

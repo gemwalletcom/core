@@ -7,7 +7,6 @@ public protocol WalletSessionManageableThrowing: Sendable {
     func getWallets() throws -> [Wallet]
     func getWallet(walletId: WalletId) throws -> Wallet
     func getCurrentWallet() throws -> Wallet
-    func getCurrentWalletId() throws -> WalletId
 }
 
 public protocol WalletSessionManageable: WalletSessionManageableThrowing {
@@ -34,13 +33,6 @@ public extension WalletSessionManageable {
             throw WalletSessionServiceError.noWallet
         }
         return currentWallet
-    }
-
-    func getCurrentWalletId() throws -> WalletId {
-        guard let currentWalletId else {
-            throw WalletSessionServiceError.noWalletId
-        }
-        return currentWalletId
     }
 
     func getWallet(walletId: WalletId) throws -> Wallet {

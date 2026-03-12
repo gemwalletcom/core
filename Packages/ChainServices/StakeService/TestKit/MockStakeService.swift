@@ -19,12 +19,4 @@ public struct MockStakeService: StakeServiceable {
     public func update(walletId: WalletId, chain: Chain, address: String) async throws {
         //
     }
-
-    public func getValidatorsActive(assetId: AssetId) throws -> [DelegationValidator] {
-        []
-    }
-
-    public func getValidator(assetId: AssetId, validatorId: String) throws -> DelegationValidator? {
-        .none
-    }
 }

@@ -33,10 +33,6 @@ public struct PriceAlertService: Sendable {
         self.pushNotificationService = PushNotificationEnablerService(preferences: preferences)
     }
 
-    var isPushNotificationsEnabled: Bool {
-        preferences.isPushNotificationsEnabled
-    }
-
     @discardableResult
     public func requestPermissions() async throws -> Bool {
         try await pushNotificationService.requestPermissions()

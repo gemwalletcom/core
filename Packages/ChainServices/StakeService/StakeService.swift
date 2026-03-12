@@ -40,14 +40,6 @@ public struct StakeService: StakeServiceable {
         }
     }
 
-    public func getValidatorsActive(assetId: AssetId) throws -> [DelegationValidator] {
-        try store.getValidatorsActive(assetId: assetId, providerType: .stake)
-    }
-
-    public func getValidator(assetId: AssetId, validatorId: String) throws -> DelegationValidator? {
-        try store.getValidator(assetId: assetId, validatorId: validatorId)
-    }
-    
     public func clearDelegations() throws {
         try store.clearDelegations()
     }
