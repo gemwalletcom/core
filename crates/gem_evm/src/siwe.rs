@@ -32,8 +32,7 @@ impl SiweMessage {
         let domain = lines.first()?.trim().strip_suffix(PREAMBLE_SUFFIX)?.trim();
         let domain = extract_host(domain)?;
 
-        let address = lines.get(1)?.trim();
-        address.parse::<Address>().ok()?;
+        let address = lines.get(1)?.trim().parse::<Address>().ok()?.to_checksum(None);
 
         let body: Vec<_> = lines.iter().skip(2).map(|l| l.trim()).filter(|l| !l.is_empty()).collect();
 
@@ -45,7 +44,7 @@ impl SiweMessage {
 
         Some(Self {
             domain,
-            address: address.to_string(),
+            address,
             uri,
             chain_id,
             nonce,
@@ -81,10 +80,6 @@ impl SiweMessage {
         let domain_host = domain_url.host_str().ok_or("Invalid domain host".to_string())?;
 
         if !uri_host.eq_ignore_ascii_case(domain_host) {
-            return Err("Origin mismatch".to_string());
-        }
-
-        if uri.port_or_known_default() != domain_url.port_or_known_default() {
             return Err("Origin mismatch".to_string());
         }
 
@@ -135,7 +130,7 @@ mod tests {
         assert!(result.is_some());
         let siwe = result.unwrap();
         assert_eq!(siwe.domain, "login.xyz");
-        assert_eq!(siwe.address, "0x6dD7802E6d44bE89a789C4bD60bD511B68F41c7c");
+        assert_eq!(siwe.address, "0x6dd7802e6D44be89a789c4Bd60bD511b68f41c7c");
         assert_eq!(siwe.uri, "https://login.xyz");
         assert_eq!(siwe.chain_id, 1);
         assert_eq!(siwe.nonce, "8hK9pX32");
@@ -188,5 +183,16 @@ mod tests {
         let siwe = SiweMessage::try_parse(&tampered).unwrap();
         let err = siwe.validate(Chain::Ethereum).unwrap_err();
         assert!(err.contains("mismatch"));
+    }
+
+    #[test]
+    fn ignores_port_when_matching_origin() {
+        let message = sample_message().replacen(
+            "login.xyz wants you to sign in with your Ethereum account:",
+            "login.xyz:8080 wants you to sign in with your Ethereum account:",
+            1,
+        );
+        let siwe = SiweMessage::try_parse(&message).unwrap();
+        assert!(siwe.validate(Chain::Ethereum).is_ok());
     }
 }

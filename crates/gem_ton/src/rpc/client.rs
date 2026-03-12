@@ -6,7 +6,7 @@ use serde_json;
 use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainStaking, ChainTraits};
 use gem_client::{Client, ClientExt};
 
-use crate::models::{ApiResult, BroadcastTransaction, Chainhead, JettonInfo, JettonWalletsResponse, MessageTransactions, SimpleJettonBalance, WalletInfo};
+use crate::models::{ApiResult, BroadcastTransaction, Chainhead, JettonInfo, JettonOffchainMetadata, JettonWalletsResponse, MessageTransactions, SimpleJettonBalance, WalletInfo};
 
 pub struct TonClient<C: Client> {
     pub client: C,
@@ -69,14 +69,23 @@ impl<C: Client> TonClient<C> {
 
     pub async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         let token_info = self.get_token_info(token_id.clone()).await?.result;
-        let decimals = token_info.jetton_content.data.decimals as i32;
-        Ok(Asset::new(
-            AssetId::from_token(Chain::Ton, &token_id),
-            token_info.jetton_content.data.name,
-            token_info.jetton_content.data.symbol,
-            decimals,
-            AssetType::JETTON,
-        ))
+        let data = &token_info.jetton_content.data;
+        let decimals = data.decimals as i32;
+
+        let (name, symbol) = match (&data.name, &data.symbol) {
+            (Some(name), Some(symbol)) => (name.clone(), symbol.clone()),
+            _ => {
+                let uri = data.uri.as_ref().ok_or("missing jetton metadata uri")?;
+                self.get_token_metadata_offchain(uri).await?
+            }
+        };
+
+        Ok(Asset::new(AssetId::from_token(Chain::Ton, &token_id), name, symbol, decimals, AssetType::JETTON))
+    }
+
+    async fn get_token_metadata_offchain(&self, uri: &str) -> Result<(String, String), Box<dyn Error + Send + Sync>> {
+        let metadata: JettonOffchainMetadata = self.client.get_url(uri).await?;
+        Ok((metadata.name, metadata.symbol))
     }
 }
 

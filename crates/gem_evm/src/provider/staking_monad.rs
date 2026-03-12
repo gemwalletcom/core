@@ -8,6 +8,7 @@ use num_bigint::BigUint;
 use num_traits::{ToPrimitive, Zero};
 use primitives::{AssetBalance, AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
 
+use crate::jsonrpc::BlockParameter;
 use crate::monad::{
     IMonadStakingLens, MONAD_SCALE, MonadLensBalance, MonadLensDelegation, MonadLensValidatorInfo, STAKING_LENS_CONTRACT, decode_get_lens_apys, decode_get_lens_balance,
     decode_get_lens_delegations, decode_get_lens_validators, encode_get_lens_apys, encode_get_lens_balance, encode_get_lens_delegations, encode_get_lens_validators,
@@ -154,7 +155,7 @@ impl<C: Client + Clone> EthereumClient<C> {
             serde_json::json!([{
                 "to": STAKING_LENS_CONTRACT,
                 "data": hex::encode_prefixed(data)
-            }, "latest"]),
+            }, serde_json::Value::from(BlockParameter::Latest)]),
         ))
     }
 

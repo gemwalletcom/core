@@ -133,6 +133,20 @@ where
         deserialize_response(&response)
     }
 
+    async fn get_url<R>(&self, url: &str) -> Result<R, ClientError>
+    where
+        R: DeserializeOwned,
+    {
+        let target = Target {
+            url: url.to_string(),
+            method: HttpMethod::Get,
+            headers: None,
+            body: None,
+        };
+        let response = self.provider.request(target).await.map_err(|e| e.into_client_error())?;
+        deserialize_response(&response)
+    }
+
     async fn post_with<T, R>(&self, path: &str, body: &T, headers: HashMap<String, String>) -> Result<R, ClientError>
     where
         T: Serialize + Send + Sync,

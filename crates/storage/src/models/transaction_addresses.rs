@@ -2,6 +2,8 @@ use diesel::prelude::*;
 use primitives::Transaction;
 use serde::{Deserialize, Serialize};
 
+use crate::sql_types::ChainRow;
+
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::transactions_addresses)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
@@ -38,5 +40,5 @@ impl NewTransactionAddressesRow {
 #[derive(Queryable, Debug, Clone)]
 pub struct AddressChainIdResultRow {
     pub address: String,
-    pub chain_id: String,
+    pub chain_id: ChainRow,
 }

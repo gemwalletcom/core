@@ -14,7 +14,7 @@ use fiat_webhook_consumer::FiatWebhookConsumer;
 pub async fn run_consumer_fiat(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let queue = QueueName::FiatOrderWebhooks;
-    let (name, stream_reader) = reader_for_queue(&settings, &queue).await?;
+    let (name, stream_reader) = reader_for_queue(&settings, &queue, &shutdown_rx).await?;
     let consumer = FiatWebhookConsumer::new(database, settings.clone());
     let consumer_config = consumer_config(&settings.consumer);
     run_consumer::<FiatWebhookPayload, FiatWebhookConsumer, bool>(&name, stream_reader, queue, None, consumer, consumer_config, shutdown_rx, reporter).await

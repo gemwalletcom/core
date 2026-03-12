@@ -1,5 +1,5 @@
 use gem_evm::ethereum_address_checksum;
-use primitives::{AssetLink, Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImages, NFTResource, NFTType};
+use primitives::{AssetLink, Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImages, NFTResource, NFTType, VerificationStatus};
 
 use super::model::{Collection, Nft, NftAsset, NftResponse, NftsResponse, Trait};
 
@@ -67,6 +67,8 @@ impl Trait {
 
 impl Collection {
     pub fn as_primitive(&self, collection: NFTCollectionId) -> primitives::NFTCollection {
+        let is_verified = self.safelist_status.as_deref() == Some("verified");
+
         primitives::NFTCollection {
             id: collection.id(),
             name: self.name.clone(),
@@ -77,8 +79,9 @@ impl Collection {
             images: NFTImages {
                 preview: NFTResource::from_url(self.image_url.as_deref().unwrap_or("")),
             },
+            status: VerificationStatus::from_verified(is_verified),
             links: self.as_links(),
-            is_verified: self.safelist_status.as_deref() == Some("verified"),
+            is_verified,
         }
     }
 

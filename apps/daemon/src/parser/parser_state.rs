@@ -14,16 +14,16 @@ impl ParserStateService {
     }
 
     pub fn get_state(&self) -> Result<ParserStateRow, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.parser_state()?.get_parser_state(self.chain.as_ref())?)
+        Ok(self.database.parser_state()?.get_parser_state(self.chain)?)
     }
 
     pub fn set_current_block(&self, block: i64) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.database.parser_state()?.set_parser_state_current_block(self.chain.as_ref(), block)?;
+        self.database.parser_state()?.set_parser_state_current_block(self.chain, block)?;
         Ok(())
     }
 
     pub fn set_latest_block(&self, block: i64) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.database.parser_state()?.set_parser_state_latest_block(self.chain.as_ref(), block)?;
+        self.database.parser_state()?.set_parser_state_latest_block(self.chain, block)?;
         Ok(())
     }
 }

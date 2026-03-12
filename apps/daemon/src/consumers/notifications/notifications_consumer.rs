@@ -35,7 +35,10 @@ impl NotificationsConsumer {
     fn store_device_notification(&self, notification: &GorushNotification, error: Option<String>) -> Result<(), Box<dyn Error + Send + Sync>> {
         let device_row_id = self.database.client()?.devices().get_device_row_id(&notification.device_id)?;
         let notification_type = PushNotificationType::from(notification.data.notification_type.clone());
-        self.database.client()?.devices_notifications().add_device_notification(device_row_id, notification_type, error)?;
+        self.database
+            .client()?
+            .devices_notifications()
+            .add_device_notification(device_row_id, notification_type, error)?;
         Ok(())
     }
 }

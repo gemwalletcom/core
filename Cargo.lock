@@ -1028,9 +1028,9 @@ dependencies = [
 
 [[package]]
 name = "async-rs"
-version = "0.8.0"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc222a468bdc5ebbe7ce4c595e16d433d531b3b8eda094b2ace18d9fd02fcaa3"
+checksum = "8d47e5e0df9bce1f132f67a64409a973b031481366b858330013060ca76b3a80"
 dependencies = [
  "async-compat",
  "async-global-executor",
@@ -3196,6 +3196,7 @@ dependencies = [
  "reqwest 0.13.2",
  "serde",
  "serde_json",
+ "tokio",
 ]
 
 [[package]]
@@ -3470,6 +3471,7 @@ dependencies = [
  "serde",
  "serde_json",
  "signer",
+ "simulation",
  "sui-sdk-types",
  "swapper",
  "tokio",
@@ -4459,9 +4461,9 @@ dependencies = [
 
 [[package]]
 name = "lapin"
-version = "4.1.0"
+version = "4.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f62a22c69768f31634be5bf964ef36436bed22e2359ac79038fc6d6bd0460e2"
+checksum = "1586ef35d652d6c47ed7449277a4483805b73b84ab368c85af44205fe3457972"
 dependencies = [
  "amq-protocol",
  "async-rs",
@@ -5537,9 +5539,9 @@ dependencies = [
 
 [[package]]
 name = "quinn-proto"
-version = "0.11.13"
+version = "0.11.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1906b49b0c3bc04b5fe5d86a77925ae6524a19b816ae38ce1e426255f1d8a31"
+checksum = "434b42fec591c96ef50e21e886936e66d3cc3f737104fdb9b737c40ffb94c098"
 dependencies = [
  "aws-lc-rs",
  "bytes",
@@ -6878,6 +6880,23 @@ dependencies = [
  "num-traits",
  "thiserror 2.0.17",
  "time",
+]
+
+[[package]]
+name = "simulation"
+version = "1.0.0"
+dependencies = [
+ "alloy-primitives",
+ "alloy-sol-types",
+ "gem_client",
+ "gem_evm",
+ "gem_jsonrpc",
+ "num-bigint",
+ "num-traits",
+ "primitives",
+ "serde_json",
+ "strum",
+ "tokio",
 ]
 
 [[package]]
