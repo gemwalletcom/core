@@ -1,0 +1,17 @@
+{
+  "types": {
+    "EIP712Domain": [],
+    "Payload": [
+      { "name": "balance", "type": "int256" },
+      { "name": "delta", "type": "int32" },
+      { "name": "active", "type": "bool" }
+    ]
+  },
+  "primaryType": "Payload",
+  "domain": {},
+  "message": {
+    "balance": "-0x0100",
+    "delta": -42,
+    "active": false
+  }
+}

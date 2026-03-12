@@ -138,37 +138,7 @@ mod tests {
 
     #[tokio::test]
     async fn eip712_permit_with_excessive_expiration_keeps_warning_with_client() -> Result<(), Box<dyn Error + Send + Sync>> {
-        let json: Value = serde_json::json!({
-            "types": {
-                "EIP712Domain": [
-                    { "name": "name", "type": "string" },
-                    { "name": "version", "type": "string" },
-                    { "name": "chainId", "type": "uint256" },
-                    { "name": "verifyingContract", "type": "address" }
-                ],
-                "Permit": [
-                    { "name": "owner", "type": "address" },
-                    { "name": "spender", "type": "address" },
-                    { "name": "value", "type": "uint256" },
-                    { "name": "nonce", "type": "uint256" },
-                    { "name": "deadline", "type": "uint256" }
-                ]
-            },
-            "primaryType": "Permit",
-            "domain": {
-                "name": "USD Coin",
-                "version": "2",
-                "chainId": "1",
-                "verifyingContract": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-            },
-            "message": {
-                "owner": "0x1111111111111111111111111111111111111111",
-                "spender": "0x2222222222222222222222222222222222222222",
-                "value": "1000",
-                "nonce": "0",
-                "deadline": "9999999999"
-            }
-        });
+        let json: Value = serde_json::from_str(include_str!("../../testdata/permit_excessive_expiration.json"))?;
         let message = parse_eip712_json(&json)?;
         let client = ethereum_client("0x1234");
 
@@ -181,6 +151,26 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test]
+    async fn eip712_permit_batch_with_externally_owned_spender_adds_critical_warning() -> Result<(), Box<dyn Error + Send + Sync>> {
+        let json: Value = serde_json::from_str(include_str!("../../testdata/permit_batch_multiple_tokens.json"))?;
+        let message = parse_eip712_json(&json)?;
+        let client = ethereum_client("0x");
+
+        let result = SimulationClient::new(&client).simulate_eip712_message(Chain::Ethereum, &message).await?;
+
+        assert_eq!(result.warnings.len(), 1);
+        assert_eq!(
+            result.warnings.first(),
+            Some(&SimulationWarning {
+                severity: SimulationSeverity::Critical,
+                warning: SimulationWarningType::ExternallyOwnedSpender,
+                message: None,
+            })
+        );
+
+        Ok(())
+    }
     fn ethereum_client(code: &str) -> EthereumClient<gem_client::testkit::MockClient> {
         let code = code.to_string();
         let client = mock_jsonrpc_client(move |method, _| match method {
