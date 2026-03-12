@@ -167,44 +167,10 @@ fn primary_type_payload_field(message: &GemEIP712Message) -> MessagePayloadField
 
     MessagePayloadField::standard(
         SimulationPayloadFieldKind::Method,
-        display_identifier(&primary_type),
+        primary_type,
         SimulationPayloadFieldType::Text,
         SimulationPayloadFieldDisplay::Secondary,
     )
-}
-
-fn display_identifier(value: &str) -> String {
-    let mut result = String::with_capacity(value.len());
-    let mut previous_was_space = true;
-    let mut previous_was_lower_or_digit = false;
-
-    for character in value.chars() {
-        if character == '_' || character == '-' || character == '.' || character.is_whitespace() {
-            if !previous_was_space {
-                result.push(' ');
-            }
-            previous_was_space = true;
-            previous_was_lower_or_digit = false;
-            continue;
-        }
-
-        if character.is_ascii_uppercase() && previous_was_lower_or_digit && !previous_was_space {
-            result.push(' ');
-        }
-
-        if previous_was_space {
-            for uppercase in character.to_uppercase() {
-                result.push(uppercase);
-            }
-        } else {
-            result.push(character);
-        }
-
-        previous_was_space = false;
-        previous_was_lower_or_digit = character.is_ascii_lowercase() || character.is_ascii_digit();
-    }
-
-    result
 }
 
 fn payload_field_from_eip712_value(field: &GemEIP712Value) -> MessagePayloadField {
