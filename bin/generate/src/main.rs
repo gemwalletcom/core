@@ -47,22 +47,25 @@ fn main() {
         "ethereum_address.rs",
         "keccak.rs",
         "number_formatter.rs",
+        "image_formatter.rs",
         "mode.rs",
         "quote.rs",
         "slippage.rs",
     ]
     .to_vec();
+
+    let ignored_directories: Vec<&'static str> = vec!["explorers"];
     let mut platform_ignored = ignored_files_by_generator(&generator_type);
     ignored_files.append(&mut platform_ignored);
 
     for folder in folders {
         let src_path = format!("{folder}/src");
         let paths = get_paths(folder, src_path);
-        process_paths(paths, folder, &generator_type, &platform_directory_path, &ignored_files);
+        process_paths(paths, folder, &generator_type, &platform_directory_path, &ignored_files, &ignored_directories);
     }
 }
 
-fn process_paths(paths: Vec<String>, _folder: &str, generator_type: &GeneratorType, platform_directory_path: &str, ignored_files: &[&str]) {
+fn process_paths(paths: Vec<String>, _folder: &str, generator_type: &GeneratorType, platform_directory_path: &str, ignored_files: &[&str], ignored_directories: &[&str]) {
     for path in paths {
         // Example path:
         // ./crates/primitives/src/utxo.rs
@@ -88,6 +91,11 @@ fn process_paths(paths: Vec<String>, _folder: &str, generator_type: &GeneratorTy
         let file_path = directory_paths_capitalized.pop().unwrap();
 
         let file_name_original = directory_paths.last().unwrap_or(&"");
+
+        if directory_paths.iter().any(|d| ignored_directories.contains(d)) {
+            continue;
+        }
+
         let allow_mod_for_swap = matches!(generator_type, GeneratorType::TypeScript)
             && *file_name_original == "mod.rs"
             && directory_paths.len() >= 2
