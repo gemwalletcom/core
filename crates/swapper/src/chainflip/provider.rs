@@ -19,7 +19,7 @@ use crate::{
     alien::RpcProvider,
     amount_to_value,
     approval::check_approval_erc20,
-    asset::{ARBITRUM_USDC, ETHEREUM_FLIP, ETHEREUM_USDC, ETHEREUM_USDT, SOLANA_USDC},
+    asset::{ARBITRUM_USDC, ARBITRUM_USDT, ETHEREUM_FLIP, ETHEREUM_USDC, ETHEREUM_USDT, ETHEREUM_WBTC, SOLANA_USDC, SOLANA_USDT},
     config::DEFAULT_CHAINFLIP_FEE_BPS,
     cross_chain::VaultAddresses,
     slippage,
@@ -147,9 +147,9 @@ where
     fn supported_assets(&self) -> Vec<SwapperChainAsset> {
         vec![
             SwapperChainAsset::Assets(Chain::Bitcoin, vec![]),
-            SwapperChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDC.id.clone(), ETHEREUM_USDT.id.clone(), ETHEREUM_FLIP.id.clone()]),
-            SwapperChainAsset::Assets(Chain::Solana, vec![SOLANA_USDC.id.clone()]),
-            SwapperChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDC.id.clone()]),
+            SwapperChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDC.id.clone(), ETHEREUM_USDT.id.clone(), ETHEREUM_WBTC.id.clone(), ETHEREUM_FLIP.id.clone()]),
+            SwapperChainAsset::Assets(Chain::Solana, vec![SOLANA_USDC.id.clone(), SOLANA_USDT.id.clone()]),
+            SwapperChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDC.id.clone(), ARBITRUM_USDT.id.clone()]),
         ]
     }
 
