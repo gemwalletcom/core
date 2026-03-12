@@ -309,7 +309,7 @@ impl GemGateway {
     }
 
     pub async fn get_earn_data(&self, asset_id: AssetId, address: String, value: String, earn_type: GemEarnType) -> Result<GemContractCallData, GatewayError> {
-        self.yielder.get_earn_data(&asset_id, &address, &value, &earn_type).await.map_err(|e| GatewayError::NetworkError { msg: e.to_string() })
+        self.yielder.earn_data(&asset_id, &address, &value, &earn_type).await.map_err(|e| GatewayError::NetworkError { msg: e.to_string() })
     }
 
     pub fn get_earn_providers(&self, asset_id: AssetId) -> Vec<GemDelegationValidator> {

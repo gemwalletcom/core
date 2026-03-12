@@ -30,7 +30,7 @@ impl YoEarnProvider {
         }
     }
 
-    fn get_asset(&self, asset_id: &AssetId) -> Result<YoAsset, YielderError> {
+    fn asset(&self, asset_id: &AssetId) -> Result<YoAsset, YielderError> {
         self.assets
             .iter()
             .find(|a| a.asset_id() == *asset_id)
@@ -42,11 +42,11 @@ impl YoEarnProvider {
         self.gateways.get(&chain).ok_or_else(|| YielderError::unsupported_chain(&chain))
     }
 
-    async fn fetch_positions(&self, chain: Chain, address: &str, assets: &[YoAsset]) -> Result<Vec<DelegationBase>, YielderError> {
+    async fn positions_for_chain(&self, chain: Chain, address: &str, assets: &[YoAsset]) -> Result<Vec<DelegationBase>, YielderError> {
         let gateway = self.gateway_for_chain(chain)?;
         let owner = Address::from_str(address)?;
         let provider_id = PROVIDER.to_string();
-        let positions = gateway.get_positions_batch(assets, owner).await?;
+        let positions = gateway.positions_batch(assets, owner).await?;
 
         Ok(assets
             .iter()
@@ -85,19 +85,19 @@ impl EarnProvider for YoEarnProvider {
         self.assets.iter().filter(|a| a.chain == chain).map(|a| a.asset_id()).collect()
     }
 
-    async fn get_positions(&self, chain: Chain, address: &str, asset_ids: &[AssetId]) -> Result<Vec<DelegationBase>, YielderError> {
+    async fn positions(&self, chain: Chain, address: &str, asset_ids: &[AssetId]) -> Result<Vec<DelegationBase>, YielderError> {
         let assets: Vec<_> = self.assets.iter().filter(|a| a.chain == chain && asset_ids.contains(&a.asset_id())).copied().collect();
-        self.fetch_positions(chain, address, &assets).await
+        self.positions_for_chain(chain, address, &assets).await
     }
 
     async fn deposit(&self, asset_id: &AssetId, address: &str, value: &str) -> Result<ContractCallData, YielderError> {
-        let asset = self.get_asset(asset_id)?;
+        let asset = self.asset(asset_id)?;
         let gateway = self.gateway_for_chain(asset.chain)?;
         let wallet = Address::from_str(address)?;
         let amount = U256::from_str(value)?;
 
         let approval = gateway.check_token_allowance(asset.asset_token, wallet, amount).await?;
-        let expected_shares = gateway.convert_to_shares(asset.yo_token, amount).await?;
+        let expected_shares = gateway.quote_shares(asset.yo_token, amount).await?;
         let min_shares_out = apply_slippage(expected_shares);
         let transaction = gateway.build_deposit_transaction(wallet, asset.yo_token, amount, min_shares_out, wallet, YO_PARTNER_ID_GEM);
 
@@ -110,13 +110,13 @@ impl EarnProvider for YoEarnProvider {
     }
 
     async fn withdraw(&self, asset_id: &AssetId, address: &str, value: &str, shares: &str) -> Result<ContractCallData, YielderError> {
-        let asset = self.get_asset(asset_id)?;
+        let asset = self.asset(asset_id)?;
         let gateway = self.gateway_for_chain(asset.chain)?;
         let wallet = Address::from_str(address)?;
         let amount = U256::from_str(value)?;
         let total_shares = U256::from_str(shares)?;
 
-        let computed_shares = gateway.convert_to_shares(asset.yo_token, amount).await?;
+        let computed_shares = gateway.quote_shares(asset.yo_token, amount).await?;
         let redeem_shares = if total_shares > computed_shares && total_shares - computed_shares <= U256::from(1) {
             total_shares
         } else {

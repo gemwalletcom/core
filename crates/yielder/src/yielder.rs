@@ -34,7 +34,7 @@ impl Yielder {
     }
 
     pub async fn positions(&self, chain: Chain, address: &str, asset_ids: &[AssetId]) -> Vec<DelegationBase> {
-        let futures: Vec<_> = self.providers.iter().map(|p| p.get_positions(chain, address, asset_ids)).collect();
+        let futures: Vec<_> = self.providers.iter().map(|p| p.positions(chain, address, asset_ids)).collect();
         futures::future::join_all(futures).await.into_iter().filter_map(|r| r.ok()).flatten().collect()
     }
 
@@ -51,9 +51,9 @@ impl Yielder {
             .collect()
     }
 
-    pub async fn get_earn_data(&self, asset_id: &AssetId, address: &str, value: &str, earn_type: &EarnType) -> Result<ContractCallData, YielderError> {
+    pub async fn earn_data(&self, asset_id: &AssetId, address: &str, value: &str, earn_type: &EarnType) -> Result<ContractCallData, YielderError> {
         let provider_id = earn_type.provider_id().parse::<YieldProvider>()?;
-        let provider = self.get_provider(provider_id)?;
+        let provider = self.provider_by_id(provider_id)?;
         match earn_type {
             EarnType::Deposit(_) => provider.deposit(asset_id, address, value).await,
             EarnType::Withdraw(delegation) => {
@@ -63,7 +63,7 @@ impl Yielder {
         }
     }
 
-    fn get_provider(&self, provider: YieldProvider) -> Result<Arc<dyn EarnProvider>, YielderError> {
+    fn provider_by_id(&self, provider: YieldProvider) -> Result<Arc<dyn EarnProvider>, YielderError> {
         self.providers
             .iter()
             .find(|p| p.id() == provider)
