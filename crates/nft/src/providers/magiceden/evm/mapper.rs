@@ -1,5 +1,5 @@
 use gem_evm::ethereum_address_checksum;
-use primitives::{Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImages, NFTResource, NFTType};
+use primitives::{Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImages, NFTResource, NFTType, VerificationStatus};
 
 use super::model::{Attribute, CollectionDetail, TokenAsset, TokenDetail};
 
@@ -74,6 +74,7 @@ impl CollectionDetail {
             images: NFTImages {
                 preview: NFTResource::from_url(&image_url),
             },
+            status: VerificationStatus::Verified,
             links: self.as_links(),
             is_verified: true,
         }

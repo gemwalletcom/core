@@ -45,7 +45,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
     };
     let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
     let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
-    let stream_producer = StreamProducer::new(&rabbitmq_config, "assets_worker").await?;
+    let stream_producer = StreamProducer::new(&rabbitmq_config, "assets_worker", shutdown_rx.clone()).await?;
 
     let asset_updater = {
         let coingecko_client = coingecko_client.clone();

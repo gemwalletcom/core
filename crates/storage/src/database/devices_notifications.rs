@@ -12,7 +12,11 @@ impl DevicesNotificationsStore for DatabaseClient {
     fn add_device_notification(&mut self, device_id: i32, notification_type: PushNotificationType, error: Option<String>) -> Result<DeviceNotificationRow, diesel::result::Error> {
         use crate::schema::devices_notifications::dsl;
 
-        let row = NewDeviceNotificationRow { device_id, notification_type, error };
+        let row = NewDeviceNotificationRow {
+            device_id,
+            notification_type,
+            error,
+        };
 
         diesel::insert_into(dsl::devices_notifications)
             .values(&row)

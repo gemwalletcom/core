@@ -13,7 +13,8 @@ use auth_config::AuthConfig;
 pub use client::DevicesClient;
 pub(crate) use clients::WalletSubscriptionInput;
 pub use clients::{
-    FiatQuotesClient, NotificationsClient, PortfolioClient, RewardsClient, RewardsRedemptionClient, ScanClient, ScanProviderFactory, TransactionsClient, WalletsClient,
+    AddressNamesClient, FiatQuotesClient, NotificationsClient, PortfolioClient, RewardsClient, RewardsRedemptionClient, ScanClient, ScanProviderFactory, TransactionsClient,
+    WalletsClient,
 };
 use gem_auth::AuthClient;
 use guard::{AuthenticatedDevice, AuthenticatedDeviceWallet, VerifiedDeviceId};
@@ -24,8 +25,9 @@ use primitives::device::Device;
 use primitives::name::NameRecord;
 use primitives::rewards::{RedemptionRequest, RedemptionResult, RewardRedemptionOption};
 use primitives::{
-    AssetId, AuthNonce, FiatAssets, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuotes, InAppNotification, MigrateDeviceIdRequest, NFTData, PortfolioAssets,
-    PortfolioAssetsRequest, PriceAlerts, ReportNft, RewardEvent, Rewards, ScanTransaction, ScanTransactionPayload, Transaction, TransactionsResponse, WalletSubscriptionChains,
+    AddressName, AssetId, AuthNonce, ChainAddress, FiatAssets, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuotes, InAppNotification, MigrateDeviceIdRequest, NFTData,
+    PortfolioAssets, PortfolioAssetsRequest, PriceAlerts, ReportNft, RewardEvent, Rewards, ScanTransaction, ScanTransactionPayload, Transaction, TransactionsResponse,
+    WalletSubscriptionChains,
 };
 use rocket::{State, delete, get, post, put, serde::json::Json, tokio::sync::Mutex};
 use std::sync::Arc;
@@ -113,6 +115,15 @@ pub async fn get_device_transaction_by_id_v2(
     client: &State<Mutex<TransactionsClient>>,
 ) -> Result<ApiResponse<Transaction>, ApiError> {
     Ok(client.lock().await.get_transaction_by_id(&id.0)?.into())
+}
+
+#[post("/devices/address_names", format = "json", data = "<requests>")]
+pub async fn get_device_address_names_v2(
+    _device: AuthenticatedDevice,
+    requests: Json<Vec<ChainAddress>>,
+    client: &State<Mutex<AddressNamesClient>>,
+) -> Result<ApiResponse<Vec<AddressName>>, ApiError> {
+    Ok(client.lock().await.get_address_names(requests.into_inner())?.into())
 }
 
 #[get("/devices/nft_assets")]

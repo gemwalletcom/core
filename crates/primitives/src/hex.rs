@@ -22,6 +22,14 @@ pub fn encode_with_0x(data: &[u8]) -> String {
     format!("0x{}", hex::encode(data))
 }
 
+pub fn parse_u64_from_hex_or_decimal(value: &str) -> Result<u64, HexError> {
+    let number_text = value.trim();
+    if let Some(hex_number_text) = number_text.strip_prefix("0x").or_else(|| number_text.strip_prefix("0X")) {
+        return u64::from_str_radix(hex_number_text, 16).map_err(|error| HexError(error.to_string()));
+    }
+    number_text.parse::<u64>().map_err(|error| HexError(error.to_string()))
+}
+
 pub fn decode_hex_utf8(value: &str) -> Option<String> {
     let bytes = decode_hex(value).ok()?;
     String::from_utf8(bytes).ok()
@@ -54,5 +62,13 @@ mod tests {
     fn decode_hex_pads_odd_length() {
         let bytes = decode_hex("0xa").expect("decode");
         assert_eq!(bytes, vec![0x0a]);
+    }
+
+    #[test]
+    fn test_parse_u64_from_hex_or_decimal() {
+        assert_eq!(parse_u64_from_hex_or_decimal("0x1f").unwrap(), 31);
+        assert_eq!(parse_u64_from_hex_or_decimal("0X2A").unwrap(), 42);
+        assert_eq!(parse_u64_from_hex_or_decimal("255").unwrap(), 255);
+        assert!(parse_u64_from_hex_or_decimal("0xZZ").is_err());
     }
 }
