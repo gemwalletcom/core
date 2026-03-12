@@ -9,7 +9,7 @@ use super::{
     ChainflipRouteData,
     broker::{BrokerClient, ChainflipAsset, DcaParameters, RefundParameters, VaultSwapBtcExtras, VaultSwapEvmExtras, VaultSwapExtras, VaultSwapResponse, VaultSwapSolanaExtras},
     capitalize::capitalize_first_letter,
-    client::{ChainflipClient, QuoteRequest as ChainflipQuoteRequest, QuoteResponse, map_swap_result},
+    client::{CHAINFLIP_SUPPORTED_ASSETS, ChainflipClient, QuoteRequest as ChainflipQuoteRequest, QuoteResponse, map_swap_result},
     price::{apply_slippage, price_to_hex_price},
     seed::generate_random_seed,
     tx_builder,
@@ -19,7 +19,6 @@ use crate::{
     alien::RpcProvider,
     amount_to_value,
     approval::check_approval_erc20,
-    asset::{ARBITRUM_USDC, ARBITRUM_USDT, ETHEREUM_FLIP, ETHEREUM_USDC, ETHEREUM_USDT, ETHEREUM_WBTC, SOLANA_USDC, SOLANA_USDT},
     config::DEFAULT_CHAINFLIP_FEE_BPS,
     cross_chain::VaultAddresses,
     slippage,
@@ -145,12 +144,7 @@ where
     }
 
     fn supported_assets(&self) -> Vec<SwapperChainAsset> {
-        vec![
-            SwapperChainAsset::Assets(Chain::Bitcoin, vec![]),
-            SwapperChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDC.id.clone(), ETHEREUM_USDT.id.clone(), ETHEREUM_WBTC.id.clone(), ETHEREUM_FLIP.id.clone()]),
-            SwapperChainAsset::Assets(Chain::Solana, vec![SOLANA_USDC.id.clone(), SOLANA_USDT.id.clone()]),
-            SwapperChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDC.id.clone(), ARBITRUM_USDT.id.clone()]),
-        ]
+        CHAINFLIP_SUPPORTED_ASSETS.clone()
     }
 
     async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
