@@ -37,7 +37,6 @@ public actor HyperliquidObserverService: PerpetualObservable {
     // MARK: - Public API
 
     public func setup(for wallet: Wallet) async {
-        await update(for: wallet)
         await connect(for: wallet)
     }
 
@@ -77,6 +76,7 @@ public actor HyperliquidObserverService: PerpetualObservable {
 
         await disconnect()
         currentWallet = wallet
+        await update(for: wallet)
 
         guard observeTask == nil else { return }
 
