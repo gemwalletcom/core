@@ -16,14 +16,14 @@ impl YoAsset {
 
 pub const YO_USDC: YoAsset = YoAsset {
     chain: Chain::Base,
-    asset_token: address!("0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"),
-    yo_token: address!("0x0000000f2eb9f69274678c76222b35eec7588a65"),
+    asset_token: address!("0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"),
+    yo_token: address!("0x0000000f2eB9f69274678c76222B35eEc7588a65"),
 };
 
 pub const YO_USDT: YoAsset = YoAsset {
     chain: Chain::Ethereum,
-    asset_token: address!("0xdac17f958d2ee523a2206206994597c13d831ec7"),
-    yo_token: address!("0xb9a7da9e90d3b428083bae04b860faa6325b721e"),
+    asset_token: address!("0xdAC17F958D2ee523a2206206994597C13D831ec7"),
+    yo_token: address!("0xb9a7da9e90D3B428083BAe04b860faA6325b721e"),
 };
 
 pub fn supported_assets() -> &'static [YoAsset] {
