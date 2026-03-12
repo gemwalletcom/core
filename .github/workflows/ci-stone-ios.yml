@@ -27,7 +27,7 @@ jobs:
       run:
         working-directory: gemstone
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Restore cargo cache
         uses: Swatinem/rust-cache@v2
