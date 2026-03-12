@@ -16,12 +16,7 @@ use super::{
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData,
-    alien::RpcProvider,
-    amount_to_value,
-    approval::check_approval_erc20,
-    config::DEFAULT_CHAINFLIP_FEE_BPS,
-    cross_chain::VaultAddresses,
-    slippage,
+    alien::RpcProvider, amount_to_value, approval::check_approval_erc20, config::DEFAULT_CHAINFLIP_FEE_BPS, cross_chain::VaultAddresses, slippage,
 };
 use primitives::{ChainType, chain::Chain, swap::QuoteAsset};
 

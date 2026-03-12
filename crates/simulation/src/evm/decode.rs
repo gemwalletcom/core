@@ -69,6 +69,10 @@ fn find_field_string(fields: &[EIP712Field], name: &str) -> Option<String> {
     })
 }
 
+fn find_field_u64(fields: &[EIP712Field], name: &str) -> Option<u64> {
+    find_field_string(fields, name)?.parse().ok()
+}
+
 fn find_field_struct<'a>(fields: &'a [EIP712Field], name: &str) -> Option<&'a [EIP712Field]> {
     fields.iter().find(|field| field.name == name).and_then(|field| match &field.value {
         EIP712TypedValue::Struct { fields } => Some(fields.as_slice()),
@@ -151,13 +155,14 @@ fn decode_permit2_batch_approval(chain: Chain, message: &EIP712Message, contract
 
     let spender_address = find_field_string(&message.message, "spender")?;
     let token_address = single_token_address(&details);
+    let warning_expiration = batch_warning_expiration(&details, &message.message);
     let mut total_value = BigUint::ZERO;
 
     for detail in details {
         let raw_value = find_field_string(detail, "amount").or_else(|| find_field_string(detail, "value"))?;
         match ApprovalValue::from_raw(&raw_value)? {
             ApprovalValue::Unlimited => {
-                return ApprovalRequest::permit_batch(chain, contract_address, spender_address, ApprovalValue::Unlimited, token_address);
+                return ApprovalRequest::permit_batch(chain, contract_address, spender_address, ApprovalValue::Unlimited, token_address, warning_expiration);
             }
             ApprovalValue::Exact(value) => {
                 total_value += value;
@@ -165,7 +170,14 @@ fn decode_permit2_batch_approval(chain: Chain, message: &EIP712Message, contract
         }
     }
 
-    ApprovalRequest::permit_batch(chain, contract_address, spender_address, ApprovalValue::Exact(total_value), token_address)
+    ApprovalRequest::permit_batch(
+        chain,
+        contract_address,
+        spender_address,
+        ApprovalValue::Exact(total_value),
+        token_address,
+        warning_expiration,
+    )
 }
 
 fn find_permit_details(fields: &[EIP712Field]) -> Option<&[EIP712Field]> {
@@ -210,4 +222,12 @@ fn single_token_address(details: &[&[EIP712Field]]) -> Option<String> {
     }
 
     token_address
+}
+
+fn batch_warning_expiration(details: &[&[EIP712Field]], message_fields: &[EIP712Field]) -> Option<u64> {
+    details
+        .iter()
+        .filter_map(|detail| find_field_u64(detail, "expiration"))
+        .chain(find_field_u64(message_fields, "sigDeadline").into_iter().chain(find_field_u64(message_fields, "deadline")))
+        .max()
 }

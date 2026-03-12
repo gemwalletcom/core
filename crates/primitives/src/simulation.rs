@@ -4,7 +4,7 @@ use typeshare::typeshare;
 
 use crate::AssetId;
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "lowercase")]
 pub enum SimulationSeverity {
@@ -28,25 +28,24 @@ pub enum SimulationWarningType {
 impl SimulationWarningType {
     fn requires_spender_verification(&self) -> bool {
         match self {
-            Self::TokenApproval { .. } | Self::NftCollectionApproval { .. } | Self::PermitApproval { .. } | Self::PermitBatchApproval { .. } => true,
             Self::SuspiciousSpender | Self::ExternallyOwnedSpender | Self::ValidationError => false,
+            Self::TokenApproval { .. } | Self::NftCollectionApproval { .. } | Self::PermitApproval { .. } | Self::PermitBatchApproval { .. } => true,
         }
     }
 
-    fn suppresses_other_warnings(&self) -> bool {
-        if let Self::ExternallyOwnedSpender = self {
-            return true;
-        }
-        if let Self::ValidationError = self {
-            return true;
-        }
-        false
-    }
-
-    fn is_unlimited_warning(&self) -> bool {
+    fn approval_value(&self) -> Option<&Option<BigInt>> {
         match self {
-            Self::TokenApproval { value, .. } | Self::PermitApproval { value, .. } | Self::PermitBatchApproval { value } => value.is_none(),
-            Self::SuspiciousSpender | Self::ExternallyOwnedSpender | Self::NftCollectionApproval { .. } | Self::ValidationError => false,
+            Self::TokenApproval { value, .. } | Self::PermitApproval { value, .. } | Self::PermitBatchApproval { value } => Some(value),
+            Self::SuspiciousSpender | Self::ExternallyOwnedSpender | Self::NftCollectionApproval { .. } | Self::ValidationError => None,
+        }
+    }
+
+    fn collapse_priority(&self, severity: SimulationSeverity) -> u8 {
+        match self {
+            Self::ExternallyOwnedSpender => 2,
+            Self::ValidationError if severity == SimulationSeverity::Critical => 2,
+            _ if self.approval_value().is_some_and(Option::is_none) => 1,
+            _ => 0,
         }
     }
 }
@@ -63,6 +62,10 @@ pub struct SimulationWarning {
 impl SimulationWarning {
     pub fn new(severity: SimulationSeverity, warning: SimulationWarningType, message: Option<String>) -> Self {
         Self { severity, warning, message }
+    }
+
+    fn collapse_priority(&self) -> u8 {
+        self.warning.collapse_priority(self.severity)
     }
 }
 
@@ -185,17 +188,15 @@ impl SimulationResult {
     }
 
     fn collapse_warnings(warnings: Vec<SimulationWarning>) -> Vec<SimulationWarning> {
-        let blocking_warning = warnings.iter().find(|warning| warning.warning.suppresses_other_warnings()).cloned();
-        match blocking_warning {
-            Some(warning) => vec![warning],
-            None => {
-                if let Some(warning) = warnings.iter().find(|warning| warning.warning.is_unlimited_warning()).cloned() {
-                    return vec![warning];
-                }
-
-                warnings
-            }
+        if let Some(warning) = warnings.iter().find(|warning| warning.collapse_priority() == 2).cloned() {
+            return vec![warning];
         }
+
+        if let Some(warning) = warnings.iter().find(|warning| warning.collapse_priority() == 1).cloned() {
+            return vec![warning];
+        }
+
+        warnings
     }
 }
 
