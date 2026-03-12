@@ -89,7 +89,7 @@ async fn run_store_prices(
     reporter: Arc<dyn ConsumerStatusReporter>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     let queue = QueueName::StorePrices;
-    let (name, stream_reader) = reader_for_queue(&settings, &queue).await?;
+    let (name, stream_reader) = reader_for_queue(&settings, &queue, &shutdown_rx).await?;
     let cacher_client = CacherClient::new(&settings.redis.url).await;
     let price_client = PriceClient::new(database.clone(), cacher_client);
     let config = ConfigCacher::new(database.clone());
@@ -105,7 +105,7 @@ async fn run_store_charts(
     reporter: Arc<dyn ConsumerStatusReporter>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     let queue = QueueName::StoreCharts;
-    let (name, stream_reader) = reader_for_queue(&settings, &queue).await?;
+    let (name, stream_reader) = reader_for_queue(&settings, &queue, &shutdown_rx).await?;
     let cacher_client = CacherClient::new(&settings.redis.url).await;
     let price_client = PriceClient::new(database, cacher_client);
     let consumer = StoreChartsConsumer::new(price_client);
@@ -114,7 +114,7 @@ async fn run_store_charts(
 
 async fn run_device_stream(settings: Arc<Settings>, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
     let queue = QueueName::DeviceStreamEvents;
-    let (name, stream_reader) = reader_for_queue(&settings, &queue).await?;
+    let (name, stream_reader) = reader_for_queue(&settings, &queue, &shutdown_rx).await?;
     let cacher_client = CacherClient::new(&settings.redis.url).await;
     let consumer = DeviceStreamConsumer { cacher_client };
     run_consumer::<DeviceStreamPayload, DeviceStreamConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx, reporter).await

@@ -36,7 +36,7 @@ impl MessageConsumer<ChainAddressPayload, String> for FetchCoinAddressesConsumer
         }
 
         let asset_address = AssetAddressRow::new(
-            payload.value.chain.to_string(),
+            payload.value.chain,
             balance.asset_id.to_string(),
             payload.value.address,
             Some(balance.balance.available.to_string()),

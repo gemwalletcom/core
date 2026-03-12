@@ -1,4 +1,4 @@
-use primitives::{Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImages, NFTResource, NFTType};
+use primitives::{Chain, LinkType, NFTAsset, NFTAssetId, NFTAttribute, NFTCollectionId, NFTImages, NFTResource, NFTType, VerificationStatus};
 
 use super::model::{Collection, Nft, Trait};
 
@@ -62,6 +62,7 @@ impl Collection {
             images: NFTImages {
                 preview: NFTResource::from_url(&self.image),
             },
+            status: VerificationStatus::Verified,
             links: self.as_links(),
             is_verified: true,
         }

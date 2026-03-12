@@ -1,10 +1,14 @@
+use std::collections::BTreeMap;
+use std::sync::LazyLock;
+
 use num_bigint::BigUint;
 use primitives::swap::SwapStatus;
 use primitives::{AssetId, Chain, TransactionSwapMetadata};
 use serde::{Deserialize, Serialize};
 use serde_serializers::{deserialize_biguint_from_str, serialize_biguint};
 
-use crate::{SwapResult, SwapperProvider};
+use crate::asset::*;
+use crate::{SwapResult, SwapperChainAsset, SwapperProvider};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -122,19 +126,36 @@ fn chainflip_chain_to_chain(chain: &str) -> Option<Chain> {
     }
 }
 
-fn chainflip_asset_to_asset_id(chain: Chain, asset: &str) -> Option<AssetId> {
-    use crate::asset::*;
-    match (chain, asset) {
-        (Chain::Ethereum, "ETH") => Some(AssetId::from_chain(Chain::Ethereum)),
-        (Chain::Ethereum, "USDC") => Some(ETHEREUM_USDC.id.clone()),
-        (Chain::Ethereum, "USDT") => Some(ETHEREUM_USDT.id.clone()),
-        (Chain::Ethereum, "FLIP") => Some(ETHEREUM_FLIP.id.clone()),
-        (Chain::Bitcoin, "BTC") => Some(AssetId::from_chain(Chain::Bitcoin)),
-        (Chain::Solana, "SOL") => Some(AssetId::from_chain(Chain::Solana)),
-        (Chain::Solana, "USDC") => Some(SOLANA_USDC.id.clone()),
-        (Chain::Arbitrum, "USDC") => Some(ARBITRUM_USDC.id.clone()),
-        _ => None,
+static CHAINFLIP_ASSETS: LazyLock<Vec<(Chain, &'static str, AssetId)>> = LazyLock::new(|| {
+    vec![
+        (Chain::Bitcoin, "BTC", AssetId::from_chain(Chain::Bitcoin)),
+        (Chain::Ethereum, "ETH", AssetId::from_chain(Chain::Ethereum)),
+        (Chain::Ethereum, "USDC", ETHEREUM_USDC.id.clone()),
+        (Chain::Ethereum, "USDT", ETHEREUM_USDT.id.clone()),
+        (Chain::Ethereum, "WBTC", ETHEREUM_WBTC.id.clone()),
+        (Chain::Ethereum, "FLIP", ETHEREUM_FLIP.id.clone()),
+        (Chain::Solana, "SOL", AssetId::from_chain(Chain::Solana)),
+        (Chain::Solana, "USDC", SOLANA_USDC.id.clone()),
+        (Chain::Solana, "USDT", SOLANA_USDT.id.clone()),
+        (Chain::Arbitrum, "ETH", AssetId::from_chain(Chain::Arbitrum)),
+        (Chain::Arbitrum, "USDC", ARBITRUM_USDC.id.clone()),
+        (Chain::Arbitrum, "USDT", ARBITRUM_USDT.id.clone()),
+    ]
+});
+
+pub static CHAINFLIP_SUPPORTED_ASSETS: LazyLock<Vec<SwapperChainAsset>> = LazyLock::new(|| {
+    let mut chains: BTreeMap<Chain, Vec<AssetId>> = BTreeMap::new();
+    for (chain, _, asset_id) in CHAINFLIP_ASSETS.iter() {
+        let tokens = chains.entry(*chain).or_default();
+        if asset_id.token_id.is_some() {
+            tokens.push(asset_id.clone());
+        }
     }
+    chains.into_iter().map(|(chain, tokens)| SwapperChainAsset::Assets(chain, tokens)).collect()
+});
+
+fn chainflip_asset_to_asset_id(chain: Chain, asset: &str) -> Option<AssetId> {
+    CHAINFLIP_ASSETS.iter().find(|(c, s, _)| *c == chain && *s == asset).map(|(_, _, id)| id.clone())
 }
 
 pub fn map_swap_result(response: &SwapTxResponse) -> SwapResult {

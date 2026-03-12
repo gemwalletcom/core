@@ -12,6 +12,15 @@ use std::future::Future;
 use std::time::Duration;
 
 use gem_tracing::info_with_fields;
+use tokio::sync::watch;
+
+pub type ShutdownReceiver = watch::Receiver<bool>;
+
+pub fn no_shutdown() -> ShutdownReceiver {
+    let (tx, rx) = watch::channel(false);
+    std::mem::forget(tx);
+    rx
+}
 
 #[derive(Clone)]
 pub struct Retry {
@@ -25,7 +34,7 @@ impl Retry {
     }
 }
 
-pub async fn with_retry<F, Fut, T>(retry: &Retry, name: &str, mut f: F) -> Result<T, Box<dyn Error + Send + Sync>>
+pub async fn with_retry<F, Fut, T>(retry: &Retry, name: &str, shutdown_rx: &ShutdownReceiver, mut f: F) -> Result<Option<T>, Box<dyn Error + Send + Sync>>
 where
     F: FnMut() -> Fut,
     Fut: Future<Output = Result<T, Box<dyn Error + Send + Sync>>>,
@@ -33,18 +42,30 @@ where
     let mut delay = retry.delay;
     let mut attempt: u32 = 0;
     loop {
+        if *shutdown_rx.borrow() {
+            return Ok(None);
+        }
         attempt += 1;
         match f().await {
-            Ok(result) => return Ok(result),
+            Ok(result) => {
+                if attempt > 1 {
+                    info_with_fields!("rabbitmq reconnected", connection = name, attempt = attempt);
+                }
+                return Ok(Some(result));
+            }
             Err(err) => {
                 info_with_fields!(
-                    "rabbitmq connect retry",
+                    "rabbitmq reconnect retry",
                     connection = name,
                     attempt = attempt,
                     delay_secs = delay.as_secs(),
                     error = err.to_string()
                 );
-                tokio::time::sleep(delay).await;
+                let mut rx = shutdown_rx.clone();
+                tokio::select! {
+                    _ = tokio::time::sleep(delay) => {}
+                    _ = rx.changed() => return Ok(None),
+                }
                 delay = (delay * 2).min(retry.timeout);
             }
         }
@@ -62,4 +83,4 @@ pub use primitives::{AssetId, PushErrorLog};
 pub use queue::QueueName;
 pub use steam_producer_queue::StreamProducerQueue;
 pub use stream_producer::{StreamProducer, StreamProducerConfig};
-pub use stream_reader::{ShutdownReceiver, StreamReader, StreamReaderConfig};
+pub use stream_reader::{StreamReader, StreamReaderConfig};

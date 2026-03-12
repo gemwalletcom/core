@@ -12,7 +12,7 @@ use std::error::Error;
 
 use settings::Settings;
 use settings_chain::ChainProviders;
-use streamer::{ConsumerConfig, QueueName, StreamProducer, StreamProducerConfig, StreamReader, StreamReaderConfig};
+use streamer::{ConsumerConfig, QueueName, ShutdownReceiver, StreamProducer, StreamProducerConfig, StreamReader, StreamReaderConfig};
 
 pub use assets::run_consumer_assets;
 pub use fiat::run_consumer_fiat;
@@ -39,10 +39,10 @@ pub(crate) fn reader_config(rabbitmq: &settings::RabbitMQ, name: String) -> Stre
     StreamReaderConfig::new(rabbitmq.url.clone(), name, rabbitmq.prefetch, retry)
 }
 
-pub(crate) async fn reader_for_queue(settings: &Settings, queue: &QueueName) -> Result<(String, StreamReader), Box<dyn Error + Send + Sync>> {
+pub(crate) async fn reader_for_queue(settings: &Settings, queue: &QueueName, shutdown_rx: &ShutdownReceiver) -> Result<(String, StreamReader), Box<dyn Error + Send + Sync>> {
     let name = queue.to_string();
     let config = reader_config(&settings.rabbitmq, name.clone());
-    let reader = StreamReader::new(config).await?;
+    let reader = StreamReader::new(config, shutdown_rx).await?.ok_or("shutdown during connect")?;
     Ok((name, reader))
 }
 
@@ -51,7 +51,7 @@ fn producer_config(settings: &Settings) -> StreamProducerConfig {
     StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry)
 }
 
-pub(crate) async fn producer_for_queue(settings: &Settings, name: &str) -> Result<StreamProducer, Box<dyn Error + Send + Sync>> {
+pub(crate) async fn producer_for_queue(settings: &Settings, name: &str, shutdown_rx: ShutdownReceiver) -> Result<StreamProducer, Box<dyn Error + Send + Sync>> {
     let config = producer_config(settings);
-    StreamProducer::new(&config, name).await
+    StreamProducer::new(&config, name, shutdown_rx).await
 }
