@@ -28,8 +28,8 @@ struct Migrations {
         migrator.registerMigration("Create all start table") { db in
             // wallet
             try WalletRecord.create(db: db)
-            try AccountRecord.create(db: db)
             try AssetRecord.create(db: db)
+            try AccountRecord.create(db: db)
             try BalanceRecord.create(db: db)
 
             // asset

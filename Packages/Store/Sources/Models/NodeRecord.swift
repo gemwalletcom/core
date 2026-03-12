@@ -31,6 +31,7 @@ extension NodeRecord: CreateTable {
             $0.column(Columns.chain.name, .text)
                 .notNull()
                 .indexed()
+                .references(AssetRecord.databaseTableName, onDelete: .cascade, onUpdate: .cascade)
             $0.column(Columns.status.name, .text)
             $0.column(Columns.priority.name, .integer)
         }

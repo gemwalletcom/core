@@ -17,7 +17,7 @@ struct NodeServiceTests {
 
     @Test
     func setNodeSelectedPersistsNode() throws {
-        let service = NodeService.mock()
+        let service = NodeService.mock(nodeStore: .mock(db: .mockWithChains([.ethereum])))
 
         try service.setNodeSelected(chain: .ethereum, node: Chain.ethereum.asiaChainNode.node)
 
@@ -26,7 +26,7 @@ struct NodeServiceTests {
 
     @Test
     func switchNode() throws {
-        let service = NodeService.mock()
+        let service = NodeService.mock(nodeStore: .mock(db: .mockWithChains([.ethereum])))
 
         try service.setNodeSelected(chain: .ethereum, node: Chain.ethereum.asiaChainNode.node)
         #expect(service.getNodeSelected(chain: .ethereum).node.url == Chain.ethereum.asiaChainNode.node.url)
@@ -37,7 +37,7 @@ struct NodeServiceTests {
 
     @Test
     func nodeURLFetchableReturnsSelectedUrl() throws {
-        let service = NodeService.mock()
+        let service = NodeService.mock(nodeStore: .mock(db: .mockWithChains([.ethereum])))
 
         try service.setNodeSelected(chain: .ethereum, node: Chain.ethereum.asiaChainNode.node)
 

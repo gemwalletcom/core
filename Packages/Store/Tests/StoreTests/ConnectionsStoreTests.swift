@@ -10,7 +10,7 @@ struct ConnectionsStoreTests {
 
     @Test
     func getConnectionReturnsBoundWallet() throws {
-        let db = DB.mock()
+        let db = DB.mockWithChains([.ethereum])
         let walletStore = WalletStore(db: db)
         let connectionsStore = ConnectionsStore(db: db)
 

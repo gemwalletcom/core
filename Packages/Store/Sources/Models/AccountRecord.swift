@@ -34,6 +34,7 @@ extension AccountRecord: CreateTable {
                 .references(WalletRecord.databaseTableName, onDelete: .cascade, onUpdate: .cascade)
             $0.column(Columns.chain.name, .text)
                 .notNull()
+                .references(AssetRecord.databaseTableName, onDelete: .cascade, onUpdate: .cascade)
             $0.column(Columns.address.name, .text)
                 .notNull()
             $0.column(Columns.extendedPublicKey.name, .text)
