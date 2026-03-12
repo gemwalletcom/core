@@ -151,3 +151,15 @@ fn earn_provider(chain: Chain) -> DelegationValidator {
 fn apply_slippage(amount: U256) -> U256 {
     amount * U256::from(10_000 - SLIPPAGE_BPS) / U256::from(10_000)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_apply_slippage() {
+        assert_eq!(apply_slippage(U256::from(10_000)), U256::from(9_950));
+        assert_eq!(apply_slippage(U256::from(1_000_000)), U256::from(995_000));
+        assert_eq!(apply_slippage(U256::ZERO), U256::ZERO);
+    }
+}
