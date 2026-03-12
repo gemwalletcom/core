@@ -132,3 +132,20 @@ fn convert_to_assets_ceil(shares: U256, total_assets: U256, total_supply: U256) 
     }
     (shares * total_assets + total_supply - U256::from(1)) / total_supply
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_convert_to_assets_ceil() {
+        assert_eq!(convert_to_assets_ceil(U256::from(100), U256::from(1000), U256::from(500)), U256::from(200));
+        assert_eq!(convert_to_assets_ceil(U256::from(1), U256::from(1000), U256::from(500)), U256::from(2));
+        assert_eq!(convert_to_assets_ceil(U256::from(500), U256::from(1000), U256::from(500)), U256::from(1000));
+        assert_eq!(convert_to_assets_ceil(U256::from(1), U256::from(10), U256::from(3)), U256::from(4));
+        assert_eq!(convert_to_assets_ceil(U256::from(2), U256::from(10), U256::from(3)), U256::from(7));
+        assert_eq!(convert_to_assets_ceil(U256::ZERO, U256::from(1000), U256::from(500)), U256::ZERO);
+        assert_eq!(convert_to_assets_ceil(U256::from(100), U256::from(1000), U256::ZERO), U256::ZERO);
+        assert_eq!(convert_to_assets_ceil(U256::ZERO, U256::ZERO, U256::ZERO), U256::ZERO);
+    }
+}
