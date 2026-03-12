@@ -16,10 +16,15 @@ struct SwapSigner {
     }
 
     func transferSwapInput(input: SignerInput, fromAsset: Asset, swapData: SwapData) throws -> SignerInput {
-        SignerInput(
+        let value = if input.useMaxAmount && fromAsset.id.type == .native {
+            input.value
+        } else {
+            swapData.quote.fromValueBigInt
+        }
+        return SignerInput(
             type: .transfer(fromAsset),
             asset: fromAsset,
-            value: swapData.quote.fromValueBigInt,
+            value: value,
             fee: input.fee,
             isMaxAmount: input.useMaxAmount,
             memo: swapData.data.memo,

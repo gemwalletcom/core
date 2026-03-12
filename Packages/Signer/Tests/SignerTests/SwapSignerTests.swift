@@ -1,5 +1,6 @@
 // Copyright (c). Gem Wallet. All rights reserved.
 
+import BigInt
 import Foundation
 import Primitives
 import PrimitivesTestKit
@@ -28,6 +29,7 @@ struct SwapSignerTests {
         from fromAsset: Asset,
         to toAsset: Asset,
         swapData: SwapData,
+        value: BigInt,
         metadata: TransactionLoadMetadata = .none,
         useMaxAmount: Bool,
         senderAddress: String? = nil,
@@ -36,7 +38,7 @@ struct SwapSignerTests {
         SignerInput(
             type: .swap(fromAsset, toAsset, swapData),
             asset: fromAsset,
-            value: swapData.quote.fromValueBigInt,
+            value: value,
             fee: .mock(),
             isMaxAmount: useMaxAmount,
             memo: nil,
@@ -82,19 +84,22 @@ struct SwapSignerTests {
     }
 
     @Test
-    func ethereumNativeTransferSwapUsesTransferFlow() throws {
+    func nativeMaxAmountUsesFeeAdjustedValue() throws {
         let fromAsset = Asset.mockEthereum()
         let toAsset = Asset.mockNear()
+        let feeAdjustedValue: BigInt = 9500
         let swapData = makeSwapData(
             walletAddress: TestValues.ethereumSender,
             toAddress: TestValues.ethereumReceiver,
             destinationAddress: TestValues.ethereumReceiver,
-            data: "0x"
+            data: "0x",
+            fromValue: "9000"
         )
         let input = makeSwapInput(
             from: fromAsset,
             to: toAsset,
             swapData: swapData,
+            value: feeAdjustedValue,
             useMaxAmount: true,
             senderAddress: TestValues.ethereumSender
         )
@@ -121,8 +126,74 @@ struct SwapSignerTests {
             #expect(Bool(false))
         }
         #expect(transferInput.destinationAddress == swapData.data.to)
-        #expect(transferInput.memo == nil)
         #expect(transferInput.useMaxAmount == true)
+        #expect(transferInput.value == feeAdjustedValue)
+        #expect(transferInput.value != swapData.quote.fromValueBigInt)
+    }
+
+    @Test
+    func nativeNonMaxAmountUsesQuoteValue() throws {
+        let fromAsset = Asset.mockEthereum()
+        let toAsset = Asset.mockNear()
+        let swapData = makeSwapData(
+            walletAddress: TestValues.ethereumSender,
+            toAddress: TestValues.ethereumReceiver,
+            destinationAddress: TestValues.ethereumReceiver,
+            data: "0x",
+            fromValue: "9000"
+        )
+        let input = makeSwapInput(
+            from: fromAsset,
+            to: toAsset,
+            swapData: swapData,
+            value: 9500,
+            useMaxAmount: false,
+            senderAddress: TestValues.ethereumSender
+        )
+        let mockSigner = SwapSignableMock()
+
+        _ = try SwapSigner().signSwap(
+            signer: mockSigner,
+            input: input,
+            fromAsset: fromAsset,
+            swapData: swapData,
+            privateKey: swapTestPrivateKey
+        )
+
+        let transferInput = mockSigner.transferInputs.first!
+        #expect(transferInput.value == swapData.quote.fromValueBigInt)
+    }
+
+    @Test
+    func tokenMaxAmountUsesQuoteValue() throws {
+        let fromAsset = Asset.mockEthereumUSDT()
+        let toAsset = Asset.mockNear()
+        let swapData = makeSwapData(
+            walletAddress: TestValues.ethereumSender,
+            toAddress: TestValues.ethereumReceiver,
+            destinationAddress: TestValues.ethereumReceiver,
+            data: "0x",
+            fromValue: "9000"
+        )
+        let input = makeSwapInput(
+            from: fromAsset,
+            to: toAsset,
+            swapData: swapData,
+            value: 9500,
+            useMaxAmount: true,
+            senderAddress: TestValues.ethereumSender
+        )
+        let mockSigner = SwapSignableMock()
+
+        _ = try SwapSigner().signSwap(
+            signer: mockSigner,
+            input: input,
+            fromAsset: fromAsset,
+            swapData: swapData,
+            privateKey: swapTestPrivateKey
+        )
+
+        let transferInput = mockSigner.tokenTransferInputs.first!
         #expect(transferInput.value == swapData.quote.fromValueBigInt)
     }
 
@@ -144,6 +215,7 @@ struct SwapSignerTests {
             from: fromAsset,
             to: toAsset,
             swapData: swapData,
+            value: swapData.quote.fromValueBigInt,
             metadata: metadata,
             useMaxAmount: false,
             senderAddress: TestValues.nearSender,
@@ -195,6 +267,7 @@ struct SwapSignerTests {
             from: fromAsset,
             to: toAsset,
             swapData: swapData,
+            value: swapData.quote.fromValueBigInt,
             metadata: metadata,
             useMaxAmount: false,
             senderAddress: TestValues.suiSender,
