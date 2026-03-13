@@ -56,7 +56,6 @@ impl Explorer {
             | SwapperProvider::Jupiter
             | SwapperProvider::Oku
             | SwapperProvider::Wagmi
-            | SwapperProvider::Cetus
             | SwapperProvider::CetusAggregator
             | SwapperProvider::StonfiV2
             | SwapperProvider::Aerodrome

@@ -3,8 +3,9 @@ use crate::{
     SwapperQuoteData, across, alien::RpcProvider, chainflip, config::DEFAULT_STABLE_SWAP_REFERRAL_BPS, cross_chain::VaultAddresses, hyperliquid, jupiter, near_intents,
     proxy::provider_factory, relay, thorchain, uniswap,
 };
+use num_bigint::BigInt;
 use num_traits::ToPrimitive;
-use primitives::{AssetId, Chain, EVMChain};
+use primitives::{AssetId, Chain, EVMChain, SwapProvider, sort_by_priority_then_amount};
 use std::{
     borrow::Cow,
     collections::{BTreeSet, HashSet},
@@ -215,6 +216,14 @@ impl GemSwapper {
             }
             return Err(SwapperError::NoQuoteAvailable);
         }
+
+        let providers = SwapProvider::all();
+        let ascending = false;
+        quotes.sort_by(|a, b| {
+            let a_amount = a.to_value.parse::<BigInt>().unwrap_or_default();
+            let b_amount = b.to_value.parse::<BigInt>().unwrap_or_default();
+            sort_by_priority_then_amount(a.data.provider.id.id(), b.data.provider.id.id(), &a_amount, &b_amount, &providers, ascending)
+        });
 
         Ok(quotes)
     }
@@ -475,5 +484,69 @@ mod tests {
                 min_amount: Some("1390400".into())
             })
         );
+    }
+
+    #[test]
+    fn test_sort_quotes_by_amount_desc() {
+        let providers = SwapProvider::all();
+        let ascending = false;
+
+        let mut quotes = vec![
+            Quote::mock_with_provider(SwapperProvider::UniswapV3, "101"),
+            Quote::mock_with_provider(SwapperProvider::UniswapV4, "100"),
+            Quote::mock_with_provider(SwapperProvider::PancakeswapV3, "102"),
+        ];
+
+        quotes.sort_by(|a, b| {
+            let a_amount = a.to_value.parse::<BigInt>().unwrap_or_default();
+            let b_amount = b.to_value.parse::<BigInt>().unwrap_or_default();
+            sort_by_priority_then_amount(a.data.provider.id.id(), b.data.provider.id.id(), &a_amount, &b_amount, &providers, ascending)
+        });
+
+        assert_eq!(quotes[0].to_value, "102");
+        assert_eq!(quotes[1].to_value, "101");
+        assert_eq!(quotes[2].to_value, "100");
+    }
+
+    #[test]
+    fn test_sort_quotes_priority_wins_same_amount() {
+        let providers = SwapProvider::all();
+        let ascending = false;
+
+        let mut quotes = vec![
+            Quote::mock_with_provider(SwapperProvider::Okx, "100"),
+            Quote::mock_with_provider(SwapperProvider::UniswapV3, "100"),
+            Quote::mock_with_provider(SwapperProvider::Thorchain, "100"),
+        ];
+
+        quotes.sort_by(|a, b| {
+            let a_amount = a.to_value.parse::<BigInt>().unwrap_or_default();
+            let b_amount = b.to_value.parse::<BigInt>().unwrap_or_default();
+            sort_by_priority_then_amount(a.data.provider.id.id(), b.data.provider.id.id(), &a_amount, &b_amount, &providers, ascending)
+        });
+
+        assert_eq!(quotes[0].data.provider.id, SwapperProvider::UniswapV3);
+        assert_eq!(quotes[1].data.provider.id, SwapperProvider::Thorchain);
+        assert_eq!(quotes[2].data.provider.id, SwapperProvider::Okx);
+    }
+
+    #[test]
+    fn test_sort_quotes_threshold_override() {
+        let providers = SwapProvider::all();
+        let ascending = false;
+
+        let mut quotes = vec![
+            Quote::mock_with_provider(SwapperProvider::Thorchain, "100"),
+            Quote::mock_with_provider(SwapperProvider::Okx, "110"),
+        ];
+
+        quotes.sort_by(|a, b| {
+            let a_amount = a.to_value.parse::<BigInt>().unwrap_or_default();
+            let b_amount = b.to_value.parse::<BigInt>().unwrap_or_default();
+            sort_by_priority_then_amount(a.data.provider.id.id(), b.data.provider.id.id(), &a_amount, &b_amount, &providers, ascending)
+        });
+
+        assert_eq!(quotes[0].data.provider.id, SwapperProvider::Okx);
+        assert_eq!(quotes[1].data.provider.id, SwapperProvider::Thorchain);
     }
 }
