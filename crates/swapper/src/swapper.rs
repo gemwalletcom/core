@@ -485,4 +485,68 @@ mod tests {
             })
         );
     }
+
+    #[test]
+    fn test_sort_quotes_by_amount_desc() {
+        let providers = SwapProvider::all();
+        let ascending = false;
+
+        let mut quotes = vec![
+            Quote::mock_with_provider(SwapperProvider::UniswapV3, "101"),
+            Quote::mock_with_provider(SwapperProvider::UniswapV4, "100"),
+            Quote::mock_with_provider(SwapperProvider::PancakeswapV3, "102"),
+        ];
+
+        quotes.sort_by(|a, b| {
+            let a_amount = a.to_value.parse::<BigInt>().unwrap_or_default();
+            let b_amount = b.to_value.parse::<BigInt>().unwrap_or_default();
+            sort_by_priority_then_amount(a.data.provider.id.id(), b.data.provider.id.id(), &a_amount, &b_amount, &providers, ascending)
+        });
+
+        assert_eq!(quotes[0].to_value, "102");
+        assert_eq!(quotes[1].to_value, "101");
+        assert_eq!(quotes[2].to_value, "100");
+    }
+
+    #[test]
+    fn test_sort_quotes_priority_wins_same_amount() {
+        let providers = SwapProvider::all();
+        let ascending = false;
+
+        let mut quotes = vec![
+            Quote::mock_with_provider(SwapperProvider::Okx, "100"),
+            Quote::mock_with_provider(SwapperProvider::UniswapV3, "100"),
+            Quote::mock_with_provider(SwapperProvider::Thorchain, "100"),
+        ];
+
+        quotes.sort_by(|a, b| {
+            let a_amount = a.to_value.parse::<BigInt>().unwrap_or_default();
+            let b_amount = b.to_value.parse::<BigInt>().unwrap_or_default();
+            sort_by_priority_then_amount(a.data.provider.id.id(), b.data.provider.id.id(), &a_amount, &b_amount, &providers, ascending)
+        });
+
+        assert_eq!(quotes[0].data.provider.id, SwapperProvider::UniswapV3); // priority 1
+        assert_eq!(quotes[1].data.provider.id, SwapperProvider::Thorchain); // priority 2
+        assert_eq!(quotes[2].data.provider.id, SwapperProvider::Okx); // priority 3
+    }
+
+    #[test]
+    fn test_sort_quotes_threshold_override() {
+        let providers = SwapProvider::all();
+        let ascending = false;
+
+        let mut quotes = vec![
+            Quote::mock_with_provider(SwapperProvider::Thorchain, "100"),
+            Quote::mock_with_provider(SwapperProvider::Okx, "110"),
+        ];
+
+        quotes.sort_by(|a, b| {
+            let a_amount = a.to_value.parse::<BigInt>().unwrap_or_default();
+            let b_amount = b.to_value.parse::<BigInt>().unwrap_or_default();
+            sort_by_priority_then_amount(a.data.provider.id.id(), b.data.provider.id.id(), &a_amount, &b_amount, &providers, ascending)
+        });
+
+        assert_eq!(quotes[0].data.provider.id, SwapperProvider::Okx); // amount wins
+        assert_eq!(quotes[1].data.provider.id, SwapperProvider::Thorchain);
+    }
 }

@@ -41,6 +41,20 @@ impl Quote {
             eta_in_seconds: None,
         }
     }
+
+    pub fn mock_with_provider(provider: SwapperProvider, to_value: &str) -> Self {
+        Quote {
+            from_value: "1000000".to_string(),
+            to_value: to_value.to_string(),
+            data: ProviderData {
+                provider: ProviderType::new(provider),
+                routes: vec![],
+                slippage_bps: 50,
+            },
+            request: QuoteRequest::mock(Chain::Ethereum, None),
+            eta_in_seconds: None,
+        }
+    }
 }
 
 pub fn mock_quote(from_asset: SwapperQuoteAsset, to_asset: SwapperQuoteAsset) -> QuoteRequest {
