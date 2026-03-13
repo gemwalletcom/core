@@ -218,10 +218,11 @@ impl GemSwapper {
         }
 
         let providers = SwapProvider::all();
+        let ascending = false;
         quotes.sort_by(|a, b| {
             let a_amount = a.to_value.parse::<BigInt>().unwrap_or_default();
             let b_amount = b.to_value.parse::<BigInt>().unwrap_or_default();
-            sort_by_priority_then_amount(a.data.provider.id.id(), b.data.provider.id.id(), &a_amount, &b_amount, &providers, false)
+            sort_by_priority_then_amount(a.data.provider.id.id(), b.data.provider.id.id(), &a_amount, &b_amount, &providers, ascending)
         });
 
         Ok(quotes)
