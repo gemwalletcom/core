@@ -1,25 +1,33 @@
 use crate::{SignatureScheme, SignerError};
+use primitives::hex::encode_with_0x;
 use primitives::{Chain, ChainType, decode_hex};
 use zeroize::Zeroizing;
 
 #[derive(Debug, Clone, Copy)]
-pub enum KeyEncoding {
+enum KeyEncoding {
     Hex,
     Base58,
     Base32,
 }
 
-fn encodings_for_chain(chain: &Chain) -> Vec<KeyEncoding> {
+fn import_encodings_for_chain(chain: &Chain) -> &'static [KeyEncoding] {
     match chain.chain_type() {
-        ChainType::Bitcoin => vec![],
-        ChainType::Solana => vec![KeyEncoding::Base58, KeyEncoding::Hex],
-        ChainType::Stellar => vec![KeyEncoding::Base32, KeyEncoding::Hex],
-        _ => vec![KeyEncoding::Hex],
+        ChainType::Bitcoin => &[],
+        ChainType::Solana => &[KeyEncoding::Base58, KeyEncoding::Hex],
+        ChainType::Stellar => &[KeyEncoding::Base32, KeyEncoding::Hex],
+        _ => &[KeyEncoding::Hex],
+    }
+}
+
+fn export_encoding_for_chain(chain: &Chain) -> KeyEncoding {
+    match chain.chain_type() {
+        ChainType::Bitcoin | ChainType::Solana => KeyEncoding::Base58,
+        _ => KeyEncoding::Hex,
     }
 }
 
 pub fn supports_private_key_import(chain: &Chain) -> bool {
-    !encodings_for_chain(chain).is_empty()
+    !import_encodings_for_chain(chain).is_empty()
 }
 
 fn scheme_for_chain(chain: &Chain) -> SignatureScheme {
@@ -131,10 +139,22 @@ fn decode_key(value: &str, encodings: &[KeyEncoding], scheme: SignatureScheme) -
     Err(SignerError::new("Invalid private key format"))
 }
 
+fn encode_key(bytes: &[u8], encoding: KeyEncoding) -> Result<String, SignerError> {
+    match encoding {
+        KeyEncoding::Hex => Ok(encode_with_0x(bytes)),
+        KeyEncoding::Base58 => Ok(bs58::encode(bytes).into_string()),
+        KeyEncoding::Base32 => Err(SignerError::new("Unsupported private key export encoding")),
+    }
+}
+
 pub fn decode_private_key(chain: &Chain, value: &str) -> Result<Zeroizing<Vec<u8>>, SignerError> {
-    let encodings = encodings_for_chain(chain);
+    let import_encodings = import_encodings_for_chain(chain);
     let scheme = scheme_for_chain(chain);
-    decode_key(value, &encodings, scheme)
+    decode_key(value, import_encodings, scheme)
+}
+
+pub fn encode_private_key(chain: &Chain, private_key: &[u8]) -> Result<String, SignerError> {
+    encode_key(private_key, export_encoding_for_chain(chain))
 }
 
 #[cfg(test)]
@@ -156,13 +176,43 @@ mod tests {
     #[test]
     fn test_decode_stellar_strkey() {
         let bytes = decode_private_key(&Chain::Stellar, "SA6XNHUKMW4QAKSHB2NOZ4SYP34ERYVAWSBTEDREYSJ2LEJ5LFHLTIRJ").unwrap();
-        assert_eq!(hex::encode(&*bytes), "3d769e8a65b9002a470e9aecf2587ef848e2a0b483320e24c493a5913d594eb9");
+        assert_eq!(hex::encode(bytes.as_slice()), "3d769e8a65b9002a470e9aecf2587ef848e2a0b483320e24c493a5913d594eb9");
     }
 
     #[test]
     fn test_decode_invalid() {
         assert!(decode_private_key(&Chain::Ethereum, "not_valid").is_err());
         assert!(decode_private_key(&Chain::Stellar, "GA6XNHUKMW4QAKSHB2NOZ4SYP34ERYVAWSBTEDREYSJ2LEJ5LFHLTIRJ").is_err());
+    }
+
+    #[test]
+    fn test_encode_solana_base58() {
+        let bytes = decode_private_key(&Chain::Solana, "4ha2npeRkDXipjgGJ3L5LhZ9TK9dRjP2yktydkFBhAzXj3N8ytpYyTS24kxcYGEefy4WKWRcog2zSPvpPZoGmxCC").unwrap();
+        let encoded = encode_private_key(&Chain::Solana, &bytes).unwrap();
+
+        assert_eq!(encoded, "DTJi5pMtSKZHdkLX4wxwvjGjf2xwXx1LSuuUZhugYWDV");
+    }
+
+    #[test]
+    fn test_encode_ethereum_hex() {
+        let bytes = decode_private_key(&Chain::Ethereum, "0x30df0ffc2b43717f4653c2a1e827e9dfb3d9364e019cc60092496cd4997d5d6e").unwrap();
+        let encoded = encode_private_key(&Chain::Ethereum, &bytes).unwrap();
+
+        assert_eq!(encoded, "0x30df0ffc2b43717f4653c2a1e827e9dfb3d9364e019cc60092496cd4997d5d6e");
+    }
+
+    #[test]
+    fn test_encode_bitcoin_base58() {
+        let bytes = decode_private_key(&Chain::Ethereum, "0x30df0ffc2b43717f4653c2a1e827e9dfb3d9364e019cc60092496cd4997d5d6e").unwrap();
+        let encoded = encode_private_key(&Chain::Bitcoin, &bytes).unwrap();
+
+        assert_eq!(encoded, "4Hmr8TxnwVB7m6fzfPRcASMn2hLRgzUz3gDGwF4ZnpVK");
+    }
+
+    #[test]
+    fn test_encode_does_not_revalidate_bytes() {
+        assert_eq!(encode_private_key(&Chain::Ethereum, &[1u8; 16]).unwrap(), "0x01010101010101010101010101010101");
+        assert_eq!(encode_private_key(&Chain::Solana, &[1u8; 64]).unwrap(), bs58::encode([1u8; 64]).into_string());
     }
 
     #[test]
