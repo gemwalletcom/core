@@ -217,7 +217,7 @@ struct WalletServiceTests {
     @Test
     func deleteLastWalletNotifiesObservers() async throws {
         let preferences = ObservablePreferences.mock()
-        let service = WalletService.mock(preferences: preferences)
+        let service = WalletService.mock(walletStore: .mock(db: .mockWithChains([.ethereum])), preferences: preferences)
 
         let wallet = try await service.loadOrCreateWallet(
             name: "Wallet",
