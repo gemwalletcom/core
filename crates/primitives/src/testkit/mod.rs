@@ -1,3 +1,4 @@
+pub mod address_name_mock;
 pub mod asset_mock;
 pub mod delegation_mock;
 pub mod device_mock;

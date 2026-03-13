@@ -43,7 +43,7 @@ impl TransactionsClient {
             .scan_addresses()?
             .get_scan_addresses_by_addresses(scan_addresses)?
             .into_iter()
-            .flat_map(|x| x.as_primitive())
+            .filter_map(|x| x.as_primitive())
             .collect();
 
         Ok(TransactionsResponse::new(transactions, address_names))

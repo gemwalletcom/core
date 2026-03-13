@@ -31,7 +31,10 @@ use assets::{AssetsClient, SearchClient};
 use cacher::CacherClient;
 use config::ConfigClient;
 use devices::DevicesClient;
-use devices::{FiatQuotesClient, NotificationsClient, PortfolioClient, RewardsClient, RewardsRedemptionClient, ScanClient, ScanProviderFactory, TransactionsClient, WalletsClient};
+use devices::{
+    AddressNamesClient, FiatQuotesClient, NotificationsClient, PortfolioClient, RewardsClient, RewardsRedemptionClient, ScanClient, ScanProviderFactory, TransactionsClient,
+    WalletsClient,
+};
 use gem_auth::AuthClient;
 use gem_rewards::{AbuseIPDBClient, IpApiClient, IpCheckProvider, IpSecurityClient};
 use metrics::fiat::FiatMetrics;
@@ -117,6 +120,7 @@ fn mount_routes(rocket: Rocket<Build>, metrics_path: &str) -> Rocket<Build> {
                 devices::get_device_name_resolve_v2,
                 devices::get_device_transaction_by_id_v2,
                 devices::get_device_transactions_v2,
+                devices::get_device_address_names_v2,
                 devices::get_device_nft_assets_v2,
                 devices::get_device_rewards_v2,
                 devices::get_device_rewards_events_v2,
@@ -169,7 +173,8 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let pusher_client = PusherClient::new(settings.pusher.url, settings.pusher.ios.topic);
     let devices_client = DevicesClient::new(database.clone(), pusher_client.clone());
     let transactions_client = TransactionsClient::new(database.clone());
-    let stream_producer = StreamProducer::new(&rabbitmq_config, "api").await.unwrap();
+    let address_names_client = AddressNamesClient::new(database.clone());
+    let stream_producer = StreamProducer::new(&rabbitmq_config, "api", streamer::no_shutdown()).await.unwrap();
     let wallets_client = WalletsClient::new(database.clone(), stream_producer.clone());
     let fiat_metrics = Arc::new(FiatMetrics::new());
 
@@ -221,6 +226,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(assets_client))
         .manage(Mutex::new(search_client))
         .manage(Mutex::new(transactions_client))
+        .manage(Mutex::new(address_names_client))
         .manage(fiat_metrics)
         .manage(Mutex::new(scan_client))
         .manage(Mutex::new(swap_client))

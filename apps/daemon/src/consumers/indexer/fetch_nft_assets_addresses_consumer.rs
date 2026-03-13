@@ -38,7 +38,7 @@ impl FetchNftAssetsAddressesConsumer {
         let name = format!("{}.{}", queue, chain.as_ref());
         let config = reader_config(&settings.rabbitmq, name.clone());
         let stream_reader = StreamReader::from_connection(connection, config).await?;
-        let stream_producer = StreamProducer::from_connection(connection).await?;
+        let stream_producer = StreamProducer::from_connection(connection, shutdown_rx.clone()).await?;
         let nft_config = NFTProviderConfig::new(settings.nft.opensea.key.secret.clone(), settings.nft.magiceden.key.secret.clone());
         let nft_client = NFTClient::new(database.clone(), nft_config);
         let nft_client = Arc::new(Mutex::new(nft_client));

@@ -1,16 +1,22 @@
+use gem_wallet_connect::session::parse_chains;
+use gem_wallet_connect::{
+    SignDigestType as WcSignDigestType, WCEthereumTransactionData as WcEthereumTransactionData, WalletConnectAction as WcWalletConnectAction,
+    WalletConnectChainOperation as WcWalletConnectChainOperation, WalletConnectRequestHandler, WalletConnectResponseHandler,
+    WalletConnectResponseType as WcWalletConnectResponseType, WalletConnectTransaction as WcWalletConnectTransaction,
+    WalletConnectTransactionType as WcWalletConnectTransactionType, WalletConnectVerifier, config_session_properties,
+};
+use primitives::{Chain, SimulationResult, TransferDataOutputType, WCEthereumTransaction, WalletConnectRequest, WalletConnectionVerificationStatus};
 use std::collections::HashMap;
 use std::str::FromStr;
-
-use gem_wallet_connect::{
-    SignMessageValidation, WalletConnectRequestHandler, WalletConnectResponseHandler, WalletConnectVerifier, config_session_properties, decode_sign_message,
-    validate_send_transaction, validate_sign_message,
-};
-use primitives::{Chain, TransferDataOutputType, WCEthereumTransaction, WalletConnectRequest, WalletConnectionVerificationStatus};
 
 use crate::{
     GemstoneError,
     message::sign_type::{SignDigestType, SignMessage},
 };
+
+mod simulation;
+mod simulation_client;
+pub use simulation_client::WalletConnectSimulationClient;
 
 // UniFFI remote enum declaration
 #[uniffi::remote(Enum)]
@@ -87,7 +93,7 @@ pub enum WalletConnectTransactionType {
 #[derive(Debug, Clone, PartialEq, uniffi::Enum)]
 pub enum WalletConnectChainOperation {
     AddChain,
-    SwitchChain,
+    SwitchChain { chain: Chain },
     GetChainId,
 }
 
@@ -147,22 +153,22 @@ impl From<WCEthereumTransaction> for WCEthereumTransactionData {
 
 // From conversions: gem_wallet_connect -> UniFFI
 
-impl From<gem_wallet_connect::SignDigestType> for SignDigestType {
-    fn from(t: gem_wallet_connect::SignDigestType) -> Self {
+impl From<WcSignDigestType> for SignDigestType {
+    fn from(t: WcSignDigestType) -> Self {
         match t {
-            gem_wallet_connect::SignDigestType::Eip191 => Self::Eip191,
-            gem_wallet_connect::SignDigestType::Eip712 => Self::Eip712,
-            gem_wallet_connect::SignDigestType::Base58 => Self::Base58,
-            gem_wallet_connect::SignDigestType::SuiPersonal => Self::SuiPersonal,
-            gem_wallet_connect::SignDigestType::Siwe => Self::Siwe,
-            gem_wallet_connect::SignDigestType::TonPersonal => Self::TonPersonal,
-            gem_wallet_connect::SignDigestType::BitcoinPersonal => Self::BitcoinPersonal,
-            gem_wallet_connect::SignDigestType::TronPersonal => Self::TronPersonal,
+            WcSignDigestType::Eip191 => Self::Eip191,
+            WcSignDigestType::Eip712 => Self::Eip712,
+            WcSignDigestType::Base58 => Self::Base58,
+            WcSignDigestType::SuiPersonal => Self::SuiPersonal,
+            WcSignDigestType::Siwe => Self::Siwe,
+            WcSignDigestType::TonPersonal => Self::TonPersonal,
+            WcSignDigestType::BitcoinPersonal => Self::BitcoinPersonal,
+            WcSignDigestType::TronPersonal => Self::TronPersonal,
         }
     }
 }
 
-impl From<SignDigestType> for gem_wallet_connect::SignDigestType {
+impl From<SignDigestType> for WcSignDigestType {
     fn from(t: SignDigestType) -> Self {
         match t {
             SignDigestType::Eip191 => Self::Eip191,
@@ -177,20 +183,20 @@ impl From<SignDigestType> for gem_wallet_connect::SignDigestType {
     }
 }
 
-impl From<gem_wallet_connect::WalletConnectTransactionType> for WalletConnectTransactionType {
-    fn from(t: gem_wallet_connect::WalletConnectTransactionType) -> Self {
+impl From<WcWalletConnectTransactionType> for WalletConnectTransactionType {
+    fn from(t: WcWalletConnectTransactionType) -> Self {
         match t {
-            gem_wallet_connect::WalletConnectTransactionType::Ethereum => Self::Ethereum,
-            gem_wallet_connect::WalletConnectTransactionType::Solana { output_type } => Self::Solana { output_type },
-            gem_wallet_connect::WalletConnectTransactionType::Sui { output_type } => Self::Sui { output_type },
-            gem_wallet_connect::WalletConnectTransactionType::Ton { output_type } => Self::Ton { output_type },
-            gem_wallet_connect::WalletConnectTransactionType::Bitcoin { output_type } => Self::Bitcoin { output_type },
-            gem_wallet_connect::WalletConnectTransactionType::Tron { output_type } => Self::Tron { output_type },
+            WcWalletConnectTransactionType::Ethereum => Self::Ethereum,
+            WcWalletConnectTransactionType::Solana { output_type } => Self::Solana { output_type },
+            WcWalletConnectTransactionType::Sui { output_type } => Self::Sui { output_type },
+            WcWalletConnectTransactionType::Ton { output_type } => Self::Ton { output_type },
+            WcWalletConnectTransactionType::Bitcoin { output_type } => Self::Bitcoin { output_type },
+            WcWalletConnectTransactionType::Tron { output_type } => Self::Tron { output_type },
         }
     }
 }
 
-impl From<WalletConnectTransactionType> for gem_wallet_connect::WalletConnectTransactionType {
+impl From<WalletConnectTransactionType> for WcWalletConnectTransactionType {
     fn from(t: WalletConnectTransactionType) -> Self {
         match t {
             WalletConnectTransactionType::Ethereum => Self::Ethereum,
@@ -203,42 +209,42 @@ impl From<WalletConnectTransactionType> for gem_wallet_connect::WalletConnectTra
     }
 }
 
-impl From<gem_wallet_connect::WalletConnectChainOperation> for WalletConnectChainOperation {
-    fn from(op: gem_wallet_connect::WalletConnectChainOperation) -> Self {
+impl From<WcWalletConnectChainOperation> for WalletConnectChainOperation {
+    fn from(op: WcWalletConnectChainOperation) -> Self {
         match op {
-            gem_wallet_connect::WalletConnectChainOperation::AddChain => Self::AddChain,
-            gem_wallet_connect::WalletConnectChainOperation::SwitchChain => Self::SwitchChain,
-            gem_wallet_connect::WalletConnectChainOperation::GetChainId => Self::GetChainId,
+            WcWalletConnectChainOperation::AddChain => Self::AddChain,
+            WcWalletConnectChainOperation::SwitchChain { chain } => Self::SwitchChain { chain },
+            WcWalletConnectChainOperation::GetChainId => Self::GetChainId,
         }
     }
 }
 
-impl From<gem_wallet_connect::WalletConnectAction> for WalletConnectAction {
-    fn from(action: gem_wallet_connect::WalletConnectAction) -> Self {
+impl From<WcWalletConnectAction> for WalletConnectAction {
+    fn from(action: WcWalletConnectAction) -> Self {
         match action {
-            gem_wallet_connect::WalletConnectAction::SignMessage { chain, sign_type, data } => Self::SignMessage {
+            WcWalletConnectAction::SignMessage { chain, sign_type, data } => Self::SignMessage {
                 chain,
                 sign_type: sign_type.into(),
                 data,
             },
-            gem_wallet_connect::WalletConnectAction::SignTransaction { chain, transaction_type, data } => Self::SignTransaction {
+            WcWalletConnectAction::SignTransaction { chain, transaction_type, data } => Self::SignTransaction {
                 chain,
                 transaction_type: transaction_type.into(),
                 data,
             },
-            gem_wallet_connect::WalletConnectAction::SendTransaction { chain, transaction_type, data } => Self::SendTransaction {
+            WcWalletConnectAction::SendTransaction { chain, transaction_type, data } => Self::SendTransaction {
                 chain,
                 transaction_type: transaction_type.into(),
                 data,
             },
-            gem_wallet_connect::WalletConnectAction::ChainOperation { operation } => Self::ChainOperation { operation: operation.into() },
-            gem_wallet_connect::WalletConnectAction::Unsupported { method } => Self::Unsupported { method },
+            WcWalletConnectAction::ChainOperation { operation } => Self::ChainOperation { operation: operation.into() },
+            WcWalletConnectAction::Unsupported { method } => Self::Unsupported { method },
         }
     }
 }
 
-impl From<gem_wallet_connect::WCEthereumTransactionData> for WCEthereumTransactionData {
-    fn from(d: gem_wallet_connect::WCEthereumTransactionData) -> Self {
+impl From<WcEthereumTransactionData> for WCEthereumTransactionData {
+    fn from(d: WcEthereumTransactionData) -> Self {
         Self {
             chain_id: d.chain_id,
             from: d.from,
@@ -255,33 +261,33 @@ impl From<gem_wallet_connect::WCEthereumTransactionData> for WCEthereumTransacti
     }
 }
 
-impl From<gem_wallet_connect::WalletConnectTransaction> for WalletConnectTransaction {
-    fn from(t: gem_wallet_connect::WalletConnectTransaction) -> Self {
+impl From<WcWalletConnectTransaction> for WalletConnectTransaction {
+    fn from(t: WcWalletConnectTransaction) -> Self {
         match t {
-            gem_wallet_connect::WalletConnectTransaction::Ethereum { data } => Self::Ethereum { data: data.into() },
-            gem_wallet_connect::WalletConnectTransaction::Solana { data, output_type } => Self::Solana {
+            WcWalletConnectTransaction::Ethereum { data } => Self::Ethereum { data: data.into() },
+            WcWalletConnectTransaction::Solana { data, output_type } => Self::Solana {
                 data: WCSolanaTransactionData { transaction: data.transaction },
                 output_type,
             },
-            gem_wallet_connect::WalletConnectTransaction::Sui { data, output_type } => Self::Sui {
+            WcWalletConnectTransaction::Sui { data, output_type } => Self::Sui {
                 data: WCSuiTransactionData {
                     transaction: data.transaction,
                     wallet_address: data.wallet_address,
                 },
                 output_type,
             },
-            gem_wallet_connect::WalletConnectTransaction::Ton { messages, output_type } => Self::Ton { messages, output_type },
-            gem_wallet_connect::WalletConnectTransaction::Bitcoin { data, output_type } => Self::Bitcoin { data, output_type },
-            gem_wallet_connect::WalletConnectTransaction::Tron { data, output_type } => Self::Tron { data, output_type },
+            WcWalletConnectTransaction::Ton { messages, output_type } => Self::Ton { messages, output_type },
+            WcWalletConnectTransaction::Bitcoin { data, output_type } => Self::Bitcoin { data, output_type },
+            WcWalletConnectTransaction::Tron { data, output_type } => Self::Tron { data, output_type },
         }
     }
 }
 
-impl From<gem_wallet_connect::WalletConnectResponseType> for WalletConnectResponseType {
-    fn from(r: gem_wallet_connect::WalletConnectResponseType) -> Self {
+impl From<WcWalletConnectResponseType> for WalletConnectResponseType {
+    fn from(r: WcWalletConnectResponseType) -> Self {
         match r {
-            gem_wallet_connect::WalletConnectResponseType::String { value } => Self::String { value },
-            gem_wallet_connect::WalletConnectResponseType::Object { json } => Self::Object { json },
+            WcWalletConnectResponseType::String { value } => Self::String { value },
+            WcWalletConnectResponseType::Object { json } => Self::Object { json },
         }
     }
 }
@@ -346,40 +352,49 @@ impl WalletConnect {
         WalletConnectResponseHandler::encode_send_transaction(chain.chain_type(), transaction_id).into()
     }
 
-    pub fn validate_sign_message(&self, chain: Chain, sign_type: SignDigestType, data: String, session_domain: String) -> Result<(), GemstoneError> {
-        let crate_sign_type: gem_wallet_connect::SignDigestType = sign_type.into();
-        let input = SignMessageValidation {
-            chain,
-            sign_type: &crate_sign_type,
-            data: &data,
-            session_domain: &session_domain,
-        };
-        validate_sign_message(&input).map_err(|e| GemstoneError::AnyError { msg: e })
-    }
-
-    pub fn validate_send_transaction(&self, transaction_type: WalletConnectTransactionType, data: String) -> Result<(), GemstoneError> {
-        let crate_type: gem_wallet_connect::WalletConnectTransactionType = transaction_type.into();
-        validate_send_transaction(&crate_type, &data).map_err(|e| GemstoneError::AnyError { msg: e })
-    }
-
     pub fn decode_sign_message(&self, chain: Chain, sign_type: SignDigestType, data: String) -> SignMessage {
-        let crate_sign_type: gem_wallet_connect::SignDigestType = sign_type.into();
-        let result = decode_sign_message(chain, crate_sign_type, data);
-        SignMessage {
-            chain: result.chain,
-            sign_type: result.sign_type.into(),
-            data: result.data,
-        }
+        simulation::decode_message(chain, sign_type, data)
     }
 
     pub fn config_session_properties(&self, properties: HashMap<String, String>, chains: Vec<String>) -> HashMap<String, String> {
-        let chains = gem_wallet_connect::session::parse_chains(&chains);
+        let chains = parse_chains(&chains);
         config_session_properties(properties, &chains)
     }
 
     pub fn decode_send_transaction(&self, transaction_type: WalletConnectTransactionType, data: String) -> Result<WalletConnectTransaction, GemstoneError> {
-        let crate_type: gem_wallet_connect::WalletConnectTransactionType = transaction_type.into();
-        let crate_result = WalletConnectRequestHandler::decode_send_transaction(crate_type, data).map_err(|e| GemstoneError::AnyError { msg: e })?;
-        Ok(crate_result.into())
+        let wc_type: WcWalletConnectTransactionType = transaction_type.into();
+        let wc_result = WalletConnectRequestHandler::decode_send_transaction(wc_type, data).map_err(|e| GemstoneError::AnyError { msg: e })?;
+        Ok(wc_result.into())
+    }
+
+    pub fn simulate_sign_message(&self, chain: Chain, sign_type: SignDigestType, data: String, session_domain: String) -> SimulationResult {
+        simulation::simulate_sign_message(chain, sign_type, data, session_domain)
+    }
+
+    pub fn simulate_send_transaction(&self, chain: Chain, transaction_type: WalletConnectTransactionType, data: String) -> SimulationResult {
+        simulation::simulate_send_transaction(chain, transaction_type, data)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::message::sign_type::SignDigestType;
+    use primitives::{Chain, SimulationWarning, SimulationWarningType};
+
+    use super::WalletConnect;
+
+    #[test]
+    fn permit2_sign_message_simulation_matches_permit_warning_behavior() {
+        let data = include_str!("../../../crates/gem_evm/testdata/uniswap_permit2.json").to_string();
+        let result = WalletConnect::new().simulate_sign_message(Chain::Ethereum, SignDigestType::Eip712, data, "thepoc.xyz".to_string());
+
+        assert_eq!(result.warnings.len(), 1);
+        assert!(matches!(
+            result.warnings.first(),
+            Some(SimulationWarning {
+                warning: SimulationWarningType::PermitApproval { value, .. },
+                ..
+            }) if value.is_none()
+        ));
     }
 }

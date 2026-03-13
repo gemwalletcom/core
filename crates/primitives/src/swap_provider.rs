@@ -1,3 +1,4 @@
+use crate::PrioritizedProvider;
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
@@ -18,7 +19,6 @@ pub enum SwapProvider {
     Across,
     Oku,
     Wagmi,
-    Cetus,
     StonfiV2,
     Mayan,
     Chainflip,
@@ -49,7 +49,6 @@ impl SwapProvider {
             | Self::Okx
             | Self::Oku
             | Self::Wagmi
-            | Self::Cetus
             | Self::CetusAggregator
             | Self::StonfiV2
             | Self::Aerodrome
@@ -73,7 +72,7 @@ impl SwapProvider {
             Self::Across => "Across",
             Self::Oku => "Oku",
             Self::Wagmi => "Wagmi",
-            Self::Cetus | Self::CetusAggregator => "Cetus",
+            Self::CetusAggregator => "Cetus",
             Self::StonfiV2 => "STON.fi",
             Self::Mayan => "Mayan",
             Self::Chainflip => "Chainflip",
@@ -97,7 +96,6 @@ impl SwapProvider {
             | Self::Jupiter
             | Self::Okx
             | Self::Wagmi
-            | Self::Cetus
             | Self::Mayan
             | Self::Chainflip
             | Self::NearIntents
@@ -107,6 +105,35 @@ impl SwapProvider {
             | Self::Hyperliquid
             | Self::Orca => self.name(),
         }
+    }
+
+    pub fn priority(&self) -> i32 {
+        match self {
+            Self::UniswapV3 | Self::UniswapV4 | Self::PancakeswapV3 | Self::Aerodrome | Self::Oku | Self::Wagmi | Self::StonfiV2 | Self::Orca | Self::Hyperliquid => 1,
+            Self::Thorchain | Self::Across | Self::Mayan | Self::Chainflip | Self::NearIntents | Self::Relay => 2,
+            Self::Jupiter | Self::Okx | Self::CetusAggregator | Self::Panora => 3,
+        }
+    }
+
+    pub fn threshold_bps(&self) -> i32 {
+        match self.priority() {
+            1 => 0,
+            _ => 100,
+        }
+    }
+}
+
+impl PrioritizedProvider for SwapProvider {
+    fn provider_id(&self) -> &str {
+        self.id()
+    }
+
+    fn priority(&self) -> i32 {
+        SwapProvider::priority(self)
+    }
+
+    fn threshold_bps(&self) -> i32 {
+        SwapProvider::threshold_bps(self)
     }
 }
 
@@ -123,5 +150,21 @@ mod tests {
         assert!(SwapProvider::Relay.is_cross_chain());
         assert!(!SwapProvider::UniswapV3.is_cross_chain());
         assert!(!SwapProvider::Jupiter.is_cross_chain());
+    }
+
+    #[test]
+    fn test_priority() {
+        assert_eq!(SwapProvider::UniswapV3.priority(), 1);
+        assert_eq!(SwapProvider::Jupiter.priority(), 3);
+        assert_eq!(SwapProvider::Thorchain.priority(), 2);
+        assert_eq!(SwapProvider::Mayan.priority(), 2);
+        assert_eq!(SwapProvider::Okx.priority(), 3);
+    }
+
+    #[test]
+    fn test_threshold_bps() {
+        assert_eq!(SwapProvider::UniswapV3.threshold_bps(), 0);
+        assert_eq!(SwapProvider::Thorchain.threshold_bps(), 100);
+        assert_eq!(SwapProvider::Okx.threshold_bps(), 100);
     }
 }

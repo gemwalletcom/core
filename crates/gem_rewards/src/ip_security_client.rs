@@ -4,9 +4,9 @@ use std::sync::Arc;
 use cacher::{CacheKey, CacherClient};
 use primitives::{ConfigKey, IpUsageType};
 
+use crate::UsernameError;
 use crate::ip_check_provider::IpCheckProvider;
 use crate::model::IpCheckResult;
-use crate::UsernameError;
 
 #[derive(Clone)]
 pub struct IpSecurityClient {

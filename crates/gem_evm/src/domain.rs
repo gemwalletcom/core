@@ -29,6 +29,14 @@ pub fn host(url_string: &str) -> String {
         .unwrap_or_else(|| url_string.to_lowercase())
 }
 
+pub fn host_only(domain_or_url: &str) -> Option<String> {
+    if domain_or_url.is_empty() {
+        return None;
+    }
+    let url = parse_url(domain_or_url)?;
+    url.host_str().map(|host| host.to_lowercase())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -58,5 +66,13 @@ mod tests {
         assert_eq!(host("https://example.com"), "example.com");
         assert_eq!(host("https://EXAMPLE.COM"), "example.com");
         assert_eq!(host("EXAMPLE.COM"), "example.com");
+    }
+
+    #[test]
+    fn test_host_only() {
+        assert_eq!(host_only("example.com"), Some("example.com".to_string()));
+        assert_eq!(host_only("example.com:8080"), Some("example.com".to_string()));
+        assert_eq!(host_only("https://EXAMPLE.COM:8080"), Some("example.com".to_string()));
+        assert_eq!(host_only(""), None);
     }
 }

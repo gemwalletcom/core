@@ -66,12 +66,14 @@ pub fn plan_next_block(state: &ParserStateRow, current_block: i64, latest_block:
 mod tests {
     use super::{BlockPlanKind, plan_next_block, should_reload_catchup, timeout_for_state};
     use chrono::Utc;
+    use primitives::Chain;
     use std::time::Duration;
     use storage::models::ParserStateRow;
+    use storage::sql_types::ChainRow;
 
     fn state(await_blocks: i32, parallel_blocks: i32, timeout_latest_block: i32, queue_behind_blocks: Option<i32>) -> ParserStateRow {
         ParserStateRow {
-            chain: "ethereum".to_string(),
+            chain: ChainRow::from(Chain::Ethereum),
             current_block: 0,
             latest_block: 0,
             await_blocks,

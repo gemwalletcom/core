@@ -8,7 +8,7 @@ mod tron;
 use crate::actions::{WCSolanaTransactionData, WCSuiTransactionData, WalletConnectAction, WalletConnectChainOperation, WalletConnectTransaction, WalletConnectTransactionType};
 use bitcoin::BitcoinRequestHandler;
 use ethereum::EthereumRequestHandler;
-use primitives::{Chain, WCEthereumTransaction, WalletConnectRequest, WalletConnectionMethods};
+use primitives::{Chain, ValueAccess, WCEthereumTransaction, WalletConnectRequest, WalletConnectionMethods, hex};
 use serde_json::Value;
 use solana::SolanaRequestHandler;
 use sui::SuiRequestHandler;
@@ -55,9 +55,12 @@ impl WalletConnectRequestHandler {
             WalletConnectionMethods::WalletAddEthereumChain => Ok(WalletConnectAction::ChainOperation {
                 operation: WalletConnectChainOperation::AddChain,
             }),
-            WalletConnectionMethods::WalletSwitchEthereumChain => Ok(WalletConnectAction::ChainOperation {
-                operation: WalletConnectChainOperation::SwitchChain,
-            }),
+            WalletConnectionMethods::WalletSwitchEthereumChain => {
+                let chain = Self::parse_switch_chain_id(&params)?;
+                Ok(WalletConnectAction::ChainOperation {
+                    operation: WalletConnectChainOperation::SwitchChain { chain },
+                })
+            }
             WalletConnectionMethods::SolanaSignMessage => SolanaRequestHandler::parse_sign_message(Chain::Solana, params, domain),
             WalletConnectionMethods::SolanaSignTransaction => SolanaRequestHandler::parse_sign_transaction(Chain::Solana, params),
             WalletConnectionMethods::SolanaSignAndSendTransaction => SolanaRequestHandler::parse_send_transaction(Chain::Solana, params),
@@ -119,6 +122,12 @@ impl WalletConnectRequestHandler {
     fn resolve_chain(chain_id: Option<String>) -> Result<Chain, String> {
         primitives::WalletConnectCAIP2::resolve_chain(chain_id)
     }
+
+    fn parse_switch_chain_id(params: &Value) -> Result<Chain, String> {
+        let chain_id_text = params.at(0)?.get_value("chainId")?.string()?;
+        let chain_id = hex::parse_u64_from_hex_or_decimal(chain_id_text).map_err(|error| error.to_string())?;
+        Chain::from_chain_id(chain_id).ok_or_else(|| "Unsupported chain".to_string())
+    }
 }
 
 #[cfg(test)]
@@ -148,6 +157,25 @@ mod tests {
                 operation: WalletConnectChainOperation::AddChain,
             }
         );
+    }
+
+    #[test]
+    fn test_chain_operation_switch_chain() {
+        let params = r#"[{"chainId":"0x1"}]"#;
+        let request = WalletConnectRequest::mock("wallet_switchEthereumChain", params, None);
+        assert_eq!(
+            WalletConnectRequestHandler::parse_request(request).unwrap(),
+            WalletConnectAction::ChainOperation {
+                operation: WalletConnectChainOperation::SwitchChain { chain: Chain::Ethereum },
+            }
+        );
+    }
+
+    #[test]
+    fn test_chain_operation_switch_chain_missing_chain_id() {
+        let params = r#"[{}]"#;
+        let request = WalletConnectRequest::mock("wallet_switchEthereumChain", params, None);
+        assert!(WalletConnectRequestHandler::parse_request(request).is_err());
     }
 
     #[test]

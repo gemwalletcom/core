@@ -78,7 +78,6 @@ pub fn map_all_balances(chain: Chain, account: Account) -> Vec<AssetBalance> {
     balances
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

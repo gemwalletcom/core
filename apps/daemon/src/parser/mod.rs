@@ -254,7 +254,7 @@ pub async fn run(settings: Settings, chain: Option<Chain>, health_state: Arc<Hea
 
         let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
         let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
-        let stream_producer = StreamProducer::new(&rabbitmq_config, format!("parser_{chain}").as_str()).await?;
+        let stream_producer = StreamProducer::new(&rabbitmq_config, format!("parser_{chain}").as_str(), shutdown_rx.clone()).await?;
 
         let options = ParserOptions {
             timeout: settings.parser.timeout,

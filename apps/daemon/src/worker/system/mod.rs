@@ -26,6 +26,10 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
     let config = ConfigCacher::new(database.clone());
     let cacher_client = CacherClient::new(settings.redis.url.as_str()).await;
 
+    let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
+    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
+    let stream_producer = StreamProducer::new(&rabbitmq_config, "observe_inactive_devices", shutdown_rx.clone()).await?;
+
     JobPlanBuilder::with_config(WorkerService::System, runtime.plan(shutdown_rx), &config)
         .job(WorkerJob::CleanupProcessedTransactions, {
             let cleanup_config = TransactionCleanupConfig {
@@ -48,9 +52,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
         })
         .job(WorkerJob::ObserveInactiveDevices, {
             let database = database.clone();
-            let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
-            let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
-            let stream_producer = StreamProducer::new(&rabbitmq_config, "observe_inactive_devices").await?;
+            let stream_producer = stream_producer.clone();
             move |_| {
                 let database = database.clone();
                 let stream_producer = stream_producer.clone();

@@ -1,10 +1,8 @@
-use std::str::FromStr;
-
 use diesel::prelude::*;
-use primitives::{Chain, NFTAsset, NFTImages, NFTResource};
+use primitives::{NFTAsset, NFTImages, NFTResource};
 use serde::{Deserialize, Serialize};
 
-use crate::sql_types::NftType;
+use crate::sql_types::{ChainRow, NftType};
 
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::nft_assets)]
@@ -13,7 +11,7 @@ pub struct NftAssetRow {
     pub id: String,
     pub collection_id: String,
     pub contract_address: String,
-    pub chain: String,
+    pub chain: ChainRow,
     pub name: String,
     pub description: String,
     pub token_id: String,
@@ -41,7 +39,7 @@ impl NftAssetRow {
             collection_id: self.collection_id.clone(),
             name: self.name.clone(),
             description: Some(self.description.clone()),
-            chain: Chain::from_str(self.chain.as_str()).unwrap(),
+            chain: self.chain.0,
             contract_address: Some(self.contract_address.clone()),
             token_id: self.token_id.clone(),
             resource: NFTResource {
@@ -63,7 +61,7 @@ impl NftAssetRow {
         Self {
             id: primitive.id.clone(),
             collection_id: primitive.collection_id.clone(),
-            chain: primitive.chain.to_string(),
+            chain: ChainRow::from(primitive.chain),
             name: primitive.name.clone(),
             description: primitive.description.unwrap_or_default(),
             contract_address: primitive.contract_address.unwrap_or_default(),

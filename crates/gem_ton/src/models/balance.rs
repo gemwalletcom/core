@@ -14,10 +14,17 @@ pub struct JettonContent {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JettonInfoMetadata {
-    pub name: String,
-    pub symbol: String,
+    pub name: Option<String>,
+    pub symbol: Option<String>,
     #[serde(deserialize_with = "deserialize_u64_from_str")]
     pub decimals: u64,
+    pub uri: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JettonOffchainMetadata {
+    pub name: String,
+    pub symbol: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

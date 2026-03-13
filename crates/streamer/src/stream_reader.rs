@@ -4,11 +4,8 @@ use futures::StreamExt;
 use gem_tracing::{error_fields, error_with_fields, info_with_fields};
 use lapin::{Channel, Connection, ConnectionProperties, options::*, types::FieldTable};
 use serde::de::DeserializeOwned;
-use tokio::sync::watch;
 
-use crate::{QueueName, Retry, StreamConnection, with_retry};
-
-pub type ShutdownReceiver = watch::Receiver<bool>;
+use crate::{QueueName, Retry, ShutdownReceiver, StreamConnection, with_retry};
 
 #[derive(Clone)]
 pub struct StreamReaderConfig {
@@ -27,17 +24,12 @@ impl StreamReaderConfig {
 pub struct StreamReader {
     config: StreamReaderConfig,
     channel: Channel,
-    connection: Option<StreamConnection>,
 }
 
 impl StreamReader {
-    pub async fn new(config: StreamReaderConfig) -> Result<Self, Box<dyn Error + Send + Sync>> {
-        let channel = with_retry(&config.retry, &config.name, || Self::try_connect(&config)).await?;
-        Ok(Self {
-            config,
-            channel,
-            connection: None,
-        })
+    pub async fn new(config: StreamReaderConfig, shutdown_rx: &ShutdownReceiver) -> Result<Option<Self>, Box<dyn Error + Send + Sync>> {
+        let channel = with_retry(&config.retry, &config.name, shutdown_rx, || Self::try_connect(&config)).await?;
+        Ok(channel.map(|channel| Self { config, channel }))
     }
 
     pub async fn from_connection(connection: &StreamConnection, config: StreamReaderConfig) -> Result<Self, Box<dyn Error + Send + Sync>> {
@@ -47,19 +39,13 @@ impl StreamReader {
             ..config
         };
         let channel = Self::create_channel(connection, config.prefetch).await?;
-        Ok(Self {
-            config,
-            channel,
-            connection: Some(connection.clone()),
-        })
+        Ok(Self { config, channel })
     }
 
     async fn try_connect(config: &StreamReaderConfig) -> Result<Channel, Box<dyn Error + Send + Sync>> {
         let options = ConnectionProperties::default().with_connection_name(config.name.clone().into());
         let connection = Connection::connect(&config.url, options).await?;
-        let channel = connection.create_channel().await?;
-        channel.basic_qos(config.prefetch, BasicQosOptions { global: false }).await?;
-        Ok(channel)
+        Self::configure_channel(connection.create_channel().await?, config.prefetch).await
     }
 
     pub async fn close(self) -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -68,48 +54,23 @@ impl StreamReader {
     }
 
     async fn create_channel(connection: &StreamConnection, prefetch: u16) -> Result<Channel, Box<dyn Error + Send + Sync>> {
-        let channel = connection.create_channel().await?;
+        Self::configure_channel(connection.create_channel().await?, prefetch).await
+    }
+
+    async fn configure_channel(channel: Channel, prefetch: u16) -> Result<Channel, Box<dyn Error + Send + Sync>> {
         channel.basic_qos(prefetch, BasicQosOptions { global: false }).await?;
         Ok(channel)
     }
 
-    async fn try_connect_shared(&self) -> Result<Channel, Box<dyn Error + Send + Sync>> {
-        if let Some(ref conn) = self.connection {
-            return Self::create_channel(conn, self.config.prefetch).await;
-        }
-        Self::try_connect(&self.config).await
-    }
-
     async fn reconnect(&mut self, shutdown_rx: &ShutdownReceiver) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        let mut delay = self.config.retry.delay;
-        let mut attempt: u32 = 0;
-        loop {
-            if *shutdown_rx.borrow() {
-                return Ok(false);
+        let result = with_retry(&self.config.retry, &self.config.name, shutdown_rx, || Self::try_connect(&self.config)).await?;
+
+        match result {
+            Some(channel) => {
+                self.channel = channel;
+                Ok(true)
             }
-            attempt += 1;
-            match self.try_connect_shared().await {
-                Ok(channel) => {
-                    self.channel = channel;
-                    info_with_fields!("rabbitmq reconnected", connection = self.config.name.as_str(), attempt = attempt);
-                    return Ok(true);
-                }
-                Err(err) => {
-                    info_with_fields!(
-                        "rabbitmq reconnect retry",
-                        connection = self.config.name.as_str(),
-                        attempt = attempt,
-                        delay_secs = delay.as_secs(),
-                        error = err.to_string()
-                    );
-                    let mut rx = shutdown_rx.clone();
-                    tokio::select! {
-                        _ = tokio::time::sleep(delay) => {}
-                        _ = rx.changed() => return Ok(false),
-                    }
-                    delay = (delay * 2).min(self.config.retry.timeout);
-                }
-            }
+            None => Ok(false),
         }
     }
 
@@ -167,16 +128,15 @@ impl StreamReader {
         Ok(())
     }
 
-    async fn consume<T, F>(&mut self, consumer: &mut lapin::Consumer, callback: &mut F, shutdown_rx: ShutdownReceiver) -> Result<bool, Box<dyn Error + Send + Sync>>
+    async fn consume<T, F>(&mut self, consumer: &mut lapin::Consumer, callback: &mut F, mut shutdown_rx: ShutdownReceiver) -> Result<bool, Box<dyn Error + Send + Sync>>
     where
         T: DeserializeOwned,
         F: FnMut(T) -> Result<(), Box<dyn Error + Send + Sync>>,
     {
         loop {
-            let mut rx = shutdown_rx.clone();
             let delivery = tokio::select! {
                 d = consumer.next() => d,
-                _ = rx.changed() => return Ok(true),
+                _ = shutdown_rx.changed() => return Ok(true),
             };
 
             match delivery {

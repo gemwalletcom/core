@@ -267,7 +267,7 @@ pub async fn jobs(
                     let price_client = PriceClient::new(database.clone(), cacher_client.clone());
                     let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
                     let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
-                    let stream_producer = StreamProducer::new(&rabbitmq_config, "observed_prices_worker").await?;
+                    let stream_producer = StreamProducer::new(&rabbitmq_config, "observed_prices_worker", streamer::no_shutdown()).await?;
                     let updater = ObservedPricesUpdater::new(cacher_client, price_client, stream_producer, max_observed_assets, min_observers);
                     updater.update().await
                 }
@@ -315,7 +315,7 @@ async fn price_updater_factory(
     let price_client = PriceClient::new(database.clone(), cacher.clone());
     let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
     let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
-    let stream_producer = StreamProducer::new(&rabbitmq_config, "pricer_worker").await?;
+    let stream_producer = StreamProducer::new(&rabbitmq_config, "pricer_worker", streamer::no_shutdown()).await?;
     Ok(PriceUpdater::new(price_client, coingecko_client, stream_producer, price_metrics))
 }
 
@@ -328,7 +328,7 @@ async fn charts_updater_factory(
     let price_client = PriceClient::new(database.clone(), cacher.clone());
     let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
     let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
-    let stream_producer = StreamProducer::new(&rabbitmq_config, "charts_worker").await?;
+    let stream_producer = StreamProducer::new(&rabbitmq_config, "charts_worker", streamer::no_shutdown()).await?;
     Ok(ChartsUpdater::new(price_client, coingecko_client, stream_producer))
 }
 

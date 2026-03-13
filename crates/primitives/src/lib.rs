@@ -116,6 +116,8 @@ pub mod address_formatter;
 pub use self::address_formatter::AddressFormatter;
 pub mod address_name;
 pub use self::address_name::AddressName;
+pub mod verification_status;
+pub use self::verification_status::VerificationStatus;
 pub mod address_status;
 pub use self::address_status::AddressStatus;
 pub mod utxo;
@@ -184,6 +186,8 @@ pub mod markets;
 pub use self::markets::{MarketDominance, Markets, MarketsAssets};
 pub mod diff;
 pub use self::diff::Diff;
+pub mod priority;
+pub use self::priority::{PrioritizedProvider, sort_by_priority_then_amount};
 pub mod swap_provider;
 pub use self::swap_provider::SwapProvider;
 pub mod swap;
@@ -273,6 +277,11 @@ pub mod list_item;
 pub use self::list_item::{CoreEmoji, CoreListItem, CoreListItemBadge, CoreListItemIcon};
 pub mod notification;
 pub use self::notification::InAppNotification;
+pub mod simulation;
+pub use self::simulation::{
+    SimulationBalanceChange, SimulationHeader, SimulationPayloadField, SimulationPayloadFieldDisplay, SimulationPayloadFieldKind, SimulationPayloadFieldType, SimulationResult,
+    SimulationSeverity, SimulationWarning, SimulationWarningType, promote_single_secondary_payload_field,
+};
 pub mod ip_usage_type;
 pub use self::ip_usage_type::IpUsageType;
 pub mod metrics;

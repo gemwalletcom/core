@@ -1,0 +1,40 @@
+{
+  "types": {
+    "EIP712Domain": [
+      { "name": "name", "type": "string" },
+      { "name": "version", "type": "string" },
+      { "name": "chainId", "type": "uint256" },
+      { "name": "verifyingContract", "type": "address" }
+    ],
+    "Inner": [
+      { "name": "flag", "type": "bool" },
+      { "name": "payload", "type": "bytes32" }
+    ],
+    "Group": [
+      { "name": "members", "type": "address[]" },
+      { "name": "name", "type": "string" },
+      { "name": "nested", "type": "Inner" },
+      { "name": "weights", "type": "uint64[3]" }
+    ]
+  },
+  "primaryType": "Group",
+  "domain": {
+    "name": "Test",
+    "version": "1",
+    "chainId": 31337,
+    "verifyingContract": "0x0000000000000000000000000000000000000001"
+  },
+  "message": {
+    "members": [
+      "0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1",
+      "0xffcf8fdee72ac11b5c542428b35eef5769c409f0",
+      "0x627306090abab3a6e1400e9345bc60c78a8bef57"
+    ],
+    "name": "Team Rocket",
+    "nested": {
+      "flag": true,
+      "payload": "0x0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"
+    },
+    "weights": ["1", "2", "3"]
+  }
+}

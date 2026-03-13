@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
 
-use crate::{AssetLink, Chain};
+use crate::{AssetLink, Chain, VerificationStatus};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -34,7 +34,11 @@ pub struct NFTCollection {
     pub chain: Chain,
     pub contract_address: String,
     pub images: NFTImages,
+    // TODO: Remove after all Rust callers and downstream indexes migrate to `status`.
+    #[serde(default)]
+    #[typeshare(skip)]
     pub is_verified: bool,
+    pub status: VerificationStatus,
     pub links: Vec<AssetLink>,
 }
 
