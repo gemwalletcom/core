@@ -9,8 +9,8 @@ pub trait PrioritizedProvider {
 pub fn sort_by_priority_then_amount<P: PrioritizedProvider>(a_id: &str, b_id: &str, a_amount: f64, b_amount: f64, providers: &[P], ascending: bool) -> Ordering {
     let a_provider = providers.iter().find(|p| p.provider_id() == a_id);
     let b_provider = providers.iter().find(|p| p.provider_id() == b_id);
-    let a_pri = a_provider.map(|p| p.priority());
-    let b_pri = b_provider.map(|p| p.priority());
+    let a_pri = a_provider.map(|p| p.priority()).filter(|&p| p > 0);
+    let b_pri = b_provider.map(|p| p.priority()).filter(|&p| p > 0);
 
     let by_amount = || {
         let ord = a_amount.partial_cmp(&b_amount).unwrap_or(Ordering::Equal);
@@ -121,5 +121,12 @@ mod tests {
         let providers = vec![MockProvider::new("a", 1, 0), MockProvider::new("b", 1, 0)];
         let result = sort_by_priority_then_amount("a", "b", 200.0, 100.0, &providers, false);
         assert_eq!(result, Ordering::Less);
+    }
+
+    #[test]
+    fn test_priority_zero_treated_as_unranked() {
+        let providers = vec![MockProvider::new("a", 0, 0), MockProvider::new("b", 1, 0)];
+        let result = sort_by_priority_then_amount("a", "b", 200.0, 100.0, &providers, false);
+        assert_eq!(result, Ordering::Greater);
     }
 }

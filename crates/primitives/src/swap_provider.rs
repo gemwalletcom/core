@@ -118,7 +118,7 @@ impl SwapProvider {
     pub fn threshold_bps(&self) -> i32 {
         match self.priority() {
             1 => 0,
-            _ => 200,
+            _ => 100,
         }
     }
 }
@@ -164,7 +164,7 @@ mod tests {
     #[test]
     fn test_threshold_bps() {
         assert_eq!(SwapProvider::UniswapV3.threshold_bps(), 0);
-        assert_eq!(SwapProvider::Thorchain.threshold_bps(), 200);
-        assert_eq!(SwapProvider::Okx.threshold_bps(), 200);
+        assert_eq!(SwapProvider::Thorchain.threshold_bps(), 100);
+        assert_eq!(SwapProvider::Okx.threshold_bps(), 100);
     }
 }
