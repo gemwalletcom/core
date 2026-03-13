@@ -3,6 +3,7 @@ use crate::{
     SwapperQuoteData, across, alien::RpcProvider, chainflip, config::DEFAULT_STABLE_SWAP_REFERRAL_BPS, cross_chain::VaultAddresses, hyperliquid, jupiter, near_intents,
     proxy::provider_factory, relay, thorchain, uniswap,
 };
+use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use primitives::{AssetId, Chain, EVMChain, SwapProvider, sort_by_priority_then_amount};
 use std::{
@@ -218,9 +219,9 @@ impl GemSwapper {
 
         let providers = SwapProvider::all();
         quotes.sort_by(|a, b| {
-            let a_amount = a.to_value.parse::<f64>().unwrap_or(0.0);
-            let b_amount = b.to_value.parse::<f64>().unwrap_or(0.0);
-            sort_by_priority_then_amount(a.data.provider.id.id(), b.data.provider.id.id(), a_amount, b_amount, &providers, false)
+            let a_amount = a.to_value.parse::<BigInt>().unwrap_or_default();
+            let b_amount = b.to_value.parse::<BigInt>().unwrap_or_default();
+            sort_by_priority_then_amount(a.data.provider.id.id(), b.data.provider.id.id(), &a_amount, &b_amount, &providers, false)
         });
 
         Ok(quotes)

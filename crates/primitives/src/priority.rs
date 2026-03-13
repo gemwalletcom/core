@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::ops::{Mul, Sub};
 
 pub trait PrioritizedProvider {
     fn provider_id(&self) -> &str;
@@ -6,14 +7,20 @@ pub trait PrioritizedProvider {
     fn threshold_bps(&self) -> i32;
 }
 
-pub fn sort_by_priority_then_amount<P: PrioritizedProvider>(a_id: &str, b_id: &str, a_amount: f64, b_amount: f64, providers: &[P], ascending: bool) -> Ordering {
+pub fn sort_by_priority_then_amount<P, A>(a_id: &str, b_id: &str, a_amount: &A, b_amount: &A, providers: &[P], ascending: bool) -> Ordering
+where
+    P: PrioritizedProvider,
+    A: PartialOrd + Clone + Sub<Output = A> + Mul<Output = A> + From<i32>,
+{
     let a_provider = providers.iter().find(|p| p.provider_id() == a_id);
     let b_provider = providers.iter().find(|p| p.provider_id() == b_id);
     let a_pri = a_provider.map(|p| p.priority()).filter(|&p| p > 0);
     let b_pri = b_provider.map(|p| p.priority()).filter(|&p| p > 0);
 
+    let cmp_amount = |x: &A, y: &A| x.partial_cmp(y).unwrap_or(Ordering::Equal);
+
     let by_amount = || {
-        let ord = a_amount.partial_cmp(&b_amount).unwrap_or(Ordering::Equal);
+        let ord = cmp_amount(a_amount, b_amount);
         if ascending { ord } else { ord.reverse() }
     };
 
@@ -32,14 +39,18 @@ pub fn sort_by_priority_then_amount<P: PrioritizedProvider>(a_id: &str, b_id: &s
     }
 }
 
-fn exceeds_threshold<P: PrioritizedProvider>(provider: &P, a: f64, b: f64, ascending: bool) -> bool {
+fn exceeds_threshold<P, A>(provider: &P, a: &A, b: &A, ascending: bool) -> bool
+where
+    P: PrioritizedProvider,
+    A: PartialOrd + Clone + Sub<Output = A> + Mul<Output = A> + From<i32>,
+{
     let bps = provider.threshold_bps();
     if bps == 0 {
         return false;
     }
-    let better = if ascending { a.min(b) } else { a.max(b) };
-    let diff = (a - b).abs() / better;
-    diff > bps as f64 / 10000.0
+    let better = if ascending == (a < b) { a } else { b }.clone();
+    let diff = if a > b { a.clone() - b.clone() } else { b.clone() - a.clone() };
+    diff * A::from(10000) > A::from(bps) * better
 }
 
 #[cfg(test)]
@@ -77,56 +88,56 @@ mod tests {
     #[test]
     fn test_no_priority_sorts_by_amount_desc() {
         let providers: Vec<MockProvider> = vec![];
-        let result = sort_by_priority_then_amount("a", "b", 100.0, 200.0, &providers, false);
+        let result = sort_by_priority_then_amount("a", "b", &100.0, &200.0, &providers, false);
         assert_eq!(result, Ordering::Greater);
     }
 
     #[test]
     fn test_priority_wins_over_amount() {
         let providers = vec![MockProvider::new("a", 1, 0), MockProvider::new("b", 2, 0)];
-        let result = sort_by_priority_then_amount("a", "b", 100.0, 200.0, &providers, false);
+        let result = sort_by_priority_then_amount("a", "b", &100.0, &200.0, &providers, false);
         assert_eq!(result, Ordering::Less);
     }
 
     #[test]
     fn test_threshold_override() {
         let providers = vec![MockProvider::new("a", 1, 500), MockProvider::new("b", 2, 0)];
-        let result = sort_by_priority_then_amount("a", "b", 100.0, 200.0, &providers, false);
+        let result = sort_by_priority_then_amount("a", "b", &100.0, &200.0, &providers, false);
         assert_eq!(result, Ordering::Greater);
     }
 
     #[test]
     fn test_threshold_not_exceeded() {
         let providers = vec![MockProvider::new("a", 1, 5000), MockProvider::new("b", 2, 0)];
-        let result = sort_by_priority_then_amount("a", "b", 100.0, 110.0, &providers, false);
+        let result = sort_by_priority_then_amount("a", "b", &100.0, &110.0, &providers, false);
         assert_eq!(result, Ordering::Less);
     }
 
     #[test]
     fn test_unprioritized_sorted_after_prioritized() {
         let providers = vec![MockProvider::new("a", 1, 0)];
-        let result = sort_by_priority_then_amount("a", "b", 50.0, 200.0, &providers, false);
+        let result = sort_by_priority_then_amount("a", "b", &50.0, &200.0, &providers, false);
         assert_eq!(result, Ordering::Less);
     }
 
     #[test]
     fn test_ascending_order() {
         let providers: Vec<MockProvider> = vec![];
-        let result = sort_by_priority_then_amount("a", "b", 100.0, 200.0, &providers, true);
+        let result = sort_by_priority_then_amount("a", "b", &100.0, &200.0, &providers, true);
         assert_eq!(result, Ordering::Less);
     }
 
     #[test]
     fn test_same_priority_sorts_by_amount() {
         let providers = vec![MockProvider::new("a", 1, 0), MockProvider::new("b", 1, 0)];
-        let result = sort_by_priority_then_amount("a", "b", 200.0, 100.0, &providers, false);
+        let result = sort_by_priority_then_amount("a", "b", &200.0, &100.0, &providers, false);
         assert_eq!(result, Ordering::Less);
     }
 
     #[test]
     fn test_priority_zero_treated_as_unranked() {
         let providers = vec![MockProvider::new("a", 0, 0), MockProvider::new("b", 1, 0)];
-        let result = sort_by_priority_then_amount("a", "b", 200.0, 100.0, &providers, false);
+        let result = sort_by_priority_then_amount("a", "b", &200.0, &100.0, &providers, false);
         assert_eq!(result, Ordering::Greater);
     }
 }

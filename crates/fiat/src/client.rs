@@ -12,8 +12,8 @@ use crate::{
 };
 use futures::future::join_all;
 use primitives::{
-    Asset, ConfigKey, FiatAssets, FiatProvider as PrimitiveFiatProvider, FiatProviderCountry, FiatQuote, FiatQuoteError as PrimitiveFiatQuoteError, FiatQuoteOldRequest,
-    FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatQuotes, FiatQuotesOld,
+    Asset, ConfigKey, FiatAssets, FiatProvider as PrimitiveFiatProvider, FiatProviderCountry, FiatQuote, FiatQuoteError as PrimitiveFiatQuoteError, FiatQuoteOld,
+    FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatQuotes, FiatQuotesOld,
 };
 use reqwest::Client as RequestClient;
 use storage::{
@@ -465,10 +465,10 @@ impl FiatClient {
         countries: Vec<FiatProviderCountry>,
         provider_priorities: &[PrimitiveFiatProvider],
         quote_fn: F,
-        sort_fn: fn(&primitives::FiatQuoteOld, &primitives::FiatQuoteOld, &[PrimitiveFiatProvider]) -> std::cmp::Ordering,
+        sort_fn: fn(&FiatQuoteOld, &FiatQuoteOld, &[PrimitiveFiatProvider]) -> std::cmp::Ordering,
     ) -> Result<FiatQuotesOld, Box<dyn Error + Send + Sync>>
     where
-        F: Fn(&dyn FiatProvider, FiatQuoteOldRequest, FiatMapping) -> futures::future::BoxFuture<'_, Result<primitives::FiatQuoteOld, Box<dyn Error + Send + Sync>>> + Send + Sync,
+        F: Fn(&dyn FiatProvider, FiatQuoteOldRequest, FiatMapping) -> futures::future::BoxFuture<'_, Result<FiatQuoteOld, Box<dyn Error + Send + Sync>>> + Send + Sync,
     {
         let providers = self.get_providers_for_request(&request);
         let futures = providers.into_iter().filter_map(|provider| {
@@ -533,26 +533,25 @@ fn precision(val: f64, precision: usize) -> f64 {
 
 use primitives::sort_by_priority_then_amount;
 
-fn sort_by_crypto_amount(a: &primitives::FiatQuoteOld, b: &primitives::FiatQuoteOld, providers: &[PrimitiveFiatProvider]) -> std::cmp::Ordering {
-    sort_by_priority_then_amount(&a.provider.id, &b.provider.id, a.crypto_amount, b.crypto_amount, providers, false)
+fn sort_by_crypto_amount(a: &FiatQuoteOld, b: &FiatQuoteOld, providers: &[PrimitiveFiatProvider]) -> std::cmp::Ordering {
+    sort_by_priority_then_amount(&a.provider.id, &b.provider.id, &a.crypto_amount, &b.crypto_amount, providers, false)
 }
 
-fn sort_by_fiat_amount(a: &primitives::FiatQuoteOld, b: &primitives::FiatQuoteOld, providers: &[PrimitiveFiatProvider]) -> std::cmp::Ordering {
-    sort_by_priority_then_amount(&a.provider.id, &b.provider.id, a.fiat_amount, b.fiat_amount, providers, false)
+fn sort_by_fiat_amount(a: &FiatQuoteOld, b: &FiatQuoteOld, providers: &[PrimitiveFiatProvider]) -> std::cmp::Ordering {
+    sort_by_priority_then_amount(&a.provider.id, &b.provider.id, &a.fiat_amount, &b.fiat_amount, providers, false)
 }
 
 fn sort_quotes_by_crypto_amount_desc(a: &FiatQuote, b: &FiatQuote, providers: &[PrimitiveFiatProvider]) -> std::cmp::Ordering {
-    sort_by_priority_then_amount(&a.provider.id, &b.provider.id, a.crypto_amount, b.crypto_amount, providers, false)
+    sort_by_priority_then_amount(&a.provider.id, &b.provider.id, &a.crypto_amount, &b.crypto_amount, providers, false)
 }
 
 fn sort_quotes_by_crypto_amount_asc(a: &FiatQuote, b: &FiatQuote, providers: &[PrimitiveFiatProvider]) -> std::cmp::Ordering {
-    sort_by_priority_then_amount(&a.provider.id, &b.provider.id, a.crypto_amount, b.crypto_amount, providers, true)
+    sort_by_priority_then_amount(&a.provider.id, &b.provider.id, &a.crypto_amount, &b.crypto_amount, providers, true)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::FiatQuoteOld;
 
     #[test]
     fn test_precision() {
