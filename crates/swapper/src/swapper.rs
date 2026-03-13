@@ -525,9 +525,9 @@ mod tests {
             sort_by_priority_then_amount(a.data.provider.id.id(), b.data.provider.id.id(), &a_amount, &b_amount, &providers, ascending)
         });
 
-        assert_eq!(quotes[0].data.provider.id, SwapperProvider::UniswapV3); // priority 1
-        assert_eq!(quotes[1].data.provider.id, SwapperProvider::Thorchain); // priority 2
-        assert_eq!(quotes[2].data.provider.id, SwapperProvider::Okx); // priority 3
+        assert_eq!(quotes[0].data.provider.id, SwapperProvider::UniswapV3);
+        assert_eq!(quotes[1].data.provider.id, SwapperProvider::Thorchain);
+        assert_eq!(quotes[2].data.provider.id, SwapperProvider::Okx);
     }
 
     #[test]
@@ -546,7 +546,7 @@ mod tests {
             sort_by_priority_then_amount(a.data.provider.id.id(), b.data.provider.id.id(), &a_amount, &b_amount, &providers, ascending)
         });
 
-        assert_eq!(quotes[0].data.provider.id, SwapperProvider::Okx); // amount wins
+        assert_eq!(quotes[0].data.provider.id, SwapperProvider::Okx);
         assert_eq!(quotes[1].data.provider.id, SwapperProvider::Thorchain);
     }
 }
