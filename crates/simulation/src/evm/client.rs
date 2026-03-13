@@ -34,7 +34,7 @@ impl<'a, C: Client + Clone> SimulationClient<'a, C> {
     }
 
     async fn simulate_approval(&self, approval: ApprovalRequest) -> Result<SimulationResult, Box<dyn Error + Send + Sync>> {
-        let warnings = self.approval_warnings(&approval).await?;
+        let warnings = self.approval_warnings(&approval).await?.into_iter().chain(approval.expiration_warning()).collect();
         Ok(approval.build_simulation_result(warnings))
     }
 
@@ -136,6 +136,41 @@ mod tests {
         Ok(())
     }
 
+    #[tokio::test]
+    async fn eip712_permit_with_excessive_expiration_keeps_warning_with_client() -> Result<(), Box<dyn Error + Send + Sync>> {
+        let json: Value = serde_json::from_str(include_str!("../../testdata/permit_excessive_expiration.json"))?;
+        let message = parse_eip712_json(&json)?;
+        let client = ethereum_client("0x1234");
+
+        let result = SimulationClient::new(&client).simulate_eip712_message(Chain::Ethereum, &message).await?;
+
+        assert_eq!(result.warnings.len(), 2);
+        assert_eq!(result.warnings[1].warning, SimulationWarningType::ValidationError);
+        assert_eq!(result.warnings[1].message.as_deref(), Some("Excessive expiration"));
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn eip712_permit_batch_with_externally_owned_spender_adds_critical_warning() -> Result<(), Box<dyn Error + Send + Sync>> {
+        let json: Value = serde_json::from_str(include_str!("../../testdata/permit_batch_multiple_tokens.json"))?;
+        let message = parse_eip712_json(&json)?;
+        let client = ethereum_client("0x");
+
+        let result = SimulationClient::new(&client).simulate_eip712_message(Chain::Ethereum, &message).await?;
+
+        assert_eq!(result.warnings.len(), 1);
+        assert_eq!(
+            result.warnings.first(),
+            Some(&SimulationWarning {
+                severity: SimulationSeverity::Critical,
+                warning: SimulationWarningType::ExternallyOwnedSpender,
+                message: None,
+            })
+        );
+
+        Ok(())
+    }
     fn ethereum_client(code: &str) -> EthereumClient<gem_client::testkit::MockClient> {
         let code = code.to_string();
         let client = mock_jsonrpc_client(move |method, _| match method {

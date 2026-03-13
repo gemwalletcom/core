@@ -1,0 +1,11 @@
+{
+  "types": {
+    "EIP712Domain": [],
+    "Simple": [
+      { "name": "value", "type": "uint256" }
+    ]
+  },
+  "primaryType": "Simple",
+  "domain": {},
+  "message": null
+}
