@@ -100,6 +100,23 @@ struct LocalKeystoreTests {
     }
 
     @Test
+    func exportEthereumPrivateKey() async {
+        await #expect(throws: Never.self) {
+            let keystore = LocalKeystore.mock()
+            let hex = "0x30df0ffc2b43717f4653c2a1e827e9dfb3d9364e019cc60092496cd4997d5d6e"
+            let wallet = try await keystore.importWallet(
+                name: "Test Ethereum",
+                type: .privateKey(text: hex, chain: .ethereum),
+                isWalletsEmpty: true,
+                source: .import
+            )
+
+            let exported = try await keystore.getPrivateKeyEncoded(wallet: wallet, chain: .ethereum)
+            #expect(exported == hex)
+        }
+    }
+
+    @Test
     func signSolanaMessage() async throws {
         let keystore = LocalKeystore.mock()
         let wallet = try await keystore.importWallet(

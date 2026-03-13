@@ -2,6 +2,7 @@ import Foundation
 import GemstonePrimitives
 import Primitives
 import WalletCore
+internal import func Gemstone.encodePrivateKey
 
 public final class LocalKeystore: Keystore, @unchecked Sendable {
     private let walletKeyStore: WalletKeyStore
@@ -116,12 +117,7 @@ public final class LocalKeystore: Keystore, @unchecked Sendable {
     public func getPrivateKeyEncoded(wallet: Primitives.Wallet, chain: Chain) async throws -> String {
         var data = try await getPrivateKey(wallet: wallet, chain: chain)
         defer { data.zeroize() }
-        switch chain.type {
-        case .bitcoin, .solana:
-            return Base58.encodeNoCheck(data: data)
-        default:
-            return data.hexString.append0x
-        }
+        return try encodePrivateKey(chain: chain.rawValue, privateKey: data)
     }
 
     public func getMnemonic(wallet: Primitives.Wallet) async throws -> [String] {
