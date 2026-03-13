@@ -805,4 +805,105 @@ mod tests {
         assert_eq!(summary.margin_usage, 0.2);
         assert_eq!(summary.unrealized_pnl, 0.0);
     }
+
+    #[test]
+    fn test_map_account_summary_aggregate() {
+        use crate::testkit::*;
+
+        let positions = vec![AssetPositions::mock(), AssetPositions::mock()];
+        let summary = map_account_summary_aggregate(&positions);
+
+        assert_eq!(summary.account_value, 20000.0);
+        assert_eq!(summary.account_leverage, 0.5);
+        assert_eq!(summary.margin_usage, 0.2);
+        assert_eq!(summary.unrealized_pnl, 0.0);
+    }
+
+    #[test]
+    fn test_perp_asset_index() {
+        assert_eq!(perp_asset_index(0, 0), 0);
+        assert_eq!(perp_asset_index(0, 5), 5);
+        assert_eq!(perp_asset_index(1, 0), 110_000);
+        assert_eq!(perp_asset_index(1, 3), 110_003);
+        assert_eq!(perp_asset_index(2, 0), 120_000);
+        assert_eq!(perp_asset_index(2, 7), 120_007);
+    }
+
+    #[test]
+    fn test_merge_chart_histories() {
+        use chrono::{TimeZone, Utc};
+
+        let d1 = Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap();
+        let d2 = Utc.with_ymd_and_hms(2024, 1, 2, 0, 0, 0).unwrap();
+        let d3 = Utc.with_ymd_and_hms(2024, 1, 3, 0, 0, 0).unwrap();
+
+        let histories = vec![
+            vec![ChartDateValue { date: d1, value: 100.0 }, ChartDateValue { date: d2, value: 200.0 }],
+            vec![ChartDateValue { date: d1, value: 50.0 }, ChartDateValue { date: d3, value: 300.0 }],
+        ];
+
+        let merged = merge_chart_histories(histories);
+        assert_eq!(merged.len(), 3);
+        assert_eq!(merged[0].value, 150.0);
+        assert_eq!(merged[1].value, 200.0);
+        assert_eq!(merged[2].value, 300.0);
+    }
+
+    #[test]
+    fn test_merge_perpetual_portfolios() {
+        use chrono::{TimeZone, Utc};
+
+        let d1 = Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap();
+
+        let portfolios = vec![
+            PerpetualPortfolio {
+                day: Some(PerpetualPortfolioTimeframeData {
+                    account_value_history: vec![ChartDateValue { date: d1, value: 100.0 }],
+                    pnl_history: vec![ChartDateValue { date: d1, value: 10.0 }],
+                    volume: 500.0,
+                }),
+                week: None,
+                month: None,
+                all_time: None,
+                account_summary: None,
+            },
+            PerpetualPortfolio {
+                day: Some(PerpetualPortfolioTimeframeData {
+                    account_value_history: vec![ChartDateValue { date: d1, value: 200.0 }],
+                    pnl_history: vec![ChartDateValue { date: d1, value: 20.0 }],
+                    volume: 300.0,
+                }),
+                week: None,
+                month: None,
+                all_time: None,
+                account_summary: None,
+            },
+        ];
+
+        let summary = PerpetualAccountSummary {
+            account_value: 1000.0,
+            account_leverage: 2.0,
+            margin_usage: 0.5,
+            unrealized_pnl: 30.0,
+        };
+
+        let merged = merge_perpetual_portfolios(portfolios, Some(summary));
+
+        let day = merged.day.unwrap();
+        assert_eq!(day.volume, 800.0);
+        assert_eq!(day.account_value_history.len(), 1);
+        assert_eq!(day.account_value_history[0].value, 300.0);
+        assert_eq!(day.pnl_history[0].value, 30.0);
+
+        assert!(merged.week.is_none());
+
+        let summary = merged.account_summary.unwrap();
+        assert_eq!(summary.account_value, 1000.0);
+    }
+
+    #[test]
+    fn test_merge_portfolio_timeframes_empty() {
+        let result = merge_portfolio_timeframes(vec![]);
+        assert!(result.is_none());
+    }
 }
