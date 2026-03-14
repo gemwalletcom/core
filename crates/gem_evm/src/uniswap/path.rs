@@ -92,6 +92,7 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
         EVMChain::World => "0x03C7054BCB39f7b2e5B2c7AcB37583e32D70Cfa3",
         EVMChain::Sonic => "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c",
         EVMChain::Linea => "0x3aAB2285ddcDdaD8edf438C1bAB47e1a9D05a9b4",
+        EVMChain::Rootstock => "0x542fda317318ebf1d3deaf76e0b632741a7e677d", // wrbtc
         _ => "", // None
     };
 
@@ -118,6 +119,7 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
         EVMChain::Monad => "0x754704Bc059F8C67012fEd69BC8A327a5aafb603",
         EVMChain::OpBNB | EVMChain::Plasma => "",
         EVMChain::Stable => "0x8a2b28364102bea189d99a475c494330ef2bdd0b", // USDC.e (Stargate)
+        EVMChain::Rootstock => "0x74c9f2b00581f1b11aa7ff05aa9f608b7389de67", // USDC.e (Stargate)
         _ => panic!("USDC is not configured for this chain"),
     };
 
@@ -143,6 +145,7 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
         EVMChain::Plasma => "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb", // USDT0
         EVMChain::Monad => "0xe7cd86e13AC4309349F30B3435a9d337750fC82D",  // USDT0
         EVMChain::Stable => "0x779Ded0c9e1022225f8E0630b35a9b54bE713736", // USDT0
+        EVMChain::Rootstock => "0x779ded0c9e1022225f8e0630b35a9b54be713736", // USDT0
         EVMChain::Blast | EVMChain::World => "",                          // None
         _ => panic!("USDT is not configured for this chain"),
     };
