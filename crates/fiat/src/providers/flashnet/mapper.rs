@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use number_formatter::BigNumberFormatter;
 use primitives::currency::Currency;
-use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
+use primitives::fiat_assets::FiatAssetLimits;
+use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus, PaymentType};
 
 use crate::model::{FiatProviderAsset, filter_token_id};
 
@@ -47,7 +48,12 @@ fn map_asset(route: FlashnetRoute) -> Option<FiatProviderAsset> {
         is_buy_enabled: true,
         is_sell_enabled: false,
         unsupported_countries: Some(HashMap::new()),
-        buy_limits: vec![],
+        buy_limits: vec![FiatAssetLimits {
+            currency: Currency::USD,
+            payment_type: PaymentType::CashApp,
+            min_amount: Some(1.0),
+            max_amount: Some(500.0),
+        }],
         sell_limits: vec![],
     })
 }
