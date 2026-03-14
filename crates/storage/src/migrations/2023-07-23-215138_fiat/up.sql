@@ -6,6 +6,7 @@ CREATE TABLE fiat_providers (
     sell_enabled BOOLEAN NOT NULL DEFAULT TRUE,
     priority INTEGER NULL,
     priority_threshold_bps INTEGER NULL,
+    payment_methods jsonb NOT NULL DEFAULT '[]'::jsonb,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp
 );

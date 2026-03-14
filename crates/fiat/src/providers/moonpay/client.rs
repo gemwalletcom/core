@@ -131,7 +131,7 @@ impl MoonPayClient {
         }
         let enabled = !asset.is_suspended.unwrap_or(true);
 
-        let payment_types = PaymentType::all();
+        let payment_types = [PaymentType::Card, PaymentType::GooglePay, PaymentType::ApplePay];
 
         let buy_limits = if asset.min_buy_amount.is_some() || asset.max_buy_amount.is_some() {
             payment_types

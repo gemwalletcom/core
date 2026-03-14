@@ -272,6 +272,7 @@ impl FiatClient {
                 let mapping = mapping.clone();
                 let country_code = ip_address_info.clone().alpha2;
                 let provider_id_clone = provider_id.clone();
+                let db_payment_methods = db_provider.payment_methods.clone();
 
                 async move {
                     if !countries.contains(&country_code) {
@@ -303,6 +304,13 @@ impl FiatClient {
                     }
                     .map_err(|e| (provider_id_clone.clone(), e))?;
                     let latency = start.elapsed().as_millis() as u64;
+                    let payment_methods = if !response.payment_methods.is_empty() {
+                        response.payment_methods
+                    } else if !db_payment_methods.is_empty() {
+                        db_payment_methods
+                    } else {
+                        provider.payment_methods().await
+                    };
                     let quote = FiatQuote::new(
                         response.quote_id,
                         asset,
@@ -312,6 +320,7 @@ impl FiatClient {
                         quote_request.currency,
                         response.crypto_amount,
                         latency,
+                        payment_methods,
                     );
                     Ok((
                         provider_id_clone,

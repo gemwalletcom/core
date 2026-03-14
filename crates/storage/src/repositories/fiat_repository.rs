@@ -22,6 +22,7 @@ pub trait FiatRepository {
     fn add_fiat_quotes(&mut self, quotes: Vec<crate::models::FiatQuoteRow>) -> Result<usize, DatabaseError>;
     fn get_fiat_quote(&mut self, quote_id: &str) -> Result<crate::models::FiatQuoteRow, DatabaseError>;
     fn add_fiat_quote_request(&mut self, request: crate::models::FiatQuoteRequestRow) -> Result<usize, DatabaseError>;
+    fn update_fiat_provider_payment_methods(&mut self, provider_id: &str, values: serde_json::Value) -> Result<usize, DatabaseError>;
 }
 
 impl FiatRepository for DatabaseClient {
@@ -90,5 +91,9 @@ impl FiatRepository for DatabaseClient {
 
     fn add_fiat_quote_request(&mut self, request: crate::models::FiatQuoteRequestRow) -> Result<usize, DatabaseError> {
         Ok(FiatStore::add_fiat_quote_request(self, request)?)
+    }
+
+    fn update_fiat_provider_payment_methods(&mut self, provider_id: &str, values: serde_json::Value) -> Result<usize, DatabaseError> {
+        Ok(FiatStore::update_fiat_provider_payment_methods(self, provider_id, values)?)
     }
 }

@@ -1,4 +1,4 @@
-use crate::PrioritizedProvider;
+use crate::{PaymentType, PrioritizedProvider};
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
@@ -26,6 +26,7 @@ pub struct FiatProvider {
     #[serde(skip)]
     #[typeshare(skip)]
     pub sell_enabled: bool,
+    pub payment_methods: Vec<PaymentType>,
 }
 
 impl FiatProvider {
@@ -92,6 +93,7 @@ impl FiatProviderName {
             enabled: true,
             buy_enabled: true,
             sell_enabled: true,
+            payment_methods: vec![],
         }
     }
 

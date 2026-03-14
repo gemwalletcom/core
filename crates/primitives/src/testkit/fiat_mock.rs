@@ -68,6 +68,7 @@ impl FiatProvider {
             enabled: true,
             buy_enabled: true,
             sell_enabled: true,
+            payment_methods: vec![],
         }
     }
 
@@ -81,6 +82,7 @@ impl FiatProvider {
             enabled: true,
             buy_enabled: true,
             sell_enabled: true,
+            payment_methods: vec![],
         }
     }
 }
@@ -110,6 +112,7 @@ impl FiatQuote {
             fiat_currency: "USD".to_string(),
             crypto_amount: 0.001,
             latency: 0,
+            payment_methods: vec![PaymentType::Card],
         }
     }
 }
@@ -120,6 +123,7 @@ impl FiatQuoteResponse {
             quote_id: quote_id.to_string(),
             fiat_amount,
             crypto_amount,
+            payment_methods: vec![],
         }
     }
 }

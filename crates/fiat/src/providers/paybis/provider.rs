@@ -11,13 +11,17 @@ use super::{
     client::PaybisClient,
     mapper::{map_assets, map_process_webhook},
 };
-use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatTransaction};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatTransaction, PaymentType};
 use streamer::FiatWebhook;
 
 #[async_trait]
 impl FiatProvider for PaybisClient {
     fn name(&self) -> FiatProviderName {
         Self::NAME
+    }
+
+    async fn payment_methods(&self) -> Vec<PaymentType> {
+        vec![PaymentType::Card]
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {

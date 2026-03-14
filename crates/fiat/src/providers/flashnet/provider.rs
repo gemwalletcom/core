@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use async_trait::async_trait;
-use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatTransaction};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatTransaction, PaymentType};
 use streamer::FiatWebhook;
 use uuid::Uuid;
 
@@ -18,6 +18,10 @@ use super::{
 impl FiatProvider for FlashnetClient {
     fn name(&self) -> FiatProviderName {
         Self::NAME
+    }
+
+    async fn payment_methods(&self) -> Vec<PaymentType> {
+        vec![PaymentType::CashApp]
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn Error + Send + Sync>> {

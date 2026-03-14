@@ -4,6 +4,7 @@ use crate::model::{FiatMapping, FiatProviderAsset};
 use async_trait::async_trait;
 use primitives::{
     FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuoteOld, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatSellQuote, FiatTransaction,
+    PaymentType,
 };
 use streamer::FiatWebhook;
 
@@ -28,6 +29,10 @@ pub trait FiatProvider: Send + Sync {
     async fn get_quote_buy(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn std::error::Error + Send + Sync>>;
     async fn get_quote_sell(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn std::error::Error + Send + Sync>>;
     async fn get_quote_url(&self, data: FiatQuoteUrlData) -> Result<FiatQuoteUrl, Box<dyn std::error::Error + Send + Sync>>;
+
+    async fn payment_methods(&self) -> Vec<PaymentType> {
+        vec![PaymentType::Card, PaymentType::ApplePay, PaymentType::GooglePay]
+    }
 }
 
 #[async_trait]
@@ -72,5 +77,9 @@ where
 
     async fn get_quote_url(&self, data: FiatQuoteUrlData) -> Result<FiatQuoteUrl, Box<dyn std::error::Error + Send + Sync>> {
         (**self).get_quote_url(data).await
+    }
+
+    async fn payment_methods(&self) -> Vec<PaymentType> {
+        (**self).payment_methods().await
     }
 }

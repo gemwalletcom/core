@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use crate::DatabaseError;
 use diesel::prelude::*;
-use primitives::{FiatAsset, FiatProvider, FiatProviderCountry, FiatProviderName, FiatQuote, FiatRate, FiatTransaction, fiat_assets::FiatAssetLimits};
+use primitives::{FiatAsset, FiatProvider, FiatProviderCountry, FiatProviderName, FiatQuote, FiatRate, FiatTransaction, PaymentType, fiat_assets::FiatAssetLimits};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
@@ -109,6 +109,7 @@ pub struct FiatProviderRow {
     pub sell_enabled: bool,
     pub priority: Option<i32>,
     pub priority_threshold_bps: Option<i32>,
+    pub payment_methods: serde_json::Value,
 }
 
 impl FiatProviderRow {
@@ -121,11 +122,13 @@ impl FiatProviderRow {
             sell_enabled: true,
             priority: None,
             priority_threshold_bps: None,
+            payment_methods: serde_json::to_value(Vec::<PaymentType>::new()).unwrap(),
         }
     }
 
     pub fn as_primitive(&self) -> Result<FiatProvider, DatabaseError> {
         let provider = FiatProviderName::from_str(&self.id).map_err(|e| DatabaseError::Error(e.to_string()))?;
+        let payment_methods: Vec<PaymentType> = serde_json::from_value(self.payment_methods.clone()).unwrap_or_default();
 
         Ok(FiatProvider {
             id: provider,
@@ -136,6 +139,7 @@ impl FiatProviderRow {
             enabled: self.enabled,
             buy_enabled: self.buy_enabled,
             sell_enabled: self.sell_enabled,
+            payment_methods,
         })
     }
 

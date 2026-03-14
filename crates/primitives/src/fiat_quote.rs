@@ -1,4 +1,4 @@
-use crate::{Asset, FiatQuoteType, fiat_provider::FiatProvider};
+use crate::{Asset, FiatQuoteType, PaymentType, fiat_provider::FiatProvider};
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
@@ -30,10 +30,21 @@ pub struct FiatQuote {
     pub crypto_amount: f64,
     #[typeshare(skip)]
     pub latency: u64,
+    pub payment_methods: Vec<PaymentType>,
 }
 
 impl FiatQuote {
-    pub fn new(id: String, asset: Asset, provider: FiatProvider, quote_type: FiatQuoteType, fiat_amount: f64, fiat_currency: String, crypto_amount: f64, latency: u64) -> Self {
+    pub fn new(
+        id: String,
+        asset: Asset,
+        provider: FiatProvider,
+        quote_type: FiatQuoteType,
+        fiat_amount: f64,
+        fiat_currency: String,
+        crypto_amount: f64,
+        latency: u64,
+        payment_methods: Vec<PaymentType>,
+    ) -> Self {
         Self {
             id,
             asset,
@@ -43,6 +54,7 @@ impl FiatQuote {
             fiat_currency,
             crypto_amount,
             latency,
+            payment_methods,
         }
     }
 }
@@ -105,6 +117,7 @@ pub struct FiatQuoteResponse {
     pub quote_id: String,
     pub fiat_amount: f64,
     pub crypto_amount: f64,
+    pub payment_methods: Vec<PaymentType>,
 }
 
 impl FiatQuoteResponse {
@@ -113,6 +126,7 @@ impl FiatQuoteResponse {
             quote_id,
             fiat_amount,
             crypto_amount,
+            payment_methods: vec![],
         }
     }
 }

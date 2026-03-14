@@ -24,6 +24,7 @@ pub(crate) trait FiatStore {
     fn get_fiat_quote(&mut self, quote_id: &str) -> Result<FiatQuoteRow, diesel::result::Error>;
     fn add_fiat_quote_request(&mut self, request: FiatQuoteRequestRow) -> Result<usize, diesel::result::Error>;
     fn add_fiat_webhook(&mut self, webhook: NewFiatWebhookRow) -> Result<usize, diesel::result::Error>;
+    fn update_fiat_provider_payment_methods(&mut self, provider_id: &str, values: serde_json::Value) -> Result<usize, diesel::result::Error>;
 }
 
 impl FiatStore for DatabaseClient {
@@ -189,6 +190,13 @@ impl FiatStore for DatabaseClient {
         use crate::schema::fiat_webhooks::dsl::*;
         diesel::insert_into(fiat_webhooks).values(&webhook).execute(&mut self.connection)
     }
+
+    fn update_fiat_provider_payment_methods(&mut self, _provider_id: &str, values: serde_json::Value) -> Result<usize, diesel::result::Error> {
+        use crate::schema::fiat_providers::dsl::*;
+        diesel::update(fiat_providers.filter(id.eq(_provider_id)))
+            .set(payment_methods.eq(values))
+            .execute(&mut self.connection)
+    }
 }
 
 // Public methods for backward compatibility
@@ -255,5 +263,9 @@ impl DatabaseClient {
 
     pub fn add_fiat_webhook(&mut self, webhook: NewFiatWebhookRow) -> Result<usize, diesel::result::Error> {
         FiatStore::add_fiat_webhook(self, webhook)
+    }
+
+    pub fn update_fiat_provider_payment_methods(&mut self, provider_id: &str, values: serde_json::Value) -> Result<usize, diesel::result::Error> {
+        FiatStore::update_fiat_provider_payment_methods(self, provider_id, values)
     }
 }

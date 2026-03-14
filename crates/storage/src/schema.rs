@@ -299,6 +299,7 @@ diesel::table! {
         sell_enabled -> Bool,
         priority -> Nullable<Int4>,
         priority_threshold_bps -> Nullable<Int4>,
+        payment_methods -> Jsonb,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
