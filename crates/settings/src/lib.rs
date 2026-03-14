@@ -25,6 +25,7 @@ pub struct Settings {
     pub mercuryo: Mercuryo,
     pub banxa: Banxa,
     pub paybis: Paybis,
+    pub flashnet: Flashnet,
 
     pub prices: Prices,
     pub coingecko: CoinGecko,
@@ -131,6 +132,7 @@ pub struct UrlSecretKeySettings {
 }
 pub type UD = UrlSecretKeySettings;
 pub type Banxa = ScanProvider;
+pub type Flashnet = ScanProvider;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Prices {

@@ -41,6 +41,11 @@ paybis:
     public: ""
     secret: ""
     private: ""
+flashnet:
+  url: "https://orchestration.flashnet.xyz"
+  key:
+    public: "gemwallet"
+    secret: ""
 prices:
   pyth:
     url: "https://hermes.pyth.network"

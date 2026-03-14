@@ -1,13 +1,11 @@
 use chain_primitives::format_token_id;
 use primitives::fiat_assets::FiatAssetLimits;
-use primitives::{AssetId, Chain, CosmosDenom, FiatAssetSymbol, FiatProviderName};
-use serde::{Deserialize, Serialize};
+use primitives::{Asset, AssetId, Chain, CosmosDenom, FiatAssetSymbol, FiatProviderName};
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone)]
 pub struct FiatMapping {
-    #[serde(flatten)]
+    pub asset: Asset,
     pub asset_symbol: FiatAssetSymbol,
     pub unsupported_countries: HashMap<String, Vec<String>>,
     pub buy_limits: Vec<FiatAssetLimits>,
@@ -42,6 +40,12 @@ impl FiatProviderAsset {
     }
 }
 
+impl FiatMapping {
+    pub fn get_network(network: Option<String>) -> Result<String, crate::error::FiatQuoteError> {
+        network.ok_or_else(|| crate::error::FiatQuoteError::InvalidRequest("Missing network".to_string()))
+    }
+}
+
 pub type FiatMappingMap = HashMap<String, FiatMapping>;
 
 // used to filter out fiat tokens that have specific token ids for native coins
@@ -61,6 +65,7 @@ pub fn filter_token_id(chain: Option<Chain>, token_id: Option<String>) -> Option
             CosmosDenom::Utia.as_ref(),                   // celestia
             "bip122:1a91e3dace36e2be3bf030a65679fe82",    // banxa::DOGE
             "bip122:12a765e31ffd4059bada1e25190f6e98",    // banxa::LTC
+            "11111111111111111111111111111111",
         ]
         .contains(&contract_address.as_str())
     });

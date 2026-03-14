@@ -54,6 +54,7 @@ pub fn create_mercuryo_test_client() -> MercuryoClient {
 impl FiatMapping {
     pub fn mock() -> Self {
         FiatMapping {
+            asset: primitives::Chain::Bitcoin.as_asset(),
             asset_symbol: primitives::FiatAssetSymbol {
                 symbol: "BTC".to_string(),
                 network: Some("BITCOIN".to_string()),

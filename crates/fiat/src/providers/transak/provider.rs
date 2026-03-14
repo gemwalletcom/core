@@ -128,7 +128,7 @@ impl FiatProvider for TransakClient {
 mod fiat_integration_tests {
     use crate::testkit::*;
     use crate::{FiatProvider, model::FiatMapping};
-    use primitives::{FiatBuyQuote, FiatQuoteRequest};
+    use primitives::{FiatBuyQuote, FiatProviderName, FiatQuoteRequest};
 
     #[tokio::test]
     async fn test_transak_get_buy_quote() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -141,7 +141,7 @@ mod fiat_integration_tests {
         let quote = FiatProvider::get_buy_quote_old(&client, request, mapping).await?;
 
         println!("Transak buy quote: {:?}", quote);
-        assert_eq!(quote.provider.id, "transak");
+        assert_eq!(quote.provider.id, FiatProviderName::Transak);
         assert_eq!(quote.fiat_currency, "USD");
         assert!(quote.crypto_amount > 0.0);
         assert_eq!(quote.fiat_amount, 100.0);

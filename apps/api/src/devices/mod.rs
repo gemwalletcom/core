@@ -7,7 +7,9 @@ pub mod guard;
 pub mod signature;
 use crate::assets::AssetsClient;
 use crate::metrics::fiat::FiatMetrics;
-use crate::params::{AssetIdParam, ChainParam, ChartPeriodParam, CurrencyParam, DeviceIdParam, DeviceParam, FiatQuoteTypeParam, TransactionIdParam, UserAgent};
+use crate::params::{
+    AssetIdParam, ChainParam, ChartPeriodParam, CurrencyParam, DeviceIdParam, DeviceParam, FiatProviderIdParam, FiatQuoteTypeParam, TransactionIdParam, UserAgent,
+};
 use crate::responders::{ApiError, ApiResponse};
 use auth_config::AuthConfig;
 pub use client::DevicesClient;
@@ -361,7 +363,7 @@ pub async fn get_fiat_quotes_v2(
     asset_id: AssetIdParam,
     amount: f64,
     currency: CurrencyParam,
-    provider: Option<&str>,
+    provider: Option<FiatProviderIdParam>,
     ip: std::net::IpAddr,
     client: &State<Mutex<FiatQuotesClient>>,
     fiat_metrics: &State<Arc<FiatMetrics>>,
@@ -372,8 +374,34 @@ pub async fn get_fiat_quotes_v2(
         quote_type: quote_type.0,
         amount,
         currency: currency.as_string(),
-        provider_id: provider.map(|x| x.to_string()),
+        provider_id: provider.map(|p| p.0.id()),
         ip_address: ip_address.to_string(),
+    };
+    let quotes = client.lock().await.get_quotes(quote_request).await?;
+    fiat_metrics.record_quotes(&quotes);
+    Ok(quotes.into())
+}
+
+#[get("/fiat/quotes/<quote_type>?<asset_id>&<amount>&<currency>&<provider_id>&<ip_address>")]
+pub async fn get_fiat_quotes_v1(
+    quote_type: FiatQuoteTypeParam,
+    asset_id: AssetIdParam,
+    amount: f64,
+    currency: CurrencyParam,
+    provider_id: Option<FiatProviderIdParam>,
+    ip_address: Option<&str>,
+    ip: std::net::IpAddr,
+    client: &State<Mutex<FiatQuotesClient>>,
+    fiat_metrics: &State<Arc<FiatMetrics>>,
+) -> Result<ApiResponse<FiatQuotes>, ApiError> {
+    let fallback_ip_address = if cfg!(debug_assertions) { constants::DEBUG_FIAT_IP.to_string() } else { ip.to_string() };
+    let quote_request = FiatQuoteRequest {
+        asset_id: asset_id.0,
+        quote_type: quote_type.0,
+        amount,
+        currency: currency.as_string(),
+        provider_id: provider_id.map(|p| p.0.id()),
+        ip_address: ip_address.map(str::to_string).unwrap_or(fallback_ip_address),
     };
     let quotes = client.lock().await.get_quotes(quote_request).await?;
     fiat_metrics.record_quotes(&quotes);
@@ -388,12 +416,12 @@ pub async fn get_fiat_quote_url_v2(
     client: &State<Mutex<FiatQuotesClient>>,
     fiat_metrics: &State<Arc<FiatMetrics>>,
 ) -> Result<ApiResponse<FiatQuoteUrl>, ApiError> {
-    let ip_address = if cfg!(debug_assertions) { constants::DEBUG_FIAT_IP } else { &ip.to_string() };
     let locale = device.device_row.locale.as_str();
+    let ip_address = if cfg!(debug_assertions) { constants::DEBUG_FIAT_IP.to_string() } else { ip.to_string() };
     let (url, quote) = client
         .lock()
         .await
-        .get_quote_url(quote_id, device.wallet_id, device.device_row.id, ip_address, locale)
+        .get_quote_url(quote_id, device.wallet_id, device.device_row.id, &ip_address, locale)
         .await?;
     fiat_metrics.record_quote_url(&quote);
     Ok(url.into())

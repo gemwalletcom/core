@@ -1,7 +1,9 @@
 use crate::currency::Currency;
 use crate::fiat_assets::FiatAssetLimits;
-use crate::{Asset, AssetId, Chain, FiatBuyQuote, FiatProvider, FiatQuote, FiatQuoteOld, FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, PaymentType};
-
+use crate::{
+    Asset, AssetId, Chain, FiatBuyQuote, FiatProvider, FiatProviderName, FiatQuote, FiatQuoteOld, FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType,
+    PaymentType,
+};
 impl FiatBuyQuote {
     pub fn mock() -> Self {
         FiatBuyQuote {
@@ -56,10 +58,10 @@ impl FiatQuoteRequest {
 }
 
 impl FiatProvider {
-    pub fn mock(id: &str) -> Self {
+    pub fn mock(id: FiatProviderName) -> Self {
         FiatProvider {
-            id: id.to_string(),
-            name: id.to_string(),
+            id,
+            name: id.name().to_string(),
             image_url: Some("".to_string()),
             priority: None,
             threshold_bps: None,
@@ -69,10 +71,10 @@ impl FiatProvider {
         }
     }
 
-    pub fn mock_with_priority(id: &str, priority: i32, threshold_bps: Option<i32>) -> Self {
+    pub fn mock_with_priority(id: FiatProviderName, priority: i32, threshold_bps: Option<i32>) -> Self {
         FiatProvider {
-            id: id.to_string(),
-            name: id.to_string(),
+            id,
+            name: id.name().to_string(),
             image_url: Some("".to_string()),
             priority: Some(priority),
             threshold_bps,
@@ -84,7 +86,7 @@ impl FiatProvider {
 }
 
 impl FiatQuoteOld {
-    pub fn mock(provider_id: &str, crypto_amount: f64, fiat_amount: f64) -> Self {
+    pub fn mock(provider_id: FiatProviderName, crypto_amount: f64, fiat_amount: f64) -> Self {
         FiatQuoteOld {
             provider: FiatProvider::mock(provider_id),
             quote_type: FiatQuoteType::Buy,
@@ -98,7 +100,7 @@ impl FiatQuoteOld {
 }
 
 impl FiatQuote {
-    pub fn mock(provider_id: &str) -> Self {
+    pub fn mock(provider_id: FiatProviderName) -> Self {
         FiatQuote {
             id: "quote_123".to_string(),
             asset: Asset::from_chain(Chain::Bitcoin),

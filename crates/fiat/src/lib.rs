@@ -10,7 +10,7 @@ pub mod rsa_signature;
 
 pub use provider::FiatProvider;
 
-use crate::providers::{BanxaClient, MercuryoClient, MoonPayClient, PaybisClient, TransakClient};
+use crate::providers::{BanxaClient, FlashnetClient, MercuryoClient, MoonPayClient, PaybisClient, TransakClient};
 use settings::Settings;
 
 pub use client::FiatClient;
@@ -40,8 +40,16 @@ impl FiatProviderFactory {
         );
         let banxa = BanxaClient::new(request_client.clone(), settings.banxa.url, settings.banxa.key.public, settings.banxa.key.secret);
         let paybis = PaybisClient::new(request_client.clone(), settings.paybis.key.public, settings.paybis.key.secret);
+        let flashnet = FlashnetClient::new(request_client.clone(), settings.flashnet.url, settings.flashnet.key.secret, settings.flashnet.key.public);
 
-        vec![Box::new(moonpay), Box::new(mercuryo), Box::new(transak), Box::new(banxa), Box::new(paybis)]
+        vec![
+            Box::new(moonpay),
+            Box::new(mercuryo),
+            Box::new(transak),
+            Box::new(banxa),
+            Box::new(paybis),
+            Box::new(flashnet),
+        ]
     }
 
     pub fn new_ip_check_client(settings: Settings) -> IPCheckClient {

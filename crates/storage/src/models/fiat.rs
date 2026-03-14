@@ -1,5 +1,7 @@
 use std::collections::HashMap;
+use std::str::FromStr;
 
+use crate::DatabaseError;
 use diesel::prelude::*;
 use primitives::{FiatAsset, FiatProvider, FiatProviderCountry, FiatProviderName, FiatQuote, FiatRate, FiatTransaction, fiat_assets::FiatAssetLimits};
 use serde::{Deserialize, Serialize};
@@ -113,7 +115,7 @@ impl FiatProviderRow {
     pub fn from_primitive(provider: FiatProviderName) -> Self {
         Self {
             id: provider.id(),
-            name: provider.as_ref().to_string(),
+            name: provider.name().to_string(),
             enabled: true,
             buy_enabled: true,
             sell_enabled: true,
@@ -122,17 +124,19 @@ impl FiatProviderRow {
         }
     }
 
-    pub fn as_primitive(&self) -> FiatProvider {
-        FiatProvider {
-            id: self.id.clone(),
-            name: self.name.clone(),
+    pub fn as_primitive(&self) -> Result<FiatProvider, DatabaseError> {
+        let provider = FiatProviderName::from_str(&self.id).map_err(|e| DatabaseError::Error(e.to_string()))?;
+
+        Ok(FiatProvider {
+            id: provider,
+            name: provider.name().to_string(),
             image_url: Some("".to_string()),
             priority: self.priority,
             threshold_bps: self.priority_threshold_bps,
             enabled: self.enabled,
             buy_enabled: self.buy_enabled,
             sell_enabled: self.sell_enabled,
-        }
+        })
     }
 
     pub fn is_buy_enabled(&self) -> bool {
@@ -232,7 +236,7 @@ impl FiatQuoteRow {
     pub fn from_primitive(quote: &FiatQuote) -> Self {
         Self {
             id: quote.id.clone(),
-            provider_id: quote.provider.id.clone(),
+            provider_id: quote.provider.id.id(),
             asset_id: quote.asset.id.to_string(),
             fiat_amount: quote.fiat_amount,
             fiat_currency: quote.fiat_currency.clone(),

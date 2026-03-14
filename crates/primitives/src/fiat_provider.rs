@@ -7,7 +7,8 @@ use typeshare::typeshare;
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "camelCase")]
 pub struct FiatProvider {
-    pub id: String,
+    #[typeshare(serialized_as = "String")]
+    pub id: FiatProviderName,
     pub name: String,
     pub image_url: Option<String>,
     #[serde(skip)]
@@ -39,7 +40,7 @@ impl FiatProvider {
 
 impl PrioritizedProvider for FiatProvider {
     fn provider_id(&self) -> &str {
-        &self.id
+        self.id.as_ref()
     }
 
     fn priority(&self) -> i32 {
@@ -51,7 +52,9 @@ impl PrioritizedProvider for FiatProvider {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq, Eq, Hash)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum FiatProviderName {
     Mercuryo,
@@ -60,6 +63,7 @@ pub enum FiatProviderName {
     Ramp,
     Banxa,
     Paybis,
+    Flashnet,
 }
 
 impl FiatProviderName {
@@ -75,11 +79,12 @@ impl FiatProviderName {
             FiatProviderName::Ramp => "Ramp",
             FiatProviderName::Banxa => "Banxa",
             FiatProviderName::Paybis => "Paybis",
+            FiatProviderName::Flashnet => "CashApp",
         }
     }
     pub fn as_fiat_provider(&self) -> FiatProvider {
         FiatProvider {
-            id: self.id(),
+            id: *self,
             name: self.name().to_owned(),
             image_url: Some("".to_string()),
             priority: None,

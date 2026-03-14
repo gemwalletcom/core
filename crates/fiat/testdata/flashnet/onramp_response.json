@@ -1,0 +1,25 @@
+{
+  "orderId": "ord_019ce92c-31ca-73f3-ad25-295f43978c07",
+  "quoteId": "q_019ce92c-2e29-79fe-97b5-a25c3247683d",
+  "depositAddress": "lnbc1m1p5mfp33pp53af7huu6g3fzd85h6ahjv3rngftaf6pzukfd0vg798a7c97n3vassp53ektjs294ws5zuutfwhj56xzvtteylk4c5afwqslvpw6ma7fdf3sxqyz5z5np4qvyndeaqzman7h898jxm98dzkm0mlrsx36s93smrur7h0azyyuxc5rzjqwghf7zxvfkxq5a6sr65g0gdkv768p83mhsnt0msszapamzx2qvuxqqqqrt49lmtcqqqqqqqqqqq86qq9qcqzpgdz8daexgwnsv9e97vp3893n2wfsxuknwdehvgknwerzvvkkyvenxskngef5vsurgcm9xverqvq9qyyssq3g9p6yrurmzwr8j5cnnpdnwkshy4q0yzghu4z9n4v9kxllcmp9uxx7kmkw94qxna9rphuy0m464vp2xwr9tz0kg30kjgln5mjls76hcqmsmsl3",
+  "amountIn": "100000",
+  "estimatedOut": "70847866",
+  "feeAmount": "284529",
+  "feeBps": 40,
+  "totalFeeAmount": "284529",
+  "feeAsset": "USDC",
+  "route": [
+    "BTC",
+    "USDB",
+    "USDC"
+  ],
+  "expiresAt": "2026-03-14T21:48:32.679Z",
+  "priceLockMode": "approval_required",
+  "lockedMinAmountOut": "64019155",
+  "amountMode": "exact_in",
+  "lightningReceiveRequestId": "SparkLightningReceiveRequest:019ce92c-30f8-cd96-0000-eb9ced645857",
+  "paymentLinks": {
+    "cashApp": "https://orchestration.flashnet.xyz/pay/zimH6K-d",
+    "shortUrl": "https://orchestration.flashnet.xyz/pay/zimH6K-d"
+  }
+}

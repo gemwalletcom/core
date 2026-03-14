@@ -117,7 +117,7 @@ impl FiatProvider for MoonPayClient {
 mod fiat_integration_tests {
     use crate::testkit::*;
     use crate::{FiatProvider, model::FiatMapping};
-    use primitives::FiatBuyQuote;
+    use primitives::{FiatBuyQuote, FiatProviderName};
 
     #[tokio::test]
     async fn test_moonpay_get_buy_quote() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -130,7 +130,7 @@ mod fiat_integration_tests {
         let quote = FiatProvider::get_buy_quote_old(&client, request, mapping).await?;
 
         println!("MoonPay buy quote: {:?}", quote);
-        assert_eq!(quote.provider.id, "moonpay");
+        assert_eq!(quote.provider.id, FiatProviderName::MoonPay);
         assert_eq!(quote.fiat_currency, "USD");
         assert!(quote.crypto_amount > 0.0);
         assert_eq!(quote.fiat_amount, 100.0);

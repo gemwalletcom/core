@@ -12,3 +12,6 @@ pub use self::banxa::client::BanxaClient;
 
 pub mod paybis;
 pub use self::paybis::client::PaybisClient;
+
+pub mod flashnet;
+pub use self::flashnet::client::FlashnetClient;

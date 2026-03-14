@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum FiatQuoteError {
     MinimumAmount(f64),
     InsufficientAmount(f64, f64),

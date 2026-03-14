@@ -64,6 +64,7 @@ fn mount_routes(rocket: Rocket<Build>, metrics_path: &str) -> Rocket<Build> {
                 prices::get_assets_prices,
                 prices::get_charts,
                 prices::get_fiat_rates,
+                devices::get_fiat_quotes_v1,
                 webhooks::create_fiat_webhook,
                 config::get_config,
                 devices::add_device,

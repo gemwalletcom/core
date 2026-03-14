@@ -1,0 +1,25 @@
+{
+  "routes": [
+    {
+      "destination": {
+        "chain": "solana",
+        "asset": "USDC",
+        "contractAddress": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+      }
+    },
+    {
+      "destination": {
+        "chain": "base",
+        "asset": "USDC",
+        "contractAddress": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+      }
+    },
+    {
+      "destination": {
+        "chain": "unknown_chain",
+        "asset": "ETH",
+        "contractAddress": null
+      }
+    }
+  ]
+}

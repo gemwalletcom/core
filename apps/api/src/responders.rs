@@ -84,6 +84,9 @@ impl From<Box<dyn std::error::Error + Send + Sync>> for ApiError {
             if let Some(db_error) = current_error.downcast_ref::<DatabaseError>() {
                 return db_error.clone().into();
             }
+            if let Some(fiat_error) = current_error.downcast_ref::<FiatQuoteError>() {
+                return fiat_error.clone().into();
+            }
             match current_error.source() {
                 Some(source) => current_error = source,
                 None => break,

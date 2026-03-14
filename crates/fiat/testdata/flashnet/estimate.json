@@ -1,0 +1,23 @@
+{
+  "estimatedOut": "98951",
+  "feeAmount": "50",
+  "feeBps": 5,
+  "totalFeeAmount": "1049",
+  "appFeeAmount": "999",
+  "appFeePlatformCutAmount": "199",
+  "appFees": [
+    {
+      "affiliateId": "gemwallet",
+      "recipient": "0x",
+      "feeBps": 100,
+      "amount": "999",
+      "platformCutAmount": "199",
+      "recipientAmount": "800"
+    }
+  ],
+  "feeAsset": "USDC",
+  "route": [
+    "USDB",
+    "USDC"
+  ]
+}

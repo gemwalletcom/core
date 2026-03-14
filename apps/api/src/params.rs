@@ -1,5 +1,5 @@
 use primitives::currency::Currency;
-use primitives::{AssetId, Chain, ChartPeriod, Device, FiatQuoteType, NFTAssetId, NFTCollectionId, SwapProvider, TransactionId};
+use primitives::{AssetId, Chain, ChartPeriod, Device, FiatProviderName, FiatQuoteType, NFTAssetId, NFTCollectionId, SwapProvider, TransactionId};
 use rocket::data::{FromData, Outcome, ToByteUnit};
 use rocket::form::{self, FromFormField, ValueField};
 use rocket::http::Status;
@@ -121,6 +121,17 @@ impl<'r> FromParam<'r> for AssetIdParam {
     }
 }
 
+impl<'r> FromFormField<'r> for AssetIdParam {
+    fn from_value(field: ValueField<'r>) -> form::Result<'r, Self> {
+        if field.value.is_empty() || field.value.len() > MAX_ASSET_ID_LENGTH {
+            return Err(form::Error::validation(format!("Invalid asset_id: {}", field.value)).into());
+        }
+        AssetId::new(field.value)
+            .map(AssetIdParam)
+            .ok_or_else(|| form::Error::validation(format!("Invalid asset_id: {}", field.value)).into())
+    }
+}
+
 pub struct DeviceIdParam(pub String);
 
 impl<'r> FromParam<'r> for DeviceIdParam {
@@ -159,6 +170,16 @@ impl<'r> FromParam<'r> for SwapProviderParam {
 
     fn from_param(param: &'r str) -> Result<Self, Self::Error> {
         SwapProvider::from_str(param).map(SwapProviderParam).map_err(|_| param)
+    }
+}
+
+pub struct FiatProviderIdParam(pub FiatProviderName);
+
+impl<'r> FromFormField<'r> for FiatProviderIdParam {
+    fn from_value(field: ValueField<'r>) -> form::Result<'r, Self> {
+        FiatProviderName::from_str(field.value)
+            .map(FiatProviderIdParam)
+            .map_err(|_| form::Error::validation(format!("Invalid provider: {}", field.value)).into())
     }
 }
 

@@ -98,7 +98,7 @@ impl FiatProvider for BanxaClient {
 mod fiat_integration_tests {
     use crate::testkit::*;
     use crate::{FiatProvider, model::FiatMapping};
-    use primitives::FiatBuyQuote;
+    use primitives::{FiatBuyQuote, FiatProviderName};
 
     #[tokio::test]
     async fn test_banxa_get_buy_quote() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -111,7 +111,7 @@ mod fiat_integration_tests {
         let quote = FiatProvider::get_buy_quote_old(&client, request, mapping).await?;
 
         println!("Banxa buy quote: {:?}", quote);
-        assert_eq!(quote.provider.id, "banxa");
+        assert_eq!(quote.provider.id, FiatProviderName::Banxa);
         assert_eq!(quote.fiat_currency, "USD");
         assert!(quote.crypto_amount > 0.0);
         assert_eq!(quote.fiat_amount, 100.0);

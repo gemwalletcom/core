@@ -97,6 +97,7 @@ impl FiatProvider for PaybisClient {
 mod fiat_integration_tests {
     use crate::testkit::*;
     use crate::{FiatProvider, model::FiatMapping};
+    use primitives::FiatProviderName;
     use primitives::currency::Currency;
     use primitives::{Chain, FiatBuyQuote, FiatQuoteRequest};
     use streamer::FiatWebhook;
@@ -112,7 +113,7 @@ mod fiat_integration_tests {
         let quote = FiatProvider::get_buy_quote_old(&client, request, mapping).await?;
 
         println!("Paybis buy quote: {:?}", quote);
-        assert_eq!(quote.provider.id, "paybis");
+        assert_eq!(quote.provider.id, FiatProviderName::Paybis);
         assert_eq!(quote.fiat_currency, "USD");
         assert!(quote.crypto_amount > 0.0);
         assert_eq!(quote.fiat_amount, 100.0);
