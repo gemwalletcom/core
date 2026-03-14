@@ -162,7 +162,7 @@ public final class FiatSceneViewModel {
     }
 
     func providerAssetImage(_ provider: FiatProvider) -> AssetImage? {
-        .resourceImage(image: provider.name.lowercased().replacing(" ", with: "_"))
+        .image(provider.image)
     }
 }
 

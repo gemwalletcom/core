@@ -2,6 +2,7 @@
 
 import SwiftUI
 import Primitives
+import PrimitivesComponents
 import Style
 import Components
 import Formatters
@@ -41,11 +42,12 @@ struct FiatQuoteViewModel: Sendable {
     private var isSelected: Bool {
         selectedQuote?.provider == quote.provider
     }
+
 }
 
 extension FiatQuoteViewModel: Identifiable {
     var id: String {
-        "\(asset.id.identifier)\(quote.provider.name)\(quote.cryptoAmount)"
+        "\(asset.id.identifier)\(quote.provider.id)\(quote.cryptoAmount)"
     }
 }
 
@@ -54,7 +56,7 @@ extension FiatQuoteViewModel: Identifiable {
 extension FiatQuoteViewModel: SimpleListItemViewable {
     var assetImage: AssetImage {
         AssetImage(
-            placeholder: Images.name(quote.provider.name.lowercased().replacing(" ", with: "_")),
+            placeholder: quote.provider.image,
             chainPlaceholder: isSelected ? Images.Wallets.selected : nil
         )
     }

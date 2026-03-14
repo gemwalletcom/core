@@ -13,7 +13,7 @@ extension FiatQuote {
     ) -> FiatQuote {
         FiatQuote(
             id: id,
-            provider: FiatProvider(id: UUID().uuidString, name: "", imageUrl: ""),
+            provider: FiatProvider(id: "moonpay", name: "", imageUrl: ""),
             type: type,
             fiatAmount: fiatAmount,
             fiatCurrency: fiatCurrency,

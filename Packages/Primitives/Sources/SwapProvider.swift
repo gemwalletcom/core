@@ -16,7 +16,6 @@ public enum SwapProvider: String, Codable, Equatable, Hashable, Sendable {
 	case across
 	case oku
 	case wagmi
-	case cetus
 	case stonfiV2 = "stonfi_v2"
 	case mayan
 	case chainflip

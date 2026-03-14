@@ -15,3 +15,13 @@ public struct FiatProvider: Codable, Equatable, Hashable, Sendable {
 		self.imageUrl = imageUrl
 	}
 }
+
+public enum FiatProviderName: String, Codable, Equatable, Hashable, Sendable {
+	case mercuryo
+	case transak
+	case moonPay = "moonpay"
+	case ramp
+	case banxa
+	case paybis
+	case flashnet
+}
