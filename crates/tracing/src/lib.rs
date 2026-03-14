@@ -8,6 +8,46 @@ pub fn get_subscriber() -> Arc<FmtSubscriber> {
     TRACING_SUBSCRIBER.get_or_init(|| Arc::new(tracing_subscriber::fmt().with_target(false).finish())).clone()
 }
 
+struct GemLogger;
+
+impl log::Log for GemLogger {
+    fn enabled(&self, metadata: &log::Metadata<'_>) -> bool {
+        metadata.level() <= log::max_level()
+    }
+
+    fn log(&self, record: &log::Record<'_>) {
+        if !self.enabled(record.metadata()) {
+            return;
+        }
+        let subscriber = get_subscriber();
+        let message = record.args().to_string();
+        tracing::subscriber::with_default(subscriber, || match record.level() {
+            log::Level::Error => tracing::error!("{}", message),
+            log::Level::Warn => tracing::warn!("{}", message),
+            log::Level::Info => tracing::info!("{}", message),
+            log::Level::Debug => tracing::debug!("{}", message),
+            log::Level::Trace => tracing::trace!("{}", message),
+        });
+    }
+
+    fn flush(&self) {}
+}
+
+/// Initializes gem_tracing as the global `log` backend.
+/// Log level is read from the `ROCKET_LOG_LEVEL` environment variable
+/// (values: `off`, `critical`, `normal`, `debug`; default: `normal`).
+/// If a global logger is already registered the call is a no-op.
+pub fn init() {
+    let level_filter = match std::env::var("ROCKET_LOG_LEVEL").as_deref() {
+        Ok("off") => log::LevelFilter::Off,
+        Ok("critical") => log::LevelFilter::Warn,
+        Ok("debug") => log::LevelFilter::Trace,
+        _ => log::LevelFilter::Info,
+    };
+    let _ = log::set_boxed_logger(Box::new(GemLogger));
+    log::set_max_level(level_filter);
+}
+
 pub fn human_duration(duration: Duration) -> String {
     if duration.is_zero() {
         return "0s".to_string();

@@ -301,6 +301,8 @@ async fn main() {
 
     info_with_fields!("api start service", service = service.as_ref());
 
+    gem_tracing::init();
+
     let rocket = match service {
         APIService::Api => rocket_api(settings).await,
         APIService::WebsocketPrices => rocket_ws_prices(settings).await,
