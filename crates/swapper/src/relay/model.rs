@@ -90,7 +90,7 @@ impl Step {
     }
 
     pub fn to_address(&self) -> Option<String> {
-        Some(self.step_data()?.to_address())
+        self.step_data()?.to_address()
     }
 }
 
@@ -103,13 +103,15 @@ pub struct StepItem {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum StepData {
+    Bitcoin(BitcoinStepData),
     Evm(EvmStepData),
 }
 
 impl StepData {
-    pub fn to_address(&self) -> String {
+    pub fn to_address(&self) -> Option<String> {
         match self {
-            Self::Evm(evm) => evm.to.clone(),
+            Self::Evm(evm) => Some(evm.to.clone()),
+            Self::Bitcoin(_) => None,
         }
     }
 }
@@ -120,6 +122,12 @@ pub struct EvmStepData {
     pub to: String,
     pub data: Option<String>,
     pub value: String,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BitcoinStepData {
+    pub psbt: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -268,6 +276,10 @@ impl RelayChainsResponse {
             .into_iter()
             .collect()
     }
+}
+
+pub fn gas_fee_amount(fees: &Option<RelayFees>) -> Option<String> {
+    fees.as_ref()?.gas.as_ref()?.amount.clone()
 }
 
 #[cfg(test)]

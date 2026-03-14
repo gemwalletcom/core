@@ -69,8 +69,8 @@ where
         let from_asset_id = request.from_asset.asset_id();
         let to_asset_id = request.to_asset.asset_id();
 
-        let origin_currency = asset_to_currency(&from_asset_id)?;
-        let destination_currency = asset_to_currency(&to_asset_id)?;
+        let origin_currency = asset_to_currency(&from_asset_id, &from_chain)?;
+        let destination_currency = asset_to_currency(&to_asset_id, &to_chain)?;
         let app_fees = resolve_app_fees(request);
         let from_value = resolve_max_quote_value(request)?;
 
@@ -119,7 +119,7 @@ where
 
         let from_asset_id = quote.request.from_asset.asset_id();
         let approval = self.check_evm_approval(quote, &response, &from_asset_id).await?;
-        mapper::map_quote_data(&response, approval)
+        mapper::map_quote_data(&response, &quote.from_value, approval)
     }
 
     async fn get_swap_result(&self, _chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
@@ -230,6 +230,33 @@ mod swap_integration_tests {
         assert!(!quote_data.data.is_empty());
         assert!(!quote_data.to.is_empty());
         assert!(quote_data.approval.is_some());
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_relay_btc_to_eth() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        use crate::asset::ETHEREUM_USDC_TOKEN_ID;
+
+        let provider = Arc::new(NativeProvider::default());
+        let relay = Relay::new(provider);
+
+        let request = QuoteRequest {
+            from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Bitcoin)),
+            to_asset: SwapperQuoteAsset::from(AssetId::from_token(Chain::Ethereum, ETHEREUM_USDC_TOKEN_ID)),
+            wallet_address: "bc1q4vxn43l44h30nkluqfxd9eckf45vr2awz38lwa".to_string(),
+            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
+            value: "2000000".to_string(),
+            mode: SwapperMode::ExactIn,
+            options: Options::new_with_slippage(100.into()),
+        };
+
+        let quote = relay.get_quote(&request).await?;
+        let quote_data = relay.get_quote_data(&quote, FetchQuoteData::None).await?;
+
+        assert_eq!(quote.from_value, request.value);
+        assert!(!quote.to_value.is_empty());
+        assert!(!quote_data.data.is_empty());
 
         Ok(())
     }

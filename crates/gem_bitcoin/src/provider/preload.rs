@@ -7,7 +7,9 @@ use std::error::Error;
 
 use gem_client::Client;
 use primitives::{
-    BitcoinChain, FeePriority, FeeRate, GasPriceType, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, UTXO,
+    BitcoinChain, FeePriority, FeeRate, GasPriceType, SwapProvider, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
+    TransactionPreloadInput, UTXO,
+    swap::SwapQuoteDataType,
 };
 
 use crate::models::Address;
@@ -32,10 +34,11 @@ impl<C: Client> ChainTransactionLoad for BitcoinClient<C> {
     }
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
-        Ok(TransactionLoadData {
-            fee: input.default_fee(),
-            metadata: input.metadata,
-        })
+        let fee = match swap_provider_fee(&input) {
+            Some(result) => result?,
+            None => input.default_fee(),
+        };
+        Ok(TransactionLoadData { fee, metadata: input.metadata })
     }
 
     async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
@@ -62,6 +65,19 @@ impl<C: Client> BitcoinClient<C> {
         let fee_sat_per_kb = self.get_fee_priority(blocks).await?;
         calculate_fee_rate(&fee_sat_per_kb, self.chain.minimum_byte_fee() as u32)
     }
+}
+
+fn swap_provider_fee(input: &TransactionLoadInput) -> Option<Result<TransactionFee, &'static str>> {
+    let swap_data = input.input_type.get_swap_data().ok()?;
+    if swap_data.data.data_type != SwapQuoteDataType::Contract {
+        return None;
+    }
+    let provider = swap_data.quote.provider_data.provider;
+    if !matches!(provider, SwapProvider::Relay) {
+        return None;
+    }
+    let limit = swap_data.data.limit.as_deref()?;
+    Some(limit.parse::<BigInt>().map(TransactionFee::new_from_fee).map_err(|_| "invalid swap fee"))
 }
 
 fn calculate_fee_rate(fee_sat_per_kb: &str, minimum_byte_fee: u32) -> Result<BigInt, Box<dyn Error + Sync + Send>> {
