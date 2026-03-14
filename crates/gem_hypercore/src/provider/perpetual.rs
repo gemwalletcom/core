@@ -2,30 +2,86 @@ use std::error::Error;
 
 use async_trait::async_trait;
 use chain_traits::{ChainAddressStatus, ChainPerpetual};
-use futures::try_join;
+use futures::{future::try_join_all, try_join};
 use gem_client::Client;
 use primitives::{
     ChartPeriod,
     chart::ChartCandleStick,
-    perpetual::{PerpetualData, PerpetualPositionsSummary},
+    perpetual::{PerpetualBalance, PerpetualData, PerpetualPositionsSummary},
     portfolio::PerpetualPortfolio,
 };
 
 use crate::{
-    provider::perpetual_mapper::{map_candlesticks, map_perpetual_portfolio, map_perpetuals_data, map_positions},
+    models::{perp_dex::PerpDex, position::AssetPositions},
+    provider::perpetual_mapper::{map_account_summary_aggregate, map_candlesticks, map_perpetual_portfolio, map_perpetuals_data, map_positions, merge_perpetual_portfolios},
     rpc::client::HyperCoreClient,
 };
+
+fn active_dex_entries(perp_dexs: &[Option<PerpDex>]) -> Vec<(u32, Option<String>)> {
+    perp_dexs
+        .iter()
+        .enumerate()
+        .filter_map(|(index, entry)| {
+            if index == 0 {
+                return Some((0, None));
+            }
+            let dex = entry.as_ref()?;
+            if dex.is_active == Some(false) {
+                return None;
+            }
+            let name = dex.name.as_ref().filter(|n| !n.is_empty())?.to_string();
+            Some((index as u32, Some(name)))
+        })
+        .collect()
+}
+
+impl<C: Client> HyperCoreClient<C> {
+    async fn get_active_dex_entries(&self) -> Vec<(u32, Option<String>)> {
+        self.get_perp_dexs().await.map(|dexs| active_dex_entries(&dexs)).unwrap_or_else(|_| vec![(0, None)])
+    }
+
+    async fn fetch_positions_for_dex(&self, address: String, dex: Option<String>) -> Result<PerpetualPositionsSummary, Box<dyn Error + Sync + Send>> {
+        let (positions, orders) = try_join!(self.get_clearinghouse_state_with_dex(&address, dex.clone()), self.get_open_orders_with_dex(&address, dex))?;
+        Ok(map_positions(positions, address, &orders))
+    }
+
+    async fn fetch_portfolio_for_dex(&self, address: String, dex: Option<String>) -> Result<(PerpetualPortfolio, AssetPositions), Box<dyn Error + Sync + Send>> {
+        let (response, positions) = try_join!(
+            self.get_perpetual_portfolio_with_dex(&address, dex.clone()),
+            self.get_clearinghouse_state_with_dex(&address, dex)
+        )?;
+        Ok((map_perpetual_portfolio(response, &positions), positions))
+    }
+}
 
 #[async_trait]
 impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
     async fn get_positions(&self, address: String) -> Result<PerpetualPositionsSummary, Box<dyn Error + Sync + Send>> {
-        let (positions, orders) = try_join!(self.get_clearinghouse_state(&address), self.get_open_orders(&address))?;
-        Ok(map_positions(positions, address, &orders))
+        let dex_entries = self.get_active_dex_entries().await;
+        let requests: Vec<_> = dex_entries.iter().map(|(_, dex)| self.fetch_positions_for_dex(address.clone(), dex.clone())).collect();
+        let summaries = try_join_all(requests).await?;
+
+        let mut positions = Vec::new();
+        let mut balance = PerpetualBalance {
+            available: 0.0,
+            reserved: 0.0,
+            withdrawable: 0.0,
+        };
+        for summary in summaries {
+            positions.extend(summary.positions);
+            balance.available += summary.balance.available;
+            balance.reserved += summary.balance.reserved;
+            balance.withdrawable += summary.balance.withdrawable;
+        }
+        Ok(PerpetualPositionsSummary { positions, balance })
     }
 
     async fn get_perpetuals_data(&self) -> Result<Vec<PerpetualData>, Box<dyn Error + Sync + Send>> {
-        let metadata = self.get_metadata().await?;
-        Ok(map_perpetuals_data(metadata))
+        let dex_entries = self.get_active_dex_entries().await;
+        let requests: Vec<_> = dex_entries.iter().map(|(_, dex)| self.get_metadata_with_dex(dex.clone())).collect();
+        let metadata = try_join_all(requests).await?;
+
+        Ok(dex_entries.iter().zip(metadata).flat_map(|((index, _), meta)| map_perpetuals_data(meta, *index)).collect())
     }
 
     async fn get_perpetual_candlesticks(&self, symbol: String, period: ChartPeriod) -> Result<Vec<ChartCandleStick>, Box<dyn Error + Sync + Send>> {
@@ -53,19 +109,148 @@ impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
     }
 
     async fn get_perpetual_portfolio(&self, address: String) -> Result<PerpetualPortfolio, Box<dyn Error + Sync + Send>> {
-        let (response, positions) = try_join!(self.get_perpetual_portfolio(&address), self.get_clearinghouse_state(&address))?;
-        Ok(map_perpetual_portfolio(response, &positions))
+        let dex_entries = self.get_active_dex_entries().await;
+        let requests: Vec<_> = dex_entries.iter().map(|(_, dex)| self.fetch_portfolio_for_dex(address.clone(), dex.clone())).collect();
+        let results = try_join_all(requests).await?;
+        let (portfolios, positions): (Vec<_>, Vec<_>) = results.into_iter().unzip();
+        let account_summary = Some(map_account_summary_aggregate(&positions));
+        Ok(merge_perpetual_portfolios(portfolios, account_summary))
     }
 }
 
 #[async_trait]
 impl<C: Client> ChainAddressStatus for HyperCoreClient<C> {}
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_active_dex_entries_filters_inactive() {
+        let dexs = vec![
+            None, // index 0: main DEX (always included)
+            Some(PerpDex {
+                name: Some("dex1".to_string()),
+                full_name: None,
+                deployer: None,
+                oracle_updater: None,
+                chain_id: None,
+                is_active: Some(true),
+            }),
+            Some(PerpDex {
+                name: Some("dex2".to_string()),
+                full_name: None,
+                deployer: None,
+                oracle_updater: None,
+                chain_id: None,
+                is_active: Some(false),
+            }),
+            Some(PerpDex {
+                name: Some("dex3".to_string()),
+                full_name: None,
+                deployer: None,
+                oracle_updater: None,
+                chain_id: None,
+                is_active: None,
+            }),
+        ];
+
+        let entries = active_dex_entries(&dexs);
+        assert_eq!(entries.len(), 3);
+        assert_eq!(entries[0], (0, None));
+        assert_eq!(entries[1], (1, Some("dex1".to_string())));
+        assert_eq!(entries[2], (3, Some("dex3".to_string())));
+    }
+
+    #[test]
+    fn test_active_dex_entries_skips_empty_names() {
+        let dexs = vec![
+            None,
+            Some(PerpDex {
+                name: Some("".to_string()),
+                full_name: None,
+                deployer: None,
+                oracle_updater: None,
+                chain_id: None,
+                is_active: Some(true),
+            }),
+            Some(PerpDex {
+                name: None,
+                full_name: None,
+                deployer: None,
+                oracle_updater: None,
+                chain_id: None,
+                is_active: Some(true),
+            }),
+        ];
+
+        let entries = active_dex_entries(&dexs);
+        assert_eq!(entries.len(), 1);
+        assert_eq!(entries[0], (0, None));
+    }
+}
+
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod integration_tests {
     use crate::provider::testkit::{TEST_ADDRESS, create_hypercore_test_client};
     use chain_traits::ChainPerpetual;
     use primitives::ChartPeriod;
+
+    #[tokio::test]
+    async fn test_hypercore_get_perp_dexs() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_hypercore_test_client();
+        let dexs = client.get_perp_dexs().await?;
+
+        assert!(!dexs.is_empty());
+
+        println!("Perp DEXs count: {}", dexs.len());
+        for (i, dex) in dexs.iter().enumerate() {
+            println!("  DEX {}: {:?}", i, dex.as_ref().map(|d| (&d.name, &d.is_active)));
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_hypercore_get_positions() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_hypercore_test_client();
+        let summary = client.get_positions(TEST_ADDRESS.to_string()).await?;
+
+        println!("Positions count: {}", summary.positions.len());
+        println!(
+            "Balance: available={}, reserved={}, withdrawable={}",
+            summary.balance.available, summary.balance.reserved, summary.balance.withdrawable
+        );
+
+        for pos in &summary.positions {
+            println!("  {} {:?} size={} leverage={}", pos.perpetual_id, pos.direction, pos.size, pos.leverage);
+        }
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_hypercore_get_perpetuals_data() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_hypercore_test_client();
+        let data = client.get_perpetuals_data().await?;
+
+        assert!(!data.is_empty());
+
+        println!("Perpetuals count: {}", data.len());
+        for d in data.iter().take(5) {
+            println!(
+                "  {} identifier={} price={} leverage={}",
+                d.perpetual.name, d.perpetual.identifier, d.perpetual.price, d.perpetual.max_leverage
+            );
+        }
+
+        let btc = data.iter().find(|d| d.perpetual.name == "BTC");
+        assert!(btc.is_some(), "BTC perpetual should exist");
+        assert_eq!(btc.unwrap().perpetual.identifier, "0");
+
+        let builder_assets: Vec<_> = data.iter().filter(|d| d.perpetual.identifier.parse::<u32>().unwrap_or(0) >= 100_000).collect();
+        println!("Builder DEX assets: {}", builder_assets.len());
+
+        Ok(())
+    }
 
     #[tokio::test]
     async fn test_hypercore_get_perpetual_portfolio() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
