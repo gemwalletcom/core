@@ -1,7 +1,7 @@
 use chrono::{Duration, Utc};
 use fiat::{FiatProvider, model::FiatProviderAsset};
 use gem_tracing::info_with_fields;
-use primitives::{AssetTag, Diff, FiatProviderName, PaymentType, currency::Currency};
+use primitives::{AssetTag, Diff, FiatProviderName, currency::Currency};
 use storage::{AssetFilter, AssetUpdate};
 use storage::{AssetsRepository, Database, TagRepository};
 
