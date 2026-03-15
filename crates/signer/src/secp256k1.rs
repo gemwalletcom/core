@@ -2,7 +2,7 @@ use primitives::SignerError;
 use k256::ecdsa::SigningKey as SecpSigningKey;
 
 pub(crate) fn sign_digest(digest: &[u8], private_key: &[u8]) -> Result<Vec<u8>, SignerError> {
-    let signing_key = SecpSigningKey::from_slice(private_key).map_err(|_| SignerError::invalid_input("Invalid Secp256k1 private key"))?;
+    let signing_key = SecpSigningKey::from_slice(private_key).map_err(|_| SignerError::signing_error("Invalid Secp256k1 private key"))?;
     let (signature, recovery_id) = signing_key
         .sign_prehash_recoverable(digest)
         .map_err(|_| SignerError::signing_error("Failed to sign Secp256k1 digest"))?;
@@ -10,4 +10,9 @@ pub(crate) fn sign_digest(digest: &[u8], private_key: &[u8]) -> Result<Vec<u8>, 
     let mut out = signature.to_bytes().to_vec();
     out.push(u8::from(recovery_id));
     Ok(out)
+}
+
+pub fn public_key_from_private(private_key: &[u8]) -> Result<Vec<u8>, SignerError> {
+    let signing_key = SecpSigningKey::from_slice(private_key).map_err(|_| SignerError::invalid_input("Invalid Secp256k1 private key"))?;
+    Ok(signing_key.verifying_key().to_sec1_bytes().to_vec())
 }

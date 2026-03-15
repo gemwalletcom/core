@@ -1,0 +1,15 @@
+{
+    "typeUrl": "/ibc.applications.transfer.v1.MsgTransfer",
+    "value": {
+        "sourcePort": "transfer",
+        "sourceChannel": "channel-0",
+        "token": {
+            "denom": "uatom",
+            "amount": "1000000"
+        },
+        "sender": "cosmos1test",
+        "receiver": "osmo1test",
+        "timeoutTimestamp": 1773382733549000000,
+        "memo": "{\"ibc_callback\":\"osmo1\"}"
+    }
+}

@@ -1,5 +1,5 @@
 use num_bigint::BigInt;
-use primitives::{GasPriceType, StakeType, TransactionFee, TransactionInputType, chain_cosmos::CosmosChain};
+use primitives::{GasPriceType, StakeType, SwapProvider, TransactionFee, TransactionInputType, chain_cosmos::CosmosChain};
 
 fn get_fee(chain: CosmosChain, input_type: &TransactionInputType) -> BigInt {
     match chain {
@@ -68,7 +68,7 @@ fn get_fee(chain: CosmosChain, input_type: &TransactionInputType) -> BigInt {
     }
 }
 
-fn get_gas_limit(input_type: &TransactionInputType, _chain: CosmosChain) -> u64 {
+fn get_gas_limit(input_type: &TransactionInputType, chain: CosmosChain) -> u64 {
     match input_type {
         TransactionInputType::Transfer(_)
         | TransactionInputType::Deposit(_)
@@ -78,7 +78,10 @@ fn get_gas_limit(input_type: &TransactionInputType, _chain: CosmosChain) -> u64 
         | TransactionInputType::Generic(_, _, _)
         | TransactionInputType::Perpetual(_, _)
         | TransactionInputType::Earn(_, _, _) => 200_000,
-        TransactionInputType::Swap(_, _, _) => 200_000,
+        TransactionInputType::Swap(_, _, swap_data) => match swap_data.quote.provider_data.provider {
+            SwapProvider::Thorchain => 200_000,
+            _ => 2_000_000,
+        },
         TransactionInputType::Stake(_, operation) => match operation {
             StakeType::Stake(_) | StakeType::Unstake(_) => 1_000_000,
             StakeType::Redelegate(_) => 1_250_000,

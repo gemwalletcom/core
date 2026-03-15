@@ -49,7 +49,8 @@ impl Explorer {
             SwapperProvider::Chainflip => ChainflipScan::boxed(),
             SwapperProvider::NearIntents => NearIntents::boxed(),
             SwapperProvider::Relay => RelayScan::boxed(),
-            SwapperProvider::UniswapV3
+            SwapperProvider::Squid
+            | SwapperProvider::UniswapV3
             | SwapperProvider::UniswapV4
             | SwapperProvider::PancakeswapV3
             | SwapperProvider::Panora

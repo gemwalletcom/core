@@ -28,6 +28,18 @@ impl CosmosChain {
     pub fn as_chain(&self) -> Chain {
         Chain::from_str(self.as_ref()).unwrap()
     }
+
+    pub fn denom(&self) -> CosmosDenom {
+        match self {
+            Self::Cosmos => CosmosDenom::Uatom,
+            Self::Osmosis => CosmosDenom::Uosmo,
+            Self::Celestia => CosmosDenom::Utia,
+            Self::Thorchain => CosmosDenom::Rune,
+            Self::Injective => CosmosDenom::Inj,
+            Self::Sei => CosmosDenom::Usei,
+            Self::Noble => CosmosDenom::Uusdc,
+        }
+    }
 }
 
 #[derive(Copy, Clone, Debug, Serialize, Deserialize, EnumIter, AsRefStr, EnumString)]
