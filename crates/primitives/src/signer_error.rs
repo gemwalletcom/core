@@ -29,6 +29,10 @@ impl SignerError {
     pub fn signing_error(message: impl Into<String>) -> Self {
         Self::SigningError(message.into())
     }
+
+    pub fn from_display(e: impl std::fmt::Display) -> Self {
+        Self::InvalidInput(e.to_string())
+    }
 }
 
 impl From<&str> for SignerError {
