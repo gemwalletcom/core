@@ -61,18 +61,16 @@ impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
         let requests: Vec<_> = dex_entries.iter().map(|(_, dex)| self.fetch_positions_for_dex(address.clone(), dex.clone())).collect();
         let summaries = try_join_all(requests).await?;
 
-        let mut positions = Vec::new();
-        let mut balance = PerpetualBalance {
-            available: 0.0,
-            reserved: 0.0,
-            withdrawable: 0.0,
-        };
-        for summary in summaries {
-            positions.extend(summary.positions);
-            balance.available += summary.balance.available;
-            balance.reserved += summary.balance.reserved;
-            balance.withdrawable += summary.balance.withdrawable;
-        }
+        let (positions, balance) = summaries.into_iter().fold(
+            (Vec::new(), PerpetualBalance { available: 0.0, reserved: 0.0, withdrawable: 0.0 }),
+            |(mut acc_pos, mut acc_bal), summary| {
+                acc_pos.extend(summary.positions);
+                acc_bal.available += summary.balance.available;
+                acc_bal.reserved += summary.balance.reserved;
+                acc_bal.withdrawable += summary.balance.withdrawable;
+                (acc_pos, acc_bal)
+            },
+        );
         Ok(PerpetualPositionsSummary { positions, balance })
     }
 
