@@ -22,8 +22,24 @@ impl SignerError {
         Self::InvalidInput(message.into())
     }
 
+    pub fn invalid_input_err<T>(message: impl Into<String>) -> Result<T, Self> {
+        Err(Self::invalid_input(message))
+    }
+
     pub fn signing_error(message: impl Into<String>) -> Self {
         Self::SigningError(message.into())
+    }
+}
+
+impl From<&str> for SignerError {
+    fn from(value: &str) -> Self {
+        Self::InvalidInput(value.to_string())
+    }
+}
+
+impl From<String> for SignerError {
+    fn from(value: String) -> Self {
+        Self::InvalidInput(value)
     }
 }
 

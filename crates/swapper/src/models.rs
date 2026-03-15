@@ -45,7 +45,7 @@ impl ProviderType {
             | SwapperProvider::Aerodrome
             | SwapperProvider::Orca
             | SwapperProvider::Okx => SwapProviderMode::OnChain,
-            SwapperProvider::Mayan | SwapperProvider::Chainflip | SwapperProvider::NearIntents => SwapProviderMode::CrossChain,
+            SwapperProvider::Mayan | SwapperProvider::Chainflip | SwapperProvider::NearIntents | SwapperProvider::Squid => SwapProviderMode::CrossChain,
             SwapperProvider::Thorchain => SwapProviderMode::OmniChain(vec![Chain::Thorchain, Chain::Tron]),
             SwapperProvider::Relay => SwapProviderMode::OmniChain(vec![Chain::Hyperliquid, Chain::Berachain]),
             SwapperProvider::Across => SwapProviderMode::Bridge,

@@ -26,3 +26,7 @@ pub fn new_panora(rpc_provider: Arc<dyn RpcProvider>) -> ProxyProvider<RpcClient
 pub fn new_mayan(rpc_provider: Arc<dyn RpcProvider>) -> ProxyProvider<RpcClient> {
     ProxyProvider::new_mayan(rpc_provider)
 }
+
+pub fn new_squid(rpc_provider: Arc<dyn RpcProvider>) -> ProxyProvider<RpcClient> {
+    ProxyProvider::new_squid(rpc_provider)
+}

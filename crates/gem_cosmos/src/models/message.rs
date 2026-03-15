@@ -1,6 +1,10 @@
 use serde::{Deserialize, Serialize};
 
 use crate::constants;
+#[cfg(feature = "signer")]
+use crate::constants::{MESSAGE_EXECUTE_CONTRACT, MESSAGE_IBC_TRANSFER};
+#[cfg(feature = "signer")]
+use super::{ExecuteContractValue, IbcTransferValue};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "@type")]
@@ -88,5 +92,64 @@ impl MsgSend {
             .flat_map(|x| num_bigint::BigInt::from_str(&x.amount).ok())
             .sum();
         Some(value)
+    }
+}
+
+#[cfg(feature = "signer")]
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MessageEnvelope {
+    pub type_url: String,
+    pub value: serde_json::Value,
+}
+
+#[cfg(feature = "signer")]
+pub enum CosmosMessage {
+    ExecuteContract {
+        sender: String,
+        contract: String,
+        msg: Vec<u8>,
+        funds: Vec<Coin>,
+    },
+    IbcTransfer {
+        source_port: String,
+        source_channel: String,
+        token: Coin,
+        sender: String,
+        receiver: String,
+        timeout_timestamp: u64,
+        memo: String,
+    },
+}
+
+#[cfg(feature = "signer")]
+impl CosmosMessage {
+    pub fn parse(data: &str) -> Result<Self, String> {
+        let envelope: MessageEnvelope = serde_json::from_str(data).map_err(|e| format!("invalid swap data JSON: {e}"))?;
+
+        match envelope.type_url.as_str() {
+            MESSAGE_EXECUTE_CONTRACT => {
+                let v: ExecuteContractValue = serde_json::from_value(envelope.value).map_err(|e| format!("invalid MsgExecuteContract: {e}"))?;
+                Ok(Self::ExecuteContract {
+                    sender: v.sender,
+                    contract: v.contract,
+                    msg: v.msg.into_bytes(),
+                    funds: v.funds,
+                })
+            }
+            MESSAGE_IBC_TRANSFER => {
+                let v: IbcTransferValue = serde_json::from_value(envelope.value).map_err(|e| format!("invalid MsgTransfer: {e}"))?;
+                Ok(Self::IbcTransfer {
+                    source_port: v.source_port,
+                    source_channel: v.source_channel,
+                    token: v.token,
+                    sender: v.sender,
+                    receiver: v.receiver,
+                    timeout_timestamp: v.timeout_timestamp,
+                    memo: v.memo,
+                })
+            }
+            other => Err(format!("unsupported cosmos message type: {other}")),
+        }
     }
 }

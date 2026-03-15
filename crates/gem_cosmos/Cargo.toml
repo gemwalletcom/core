@@ -21,6 +21,8 @@ chain_traits = { path = "../chain_traits", optional = true }
 futures = { workspace = true, optional = true }
 number_formatter = { path = "../number_formatter", optional = true }
 
+signer = { path = "../signer", optional = true }
+
 num-bigint = { workspace = true }
 
 [features]
@@ -34,6 +36,7 @@ rpc = [
     "dep:futures",
     "dep:number_formatter",
 ]
+signer = ["dep:signer", "dep:serde_json"]
 reqwest = ["gem_client/reqwest"]
 chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 

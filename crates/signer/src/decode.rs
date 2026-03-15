@@ -104,12 +104,12 @@ fn decode_base32_stellar(value: &str) -> Option<Vec<u8>> {
 fn validate_key(bytes: &[u8], scheme: SignatureScheme) -> Result<(), SignerError> {
     match scheme {
         SignatureScheme::Ed25519 => {
-            let arr: &[u8; 32] = bytes.try_into().map_err(|_| SignerError::new("Invalid ed25519 private key"))?;
+            let arr: &[u8; 32] = bytes.try_into().map_err(|_| SignerError::invalid_input("Invalid ed25519 private key"))?;
             ed25519_dalek::SigningKey::from_bytes(arr);
             Ok(())
         }
         SignatureScheme::Secp256k1 => {
-            k256::ecdsa::SigningKey::from_slice(bytes).map_err(|_| SignerError::new("Invalid secp256k1 private key"))?;
+            k256::ecdsa::SigningKey::from_slice(bytes).map_err(|_| SignerError::invalid_input("Invalid secp256k1 private key"))?;
             Ok(())
         }
     }
@@ -128,7 +128,7 @@ fn decode_key(value: &str, encodings: &[KeyEncoding], scheme: SignatureScheme) -
             return Ok(Zeroizing::new(bytes));
         }
     }
-    Err(SignerError::new("Invalid private key format"))
+    Err(SignerError::invalid_input("Invalid private key format"))
 }
 
 pub fn decode_private_key(chain: &Chain, value: &str) -> Result<Zeroizing<Vec<u8>>, SignerError> {

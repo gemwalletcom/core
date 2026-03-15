@@ -20,7 +20,7 @@ swap_integration_tests = ["reqwest_provider"]
 [dependencies]
 swapper = { path = "../crates/swapper" }
 primitives = { path = "../crates/primitives" }
-gem_cosmos = { path = "../crates/gem_cosmos", features = ["rpc"] }
+gem_cosmos = { path = "../crates/gem_cosmos", features = ["rpc", "signer"] }
 gem_solana = { path = "../crates/gem_solana", features = ["rpc", "signer"] }
 gem_ton = { path = "../crates/gem_ton", features = ["rpc", "signer"] }
 gem_tron = { path = "../crates/gem_tron", features = ["rpc"] }

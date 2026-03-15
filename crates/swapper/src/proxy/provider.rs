@@ -5,6 +5,7 @@ use std::{collections::BTreeSet, fmt::Debug, str::FromStr, sync::Arc};
 use super::{
     client::ProxyClient,
     mayan::{MAYAN_DEPOSIT_CONTRACTS, MAYAN_SEND_CONTRACTS, MayanChain, MayanExplorer, MayanPrice, map_swap_result},
+    squid::SquidClient,
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperError, SwapperProvider, SwapperProviderMode, SwapperQuoteData,
@@ -130,6 +131,22 @@ impl ProxyProvider<RpcClient> {
         Self::new_with_path(SwapperProvider::Panora, "panora", vec![SwapperChainAsset::All(Chain::Aptos)], rpc_provider)
     }
 
+    pub fn new_squid(rpc_provider: Arc<dyn RpcProvider>) -> Self {
+        Self::new_with_path(
+            SwapperProvider::Squid,
+            "squid",
+            vec![
+                SwapperChainAsset::All(Chain::Cosmos),
+                SwapperChainAsset::All(Chain::Osmosis),
+                SwapperChainAsset::All(Chain::Celestia),
+                SwapperChainAsset::All(Chain::Injective),
+                SwapperChainAsset::All(Chain::Sei),
+                SwapperChainAsset::All(Chain::Noble),
+            ],
+            rpc_provider,
+        )
+    }
+
     pub fn new_mayan(rpc_provider: Arc<dyn RpcProvider>) -> Self {
         let assets = vec![
             SwapperChainAsset::Assets(
@@ -234,6 +251,15 @@ where
                 let client = MayanExplorer::new(base_url, self.rpc_provider.clone());
                 let result = client.get_transaction_status(transaction_hash).await?;
                 Ok(map_swap_result(&result))
+            }
+            SwapperProvider::Squid => {
+                let base_url = get_swap_api_url("squid");
+                let client = SquidClient::new(base_url, self.rpc_provider.clone());
+                let result = client.get_transaction_status(transaction_hash).await?;
+                Ok(SwapResult {
+                    status: result.squid_transaction_status.swap_status(),
+                    metadata: None,
+                })
             }
             _ => {
                 if self.provider.mode == SwapperProviderMode::OnChain {

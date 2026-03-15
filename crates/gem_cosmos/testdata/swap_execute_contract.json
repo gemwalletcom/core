@@ -1,0 +1,14 @@
+{
+    "typeUrl": "/cosmwasm.wasm.v1.MsgExecuteContract",
+    "value": {
+        "sender": "osmo1test",
+        "contract": "osmo1contract",
+        "msg": "{\"swap\":{}}",
+        "funds": [
+            {
+                "denom": "uosmo",
+                "amount": "1000000"
+            }
+        ]
+    }
+}

@@ -27,6 +27,7 @@ pub enum SwapProvider {
     Relay,
     Hyperliquid,
     Orca,
+    Squid,
 }
 
 impl SwapProvider {
@@ -40,7 +41,7 @@ impl SwapProvider {
 
     pub fn is_cross_chain(&self) -> bool {
         match self {
-            Self::Thorchain | Self::Across | Self::Mayan | Self::Chainflip | Self::NearIntents | Self::Relay | Self::Hyperliquid => true,
+            Self::Thorchain | Self::Across | Self::Mayan | Self::Chainflip | Self::NearIntents | Self::Relay | Self::Hyperliquid | Self::Squid => true,
             Self::UniswapV3
             | Self::UniswapV4
             | Self::PancakeswapV3
@@ -81,6 +82,7 @@ impl SwapProvider {
             Self::Relay => "Relay",
             Self::Hyperliquid => "Hyperliquid",
             Self::Orca => "Orca",
+            Self::Squid => "Squid",
         }
     }
 
@@ -105,7 +107,8 @@ impl SwapProvider {
             | Self::Aerodrome
             | Self::Relay
             | Self::Hyperliquid
-            | Self::Orca => self.name(),
+            | Self::Orca
+            | Self::Squid => self.name(),
         }
     }
 }
