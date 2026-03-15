@@ -1,4 +1,4 @@
-use crate::error::SignerError;
+use primitives::SignerError;
 use k256::ecdsa::SigningKey as SecpSigningKey;
 
 pub(crate) fn sign_digest(digest: &[u8], private_key: &[u8]) -> Result<Vec<u8>, SignerError> {
