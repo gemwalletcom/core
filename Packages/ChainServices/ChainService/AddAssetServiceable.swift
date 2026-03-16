@@ -3,6 +3,6 @@
 import Foundation
 import Primitives
 
-public protocol AddTokenServable: Sendable {
+public protocol AddAssetServiceable: Sendable {
     func getTokenData(chain: Chain, tokenId: String) async throws -> Asset
 }

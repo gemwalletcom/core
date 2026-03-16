@@ -2,7 +2,7 @@
 
 import Primitives
 
-struct AddTokenInput {
+struct AddAssetInput {
     
     let chains: [Chain]
 

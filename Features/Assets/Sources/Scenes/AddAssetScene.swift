@@ -8,8 +8,8 @@ import Style
 import PrimitivesComponents
 import Localization
 
-public struct AddTokenScene: View {
-    @State private var model: AddTokenViewModel
+public struct AddAssetScene: View {
+    @State private var model: AddAssetSceneViewModel
     @State private var networksModel: NetworkSelectorViewModel
     @State private var isPresentingUrl: URL?
 
@@ -20,7 +20,7 @@ public struct AddTokenScene: View {
 
     var action: ((Asset) -> Void)?
 
-    public init(model: AddTokenViewModel, action: ((Asset) -> Void)? = nil) {
+    public init(model: AddAssetSceneViewModel, action: ((Asset) -> Void)? = nil) {
         _model = State(initialValue: model)
         _networksModel = State(initialValue: NetworkSelectorViewModel(state: .data(.plain(model.chains))))
         self.action = action
@@ -57,7 +57,7 @@ public struct AddTokenScene: View {
 
 // MARK: - UI Components
 
-extension AddTokenScene {
+extension AddAssetScene {
     @ViewBuilder
     private var addTokenList: some View {
         List {
@@ -130,7 +130,7 @@ extension AddTokenScene {
 
 // MARK: - Actions
 
-extension AddTokenScene {
+extension AddAssetScene {
     private func onFinishChainSelection(chains: [Chain]) {
         model.input.chain = chains.first
         onAddressClean(nil, nil)
@@ -167,7 +167,7 @@ extension AddTokenScene {
 
 // MARK: - Effects
 
-extension AddTokenScene {
+extension AddAssetScene {
     private func fetch() {
         Task {
             await model.fetch()

@@ -12,17 +12,17 @@ import GemstonePrimitives
 
 @Observable
 @MainActor
-public final class AddTokenViewModel {
-    private let service: any AddTokenServable
+public final class AddAssetSceneViewModel {
+    private let service: any AddAssetServiceable
 
     var state: StateViewType<AddAssetViewModel> = .noData
-    var input: AddTokenInput
+    var input: AddAssetInput
 
     var isPresentingScanner = false
 
-    public init(wallet: Wallet, service: any AddTokenServable) {
+    public init(wallet: Wallet, service: any AddAssetServiceable) {
         self.service = service
-        self.input = AddTokenInput(chains: wallet.chainsWithTokens)
+        self.input = AddAssetInput(chains: wallet.chainsWithTokens)
     }
 
     var title: String { Localized.Wallet.AddToken.title }
@@ -67,7 +67,7 @@ public final class AddTokenViewModel {
 
 // MARK: - Business Logic
 
-extension AddTokenViewModel {
+extension AddAssetSceneViewModel {
     func fetch() async {
         guard let chain = input.chain, let address = input.address, !address.isEmpty else {
             state = .noData

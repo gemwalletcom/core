@@ -3,7 +3,7 @@
 import Foundation
 import Primitives
 
-public struct AddTokenService: AddTokenServable, Sendable {
+public struct AddAssetService: AddAssetServiceable, Sendable {
     private let chainServiceFactory: any ChainServiceFactorable
 
     public init(chainServiceFactory: any ChainServiceFactorable) {

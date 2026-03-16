@@ -216,7 +216,7 @@ struct WalletNavigationStack: View {
                 )
             }
             .sheet(isPresented: $model.isPresentingAddToken) {
-                AddTokenNavigationStack(
+                AddAssetNavigationStack(
                     wallet: model.wallet,
                     isPresenting: $model.isPresentingAddToken
                 )

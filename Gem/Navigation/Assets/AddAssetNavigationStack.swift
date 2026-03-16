@@ -7,7 +7,7 @@ import Assets
 import Style
 import Localization
 
-struct AddTokenNavigationStack: View {
+struct AddAssetNavigationStack: View {
     
     let wallet: Wallet
     @State var isPresenting: Binding<Bool>
@@ -17,10 +17,10 @@ struct AddTokenNavigationStack: View {
 
     var body: some View {
         NavigationStack {
-            AddTokenScene(
-                model: AddTokenViewModel(
+            AddAssetScene(
+                model: AddAssetSceneViewModel(
                     wallet: wallet,
-                    service: AddTokenService(chainServiceFactory: chainServiceFactory)
+                    service: AddAssetService(chainServiceFactory: chainServiceFactory)
                 ),
                 action: addAsset
             )
@@ -37,7 +37,7 @@ struct AddTokenNavigationStack: View {
     }
 }
 
-extension AddTokenNavigationStack {
+extension AddAssetNavigationStack {
     private func addAsset(_ asset: Asset) {
         Task {
             try assetsService.addNewAsset(walletId: wallet.walletId, asset: asset)
