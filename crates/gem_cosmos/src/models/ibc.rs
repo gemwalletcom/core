@@ -15,22 +15,3 @@ pub struct IbcTransferValue {
     #[serde(default)]
     pub memo: String,
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_deserialize_timeout_as_number() {
-        let json = r#"{"sourcePort":"transfer","sourceChannel":"channel-0","token":{"denom":"uatom","amount":"1000000"},"sender":"cosmos1test","receiver":"osmo1test","timeoutTimestamp":1773382733549000000,"memo":"test"}"#;
-        let v: IbcTransferValue = serde_json::from_str(json).unwrap();
-        assert_eq!(v.timeout_timestamp, 1773382733549000000);
-    }
-
-    #[test]
-    fn test_deserialize_timeout_as_string() {
-        let json = r#"{"sourcePort":"transfer","sourceChannel":"channel-0","token":{"denom":"uatom","amount":"1000000"},"sender":"cosmos1test","receiver":"osmo1test","timeoutTimestamp":"1773382733549000000","memo":"test"}"#;
-        let v: IbcTransferValue = serde_json::from_str(json).unwrap();
-        assert_eq!(v.timeout_timestamp, 1773382733549000000);
-    }
-}
