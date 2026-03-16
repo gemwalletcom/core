@@ -68,7 +68,7 @@ fn get_fee(chain: CosmosChain, input_type: &TransactionInputType) -> BigInt {
     }
 }
 
-fn get_gas_limit(input_type: &TransactionInputType, chain: CosmosChain) -> u64 {
+fn get_gas_limit(input_type: &TransactionInputType, _chain: CosmosChain) -> u64 {
     match input_type {
         TransactionInputType::Transfer(_)
         | TransactionInputType::Deposit(_)
