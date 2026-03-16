@@ -113,7 +113,7 @@ impl SwapProvider {
     pub fn priority(&self) -> i32 {
         match self {
             Self::UniswapV3 | Self::UniswapV4 | Self::PancakeswapV3 | Self::Aerodrome | Self::Oku | Self::Wagmi | Self::StonfiV2 | Self::Orca | Self::Hyperliquid => 1,
-            Self::Thorchain | Self::Across | Self::Mayan | Self::Chainflip | Self::NearIntents | Self::Relay => 2,
+            Self::Thorchain | Self::Across | Self::Mayan | Self::Chainflip | Self::NearIntents | Self::Relay | Self::Squid => 2,
             Self::Jupiter | Self::Okx | Self::CetusAggregator | Self::Panora => 3,
         }
     }

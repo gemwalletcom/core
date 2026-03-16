@@ -5,7 +5,7 @@ use std::{collections::BTreeSet, fmt::Debug, str::FromStr, sync::Arc};
 use super::{
     client::ProxyClient,
     mayan::{MAYAN_DEPOSIT_CONTRACTS, MAYAN_SEND_CONTRACTS, MayanChain, MayanExplorer, MayanPrice, map_swap_result},
-    squid::SquidClient,
+    squid::{SQUID_COSMOS_MULTICALL, SquidClient},
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperError, SwapperProvider, SwapperProviderMode, SwapperQuoteData,
@@ -288,6 +288,13 @@ where
                 Ok(VaultAddresses {
                     deposit: deposit.into_iter().collect(),
                     send: send.into_iter().collect(),
+                })
+            }
+            SwapperProvider::Squid => {
+                let address = SQUID_COSMOS_MULTICALL.to_string();
+                Ok(VaultAddresses {
+                    deposit: vec![address.clone()],
+                    send: vec![address],
                 })
             }
             _ => Ok(VaultAddresses { deposit: vec![], send: vec![] }),
