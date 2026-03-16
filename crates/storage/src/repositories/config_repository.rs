@@ -2,10 +2,9 @@ use std::time::Duration;
 
 use primitives::ConfigKey;
 
-use crate::DatabaseClient;
-use crate::DatabaseError;
 use crate::database::config::ConfigStore;
 use crate::models::ConfigRow;
+use crate::{DatabaseClient, DatabaseError, DieselResultExt};
 
 pub trait ConfigRepository {
     fn get_config(&mut self, key: ConfigKey) -> Result<String, DatabaseError>;
@@ -20,7 +19,8 @@ pub trait ConfigRepository {
 
 impl ConfigRepository for DatabaseClient {
     fn get_config(&mut self, key: ConfigKey) -> Result<String, DatabaseError> {
-        let result = ConfigStore::get_config_key(self, key.as_ref())?;
+        let key = key.as_ref().to_string();
+        let result = ConfigStore::get_config_key(self, &key).or_not_found(key)?;
         Ok(result.value)
     }
 

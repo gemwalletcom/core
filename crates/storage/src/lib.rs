@@ -19,7 +19,7 @@ pub use self::database::{
     rewards_redemptions::RedemptionUpdate,
     transactions::{TransactionFilter, TransactionUpdate},
 };
-pub use self::error::{DatabaseError, ReferralValidationError};
+pub use self::error::{DatabaseError, DieselResultExt, ReferralValidationError};
 pub use self::models::{AssetUsageRankRow, NewNotificationRow, NewWalletRow, RewardRedemptionOptionRow};
 pub use self::repositories::{
     assets_addresses_repository::AssetsAddressesRepository, assets_links_repository::AssetsLinksRepository, assets_repository::AssetsRepository,

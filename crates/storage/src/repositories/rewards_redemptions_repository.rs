@@ -2,7 +2,7 @@ use crate::database::rewards::RewardsStore;
 use crate::database::rewards_redemptions::{RedemptionUpdate, RewardsRedemptionsStore};
 use crate::models::{NewRewardRedemptionRow, RewardRedemptionRow};
 use crate::sql_types::{RedemptionStatus, RewardRedemptionType};
-use crate::{DatabaseClient, DatabaseError};
+use crate::{DatabaseClient, DatabaseError, DieselResultExt};
 use chrono::Utc;
 use primitives::rewards::{RewardRedemption, RewardRedemptionOption};
 
@@ -17,8 +17,8 @@ pub trait RewardsRedemptionsRepository {
 
 impl RewardsRedemptionsRepository for DatabaseClient {
     fn add_redemption(&mut self, username: &str, option_id: &str, device_id: i32, wallet_id: i32) -> Result<RewardRedemption, DatabaseError> {
-        let redemption_option = RewardsRedemptionsStore::get_redemption_option(self, option_id)?;
-        let rewards = RewardsStore::get_rewards(self, username)?;
+        let redemption_option = RewardsRedemptionsStore::get_redemption_option(self, option_id).or_not_found(option_id.to_string())?;
+        let rewards = RewardsStore::get_rewards(self, username).or_not_found(username.to_string())?;
 
         if rewards.points < redemption_option.option.points {
             return Err(DatabaseError::Error("Not enough points".into()));
@@ -42,12 +42,12 @@ impl RewardsRedemptionsRepository for DatabaseClient {
         )?;
 
         let option = redemption_option.as_primitive();
-        let redemption_row = RewardsRedemptionsStore::get_redemption(self, redemption_id)?;
+        let redemption_row = RewardsRedemptionsStore::get_redemption(self, redemption_id).or_not_found_internal(redemption_id.to_string())?;
         Ok(redemption_row.as_primitive(option))
     }
 
     fn get_redemption(&mut self, redemption_id: i32) -> Result<RewardRedemptionRow, DatabaseError> {
-        Ok(RewardsRedemptionsStore::get_redemption(self, redemption_id)?)
+        RewardsRedemptionsStore::get_redemption(self, redemption_id).or_not_found_internal(redemption_id.to_string())
     }
 
     fn update_redemption(&mut self, redemption_id: i32, updates: Vec<RedemptionUpdate>) -> Result<(), DatabaseError> {
@@ -60,7 +60,7 @@ impl RewardsRedemptionsRepository for DatabaseClient {
     }
 
     fn get_redemption_option(&mut self, id: &str) -> Result<RewardRedemptionOption, DatabaseError> {
-        Ok(RewardsRedemptionsStore::get_redemption_option(self, id)?.as_primitive())
+        Ok(RewardsRedemptionsStore::get_redemption_option(self, id).or_not_found(id.to_string())?.as_primitive())
     }
 
     fn count_redemptions_since_days(&mut self, username: &str, days: i64) -> Result<i64, DatabaseError> {

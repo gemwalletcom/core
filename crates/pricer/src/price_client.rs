@@ -1,4 +1,4 @@
-use cacher::{CacheKey, CacherClient};
+use cacher::{CacheError, CacheKey, CacherClient};
 use chrono::NaiveDateTime;
 use primitives::{AssetMarketPrice, AssetPriceInfo, AssetPrices, ChartTimeframe, FiatRate};
 use std::error::Error;
@@ -86,7 +86,10 @@ impl PriceClient {
     }
 
     pub async fn get_cache_fiat_rates(&self) -> Result<Vec<FiatRate>, Box<dyn Error + Send + Sync>> {
-        self.cacher_client.get_cached(CacheKey::FiatRates).await
+        match self.cacher_client.get_cached_optional::<Vec<FiatRate>>(CacheKey::FiatRates).await? {
+            Some(rates) => Ok(rates),
+            None => Err(Box::new(CacheError::not_found_resource("FiatRates"))),
+        }
     }
 
     pub async fn set_cache_prices(&self, prices: Vec<AssetPriceInfo>, ttl_seconds: i64) -> Result<usize, Box<dyn Error + Send + Sync>> {
@@ -104,7 +107,10 @@ impl PriceClient {
     }
 
     pub async fn get_cache_price(&self, asset_id: &str) -> Result<AssetPriceInfo, Box<dyn Error + Send + Sync>> {
-        self.cacher_client.get_cached(CacheKey::Price(asset_id)).await
+        match self.cacher_client.get_cached_optional::<AssetPriceInfo>(CacheKey::Price(asset_id)).await? {
+            Some(price) => Ok(price),
+            None => Err(Box::new(CacheError::not_found("Price", asset_id.to_string()))),
+        }
     }
 
     pub async fn get_asset_prices(&self, currency: &str, asset_ids: Vec<String>) -> Result<AssetPrices, Box<dyn Error + Send + Sync>> {

@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use cacher::{CacheKey, CacherClient};
+use cacher::{CacheError, CacheKey, CacherClient};
 use primitives::{AssetId, AssetTag, Markets, MarketsAssets};
 use storage::{Database, PricesRepository, TagRepository};
 
@@ -16,7 +16,10 @@ impl MarketsClient {
     }
 
     pub async fn get_markets(&self) -> Result<Markets, Box<dyn Error + Send + Sync>> {
-        self.cacher.get_cached(CacheKey::Markets).await
+        match self.cacher.get_cached_optional(CacheKey::Markets).await? {
+            Some(markets) => Ok(markets),
+            None => Err(Box::new(CacheError::not_found_resource("Markets"))),
+        }
     }
 
     pub async fn set_markets(&self, markets: Markets) -> Result<(), Box<dyn Error + Send + Sync>> {

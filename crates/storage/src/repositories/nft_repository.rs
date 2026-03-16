@@ -1,11 +1,9 @@
-use crate::DatabaseError;
-
-use crate::DatabaseClient;
 use crate::database::nft::NftStore;
 use crate::models::{
     NewNftCollectionRow, NftAssetRow, NftCollectionRow, nft_asset::UpdateNftAssetImageUrlRow, nft_collection::UpdateNftCollectionImageUrlRow, nft_link::NftLinkRow,
     nft_report::NewNftReportRow,
 };
+use crate::{DatabaseClient, DatabaseError, DieselResultExt};
 
 pub trait NftRepository {
     fn get_nft_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<NftAssetRow>, DatabaseError>;
@@ -28,7 +26,7 @@ impl NftRepository for DatabaseClient {
     }
 
     fn get_nft_asset(&mut self, asset_id: &str) -> Result<NftAssetRow, DatabaseError> {
-        Ok(NftStore::get_nft_asset(self, asset_id)?)
+        NftStore::get_nft_asset(self, asset_id).or_not_found(asset_id.to_string())
     }
 
     fn add_nft_assets(&mut self, values: Vec<NftAssetRow>) -> Result<usize, DatabaseError> {
@@ -44,7 +42,7 @@ impl NftRepository for DatabaseClient {
     }
 
     fn get_nft_collection(&mut self, collection_id: &str) -> Result<NftCollectionRow, DatabaseError> {
-        Ok(NftStore::get_nft_collection(self, collection_id)?)
+        NftStore::get_nft_collection(self, collection_id).or_not_found(collection_id.to_string())
     }
 
     fn get_nft_collections(&mut self, ids: Vec<String>) -> Result<Vec<NftCollectionRow>, DatabaseError> {

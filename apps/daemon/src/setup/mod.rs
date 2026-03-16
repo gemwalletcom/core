@@ -246,12 +246,16 @@ fn setup_dev_devices(database: &Database) -> Result<(), Box<dyn std::error::Erro
     info_with_fields!("setup_dev", step = "wallet added", wallet_id = wallet.id);
 
     info_with_fields!("setup_dev", step = "add wallet subscriptions");
-    let ios_subscriptions = vec![(wallet.id, Chain::Ethereum, wallet_address.to_string())];
-    let result = WalletsRepository::add_subscriptions(&mut database.wallets()?, ios_device_row_id, ios_subscriptions)?;
+    let solana_address = "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H";
+    let subscriptions = vec![
+        (wallet.id, Chain::Ethereum, wallet_address.to_string()),
+        (wallet.id, Chain::Solana, solana_address.to_string()),
+    ];
+
+    let result = WalletsRepository::add_subscriptions(&mut database.wallets()?, ios_device_row_id, subscriptions.clone())?;
     info_with_fields!("setup_dev", step = "ios wallet subscription added", count = result);
 
-    let android_subscriptions = vec![(wallet.id, Chain::Ethereum, wallet_address.to_string())];
-    let result = WalletsRepository::add_subscriptions(&mut database.wallets()?, android_device_row_id, android_subscriptions)?;
+    let result = WalletsRepository::add_subscriptions(&mut database.wallets()?, android_device_row_id, subscriptions)?;
     info_with_fields!("setup_dev", step = "android wallet subscription added", count = result);
 
     info_with_fields!("setup_dev", step = "add rewards");

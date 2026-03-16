@@ -1,4 +1,4 @@
-use crate::DatabaseError;
+use crate::{DatabaseError, DieselResultExt};
 use chrono::NaiveDateTime;
 use primitives::{FiatProviderCountry, FiatRate, FiatTransaction};
 
@@ -69,7 +69,7 @@ impl FiatRepository for DatabaseClient {
     }
 
     fn get_fiat_rate(&mut self, currency: &str) -> Result<FiatRate, DatabaseError> {
-        let result = FiatStore::get_fiat_rate(self, currency)?;
+        let result = FiatStore::get_fiat_rate(self, currency).or_not_found(currency.to_string())?;
         Ok(result.as_primitive())
     }
 
@@ -86,7 +86,7 @@ impl FiatRepository for DatabaseClient {
     }
 
     fn get_fiat_quote(&mut self, quote_id: &str) -> Result<crate::models::FiatQuoteRow, DatabaseError> {
-        Ok(FiatStore::get_fiat_quote(self, quote_id)?)
+        FiatStore::get_fiat_quote(self, quote_id).or_not_found(quote_id.to_string())
     }
 
     fn add_fiat_quote_request(&mut self, request: crate::models::FiatQuoteRequestRow) -> Result<usize, DatabaseError> {

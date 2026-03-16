@@ -1,8 +1,6 @@
-use crate::DatabaseError;
-
-use crate::DatabaseClient;
 use crate::database::scan_addresses::ScanAddressesStore;
 use crate::models::{NewScanAddressRow, ScanAddressRow};
+use crate::{DatabaseClient, DatabaseError, DieselResultExt};
 use primitives::{Chain, ScanAddress};
 
 pub trait ScanAddressesRepository {
@@ -13,8 +11,8 @@ pub trait ScanAddressesRepository {
 }
 
 impl ScanAddressesRepository for DatabaseClient {
-    fn get_scan_address(&mut self, _chain: Chain, value: &str) -> Result<ScanAddressRow, DatabaseError> {
-        Ok(ScanAddressesStore::get_scan_address(self, _chain, value)?)
+    fn get_scan_address(&mut self, chain: Chain, value: &str) -> Result<ScanAddressRow, DatabaseError> {
+        ScanAddressesStore::get_scan_address(self, chain, value).or_not_found(format!("{}/{}", chain.as_ref(), value))
     }
 
     fn get_scan_addresses(&mut self, queries: &[(Chain, &str)]) -> Result<Vec<ScanAddressRow>, DatabaseError> {
