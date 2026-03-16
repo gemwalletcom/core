@@ -11,9 +11,8 @@ use crate::provider::EarnProvider;
 
 use super::{YO_PARTNER_ID_GEM, YoAsset, client::YoClient, mapper::{map_to_delegation, map_to_earn_provider}, supported_assets};
 
-const GAS_LIMIT: &str = "300000";
+const GAS_LIMIT: u64 = 300_000;
 const SLIPPAGE_BPS: u64 = 50;
-const PROVIDER: YieldProvider = YieldProvider::Yo;
 
 pub struct YoEarnProvider {
     assets: &'static [YoAsset],
@@ -43,7 +42,7 @@ impl YoEarnProvider {
     async fn positions_for_chain(&self, chain: Chain, address: &str, assets: &[YoAsset]) -> Result<Vec<DelegationBase>, YielderError> {
         let gateway = self.gateway_for_chain(chain)?;
         let owner = Address::from_str(address)?;
-        let provider_id = PROVIDER.to_string();
+        let provider_id = YieldProvider::Yo.to_string();
         let positions = gateway.positions_batch(assets, owner).await?;
 
         Ok(assets
@@ -58,11 +57,11 @@ impl YoEarnProvider {
 #[async_trait]
 impl EarnProvider for YoEarnProvider {
     fn id(&self) -> YieldProvider {
-        PROVIDER
+        YieldProvider::Yo
     }
 
     fn earn_providers(&self, asset_id: &AssetId) -> Vec<DelegationValidator> {
-        self.assets.iter().filter(|a| a.asset_id() == *asset_id).map(|a| map_to_earn_provider(a.chain, PROVIDER)).collect()
+        self.assets.iter().filter(|a| a.asset_id() == *asset_id).map(|a| map_to_earn_provider(a.chain, YieldProvider::Yo)).collect()
     }
 
     fn earn_asset_ids_for_chain(&self, chain: Chain) -> Vec<AssetId> {
