@@ -20,7 +20,7 @@ pub use query::build_path_with_query;
 pub use types::{ClientError, Response, decode_json_byte_array, deserialize_response};
 
 #[cfg(feature = "reqwest")]
-pub use reqwest_client::ReqwestClient;
+pub use reqwest_client::{ReqwestClient, json_response};
 
 #[cfg(feature = "reqwest")]
 pub use retry::{default_should_retry, retry, retry_policy};

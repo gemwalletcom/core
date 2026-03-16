@@ -27,6 +27,7 @@ serde_serializers = { path = "../serde_serializers" }
 number_formatter = { path = "../number_formatter" }
 cacher = { path = "../cacher" }
 streamer = { path = "../streamer" }
+gem_client = { path = "../gem_client", features = ["reqwest"] }
 
 [dev-dependencies]
 
