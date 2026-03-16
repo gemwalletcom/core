@@ -1,7 +1,7 @@
 use chrono::{Duration, Utc};
 use fiat::{FiatProvider, model::FiatProviderAsset};
 use gem_tracing::info_with_fields;
-use primitives::{AssetTag, Diff, FiatProviderName, PaymentType, currency::Currency};
+use primitives::{AssetTag, Diff, FiatProviderName, currency::Currency};
 use storage::{AssetFilter, AssetUpdate};
 use storage::{AssetsRepository, Database, TagRepository};
 
@@ -65,7 +65,7 @@ impl FiatAssetsUpdater {
     }
 
     pub async fn update_fiat_assets_for(&self, provider_name: FiatProviderName) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let provider = self.get_provider(provider_name.clone())?;
+        let provider = self.get_provider(provider_name)?;
 
         let payment_methods = provider.payment_methods().await;
         let payment_methods_json = serde_json::to_value(&payment_methods)?;
@@ -106,7 +106,7 @@ impl FiatAssetsUpdater {
     }
 
     pub async fn update_fiat_countries_for(&self, provider_name: FiatProviderName) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let provider = self.get_provider(provider_name.clone())?;
+        let provider = self.get_provider(provider_name)?;
         let countries = provider.get_countries().await?;
         let country_count = countries.len();
         self.database

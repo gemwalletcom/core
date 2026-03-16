@@ -24,7 +24,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
             move |_| {
                 let settings = settings.clone();
                 let database = database.clone();
-                let provider = provider.clone();
+                let provider = provider;
                 async move {
                     let providers = FiatProviderFactory::new_providers((*settings).clone());
                     let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);
@@ -38,7 +38,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
             move |_| {
                 let settings = settings.clone();
                 let database = database.clone();
-                let provider = provider.clone();
+                let provider = provider;
                 async move {
                     let providers = FiatProviderFactory::new_providers((*settings).clone());
                     let fiat_assets_updater = FiatAssetsUpdater::new(database.clone(), providers);

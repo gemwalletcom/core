@@ -1,4 +1,4 @@
-use crate::SignerError;
+use primitives::SignerError;
 use alloy_primitives::hex;
 use gem_hash::keccak::keccak256;
 use serde_json::{Map, Value};
@@ -134,7 +134,7 @@ fn encode_string(value: Option<&Value>) -> Result<[u8; 32], SignerError> {
 
 fn encode_bytes(value: Option<&Value>) -> Result<[u8; 32], SignerError> {
     let bytes = match value {
-        Some(Value::String(s)) => hex::decode(s)?,
+        Some(Value::String(s)) => hex::decode(s).map_err(SignerError::from_display)?,
         Some(Value::Null) | None => Vec::new(),
         Some(other) => return Err(SignerError::invalid_input(format!("Expected hex string for bytes value, got {}", other))),
     };
@@ -160,7 +160,7 @@ fn encode_bool(value: Option<&Value>) -> Result<[u8; 32], SignerError> {
 fn encode_address(value: Option<&Value>) -> Result<[u8; 32], SignerError> {
     let bytes = match value {
         Some(Value::String(s)) => {
-            let raw = hex::decode(s)?;
+            let raw = hex::decode(s).map_err(SignerError::from_display)?;
             if raw.len() != 20 {
                 return Err(SignerError::invalid_input(format!("Invalid address length for '{s}'")));
             }
@@ -197,7 +197,7 @@ fn encode_fixed_bytes(type_name: &str, value: Option<&Value>) -> Result<[u8; 32]
     let size = parse_fixed_bytes_size(type_name)?;
     let mut bytes = match value {
         Some(Value::String(s)) if s.is_empty() => Vec::new(),
-        Some(Value::String(s)) => hex::decode(s)?,
+        Some(Value::String(s)) => hex::decode(s).map_err(SignerError::from_display)?,
         Some(Value::Null) | None => Vec::new(),
         Some(other) => return Err(SignerError::invalid_input(format!("Expected hex string for {type_name}, got {}", other))),
     };
