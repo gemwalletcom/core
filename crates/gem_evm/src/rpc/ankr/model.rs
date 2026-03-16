@@ -60,5 +60,6 @@ pub fn ankr_chain(chain: EVMChain) -> Option<String> {
         EVMChain::Monad => None,
         EVMChain::XLayer => None,
         EVMChain::Stable => None,
+        EVMChain::Rootstock => None,
     }
 }

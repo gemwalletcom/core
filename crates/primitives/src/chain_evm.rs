@@ -41,6 +41,7 @@ pub enum EVMChain {
     Monad,
     XLayer,
     Stable,
+    Rootstock,
 }
 
 impl EVMChain {
