@@ -5,6 +5,8 @@ use super::{ExecuteContractValue, IbcTransferValue};
 use crate::constants;
 #[cfg(feature = "signer")]
 use crate::constants::{MESSAGE_EXECUTE_CONTRACT, MESSAGE_IBC_TRANSFER};
+#[cfg(feature = "signer")]
+use primitives::SignerError;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "@type")]
@@ -124,12 +126,12 @@ pub enum CosmosMessage {
 
 #[cfg(feature = "signer")]
 impl CosmosMessage {
-    pub fn parse(data: &str) -> Result<Self, String> {
-        let envelope: MessageEnvelope = serde_json::from_str(data).map_err(|e| format!("invalid swap data JSON: {e}"))?;
+    pub fn parse(data: &str) -> Result<Self, SignerError> {
+        let envelope: MessageEnvelope = serde_json::from_str(data)?;
 
         match envelope.type_url.as_str() {
             MESSAGE_EXECUTE_CONTRACT => {
-                let v: ExecuteContractValue = serde_json::from_value(envelope.value).map_err(|e| format!("invalid MsgExecuteContract: {e}"))?;
+                let v: ExecuteContractValue = serde_json::from_value(envelope.value)?;
                 Ok(Self::ExecuteContract {
                     sender: v.sender,
                     contract: v.contract,
@@ -138,7 +140,7 @@ impl CosmosMessage {
                 })
             }
             MESSAGE_IBC_TRANSFER => {
-                let v: IbcTransferValue = serde_json::from_value(envelope.value).map_err(|e| format!("invalid MsgTransfer: {e}"))?;
+                let v: IbcTransferValue = serde_json::from_value(envelope.value)?;
                 Ok(Self::IbcTransfer {
                     source_port: v.source_port,
                     source_channel: v.source_channel,
@@ -149,7 +151,7 @@ impl CosmosMessage {
                     memo: v.memo,
                 })
             }
-            other => Err(format!("unsupported cosmos message type: {other}")),
+            other => SignerError::invalid_input_err(format!("unsupported cosmos message type: {other}")),
         }
     }
 }

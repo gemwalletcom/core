@@ -35,18 +35,6 @@ impl SignerError {
     }
 }
 
-impl From<&str> for SignerError {
-    fn from(value: &str) -> Self {
-        Self::InvalidInput(value.to_string())
-    }
-}
-
-impl From<String> for SignerError {
-    fn from(value: String) -> Self {
-        Self::InvalidInput(value)
-    }
-}
-
 impl From<serde_json::Error> for SignerError {
     fn from(error: serde_json::Error) -> Self {
         SignerError::InvalidInput(error.to_string())

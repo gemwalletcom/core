@@ -111,14 +111,12 @@ mod tests {
             sender: "osmo1test".to_string(),
             contract: "osmo1contract".to_string(),
             msg: b"{\"swap\":{}}".to_vec(),
-            funds: vec![Coin {
-                denom: "uosmo".to_string(),
-                amount: "1000000".to_string(),
-            }],
+            funds: vec![Coin { denom: "uosmo".to_string(), amount: "1000000".to_string() }],
         };
-        let any = msg.encode_as_any();
-        assert!(!any.is_empty());
-        assert!(any.len() > 10);
+        assert_eq!(
+            hex::encode(msg.encode_as_any()),
+            "0a242f636f736d7761736d2e7761736d2e76312e4d736745786563757465436f6e747261637412390a096f736d6f3174657374120d6f736d6f31636f6e74726163741a0b7b2273776170223a7b7d7d2a100a05756f736d6f120731303030303030"
+        );
     }
 
     #[test]
@@ -126,16 +124,15 @@ mod tests {
         let msg = CosmosMessage::IbcTransfer {
             source_port: "transfer".to_string(),
             source_channel: "channel-0".to_string(),
-            token: Coin {
-                denom: "uatom".to_string(),
-                amount: "1000000".to_string(),
-            },
+            token: Coin { denom: "uatom".to_string(), amount: "1000000".to_string() },
             sender: "cosmos1test".to_string(),
             receiver: "osmo1test".to_string(),
             timeout_timestamp: 1773382733549000000,
             memo: "{\"ibc_callback\":\"osmo1contract\"}".to_string(),
         };
-        let any = msg.encode_as_any();
-        assert!(!any.is_empty());
+        assert_eq!(
+            hex::encode(msg.encode_as_any()),
+            "0a292f6962632e6170706c69636174696f6e732e7472616e736665722e76312e4d73675472616e73666572126b0a087472616e7366657212096368616e6e656c2d301a100a057561746f6d120731303030303030220b636f736d6f7331746573742a096f736d6f317465737438c0aaffdfb4c694ce1842207b226962635f63616c6c6261636b223a226f736d6f31636f6e7472616374227d"
+        );
     }
 }
