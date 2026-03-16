@@ -10,7 +10,7 @@ use crate::model::{FiatMapping, FiatProviderAsset};
 
 use super::{
     client::FlashnetClient,
-    mapper::{map_assets, map_crypto_amount, map_order, map_redirect_url, map_source_amount},
+    mapper::{map_amount, map_assets, map_crypto_amount, map_order, map_redirect_url, map_source_amount},
     model::{FlashnetOnrampRequest, FlashnetWebhookPayload},
 };
 
@@ -66,14 +66,14 @@ impl FiatProvider for FlashnetClient {
 
     async fn get_quote_url(&self, data: FiatQuoteUrlData) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {
         let network = FiatMapping::get_network(data.asset_symbol.network.clone())?;
-        let amount = map_source_amount(data.quote.fiat_amount);
+        let amount = map_amount(data.quote.crypto_amount, data.quote.asset.decimals as u32);
 
         let request = FlashnetOnrampRequest {
             destination_chain: network,
             destination_asset: data.asset_symbol.symbol.to_ascii_uppercase(),
             recipient_address: data.wallet_address.clone(),
             amount,
-            amount_mode: "exact_in".to_string(),
+            amount_mode: "exact_out".to_string(),
             affiliate_id: self.affiliate_id.clone(),
         };
         let response = self.create_onramp(request, &data.quote.id).await?;

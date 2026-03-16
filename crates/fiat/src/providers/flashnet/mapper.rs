@@ -60,9 +60,13 @@ fn map_asset(route: FlashnetRoute) -> Option<FiatProviderAsset> {
 
 const USDB_DECIMALS: u32 = 6;
 
+pub fn map_amount(amount: f64, decimals: u32) -> String {
+    let value = amount * 10f64.powi(decimals as i32);
+    (value.round() as u64).to_string()
+}
+
 pub fn map_source_amount(fiat_amount: f64) -> String {
-    let amount = fiat_amount * 10f64.powi(USDB_DECIMALS as i32);
-    (amount.round() as u64).to_string()
+    map_amount(fiat_amount, USDB_DECIMALS)
 }
 
 pub fn map_crypto_amount(estimated_out: &str, decimals: u32) -> f64 {
@@ -132,6 +136,21 @@ mod tests {
             FiatTransactionStatus::Unknown(value) => assert_eq!(value, "unexpected"),
             status => panic!("Expected unknown status, got {:?}", status),
         }
+    }
+
+    #[test]
+    fn map_amount_converts_to_smallest_units() {
+        assert_eq!(map_amount(100.0, 6), "100000000");
+        assert_eq!(map_amount(1.0, 6), "1000000");
+        assert_eq!(map_amount(0.5, 6), "500000");
+        assert_eq!(map_amount(50.0, 8), "5000000000");
+        assert_eq!(map_amount(500.0, 6), "500000000");
+    }
+
+    #[test]
+    fn map_source_amount_uses_usdb_decimals() {
+        assert_eq!(map_source_amount(100.0), "100000000");
+        assert_eq!(map_source_amount(1.0), "1000000");
     }
 
     #[test]
