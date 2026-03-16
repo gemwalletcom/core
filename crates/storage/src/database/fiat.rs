@@ -6,20 +6,31 @@ use diesel::dsl::count_star;
 use diesel::prelude::*;
 use diesel::upsert::excluded;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FiatAssetFilter {
+    HasAssetId,
+    IsEnabled(bool),
+    IsEnabledByProvider(bool),
+    IsBuyEnabled(bool),
+    IsSellEnabled(bool),
+    ProviderEnabled(bool),
+    ProviderBuyEnabled(bool),
+    ProviderSellEnabled(bool),
+}
+
 pub(crate) trait FiatStore {
     fn add_fiat_assets(&mut self, values: Vec<FiatAssetRow>) -> Result<usize, diesel::result::Error>;
     fn add_fiat_providers(&mut self, values: Vec<FiatProviderRow>) -> Result<usize, diesel::result::Error>;
     fn add_fiat_providers_countries(&mut self, values: Vec<FiatProviderCountryRow>) -> Result<usize, diesel::result::Error>;
     fn get_fiat_providers_countries(&mut self) -> Result<Vec<FiatProviderCountryRow>, diesel::result::Error>;
     fn add_fiat_transaction(&mut self, transaction: FiatTransactionRow) -> Result<usize, diesel::result::Error>;
-    fn get_fiat_assets(&mut self) -> Result<Vec<FiatAssetRow>, diesel::result::Error>;
+    fn get_fiat_assets_by_filter(&mut self, filters: Vec<FiatAssetFilter>) -> Result<Vec<FiatAssetRow>, diesel::result::Error>;
     fn get_fiat_assets_popular(&mut self, from: NaiveDateTime, limit: i64) -> Result<Vec<String>, diesel::result::Error>;
     fn get_fiat_assets_for_asset_id(&mut self, asset_id: &str) -> Result<Vec<FiatAssetRow>, diesel::result::Error>;
     fn set_fiat_rates(&mut self, rates: Vec<FiatRateRow>) -> Result<usize, diesel::result::Error>;
     fn get_fiat_rates(&mut self) -> Result<Vec<FiatRateRow>, diesel::result::Error>;
     fn get_fiat_rate(&mut self, currency: &str) -> Result<FiatRateRow, diesel::result::Error>;
     fn get_fiat_providers(&mut self) -> Result<Vec<FiatProviderRow>, diesel::result::Error>;
-    fn get_fiat_assets_is_enabled(&mut self) -> Result<Vec<String>, diesel::result::Error>;
     fn add_fiat_quotes(&mut self, quotes: Vec<FiatQuoteRow>) -> Result<usize, diesel::result::Error>;
     fn get_fiat_quote(&mut self, quote_id: &str) -> Result<FiatQuoteRow, diesel::result::Error>;
     fn add_fiat_quote_request(&mut self, request: FiatQuoteRequestRow) -> Result<usize, diesel::result::Error>;
@@ -72,12 +83,7 @@ impl FiatStore for DatabaseClient {
     fn add_fiat_transaction(&mut self, transaction: FiatTransactionRow) -> Result<usize, diesel::result::Error> {
         use crate::schema::fiat_transactions::dsl::*;
 
-        let update = FiatTransactionUpdateRow {
-            status: transaction.status.clone(),
-            country: transaction.country.clone(),
-            transaction_hash: transaction.transaction_hash.clone(),
-            address: transaction.address.clone(),
-        };
+        let update = FiatTransactionUpdateRow::from_row(&transaction);
 
         diesel::insert_into(fiat_transactions)
             .values(&transaction)
@@ -87,9 +93,29 @@ impl FiatStore for DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    fn get_fiat_assets(&mut self) -> Result<Vec<FiatAssetRow>, diesel::result::Error> {
-        use crate::schema::fiat_assets::dsl::*;
-        fiat_assets.select(FiatAssetRow::as_select()).load(&mut self.connection)
+    fn get_fiat_assets_by_filter(&mut self, filters: Vec<FiatAssetFilter>) -> Result<Vec<FiatAssetRow>, diesel::result::Error> {
+        use crate::schema::{fiat_assets, fiat_providers};
+
+        let mut query = fiat_assets::table.inner_join(fiat_providers::table).into_boxed();
+
+        for filter in filters {
+            query = match filter {
+                FiatAssetFilter::HasAssetId => query.filter(fiat_assets::asset_id.is_not_null()),
+                FiatAssetFilter::IsEnabled(value) => query.filter(fiat_assets::is_enabled.eq(value)),
+                FiatAssetFilter::IsEnabledByProvider(value) => query.filter(fiat_assets::is_enabled_by_provider.eq(value)),
+                FiatAssetFilter::IsBuyEnabled(value) => query.filter(fiat_assets::is_buy_enabled.eq(value)),
+                FiatAssetFilter::IsSellEnabled(value) => query.filter(fiat_assets::is_sell_enabled.eq(value)),
+                FiatAssetFilter::ProviderEnabled(value) => query.filter(fiat_providers::enabled.eq(value)),
+                FiatAssetFilter::ProviderBuyEnabled(value) => query.filter(fiat_providers::buy_enabled.eq(value)),
+                FiatAssetFilter::ProviderSellEnabled(value) => query.filter(fiat_providers::sell_enabled.eq(value)),
+            };
+        }
+
+        query
+            .select(FiatAssetRow::as_select())
+            .distinct()
+            .order(fiat_assets::asset_id.asc())
+            .load(&mut self.connection)
     }
 
     fn get_fiat_assets_popular(&mut self, from: NaiveDateTime, limit: i64) -> Result<Vec<String>, diesel::result::Error> {
@@ -140,20 +166,6 @@ impl FiatStore for DatabaseClient {
     fn get_fiat_providers(&mut self) -> Result<Vec<FiatProviderRow>, diesel::result::Error> {
         use crate::schema::fiat_providers::dsl::*;
         fiat_providers.select(FiatProviderRow::as_select()).load(&mut self.connection)
-    }
-
-    fn get_fiat_assets_is_enabled(&mut self) -> Result<Vec<String>, diesel::result::Error> {
-        use crate::schema::fiat_assets::dsl::*;
-        Ok(fiat_assets
-            .filter(is_enabled.eq(true))
-            .filter(is_enabled_by_provider.eq(true))
-            .filter(asset_id.is_not_null())
-            .distinct()
-            .select(asset_id)
-            .load::<Option<String>>(&mut self.connection)?
-            .into_iter()
-            .flatten()
-            .collect::<Vec<String>>())
     }
 
     fn add_fiat_quotes(&mut self, quotes: Vec<FiatQuoteRow>) -> Result<usize, diesel::result::Error> {
@@ -220,8 +232,8 @@ impl DatabaseClient {
         FiatStore::add_fiat_transaction(self, transaction)
     }
 
-    pub fn get_fiat_assets(&mut self) -> Result<Vec<FiatAssetRow>, diesel::result::Error> {
-        FiatStore::get_fiat_assets(self)
+    pub fn get_fiat_assets_by_filter(&mut self, filters: Vec<FiatAssetFilter>) -> Result<Vec<FiatAssetRow>, diesel::result::Error> {
+        FiatStore::get_fiat_assets_by_filter(self, filters)
     }
 
     pub fn get_fiat_assets_popular(&mut self, from: NaiveDateTime, limit: i64) -> Result<Vec<String>, diesel::result::Error> {
@@ -246,10 +258,6 @@ impl DatabaseClient {
 
     pub fn get_fiat_providers(&mut self) -> Result<Vec<FiatProviderRow>, diesel::result::Error> {
         FiatStore::get_fiat_providers(self)
-    }
-
-    pub fn get_fiat_assets_is_enabled(&mut self) -> Result<Vec<String>, diesel::result::Error> {
-        FiatStore::get_fiat_assets_is_enabled(self)
     }
 
     pub fn add_fiat_quotes(&mut self, quotes: Vec<FiatQuoteRow>) -> Result<usize, diesel::result::Error> {

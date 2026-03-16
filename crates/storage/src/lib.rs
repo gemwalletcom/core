@@ -15,12 +15,13 @@ diesel::allow_columns_to_appear_in_same_group_by_clause!(schema::transactions_ad
 pub use self::database::{
     DatabaseClient,
     assets::{AssetFilter, AssetUpdate},
+    fiat::FiatAssetFilter,
     rewards::{AbusePatterns, ReferralUpdate},
     rewards_redemptions::RedemptionUpdate,
     transactions::{TransactionFilter, TransactionUpdate},
 };
 pub use self::error::{DatabaseError, DieselResultExt, ReferralValidationError};
-pub use self::models::{AssetUsageRankRow, NewNotificationRow, NewWalletRow, RewardRedemptionOptionRow};
+pub use self::models::{AssetUsageRankRow, FiatAssetRowsExt, NewNotificationRow, NewWalletRow, RewardRedemptionOptionRow};
 pub use self::repositories::{
     assets_addresses_repository::AssetsAddressesRepository, assets_links_repository::AssetsLinksRepository, assets_repository::AssetsRepository,
     assets_usage_ranks_repository::AssetsUsageRanksRepository, chains_repository::ChainsRepository, charts_repository::ChartsRepository, config_repository::ConfigRepository,

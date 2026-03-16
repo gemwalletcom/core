@@ -6,10 +6,10 @@ use diesel::{prelude::*, upsert::excluded};
 
 #[derive(Debug, Clone)]
 pub enum AssetUpdate {
+    IsEnabled(bool),
     IsSwappable(bool),
     IsBuyable(bool),
     IsSellable(bool),
-    IsEnabled(bool),
     Rank(i32),
     StakingApr(Option<f64>),
     HasImage(bool),
@@ -53,26 +53,18 @@ impl AssetsStore for DatabaseClient {
             return Ok(0);
         }
 
-        self.connection.transaction(|conn| {
-            let mut total_updated = 0;
-
-            for asset_id in asset_ids.into_iter() {
-                for update in &updates {
-                    let target = assets.find(&asset_id);
-                    let updated = match update {
-                        AssetUpdate::IsSwappable(value) => diesel::update(target).set(is_swappable.eq(*value)).execute(conn)?,
-                        AssetUpdate::IsBuyable(value) => diesel::update(target).set(is_buyable.eq(*value)).execute(conn)?,
-                        AssetUpdate::IsSellable(value) => diesel::update(target).set(is_sellable.eq(*value)).execute(conn)?,
-                        AssetUpdate::IsEnabled(value) => diesel::update(target).set(is_enabled.eq(*value)).execute(conn)?,
-                        AssetUpdate::Rank(value) => diesel::update(target).set(rank.eq(*value)).execute(conn)?,
-                        AssetUpdate::StakingApr(value) => diesel::update(target).set(staking_apr.eq(*value)).execute(conn)?,
-                        AssetUpdate::HasImage(value) => diesel::update(target).set(has_image.eq(*value)).execute(conn)?,
-                    };
-                    total_updated += updated;
-                }
-            }
-
-            Ok(total_updated)
+        updates.into_iter().try_fold(0, |total, update| {
+            let target = assets.filter(id.eq_any(&asset_ids));
+            let updated = match update {
+                AssetUpdate::IsEnabled(value) => diesel::update(target).set(is_enabled.eq(value)).execute(&mut self.connection)?,
+                AssetUpdate::IsSwappable(value) => diesel::update(target).set(is_swappable.eq(value)).execute(&mut self.connection)?,
+                AssetUpdate::IsBuyable(value) => diesel::update(target).set(is_buyable.eq(value)).execute(&mut self.connection)?,
+                AssetUpdate::IsSellable(value) => diesel::update(target).set(is_sellable.eq(value)).execute(&mut self.connection)?,
+                AssetUpdate::Rank(value) => diesel::update(target).set(rank.eq(value)).execute(&mut self.connection)?,
+                AssetUpdate::StakingApr(value) => diesel::update(target).set(staking_apr.eq(value)).execute(&mut self.connection)?,
+                AssetUpdate::HasImage(value) => diesel::update(target).set(has_image.eq(value)).execute(&mut self.connection)?,
+            };
+            Ok(total + updated)
         })
     }
 

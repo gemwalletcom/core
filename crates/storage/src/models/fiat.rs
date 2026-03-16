@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::str::FromStr;
 
 use crate::DatabaseError;
@@ -95,6 +95,16 @@ impl FiatAssetRow {
 
     pub fn sell_limits(&self) -> Vec<FiatAssetLimits> {
         self.sell_limits.as_ref().and_then(|v| serde_json::from_value(v.clone()).ok()).unwrap_or_default()
+    }
+}
+
+pub trait FiatAssetRowsExt {
+    fn asset_ids(self) -> Vec<String>;
+}
+
+impl FiatAssetRowsExt for Vec<FiatAssetRow> {
+    fn asset_ids(self) -> Vec<String> {
+        self.into_iter().filter_map(|asset| asset.asset_id).collect::<BTreeSet<_>>().into_iter().collect()
     }
 }
 
@@ -219,10 +229,31 @@ impl FiatProviderCountryRow {
 #[derive(AsChangeset)]
 #[diesel(table_name = crate::schema::fiat_transactions)]
 pub struct FiatTransactionUpdateRow {
+    pub asset_id: Option<String>,
+    pub transaction_type: String,
+    pub symbol: String,
     pub status: String,
     pub country: Option<String>,
+    pub fiat_amount: f64,
+    pub fiat_currency: String,
     pub transaction_hash: Option<String>,
     pub address: Option<String>,
+}
+
+impl FiatTransactionUpdateRow {
+    pub fn from_row(transaction: &FiatTransactionRow) -> Self {
+        Self {
+            asset_id: transaction.asset_id.clone(),
+            transaction_type: transaction.transaction_type.clone(),
+            symbol: transaction.symbol.clone(),
+            status: transaction.status.clone(),
+            country: transaction.country.clone(),
+            fiat_amount: transaction.fiat_amount,
+            fiat_currency: transaction.fiat_currency.clone(),
+            transaction_hash: transaction.transaction_hash.clone(),
+            address: transaction.address.clone(),
+        }
+    }
 }
 
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Clone)]
