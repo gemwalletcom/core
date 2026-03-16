@@ -49,13 +49,12 @@ impl<C: Client> ChainStaking for CosmosClient<C> {
         match chain {
             CosmosChain::Noble | CosmosChain::Thorchain => Ok(vec![]),
             CosmosChain::Cosmos | CosmosChain::Injective | CosmosChain::Osmosis | CosmosChain::Celestia | CosmosChain::Sei => {
-                let (active_delegations, unbonding, rewards) = try_join!(
+                let (active_delegations, unbonding, rewards, validators) = try_join!(
                     self.get_delegations(&address),
                     self.get_unbonding_delegations(&address),
-                    self.get_delegation_rewards(&address)
+                    self.get_delegation_rewards(&address),
+                    self.get_delegations_validators(&address),
                 )?;
-
-                let validators = self.get_validators().await?;
 
                 Ok(map_staking_delegations(active_delegations, unbonding, rewards, validators.validators, chain, denom))
             }

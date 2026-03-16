@@ -80,6 +80,10 @@ impl<C: Client> CosmosClient<C> {
         Ok(self.client.get("/cosmos/staking/v1beta1/validators?status=BOND_STATUS_BONDED&pagination.limit=100").await?)
     }
 
+    pub async fn get_delegations_validators(&self, address: &str) -> Result<ValidatorsResponse, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.get(&format!("/cosmos/staking/v1beta1/delegators/{address}/validators?pagination.limit=100")).await?)
+    }
+
     pub async fn get_staking_pool(&self) -> Result<StakingPoolResponse, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get("/cosmos/staking/v1beta1/pool").await?)
     }
