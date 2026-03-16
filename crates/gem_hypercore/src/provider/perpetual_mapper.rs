@@ -177,19 +177,14 @@ pub fn map_account_summary(positions: &AssetPositions) -> PerpetualAccountSummar
 }
 
 pub fn map_account_summary_aggregate(positions: &[AssetPositions]) -> PerpetualAccountSummary {
-    let mut account_value = 0.0;
-    let mut total_ntl_pos = 0.0;
-    let mut total_margin_used = 0.0;
-    let mut unrealized_pnl = 0.0;
-
-    for positions in positions {
-        account_value += positions.margin_summary.account_value.parse::<f64>().unwrap_or(0.0);
-        total_ntl_pos += positions.margin_summary.total_ntl_pos.parse::<f64>().unwrap_or(0.0);
-        total_margin_used += positions.margin_summary.total_margin_used.parse::<f64>().unwrap_or(0.0);
-        for position in &positions.asset_positions {
-            unrealized_pnl += position.position.unrealized_pnl.parse::<f64>().unwrap_or(0.0);
-        }
-    }
+    let account_value: f64 = positions.iter().map(|p| p.margin_summary.account_value.parse().unwrap_or(0.0)).sum();
+    let total_ntl_pos: f64 = positions.iter().map(|p| p.margin_summary.total_ntl_pos.parse().unwrap_or(0.0)).sum();
+    let total_margin_used: f64 = positions.iter().map(|p| p.margin_summary.total_margin_used.parse().unwrap_or(0.0)).sum();
+    let unrealized_pnl: f64 = positions
+        .iter()
+        .flat_map(|p| &p.asset_positions)
+        .map(|p| p.position.unrealized_pnl.parse().unwrap_or(0.0))
+        .sum();
 
     let account_leverage = if account_value > 0.0 { total_ntl_pos / account_value } else { 0.0 };
     let margin_usage = if account_value > 0.0 { total_margin_used / account_value } else { 0.0 };
