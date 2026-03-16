@@ -96,6 +96,7 @@ fn process_data() {
 - **Bird's eye view**: Step back and look at the overall structure; identify opportunities to simplify and consolidate
 - **Avoid `mut`**: Prefer immutable bindings; use `mut` only when truly necessary
 - **No `#[allow(dead_code)]`**: Remove dead code instead of suppressing warnings
+- **Avoid `#[serde(default)]`**: Only use when the field is genuinely optional in the API response; if the field is always present, omit it
 - **No unused fields**: Remove unused fields from structs/models; don't keep fields "for future use"
 - **Constants for magic numbers**: Extract magic numbers into named constants with clear meaning
 - **Minimum interface**: Don't expose unnecessary functions; if client only needs one function, don't add multiple variants

@@ -10,8 +10,7 @@ pub struct IbcTransferValue {
     pub token: Coin,
     pub sender: String,
     pub receiver: String,
-    #[serde(default, deserialize_with = "deserialize_u64_from_str_or_int")]
+    #[serde(deserialize_with = "deserialize_u64_from_str_or_int")]
     pub timeout_timestamp: u64,
-    #[serde(default)]
     pub memo: String,
 }
