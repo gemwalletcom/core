@@ -11,14 +11,16 @@ public struct FiatQuote: Codable, Equatable, Hashable, Sendable {
 	public let fiatAmount: Double
 	public let fiatCurrency: String
 	public let cryptoAmount: Double
+	public let paymentMethods: [PaymentType]
 
-	public init(id: String, provider: FiatProvider, type: FiatQuoteType, fiatAmount: Double, fiatCurrency: String, cryptoAmount: Double) {
+	public init(id: String, provider: FiatProvider, type: FiatQuoteType, fiatAmount: Double, fiatCurrency: String, cryptoAmount: Double, paymentMethods: [PaymentType]) {
 		self.id = id
 		self.provider = provider
 		self.type = type
 		self.fiatAmount = fiatAmount
 		self.fiatCurrency = fiatCurrency
 		self.cryptoAmount = cryptoAmount
+		self.paymentMethods = paymentMethods
 	}
 }
 

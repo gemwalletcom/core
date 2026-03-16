@@ -532,8 +532,8 @@
 "perpetual.all_time_pnl" = "Tüm Zamanların Kar ve Zarar Tablosu";
 "perpetual.margin_usage" = "Kenar Boşluğu Kullanımı";
 "perpetual.account_leverage" = "Hesap Kaldıraç";
-"asset.all_time_high" = "Tüm Zamanların En Yüksek Seviyesi";
-"asset.all_time_low" = "Tüm Zamanların En Düşük Seviyesi";
+"asset.all_time_high" = "Tarihi zirve";
+"asset.all_time_low" = "Tarihi dip";
 "errors.swap.minimum_amount" = "Minimum işlem tutarı %@. Lütfen daha yüksek bir tutar girin.";
 "swap.use_minimum_amount" = "Minimum Tutarı Kullanın";
 "common.earn" = "Earn";

@@ -15,7 +15,6 @@ public extension FiatProvider {
         case .transak: Images.Fiat.transak
         case .banxa: Images.Fiat.banxa
         case .mercuryo: Images.Fiat.mercuryo
-        case .ramp: Images.name(id)
         case .paybis: Images.Fiat.paybis
         case .flashnet: Images.Fiat.cashapp
         case nil: Images.name(name.lowercased().replacingOccurrences(of: " ", with: "_"))

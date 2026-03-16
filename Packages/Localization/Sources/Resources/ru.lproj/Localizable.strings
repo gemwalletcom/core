@@ -532,8 +532,8 @@
 "perpetual.all_time_pnl" = "PnL за всё время";
 "perpetual.margin_usage" = "Использование маржи";
 "perpetual.account_leverage" = "Кредитное плечо счета";
-"asset.all_time_high" = "Рекордный максимум за все время";
-"asset.all_time_low" = "Рекордный минимум за все время";
+"asset.all_time_high" = "Исторический максимум";
+"asset.all_time_low" = "Исторический минимум";
 "errors.swap.minimum_amount" = "Минимальная сумма сделки — %@. Введите, пожалуйста, сумму побольше.";
 "swap.use_minimum_amount" = "Использовать минимальное количество";
 "common.earn" = "Earn";

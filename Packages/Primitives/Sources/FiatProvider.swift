@@ -8,11 +8,13 @@ public struct FiatProvider: Codable, Equatable, Hashable, Sendable {
 	public let id: String
 	public let name: String
 	public let imageUrl: String?
+	public let paymentMethods: [PaymentType]
 
-	public init(id: String, name: String, imageUrl: String?) {
+	public init(id: String, name: String, imageUrl: String?, paymentMethods: [PaymentType]) {
 		self.id = id
 		self.name = name
 		self.imageUrl = imageUrl
+		self.paymentMethods = paymentMethods
 	}
 }
 
@@ -20,7 +22,6 @@ public enum FiatProviderName: String, Codable, Equatable, Hashable, Sendable {
 	case mercuryo
 	case transak
 	case moonPay = "moonpay"
-	case ramp
 	case banxa
 	case paybis
 	case flashnet

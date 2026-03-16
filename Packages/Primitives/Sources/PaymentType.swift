@@ -8,4 +8,9 @@ public enum PaymentType: String, Codable, Equatable, Hashable, Sendable {
 	case card
 	case googlePay = "google_pay"
 	case applePay = "apple_pay"
+	case cashApp = "cash_app"
+	case venmo
+	case sepa
+	case ach
+	case wire
 }
