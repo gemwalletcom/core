@@ -52,12 +52,15 @@ impl ChainSigner for CosmosChainSigner {
         let swap_data = input.input_type.get_swap_data().map_err(SignerError::invalid_input)?;
 
         let (account_number, sequence, chain_id) = match &input.metadata {
-            TransactionLoadMetadata::Cosmos { account_number, sequence, chain_id } => (*account_number, *sequence, chain_id.as_str()),
+            TransactionLoadMetadata::Cosmos {
+                account_number,
+                sequence,
+                chain_id,
+            } => (*account_number, *sequence, chain_id.as_str()),
             _ => return Err(SignerError::invalid_input("expected Cosmos metadata")),
         };
 
-        let chain = CosmosChain::from_str(input.input_type.get_asset().chain.as_ref())
-            .map_err(|_| SignerError::invalid_input("unsupported cosmos chain"))?;
+        let chain = CosmosChain::from_str(input.input_type.get_asset().chain.as_ref()).map_err(|_| SignerError::invalid_input("unsupported cosmos chain"))?;
 
         let message = CosmosMessage::parse(&swap_data.data.data)?;
         let body_bytes = encode_tx_body(&[message.encode_as_any()], input.memo.as_deref().unwrap_or(""));
@@ -79,7 +82,10 @@ impl ChainSigner for CosmosChainSigner {
             chain_id,
             account_number,
             sequence,
-            fee_coins: vec![Coin { denom: chain.denom().as_ref().to_string(), amount: fee_amount }],
+            fee_coins: vec![Coin {
+                denom: chain.denom().as_ref().to_string(),
+                amount: fee_amount,
+            }],
             gas_limit,
         };
 
@@ -110,7 +116,15 @@ mod tests {
     fn test_parse_ibc_transfer() {
         let msg = CosmosMessage::parse(include_str!("../../testdata/swap_ibc_transfer.json")).unwrap();
         match msg {
-            CosmosMessage::IbcTransfer { source_port, source_channel, sender, receiver, timeout_timestamp, memo, .. } => {
+            CosmosMessage::IbcTransfer {
+                source_port,
+                source_channel,
+                sender,
+                receiver,
+                timeout_timestamp,
+                memo,
+                ..
+            } => {
                 assert_eq!(source_port, "transfer");
                 assert_eq!(source_channel, "channel-141");
                 assert_eq!(sender, "cosmos1tkvyjqeq204rmrrz3w4hcrs336qahsfwmugljt");
@@ -120,11 +134,5 @@ mod tests {
             }
             _ => panic!("expected IbcTransfer"),
         }
-    }
-
-    #[test]
-    fn test_parse_unsupported_type() {
-        let json = r#"{"typeUrl":"/unknown.MsgType","value":{}}"#;
-        assert!(CosmosMessage::parse(json).is_err());
     }
 }

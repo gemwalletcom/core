@@ -21,12 +21,21 @@ impl CosmosMessage {
                 let fund_fields: Vec<u8> = funds.iter().flat_map(|c| encode_message_field(5, &encode_coin(&c.denom, &c.amount))).collect();
                 [encode_string_field(1, sender), encode_string_field(2, contract), encode_bytes_field(3, msg), fund_fields].concat()
             }
-            Self::IbcTransfer { source_port, source_channel, token, sender, receiver, timeout_timestamp, memo } => [
+            Self::IbcTransfer {
+                source_port,
+                source_channel,
+                token,
+                sender,
+                receiver,
+                timeout_timestamp,
+                memo,
+            } => [
                 encode_string_field(1, source_port),
                 encode_string_field(2, source_channel),
                 encode_message_field(3, &encode_coin(&token.denom, &token.amount)),
                 encode_string_field(4, sender),
                 encode_string_field(5, receiver),
+                // field number skips 6
                 encode_varint_field(7, *timeout_timestamp),
                 encode_string_field(8, memo),
             ]
@@ -45,7 +54,11 @@ pub fn encode_tx_body(messages: &[Vec<u8>], memo: &str) -> Vec<u8> {
 }
 
 fn encode_pubkey_any(pubkey_bytes: &[u8]) -> Vec<u8> {
-    [encode_string_field(1, SECP256K1_PUBKEY_TYPE_URL), encode_bytes_field(2, &encode_bytes_field(1, pubkey_bytes))].concat()
+    [
+        encode_string_field(1, SECP256K1_PUBKEY_TYPE_URL),
+        encode_bytes_field(2, &encode_bytes_field(1, pubkey_bytes)),
+    ]
+    .concat()
 }
 
 fn encode_mode_info_single() -> Vec<u8> {
@@ -53,7 +66,12 @@ fn encode_mode_info_single() -> Vec<u8> {
 }
 
 fn encode_signer_info(pubkey_bytes: &[u8], sequence: u64) -> Vec<u8> {
-    [encode_message_field(1, &encode_pubkey_any(pubkey_bytes)), encode_message_field(2, &encode_mode_info_single()), encode_varint_field(3, sequence)].concat()
+    [
+        encode_message_field(1, &encode_pubkey_any(pubkey_bytes)),
+        encode_message_field(2, &encode_mode_info_single()),
+        encode_varint_field(3, sequence),
+    ]
+    .concat()
 }
 
 fn encode_fee(coins: &[Coin], gas_limit: u64) -> Vec<u8> {
@@ -62,11 +80,21 @@ fn encode_fee(coins: &[Coin], gas_limit: u64) -> Vec<u8> {
 }
 
 pub fn encode_auth_info(pubkey_bytes: &[u8], sequence: u64, fee_coins: &[Coin], gas_limit: u64) -> Vec<u8> {
-    [encode_message_field(1, &encode_signer_info(pubkey_bytes, sequence)), encode_message_field(2, &encode_fee(fee_coins, gas_limit))].concat()
+    [
+        encode_message_field(1, &encode_signer_info(pubkey_bytes, sequence)),
+        encode_message_field(2, &encode_fee(fee_coins, gas_limit)),
+    ]
+    .concat()
 }
 
 pub fn encode_sign_doc(body_bytes: &[u8], auth_info_bytes: &[u8], chain_id: &str, account_number: u64) -> Vec<u8> {
-    [encode_bytes_field(1, body_bytes), encode_bytes_field(2, auth_info_bytes), encode_string_field(3, chain_id), encode_varint_field(4, account_number)].concat()
+    [
+        encode_bytes_field(1, body_bytes),
+        encode_bytes_field(2, auth_info_bytes),
+        encode_string_field(3, chain_id),
+        encode_varint_field(4, account_number),
+    ]
+    .concat()
 }
 
 pub fn encode_tx_raw(body_bytes: &[u8], auth_info_bytes: &[u8], signature: &[u8]) -> Vec<u8> {
@@ -83,7 +111,10 @@ mod tests {
             sender: "osmo1test".to_string(),
             contract: "osmo1contract".to_string(),
             msg: b"{\"swap\":{}}".to_vec(),
-            funds: vec![Coin { denom: "uosmo".to_string(), amount: "1000000".to_string() }],
+            funds: vec![Coin {
+                denom: "uosmo".to_string(),
+                amount: "1000000".to_string(),
+            }],
         };
         let any = msg.encode_as_any();
         assert!(!any.is_empty());
@@ -95,7 +126,10 @@ mod tests {
         let msg = CosmosMessage::IbcTransfer {
             source_port: "transfer".to_string(),
             source_channel: "channel-0".to_string(),
-            token: Coin { denom: "uatom".to_string(), amount: "1000000".to_string() },
+            token: Coin {
+                denom: "uatom".to_string(),
+                amount: "1000000".to_string(),
+            },
             sender: "cosmos1test".to_string(),
             receiver: "osmo1test".to_string(),
             timeout_timestamp: 1773382733549000000,

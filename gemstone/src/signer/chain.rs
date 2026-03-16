@@ -23,9 +23,7 @@ impl GemChainSigner {
             Chain::Sui => Box::new(SuiChainSigner),
             Chain::Solana => Box::new(SolanaChainSigner),
             Chain::Tron => Box::new(TronChainSigner),
-            Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Injective | Chain::Sei | Chain::Noble => {
-                Box::new(CosmosChainSigner)
-            }
+            Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Injective | Chain::Sei | Chain::Noble => Box::new(CosmosChainSigner),
             _ => todo!("Signer not implemented for chain {:?}", chain),
         };
 

@@ -1,10 +1,10 @@
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "signer")]
+use super::{ExecuteContractValue, IbcTransferValue};
 use crate::constants;
 #[cfg(feature = "signer")]
 use crate::constants::{MESSAGE_EXECUTE_CONTRACT, MESSAGE_IBC_TRANSFER};
-#[cfg(feature = "signer")]
-use super::{ExecuteContractValue, IbcTransferValue};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "@type")]
