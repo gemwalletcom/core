@@ -18,7 +18,7 @@ use crate::{
 };
 use gem_client::Client;
 use primitives::{
-    Chain, ChainType,
+    AssetId, Chain, ChainType,
     swap::{ApprovalData, ProxyQuote, ProxyQuoteRequest, SwapQuoteData},
 };
 
@@ -133,15 +133,33 @@ impl ProxyProvider<RpcClient> {
     }
 
     pub fn new_squid(rpc_provider: Arc<dyn RpcProvider>) -> Self {
+        use crate::proxy::squid::{
+            COSMOS_USDC_TOKEN_ID, INJECTIVE_USDC_TOKEN_ID, OSMOSIS_USDC_TOKEN_ID, OSMOSIS_USDT_TOKEN_ID, SEI_USDC_TOKEN_ID,
+        };
         Self::new_with_path(
             SwapperProvider::Squid,
             "squid",
             vec![
-                SwapperChainAsset::All(Chain::Cosmos),
-                SwapperChainAsset::All(Chain::Osmosis),
+                SwapperChainAsset::Assets(
+                    Chain::Cosmos,
+                    vec![AssetId::from_token(Chain::Cosmos, COSMOS_USDC_TOKEN_ID)],
+                ),
+                SwapperChainAsset::Assets(
+                    Chain::Osmosis,
+                    vec![
+                        AssetId::from_token(Chain::Osmosis, OSMOSIS_USDC_TOKEN_ID),
+                        AssetId::from_token(Chain::Osmosis, OSMOSIS_USDT_TOKEN_ID),
+                    ],
+                ),
                 SwapperChainAsset::All(Chain::Celestia),
-                SwapperChainAsset::All(Chain::Injective),
-                SwapperChainAsset::All(Chain::Sei),
+                SwapperChainAsset::Assets(
+                    Chain::Injective,
+                    vec![AssetId::from_token(Chain::Injective, INJECTIVE_USDC_TOKEN_ID)],
+                ),
+                SwapperChainAsset::Assets(
+                    Chain::Sei,
+                    vec![AssetId::from_token(Chain::Sei, SEI_USDC_TOKEN_ID)],
+                ),
                 SwapperChainAsset::All(Chain::Noble),
             ],
             rpc_provider,

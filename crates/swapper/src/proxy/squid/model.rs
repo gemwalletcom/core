@@ -32,8 +32,7 @@ mod tests {
 
     #[test]
     fn test_deserialize_status_response() {
-        let json = r#"{"id":"D68723CEADAB65795B176FAE0B84B0ED5923DA9AAEC69502F8D30554431250A9","status":"destination_executed","squidTransactionStatus":"success","gasStatus":"","isGMPTransaction":false}"#;
-        let result: SquidTransactionStatus = serde_json::from_str(json).unwrap();
+        let result: SquidTransactionStatus = serde_json::from_str(include_str!("../../../testdata/squid/status_response.json")).unwrap();
         assert_eq!(result.squid_transaction_status, SquidStatus::Success);
         assert_eq!(result.squid_transaction_status.swap_status(), SwapStatus::Completed);
     }
