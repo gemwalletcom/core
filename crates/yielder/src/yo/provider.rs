@@ -4,14 +4,12 @@ use std::sync::Arc;
 
 use alloy_primitives::{Address, U256};
 use async_trait::async_trait;
-use gem_evm::u256::u256_to_biguint;
-use num_bigint::BigUint;
-use primitives::{AssetId, Chain, ContractCallData, DelegationBase, DelegationState, DelegationValidator, StakeProviderType, YieldProvider};
+use primitives::{AssetId, Chain, ContractCallData, DelegationBase, DelegationValidator, YieldProvider};
 
 use crate::error::YielderError;
 use crate::provider::EarnProvider;
 
-use super::{YO_PARTNER_ID_GEM, YoAsset, client::YoClient, supported_assets};
+use super::{YO_PARTNER_ID_GEM, YoAsset, client::YoClient, mapper::{map_to_delegation, map_to_earn_provider}, supported_assets};
 
 const GAS_LIMIT: &str = "300000";
 const SLIPPAGE_BPS: u64 = 50;
@@ -51,22 +49,8 @@ impl YoEarnProvider {
         Ok(assets
             .iter()
             .zip(positions)
-            .filter_map(|(a, data)| {
-                if data.share_balance == U256::ZERO {
-                    return None;
-                }
-                let asset_id = a.asset_id();
-                Some(DelegationBase {
-                    delegation_id: format!("{}-{}", provider_id, asset_id),
-                    validator_id: provider_id.clone(),
-                    asset_id,
-                    state: DelegationState::Active,
-                    balance: u256_to_biguint(&data.asset_balance),
-                    shares: u256_to_biguint(&data.share_balance),
-                    rewards: BigUint::ZERO,
-                    completion_date: None,
-                })
-            })
+            .filter(|(_, data)| data.share_balance != U256::ZERO)
+            .map(|(asset, data)| map_to_delegation(asset.asset_id(), &data, &provider_id))
             .collect())
     }
 }
@@ -78,7 +62,7 @@ impl EarnProvider for YoEarnProvider {
     }
 
     fn earn_providers(&self, asset_id: &AssetId) -> Vec<DelegationValidator> {
-        self.assets.iter().filter(|a| a.asset_id() == *asset_id).map(|a| earn_provider(a.chain)).collect()
+        self.assets.iter().filter(|a| a.asset_id() == *asset_id).map(|a| map_to_earn_provider(a.chain, PROVIDER)).collect()
     }
 
     fn earn_asset_ids_for_chain(&self, chain: Chain) -> Vec<AssetId> {
@@ -133,18 +117,6 @@ impl EarnProvider for YoEarnProvider {
             approval,
             gas_limit: Some(GAS_LIMIT.to_string()),
         })
-    }
-}
-
-fn earn_provider(chain: Chain) -> DelegationValidator {
-    DelegationValidator {
-        chain,
-        id: PROVIDER.to_string(),
-        name: PROVIDER.to_string(),
-        is_active: true,
-        commission: 0.0,
-        apr: 0.0,
-        provider_type: StakeProviderType::Earn,
     }
 }
 
