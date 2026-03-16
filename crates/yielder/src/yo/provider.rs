@@ -60,15 +60,15 @@ impl EarnProvider for YoEarnProvider {
         YieldProvider::Yo
     }
 
-    fn earn_providers(&self, asset_id: &AssetId) -> Vec<DelegationValidator> {
+    fn get_providers(&self, asset_id: &AssetId) -> Vec<DelegationValidator> {
         self.assets.iter().filter(|a| a.asset_id() == *asset_id).map(|a| map_to_earn_provider(a.chain, YieldProvider::Yo)).collect()
     }
 
-    fn earn_asset_ids_for_chain(&self, chain: Chain) -> Vec<AssetId> {
+    fn get_asset_ids_for_chain(&self, chain: Chain) -> Vec<AssetId> {
         self.assets.iter().filter(|a| a.chain == chain).map(|a| a.asset_id()).collect()
     }
 
-    async fn positions(&self, chain: Chain, address: &str, asset_ids: &[AssetId]) -> Result<Vec<DelegationBase>, YielderError> {
+    async fn get_positions(&self, chain: Chain, address: &str, asset_ids: &[AssetId]) -> Result<Vec<DelegationBase>, YielderError> {
         let assets: Vec<_> = self.assets.iter().filter(|a| a.chain == chain && asset_ids.contains(&a.asset_id())).copied().collect();
         self.positions_for_chain(chain, address, &assets).await
     }

@@ -305,19 +305,19 @@ impl GemGateway {
     }
 
     pub async fn get_balance_earn(&self, chain: Chain, address: String) -> Result<Vec<GemAssetBalance>, GatewayError> {
-        Ok(self.yielder.balance(chain, &address).await)
+        Ok(self.yielder.get_balance(chain, &address).await)
     }
 
     pub async fn get_earn_data(&self, asset_id: AssetId, address: String, value: String, earn_type: GemEarnType) -> Result<GemContractCallData, GatewayError> {
-        self.yielder.earn_data(&asset_id, &address, &value, &earn_type).await.map_err(|e| GatewayError::NetworkError { msg: e.to_string() })
+        self.yielder.get_data(&asset_id, &address, &value, &earn_type).await.map_err(|e| GatewayError::NetworkError { msg: e.to_string() })
     }
 
     pub fn get_earn_providers(&self, asset_id: AssetId) -> Vec<GemDelegationValidator> {
-        self.yielder.providers(&asset_id)
+        self.yielder.get_providers(&asset_id)
     }
 
     pub async fn get_earn_positions(&self, chain: Chain, address: String, asset_ids: Vec<AssetId>) -> Result<Vec<GemDelegationBase>, GatewayError> {
-        Ok(self.yielder.positions(chain, &address, &asset_ids).await)
+        Ok(self.yielder.get_positions(chain, &address, &asset_ids).await)
     }
 
     pub async fn get_node_status(&self, chain: Chain, url: &str) -> Result<GemNodeStatus, GatewayError> {

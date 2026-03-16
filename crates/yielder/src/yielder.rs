@@ -29,18 +29,18 @@ impl Yielder {
         Self { providers: vec![yo_provider] }
     }
 
-    pub fn providers(&self, asset_id: &AssetId) -> Vec<DelegationValidator> {
-        self.providers.iter().flat_map(|p| p.earn_providers(asset_id)).collect()
+    pub fn get_providers(&self, asset_id: &AssetId) -> Vec<DelegationValidator> {
+        self.providers.iter().flat_map(|p| p.get_providers(asset_id)).collect()
     }
 
-    pub async fn positions(&self, chain: Chain, address: &str, asset_ids: &[AssetId]) -> Vec<DelegationBase> {
-        let futures: Vec<_> = self.providers.iter().map(|p| p.positions(chain, address, asset_ids)).collect();
+    pub async fn get_positions(&self, chain: Chain, address: &str, asset_ids: &[AssetId]) -> Vec<DelegationBase> {
+        let futures: Vec<_> = self.providers.iter().map(|p| p.get_positions(chain, address, asset_ids)).collect();
         futures::future::join_all(futures).await.into_iter().filter_map(|r| r.ok()).flatten().collect()
     }
 
-    pub async fn balance(&self, chain: Chain, address: &str) -> Vec<AssetBalance> {
-        let asset_ids: Vec<_> = self.providers.iter().flat_map(|p| p.earn_asset_ids_for_chain(chain)).collect();
-        let positions: HashMap<_, _> = self.positions(chain, address, &asset_ids).await.into_iter().map(|p| (p.asset_id, p.balance)).collect();
+    pub async fn get_balance(&self, chain: Chain, address: &str) -> Vec<AssetBalance> {
+        let asset_ids: Vec<_> = self.providers.iter().flat_map(|p| p.get_asset_ids_for_chain(chain)).collect();
+        let positions: HashMap<_, _> = self.get_positions(chain, address, &asset_ids).await.into_iter().map(|p| (p.asset_id, p.balance)).collect();
 
         asset_ids
             .into_iter()
@@ -51,7 +51,7 @@ impl Yielder {
             .collect()
     }
 
-    pub async fn earn_data(&self, asset_id: &AssetId, address: &str, value: &str, earn_type: &EarnType) -> Result<ContractCallData, YielderError> {
+    pub async fn get_data(&self, asset_id: &AssetId, address: &str, value: &str, earn_type: &EarnType) -> Result<ContractCallData, YielderError> {
         let provider_id = earn_type.provider_id().parse::<YieldProvider>()?;
         let provider = self.provider_by_id(provider_id)?;
         match earn_type {
