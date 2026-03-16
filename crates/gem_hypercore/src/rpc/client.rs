@@ -175,9 +175,7 @@ impl<C: Client> HyperCoreClient<C> {
             "type": "clearinghouseState",
             "user": user
         });
-        if let Some(dex) = dex
-            && !dex.is_empty()
-        {
+        if let Some(dex) = dex && !dex.is_empty() {
             payload["dex"] = json!(dex);
         }
         self.info(payload).await
@@ -189,9 +187,7 @@ impl<C: Client> HyperCoreClient<C> {
 
     pub async fn get_metadata_with_dex(&self, dex: Option<String>) -> Result<HypercoreMetadataResponse, Box<dyn Error + Send + Sync>> {
         let mut payload = json!({"type": "metaAndAssetCtxs"});
-        if let Some(dex) = dex
-            && !dex.is_empty()
-        {
+        if let Some(dex) = dex && !dex.is_empty() {
             payload["dex"] = json!(dex);
         }
         self.info(payload).await
@@ -292,9 +288,7 @@ impl<C: Client> HyperCoreClient<C> {
             "type": "frontendOpenOrders",
             "user": user
         });
-        if let Some(dex) = dex
-            && !dex.is_empty()
-        {
+        if let Some(dex) = dex && !dex.is_empty() {
             payload["dex"] = json!(dex);
         }
         self.info(payload).await
@@ -309,9 +303,7 @@ impl<C: Client> HyperCoreClient<C> {
             "type": "portfolio",
             "user": user
         });
-        if let Some(dex) = dex
-            && !dex.is_empty()
-        {
+        if let Some(dex) = dex && !dex.is_empty() {
             payload["dex"] = json!(dex);
         }
         self.info(payload).await
