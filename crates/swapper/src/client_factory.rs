@@ -1,23 +1,17 @@
-use gem_evm::rpc::EthereumClient;
+use gem_evm::rpc::{self, EthereumClient};
+use gem_jsonrpc::alien::{self, RpcClient, RpcProvider};
 use gem_jsonrpc::client::JsonRpcClient;
-use primitives::{Chain, EVMChain};
+use primitives::Chain;
 use std::sync::Arc;
 
-use crate::{
-    SwapperError,
-    alien::{RpcClient, RpcProvider},
-};
+use crate::SwapperError;
 
 pub fn create_client_with_chain(provider: Arc<dyn RpcProvider>, chain: Chain) -> JsonRpcClient<RpcClient> {
-    let endpoint = provider.get_endpoint(chain).expect("Failed to get endpoint for chain");
-    let client = RpcClient::new(endpoint, provider);
-    JsonRpcClient::new(client)
+    alien::create_client(provider, chain).expect("failed to create client for chain")
 }
 
 pub fn create_eth_client(provider: Arc<dyn RpcProvider>, chain: Chain) -> Result<EthereumClient<RpcClient>, SwapperError> {
-    let evm_chain = EVMChain::from_chain(chain).ok_or(SwapperError::NotSupportedChain)?;
-    let client = create_client_with_chain(provider, chain);
-    Ok(EthereumClient::new(client, evm_chain))
+    rpc::create_eth_client(provider, chain).ok_or(SwapperError::NotSupportedChain)
 }
 
 #[cfg(all(test, feature = "reqwest_provider", feature = "swap_integration_tests"))]

@@ -5,7 +5,8 @@ use std::{
 };
 
 use super::{AlienError, Target};
-use gem_jsonrpc::{RpcProvider as GenericRpcProvider, RpcResponse};
+use gem_jsonrpc::RpcResponse;
+use gem_jsonrpc::rpc::RpcProvider as GenericRpcProvider;
 use primitives::Chain;
 
 #[allow(unused)]
