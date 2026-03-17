@@ -277,4 +277,25 @@ impl<C: Client + Clone> EthereumClient<C> {
 
         Ok(multicall_results)
     }
+
+    #[cfg(feature = "rpc")]
+    pub async fn call_contract<T: SolCall>(&self, target: Address, sol_call: T) -> Result<T::Return, Box<dyn std::error::Error + Sync + Send>> {
+        let call_data = hex::encode_prefixed(sol_call.abi_encode());
+        let params = json!([{ "to": target.to_string(), "data": call_data }, Self::latest_block_parameter()]);
+        let result: String = self.client.call("eth_call", params).await?;
+        let result_data = hex::decode(&result)?;
+        Ok(T::abi_decode_returns(&result_data)?)
+    }
+
+    #[cfg(feature = "rpc")]
+    pub async fn multicall3_batch<T, R, const N: usize>(
+        &self,
+        items: &[T],
+        build: impl Fn(&T) -> [Call3; N],
+        decode: impl Fn(&[MulticallResult]) -> Result<R, Box<dyn std::error::Error + Send + Sync>>,
+    ) -> Result<Vec<R>, Box<dyn std::error::Error + Sync + Send>> {
+        let calls = items.iter().flat_map(&build).collect();
+        let results = self.multicall3(calls).await?;
+        results.chunks(N).map(&decode).collect()
+    }
 }

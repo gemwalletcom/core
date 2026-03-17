@@ -2,6 +2,7 @@ use alloy_primitives::{Address, U256};
 use alloy_sol_types::SolCall;
 use async_trait::async_trait;
 use gem_client::Client;
+use gem_evm::contracts::erc4626::IERC4626;
 use gem_evm::contracts::IERC20;
 use gem_evm::jsonrpc::TransactionObject;
 use gem_evm::multicall3::{create_call3, decode_call3_return};
@@ -9,7 +10,7 @@ use gem_evm::rpc::EthereumClient;
 use primitives::swap::ApprovalData;
 
 use super::assets::YoAsset;
-use super::contract::{IYoGateway, IYoVaultToken};
+use super::contract::IYoGateway;
 use crate::error::YielderError;
 
 #[derive(Debug, Clone)]
@@ -71,40 +72,34 @@ where
     }
 
     async fn positions_batch(&self, assets: &[YoAsset], owner: Address) -> Result<Vec<PositionData>, YielderError> {
-        let calls: Vec<_> = assets
-            .iter()
-            .flat_map(|a| {
-                let vault = a.yo_token.to_string();
-                [
-                    create_call3(&vault, IYoVaultToken::balanceOfCall { account: owner }),
-                    create_call3(&vault, IYoVaultToken::totalAssetsCall {}),
-                    create_call3(&vault, IYoVaultToken::totalSupplyCall {}),
-                ]
-            })
-            .collect();
-        let results = self.ethereum_client.multicall3(calls).await?;
-
-        results
-            .chunks(3)
-            .map(|chunk| {
-                let shares = decode_call3_return::<IYoVaultToken::balanceOfCall>(&chunk[0])?;
-                let total_assets = decode_call3_return::<IYoVaultToken::totalAssetsCall>(&chunk[1])?;
-                let total_supply = decode_call3_return::<IYoVaultToken::totalSupplyCall>(&chunk[2])?;
-                let asset_balance = convert_to_assets_ceil(shares, total_assets, total_supply);
-                Ok(PositionData {
-                    share_balance: shares,
-                    asset_balance,
-                })
-            })
-            .collect()
+        Ok(self
+            .ethereum_client
+            .multicall3_batch(
+                assets,
+                |a| {
+                    let vault = a.yo_token.to_string();
+                    [
+                        create_call3(&vault, IERC4626::balanceOfCall { account: owner }),
+                        create_call3(&vault, IERC4626::totalAssetsCall {}),
+                        create_call3(&vault, IERC4626::totalSupplyCall {}),
+                    ]
+                },
+                |c| {
+                    let shares = decode_call3_return::<IERC4626::balanceOfCall>(&c[0])?;
+                    let total_assets = decode_call3_return::<IERC4626::totalAssetsCall>(&c[1])?;
+                    let total_supply = decode_call3_return::<IERC4626::totalSupplyCall>(&c[2])?;
+                    Ok(PositionData {
+                        share_balance: shares,
+                        asset_balance: convert_to_assets_ceil(shares, total_assets, total_supply),
+                    })
+                },
+            )
+            .await?)
     }
 
     async fn check_token_allowance(&self, token: Address, owner: Address, amount: U256) -> Result<Option<ApprovalData>, YielderError> {
         let spender = self.contract_address;
-
-        let calls = vec![create_call3(&token.to_string(), IERC20::allowanceCall { owner, spender })];
-        let results = self.ethereum_client.multicall3(calls).await?;
-        let allowance = decode_call3_return::<IERC20::allowanceCall>(&results[0])?;
+        let allowance = self.ethereum_client.call_contract(token, IERC20::allowanceCall { owner, spender }).await?;
 
         if allowance < amount {
             Ok(Some(ApprovalData {
@@ -118,10 +113,8 @@ where
     }
 
     async fn quote_shares(&self, yo_token: Address, assets: U256) -> Result<U256, YielderError> {
-        let gateway = self.contract_address.to_string();
-        let calls = vec![create_call3(&gateway, IYoGateway::quoteConvertToSharesCall { yoVault: yo_token, assets })];
-        let results = self.ethereum_client.multicall3(calls).await?;
-        Ok(decode_call3_return::<IYoGateway::quoteConvertToSharesCall>(&results[0])?)
+        let call = IYoGateway::quoteConvertToSharesCall { yoVault: yo_token, assets };
+        Ok(self.ethereum_client.call_contract(self.contract_address, call).await?)
     }
 }
 
@@ -149,3 +142,4 @@ mod tests {
         assert_eq!(convert_to_assets_ceil(U256::ZERO, U256::ZERO, U256::ZERO), U256::ZERO);
     }
 }
+
