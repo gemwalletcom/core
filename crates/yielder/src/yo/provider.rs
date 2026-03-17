@@ -1,19 +1,19 @@
+use std::slice::from_ref;
 use std::sync::Arc;
 
 use alloy_primitives::{Address, U256};
 use async_trait::async_trait;
-use num_bigint::BigUint;
 use primitives::{AssetBalance, AssetId, Chain, ContractCallData, DelegationBase, DelegationValidator, EarnType, YieldProvider};
 
 use gem_evm::rpc::create_eth_client;
 use gem_evm::slippage::apply_slippage_in_bp;
-use gem_evm::u256::{biguint_to_u256, u256_to_biguint};
+use gem_evm::u256::biguint_to_u256;
 use gem_jsonrpc::alien::RpcProvider;
 
 use crate::error::YielderError;
 use crate::provider::EarnProvider;
 
-use super::{YO_GATEWAY, YO_PARTNER_ID_GEM, YoAsset, client::YoGatewayClient, mapper::{map_to_delegation, map_to_earn_provider}, supported_assets};
+use super::{YO_GATEWAY, YO_PARTNER_ID_GEM, YoAsset, client::YoGatewayClient, mapper::{map_to_asset_balance, map_to_contract_call_data, map_to_delegation, map_to_earn_provider}, supported_assets};
 
 const GAS_LIMIT: u64 = 300_000;
 const SLIPPAGE_BPS: u32 = 50;
@@ -31,6 +31,14 @@ impl YoEarnProvider {
         }
     }
 
+    fn get_assets(&self, chain: Chain, token_ids: &[String]) -> Vec<YoAsset> {
+        self.assets
+            .iter()
+            .filter(|a| a.chain == chain && token_ids.contains(&a.asset_token.to_string()))
+            .copied()
+            .collect()
+    }
+
     fn get_asset(&self, asset_id: &AssetId) -> Result<YoAsset, YielderError> {
         self.assets
             .iter()
@@ -44,44 +52,37 @@ impl YoEarnProvider {
         Ok(YoGatewayClient::new(client, YO_GATEWAY))
     }
 
-    async fn get_position_for_asset(&self, address: &str, asset: &YoAsset) -> Result<Option<DelegationBase>, YielderError> {
-        let client = self.get_client(asset.chain)?;
+    async fn get_positions(&self, chain: Chain, address: &str, assets: &[YoAsset]) -> Result<Vec<super::client::PositionData>, YielderError> {
+        let client = self.get_client(chain)?;
         let owner: Address = address.parse()?;
-        let positions = client.get_positions(&[*asset], owner).await?;
-
-        Ok(positions.into_iter().find(|d| d.share_balance != U256::ZERO).map(|data| map_to_delegation(asset.asset_id(), &data, YieldProvider::Yo.as_ref())))
+        client.get_positions(assets, owner).await
     }
 }
 
 #[async_trait]
 impl EarnProvider for YoEarnProvider {
     fn get_provider(&self, asset_id: &AssetId) -> Option<DelegationValidator> {
-        self.assets.iter().find(|a| a.asset_id() == *asset_id).map(|a| map_to_earn_provider(a.chain, YieldProvider::Yo))
+        self.get_asset(asset_id).ok().map(|a| map_to_earn_provider(a.chain, YieldProvider::Yo))
     }
 
     async fn get_position(&self, address: &str, asset_id: &AssetId) -> Result<Option<DelegationBase>, YielderError> {
         let asset = self.get_asset(asset_id)?;
-        self.get_position_for_asset(address, &asset).await
+        let positions = self.get_positions(asset.chain, address, from_ref(&asset)).await?;
+        let delegation = positions
+            .into_iter()
+            .find(|d| d.share_balance != U256::ZERO)
+            .map(|data| map_to_delegation(asset.asset_id(), &data, YieldProvider::Yo.as_ref()));
+        Ok(delegation)
     }
 
     async fn get_balance(&self, chain: Chain, address: &str, token_ids: &[String]) -> Result<Vec<AssetBalance>, YielderError> {
-        let token_match = |a: &&YoAsset| token_ids.iter().any(|t| a.asset_token.to_string().eq_ignore_ascii_case(t));
-        let assets: Vec<_> = self.assets.iter().filter(|a| a.chain == chain).filter(token_match).copied().collect();
+        let assets = self.get_assets(chain, token_ids);
         if assets.is_empty() {
             return Ok(vec![]);
         }
-        let client = self.get_client(chain)?;
-        let owner: Address = address.parse()?;
-        let positions = client.get_positions(&assets, owner).await?;
-
-        Ok(assets
-            .iter()
-            .zip(positions)
-            .map(|(asset, data)| {
-                let balance = if data.share_balance != U256::ZERO { u256_to_biguint(&data.asset_balance) } else { BigUint::ZERO };
-                AssetBalance::new_earn(asset.asset_id(), balance)
-            })
-            .collect())
+        let positions = self.get_positions(chain, address, &assets).await?;
+        let balances = assets.iter().zip(positions).map(|(asset, data)| map_to_asset_balance(asset, &data)).collect();
+        Ok(balances)
     }
 
     async fn get_data(&self, asset_id: &AssetId, address: &str, value: &str, earn_type: &EarnType) -> Result<ContractCallData, YielderError> {
@@ -113,11 +114,6 @@ impl EarnProvider for YoEarnProvider {
             }
         };
 
-        Ok(ContractCallData {
-            contract_address: transaction.to,
-            call_data: transaction.data,
-            approval,
-            gas_limit: Some(GAS_LIMIT.to_string()),
-        })
+        Ok(map_to_contract_call_data(transaction, approval, GAS_LIMIT))
     }
 }

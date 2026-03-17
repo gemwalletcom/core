@@ -31,16 +31,20 @@ impl Yielder {
 
     pub async fn get_balance(&self, chain: Chain, address: &str, token_ids: &[String]) -> Vec<AssetBalance> {
         let futures: Vec<_> = self.providers.iter().map(|p| p.get_balance(chain, address, token_ids)).collect();
-        let balances: HashMap<AssetId, BigUint> = futures::future::join_all(futures)
-            .await
+        let balances = futures::future::join_all(futures).await.into_iter().filter_map(|r| r.ok()).flatten().collect();
+        Self::map_earn_balances(balances)
+    }
+
+    fn map_earn_balances(balances: Vec<AssetBalance>) -> Vec<AssetBalance> {
+        balances
             .into_iter()
-            .filter_map(|r| r.ok())
-            .flatten()
-            .fold(HashMap::new(), |mut acc, b| {
+            .fold(HashMap::<AssetId, BigUint>::new(), |mut acc, b| {
                 *acc.entry(b.asset_id).or_default() += b.balance.earn;
                 acc
-            });
-        balances.into_iter().map(|(id, earn)| AssetBalance::new_earn(id, earn)).collect()
+            })
+            .into_iter()
+            .map(|(id, earn)| AssetBalance::new_earn(id, earn))
+            .collect()
     }
 
     pub async fn get_data(&self, asset_id: &AssetId, address: &str, value: &str, earn_type: &EarnType) -> Result<ContractCallData, YielderError> {
