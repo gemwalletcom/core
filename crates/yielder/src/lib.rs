@@ -1,3 +1,4 @@
+mod client_factory;
 mod error;
 mod provider;
 mod yielder;

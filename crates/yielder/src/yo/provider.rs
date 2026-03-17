@@ -3,17 +3,18 @@ use std::sync::Arc;
 
 use alloy_primitives::{Address, U256};
 use async_trait::async_trait;
-use primitives::{AssetBalance, AssetId, Chain, ContractCallData, DelegationBase, DelegationValidator, EarnType, YieldProvider};
-
-use gem_evm::rpc::create_eth_client;
 use gem_evm::slippage::apply_slippage_in_bp;
 use gem_evm::u256::biguint_to_u256;
 use gem_jsonrpc::alien::RpcProvider;
+use primitives::{AssetBalance, AssetId, Chain, ContractCallData, DelegationBase, DelegationValidator, EarnType, YieldProvider};
 
+use crate::client_factory::create_eth_client;
 use crate::error::YielderError;
 use crate::provider::EarnProvider;
 
-use super::{YO_GATEWAY, YO_PARTNER_ID_GEM, YoAsset, client::YoGatewayClient, mapper::{map_to_asset_balance, map_to_contract_call_data, map_to_delegation, map_to_earn_provider}, supported_assets};
+use super::client::YoGatewayClient;
+use super::mapper::{map_to_asset_balance, map_to_contract_call_data, map_to_delegation, map_to_earn_provider};
+use super::{YO_GATEWAY, YO_PARTNER_ID_GEM, YoAsset, supported_assets};
 
 const GAS_LIMIT: u64 = 300_000;
 const SLIPPAGE_BPS: u32 = 50;
@@ -48,7 +49,7 @@ impl YoEarnProvider {
     }
 
     fn get_client(&self, chain: Chain) -> Result<YoGatewayClient, YielderError> {
-        let client = create_eth_client(self.rpc_provider.clone(), chain).ok_or_else(|| YielderError::unsupported_chain(&chain))?;
+        let client = create_eth_client(self.rpc_provider.clone(), chain)?;
         Ok(YoGatewayClient::new(client, YO_GATEWAY))
     }
 

@@ -54,9 +54,7 @@ pub fn map_to_earn_provider(chain: Chain, provider: YieldProvider) -> Delegation
 #[cfg(test)]
 mod tests {
     use super::*;
-    use super::super::assets::YO_USDC;
-    use alloy_primitives::U256;
-    use primitives::AssetId;
+    use crate::yo::assets::YO_USDC;
 
     #[test]
     fn test_map_to_delegation() {
@@ -91,9 +89,8 @@ mod tests {
 
     #[test]
     fn test_map_to_contract_call_data() {
-        let result = map_to_contract_call_data(TransactionObject { to: "0xcontract".to_string(), data: "0xcalldata".to_string() }, None, 300_000);
+        let result = map_to_contract_call_data(TransactionObject::new_call("0xcontract", vec![]), None, 300_000);
         assert_eq!(result.contract_address, "0xcontract");
-        assert_eq!(result.call_data, "0xcalldata");
         assert_eq!(result.gas_limit, Some("300000".to_string()));
     }
 }

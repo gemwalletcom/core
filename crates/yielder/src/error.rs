@@ -7,15 +7,12 @@ use alloy_primitives::ruint::ParseError;
 #[derive(Debug, Clone)]
 pub enum YielderError {
     NetworkError(String),
+    NotSupportedChain,
 }
 
 impl YielderError {
     pub fn unsupported_asset(asset: &impl Display) -> Self {
         Self::NetworkError(format!("Unsupported asset: {asset}"))
-    }
-
-    pub fn unsupported_chain(chain: &impl Display) -> Self {
-        Self::NetworkError(format!("Unsupported chain: {chain}"))
     }
 }
 
@@ -23,6 +20,7 @@ impl fmt::Display for YielderError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
             Self::NetworkError(msg) => write!(f, "{msg}"),
+            Self::NotSupportedChain => write!(f, "Not supported chain"),
         }
     }
 }
