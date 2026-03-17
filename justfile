@@ -10,7 +10,12 @@ build-gemstone:
 build-ios:
     just gemstone build-ios
 
-install: install-typeshare install-postgres install-diesel
+install: install-sccache install-typeshare install-postgres install-diesel
+
+install-sccache:
+    @echo Install sccache
+    @which sccache &>/dev/null || brew install sccache
+    @sccache --version
 
 install-rust:
     @echo Install Rust
