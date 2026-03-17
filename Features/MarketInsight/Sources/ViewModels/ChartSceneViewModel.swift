@@ -31,7 +31,7 @@ public final class ChartSceneViewModel: ChartListViewable {
     var priceData: PriceData? { priceQuery.value }
 
     var isPresentingInfoSheet: InfoSheetType?
-    public var isPresentingSetPriceAlert: Binding<Asset?>
+    private let onSetPriceAlert: (Asset) -> Void
 
     var title: String { assetModel.name }
 
@@ -46,7 +46,7 @@ public final class ChartSceneViewModel: ChartListViewable {
         priceAlertService: PriceAlertService,
         walletId: WalletId,
         currentPeriod: ChartPeriod = ChartValuesViewModel.defaultPeriod,
-        isPresentingSetPriceAlert: Binding<Asset?>
+        onSetPriceAlert: @escaping (Asset) -> Void
     ) {
         self.service = service
         self.priceService = priceService
@@ -55,7 +55,7 @@ public final class ChartSceneViewModel: ChartListViewable {
         self.walletId = walletId
         self.selectedPeriod = currentPeriod
         self.priceQuery = ObservableQuery(PriceRequest(assetId: assetModel.asset.id), initialValue: nil)
-        self.isPresentingSetPriceAlert = isPresentingSetPriceAlert
+        self.onSetPriceAlert = onSetPriceAlert
     }
     
     var priceDataModel: AssetDetailsInfoViewModel? {
@@ -103,6 +103,6 @@ extension ChartSceneViewModel {
     }
 
     public func onSelectSetPriceAlerts() {
-        isPresentingSetPriceAlert.wrappedValue = assetModel.asset
+        onSetPriceAlert(assetModel.asset)
     }
 }

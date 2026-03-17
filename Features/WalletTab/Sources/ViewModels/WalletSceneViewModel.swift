@@ -38,19 +38,11 @@ public final class WalletSceneViewModel: Sendable {
     public var assets: [AssetData] { assetsQuery.value }
     public var banners: [Banner] { bannersQuery.value }
 
-    // TODO: - separate presenting sheet state logic to separate type
     public var isPresentingSelectedAssetInput: Binding<SelectedAssetInput?>
-    public var isPresentingWallets = false
-    public var isPresentingSelectAssetType: SelectAssetType?
-    public var isPresentingInfoSheet: InfoSheetType?
-    public var isPresentingUrl: URL? = nil
-    public var isPresentingTransferData: TransferData?
-    public var isPresentingPerpetualRecipientData: PerpetualRecipientData?
-    public var isPresentingSetPriceAlert: Asset?
-    public var isPresentingToastMessage: ToastMessage?
+    public var isPresentingSheet: WalletSheetType?
     public var isPresentingSearch = false
-    public var isPresentingAddToken: Bool = false
-    public var isPresentingPortfolio = false
+    public var isPresentingUrl: URL? = nil
+    public var isPresentingToastMessage: ToastMessage?
 
     public var isLoadingAssets: Bool = false
 
@@ -138,11 +130,11 @@ extension WalletSceneViewModel {
     }
     
     public func onSelectWalletBar() {
-        isPresentingWallets.toggle()
+        isPresentingSheet = .wallets
     }
 
     public func onSelectManage() {
-        isPresentingSelectAssetType = .manage
+        isPresentingSheet = .selectAsset(.manage)
     }
 
     public func onToggleSearch() {
@@ -150,22 +142,20 @@ extension WalletSceneViewModel {
     }
 
     public func onSelectAddCustomToken() {
-        isPresentingAddToken = true
+        isPresentingSheet = .addAsset
     }
 
     func onSelectPortfolio() {
-        isPresentingPortfolio = true
+        isPresentingSheet = .portfolio
     }
 
     func onHeaderAction(type: HeaderButtonType) {
-        let selectType: SelectAssetType = switch type {
-        case .buy: .buy
-        case .send: .send
-        case .receive: .receive(.asset)
-        case .sell, .swap, .more, .stake, .deposit, .withdraw:
-            fatalError()
+        switch type {
+        case .buy: isPresentingSheet = .selectAsset(.buy)
+        case .send: isPresentingSheet = .selectAsset(.send)
+        case .receive: isPresentingSheet = .selectAsset(.receive(.asset))
+        case .sell, .swap, .more, .stake, .deposit, .withdraw: break
         }
-        isPresentingSelectAssetType = selectType
     }
 
     func onCloseBanner(banner: Banner) {
@@ -173,7 +163,7 @@ extension WalletSceneViewModel {
     }
 
     func onSelectWatchWalletInfo() {
-        isPresentingInfoSheet = .watchWallet
+        isPresentingSheet = .infoSheet(.watchWallet)
     }
 
     func onBanner(action: BannerAction) {
@@ -184,8 +174,8 @@ extension WalletSceneViewModel {
             }
         case .button(let bannerButton):
             switch bannerButton {
-            case .buy: isPresentingSelectAssetType = .buy
-            case .receive: isPresentingSelectAssetType = .receive(.asset)
+            case .buy: isPresentingSheet = .selectAsset(.buy)
+            case .receive: isPresentingSheet = .selectAsset(.receive(.asset))
             }
         }
         isPresentingUrl = action.url
@@ -232,12 +222,24 @@ extension WalletSceneViewModel {
     }
     
     public func onTransferComplete() {
-        isPresentingTransferData = nil
+        isPresentingSheet = nil
     }
-    
+
     public func onSetPriceAlertComplete(message: String) {
-        isPresentingSetPriceAlert = nil
+        isPresentingSheet = nil
         isPresentingToastMessage = .priceAlert(message: message)
+    }
+
+    public func presentTransferData(_ data: TransferData) {
+        isPresentingSheet = .transferData(data)
+    }
+
+    public func presentPerpetualRecipientData(_ data: PerpetualRecipientData) {
+        isPresentingSheet = .perpetualRecipientData(data)
+    }
+
+    public func presentPriceAlert(_ asset: Asset) {
+        isPresentingSheet = .setPriceAlert(asset)
     }
 }
 

@@ -11,16 +11,12 @@ struct WalletsNavigationStack: View {
     @Environment(\.walletService) private var walletService
     @Environment(\.avatarService) private var avatarService
     @Environment(\.nameService) private var nameService
+    @Environment(\.dismiss) private var dismiss
 
     @State private var navigationPath = NavigationPath()
 
     @State private var isPresentingCreateWalletSheet = false
     @State private var isPresentingImportWalletSheet = false
-    @Binding private var isPresentingWallets: Bool
-
-    init(isPresentingWallets: Binding<Bool>) {
-        _isPresentingWallets = isPresentingWallets
-    }
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -52,7 +48,7 @@ struct WalletsNavigationStack: View {
                     model: CreateWalletModel(
                         walletService: walletService,
                         avatarService: avatarService,
-                        onComplete: { isPresentingWallets = false }
+                        onComplete: { dismiss() }
                     )
                 )
             }
@@ -62,14 +58,14 @@ struct WalletsNavigationStack: View {
                         walletService: walletService,
                         avatarService: avatarService,
                         nameService: nameService,
-                        onComplete: { isPresentingWallets = false }
+                        onComplete: { dismiss() }
                     )
                 )
             }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("", systemImage: SystemImage.xmark) {
-                        isPresentingWallets.toggle()
+                        dismiss()
                     }
                 }
             }

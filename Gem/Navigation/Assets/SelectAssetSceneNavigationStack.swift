@@ -14,19 +14,15 @@ struct SelectAssetSceneNavigationStack: View {
     @Environment(\.viewModelFactory) private var viewModelFactory
     @Environment(\.assetsEnabler) private var assetsEnabler
     @Environment(\.activityService) private var activityService
+    @Environment(\.dismiss) private var dismiss
 
     @State private var isPresentingFilteringView: Bool = false
 
     @State private var model: SelectAssetViewModel
     @State private var navigationPath = NavigationPath()
-    @Binding private var isPresentingSelectAssetType: SelectAssetType?
 
-    init(
-        model: SelectAssetViewModel,
-        isPresentingSelectType: Binding<SelectAssetType?>
-    ) {
+    init(model: SelectAssetViewModel) {
         _model = State(wrappedValue: model)
-        _isPresentingSelectAssetType = isPresentingSelectType
     }
 
     var body: some View {
@@ -143,18 +139,13 @@ struct SelectAssetSceneNavigationStack: View {
                     model: viewModelFactory.confirmTransferScene(
                         wallet: model.wallet,
                         data: data,
-                        onComplete: {
-                            isPresentingSelectAssetType = nil
-                        }
+                        onComplete: { dismiss() }
                     )
                 )
             }
         }
         .sheet(isPresented: $model.isPresentingAddToken) {
-            AddAssetNavigationStack(
-                wallet: model.wallet,
-                isPresenting: $model.isPresentingAddToken
-            )
+            AddAssetNavigationStack(wallet: model.wallet)
         }
         .sheet(isPresented: $isPresentingFilteringView) {
             NavigationStack {

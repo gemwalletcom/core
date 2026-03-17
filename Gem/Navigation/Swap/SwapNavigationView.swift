@@ -37,8 +37,7 @@ struct SwapNavigationView: View {
                             priceAlertService: priceAlertService,
                             activityService: activityService,
                             selectAssetAction: model.onFinishAssetSelection
-                        ),
-                        isPresentingSelectType: .constant(.swap(type))
+                        )
                     )
                 case .swapDetails:
                     if let model = model.swapDetailsViewModel {

@@ -5,12 +5,12 @@ import Style
 import Store
 import PerpetualService
 import Perpetuals
+import WalletTab
 import TransactionsService
 
 public struct PerpetualNavigationView: View {
     @State private var model: PerpetualSceneViewModel
-    @Binding var isPresentingTransferData: TransferData?
-    @Binding var isPresentingPerpetualRecipientData: PerpetualRecipientData?
+    @Binding var isPresentingSheet: WalletSheetType?
 
     public init(
         asset: Asset,
@@ -18,19 +18,17 @@ public struct PerpetualNavigationView: View {
         perpetualService: any PerpetualServiceable,
         transactionsService: TransactionsService,
         observerService: any PerpetualObservable<HyperliquidSubscription>,
-        isPresentingTransferData: Binding<TransferData?>,
-        isPresentingPerpetualRecipientData: Binding<PerpetualRecipientData?>
+        isPresentingSheet: Binding<WalletSheetType?>
     ) {
-        _isPresentingTransferData = isPresentingTransferData
-        _isPresentingPerpetualRecipientData = isPresentingPerpetualRecipientData
+        _isPresentingSheet = isPresentingSheet
         _model = State(initialValue: PerpetualSceneViewModel(
             wallet: wallet,
             asset: asset,
             perpetualService: perpetualService,
             transactionsService: transactionsService,
             observerService: observerService,
-            onTransferData: { isPresentingTransferData.wrappedValue = $0 },
-            onPerpetualRecipientData: { isPresentingPerpetualRecipientData.wrappedValue = $0 }
+            onTransferData: { isPresentingSheet.wrappedValue = .transferData($0) },
+            onPerpetualRecipientData: { isPresentingSheet.wrappedValue = .perpetualRecipientData($0) }
         ))
     }
 
@@ -46,15 +44,13 @@ public struct PerpetualNavigationView: View {
                 }
             }
             .bindQuery(model.positionsQuery, model.perpetualQuery, model.transactionsQuery, model.perpetualTotalValueQuery)
-            // we should ideally observer is isCompleted, but don't have access from here
-            .onChange(of: isPresentingTransferData) { _, newValue in
-                if newValue == .none {
+            .onChange(of: isPresentingSheet) { oldValue, newValue in
+                guard newValue == nil else { return }
+                switch oldValue {
+                case .transferData, .perpetualRecipientData:
                     model.fetch()
-                }
-            }
-            .onChange(of: isPresentingPerpetualRecipientData) { oldValue, newValue in
-                if newValue == .none {
-                    model.fetch()
+                default:
+                    break
                 }
             }
     }

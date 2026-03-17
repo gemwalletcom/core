@@ -77,8 +77,7 @@ struct CollectionsNavigationStack: View {
                             assetsEnabler: assetsEnabler,
                             priceAlertService: priceAlertService,
                             activityService: activityService
-                        ),
-                        isPresentingSelectType: $model.isPresentingReceiveSelectAssetType
+                        )
                     )
                 }
                 .toolbar {

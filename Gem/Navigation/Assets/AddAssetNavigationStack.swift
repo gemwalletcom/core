@@ -8,12 +8,11 @@ import Style
 import Localization
 
 struct AddAssetNavigationStack: View {
-    
+
     let wallet: Wallet
-    @State var isPresenting: Binding<Bool>
-    
     @Environment(\.chainServiceFactory) private var chainServiceFactory
     @Environment(\.assetsService) private var assetsService
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
@@ -29,7 +28,7 @@ struct AddAssetNavigationStack: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("", systemImage: SystemImage.xmark) {
-                        isPresenting.wrappedValue = false
+                        dismiss()
                     }
                 }
             }
@@ -42,6 +41,6 @@ extension AddAssetNavigationStack {
         Task {
             try assetsService.addNewAsset(walletId: wallet.walletId, asset: asset)
         }
-        isPresenting.wrappedValue = false
+        dismiss()
     }
 }

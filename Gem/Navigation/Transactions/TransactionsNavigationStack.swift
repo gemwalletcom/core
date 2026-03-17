@@ -69,8 +69,7 @@ struct TransactionsNavigationStack: View {
                             assetsEnabler: assetsEnabler,
                             priceAlertService: priceAlertService,
                             activityService: activityService
-                        ),
-                        isPresentingSelectType: $model.isPresentingSelectAssetType
+                        )
                     )
                 }
         }
