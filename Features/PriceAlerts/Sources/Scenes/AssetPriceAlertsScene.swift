@@ -17,14 +17,12 @@ public struct AssetPriceAlertsScene: View {
     
     public var body: some View {
         List {
-            if let autoAlert = model.autoAlertModel {
-                Section {
-                    alertView(model: autoAlert)
-                } footer: {
-                    Text(Localized.PriceAlerts.autoFooter)
-                }
+            Section {
+                autoAlertToggleView
+            } footer: {
+                Text(Localized.PriceAlerts.autoFooter)
             }
-            
+
             if model.alertsModel.isNotEmpty {
                 Section {
                     ForEach(model.alertsModel, id: \.data.priceAlert.id) { alertModel in
@@ -35,12 +33,8 @@ public struct AssetPriceAlertsScene: View {
                 }
             }
         }
-        .overlay {
-            if model.showEmptyState {
-                EmptyContentView(model: model.emptyContentModel)
-            }
-        }
         .bindQuery(model.query)
+        .bindQuery(model.priceQuery)
         .listSectionSpacing(.compact)
         .refreshable { await model.fetch() }
         .task { await model.fetch() }
@@ -65,6 +59,13 @@ public struct AssetPriceAlertsScene: View {
         .toast(message: $model.isPresentingToastMessage)
     }
     
+    private var autoAlertToggleView: some View {
+        Toggle(isOn: model.isAutoAlertEnabledBinding) {
+            ListAssetItemView(model: model.autoAlertItemModel)
+        }
+        .toggleStyle(AppToggleStyle())
+    }
+
     private func alertView(model: PriceAlertItemViewModel) -> some View {
         ListAssetItemView(model: model)
             .swipeActions(edge: .trailing) {
@@ -79,7 +80,7 @@ public struct AssetPriceAlertsScene: View {
 // MARK: - Actions
 
 extension AssetPriceAlertsScene {
-    func onDelete(alert: PriceAlert) {
+    private func onDelete(alert: PriceAlert) {
         Task {
             await model.deletePriceAlert(priceAlert: alert)
         }

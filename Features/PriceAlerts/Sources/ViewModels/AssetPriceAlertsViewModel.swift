@@ -8,6 +8,7 @@ import PriceAlertService
 import PrimitivesComponents
 import Components
 import Style
+import Preferences
 
 @Observable
 @MainActor
@@ -17,6 +18,7 @@ public final class AssetPriceAlertsViewModel: Sendable {
     let asset: Asset
 
     public let query: ObservableQuery<PriceAlertsRequest>
+    public let priceQuery: ObservableQuery<PriceRequest>
     var priceAlerts: [PriceAlertData] { query.value }
 
     var isPresentingSetPriceAlert: Bool = false
@@ -31,14 +33,26 @@ public final class AssetPriceAlertsViewModel: Sendable {
         self.walletId = walletId
         self.asset = asset
         self.query = ObservableQuery(PriceAlertsRequest(assetId: asset.id), initialValue: [])
+        self.priceQuery = ObservableQuery(PriceRequest(assetId: asset.id), initialValue: nil)
     }
     
     var title: String { Localized.Settings.PriceAlerts.title }
-    
-    var autoAlertModel: PriceAlertItemViewModel? {
-        priceAlerts
-            .first(where: { $0.priceAlert.type == .auto })
-            .map { PriceAlertItemViewModel(data: $0) }
+
+    var autoAlertItemModel: PriceAlertItemViewModel {
+        PriceAlertItemViewModel(data: PriceAlertData(
+            asset: asset,
+            price: priceQuery.value?.price,
+            priceAlert: .default(for: asset.id, currency: Preferences.standard.currency)
+        ))
+    }
+
+    var isAutoAlertEnabledBinding: Binding<Bool> {
+        Binding(
+            get: { self.priceAlerts.contains(where: { $0.priceAlert.type == .auto }) },
+            set: { newValue in
+                Task { await self.toggleAutoAlert(enabled: newValue) }
+            }
+        )
     }
 
     var alertsModel: [PriceAlertItemViewModel] {
@@ -50,14 +64,6 @@ public final class AssetPriceAlertsViewModel: Sendable {
                 KeyPathComparator(\.priceAlert.pricePercentChange, order: .reverse)
             ])
             .map { PriceAlertItemViewModel(data: $0) }
-    }
-    
-    var showEmptyState: Bool {
-        alertsModel.isEmpty && autoAlertModel == nil
-    }
-
-    var emptyContentModel: EmptyContentTypeViewModel {
-        EmptyContentTypeViewModel(type: .priceAlerts)
     }
 }
 
@@ -72,6 +78,21 @@ extension AssetPriceAlertsViewModel {
         }
     }
     
+    func toggleAutoAlert(enabled: Bool) async {
+        let currency = Preferences.standard.currency
+        do {
+            if enabled {
+                try await priceAlertService.add(priceAlert: .default(for: asset.id, currency: currency))
+                try await priceAlertService.requestPermissions()
+                try await priceAlertService.enablePriceAlerts()
+            } else {
+                try await priceAlertService.delete(priceAlerts: [.default(for: asset.id, currency: currency)])
+            }
+        } catch {
+            debugLog("toggleAutoAlert error: \(error)")
+        }
+    }
+
     func deletePriceAlert(priceAlert: PriceAlert) async {
         do {
             try await priceAlertService.delete(priceAlerts: [priceAlert])

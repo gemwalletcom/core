@@ -23,17 +23,7 @@ struct AssetPriceAlertsViewModelTests {
         model.query.value = [alert1, alert2, alert3, autoAlert]
 
         #expect(model.alertsModel.map { $0.data } == [alert3, alert2, alert1])
-        #expect(model.autoAlertModel?.data == autoAlert)
-    }
-
-    @Test
-    func showEmptyState() {
-        let emptyModel = AssetPriceAlertsViewModel.mock()
-        #expect(emptyModel.showEmptyState == true)
-
-        let modelWithAlerts = AssetPriceAlertsViewModel.mock()
-        modelWithAlerts.query.value = [PriceAlertData.mock()]
-        #expect(modelWithAlerts.showEmptyState == false)
+        #expect(model.isAutoAlertEnabledBinding.wrappedValue == true)
     }
 }
 
