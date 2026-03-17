@@ -68,10 +68,19 @@ public final class CollectibleViewModel {
         return ListItemField(title: Localized.Asset.contract, value: text)
     }
 
+    var contractExplorerUrl: BlockExplorerLink? {
+        explorerService.tokenUrl(chain: assetData.asset.chain, address: contractValue)
+    }
+
     var contractContextMenu: [ContextMenuItemType] {
-        [.copy(value: contractValue, onCopy: { [weak self] value in
-            self?.isPresentingToast = .copied(value)
-        })]
+        [
+            .copy(value: contractValue, onCopy: { [weak self] value in
+                self?.isPresentingToast = .copied(value)
+            }),
+            contractExplorerUrl.map {
+                .url(title: Localized.Transaction.viewOn($0.name), onOpen: onSelectViewContractInExplorer)
+            }
+        ].compactMap { $0 }
     }
 
     var tokenIdValue: String { assetData.asset.tokenId }
@@ -227,9 +236,11 @@ extension CollectibleViewModel {
     }
     
     func onSelectViewTokenInExplorer() {
-        guard let explorerLink = tokenExplorerUrl else { return }
-        guard let url = URL(string: explorerLink.link) else { return }
-        isPresentingTokenExplorerUrl = url
+        isPresentingTokenExplorerUrl = tokenExplorerUrl?.url
+    }
+
+    func onSelectViewContractInExplorer() {
+        isPresentingTokenExplorerUrl = contractExplorerUrl?.url
     }
 
     func onSelectReport() {
