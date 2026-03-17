@@ -79,7 +79,10 @@ mod chain_integration_tests {
     async fn test_bitcoin_get_transactions_by_address() {
         let bitcoin_client = create_bitcoin_test_client();
 
-        let transactions = bitcoin_client.get_transactions_by_address(TransactionsRequest::new(TEST_ADDRESS.to_string())).await.unwrap();
+        let transactions = bitcoin_client
+            .get_transactions_by_address(TransactionsRequest::new(TEST_ADDRESS.to_string()))
+            .await
+            .unwrap();
 
         println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
 

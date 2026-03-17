@@ -4,7 +4,7 @@ use localizer::LanguageLocalizer;
 use number_formatter::{ValueFormatter, ValueStyle};
 use primitives::{
     AddressFormatter, Asset, AssetVecExt, Chain, DeviceSubscription, GorushNotification, NFTAssetId, PushNotification, PushNotificationTransaction, PushNotificationTypes,
-    Transaction, TransactionNFTTransferMetadata, TransactionSwapMetadata, TransactionType,
+    Transaction, TransactionNFTTransferMetadata, TransactionPerpetualMetadata, TransactionSwapMetadata, TransactionType,
 };
 use storage::{Database, ScanAddressesRepository};
 
@@ -95,15 +95,24 @@ impl Pusher {
                     message: Some(localizer.notification_swap_description(&from_amount, &to_amount)),
                 })
             }
-            TransactionType::PerpetualOpenPosition => {
-                let title = format!("Opened Perpetual Position: {amount}");
-                let message = format!("Opened perpetual position for {amount} at {to_address}");
-                Ok(Message { title, message: Some(message) })
-            }
-            TransactionType::PerpetualClosePosition => {
-                let title = format!("Closed Perpetual Position: {amount}");
-                let message = format!("Closed perpetual position for {amount} at {to_address}");
-                Ok(Message { title, message: Some(message) })
+            TransactionType::PerpetualOpenPosition | TransactionType::PerpetualClosePosition => {
+                let metadata: TransactionPerpetualMetadata = serde_json::from_value(transaction.metadata.ok_or("Missing metadata")?)?;
+                let coin = &asset.symbol;
+                let direction = metadata.direction.as_ref();
+                let price = ValueFormatter::format_f64_currency(ValueStyle::Auto, metadata.price, "$");
+                let title = match metadata.direction {
+                    primitives::PerpetualDirection::Long => localizer.notification_perpetual_long_title(direction, coin),
+                    primitives::PerpetualDirection::Short => localizer.notification_perpetual_short_title(direction, coin),
+                };
+                let description = match transaction.transaction_type {
+                    TransactionType::PerpetualOpenPosition => Some(localizer.notification_perpetual_open_description(&amount, &price)),
+                    TransactionType::PerpetualClosePosition => {
+                        let pnl = ValueFormatter::format_f64_currency(ValueStyle::Auto, metadata.pnl, "$");
+                        Some(localizer.notification_perpetual_close_description(&pnl, &price))
+                    }
+                    _ => None,
+                };
+                Ok(Message { title, message: description })
             }
             TransactionType::AssetActivation | TransactionType::PerpetualModifyPosition | TransactionType::EarnDeposit | TransactionType::EarnWithdraw => todo!(),
             TransactionType::StakeFreeze => Ok(Message {

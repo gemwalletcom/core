@@ -147,6 +147,10 @@ pub trait ChainPerpetual: Send + Sync {
     async fn get_perpetual_portfolio(&self, _address: String) -> Result<PerpetualPortfolio, Box<dyn Error + Sync + Send>> {
         Err("Chain does not support perpetual portfolio".into())
     }
+
+    async fn get_perpetual_referred_addresses(&self) -> Result<Vec<String>, Box<dyn Error + Sync + Send>> {
+        Ok(vec![])
+    }
 }
 
 #[async_trait]

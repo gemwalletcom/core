@@ -1,6 +1,7 @@
 use std::error::Error;
 
 use chain_traits::{ChainTraits, TransactionsRequest};
+use primitives::perpetual::PerpetualPositionsSummary;
 use primitives::{Asset, AssetBalance, Chain, DelegationBase, StakeValidator, Transaction};
 use settings::Settings;
 
@@ -52,10 +53,7 @@ impl ChainProviders {
     }
 
     pub async fn get_transactions_by_address(&self, chain: Chain, request: TransactionsRequest) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        self.get_provider(chain)?
-            .get_transactions_by_address(request)
-            .await
-            .map(sort_transactions_by_date)
+        self.get_provider(chain)?.get_transactions_by_address(request).await.map(sort_transactions_by_date)
     }
 
     pub async fn get_validators(&self, chain: Chain) -> Result<Vec<StakeValidator>, Box<dyn Error + Send + Sync>> {
@@ -76,6 +74,14 @@ impl ChainProviders {
 
     pub async fn get_staking_delegations(&self, chain: Chain, address: String) -> Result<Vec<DelegationBase>, Box<dyn Error + Send + Sync>> {
         self.get_provider(chain)?.get_staking_delegations(address).await
+    }
+
+    pub async fn get_perpetual_positions(&self, chain: Chain, address: String) -> Result<PerpetualPositionsSummary, Box<dyn Error + Send + Sync>> {
+        self.get_provider(chain)?.get_positions(address).await
+    }
+
+    pub async fn get_perpetual_referred_addresses(&self, chain: Chain) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
+        self.get_provider(chain)?.get_perpetual_referred_addresses().await
     }
 }
 

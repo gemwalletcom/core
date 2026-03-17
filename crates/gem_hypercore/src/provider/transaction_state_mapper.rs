@@ -154,5 +154,4 @@ mod tests {
 
         assert!(prepare_perpetual_fill(&[&fill], &fill).is_none());
     }
-
 }

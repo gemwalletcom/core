@@ -12,6 +12,7 @@ use primitives::{
 };
 
 use crate::{
+    config::HypercoreConfig,
     provider::perpetual_mapper::{map_candlesticks, map_perpetual_portfolio, map_perpetuals_data, map_positions},
     rpc::client::HyperCoreClient,
 };
@@ -55,6 +56,13 @@ impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
     async fn get_perpetual_portfolio(&self, address: String) -> Result<PerpetualPortfolio, Box<dyn Error + Sync + Send>> {
         let (response, positions) = try_join!(self.get_perpetual_portfolio(&address), self.get_clearinghouse_state(&address))?;
         Ok(map_perpetual_portfolio(response, &positions))
+    }
+
+    async fn get_perpetual_referred_addresses(&self) -> Result<Vec<String>, Box<dyn Error + Sync + Send>> {
+        let config = HypercoreConfig::default();
+        let referral = self.get_referral(&config.builder_address).await?;
+        let referral_states = referral.referrer_state.map(|s| s.data.referral_states).unwrap_or_default();
+        Ok(referral_states.into_iter().map(|r| r.user).collect())
     }
 }
 

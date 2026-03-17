@@ -4,7 +4,7 @@ use std::error::Error;
 use chrono::{DateTime, Utc};
 use primitives::{Transaction, TransactionState};
 
-use crate::models::action::{ExchangeRequest, ACTION_ID_PREFIX};
+use crate::models::action::{ACTION_ID_PREFIX, ExchangeRequest};
 use crate::models::order::PerpetualFill;
 use crate::models::response::{BroadcastResult, TransactionBroadcastResponse};
 use crate::models::token::HYPERCORE_USDC_ASSET_ID;

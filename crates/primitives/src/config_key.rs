@@ -179,6 +179,8 @@ pub enum ConfigKey {
     TransactionCleanupAddressMaxCount,
     TransactionCleanupAddressLimit,
     TransactionCleanupLookback,
+    TransactionPerpetualObserverInterval,
+    TransactionPerpetualAddressRefreshInterval,
 
     // Search
     SearchAssetsUpdateInterval,
@@ -354,6 +356,8 @@ impl ConfigKey {
             Self::TransactionCleanupAddressMaxCount => "5000",
             Self::TransactionCleanupAddressLimit => "200",
             Self::TransactionCleanupLookback => "90d",
+            Self::TransactionPerpetualObserverInterval => "30s",
+            Self::TransactionPerpetualAddressRefreshInterval => "1h",
             Self::SearchAssetsUpdateInterval => "30m",
             Self::SearchPerpetualsUpdateInterval => "30m",
             Self::SearchNftsUpdateInterval => "30m",

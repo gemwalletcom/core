@@ -22,6 +22,7 @@ pub struct DeviceRow {
     pub subscriptions_version: i32,
     pub os: String,
     pub model: String,
+    pub updated_at: NaiveDateTime,
     pub created_at: NaiveDateTime,
 }
 

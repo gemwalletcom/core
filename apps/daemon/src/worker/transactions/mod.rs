@@ -1,11 +1,15 @@
 mod in_transit_updater;
+mod perpetual_address_refresher;
+mod perpetual_observer;
 mod vault_addresses_updater;
 
 use cacher::CacherClient;
 use in_transit_updater::{InTransitConfig, InTransitUpdater};
 use job_runner::{JobHandle, ShutdownReceiver};
-use primitives::{ConfigKey, ParamConfigKey, SwapProvider};
-use settings_chain::ProviderFactory;
+use perpetual_address_refresher::PerpetualAddressRefresher;
+use perpetual_observer::PerpetualPositionObserver;
+use primitives::{Chain, ConfigKey, ParamConfigKey, SwapProvider};
+use settings_chain::{ChainProviders, ProviderFactory};
 use std::error::Error;
 use std::sync::Arc;
 use storage::ConfigCacher;
@@ -39,6 +43,12 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
     let stream_producer = StreamProducer::new(&rabbitmq_config, "transactions_worker", shutdown_rx.clone()).await?;
     let cacher = CacherClient::new(&settings.redis.url).await;
 
+    let perpetual_providers = Arc::new(ChainProviders::from_settings(
+        &settings,
+        &settings::service_user_agent("daemon", Some("perpetual_observer")),
+    ));
+    let refresher = Arc::new(PerpetualAddressRefresher::new(perpetual_providers.clone(), database.clone(), cacher.clone()));
+
     JobPlanBuilder::with_config(WorkerService::Transactions, runtime.plan(shutdown_rx), &config)
         .job(WorkerJob::UpdateInTransitTransactions, {
             let database = database.clone();
@@ -48,6 +58,20 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
             move |_| {
                 let updater = InTransitUpdater::new(database.clone(), in_transit_config, swapper.clone(), stream_producer.clone(), vault_client.clone());
                 async move { updater.update().await }
+            }
+        })
+        .jobs(WorkerJob::ObservePerpetualPositions, Chain::perpetual_chains(), |chain, _| {
+            let observer = Arc::new(PerpetualPositionObserver::new(chain, perpetual_providers.clone(), cacher.clone(), stream_producer.clone()));
+            move |_| {
+                let observer = observer.clone();
+                async move { observer.observe().await }
+            }
+        })
+        .jobs(WorkerJob::RefreshPerpetualActiveAddresses, Chain::perpetual_chains(), |chain, _| {
+            let refresher = refresher.clone();
+            move |_| {
+                let refresher = refresher.clone();
+                async move { refresher.update(chain).await }
             }
         })
         .jobs_with_config(
