@@ -25,7 +25,7 @@ impl<C: Client + Clone> ChainTransactions for TronClient<C> {
         Ok(map_transactions_by_block(self.get_chain(), block_data, receipts))
     }
 
-    async fn get_transactions_by_address(&self, address: String, limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+    async fn get_transactions_by_address(&self, address: String, limit: Option<usize>, _from_timestamp: Option<u64>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         let limit = limit.unwrap_or(20);
         let transactions = self.trongrid_client.get_transactions_by_address(&address, limit).await?.data;
 
@@ -67,7 +67,7 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_get_transactions_by_address() {
         let tron_client = create_test_client();
-        let transactions = tron_client.get_transactions_by_address(TEST_ADDRESS.to_string(), Some(1)).await.unwrap();
+        let transactions = tron_client.get_transactions_by_address(TEST_ADDRESS.to_string(), Some(1), None).await.unwrap();
 
         println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
         assert!(!transactions.is_empty());

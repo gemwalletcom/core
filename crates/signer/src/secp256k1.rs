@@ -1,5 +1,5 @@
-use primitives::SignerError;
 use k256::ecdsa::SigningKey as SecpSigningKey;
+use primitives::SignerError;
 
 pub(crate) fn sign_digest(digest: &[u8], private_key: &[u8]) -> Result<Vec<u8>, SignerError> {
     let signing_key = SecpSigningKey::from_slice(private_key).map_err(|_| SignerError::invalid_input("Invalid Secp256k1 private key"))?;

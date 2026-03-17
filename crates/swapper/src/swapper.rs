@@ -491,9 +491,11 @@ mod tests {
         let providers = SwapProvider::all();
         let ascending = false;
 
-        let mut quotes = [Quote::mock_with_provider(SwapperProvider::UniswapV3, "101"),
+        let mut quotes = [
+            Quote::mock_with_provider(SwapperProvider::UniswapV3, "101"),
             Quote::mock_with_provider(SwapperProvider::UniswapV4, "100"),
-            Quote::mock_with_provider(SwapperProvider::PancakeswapV3, "102")];
+            Quote::mock_with_provider(SwapperProvider::PancakeswapV3, "102"),
+        ];
 
         quotes.sort_by(|a, b| {
             let a_amount = a.to_value.parse::<BigInt>().unwrap_or_default();
@@ -511,9 +513,11 @@ mod tests {
         let providers = SwapProvider::all();
         let ascending = false;
 
-        let mut quotes = [Quote::mock_with_provider(SwapperProvider::Okx, "100"),
+        let mut quotes = [
+            Quote::mock_with_provider(SwapperProvider::Okx, "100"),
             Quote::mock_with_provider(SwapperProvider::UniswapV3, "100"),
-            Quote::mock_with_provider(SwapperProvider::Thorchain, "100")];
+            Quote::mock_with_provider(SwapperProvider::Thorchain, "100"),
+        ];
 
         quotes.sort_by(|a, b| {
             let a_amount = a.to_value.parse::<BigInt>().unwrap_or_default();
@@ -531,8 +535,10 @@ mod tests {
         let providers = SwapProvider::all();
         let ascending = false;
 
-        let mut quotes = [Quote::mock_with_provider(SwapperProvider::Thorchain, "100"),
-            Quote::mock_with_provider(SwapperProvider::Okx, "110")];
+        let mut quotes = [
+            Quote::mock_with_provider(SwapperProvider::Thorchain, "100"),
+            Quote::mock_with_provider(SwapperProvider::Okx, "110"),
+        ];
 
         quotes.sort_by(|a, b| {
             let a_amount = a.to_value.parse::<BigInt>().unwrap_or_default();

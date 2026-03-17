@@ -22,4 +22,4 @@ Before finishing a task:
 2. **Keep changes minimal** — code must be concise and focused; reviewers cannot realistically review thousands of lines per PR, so only include what is necessary for the task
 3. **Run tests**: `just test <CRATE>`
 4. **Run clippy**: `cargo clippy -p <crate> -- -D warnings`
-5. **Format only touched files**: `rustfmt --edition 2024 <files>`
+5. **Format**: `just format`

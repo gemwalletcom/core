@@ -38,7 +38,7 @@ impl<C: Client> ChainTransactions for BitcoinClient<C> {
         Ok(transactions)
     }
 
-    async fn get_transactions_by_address(&self, address: String, limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+    async fn get_transactions_by_address(&self, address: String, limit: Option<usize>, _from_timestamp: Option<u64>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         let address = Address::new(&address, self.get_chain()).full();
         let address_details = self.get_address_details(&address, limit.unwrap_or(25)).await?;
         let transactions = address_details.transactions.unwrap_or_default();
@@ -78,7 +78,7 @@ mod chain_integration_tests {
     async fn test_bitcoin_get_transactions_by_address() {
         let bitcoin_client = create_bitcoin_test_client();
 
-        let transactions = bitcoin_client.get_transactions_by_address(TEST_ADDRESS.to_string(), None).await.unwrap();
+        let transactions = bitcoin_client.get_transactions_by_address(TEST_ADDRESS.to_string(), None, None).await.unwrap();
 
         println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
 

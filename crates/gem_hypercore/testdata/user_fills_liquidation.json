@@ -1,0 +1,24 @@
+[
+  {
+    "coin": "HYPE",
+    "px": "27.283",
+    "sz": "7.27",
+    "side": "A",
+    "time": 1771816452802,
+    "startPosition": "7.27",
+    "dir": "Close Long",
+    "closedPnl": "-101.585891",
+    "hash": "0xbdd673d955e66365bf500435d435fc0201fa00bef0e98237619f1f2c14ea3d50",
+    "oid": 327271591087,
+    "crossed": true,
+    "fee": "0.085686",
+    "tid": 794561431105279,
+    "liquidation": {
+      "liquidatedUser": "0xba4d1d35bce0e8f28e5a3403e7a0b996c5d50ac4",
+      "markPx": "27.286",
+      "method": "market"
+    },
+    "feeToken": "USDC",
+    "twapId": null
+  }
+]

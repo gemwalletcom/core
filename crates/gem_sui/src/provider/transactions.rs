@@ -29,7 +29,12 @@ impl<C: Client + Clone> ChainTransactions for SuiClient<C> {
         Ok(map_transaction_blocks(transaction_blocks))
     }
 
-    async fn get_transactions_by_address(&self, address: String, _limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Sync + Send>> {
+    async fn get_transactions_by_address(
+        &self,
+        address: String,
+        _limit: Option<usize>,
+        _from_timestamp: Option<u64>,
+    ) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Sync + Send>> {
         Ok(self.get_transactions_by_address(address).await?.data.into_iter().flat_map(map_transaction).collect())
     }
 }
@@ -67,7 +72,7 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_get_transactions_by_address() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_sui_test_client();
-        let transactions = ChainTransactions::get_transactions_by_address(&client, TEST_ADDRESS.to_string(), Some(1)).await?;
+        let transactions = ChainTransactions::get_transactions_by_address(&client, TEST_ADDRESS.to_string(), Some(1), None).await?;
         println!("Address transactions count: {}", transactions.len());
 
         assert!(!transactions.is_empty());

@@ -26,7 +26,7 @@ impl AddressNamesClient {
             .scan_addresses()?
             .get_scan_addresses(&queries)?
             .into_iter()
-            .filter_map(|row| row.as_primitive())
+            .filter_map(|x| x.as_primitive())
             .map(|name| (ChainAddress::new(name.chain, name.address.clone()), name))
             .collect::<HashMap<_, _>>();
         let asset_ids = requests

@@ -28,8 +28,8 @@ impl ChainClient {
         self.providers.get_balance_assets(request.chain, request.address).await
     }
 
-    pub async fn get_transactions(&self, request: ChainAddress) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        self.providers.get_transactions_by_address(request.chain, request.address).await
+    pub async fn get_transactions(&self, request: ChainAddress, from_timestamp: Option<u64>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        self.providers.get_transactions_by_address(request.chain, request.address, from_timestamp).await
     }
 
     pub async fn get_validators(&self, chain: Chain) -> Result<Vec<primitives::StakeValidator>, Box<dyn Error + Send + Sync>> {

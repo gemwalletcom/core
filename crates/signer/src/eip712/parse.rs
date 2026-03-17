@@ -1,5 +1,5 @@
-use primitives::SignerError;
 use alloy_primitives::{I256, U256};
+use primitives::SignerError;
 use serde_json::Value;
 use std::str::FromStr;
 

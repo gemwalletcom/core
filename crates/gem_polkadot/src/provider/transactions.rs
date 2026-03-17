@@ -28,7 +28,7 @@ impl<C: Client> ChainTransactions for PolkadotClient<C> {
         Ok(transactions_mapper::map_transactions(self.get_chain(), block_data))
     }
 
-    async fn get_transactions_by_address(&self, _address: String, _limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+    async fn get_transactions_by_address(&self, _address: String, _limit: Option<usize>, _from_timestamp: Option<u64>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         Ok(vec![])
     }
 }

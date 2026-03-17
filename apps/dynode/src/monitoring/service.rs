@@ -295,7 +295,13 @@ impl NodeService {
         }
     }
 
-    fn log_and_create_error_response(&self, request: &ProxyRequest, host: Option<&str>, error_message: &str, upstream_data: Option<Value>) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {
+    fn log_and_create_error_response(
+        &self,
+        request: &ProxyRequest,
+        host: Option<&str>,
+        error_message: &str,
+        upstream_data: Option<Value>,
+    ) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {
         let request_id = request.id.as_str();
         let chain = request.chain.as_ref();
         let uri = request.path.as_str();

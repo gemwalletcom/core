@@ -93,20 +93,15 @@ pub async fn get_device_assets_v2(
 #[get("/devices/transactions?<asset_id>&<from_timestamp>")]
 pub async fn get_device_transactions_v2(
     device: AuthenticatedDeviceWallet,
-    asset_id: Option<&str>,
+    asset_id: Option<AssetIdParam>,
     from_timestamp: Option<u64>,
     client: &State<Mutex<TransactionsClient>>,
 ) -> Result<ApiResponse<TransactionsResponse>, ApiError> {
     Ok(client
         .lock()
         .await
-        .get_transactions_by_wallet_id(
-            &device.device_row.device_id,
-            device.device_row.id,
-            device.wallet_id,
-            asset_id.map(|s| s.to_string()),
-            from_timestamp,
-        )?
+        .get_transactions_by_wallet_id(&device.device_row.device_id, device.device_row.id, device.wallet_id, asset_id.map(|x| x.0), from_timestamp)
+        .await?
         .into())
 }
 

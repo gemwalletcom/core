@@ -51,8 +51,11 @@ impl ChainProviders {
         self.get_provider(chain)?.get_transactions_in_blocks(blocks).await
     }
 
-    pub async fn get_transactions_by_address(&self, chain: Chain, address: String) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        self.get_provider(chain)?.get_transactions_by_address(address, None).await
+    pub async fn get_transactions_by_address(&self, chain: Chain, address: String, from_timestamp: Option<u64>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+        self.get_provider(chain)?
+            .get_transactions_by_address(address, None, from_timestamp)
+            .await
+            .map(sort_transactions_by_date)
     }
 
     pub async fn get_validators(&self, chain: Chain) -> Result<Vec<StakeValidator>, Box<dyn Error + Send + Sync>> {
@@ -74,4 +77,9 @@ impl ChainProviders {
     pub async fn get_staking_delegations(&self, chain: Chain, address: String) -> Result<Vec<DelegationBase>, Box<dyn Error + Send + Sync>> {
         self.get_provider(chain)?.get_staking_delegations(address).await
     }
+}
+
+fn sort_transactions_by_date(mut transactions: Vec<Transaction>) -> Vec<Transaction> {
+    transactions.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+    transactions
 }

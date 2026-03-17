@@ -1,6 +1,6 @@
-use primitives::SignerError;
 use alloy_primitives::hex;
 use gem_hash::keccak::keccak256;
+use primitives::SignerError;
 use serde_json::{Map, Value};
 use std::borrow::Cow;
 use std::collections::BTreeSet;

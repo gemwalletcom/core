@@ -20,7 +20,7 @@ impl<C: Client> ChainTransactions for TonClient<C> {
         Ok(map_transactions(transactions.transactions))
     }
 
-    async fn get_transactions_by_address(&self, address: String, limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+    async fn get_transactions_by_address(&self, address: String, limit: Option<usize>, _from_timestamp: Option<u64>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         let limit = limit.unwrap_or(100);
         let transactions = self.get_transactions_by_address(address, limit).await?;
         Ok(map_transactions(transactions.transactions))
@@ -46,7 +46,7 @@ mod chain_integration_tests {
 
     #[tokio::test]
     async fn test_get_transactions_by_address() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let transactions = ChainTransactions::get_transactions_by_address(&create_ton_test_client(), TEST_ADDRESS.to_string(), Some(10)).await?;
+        let transactions = ChainTransactions::get_transactions_by_address(&create_ton_test_client(), TEST_ADDRESS.to_string(), Some(10), None).await?;
         println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
 
         assert!(!transactions.is_empty());

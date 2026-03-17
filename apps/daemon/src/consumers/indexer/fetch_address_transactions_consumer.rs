@@ -38,7 +38,7 @@ impl MessageConsumer<ChainAddressPayload, usize> for FetchAddressTransactionsCon
             .await
     }
     async fn process(&self, payload: ChainAddressPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let transactions = self.providers.get_transactions_by_address(payload.value.chain, payload.value.address.clone()).await?;
+        let transactions = self.providers.get_transactions_by_address(payload.value.chain, payload.value.address.clone(), None).await?;
         let _ = self.process_result(payload.value.chain, transactions.clone()).await;
         Ok(transactions.len())
     }

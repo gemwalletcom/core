@@ -28,7 +28,7 @@ impl<C: Client + Clone> ChainTransactions for SolanaClient<C> {
         }
     }
 
-    async fn get_transactions_by_address(&self, address: String, limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+    async fn get_transactions_by_address(&self, address: String, limit: Option<usize>, _from_timestamp: Option<u64>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         let limit = limit.unwrap_or(10);
         let signatures = self.get_signatures_for_address(&address, limit).await?;
         if signatures.is_empty() {
@@ -61,7 +61,7 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_solana_get_transactions_by_address() {
         let client = create_solana_test_client();
-        let transactions = client.get_transactions_by_address(TEST_ADDRESS.to_string(), None).await.unwrap();
+        let transactions = client.get_transactions_by_address(TEST_ADDRESS.to_string(), None, None).await.unwrap();
 
         println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
     }
