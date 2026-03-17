@@ -68,7 +68,10 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_get_transactions_by_address() {
         let tron_client = create_test_client();
-        let transactions = tron_client.get_transactions_by_address(TransactionsRequest::new(TEST_ADDRESS.to_string()).with_limit(1)).await.unwrap();
+        let transactions = tron_client
+            .get_transactions_by_address(TransactionsRequest::new(TEST_ADDRESS.to_string()).with_limit(1))
+            .await
+            .unwrap();
 
         println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
         assert!(!transactions.is_empty());

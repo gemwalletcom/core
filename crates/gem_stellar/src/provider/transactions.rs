@@ -52,7 +52,10 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_get_transactions_by_address() {
         let stellar_client = create_test_client();
-        let transactions = stellar_client.get_transactions_by_address(TransactionsRequest::new(TEST_ADDRESS.to_string())).await.unwrap();
+        let transactions = stellar_client
+            .get_transactions_by_address(TransactionsRequest::new(TEST_ADDRESS.to_string()))
+            .await
+            .unwrap();
 
         println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
 
@@ -62,7 +65,10 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_get_transactions_by_address_empty() {
         let stellar_client = create_test_client();
-        let transactions = stellar_client.get_transactions_by_address(TransactionsRequest::new(TEST_EMPTY_ADDRESS.to_string())).await.unwrap();
+        let transactions = stellar_client
+            .get_transactions_by_address(TransactionsRequest::new(TEST_EMPTY_ADDRESS.to_string()))
+            .await
+            .unwrap();
 
         println!("Address: {}, transactions count: {}", TEST_EMPTY_ADDRESS, transactions.len());
 
