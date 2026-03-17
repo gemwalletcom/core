@@ -94,6 +94,32 @@ struct TransferExecutorTests {
         #expect(transactions.count == 1)
         #expect(transactions.first?.id.hash == "hash")
     }
+
+    @Test
+    func perpetualModifyDoesNotStoreTransaction() async throws {
+        let db = DB.mockAssets(assets: [.mock(asset: .hypercoreUSDC())])
+        let transactionStore = TransactionStore(db: db)
+        let executor = TransferExecutor(
+            signer: TransactionSignerMock(signedData: ["modify_tx"]),
+            chainService: ChainServiceMock.mock(broadcastResponses: ["hash"]),
+            assetsEnabler: .mock(),
+            balanceService: .mock(),
+            transactionStateService: .mock(transactionStore: transactionStore)
+        )
+
+        let input = TransferConfirmationInput(
+            data: .mock(type: .perpetual(.hypercoreUSDC(), .mockModify())),
+            wallet: .mock(accounts: [Account.mock(chain: .hyperCore)]),
+            transactionData: .mock(),
+            amount: .mock(),
+            delegate: nil
+        )
+
+        try await executor.execute(input: input)
+
+        let transactions = try transactionStore.getTransactions(state: .pending)
+        #expect(transactions.isEmpty)
+    }
 }
 
 extension ChainServiceMock {
