@@ -64,13 +64,17 @@ impl EarnProvider for YoEarnProvider {
         self.get_position_for_asset(address, &asset).await
     }
 
-    async fn get_balance(&self, chain: Chain, address: &str) -> Result<Vec<AssetBalance>, YielderError> {
-        let chain_assets: Vec<_> = self.assets.iter().filter(|a| a.chain == chain).copied().collect();
+    async fn get_balance(&self, chain: Chain, address: &str, token_ids: &[String]) -> Result<Vec<AssetBalance>, YielderError> {
+        let token_match = |a: &&YoAsset| token_ids.iter().any(|t| a.asset_token.to_string().eq_ignore_ascii_case(t));
+        let assets: Vec<_> = self.assets.iter().filter(|a| a.chain == chain).filter(token_match).copied().collect();
+        if assets.is_empty() {
+            return Ok(vec![]);
+        }
         let client = self.get_client(chain)?;
         let owner: Address = address.parse()?;
-        let positions = client.get_positions(&chain_assets, owner).await?;
+        let positions = client.get_positions(&assets, owner).await?;
 
-        Ok(chain_assets
+        Ok(assets
             .iter()
             .zip(positions)
             .map(|(asset, data)| {

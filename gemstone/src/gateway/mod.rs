@@ -304,8 +304,8 @@ impl GemGateway {
         Ok(self.provider(chain).await?.get_is_token_address(&token_id))
     }
 
-    pub async fn get_balance_earn(&self, chain: Chain, address: String) -> Result<Vec<GemAssetBalance>, GatewayError> {
-        Ok(self.yielder.get_balance(chain, &address).await)
+    pub async fn get_balance_earn(&self, chain: Chain, address: String, token_ids: Vec<String>) -> Result<Vec<GemAssetBalance>, GatewayError> {
+        Ok(self.yielder.get_balance(chain, &address, &token_ids).await)
     }
 
     pub async fn get_earn_data(&self, asset_id: AssetId, address: String, value: String, earn_type: GemEarnType) -> Result<GemContractCallData, GatewayError> {
