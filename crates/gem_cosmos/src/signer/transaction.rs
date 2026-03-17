@@ -4,7 +4,8 @@ use crate::constants::{MESSAGE_EXECUTE_CONTRACT, MESSAGE_IBC_TRANSFER};
 
 use super::protobuf::*;
 
-const SECP256K1_PUBKEY_TYPE_URL: &str = "/cosmos.crypto.secp256k1.PubKey";
+pub const COSMOS_SECP256K1_PUBKEY_TYPE: &str = "/cosmos.crypto.secp256k1.PubKey";
+pub const INJECTIVE_ETHSECP256K1_PUBKEY_TYPE: &str = "/injective.crypto.v1beta1.ethsecp256k1.PubKey";
 const SIGN_MODE_DIRECT: u64 = 1;
 
 pub struct CosmosTxParams<'a> {
@@ -14,6 +15,7 @@ pub struct CosmosTxParams<'a> {
     pub sequence: u64,
     pub fee_coins: Vec<Coin>,
     pub gas_limit: u64,
+    pub pubkey_type: &'a str,
 }
 
 impl CosmosMessage {
@@ -62,21 +64,17 @@ pub fn encode_tx_body(messages: &[Vec<u8>], memo: &str) -> Vec<u8> {
     [msg_fields, encode_string_field(2, memo)].concat()
 }
 
-fn encode_pubkey_any(pubkey_bytes: &[u8]) -> Vec<u8> {
-    [
-        encode_string_field(1, SECP256K1_PUBKEY_TYPE_URL),
-        encode_bytes_field(2, &encode_bytes_field(1, pubkey_bytes)),
-    ]
-    .concat()
+fn encode_pubkey_any(pubkey_type: &str, pubkey_bytes: &[u8]) -> Vec<u8> {
+    [encode_string_field(1, pubkey_type), encode_bytes_field(2, &encode_bytes_field(1, pubkey_bytes))].concat()
 }
 
 fn encode_mode_info_single() -> Vec<u8> {
     encode_message_field(1, &encode_varint_field(1, SIGN_MODE_DIRECT))
 }
 
-fn encode_signer_info(pubkey_bytes: &[u8], sequence: u64) -> Vec<u8> {
+fn encode_signer_info(pubkey_type: &str, pubkey_bytes: &[u8], sequence: u64) -> Vec<u8> {
     [
-        encode_message_field(1, &encode_pubkey_any(pubkey_bytes)),
+        encode_message_field(1, &encode_pubkey_any(pubkey_type, pubkey_bytes)),
         encode_message_field(2, &encode_mode_info_single()),
         encode_varint_field(3, sequence),
     ]
@@ -88,9 +86,9 @@ fn encode_fee(coins: &[Coin], gas_limit: u64) -> Vec<u8> {
     [coin_fields, encode_varint_field(2, gas_limit)].concat()
 }
 
-pub fn encode_auth_info(pubkey_bytes: &[u8], sequence: u64, fee_coins: &[Coin], gas_limit: u64) -> Vec<u8> {
+pub fn encode_auth_info(pubkey_type: &str, pubkey_bytes: &[u8], sequence: u64, fee_coins: &[Coin], gas_limit: u64) -> Vec<u8> {
     [
-        encode_message_field(1, &encode_signer_info(pubkey_bytes, sequence)),
+        encode_message_field(1, &encode_signer_info(pubkey_type, pubkey_bytes, sequence)),
         encode_message_field(2, &encode_fee(fee_coins, gas_limit)),
     ]
     .concat()

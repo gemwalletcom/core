@@ -96,11 +96,11 @@ where
     }
 
     async fn get_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
-        let squid_request = build_route_request(&quote.request, &quote.from_value, false)?;
-        let response = self.client.get_route(&squid_request).await?;
+        let request = build_route_request(&quote.request, &quote.from_value, false)?;
+        let response = self.client.get_route(&request).await?;
         let tx = response.route.transaction_request.ok_or(SwapperError::InvalidRoute)?;
-        let gas_limit = tx.get_gas_limit();
-        Ok(SwapperQuoteData::new_contract(tx.target, tx.value, tx.data, None, gas_limit))
+
+        Ok(SwapperQuoteData::new_contract(tx.target, tx.value, tx.data, None, Some(tx.gas_limit)))
     }
 
     async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<VaultAddresses, SwapperError> {

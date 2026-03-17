@@ -30,7 +30,16 @@ pub struct SquidRouteResponse {
 #[serde(rename_all = "camelCase")]
 pub struct SquidRoute {
     pub estimate: SquidEstimate,
+    #[serde(deserialize_with = "deserialize_transaction_request")]
     pub transaction_request: Option<SquidTransactionRequest>,
+}
+
+fn deserialize_transaction_request<'de, D: serde::Deserializer<'de>>(deserializer: D) -> Result<Option<SquidTransactionRequest>, D::Error> {
+    let value = Option::<serde_json::Value>::deserialize(deserializer)?;
+    match value {
+        Some(v) if v.as_object().is_some_and(|m| m.contains_key("data")) => serde_json::from_value(v).map(Some).map_err(serde::de::Error::custom),
+        _ => Ok(None),
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -47,12 +56,6 @@ pub struct SquidTransactionRequest {
     pub data: String,
     pub value: String,
     pub gas_limit: String,
-}
-
-impl SquidTransactionRequest {
-    pub fn get_gas_limit(&self) -> Option<String> {
-        if self.gas_limit.is_empty() || self.gas_limit == "0" { None } else { Some(self.gas_limit.clone()) }
-    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
