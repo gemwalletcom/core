@@ -5,6 +5,7 @@ import Style
 import Store
 import PerpetualService
 import Perpetuals
+import TransactionsService
 
 public struct PerpetualNavigationView: View {
     @State private var model: PerpetualSceneViewModel
@@ -15,6 +16,7 @@ public struct PerpetualNavigationView: View {
         asset: Asset,
         wallet: Wallet,
         perpetualService: any PerpetualServiceable,
+        transactionsService: TransactionsService,
         observerService: any PerpetualObservable<HyperliquidSubscription>,
         isPresentingTransferData: Binding<TransferData?>,
         isPresentingPerpetualRecipientData: Binding<PerpetualRecipientData?>
@@ -25,6 +27,7 @@ public struct PerpetualNavigationView: View {
             wallet: wallet,
             asset: asset,
             perpetualService: perpetualService,
+            transactionsService: transactionsService,
             observerService: observerService,
             onTransferData: { isPresentingTransferData.wrappedValue = $0 },
             onPerpetualRecipientData: { isPresentingPerpetualRecipientData.wrappedValue = $0 }

@@ -5,8 +5,6 @@ import Primitives
 import Store
 
 public struct AssetSceneInput: Sendable {
-    private static let transactionsLimit = 25
-
     public let wallet: Wallet
     public let asset: Asset
 
@@ -23,10 +21,9 @@ public struct AssetSceneInput: Sendable {
             assetId: asset.id
         )
 
-        self.transactionsRequest = TransactionsRequest(
+        self.transactionsRequest = TransactionsRequest.assetScene(
             walletId: wallet.walletId,
-            type: .asset(assetId: asset.id),
-            limit: Self.transactionsLimit
+            assetId: asset.id
         )
 
         self.bannersRequest = BannersRequest(

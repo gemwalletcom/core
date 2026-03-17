@@ -157,6 +157,7 @@ struct WalletNavigationStack: View {
                     asset: $0.asset,
                     wallet: model.wallet,
                     perpetualService: perpetualService,
+                    transactionsService: transactionsService,
                     observerService: hyperliquidObserverService,
                     isPresentingTransferData: $model.isPresentingTransferData,
                     isPresentingPerpetualRecipientData: $model.isPresentingPerpetualRecipientData

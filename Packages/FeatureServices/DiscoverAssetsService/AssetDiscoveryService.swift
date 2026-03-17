@@ -28,8 +28,7 @@ public struct AssetDiscoveryService: AssetDiscoverable {
 
     public func discoverAssets(wallet: Wallet) async throws {
         let preferences = WalletPreferences(walletId: wallet.walletId)
-        _ = try await deviceService.getSubscriptionsDeviceId()
-
+        
         let assetIds = try await assetsListService.getDeviceAssets(walletId: wallet.id, fromTimestamp: preferences.assetsTimestamp)
 
         if assetIds.isNotEmpty {
