@@ -56,7 +56,7 @@ impl YoEarnProvider {
 #[async_trait]
 impl EarnProvider for YoEarnProvider {
     fn get_provider(&self, asset_id: &AssetId) -> Option<DelegationValidator> {
-        self.assets.iter().find(|a| a.asset_id() == *asset_id).map(|a| map_to_earn_provider(a.chain, YieldProvider::Yo.as_ref()))
+        self.assets.iter().find(|a| a.asset_id() == *asset_id).map(|a| map_to_earn_provider(a.chain, YieldProvider::Yo))
     }
 
     async fn get_position(&self, address: &str, asset_id: &AssetId) -> Result<Option<DelegationBase>, YielderError> {

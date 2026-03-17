@@ -9,3 +9,11 @@ use typeshare::typeshare;
 pub enum YieldProvider {
     Yo,
 }
+
+impl YieldProvider {
+    pub fn name(&self) -> &str {
+        match self {
+            Self::Yo => "Yo",
+        }
+    }
+}
