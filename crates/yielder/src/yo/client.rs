@@ -23,9 +23,9 @@ pub struct PositionData {
 pub trait YoClient: Send + Sync {
     fn build_deposit_transaction(&self, from: Address, yo_token: Address, assets: U256, min_shares_out: U256, receiver: Address, partner_id: u32) -> TransactionObject;
     fn build_redeem_transaction(&self, from: Address, yo_token: Address, shares: U256, min_assets_out: U256, receiver: Address, partner_id: u32) -> TransactionObject;
-    async fn positions_batch(&self, assets: &[YoAsset], owner: Address) -> Result<Vec<PositionData>, YielderError>;
+    async fn get_positions(&self, assets: &[YoAsset], owner: Address) -> Result<Vec<PositionData>, YielderError>;
     async fn check_token_allowance(&self, token: Address, owner: Address, amount: U256) -> Result<Option<ApprovalData>, YielderError>;
-    async fn quote_shares(&self, yo_token: Address, assets: U256) -> Result<U256, YielderError>;
+    async fn get_quote_shares(&self, yo_token: Address, assets: U256) -> Result<U256, YielderError>;
 }
 
 pub struct YoGatewayClient<C: Client + Clone> {
@@ -71,7 +71,7 @@ where
         TransactionObject::new_call_with_from(&from.to_string(), &self.contract_address.to_string(), data)
     }
 
-    async fn positions_batch(&self, assets: &[YoAsset], owner: Address) -> Result<Vec<PositionData>, YielderError> {
+    async fn get_positions(&self, assets: &[YoAsset], owner: Address) -> Result<Vec<PositionData>, YielderError> {
         Ok(self
             .ethereum_client
             .multicall3_batch(
@@ -112,7 +112,7 @@ where
         }
     }
 
-    async fn quote_shares(&self, yo_token: Address, assets: U256) -> Result<U256, YielderError> {
+    async fn get_quote_shares(&self, yo_token: Address, assets: U256) -> Result<U256, YielderError> {
         let call = IYoGateway::quoteConvertToSharesCall { yoVault: yo_token, assets };
         Ok(self.ethereum_client.call_contract(self.contract_address, call).await?)
     }

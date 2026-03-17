@@ -1,6 +1,7 @@
 use std::str::FromStr;
 
-use crate::{QuoteRequest, Route, SwapperError, SwapperMode, eth_address, slippage::apply_slippage_in_bp};
+use crate::{QuoteRequest, Route, SwapperError, SwapperMode, eth_address};
+use gem_evm::slippage::apply_slippage_in_bp;
 use alloy_primitives::{Address, U256};
 use gem_evm::uniswap::{
     actions::V4Action::{SETTLE, SWAP_EXACT_IN, TAKE},

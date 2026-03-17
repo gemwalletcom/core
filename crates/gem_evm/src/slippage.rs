@@ -39,7 +39,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_apply_slippage() {
+    fn test_apply_slippage_in_bp() {
         assert_eq!(apply_slippage_in_bp(&U256::from(100), 300), U256::from(97));
         assert_eq!(apply_slippage_in_bp(&100_u128, 300), 97_u128);
         assert_eq!(apply_slippage_in_bp(&1000_u64, 500), 950_u64);

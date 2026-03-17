@@ -16,7 +16,7 @@ pub struct Yielder {
 
 impl Yielder {
     pub fn new<E: RpcClientError + Clone + 'static>(rpc_provider: Arc<dyn RpcProvider<Error = E>>) -> Self {
-        let gateways: HashMap<Chain, Arc<dyn YoClient>> = supported_assets()
+        let clients: HashMap<Chain, Arc<dyn YoClient>> = supported_assets()
             .iter()
             .filter_map(|asset| {
                 let chain = asset.chain;
@@ -25,7 +25,7 @@ impl Yielder {
             })
             .collect();
 
-        let yo_provider: Arc<dyn EarnProvider> = Arc::new(YoEarnProvider::new(gateways));
+        let yo_provider: Arc<dyn EarnProvider> = Arc::new(YoEarnProvider::new(clients));
         Self { providers: vec![yo_provider] }
     }
 
