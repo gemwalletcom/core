@@ -147,7 +147,7 @@ pub fn map_webhook_data(webhook_data: PaybisWebhookData) -> FiatWebhook {
             _ => FiatQuoteType::Buy,
         },
         symbol: webhook_data.amount_to.currency,
-        provider_id: PaybisClient::NAME.id(),
+        provider_id: PaybisClient::NAME,
         provider_transaction_id: webhook_data.transaction.invoice,
         status: map_status(&webhook_data.transaction.status),
         country: webhook_data.payment.as_ref().and_then(|p| p.card.as_ref()).map(|c| c.billing_address.country.code.clone()),

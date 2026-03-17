@@ -2,8 +2,12 @@ use std::collections::{BTreeSet, HashMap};
 use std::str::FromStr;
 
 use crate::DatabaseError;
+use crate::sql_types::FiatProviderNameRow;
 use diesel::prelude::*;
-use primitives::{FiatAsset, FiatProvider, FiatProviderCountry, FiatProviderName, FiatQuote, FiatRate, FiatTransaction, PaymentType, fiat_assets::FiatAssetLimits};
+use primitives::{
+    FiatAsset, FiatProvider, FiatProviderCountry, FiatProviderName, FiatQuote, FiatQuoteType, FiatRate, FiatTransaction, FiatTransactionStatus, PaymentType,
+    fiat_assets::FiatAssetLimits,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
@@ -169,7 +173,7 @@ pub struct FiatTransactionRow {
     pub asset_id: Option<String>,
     pub transaction_type: String,
     pub symbol: String,
-    pub provider_id: String,
+    pub provider_id: FiatProviderNameRow,
     pub provider_transaction_id: String,
     pub status: String,
     pub country: Option<String>,
@@ -185,7 +189,7 @@ impl FiatTransactionRow {
             asset_id: transaction.asset_id.map(|x| x.to_string()),
             transaction_type: transaction.transaction_type.as_ref().to_string(),
             symbol: transaction.symbol,
-            provider_id: transaction.provider_id,
+            provider_id: transaction.provider_id.into(),
             provider_transaction_id: transaction.provider_transaction_id,
             status: transaction.status.as_ref().to_string(),
             country: transaction.country,
@@ -194,6 +198,25 @@ impl FiatTransactionRow {
             transaction_hash: transaction.transaction_hash,
             address: transaction.address,
         }
+    }
+
+    pub fn as_primitive(&self) -> Result<FiatTransaction, DatabaseError> {
+        let transaction_type = FiatQuoteType::from_str(&self.transaction_type).map_err(|e| DatabaseError::Error(e.to_string()))?;
+        let status = FiatTransactionStatus::from_str(&self.status).map_err(|e| DatabaseError::Error(e.to_string()))?;
+
+        Ok(FiatTransaction {
+            asset_id: self.asset_id.as_deref().and_then(primitives::AssetId::new),
+            transaction_type,
+            provider_id: self.provider_id.0,
+            provider_transaction_id: self.provider_transaction_id.clone(),
+            status,
+            country: self.country.clone(),
+            symbol: self.symbol.clone(),
+            fiat_amount: self.fiat_amount,
+            fiat_currency: self.fiat_currency.clone(),
+            transaction_hash: self.transaction_hash.clone(),
+            address: self.address.clone(),
+        })
     }
 }
 
