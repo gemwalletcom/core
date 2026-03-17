@@ -1,6 +1,6 @@
 use crate::database::devices::{DeviceFieldUpdate, DeviceFilter, DevicesStore};
 use crate::database::wallets::WalletsStore;
-use crate::{DatabaseClient, DatabaseError};
+use crate::{DatabaseClient, DatabaseError, DieselResultExt};
 use primitives::Device;
 
 pub trait DevicesRepository {
@@ -23,27 +23,28 @@ impl DevicesRepository for DatabaseClient {
     }
 
     fn get_device_by_id(&mut self, id: i32) -> Result<Device, DatabaseError> {
-        Ok(DevicesStore::get_device_by_id(self, id)?.as_primitive())
+        Ok(DevicesStore::get_device_by_id(self, id).or_not_found_internal(id.to_string())?.as_primitive())
     }
 
     fn get_device(&mut self, device_id: &str) -> Result<Device, DatabaseError> {
-        Ok(DevicesStore::get_device(self, device_id)?.as_primitive())
+        Ok(DevicesStore::get_device(self, device_id).or_not_found(device_id.to_string())?.as_primitive())
     }
 
     fn get_device_exist(&mut self, device_id: &str) -> Result<bool, DatabaseError> {
         match DevicesStore::get_device(self, device_id) {
             Ok(_) => Ok(true),
             Err(diesel::result::Error::NotFound) => Ok(false),
-            Err(err) => Err(err.into()),
+            Err(error) => Err(error.into()),
         }
     }
 
     fn get_device_row_id(&mut self, device_id: &str) -> Result<i32, DatabaseError> {
-        Ok(DevicesStore::get_device(self, device_id)?.id)
+        Ok(DevicesStore::get_device(self, device_id).or_not_found(device_id.to_string())?.id)
     }
 
     fn update_device(&mut self, device: crate::models::UpdateDeviceRow) -> Result<Device, DatabaseError> {
-        Ok(DevicesStore::update_device(self, device)?.as_primitive())
+        let device_id = device.device_id.clone();
+        Ok(DevicesStore::update_device(self, device).or_not_found(device_id)?.as_primitive())
     }
 
     fn update_device_fields(&mut self, device_ids: Vec<String>, updates: Vec<DeviceFieldUpdate>) -> Result<usize, DatabaseError> {
@@ -51,7 +52,9 @@ impl DevicesRepository for DatabaseClient {
     }
 
     fn migrate_device_id(&mut self, old_device_id: &str, new_device_id: &str) -> Result<Device, DatabaseError> {
-        Ok(DevicesStore::migrate_device_id(self, old_device_id, new_device_id)?.as_primitive())
+        Ok(DevicesStore::migrate_device_id(self, old_device_id, new_device_id)
+            .or_not_found(old_device_id.to_string())?
+            .as_primitive())
     }
 
     fn delete_device(&mut self, device_id: &str) -> Result<usize, DatabaseError> {
@@ -60,7 +63,7 @@ impl DevicesRepository for DatabaseClient {
 
     fn delete_devices_subscriptions_after_days(&mut self, days: i64) -> Result<usize, DatabaseError> {
         let device_ids = DevicesStore::get_stale_device_ids(self, days)?;
-        WalletsStore::delete_subscriptions_for_device_ids(self, device_ids)
+        Ok(WalletsStore::delete_subscriptions_for_device_ids(self, device_ids)?)
     }
 
     fn devices_inactive_days(&mut self, min_days: i64, max_days: i64, push_enabled: Option<bool>) -> Result<Vec<Device>, DatabaseError> {

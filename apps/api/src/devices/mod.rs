@@ -356,7 +356,7 @@ pub async fn get_device_fiat_assets_v2(
     Ok(assets.into())
 }
 
-#[get("/devices/fiat/quotes/<quote_type>/<asset_id>?<amount>&<currency>&<provider>", rank = 2)]
+#[get("/devices/fiat/quotes/<quote_type>/<asset_id>?<amount>&<currency>&<provider>&<ip_address>", rank = 2)]
 pub async fn get_fiat_quotes_v2(
     _device: AuthenticatedDeviceWallet,
     quote_type: FiatQuoteTypeParam,
@@ -364,18 +364,19 @@ pub async fn get_fiat_quotes_v2(
     amount: f64,
     currency: CurrencyParam,
     provider: Option<FiatProviderIdParam>,
+    ip_address: Option<&str>,
     ip: std::net::IpAddr,
     client: &State<Mutex<FiatQuotesClient>>,
     fiat_metrics: &State<Arc<FiatMetrics>>,
 ) -> Result<ApiResponse<FiatQuotes>, ApiError> {
-    let ip_address = if cfg!(debug_assertions) { constants::DEBUG_FIAT_IP } else { &ip.to_string() };
+    let fallback_ip_address = if cfg!(debug_assertions) { constants::DEBUG_FIAT_IP.to_string() } else { ip.to_string() };
     let quote_request = FiatQuoteRequest {
         asset_id: asset_id.0,
         quote_type: quote_type.0,
         amount,
         currency: currency.as_string(),
         provider_id: provider.map(|p| p.0.id()),
-        ip_address: ip_address.to_string(),
+        ip_address: ip_address.map(str::to_string).unwrap_or(fallback_ip_address),
     };
     let quotes = client.lock().await.get_quotes(quote_request).await?;
     fiat_metrics.record_quotes(&quotes);

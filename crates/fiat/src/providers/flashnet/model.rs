@@ -90,8 +90,35 @@ pub struct FlashnetOrder {
     pub destination: Option<FlashnetDestination>,
 }
 
+impl FlashnetOrder {
+    pub fn destination_chain(&self) -> Option<&str> {
+        self.destination_chain
+            .as_deref()
+            .or(self.destination.as_ref().and_then(|destination| destination.chain.as_deref()))
+    }
+
+    pub fn destination_asset(&self) -> Option<&str> {
+        self.destination_asset
+            .as_deref()
+            .or(self.destination.as_ref().and_then(|destination| destination.asset.as_deref()))
+    }
+
+    pub fn recipient_address(&self) -> Option<&str> {
+        self.recipient_address
+            .as_deref()
+            .or(self.destination.as_ref().and_then(|destination| destination.address.as_deref()))
+    }
+
+    pub fn destination_tx_hash(&self) -> Option<&str> {
+        self.destination.as_ref().and_then(|destination| destination.tx_hash.as_deref())
+    }
+}
+
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FlashnetDestination {
+    pub chain: Option<String>,
+    pub asset: Option<String>,
+    pub address: Option<String>,
     pub tx_hash: Option<String>,
 }

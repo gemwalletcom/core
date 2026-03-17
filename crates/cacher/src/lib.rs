@@ -53,7 +53,15 @@ impl CacherClient {
         let value: Option<String> = self.connection.clone().get(key).await?;
         match value {
             Some(s) => Ok(serde_json::from_str(&s)?),
-            None => Err(Box::new(CacheError::NotFound(key.to_string()))),
+            None => Err(Box::new(CacheError::KeyNotFound(key.to_string()))),
+        }
+    }
+
+    pub async fn get_value_optional<T: serde::de::DeserializeOwned>(&self, key: &str) -> Result<Option<T>, Box<dyn Error + Send + Sync>> {
+        let value: Option<String> = self.connection.clone().get(key).await?;
+        match value {
+            Some(serialized) => Ok(Some(serde_json::from_str(&serialized)?)),
+            None => Ok(None),
         }
     }
 
@@ -123,6 +131,10 @@ impl CacherClient {
 
     pub async fn get_cached<T: serde::de::DeserializeOwned>(&self, key: CacheKey<'_>) -> Result<T, Box<dyn Error + Send + Sync>> {
         self.get_value(&key.key()).await
+    }
+
+    pub async fn get_cached_optional<T: serde::de::DeserializeOwned>(&self, key: CacheKey<'_>) -> Result<Option<T>, Box<dyn Error + Send + Sync>> {
+        self.get_value_optional(&key.key()).await
     }
 
     pub async fn set_values_cached<T: serde::Serialize>(&self, entries: &[(CacheKey<'_>, &T)]) -> Result<usize, Box<dyn Error + Send + Sync>> {

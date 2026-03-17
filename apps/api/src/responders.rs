@@ -39,7 +39,8 @@ impl<'r> Responder<'r, 'static> for ApiError {
 impl From<CacheError> for ApiError {
     fn from(error: CacheError) -> Self {
         match error {
-            CacheError::NotFound(key) => ApiError::NotFound(format!("Asset not found: {}", key)),
+            CacheError::NotFound { .. } | CacheError::ResourceNotFound(_) => ApiError::NotFound(error.to_string()),
+            CacheError::KeyNotFound(_) => ApiError::InternalServerError("Unexpected cache miss".to_string()),
         }
     }
 }
@@ -53,7 +54,7 @@ impl From<ParseError> for ApiError {
 impl From<DatabaseError> for ApiError {
     fn from(error: DatabaseError) -> Self {
         match error {
-            DatabaseError::NotFound => ApiError::NotFound(error.to_string()),
+            DatabaseError::NotFound { .. } => ApiError::NotFound(error.to_string()),
             DatabaseError::Error(msg) => ApiError::InternalServerError(msg),
         }
     }
@@ -76,10 +77,7 @@ impl From<Box<dyn std::error::Error + Send + Sync>> for ApiError {
         let mut current_error: &dyn std::error::Error = error.as_ref();
         loop {
             if let Some(cache_error) = current_error.downcast_ref::<CacheError>() {
-                let reconstructed = match cache_error {
-                    CacheError::NotFound(key) => CacheError::NotFound(key.clone()),
-                };
-                return reconstructed.into();
+                return cache_error.clone().into();
             }
             if let Some(db_error) = current_error.downcast_ref::<DatabaseError>() {
                 return db_error.clone().into();
@@ -94,6 +92,40 @@ impl From<Box<dyn std::error::Error + Send + Sync>> for ApiError {
         }
 
         ApiError::InternalServerError(format!("{}", error))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::ApiError;
+    use cacher::CacheError;
+    use storage::DatabaseError;
+
+    #[test]
+    fn test_cache_not_found_maps_to_public_not_found() {
+        let error = ApiError::from(CacheError::not_found("FiatQuote", "abc"));
+        match error {
+            ApiError::NotFound(message) => assert_eq!(message, "FiatQuote abc not found"),
+            _ => panic!("expected not found"),
+        }
+    }
+
+    #[test]
+    fn test_cache_key_not_found_maps_to_internal_server_error() {
+        let error = ApiError::from(CacheError::KeyNotFound("fiat:quote:abc".to_string()));
+        match error {
+            ApiError::InternalServerError(message) => assert_eq!(message, "Unexpected cache miss"),
+            _ => panic!("expected internal server error"),
+        }
+    }
+
+    #[test]
+    fn test_boxed_database_not_found_hides_internal_lookup() {
+        let error: Box<dyn std::error::Error + Send + Sync> = Box::new(DatabaseError::not_found_internal("Device", "1"));
+        match ApiError::from(error) {
+            ApiError::NotFound(message) => assert_eq!(message, "Device not found"),
+            _ => panic!("expected not found"),
+        }
     }
 }
 

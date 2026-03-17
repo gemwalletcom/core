@@ -1,7 +1,5 @@
-use crate::DatabaseError;
-
-use crate::DatabaseClient;
 use crate::database::parser_state::ParserStateStore;
+use crate::{DatabaseClient, DatabaseError, DieselResultExt};
 use primitives::Chain;
 
 pub trait ParserStateRepository {
@@ -14,7 +12,7 @@ pub trait ParserStateRepository {
 
 impl ParserStateRepository for DatabaseClient {
     fn get_parser_state(&mut self, chain: Chain) -> Result<crate::models::ParserStateRow, DatabaseError> {
-        Ok(ParserStateStore::get_parser_state(self, chain)?)
+        ParserStateStore::get_parser_state(self, chain).or_not_found(chain.as_ref().to_string())
     }
 
     fn add_parser_state(&mut self, chain: Chain, block_time_ms: i32) -> Result<usize, DatabaseError> {

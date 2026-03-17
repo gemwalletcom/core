@@ -38,7 +38,8 @@ pub use self::device::{DeviceRow, UpdateDeviceRow};
 pub use self::device_notification::{DeviceNotificationRow, NewDeviceNotificationRow};
 pub use self::device_session::{DeviceSessionRow, NewDeviceSessionRow};
 pub use self::fiat::{
-    FiatAssetRow, FiatProviderCountryRow, FiatProviderRow, FiatQuoteRequestRow, FiatQuoteRow, FiatRateRow, FiatTransactionRow, FiatTransactionUpdateRow, NewFiatWebhookRow,
+    FiatAssetRow, FiatAssetRowsExt, FiatProviderCountryRow, FiatProviderRow, FiatQuoteRequestRow, FiatQuoteRow, FiatRateRow, FiatTransactionRow, FiatTransactionUpdateRow,
+    NewFiatWebhookRow,
 };
 pub use self::nft_asset::NftAssetRow;
 pub use self::nft_collection::{NewNftCollectionRow, NftCollectionRow};

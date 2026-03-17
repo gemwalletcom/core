@@ -1,5 +1,6 @@
 use std::error::Error;
 
+use gem_client::json_response;
 use primitives::FiatProviderName;
 use reqwest::Client;
 
@@ -25,8 +26,8 @@ impl FlashnetClient {
     }
 
     pub async fn get_routes(&self) -> Result<FlashnetRoutesResponse, Box<dyn Error + Send + Sync>> {
-        let response = self.client.get(format!("{}/v1/orchestration/routes", self.base_url)).send().await?.error_for_status()?;
-        Ok(response.json::<FlashnetRoutesResponse>().await?)
+        let response = self.client.get(format!("{}/v1/orchestration/routes", self.base_url)).send().await?;
+        Ok(json_response(response).await?)
     }
 
     pub async fn create_onramp(&self, request: FlashnetOnrampRequest, idempotency_key: &str) -> Result<FlashnetOnrampResponse, Box<dyn Error + Send + Sync>> {
@@ -37,10 +38,8 @@ impl FlashnetClient {
             .header("X-Idempotency-Key", idempotency_key)
             .json(&request)
             .send()
-            .await?
-            .error_for_status()?;
-
-        Ok(response.json::<FlashnetOnrampResponse>().await?)
+            .await?;
+        Ok(json_response(response).await?)
     }
 
     pub async fn get_estimate(&self, destination_chain: &str, destination_asset: &str, amount: &str) -> Result<FlashnetEstimateResponse, Box<dyn Error + Send + Sync>> {
@@ -57,9 +56,8 @@ impl FlashnetClient {
                 ("affiliateId", self.affiliate_id.as_str()),
             ])
             .send()
-            .await?
-            .error_for_status()?;
-        Ok(response.json::<FlashnetEstimateResponse>().await?)
+            .await?;
+        Ok(json_response(response).await?)
     }
 
     pub async fn get_order_status(&self, order_id: &str) -> Result<FlashnetStatusResponse, Box<dyn Error + Send + Sync>> {
@@ -69,9 +67,7 @@ impl FlashnetClient {
             .bearer_auth(&self.api_key)
             .query(&[("id", order_id)])
             .send()
-            .await?
-            .error_for_status()?;
-
-        Ok(response.json::<FlashnetStatusResponse>().await?)
+            .await?;
+        Ok(json_response(response).await?)
     }
 }

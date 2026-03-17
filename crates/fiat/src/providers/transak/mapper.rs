@@ -82,7 +82,7 @@ pub fn map_order_from_response(payload: TransakOrderResponse) -> Result<FiatTran
         asset_id,
         transaction_type: map_transaction_type(&payload.is_buy_or_sell),
         symbol: payload.crypto_currency,
-        provider_id: TransakClient::NAME.id(),
+        provider_id: TransakClient::NAME,
         provider_transaction_id: payload.id,
         status: map_status(&payload.status),
         country: payload.country_code,
@@ -171,7 +171,7 @@ fn map_payment_type(payment_id: &str) -> Option<PaymentType> {
 mod tests {
     use super::*;
     use crate::providers::transak::models::{Data, FiatCurrency, Response, TransakOrderResponse};
-    use primitives::{FiatQuoteType, FiatTransactionStatus, PaymentType};
+    use primitives::{FiatProviderName, FiatQuoteType, FiatTransactionStatus, PaymentType};
 
     #[test]
     fn test_map_order_buy_failed() {
@@ -179,7 +179,7 @@ mod tests {
 
         let result = map_order_from_response(response.data).expect("Failed to map order");
 
-        assert_eq!(result.provider_id, "transak");
+        assert_eq!(result.provider_id, FiatProviderName::Transak);
         assert_eq!(result.provider_transaction_id, "df7997b7-a19f-447e-b9fe-2f0eb7cb7b3a");
         assert!(matches!(result.status, FiatTransactionStatus::Failed));
         assert!(matches!(result.transaction_type, FiatQuoteType::Buy));

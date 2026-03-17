@@ -3,7 +3,7 @@ use crate::{SUI_COIN_TYPE, SUI_COIN_TYPE_FULL, SUI_STAKE_EVENT, SUI_UNSTAKE_EVEN
 use chain_primitives::{BalanceDiff, SwapMapper};
 use chrono::{TimeZone, Utc};
 use num_bigint::BigUint;
-use primitives::{AssetId, SwapProvider, Transaction, TransactionState, TransactionSwapMetadata, TransactionType, chain::Chain};
+use primitives::{AssetId, SwapProvider, Transaction, TransactionSmartContractMetadata, TransactionState, TransactionSwapMetadata, TransactionType, chain::Chain};
 
 const CHAIN: Chain = Chain::Sui;
 
@@ -34,8 +34,36 @@ pub fn map_transaction(transaction: Digest) -> Option<Transaction> {
     let owner = effects.gas_object.owner.get_address_owner();
     let sui_coin_type = chain.as_denom()?;
 
+    let (asset_id, from, to, transaction_type, value, metadata) = map_transaction_type(&transaction.events, &balance_changes, &owner, sui_coin_type, &fee)?;
+
+    Some(Transaction::new(
+        hash,
+        asset_id,
+        from,
+        to,
+        None,
+        transaction_type,
+        state,
+        fee.to_string(),
+        chain.as_asset_id(),
+        value,
+        None,
+        metadata,
+        created_at,
+    ))
+}
+
+fn map_transaction_type(
+    events: &[crate::models::Event],
+    balance_changes: &[BalanceChange],
+    owner: &Option<String>,
+    sui_coin_type: &str,
+    fee: &BigUint,
+) -> Option<(AssetId, String, String, TransactionType, String, Option<serde_json::Value>)> {
+    let chain = CHAIN;
+
     // system & token transfer
-    if transaction.events.is_empty() && (balance_changes.len() == 2 || balance_changes.len() == 3) {
+    if events.is_empty() && (balance_changes.len() == 2 || balance_changes.len() == 3) {
         let (from_change, to_change) = if balance_changes.len() == 2 && balance_changes[0].coin_type == sui_coin_type && balance_changes[1].coin_type == sui_coin_type {
             if balance_changes[0].amount < balance_changes[1].amount {
                 (balance_changes[0].clone(), balance_changes[1].clone())
@@ -57,106 +85,79 @@ pub fn map_transaction(transaction: Digest) -> Option<Transaction> {
         } else {
             AssetId::from_token(chain, &from_change.coin_type)
         };
-        let from = from_change.owner.get_address_owner()?;
-        let to = to_change.owner.get_address_owner()?;
-        let value = to_change.amount;
-
-        let transaction = Transaction::new(
-            hash,
+        return Some((
             asset_id,
-            from,
-            to,
-            None,
+            from_change.owner.get_address_owner()?,
+            to_change.owner.get_address_owner()?,
             TransactionType::Transfer,
-            state,
-            fee.to_string(),
-            chain.as_asset_id(),
-            value.to_string(),
+            to_change.amount.to_string(),
             None,
-            None,
-            created_at,
-        );
-        return Some(transaction);
+        ));
     }
 
     // stake
-    if transaction.events.len() == 1 && transaction.events.first().is_some_and(|e| e.event_type == SUI_STAKE_EVENT) {
-        let event = transaction.events.first()?;
-        let event_json = event.parsed_json.clone()?;
+    if events.len() == 1 && events.first().is_some_and(|e| e.event_type == SUI_STAKE_EVENT) {
+        let event_json = events.first()?.parsed_json.clone()?;
         let stake = serde_json::from_value::<EventStake>(event_json).ok()?;
-
-        let transaction = Transaction::new(
-            hash,
+        return Some((
             chain.as_asset_id(),
             stake.staker_address,
             stake.validator_address,
-            None,
             TransactionType::StakeDelegate,
-            state,
-            fee.to_string(),
-            chain.as_asset_id(),
             stake.amount,
             None,
-            None,
-            created_at,
-        );
-        return Some(transaction);
+        ));
     }
 
     // swap
-    if transaction.events.iter().any(|x| x.event_type.contains("Swap")) {
-        let owner_balance_changes = balance_changes.iter().filter(|x| x.owner.get_address_owner() == owner).cloned().collect::<Vec<_>>();
-        // TODO: Handle other swap providers
+    if events.iter().any(|x| x.event_type.contains("Swap")) {
+        let owner_balance_changes: Vec<_> = balance_changes.iter().filter(|x| x.owner.get_address_owner() == *owner).cloned().collect();
         let swap = match owner_balance_changes.len() {
-            2 => map_swap_from_balance_changes(owner_balance_changes.clone(), &fee)?,
+            2 => map_swap_from_balance_changes(owner_balance_changes, fee)?,
             3 => {
-                let owner_balance_changes_filtered = owner_balance_changes.iter().filter(|x| x.coin_type != SUI_COIN_TYPE).cloned().collect::<Vec<_>>();
-                map_swap_from_balance_changes(owner_balance_changes_filtered.clone(), &fee)?
+                let filtered: Vec<_> = owner_balance_changes.into_iter().filter(|x| x.coin_type != SUI_COIN_TYPE).collect();
+                map_swap_from_balance_changes(filtered, fee)?
             }
             _ => return None,
         };
-
-        let transaction = Transaction::new(
-            hash,
+        let owner = owner.clone()?;
+        return Some((
             chain.as_asset_id(),
-            owner.clone()?,
-            owner.clone()?,
-            None,
+            owner.clone(),
+            owner,
             TransactionType::Swap,
-            TransactionState::Confirmed,
-            fee.to_string(),
-            chain.as_asset_id(),
-            swap.clone().from_value,
-            None,
-            serde_json::to_value(swap.clone()).ok(),
-            created_at,
-        );
-        return Some(transaction);
+            swap.from_value.clone(),
+            serde_json::to_value(&swap).ok(),
+        ));
     }
 
     // unstake
-    if transaction.events.len() == 1 && transaction.events.first().is_some_and(|e| e.event_type == SUI_UNSTAKE_EVENT) {
-        let event = transaction.events.first()?;
-        let event_json = event.parsed_json.clone()?;
-        let stake: EventUnstake = serde_json::from_value::<EventUnstake>(event_json).ok()?;
-        let value = stake.principal_amount; // add reward amount
-
-        let transaction = Transaction::new(
-            hash,
+    if events.len() == 1 && events.first().is_some_and(|e| e.event_type == SUI_UNSTAKE_EVENT) {
+        let event_json = events.first()?.parsed_json.clone()?;
+        let stake = serde_json::from_value::<EventUnstake>(event_json).ok()?;
+        return Some((
             chain.as_asset_id(),
             stake.staker_address,
             stake.validator_address,
-            None,
             TransactionType::StakeUndelegate,
-            state,
-            fee.to_string(),
+            stake.principal_amount,
+            None,
+        ));
+    }
+
+    // smart contract call
+    if !events.is_empty() {
+        let method_name = events.first()?.event_type.rsplit("::").nth(1)?.to_string();
+        let metadata = TransactionSmartContractMetadata { method_name };
+        let owner = owner.clone()?;
+        return Some((
             chain.as_asset_id(),
-            value,
-            None,
-            None,
-            created_at,
-        );
-        return Some(transaction);
+            owner.clone(),
+            owner,
+            TransactionType::SmartContractCall,
+            "0".to_string(),
+            serde_json::to_value(metadata).ok(),
+        ));
     }
 
     None
@@ -197,5 +198,19 @@ mod tests {
         let transaction_blocks = TransactionBlocks { data: vec![] };
         let transactions = map_transaction_blocks(transaction_blocks);
         assert_eq!(transactions.len(), 0);
+    }
+
+    #[test]
+    fn test_map_smart_contract_call() {
+        let response: serde_json::Value = serde_json::from_str(include_str!("../../testdata/transfer_token_contract.json")).unwrap();
+        let digest: Digest = serde_json::from_value(response["result"].clone()).unwrap();
+        let transaction = map_transaction(digest).unwrap();
+
+        assert_eq!(transaction.transaction_type, TransactionType::SmartContractCall);
+        assert_eq!(transaction.hash, "7HzEQGTN95E8CKSrwLghNCsx1ikgQMRLWCQpZeeTuYen");
+        assert_eq!(transaction.value, "0");
+
+        let metadata: TransactionSmartContractMetadata = serde_json::from_value(transaction.metadata.unwrap()).unwrap();
+        assert_eq!(metadata.method_name, "timevy_tipping");
     }
 }

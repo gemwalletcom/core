@@ -1,9 +1,8 @@
-use crate::DatabaseError;
-
-use crate::DatabaseClient;
 use crate::database::assets::AssetsStore;
 use crate::database::assets::{AssetFilter, AssetUpdate};
 use crate::models::{AssetRow, NewAssetRow};
+use crate::{DatabaseClient, DatabaseError, DieselResultExt};
+use diesel::OptionalExtension;
 use primitives::{Asset, AssetBasic, AssetFull, AssetPriceMetadata};
 
 pub trait AssetsRepository {
@@ -47,16 +46,15 @@ impl AssetsRepository for DatabaseClient {
     }
 
     fn get_asset(&mut self, asset_id: &str) -> Result<Asset, DatabaseError> {
-        Ok(AssetsStore::get_asset(self, asset_id)?.as_primitive())
+        Ok(AssetsStore::get_asset(self, asset_id).or_not_found(asset_id.to_string())?.as_primitive())
     }
 
     fn get_asset_full(&mut self, asset_id: &str) -> Result<AssetFull, DatabaseError> {
         use crate::database::assets_links::AssetsLinksStore;
         use crate::database::prices::PricesStore;
         use crate::database::tag::TagStore;
-        use diesel::OptionalExtension;
 
-        let asset = AssetsStore::get_asset(self, asset_id)?;
+        let asset = AssetsStore::get_asset(self, asset_id).or_not_found(asset_id.to_string())?;
         let price = PricesStore::get_price(self, asset_id).optional()?;
         let market = price.as_ref().map(|x| x.as_market_primitive());
         let links = AssetsLinksStore::get_asset_links(self, asset_id)?.into_iter().map(|x| x.as_primitive()).collect();
