@@ -73,7 +73,7 @@ public final class PerpetualSceneViewModel {
         self.perpetualQuery = ObservableQuery(PerpetualRequest(assetId: asset.id), initialValue: .empty)
         self.perpetualTotalValueQuery = ObservableQuery(TotalValueRequest(walletId: wallet.walletId, balanceType: .perpetual), initialValue: .zero)
         self.transactionsQuery = ObservableQuery(
-            TransactionsRequest.assetScene(
+            TransactionsRequest.perpetualScene(
                 walletId: wallet.walletId,
                 assetId: asset.id,
                 limit: 50

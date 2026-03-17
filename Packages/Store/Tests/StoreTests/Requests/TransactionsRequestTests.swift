@@ -20,4 +20,27 @@ struct TransactionsRequestTests {
             )
         )
     }
+
+    @Test
+    func perpetualScene() {
+        let walletId = WalletId.multicoin(address: "wallet")
+        let assetId = AssetId(chain: .hyperCore, tokenId: AssetId.subTokenId(["perpetual", "SOL"]))
+
+        #expect(
+            TransactionsRequest.perpetualScene(
+                walletId: walletId,
+                assetId: assetId,
+                limit: 50
+            ) ==
+            TransactionsRequest(
+                walletId: walletId,
+                type: .asset(assetId: assetId),
+                filters: [.types([
+                    TransactionType.perpetualOpenPosition.rawValue,
+                    TransactionType.perpetualClosePosition.rawValue
+                ])],
+                limit: 50
+            )
+        )
+    }
 }
