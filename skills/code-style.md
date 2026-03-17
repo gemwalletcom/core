@@ -98,6 +98,7 @@ fn process_data() {
 - **No `#[allow(dead_code)]`**: Remove dead code instead of suppressing warnings
 - **Avoid `#[serde(default)]`**: Only use when the field is genuinely optional in the API response; if the field is always present, omit it
 - **Use accessor methods for enum variants**: Instead of destructuring enum variants with `match`, use typed accessor methods (e.g., `metadata.get_sequence()` instead of `match &metadata { Cosmos { sequence, .. } => ... }`)
+- **No `assert!` with `contains`**: Use `assert_eq!` with concrete values; `assert!(x.contains(...))` gives useless failure messages
 - **No unused fields**: Remove unused fields from structs/models; don't keep fields "for future use"
 - **Constants for magic numbers**: Extract magic numbers into named constants with clear meaning
 - **Minimum interface**: Don't expose unnecessary functions; if client only needs one function, don't add multiple variants

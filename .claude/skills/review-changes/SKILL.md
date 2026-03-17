@@ -115,6 +115,7 @@ Analyze the diff above and check for the following issues:
 - [ ] **Error handling**: Use `Result<(), Box<dyn std::error::Error + Send + Sync>>`
 - [ ] **Test data**: For long JSON (>20 lines), store in `testdata/` and use `include_str!()`
 - [ ] **`.unwrap()` not `.expect()`**: Never use `.expect()` in tests; use `.unwrap()` for brevity
+- [ ] **No `assert!` with `contains`**: Use `assert_eq!` with concrete values; `assert!(x.contains(...))` gives useless failure messages
 - [ ] **Mock methods in testkit**: Use `Type::mock()` constructors in `testkit/` modules instead of inline struct construction in tests
 - [ ] **`PartialEq` + `assert_eq!`**: Derive `PartialEq` on test-relevant enums and use direct `assert_eq!` with constructed expected values instead of destructuring with `let ... else { panic! }` or `match ... { _ => panic! }`
 - [ ] **Test helpers**: Create concise constructor functions (e.g., `fn object(json: &str) -> EnumType`, `fn sign_message(chain, sign_type, data) -> Action`) for frequently constructed enum variants in test modules

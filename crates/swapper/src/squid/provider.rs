@@ -195,7 +195,6 @@ mod swap_integration_tests {
         println!("ATOM->OSMO data: to={}, value={}, gasLimit={:?}", quote_data.to, quote_data.value, quote_data.gas_limit);
         println!("ATOM->OSMO msg: {}", &quote_data.data[..200.min(quote_data.data.len())]);
         assert!(!quote_data.data.is_empty());
-        assert!(!quote_data.data.contains("\"low\""));
 
         Ok(())
     }

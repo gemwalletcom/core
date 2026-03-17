@@ -155,3 +155,39 @@ impl CosmosMessage {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_execute_contract() {
+        let msg = CosmosMessage::parse(include_str!("../../testdata/swap_execute_contract.json")).unwrap();
+        match msg {
+            CosmosMessage::ExecuteContract { sender, contract, funds, .. } => {
+                assert_eq!(sender, "osmo1tkvyjqeq204rmrrz3w4hcrs336qahsfwn8m0ye");
+                assert_eq!(contract, "osmo1n6ney9tsf55etz9nrmzyd8wa7e64qd3s06a74fqs30ka8pps6cvqtsycr6");
+                assert_eq!(funds.len(), 1);
+                assert_eq!(funds[0].denom, "uosmo");
+                assert_eq!(funds[0].amount, "10000000");
+            }
+            _ => panic!("expected ExecuteContract"),
+        }
+    }
+
+    #[test]
+    fn test_parse_ibc_transfer() {
+        let msg = CosmosMessage::parse(include_str!("../../testdata/swap_ibc_transfer.json")).unwrap();
+        match msg {
+            CosmosMessage::IbcTransfer { source_port, source_channel, sender, receiver, timeout_timestamp, memo, .. } => {
+                assert_eq!(source_port, "transfer");
+                assert_eq!(source_channel, "channel-141");
+                assert_eq!(sender, "cosmos1tkvyjqeq204rmrrz3w4hcrs336qahsfwmugljt");
+                assert_eq!(receiver, "osmo1n6ney9tsf55etz9nrmzyd8wa7e64qd3s06a74fqs30ka8pps6cvqtsycr6");
+                assert_eq!(timeout_timestamp, 1773632858715000064);
+                assert!(!memo.is_empty());
+            }
+            _ => panic!("expected IbcTransfer"),
+        }
+    }
+}

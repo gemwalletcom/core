@@ -7,6 +7,15 @@ use super::protobuf::*;
 const SECP256K1_PUBKEY_TYPE_URL: &str = "/cosmos.crypto.secp256k1.PubKey";
 const SIGN_MODE_DIRECT: u64 = 1;
 
+pub struct CosmosTxParams<'a> {
+    pub body_bytes: Vec<u8>,
+    pub chain_id: &'a str,
+    pub account_number: u64,
+    pub sequence: u64,
+    pub fee_coins: Vec<Coin>,
+    pub gas_limit: u64,
+}
+
 impl CosmosMessage {
     fn type_url(&self) -> &str {
         match self {
