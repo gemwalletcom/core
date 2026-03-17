@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use chain_traits::ChainStaking;
 use futures::try_join;
+use std::collections::HashMap;
 use std::error::Error;
 
 use gem_client::Client;
@@ -49,15 +50,24 @@ impl<C: Client> ChainStaking for CosmosClient<C> {
         match chain {
             CosmosChain::Noble | CosmosChain::Thorchain => Ok(vec![]),
             CosmosChain::Cosmos | CosmosChain::Injective | CosmosChain::Osmosis | CosmosChain::Celestia | CosmosChain::Sei => {
-                let (active_delegations, unbonding, rewards) = try_join!(
+                let (active_delegations, unbonding, rewards, validators, delegation_validators) = try_join!(
                     self.get_delegations(&address),
                     self.get_unbonding_delegations(&address),
-                    self.get_delegation_rewards(&address)
+                    self.get_delegation_rewards(&address),
+                    self.get_validators(),
+                    self.get_delegations_validators(&address),
                 )?;
 
-                let validators = self.get_validators().await?;
+                let all_validators: Vec<_> = delegation_validators
+                    .validators
+                    .into_iter()
+                    .chain(validators.validators)
+                    .map(|v| (v.operator_address.clone(), v))
+                    .collect::<HashMap<_, _>>()
+                    .into_values()
+                    .collect();
 
-                Ok(map_staking_delegations(active_delegations, unbonding, rewards, validators.validators, chain, denom))
+                Ok(map_staking_delegations(active_delegations, unbonding, rewards, all_validators, chain, denom))
             }
         }
     }
