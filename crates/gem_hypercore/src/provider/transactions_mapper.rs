@@ -8,6 +8,7 @@ use crate::models::action::{ExchangeRequest, ACTION_ID_PREFIX};
 use crate::models::order::PerpetualFill;
 use crate::models::response::{BroadcastResult, TransactionBroadcastResponse};
 use crate::models::token::HYPERCORE_USDC_ASSET_ID;
+use crate::perpetual_formatter::usdc_value;
 use crate::provider::perpetual_mapper::create_perpetual_asset_id;
 use crate::provider::transaction_state_mapper::prepare_perpetual_fill;
 
@@ -49,9 +50,9 @@ fn map_perpetual_fill_group(address: &str, fills: Vec<PerpetualFill>) -> Option<
         None,
         transaction_type,
         TransactionState::Confirmed,
-        fee.to_string(),
+        usdc_value(fee),
         HYPERCORE_USDC_ASSET_ID.clone(),
-        value.to_string(),
+        usdc_value(value),
         None,
         Some(metadata),
         created_at,

@@ -3,7 +3,11 @@
 
 const MIN_ORDER_VALUE_USD: f64 = 10.0;
 const USDC_CENTS_MULTIPLIER: f64 = 100.0;
-const USDC_DECIMALS_MULTIPLIER: f64 = 1_000_000.0;
+pub const USDC_DECIMALS_MULTIPLIER: f64 = 1_000_000.0;
+
+pub fn usdc_value(amount: f64) -> String {
+    ((amount * USDC_DECIMALS_MULTIPLIER).round() as u64).to_string()
+}
 
 pub struct PerpetualFormatter;
 
