@@ -34,6 +34,19 @@ public struct CollectibleScene: View {
         .environment(\.defaultMinListHeaderHeight, 0)
         .listSectionSpacing(.compact)
         .navigationTitle(model.title)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                HStack(spacing: Spacing.tiny) {
+                    Text(model.title)
+                        .font(.headline)
+                    if model.isVerified {
+                        Images.System.checkmarkSealFill
+                            .font(.footnote)
+                            .foregroundStyle(Colors.blue)
+                    }
+                }
+            }
+        }
         .alertSheet($model.isPresentingAlertMessage)
         .toast(message: $model.isPresentingToast)
         .safariSheet(url: $model.isPresentingTokenExplorerUrl)

@@ -55,6 +55,10 @@ public final class CollectibleViewModel {
         ListItemField(title: Localized.Nft.collection, value: assetData.collection.name)
     }
 
+    var isVerified: Bool {
+        assetData.collection.status == .verified
+    }
+
     var networkField: ListItemField {
         ListItemField(title: Localized.Transfer.network, value: assetData.asset.chain.asset.name)
     }
