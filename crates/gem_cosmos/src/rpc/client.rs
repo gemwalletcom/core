@@ -81,7 +81,7 @@ impl<C: Client> CosmosClient<C> {
     }
 
     pub async fn get_delegations_validators(&self, address: &str) -> Result<ValidatorsResponse, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/cosmos/staking/v1beta1/delegators/{address}/validators?pagination.limit=100")).await?)
+        Ok(self.client.get(&format!("/cosmos/staking/v1beta1/delegators/{address}/validators")).await?)
     }
 
     pub async fn get_staking_pool(&self) -> Result<StakingPoolResponse, Box<dyn Error + Send + Sync>> {
