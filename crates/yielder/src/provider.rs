@@ -1,15 +1,13 @@
 use async_trait::async_trait;
-use primitives::{AssetId, Chain, ContractCallData, DelegationBase, DelegationValidator, YieldProvider};
+use primitives::{AssetBalance, AssetId, Chain, ContractCallData, DelegationBase, DelegationValidator, EarnType};
 
 use crate::error::YielderError;
 
 #[async_trait]
 pub trait EarnProvider: Send + Sync {
-    fn id(&self) -> YieldProvider;
-    fn get_providers(&self, asset_id: &AssetId) -> Vec<DelegationValidator>;
-    fn get_asset_ids_for_chain(&self, chain: Chain) -> Vec<AssetId>;
+    fn get_provider(&self, asset_id: &AssetId) -> Option<DelegationValidator>;
 
-    async fn get_positions(&self, chain: Chain, address: &str, asset_ids: &[AssetId]) -> Result<Vec<DelegationBase>, YielderError>;
-    async fn deposit(&self, asset_id: &AssetId, address: &str, value: &str) -> Result<ContractCallData, YielderError>;
-    async fn withdraw(&self, asset_id: &AssetId, address: &str, value: &str, shares: &str) -> Result<ContractCallData, YielderError>;
+    async fn get_position(&self, address: &str, asset_id: &AssetId) -> Result<Option<DelegationBase>, YielderError>;
+    async fn get_balance(&self, chain: Chain, address: &str) -> Result<Vec<AssetBalance>, YielderError>;
+    async fn get_data(&self, asset_id: &AssetId, address: &str, value: &str, earn_type: &EarnType) -> Result<ContractCallData, YielderError>;
 }

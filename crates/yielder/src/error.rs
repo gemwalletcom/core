@@ -17,10 +17,6 @@ impl YielderError {
     pub fn unsupported_chain(chain: &impl Display) -> Self {
         Self::NetworkError(format!("Unsupported chain: {chain}"))
     }
-
-    pub fn provider_not_found(provider: &impl Display) -> Self {
-        Self::NetworkError(format!("Provider not found: {provider}"))
-    }
 }
 
 impl fmt::Display for YielderError {
@@ -47,12 +43,6 @@ impl From<ParseError> for YielderError {
 
 impl From<Box<dyn std::error::Error + Send + Sync>> for YielderError {
     fn from(err: Box<dyn std::error::Error + Send + Sync>) -> Self {
-        Self::NetworkError(err.to_string())
-    }
-}
-
-impl From<strum::ParseError> for YielderError {
-    fn from(err: strum::ParseError) -> Self {
         Self::NetworkError(err.to_string())
     }
 }

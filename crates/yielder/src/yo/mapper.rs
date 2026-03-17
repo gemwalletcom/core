@@ -2,7 +2,7 @@ use gem_evm::u256::u256_to_biguint;
 use num_bigint::BigUint;
 use primitives::{AssetId, Chain, DelegationBase, DelegationState, DelegationValidator, StakeProviderType, YieldProvider};
 
-use super::PositionData;
+use super::client::PositionData;
 
 pub fn map_to_delegation(asset_id: AssetId, data: &PositionData, provider_id: &str) -> DelegationBase {
     DelegationBase {

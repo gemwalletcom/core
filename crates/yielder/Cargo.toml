@@ -22,7 +22,6 @@ gem_jsonrpc = { path = "../gem_jsonrpc" }
 primitives = { path = "../primitives" }
 async-trait = { workspace = true }
 futures = { workspace = true }
-strum = { workspace = true }
 
 [dev-dependencies]
 gem_client = { path = "../gem_client", features = ["reqwest"] }
