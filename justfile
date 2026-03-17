@@ -89,6 +89,9 @@ migrate:
     diesel migration run
 
 localize:
+    @sh scripts/localize.sh core crates/localizer/i18n en
+
+localize-all:
     @sh scripts/localize.sh core crates/localizer/i18n
 
 setup-services:
