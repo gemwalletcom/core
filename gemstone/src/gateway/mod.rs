@@ -312,12 +312,12 @@ impl GemGateway {
         self.yielder.get_data(&asset_id, &address, &value, &earn_type).await.map_err(|e| GatewayError::NetworkError { msg: e.to_string() })
     }
 
-    pub fn get_earn_provider(&self, asset_id: AssetId) -> Option<GemDelegationValidator> {
-        self.yielder.get_provider(&asset_id)
+    pub fn get_earn_providers(&self, asset_id: AssetId) -> Vec<GemDelegationValidator> {
+        self.yielder.get_providers(&asset_id)
     }
 
-    pub async fn get_earn_position(&self, address: String, asset_id: AssetId) -> Result<Option<GemDelegationBase>, GatewayError> {
-        Ok(self.yielder.get_position(&address, &asset_id).await)
+    pub async fn get_earn_positions(&self, address: String, asset_id: AssetId) -> Vec<GemDelegationBase> {
+        self.yielder.get_positions(&address, &asset_id).await
     }
 
     pub async fn get_node_status(&self, chain: Chain, url: &str) -> Result<GemNodeStatus, GatewayError> {

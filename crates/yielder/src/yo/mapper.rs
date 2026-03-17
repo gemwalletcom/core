@@ -1,6 +1,6 @@
 use gem_evm::u256::u256_to_biguint;
 use num_bigint::BigUint;
-use primitives::{AssetId, Chain, DelegationBase, DelegationState, DelegationValidator, StakeProviderType, YieldProvider};
+use primitives::{AssetId, Chain, DelegationBase, DelegationState, DelegationValidator, StakeProviderType};
 
 use super::client::PositionData;
 
@@ -17,14 +17,16 @@ pub fn map_to_delegation(asset_id: AssetId, data: &PositionData, provider_id: &s
     }
 }
 
-pub fn map_to_earn_provider(chain: Chain, provider: YieldProvider) -> DelegationValidator {
+const YO_APR: f64 = 4.9;
+
+pub fn map_to_earn_provider(chain: Chain, provider_id: &str) -> DelegationValidator {
     DelegationValidator {
         chain,
-        id: provider.to_string(),
-        name: provider.to_string(),
+        id: provider_id.to_string(),
+        name: provider_id.to_string(),
         is_active: true,
         commission: 0.0,
-        apr: 0.0,
+        apr: YO_APR,
         provider_type: StakeProviderType::Earn,
     }
 }
@@ -51,7 +53,7 @@ mod tests {
 
     #[test]
     fn test_map_to_earn_provider() {
-        let result = map_to_earn_provider(Chain::Base, YieldProvider::Yo);
+        let result = map_to_earn_provider(Chain::Base, "yo");
 
         assert_eq!(result.id, "yo");
         assert_eq!(result.chain, Chain::Base);

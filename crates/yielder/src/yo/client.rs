@@ -1,12 +1,11 @@
 use alloy_primitives::{Address, U256};
 use alloy_sol_types::SolCall;
-use async_trait::async_trait;
-use gem_client::Client;
 use gem_evm::contracts::erc4626::IERC4626;
 use gem_evm::contracts::IERC20;
 use gem_evm::jsonrpc::TransactionObject;
 use gem_evm::multicall3::{create_call3, decode_call3_return};
 use gem_evm::rpc::EthereumClient;
+use gem_jsonrpc::alien::RpcClient;
 use primitives::swap::ApprovalData;
 
 use super::assets::YoAsset;
@@ -19,35 +18,20 @@ pub struct PositionData {
     pub asset_balance: U256,
 }
 
-#[async_trait]
-pub trait YoClient: Send + Sync {
-    fn build_deposit_transaction(&self, from: Address, yo_token: Address, assets: U256, min_shares_out: U256, receiver: Address, partner_id: u32) -> TransactionObject;
-    fn build_redeem_transaction(&self, from: Address, yo_token: Address, shares: U256, min_assets_out: U256, receiver: Address, partner_id: u32) -> TransactionObject;
-    async fn get_positions(&self, assets: &[YoAsset], owner: Address) -> Result<Vec<PositionData>, YielderError>;
-    async fn check_token_allowance(&self, token: Address, owner: Address, amount: U256) -> Result<Option<ApprovalData>, YielderError>;
-    async fn get_quote_shares(&self, yo_token: Address, assets: U256) -> Result<U256, YielderError>;
-}
-
-pub struct YoGatewayClient<C: Client + Clone> {
-    ethereum_client: EthereumClient<C>,
+pub struct YoGatewayClient {
+    ethereum_client: EthereumClient<RpcClient>,
     contract_address: Address,
 }
 
-impl<C: Client + Clone> YoGatewayClient<C> {
-    pub fn new(ethereum_client: EthereumClient<C>, contract_address: Address) -> Self {
+impl YoGatewayClient {
+    pub fn new(ethereum_client: EthereumClient<RpcClient>, contract_address: Address) -> Self {
         Self {
             ethereum_client,
             contract_address,
         }
     }
-}
 
-#[async_trait]
-impl<C> YoClient for YoGatewayClient<C>
-where
-    C: Client + Clone + Send + Sync + 'static,
-{
-    fn build_deposit_transaction(&self, from: Address, yo_token: Address, assets: U256, min_shares_out: U256, receiver: Address, partner_id: u32) -> TransactionObject {
+    pub fn build_deposit_transaction(&self, from: Address, yo_token: Address, assets: U256, min_shares_out: U256, receiver: Address, partner_id: u32) -> TransactionObject {
         let data = IYoGateway::depositCall {
             yoVault: yo_token,
             assets,
@@ -59,7 +43,7 @@ where
         TransactionObject::new_call_with_from(&from.to_string(), &self.contract_address.to_string(), data)
     }
 
-    fn build_redeem_transaction(&self, from: Address, yo_token: Address, shares: U256, min_assets_out: U256, receiver: Address, partner_id: u32) -> TransactionObject {
+    pub fn build_redeem_transaction(&self, from: Address, yo_token: Address, shares: U256, min_assets_out: U256, receiver: Address, partner_id: u32) -> TransactionObject {
         let data = IYoGateway::redeemCall {
             yoVault: yo_token,
             shares,
@@ -71,7 +55,7 @@ where
         TransactionObject::new_call_with_from(&from.to_string(), &self.contract_address.to_string(), data)
     }
 
-    async fn get_positions(&self, assets: &[YoAsset], owner: Address) -> Result<Vec<PositionData>, YielderError> {
+    pub async fn get_positions(&self, assets: &[YoAsset], owner: Address) -> Result<Vec<PositionData>, YielderError> {
         Ok(self
             .ethereum_client
             .multicall3_batch(
@@ -97,7 +81,7 @@ where
             .await?)
     }
 
-    async fn check_token_allowance(&self, token: Address, owner: Address, amount: U256) -> Result<Option<ApprovalData>, YielderError> {
+    pub async fn check_token_allowance(&self, token: Address, owner: Address, amount: U256) -> Result<Option<ApprovalData>, YielderError> {
         let spender = self.contract_address;
         let allowance = self.ethereum_client.call_contract(token, IERC20::allowanceCall { owner, spender }).await?;
 
@@ -112,7 +96,7 @@ where
         }
     }
 
-    async fn get_quote_shares(&self, yo_token: Address, assets: U256) -> Result<U256, YielderError> {
+    pub async fn get_quote_shares(&self, yo_token: Address, assets: U256) -> Result<U256, YielderError> {
         let call = IYoGateway::quoteConvertToSharesCall { yoVault: yo_token, assets };
         Ok(self.ethereum_client.call_contract(self.contract_address, call).await?)
     }
@@ -142,4 +126,3 @@ mod tests {
         assert_eq!(convert_to_assets_ceil(U256::ZERO, U256::ZERO, U256::ZERO), U256::ZERO);
     }
 }
-
