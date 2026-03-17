@@ -5,9 +5,42 @@ use primitives::chart::ChartCandleStick;
 use primitives::perpetual::{PerpetualData, PerpetualPositionsSummary};
 use primitives::portfolio::PerpetualPortfolio;
 use primitives::{
-    AddressStatus, Asset, AssetBalance, BroadcastOptions, Chain, ChartPeriod, DelegationBase, DelegationValidator, FeeRate, NodeSyncStatus, Transaction, TransactionFee,
+    AddressStatus, Asset, AssetBalance, AssetId, BroadcastOptions, Chain, ChartPeriod, DelegationBase, DelegationValidator, FeeRate, NodeSyncStatus, Transaction, TransactionFee,
     TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate, UTXO,
 };
+
+pub struct TransactionsRequest {
+    pub address: String,
+    pub asset_id: Option<AssetId>,
+    pub limit: Option<usize>,
+    pub from_timestamp: Option<u64>,
+}
+
+impl TransactionsRequest {
+    pub fn new(address: String) -> Self {
+        Self {
+            address,
+            asset_id: None,
+            limit: None,
+            from_timestamp: None,
+        }
+    }
+
+    pub fn with_asset_id(mut self, asset_id: AssetId) -> Self {
+        self.asset_id = Some(asset_id);
+        self
+    }
+
+    pub fn with_limit(mut self, limit: usize) -> Self {
+        self.limit = Some(limit);
+        self
+    }
+
+    pub fn with_from_timestamp(mut self, from_timestamp: Option<u64>) -> Self {
+        self.from_timestamp = from_timestamp;
+        self
+    }
+}
 
 pub trait ChainTraits:
     ChainProvider
@@ -67,7 +100,7 @@ pub trait ChainTransactions: Send + Sync {
     async fn get_transactions_by_block(&self, _block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         Ok(vec![])
     }
-    async fn get_transactions_by_address(&self, _address: String, _limit: Option<usize>, _from_timestamp: Option<u64>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+    async fn get_transactions_by_address(&self, _request: TransactionsRequest) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         Ok(vec![])
     }
 

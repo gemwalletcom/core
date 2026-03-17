@@ -1,7 +1,7 @@
 #[cfg(feature = "rpc")]
 use async_trait::async_trait;
 #[cfg(feature = "rpc")]
-use chain_traits::ChainTransactions;
+use chain_traits::{ChainTransactions, TransactionsRequest};
 #[cfg(feature = "rpc")]
 use gem_client::Client;
 use primitives::{BroadcastOptions, Transaction};
@@ -29,12 +29,8 @@ impl<C: Client + Clone> ChainTransactions for SuiClient<C> {
         Ok(map_transaction_blocks(transaction_blocks))
     }
 
-    async fn get_transactions_by_address(
-        &self,
-        address: String,
-        _limit: Option<usize>,
-        _from_timestamp: Option<u64>,
-    ) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Sync + Send>> {
+    async fn get_transactions_by_address(&self, request: TransactionsRequest) -> Result<Vec<Transaction>, Box<dyn std::error::Error + Sync + Send>> {
+        let TransactionsRequest { address, .. } = request;
         Ok(self.get_transactions_by_address(address).await?.data.into_iter().flat_map(map_transaction).collect())
     }
 }
@@ -42,7 +38,7 @@ impl<C: Client + Clone> ChainTransactions for SuiClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use crate::provider::testkit::*;
-    use chain_traits::{ChainState, ChainTransactionState, ChainTransactions};
+    use chain_traits::{ChainState, ChainTransactionState, ChainTransactions, TransactionsRequest};
     use primitives::{TransactionState, TransactionStateRequest};
 
     #[tokio::test]
@@ -72,7 +68,7 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_get_transactions_by_address() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_sui_test_client();
-        let transactions = ChainTransactions::get_transactions_by_address(&client, TEST_ADDRESS.to_string(), Some(1), None).await?;
+        let transactions = ChainTransactions::get_transactions_by_address(&client, TransactionsRequest::new(TEST_ADDRESS.to_string()).with_limit(1)).await?;
         println!("Address transactions count: {}", transactions.len());
 
         assert!(!transactions.is_empty());

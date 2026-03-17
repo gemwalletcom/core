@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use chain_traits::ChainTransactions;
+use chain_traits::{ChainTransactions, TransactionsRequest};
 use primitives::{BroadcastOptions, Transaction};
 use std::error::Error;
 
@@ -38,7 +38,8 @@ impl<C: Client> ChainTransactions for BitcoinClient<C> {
         Ok(transactions)
     }
 
-    async fn get_transactions_by_address(&self, address: String, limit: Option<usize>, _from_timestamp: Option<u64>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+    async fn get_transactions_by_address(&self, request: TransactionsRequest) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        let TransactionsRequest { address, limit, .. } = request;
         let address = Address::new(&address, self.get_chain()).full();
         let address_details = self.get_address_details(&address, limit.unwrap_or(25)).await?;
         let transactions = address_details.transactions.unwrap_or_default();
@@ -49,7 +50,7 @@ impl<C: Client> ChainTransactions for BitcoinClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use crate::provider::testkit::*;
-    use chain_traits::{ChainState, ChainTransactionState, ChainTransactions};
+    use chain_traits::{ChainState, ChainTransactionState, ChainTransactions, TransactionsRequest};
     use primitives::{TransactionState, TransactionStateRequest};
 
     #[tokio::test]
@@ -78,7 +79,7 @@ mod chain_integration_tests {
     async fn test_bitcoin_get_transactions_by_address() {
         let bitcoin_client = create_bitcoin_test_client();
 
-        let transactions = bitcoin_client.get_transactions_by_address(TEST_ADDRESS.to_string(), None, None).await.unwrap();
+        let transactions = bitcoin_client.get_transactions_by_address(TransactionsRequest::new(TEST_ADDRESS.to_string())).await.unwrap();
 
         println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
 

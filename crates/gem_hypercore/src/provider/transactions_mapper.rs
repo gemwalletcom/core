@@ -4,6 +4,7 @@ use std::error::Error;
 use chrono::{DateTime, Utc};
 use primitives::{Transaction, TransactionState};
 
+use crate::models::action::{ExchangeRequest, ACTION_ID_PREFIX};
 use crate::models::order::PerpetualFill;
 use crate::models::response::{BroadcastResult, TransactionBroadcastResponse};
 use crate::models::token::HYPERCORE_USDC_ASSET_ID;
@@ -12,7 +13,8 @@ use crate::provider::transaction_state_mapper::prepare_perpetual_fill;
 
 pub fn map_transaction_broadcast(response: serde_json::Value, data: String) -> Result<String, Box<dyn Error + Sync + Send>> {
     let broadcast_response = serde_json::from_value::<TransactionBroadcastResponse>(response)?;
-    match broadcast_response.into_result(data) {
+    let action_id = ExchangeRequest::get_nonce(&data).map(|nonce| format!("{}{}", ACTION_ID_PREFIX, nonce));
+    match broadcast_response.into_result(action_id) {
         BroadcastResult::Success(result) => Ok(result),
         BroadcastResult::Error(error) => Err(error.into()),
     }
@@ -65,23 +67,32 @@ mod tests {
     #[test]
     fn test_map_transaction_broadcast_success() {
         let response: serde_json::Value = serde_json::from_str(include_str!("../../testdata/order_broadcast_filled.json")).unwrap();
-        let result = map_transaction_broadcast(response, "test_hash".to_string()).unwrap();
-        assert_eq!(result, "134896397196");
+        let data = include_str!("../../testdata/hl_action_open_long_order.json").trim().to_string();
+        assert_eq!(map_transaction_broadcast(response, data).unwrap(), "134896397196");
     }
 
     #[test]
     fn test_map_transaction_broadcast_error() {
         let response: serde_json::Value = serde_json::from_str(include_str!("../../testdata/order_broadcast_error.json")).unwrap();
-        let result = map_transaction_broadcast(response, "test_hash".to_string());
-        assert!(result.is_err());
+        let data = include_str!("../../testdata/hl_action_open_long_order.json").trim().to_string();
+        assert!(map_transaction_broadcast(response, data).is_err());
     }
 
     #[test]
     fn test_map_transaction_broadcast_extra_agent_error() {
         let response: serde_json::Value = serde_json::from_str(include_str!("../../testdata/transaction_broadcast_error_extra_agent.json")).unwrap();
-        let result = map_transaction_broadcast(response, "test_hash".to_string());
+        let data = include_str!("../../testdata/hl_action_open_long_order.json").trim().to_string();
+        let result = map_transaction_broadcast(response, data);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err().to_string(), "Extra agent already used.");
+    }
+
+    #[test]
+    fn test_map_transaction_broadcast_fallback_converts_json_to_action_nonce() {
+        let response: serde_json::Value = serde_json::from_str(r#"{"status":"ok","response":{"type":"order"}}"#).unwrap();
+        let data = include_str!("../../testdata/hl_action_update_position_tp_sl.json").trim().to_string();
+        let result = map_transaction_broadcast(response, data).unwrap();
+        assert_eq!(result, "action:1755132472149");
     }
 
     #[test]

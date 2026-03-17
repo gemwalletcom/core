@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use primitives::{AssetId, Chain, Transaction, TransactionId, TransactionsResponse};
-use settings_chain::ChainProviders;
+use settings_chain::{ChainProviders, TransactionsRequest};
 use storage::{Database, ScanAddressesRepository, TransactionsRepository, WalletsRepository};
 
 use chrono::{DateTime, Utc};
@@ -25,11 +25,11 @@ impl TransactionsClient {
         let address = self.database.wallets()?.subscriptions_wallet_address_for_chain(device_row_id, wallet_id, asset_id.chain)?;
         let transactions = self
             .providers
-            .get_transactions_by_address(asset_id.chain, address, from_timestamp)
-            .await?
-            .into_iter()
-            .filter(|tx| tx.asset_id == *asset_id)
-            .collect::<Vec<_>>();
+            .get_transactions_by_address(
+                asset_id.chain,
+                TransactionsRequest::new(address).with_asset_id(asset_id.clone()).with_from_timestamp(from_timestamp),
+            )
+            .await?;
         self.database.transactions()?.add_transactions(transactions)?;
 
         Ok(())

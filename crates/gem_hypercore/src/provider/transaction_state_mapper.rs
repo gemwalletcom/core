@@ -31,17 +31,18 @@ pub fn prepare_perpetual_fill(matching_fills: &[&PerpetualFill], last_fill: &Per
 pub fn map_transaction_state_order(fills: Vec<PerpetualFill>, oid: u64, request_id: String) -> TransactionUpdate {
     let matching_fills: Vec<_> = fills.iter().filter(|fill| fill.oid == oid).collect();
 
-    if matching_fills.is_empty() {
-        return TransactionUpdate::new_state(TransactionState::Pending);
-    }
+    let last_fill = match matching_fills.last() {
+        Some(fill) => fill,
+        None => return TransactionUpdate::new_state(TransactionState::Pending),
+    };
 
-    let last_fill = matching_fills.last().unwrap();
+    let (_, metadata) = match prepare_perpetual_fill(&matching_fills, last_fill) {
+        Some(result) => result,
+        None => return TransactionUpdate::new_state(TransactionState::Pending),
+    };
 
     let mut update = TransactionUpdate::new_state(TransactionState::Confirmed);
-
-    if let Some((_, metadata)) = prepare_perpetual_fill(&matching_fills, last_fill) {
-        update.changes.push(TransactionChange::Metadata(TransactionMetadata::Perpetual(metadata)));
-    }
+    update.changes.push(TransactionChange::Metadata(TransactionMetadata::Perpetual(metadata)));
 
     if !last_fill.hash.is_empty() && last_fill.hash != request_id {
         update.changes.push(TransactionChange::HashChange {
@@ -104,7 +105,7 @@ mod tests {
     }
 
     #[test]
-    fn test_map_transaction_state_order_non_perpetual_fill() {
+    fn test_map_transaction_state_order_non_perpetual_fill_stays_pending() {
         let fills = vec![PerpetualFill {
             coin: "HYPE".to_string(),
             hash: String::new(),
@@ -120,7 +121,7 @@ mod tests {
 
         let update = map_transaction_state_order(fills, 123, "123".to_string());
 
-        assert_eq!(update.state, TransactionState::Confirmed);
+        assert_eq!(update.state, TransactionState::Pending);
         assert!(update.changes.is_empty());
     }
 
@@ -153,4 +154,5 @@ mod tests {
 
         assert!(prepare_perpetual_fill(&[&fill], &fill).is_none());
     }
+
 }

@@ -76,7 +76,7 @@ pub enum BroadcastResult {
 }
 
 impl TransactionBroadcastResponse {
-    pub fn into_result(self, data: String) -> BroadcastResult {
+    pub fn into_result(self, action_id: Option<String>) -> BroadcastResult {
         match self {
             TransactionBroadcastResponse::OrderResponse(order) => {
                 if order.status == "ok" {
@@ -91,7 +91,10 @@ impl TransactionBroadcastResponse {
                             return BroadcastResult::Success(resting.oid.to_string());
                         }
                     }
-                    BroadcastResult::Success(data)
+                    match action_id {
+                        Some(id) => BroadcastResult::Success(id),
+                        None => BroadcastResult::Error("Failed to parse action id".to_string()),
+                    }
                 } else {
                     BroadcastResult::Error("Order failed".to_string())
                 }
@@ -103,8 +106,9 @@ impl TransactionBroadcastResponse {
                     BroadcastResult::Error(format!("Request failed with status: {}", status_error.status))
                 }
             }
-            TransactionBroadcastResponse::SimpleResponse(simple) => match simple.status.as_str() {
-                "ok" => BroadcastResult::Success(data),
+            TransactionBroadcastResponse::SimpleResponse(simple) => match (simple.status.as_str(), action_id) {
+                ("ok", Some(id)) => BroadcastResult::Success(id),
+                ("ok", None) => BroadcastResult::Error("Failed to parse action id".to_string()),
                 _ => BroadcastResult::Error("Request failed".to_string()),
             },
             TransactionBroadcastResponse::ErrorResponse(error) => BroadcastResult::Error(error.response),
@@ -118,31 +122,47 @@ mod tests {
 
     #[test]
     fn test_order_broadcast_error() {
-        let response: TransactionBroadcastResponse = serde_json::from_str(include_str!("../../testdata/order_broadcast_error.json")).unwrap();
-        assert!(matches!(response.into_result("test".to_string()), BroadcastResult::Error(_)));
+        let result = serde_json::from_str::<TransactionBroadcastResponse>(include_str!("../../testdata/order_broadcast_error.json")).unwrap().into_result(None);
+        let BroadcastResult::Error(_) = result else { panic!("Expected error") };
     }
 
     #[test]
     fn test_order_broadcast_filled() {
-        let response: TransactionBroadcastResponse = serde_json::from_str(include_str!("../../testdata/order_broadcast_filled.json")).unwrap();
-        match response.into_result("test".to_string()) {
-            BroadcastResult::Success(oid) => assert_eq!(oid, "134896397196"),
-            _ => panic!("Expected success"),
-        }
+        let result = serde_json::from_str::<TransactionBroadcastResponse>(include_str!("../../testdata/order_broadcast_filled.json")).unwrap().into_result(None);
+        let BroadcastResult::Success(oid) = result else { panic!("Expected success") };
+        assert_eq!(oid, "134896397196");
     }
 
     #[test]
     fn test_order_broadcast_resting() {
-        let response: TransactionBroadcastResponse = serde_json::from_str(include_str!("../../testdata/order_broadcast_resting.json")).unwrap();
-        match response.into_result("test".to_string()) {
-            BroadcastResult::Success(oid) => assert_eq!(oid, "789012"),
-            _ => panic!("Expected success"),
-        }
+        let result = serde_json::from_str::<TransactionBroadcastResponse>(include_str!("../../testdata/order_broadcast_resting.json")).unwrap().into_result(None);
+        let BroadcastResult::Success(oid) = result else { panic!("Expected success") };
+        assert_eq!(oid, "789012");
     }
 
     #[test]
     fn test_order_broadcast_simple_error() {
-        let response: TransactionBroadcastResponse = serde_json::from_str(include_str!("../../testdata/order_broadcast_simple_error.json")).unwrap();
-        assert!(matches!(response.into_result("test".to_string()), BroadcastResult::Error(_)));
+        let result = serde_json::from_str::<TransactionBroadcastResponse>(include_str!("../../testdata/order_broadcast_simple_error.json")).unwrap().into_result(None);
+        let BroadcastResult::Error(_) = result else { panic!("Expected error") };
+    }
+
+    #[test]
+    fn test_order_broadcast_fallback_uses_action_id() {
+        let result = serde_json::from_str::<TransactionBroadcastResponse>(r#"{"status":"ok","response":{"type":"order"}}"#).unwrap().into_result(Some("action:123".to_string()));
+        let BroadcastResult::Success(id) = result else { panic!("Expected success") };
+        assert_eq!(id, "action:123");
+    }
+
+    #[test]
+    fn test_simple_broadcast_uses_action_id() {
+        let result = serde_json::from_str::<TransactionBroadcastResponse>(r#"{"status":"ok"}"#).unwrap().into_result(Some("action:456".to_string()));
+        let BroadcastResult::Success(id) = result else { panic!("Expected success") };
+        assert_eq!(id, "action:456");
+    }
+
+    #[test]
+    fn test_order_broadcast_fallback_without_action_id() {
+        let result = serde_json::from_str::<TransactionBroadcastResponse>(r#"{"status":"ok","response":{"type":"order"}}"#).unwrap().into_result(None);
+        let BroadcastResult::Error(_) = result else { panic!("Expected error") };
     }
 }

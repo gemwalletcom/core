@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use chain_traits::ChainTransactions;
+use chain_traits::{ChainTransactions, TransactionsRequest};
 use std::error::Error;
 
 use gem_client::Client;
@@ -20,7 +20,8 @@ impl<C: Client> ChainTransactions for TonClient<C> {
         Ok(map_transactions(transactions.transactions))
     }
 
-    async fn get_transactions_by_address(&self, address: String, limit: Option<usize>, _from_timestamp: Option<u64>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+    async fn get_transactions_by_address(&self, request: TransactionsRequest) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        let TransactionsRequest { address, limit, .. } = request;
         let limit = limit.unwrap_or(100);
         let transactions = self.get_transactions_by_address(address, limit).await?;
         Ok(map_transactions(transactions.transactions))
@@ -46,7 +47,7 @@ mod chain_integration_tests {
 
     #[tokio::test]
     async fn test_get_transactions_by_address() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let transactions = ChainTransactions::get_transactions_by_address(&create_ton_test_client(), TEST_ADDRESS.to_string(), Some(10), None).await?;
+        let transactions = ChainTransactions::get_transactions_by_address(&create_ton_test_client(), TransactionsRequest::new(TEST_ADDRESS.to_string()).with_limit(10)).await?;
         println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
 
         assert!(!transactions.is_empty());

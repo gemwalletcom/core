@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use chain_traits::ChainTransactions;
+use chain_traits::{ChainTransactions, TransactionsRequest};
 use primitives::BroadcastOptions;
 use std::error::Error;
 
@@ -17,13 +17,13 @@ impl<C: Client> ChainTransactions for HyperCoreClient<C> {
         map_transaction_broadcast(response, data)
     }
 
-    async fn get_transactions_by_address(
-        &self,
-        address: String,
-        _limit: Option<usize>,
-        from_timestamp: Option<u64>,
-    ) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Sync + Send>> {
-        let start_time = from_timestamp.map(|ts| ts as i64 * 1000).unwrap_or(0);
-        Ok(map_perpetual_fills(&address, self.get_user_fills_by_time(&address, start_time).await?))
+    async fn get_transactions_by_address(&self, request: TransactionsRequest) -> Result<Vec<primitives::Transaction>, Box<dyn Error + Sync + Send>> {
+        let start_time = request.from_timestamp.map(|ts| ts as i64 * 1000).unwrap_or(0);
+        let transactions = map_perpetual_fills(&request.address, self.get_user_fills_by_time(&request.address, start_time).await?);
+
+        match request.asset_id {
+            Some(asset_id) => Ok(transactions.into_iter().filter(|tx| tx.asset_id == asset_id).collect()),
+            None => Ok(transactions),
+        }
     }
 }

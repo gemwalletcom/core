@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use chain_traits::ChainTraits;
+use chain_traits::{ChainTraits, TransactionsRequest};
 use primitives::{Asset, AssetBalance, Chain, DelegationBase, StakeValidator, Transaction};
 use settings::Settings;
 
@@ -51,9 +51,9 @@ impl ChainProviders {
         self.get_provider(chain)?.get_transactions_in_blocks(blocks).await
     }
 
-    pub async fn get_transactions_by_address(&self, chain: Chain, address: String, from_timestamp: Option<u64>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_transactions_by_address(&self, chain: Chain, request: TransactionsRequest) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         self.get_provider(chain)?
-            .get_transactions_by_address(address, None, from_timestamp)
+            .get_transactions_by_address(request)
             .await
             .map(sort_transactions_by_date)
     }

@@ -3,7 +3,7 @@ use std::error::Error;
 #[cfg(feature = "rpc")]
 use async_trait::async_trait;
 #[cfg(feature = "rpc")]
-use chain_traits::ChainTransactions;
+use chain_traits::{ChainTransactions, TransactionsRequest};
 use primitives::{BroadcastOptions, NodeType, Transaction};
 
 use crate::{
@@ -51,7 +51,8 @@ impl<C: Client + Clone> ChainTransactions for EthereumClient<C> {
         Ok(self.send_raw_transaction(&data).await?)
     }
 
-    async fn get_transactions_by_address(&self, address: String, limit: Option<usize>, _from_timestamp: Option<u64>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+    async fn get_transactions_by_address(&self, request: TransactionsRequest) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        let TransactionsRequest { address, limit, .. } = request;
         let hashes = if let Some(ankr_client) = &self.ankr_client {
             ankr_client
                 .get_ankr_transactions_by_address(address.as_str(), limit)
@@ -97,14 +98,14 @@ impl<C: Client + Clone> ChainTransactions for EthereumClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use crate::provider::testkit::{TEST_ADDRESS, create_ethereum_test_client};
-    use chain_traits::{ChainBalances, ChainTransactions};
+    use chain_traits::{ChainBalances, ChainTransactions, TransactionsRequest};
     use num_bigint::BigUint;
     use std::error::Error;
 
     #[tokio::test]
     async fn test_ethereum_get_transactions_by_address() -> Result<(), Box<dyn Error + Send + Sync>> {
         let client = create_ethereum_test_client();
-        let transactions = ChainTransactions::get_transactions_by_address(&client, TEST_ADDRESS.to_string(), Some(5), None).await?;
+        let transactions = ChainTransactions::get_transactions_by_address(&client, TransactionsRequest::new(TEST_ADDRESS.to_string()).with_limit(5)).await?;
 
         assert!(!transactions.is_empty());
 
