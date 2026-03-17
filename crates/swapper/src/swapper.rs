@@ -243,8 +243,8 @@ impl GemSwapper {
     pub async fn get_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let provider = self.get_swapper_by_provider(&quote.data.provider.id)?;
         let mut quote_data = provider.get_quote_data(quote, data).await?;
-        if let Some(gas_limit) = quote_data.gas_limit.take() {
-            quote_data.gas_limit = Some(Self::apply_gas_limit_multiplier(&quote.request.from_asset.chain(), gas_limit));
+        if let Some(limit) = quote_data.gas_limit.take() {
+            quote_data.gas_limit = Some(Self::apply_gas_limit_multiplier(&quote.request.from_asset.chain(), limit));
         }
         Ok(quote_data)
     }
