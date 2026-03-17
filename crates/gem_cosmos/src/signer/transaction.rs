@@ -111,7 +111,10 @@ mod tests {
             sender: "osmo1test".to_string(),
             contract: "osmo1contract".to_string(),
             msg: b"{\"swap\":{}}".to_vec(),
-            funds: vec![Coin { denom: "uosmo".to_string(), amount: "1000000".to_string() }],
+            funds: vec![Coin {
+                denom: "uosmo".to_string(),
+                amount: "1000000".to_string(),
+            }],
         };
         assert_eq!(
             hex::encode(msg.encode_as_any()),
@@ -124,7 +127,10 @@ mod tests {
         let msg = CosmosMessage::IbcTransfer {
             source_port: "transfer".to_string(),
             source_channel: "channel-0".to_string(),
-            token: Coin { denom: "uatom".to_string(), amount: "1000000".to_string() },
+            token: Coin {
+                denom: "uatom".to_string(),
+                amount: "1000000".to_string(),
+            },
             sender: "cosmos1test".to_string(),
             receiver: "osmo1test".to_string(),
             timeout_timestamp: 1773382733549000000,

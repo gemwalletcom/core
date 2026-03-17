@@ -82,6 +82,8 @@ Analyze the diff above and check for the following issues:
 - [ ] **Simple solutions**: Three similar lines is better than a premature abstraction
 - [ ] **Avoid `mut`**: Prefer immutable bindings; use `mut` only when truly necessary
 - [ ] **Prefer one-liners**: Inline single-use variables; avoid creating variables used only once
+- [ ] **Avoid `#[serde(default)]`**: Only use when the field is genuinely optional in the API response; if the field is always present, omit it
+- [ ] **Use accessor methods for enum variants**: Instead of destructuring enum variants with `match`, use typed accessor methods (e.g., `metadata.get_sequence()?` instead of `match &metadata { Cosmos { sequence, .. } => ... }`)
 
 ### 5. Code Organization
 - [ ] **Modular structure**: Break down files into smaller, focused modules; separate models from clients/logic (e.g., `models.rs` + `client.rs`, not everything in one file)

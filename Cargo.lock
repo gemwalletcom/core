@@ -7183,6 +7183,7 @@ dependencies = [
  "futures",
  "gem_aptos",
  "gem_client",
+ "gem_cosmos",
  "gem_evm",
  "gem_hash",
  "gem_hypercore",

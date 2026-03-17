@@ -3,7 +3,7 @@ use std::str::FromStr;
 use base64::{Engine, engine::general_purpose::STANDARD};
 use gem_hash::sha2::sha256;
 use primitives::chain_cosmos::CosmosChain;
-use primitives::{ChainSigner, SignerError, TransactionLoadInput, TransactionLoadMetadata};
+use primitives::{ChainSigner, SignerError, TransactionLoadInput};
 use signer::{SignatureScheme, Signer};
 
 use crate::models::{Coin, CosmosMessage};
@@ -50,16 +50,9 @@ pub fn encode_and_sign_tx(params: &CosmosTxParams, private_key: &[u8]) -> Result
 impl ChainSigner for CosmosChainSigner {
     fn sign_swap(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
         let swap_data = input.input_type.get_swap_data().map_err(SignerError::invalid_input)?;
-
-        let (account_number, sequence, chain_id) = match &input.metadata {
-            TransactionLoadMetadata::Cosmos {
-                account_number,
-                sequence,
-                chain_id,
-            } => (*account_number, *sequence, chain_id.as_str()),
-            _ => return Err(SignerError::invalid_input("expected Cosmos metadata")),
-        };
-
+        let account_number = input.metadata.get_account_number().map_err(SignerError::from_display)?;
+        let sequence = input.metadata.get_sequence().map_err(SignerError::from_display)?;
+        let chain_id = input.metadata.get_chain_id().map_err(SignerError::from_display)?;
         let chain = CosmosChain::from_str(input.input_type.get_asset().chain.as_ref()).map_err(|_| SignerError::invalid_input("unsupported cosmos chain"))?;
 
         let message = CosmosMessage::parse(&swap_data.data.data)?;
@@ -74,12 +67,17 @@ impl ChainSigner for CosmosChainSigner {
             .unwrap_or(BASE_FEE_GAS_UNITS);
         let gas_limit = gas_limit * GAS_BUFFER_NUMERATOR / GAS_BUFFER_DENOMINATOR;
 
-        let base_fee: u64 = input.gas_price.gas_price().to_string().parse().unwrap_or(0);
+        let base_fee: u64 = input
+            .gas_price
+            .gas_price()
+            .to_string()
+            .parse()
+            .map_err(|_| SignerError::invalid_input("invalid gas price"))?;
         let fee_amount = ((gas_limit as u128 * base_fee as u128 / BASE_FEE_GAS_UNITS as u128) as u64).to_string();
 
         let params = CosmosTxParams {
             body_bytes,
-            chain_id,
+            chain_id: &chain_id,
             account_number,
             sequence,
             fee_coins: vec![Coin {

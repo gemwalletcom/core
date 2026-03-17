@@ -5,7 +5,6 @@ use std::{collections::BTreeSet, fmt::Debug, str::FromStr, sync::Arc};
 use super::{
     client::ProxyClient,
     mayan::{MAYAN_DEPOSIT_CONTRACTS, MAYAN_SEND_CONTRACTS, MayanChain, MayanExplorer, MayanPrice, map_swap_result},
-    squid::{SQUID_COSMOS_MULTICALL, SquidClient},
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperError, SwapperProvider, SwapperProviderMode, SwapperQuoteData,
@@ -18,7 +17,7 @@ use crate::{
 };
 use gem_client::Client;
 use primitives::{
-    AssetId, Chain, ChainType,
+    Chain, ChainType,
     swap::{ApprovalData, ProxyQuote, ProxyQuoteRequest, SwapQuoteData},
 };
 
@@ -132,29 +131,6 @@ impl ProxyProvider<RpcClient> {
         Self::new_with_path(SwapperProvider::Panora, "panora", vec![SwapperChainAsset::All(Chain::Aptos)], rpc_provider)
     }
 
-    pub fn new_squid(rpc_provider: Arc<dyn RpcProvider>) -> Self {
-        use crate::asset::{COSMOS_USDC_TOKEN_ID, INJECTIVE_USDC_TOKEN_ID, OSMOSIS_USDC_TOKEN_ID, OSMOSIS_USDT_TOKEN_ID, SEI_USDC_TOKEN_ID};
-        Self::new_with_path(
-            SwapperProvider::Squid,
-            "squid",
-            vec![
-                SwapperChainAsset::Assets(Chain::Cosmos, vec![AssetId::from_token(Chain::Cosmos, COSMOS_USDC_TOKEN_ID)]),
-                SwapperChainAsset::Assets(
-                    Chain::Osmosis,
-                    vec![
-                        AssetId::from_token(Chain::Osmosis, OSMOSIS_USDC_TOKEN_ID),
-                        AssetId::from_token(Chain::Osmosis, OSMOSIS_USDT_TOKEN_ID),
-                    ],
-                ),
-                SwapperChainAsset::Assets(Chain::Celestia, vec![]),
-                SwapperChainAsset::Assets(Chain::Injective, vec![AssetId::from_token(Chain::Injective, INJECTIVE_USDC_TOKEN_ID)]),
-                SwapperChainAsset::Assets(Chain::Sei, vec![AssetId::from_token(Chain::Sei, SEI_USDC_TOKEN_ID)]),
-                SwapperChainAsset::Assets(Chain::Noble, vec![]),
-            ],
-            rpc_provider,
-        )
-    }
-
     pub fn new_mayan(rpc_provider: Arc<dyn RpcProvider>) -> Self {
         let assets = vec![
             SwapperChainAsset::Assets(
@@ -260,15 +236,6 @@ where
                 let result = client.get_transaction_status(transaction_hash).await?;
                 Ok(map_swap_result(&result))
             }
-            SwapperProvider::Squid => {
-                let base_url = get_swap_api_url("squid");
-                let client = SquidClient::new(base_url, self.rpc_provider.clone());
-                let result = client.get_transaction_status(transaction_hash).await?;
-                Ok(SwapResult {
-                    status: result.squid_transaction_status.swap_status(),
-                    metadata: None,
-                })
-            }
             _ => {
                 if self.provider.mode == SwapperProviderMode::OnChain {
                     Ok(SwapResult {
@@ -295,13 +262,6 @@ where
                 Ok(VaultAddresses {
                     deposit: deposit.into_iter().collect(),
                     send: send.into_iter().collect(),
-                })
-            }
-            SwapperProvider::Squid => {
-                let address = SQUID_COSMOS_MULTICALL.to_string();
-                Ok(VaultAddresses {
-                    deposit: vec![address.clone()],
-                    send: vec![address],
                 })
             }
             _ => Ok(VaultAddresses { deposit: vec![], send: vec![] }),

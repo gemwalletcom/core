@@ -33,12 +33,12 @@ pub static RESERVED_NATIVE_FEES: LazyLock<HashMap<Chain, &'static str>> = LazyLo
         (Chain::Monad, "5000000000000000"),       // 0.005 MON
         (Chain::XLayer, "5000000000000000"),      // 0.005 OKB
         (Chain::Plasma, "5000000000000000"),      // 0.005 XPL
-        (Chain::Cosmos, "39000"),                  // 0.039 ATOM (2.6M gas × 3000 / 200K)
-        (Chain::Osmosis, "130000"),                // 0.13 OSMO (2.6M gas × 10000 / 200K)
-        (Chain::Celestia, "39000"),                // 0.039 TIA (2.6M gas × 3000 / 200K)
-        (Chain::Injective, "1300000000000000"),    // 0.0013 INJ (2.6M gas × 100T / 200K)
-        (Chain::Sei, "1300000"),                   // 1.3 SEI (2.6M gas × 100000 / 200K)
-        (Chain::Noble, "25000"),                   // 0.025 USDC
+        (Chain::Cosmos, "39000"),                 // 0.039 ATOM (2.6M gas × 3000 / 200K)
+        (Chain::Osmosis, "130000"),               // 0.13 OSMO (2.6M gas × 10000 / 200K)
+        (Chain::Celestia, "39000"),               // 0.039 TIA (2.6M gas × 3000 / 200K)
+        (Chain::Injective, "1300000000000000"),   // 0.0013 INJ (2.6M gas × 100T / 200K)
+        (Chain::Sei, "1300000"),                  // 1.3 SEI (2.6M gas × 100000 / 200K)
+        (Chain::Noble, "25000"),                  // 0.025 USDC
     ])
 });
 

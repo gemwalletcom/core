@@ -24,6 +24,7 @@ pub mod proxy;
 pub mod referrer;
 pub mod relay;
 pub mod slippage;
+pub mod squid;
 pub mod swapper;
 pub mod thorchain;
 pub mod uniswap;
