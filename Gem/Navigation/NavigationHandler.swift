@@ -144,14 +144,20 @@ extension NavigationHandler {
 
         let asset = try await assetsService.getOrFetchAsset(for: assetId)
         try transactionsService.addTransaction(walletId: walletId, transaction: transaction)
-        let transactionExtended = try transactionsService.getTransaction(walletId: walletId, transactionId: transaction.id.identifier)
+        let transaction = try transactionsService.getTransaction(walletId: walletId, transactionId: transaction.id.identifier)
 
         if walletService.currentWalletId != walletId {
             walletService.setCurrent(for: walletId)
             await Task.yield()
         }
 
-        navigationState.wallet.setPath([Scenes.Asset(asset: asset), Scenes.Transaction(transaction: transactionExtended)])
+        switch asset.type {
+        case .perpetual:
+            navigationState.wallet.setPath([Scenes.Perpetuals(), Scenes.Perpetual(asset), Scenes.Transaction(transaction: transaction)])
+        default:
+            navigationState.wallet.setPath([Scenes.Asset(asset: asset), Scenes.Transaction(transaction: transaction)])
+        }
+
         navigationState.selectedTab = .wallet
     }
 
