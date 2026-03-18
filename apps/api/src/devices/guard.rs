@@ -14,7 +14,7 @@ use crate::devices::error::DeviceError;
 use crate::devices::signature::{parse_auth_components, verify_request_signature};
 use crate::responders::cache_error;
 
-fn auth_error_outcome<T>(req: &Request<'_>, error: DeviceError, device_id: Option<&str>) -> Outcome<T, String> {
+fn auth_error_outcome<T>(req: &Request<'_>, error: DeviceError, device_id: Option<&str>, wallet_id: Option<&str>) -> Outcome<T, String> {
     let status = match error {
         DeviceError::MissingHeader(_)
         | DeviceError::InvalidDeviceId
@@ -25,12 +25,20 @@ fn auth_error_outcome<T>(req: &Request<'_>, error: DeviceError, device_id: Optio
         DeviceError::DeviceNotFound | DeviceError::WalletNotFound => Status::NotFound,
         DeviceError::DatabaseUnavailable | DeviceError::DatabaseError => Status::InternalServerError,
     };
-    let message = match device_id {
-        Some(id) => format!("{} device_id={}", error, id),
-        None => error.to_string(),
-    };
+    let message = format_auth_error_message(&error, device_id, wallet_id);
     cache_error(req, &message);
     Error((status, message))
+}
+
+fn format_auth_error_message(error: &DeviceError, device_id: Option<&str>, wallet_id: Option<&str>) -> String {
+    let mut message = error.to_string();
+    if let Some(id) = device_id {
+        message.push_str(&format!(" device_id={id}"));
+    }
+    if let Some(id) = wallet_id {
+        message.push_str(&format!(" wallet_id={id}"));
+    }
+    message
 }
 
 struct AuthResult {
@@ -47,10 +55,10 @@ async fn authenticate<T>(req: &Request<'_>) -> Result<AuthResult, Outcome<T, Str
         let device_id = req
             .headers()
             .get_one(HEADER_DEVICE_ID)
-            .ok_or_else(|| auth_error_outcome(req, DeviceError::MissingHeader(HEADER_DEVICE_ID), None))?;
+            .ok_or_else(|| auth_error_outcome(req, DeviceError::MissingHeader(HEADER_DEVICE_ID), None, None))?;
 
         if device_id.len() != DEVICE_ID_LENGTH {
-            return Err(auth_error_outcome(req, DeviceError::InvalidDeviceId, Some(device_id)));
+            return Err(auth_error_outcome(req, DeviceError::InvalidDeviceId, Some(device_id), None));
         }
 
         return Ok(AuthResult {
@@ -59,10 +67,10 @@ async fn authenticate<T>(req: &Request<'_>) -> Result<AuthResult, Outcome<T, Str
         });
     }
 
-    let components = parse_auth_components(req).map_err(|e| auth_error_outcome(req, e, None))?;
+    let components = parse_auth_components(req).map_err(|e| auth_error_outcome(req, e, None, None))?;
 
     if components.device_id.len() != DEVICE_ID_LENGTH {
-        return Err(auth_error_outcome(req, DeviceError::InvalidDeviceId, Some(&components.device_id)));
+        return Err(auth_error_outcome(req, DeviceError::InvalidDeviceId, Some(&components.device_id), None));
     }
 
     verify_request_signature(req, &components, config.tolerance.as_millis() as u64).map_err(|(status, msg)| {
@@ -134,7 +142,7 @@ impl<'r> FromRequest<'r> for AuthenticatedDeviceWallet {
         };
 
         let Some(wallet_id_str) = auth.wallet_id else {
-            return auth_error_outcome(req, DeviceError::MissingHeader(HEADER_WALLET_ID), Some(&auth.device_id));
+            return auth_error_outcome(req, DeviceError::MissingHeader(HEADER_WALLET_ID), Some(&auth.device_id), None);
         };
 
         let (device_row, mut db_client) = match lookup_device(req, &auth.device_id).await {
@@ -143,7 +151,7 @@ impl<'r> FromRequest<'r> for AuthenticatedDeviceWallet {
         };
 
         let Ok(wallet_row) = WalletsStore::get_wallet(&mut db_client, &wallet_id_str) else {
-            return auth_error_outcome(req, DeviceError::WalletNotFound, Some(&auth.device_id));
+            return auth_error_outcome(req, DeviceError::WalletNotFound, Some(&auth.device_id), Some(&wallet_id_str));
         };
 
         Success(AuthenticatedDeviceWallet {
@@ -155,20 +163,33 @@ impl<'r> FromRequest<'r> for AuthenticatedDeviceWallet {
 
 async fn lookup_device<T>(req: &Request<'_>, device_id: &str) -> Result<(DeviceRow, storage::DatabaseClient), Outcome<T, String>> {
     let Success(database) = req.guard::<&rocket::State<Database>>().await else {
-        return Err(auth_error_outcome(req, DeviceError::DatabaseUnavailable, Some(device_id)));
+        return Err(auth_error_outcome(req, DeviceError::DatabaseUnavailable, Some(device_id), None));
     };
 
     let Ok(mut db_client) = database.client() else {
-        return Err(auth_error_outcome(req, DeviceError::DatabaseError, Some(device_id)));
+        return Err(auth_error_outcome(req, DeviceError::DatabaseError, Some(device_id), None));
     };
 
     let Ok(device_row) = DevicesStore::get_device(&mut db_client, device_id) else {
-        return Err(auth_error_outcome(req, DeviceError::DeviceNotFound, Some(device_id)));
+        return Err(auth_error_outcome(req, DeviceError::DeviceNotFound, Some(device_id), None));
     };
 
     if DeviceSessionsStore::add_device_session(&mut db_client, device_row.id).is_err() {
-        return Err(auth_error_outcome(req, DeviceError::DatabaseError, Some(device_id)));
+        return Err(auth_error_outcome(req, DeviceError::DatabaseError, Some(device_id), None));
     }
 
     Ok((device_row, db_client))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::format_auth_error_message;
+    use crate::devices::error::DeviceError;
+
+    #[test]
+    fn test_format_auth_error_message_includes_wallet_id() {
+        let message = format_auth_error_message(&DeviceError::WalletNotFound, Some("device_123"), Some("wallet_456"));
+
+        assert_eq!(message, "Wallet not found device_id=device_123 wallet_id=wallet_456");
+    }
 }
