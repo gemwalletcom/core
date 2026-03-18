@@ -1,5 +1,5 @@
 use crate::models::{
-    EpochInfo, InflationRate, ResultTokenInfo, Signature, TokenAccountInfo, ValueResult, VoteAccounts,
+    EpochInfo, InflationRate, ResultTokenInfo, Signature, SupplyResult, TokenAccountInfo, ValueResult, VoteAccounts,
     balances::SolanaBalance,
     blockhash::SolanaBlockhashResult,
     prioritization_fee::SolanaPrioritizationFee,
@@ -136,6 +136,10 @@ impl<C: Client + Clone> SolanaClient<C> {
 
     pub async fn get_inflation_rate(&self) -> Result<InflationRate, JsonRpcError> {
         self.rpc_call("getInflationRate", serde_json::json!([])).await
+    }
+
+    pub async fn get_supply(&self) -> Result<SupplyResult, JsonRpcError> {
+        self.rpc_call("getSupply", serde_json::json!([])).await
     }
 
     pub async fn send_transaction(&self, data: String, skip_preflight: Option<bool>) -> Result<String, JsonRpcError> {

@@ -1,5 +1,5 @@
 use crate::models::staking::{Delegations, Rewards, StakingPoolResponse, UnbondingDelegations, Validator};
-use crate::models::{InflationResponse, OsmosisEpochProvisionsResponse, OsmosisMintParamsResponse};
+use crate::models::{InflationResponse, OsmosisEpochProvisionsResponse, OsmosisMintParamsResponse, SupplyResponse};
 use num_bigint::BigUint;
 use std::str::FromStr;
 
@@ -7,7 +7,7 @@ use std::str::FromStr;
 use crate::models::staking::{StakingPool, ValidatorCommission, ValidatorCommissionRates, ValidatorDescription, ValidatorsResponse};
 
 #[cfg(test)]
-use crate::models::{OsmosisDistributionProportions, OsmosisMintParams};
+use crate::models::{OsmosisDistributionProportions, OsmosisMintParams, SupplyAmount};
 
 use number_formatter::BigNumberFormatter;
 use primitives::chain_cosmos::CosmosChain;
@@ -21,16 +21,14 @@ fn parse_to_biguint(value: &str) -> BigUint {
     BigUint::from_str(value).unwrap_or_default()
 }
 
-pub fn calculate_network_apy_cosmos(inflation: InflationResponse, staking_pool: StakingPoolResponse) -> Option<f64> {
-    let inflation_rate = inflation.inflation;
+pub fn calculate_network_apy_cosmos(inflation: InflationResponse, supply: SupplyResponse, staking_pool: StakingPoolResponse) -> Option<f64> {
     let bonded_tokens = staking_pool.pool.bonded_tokens;
-    let total_supply = bonded_tokens + staking_pool.pool.not_bonded_tokens;
 
     if bonded_tokens == 0.0 {
         return Some(0.0);
     }
 
-    let network_apy = inflation_rate * (total_supply / bonded_tokens);
+    let network_apy = inflation.inflation * (supply.amount.amount / bonded_tokens);
     Some(network_apy * 100.0)
 }
 
@@ -46,8 +44,7 @@ pub fn calculate_network_apy_osmosis(mint_params: OsmosisMintParamsResponse, epo
     let epochs_per_year = if mint_params.params.epoch_identifier == "day" { 365.0 } else { 52.0 };
 
     let annual_issuance = epoch_provisions * epochs_per_year;
-    let effective_staking_distribution = if staking_distribution < 0.1 { 0.093 } else { staking_distribution };
-    let annual_staking_rewards = annual_issuance * effective_staking_distribution;
+    let annual_staking_rewards = annual_issuance * staking_distribution;
     let staking_apy = (annual_staking_rewards / bonded_tokens) * 100.0;
 
     Some(staking_apy)
@@ -249,24 +246,44 @@ mod tests {
     }
 
     #[test]
-    fn test_calculate_network_apy_osmosis() {
-        let mint_params = OsmosisMintParamsResponse {
-            params: OsmosisMintParams {
-                epoch_identifier: "day".to_string(),
-                distribution_proportions: OsmosisDistributionProportions {
-                    staking: 0.4, // 40% of minted tokens go to staking
-                },
+    fn test_calculate_network_apy_cosmos() {
+        let inflation = InflationResponse { inflation: 0.10 };
+        let supply = SupplyResponse {
+            amount: SupplyAmount {
+                denom: "uatom".to_string(),
+                amount: 498707607433890.0,
+            },
+        };
+        let staking_pool = StakingPoolResponse {
+            pool: StakingPool {
+                bonded_tokens: 294464180546813.0,
+                not_bonded_tokens: 14480963444282.0,
             },
         };
 
-        let epoch_provisions = OsmosisEpochProvisionsResponse {
-            epoch_provisions: 100000000000.0, // 100k OSMO per day
+        let result = calculate_network_apy_cosmos(inflation, supply, staking_pool);
+
+        assert!(result.is_some());
+        let apy = result.unwrap();
+
+        assert_eq!(apy.to_bits(), 0x4030efa48809e989);
+    }
+
+    #[test]
+    fn test_calculate_network_apy_osmosis() {
+        let mint_params = OsmosisMintParamsResponse {
+            params: OsmosisMintParams {
+                epoch_identifier: "week".to_string(),
+                distribution_proportions: OsmosisDistributionProportions { staking: 0.5 },
+            },
         };
+
+        let epoch_provisions = OsmosisEpochProvisionsResponse { epoch_provisions: 1.0 };
 
         let staking_pool = StakingPoolResponse {
             pool: StakingPool {
-                bonded_tokens: 400000000000000.0,     // 400M OSMO bonded
-                not_bonded_tokens: 100000000000000.0, // 100M OSMO not bonded
+                bonded_tokens: 50.0,
+                not_bonded_tokens: 0.0,
             },
         };
 
@@ -275,6 +292,6 @@ mod tests {
         assert!(result.is_some());
         let apy = result.unwrap();
 
-        assert!((apy - 3.65).abs() < 0.001);
+        assert_eq!(apy, 52.0);
     }
 }

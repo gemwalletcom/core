@@ -3,6 +3,14 @@ use chrono::Utc;
 use num_bigint::BigUint;
 use primitives::{AssetId, Chain, DelegationBase, DelegationState, DelegationValidator};
 
+pub fn calculate_network_apy(inflation_rate: f64, total_supply: u64, total_active_stake: u64) -> f64 {
+    if total_active_stake == 0 {
+        return 0.0;
+    }
+
+    inflation_rate * (total_supply as f64 / total_active_stake as f64) * 100.0
+}
+
 pub fn map_staking_validators(vote_accounts: Vec<VoteAccount>, chain: Chain, network_apy: f64) -> Vec<DelegationValidator> {
     vote_accounts
         .into_iter()
@@ -85,6 +93,7 @@ mod tests {
             vote_pubkey: "validator1".to_string(),
             node_pubkey: "node1".to_string(),
             commission: 5,
+            activated_stake: 1_000_000,
         }];
 
         let result = map_staking_validators(vote_accounts, Chain::Solana, 8.0);
@@ -93,6 +102,13 @@ mod tests {
         assert_eq!(result[0].id, "validator1");
         assert_eq!(result[0].commission, 5.0);
         assert_eq!(result[0].apr, 7.6);
+    }
+
+    #[test]
+    fn test_calculate_network_apy() {
+        let apy = calculate_network_apy(0.125, 400, 100);
+
+        assert_eq!(apy, 50.0);
     }
 
     #[test]

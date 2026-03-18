@@ -49,7 +49,7 @@ pub fn wormhole_chain_id_to_chain(chain_id: u16) -> Option<Chain> {
 }
 
 pub fn resolve_asset_id(chain: Chain, token_address: &str) -> Option<AssetId> {
-    let is_native = token_address == EVM_ZERO_ADDRESS || token_address == WSOL_TOKEN_ADDRESS || chain.config().denom.is_some_and(|d| d == token_address);
+    let is_native = token_address == EVM_ZERO_ADDRESS || token_address == WSOL_TOKEN_ADDRESS || chain.as_denom().is_some_and(|denom| denom == token_address);
     if is_native {
         return Some(AssetId::from_chain(chain));
     }

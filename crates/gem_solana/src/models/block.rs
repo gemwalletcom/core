@@ -13,6 +13,7 @@ pub struct VoteAccount {
     pub vote_pubkey: String,
     pub node_pubkey: String,
     pub commission: u8,
+    pub activated_stake: u64,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -60,4 +61,14 @@ pub struct ValidatorConfigInfo {
 #[serde(rename_all = "camelCase")]
 pub struct InflationRate {
     pub validator: f64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SupplyResult {
+    pub value: SupplyValue,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SupplyValue {
+    pub total: u64,
 }

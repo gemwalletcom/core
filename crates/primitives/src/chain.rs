@@ -83,7 +83,7 @@ impl Chain {
     }
 
     pub fn as_denom(&self) -> Option<&str> {
-        self.config().denom
+        self.config().denom.as_deref()
     }
 
     pub fn as_asset_id(&self) -> AssetId {
