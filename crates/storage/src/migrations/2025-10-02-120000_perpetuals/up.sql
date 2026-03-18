@@ -24,4 +24,5 @@ CREATE TABLE perpetuals_assets
 );
 
 SELECT diesel_manage_updated_at('perpetuals');
+CREATE INDEX perpetuals_updated_at_idx ON perpetuals (updated_at);
 SELECT diesel_manage_updated_at('perpetuals_assets');

@@ -76,8 +76,8 @@ impl IndexSync<'_> {
         self.last_updated_at.and_utc().timestamp() == 0
     }
 
-    pub fn last_updated_at(&self) -> NaiveDateTime {
-        self.last_updated_at
+    pub fn since(&self) -> Option<NaiveDateTime> {
+        if self.should_replace_index() { None } else { Some(self.last_updated_at) }
     }
 
     pub async fn write<T: Serialize + Send + Sync>(self, index: &str, documents: Vec<T>) -> Result<SearchSyncResult, Box<dyn Error + Send + Sync>> {

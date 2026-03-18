@@ -2,7 +2,7 @@ use super::sync::{SearchSyncClient, SearchSyncResult};
 use primitives::ConfigKey;
 use search_index::{NFTDocument, NFTS_INDEX_NAME, SearchIndexClient};
 use storage::models::NftCollectionRow;
-use storage::{Database, NftRepository};
+use storage::{Database, NftCollectionFilter, NftRepository};
 
 pub struct NftsIndexUpdater {
     database: Database,
@@ -18,14 +18,11 @@ impl NftsIndexUpdater {
     }
 
     pub async fn update(&self) -> Result<SearchSyncResult, Box<dyn std::error::Error + Send + Sync>> {
-        let collections = self.database.nft()?.get_nft_collections_all()?;
-
         let sync = self.sync_client.for_key(ConfigKey::SearchNftsLastUpdatedAt)?;
-        let documents = if sync.should_replace_index() {
-            Self::build_documents(collections.iter())
-        } else {
-            Self::build_documents(collections.iter().filter(|c| c.updated_at > sync.last_updated_at()))
-        };
+        let filters = sync.since().map(NftCollectionFilter::UpdatedSince).into_iter().collect();
+        let collections = self.database.nft()?.get_nft_collections_by_filter(filters)?;
+
+        let documents = Self::build_documents(collections.iter());
 
         sync.write(NFTS_INDEX_NAME, documents).await
     }

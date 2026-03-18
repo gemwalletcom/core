@@ -3,7 +3,7 @@ use chrono::NaiveDateTime;
 use primitives::Price;
 
 use crate::DatabaseClient;
-use crate::database::prices::PricesStore;
+use crate::database::prices::{AssetsWithPricesFilter, PricesStore};
 use crate::models::{PriceAssetRow, PriceRow, price::NewPriceRow, price::PriceAssetDataRow};
 
 pub trait PricesRepository {
@@ -17,7 +17,7 @@ pub trait PricesRepository {
     fn get_prices_assets_for_asset_id(&mut self, id: &str) -> Result<Vec<PriceAssetRow>, DatabaseError>;
     fn get_prices_assets_for_price_ids(&mut self, ids: Vec<String>) -> Result<Vec<PriceAssetRow>, DatabaseError>;
     fn delete_prices_updated_at_before(&mut self, time: NaiveDateTime) -> Result<usize, DatabaseError>;
-    fn get_prices_assets_list(&mut self) -> Result<Vec<PriceAssetDataRow>, DatabaseError>;
+    fn get_assets_with_prices_by_filter(&mut self, filters: Vec<AssetsWithPricesFilter>) -> Result<Vec<PriceAssetDataRow>, DatabaseError>;
 }
 
 impl PricesRepository for DatabaseClient {
@@ -60,7 +60,7 @@ impl PricesRepository for DatabaseClient {
         Ok(PricesStore::delete_prices_updated_at_before(self, time)?)
     }
 
-    fn get_prices_assets_list(&mut self) -> Result<Vec<PriceAssetDataRow>, DatabaseError> {
-        Ok(PricesStore::get_prices_assets_list(self)?)
+    fn get_assets_with_prices_by_filter(&mut self, filters: Vec<AssetsWithPricesFilter>) -> Result<Vec<PriceAssetDataRow>, DatabaseError> {
+        Ok(PricesStore::get_assets_with_prices_by_filter(self, filters)?)
     }
 }

@@ -27,6 +27,7 @@ CREATE TABLE assets (
 );
 
 SELECT diesel_manage_updated_at('assets');
+CREATE INDEX assets_updated_at_idx ON assets (updated_at);
 
 CREATE TABLE tags (
     id VARCHAR(64) PRIMARY KEY,

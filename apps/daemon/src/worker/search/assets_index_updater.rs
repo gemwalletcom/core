@@ -1,11 +1,10 @@
 use std::collections::HashMap;
 
 use super::sync::{SearchSyncClient, SearchSyncResult};
-use chrono::NaiveDateTime;
 use primitives::ConfigKey;
 use search_index::{ASSETS_INDEX_NAME, AssetDocument, SearchIndexClient, sanitize_index_primary_id};
 use storage::models::PriceAssetDataRow;
-use storage::{AssetsUsageRanksRepository, Database, PricesRepository, TagRepository};
+use storage::{AssetsUsageRanksRepository, AssetsWithPricesFilter, Database, PricesRepository, TagRepository};
 
 pub struct AssetsIndexUpdater {
     database: Database,
@@ -21,7 +20,14 @@ impl AssetsIndexUpdater {
     }
 
     pub async fn update(&self) -> Result<SearchSyncResult, Box<dyn std::error::Error + Send + Sync>> {
-        let prices = self.database.prices()?.get_prices_assets_list()?;
+        let sync = self.sync_client.for_key(ConfigKey::SearchAssetsLastUpdatedAt)?;
+        let filters = sync.since().map(AssetsWithPricesFilter::UpdatedSince).into_iter().collect();
+        let prices = self.database.prices()?.get_assets_with_prices_by_filter(filters)?;
+
+        if prices.is_empty() {
+            return sync.write(ASSETS_INDEX_NAME, Vec::<AssetDocument>::new()).await;
+        }
+
         let assets_tags = self.database.tag()?.get_assets_tags()?;
         let usage_ranks = self.database.assets_usage_ranks()?.get_all_usage_ranks()?;
 
@@ -31,22 +37,9 @@ impl AssetsIndexUpdater {
         });
         let usage_ranks_map: HashMap<String, i32> = usage_ranks.into_iter().map(|r| (r.asset_id, r.usage_rank)).collect();
 
-        let sync = self.sync_client.for_key(ConfigKey::SearchAssetsLastUpdatedAt)?;
-        let documents = if sync.should_replace_index() {
-            Self::build_documents(prices.iter(), &assets_tags_map, &usage_ranks_map)
-        } else {
-            Self::build_documents(
-                prices.iter().filter(|data| Self::is_updated(data, sync.last_updated_at())),
-                &assets_tags_map,
-                &usage_ranks_map,
-            )
-        };
+        let documents = Self::build_documents(prices.iter(), &assets_tags_map, &usage_ranks_map);
 
         sync.write(ASSETS_INDEX_NAME, documents).await
-    }
-
-    fn is_updated(data: &PriceAssetDataRow, since: NaiveDateTime) -> bool {
-        data.asset.updated_at > since || data.price.as_ref().is_some_and(|p| p.last_updated_at > since)
     }
 
     fn build_documents<'a>(

@@ -1,4 +1,4 @@
-use crate::database::perpetuals::PerpetualsStore;
+use crate::database::perpetuals::{PerpetualFilter, PerpetualsStore};
 use crate::models::{NewPerpetualRow, PerpetualRow};
 use crate::{DatabaseClient, DatabaseError};
 use primitives::perpetual::Perpetual;
@@ -10,7 +10,7 @@ pub trait PerpetualsRepository {
 
     fn perpetuals_all(&mut self) -> Result<Vec<Perpetual>, DatabaseError>;
 
-    fn perpetuals_all_rows(&mut self) -> Result<Vec<PerpetualRow>, DatabaseError>;
+    fn get_perpetuals_by_filter(&mut self, filters: Vec<PerpetualFilter>) -> Result<Vec<PerpetualRow>, DatabaseError>;
 }
 
 impl PerpetualsRepository for DatabaseClient {
@@ -23,10 +23,10 @@ impl PerpetualsRepository for DatabaseClient {
     }
 
     fn perpetuals_all(&mut self) -> Result<Vec<Perpetual>, DatabaseError> {
-        Ok(PerpetualsStore::get_all_perpetuals(self)?.into_iter().map(|x| x.as_primitive()).collect())
+        Ok(PerpetualsStore::get_perpetuals_by_filter(self, vec![])?.into_iter().map(|x| x.as_primitive()).collect())
     }
 
-    fn perpetuals_all_rows(&mut self) -> Result<Vec<PerpetualRow>, DatabaseError> {
-        Ok(PerpetualsStore::get_all_perpetuals(self)?)
+    fn get_perpetuals_by_filter(&mut self, filters: Vec<PerpetualFilter>) -> Result<Vec<PerpetualRow>, DatabaseError> {
+        Ok(PerpetualsStore::get_perpetuals_by_filter(self, filters)?)
     }
 }

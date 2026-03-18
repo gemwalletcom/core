@@ -23,6 +23,7 @@ CREATE TABLE nft_collections (
 );
 
 SELECT diesel_manage_updated_at('nft_collections');
+CREATE INDEX nft_collections_updated_at_idx ON nft_collections (updated_at);
 
 CREATE TABLE nft_collections_links (
     id SERIAL PRIMARY KEY,
