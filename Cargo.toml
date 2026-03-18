@@ -129,3 +129,6 @@ alloy-network = { version = "1.7.3" }
 alloy-consensus = { version = "1.7.3" }
 alloy-rlp = { version = "0.3.13" }
 jsonwebtoken = { version = "10.3.0" }
+
+[profile.dev]
+debug = 0

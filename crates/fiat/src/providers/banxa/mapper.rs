@@ -68,7 +68,7 @@ pub fn map_order(order: Order) -> Result<FiatTransaction, Box<dyn std::error::Er
         asset_id,
         transaction_type,
         symbol: order.crypto.id,
-        provider_id: BanxaClient::NAME.id(),
+        provider_id: BanxaClient::NAME,
         provider_transaction_id: order.id,
         status,
         country: order.country,
@@ -151,7 +151,7 @@ fn map_payment_type(payment_id: &str) -> Option<PaymentType> {
 mod tests {
     use super::*;
     use primitives::currency::Currency;
-    use primitives::{FiatQuoteType, FiatTransactionStatus, PaymentType};
+    use primitives::{FiatProviderName, FiatQuoteType, FiatTransactionStatus, PaymentType};
 
     #[test]
     fn test_map_order_sell_expired() {
@@ -159,7 +159,7 @@ mod tests {
 
         let result = map_order(response).expect("Failed to map order");
 
-        assert_eq!(result.provider_id, "banxa");
+        assert_eq!(result.provider_id, FiatProviderName::Banxa);
         assert_eq!(result.provider_transaction_id, "test");
         assert!(matches!(result.status, FiatTransactionStatus::Failed));
         assert!(matches!(result.transaction_type, FiatQuoteType::Sell));
@@ -175,7 +175,7 @@ mod tests {
 
         let result = map_order(response).expect("Failed to map order");
 
-        assert_eq!(result.provider_id, "banxa");
+        assert_eq!(result.provider_id, FiatProviderName::Banxa);
         assert_eq!(result.provider_transaction_id, "123");
         assert!(matches!(result.status, FiatTransactionStatus::Failed));
         assert!(matches!(result.transaction_type, FiatQuoteType::Sell));

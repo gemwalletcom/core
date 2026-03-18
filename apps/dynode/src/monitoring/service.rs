@@ -21,6 +21,7 @@ use crate::proxy::response_builder::ResponseBuilder;
 use crate::proxy::{NodeDomain, ProxyResponse};
 use gem_tracing::{DurationMs, info_with_fields};
 use primitives::{Chain, ResponseError, response::ErrorDetail};
+use serde_json::Value;
 
 const NODE_NOT_FOUND: &str = "Node not found";
 
@@ -112,6 +113,7 @@ impl NodeService {
 
         let retry_enabled = self.retry_config.enabled && urls.len() > 1;
         let mut last_error: Option<String> = None;
+        let mut last_error_data: Option<Value> = None;
         let max_attempts = if retry_enabled { self.retry_config.effective_max_attempts(urls.len()) } else { 1 };
 
         for url in urls.iter().take(max_attempts) {
@@ -127,10 +129,12 @@ impl NodeService {
                         return Ok(response);
                     }
 
+                    let upstream_data = serde_json::from_slice::<Value>(&response.body).ok();
                     if !retry_enabled {
-                        return self.log_and_create_error_response(&request, Some(remote_host.as_str()), &format!("Upstream status code: {}", response.status));
+                        return self.log_and_create_error_response(&request, Some(remote_host.as_str()), &format!("Upstream status code: {}", response.status), upstream_data);
                     }
                     last_error = Some(format!("status={}", response.status));
+                    last_error_data = upstream_data;
                 }
                 Err(e) => {
                     self.record_attempt(chain_config.chain, remote_host.as_str(), true).await;
@@ -158,7 +162,7 @@ impl NodeService {
         let error_message = last_error
             .map(|e| format!("All upstream URLs failed, {}", e))
             .unwrap_or_else(|| "All upstream URLs failed".to_string());
-        self.log_and_create_error_response(&request, None, &error_message)
+        self.log_and_create_error_response(&request, None, &error_message, last_error_data)
     }
 
     fn get_chain_config(&self, request: &ProxyRequest) -> Result<&ChainConfig, Box<dyn Error + Send + Sync>> {
@@ -183,7 +187,7 @@ impl NodeService {
     }
 
     fn node_not_found_response(&self, request: &ProxyRequest) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {
-        self.log_and_create_error_response(request, None, NODE_NOT_FOUND)
+        self.log_and_create_error_response(request, None, NODE_NOT_FOUND, None)
     }
 
     async fn get_ordered_urls(&self, chain: Chain, urls: &[Url], current: &Url, request_id: &str) -> Vec<Url> {
@@ -291,7 +295,13 @@ impl NodeService {
         }
     }
 
-    fn log_and_create_error_response(&self, request: &ProxyRequest, host: Option<&str>, error_message: &str) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {
+    fn log_and_create_error_response(
+        &self,
+        request: &ProxyRequest,
+        host: Option<&str>,
+        error_message: &str,
+        upstream_data: Option<Value>,
+    ) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {
         let request_id = request.id.as_str();
         let chain = request.chain.as_ref();
         let uri = request.path.as_str();
@@ -318,7 +328,7 @@ impl NodeService {
             RequestType::Regular { .. } => serde_json::to_value(ResponseError {
                 error: ErrorDetail {
                     message: error_message.to_string(),
-                    data: None,
+                    data: upstream_data,
                 },
             })?,
         };

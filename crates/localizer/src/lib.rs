@@ -283,6 +283,22 @@ impl LanguageLocalizer {
         fl!(self.loader.as_ref(), "notification_rewards_disabled_description")
     }
 
+    pub fn notification_perpetual_long_title(&self, coin: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_perpetual_long_title", coin = coin)
+    }
+
+    pub fn notification_perpetual_short_title(&self, coin: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_perpetual_short_title", coin = coin)
+    }
+
+    pub fn notification_perpetual_open_description(&self, amount: &str, price: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_perpetual_open_description", amount = amount, price = price)
+    }
+
+    pub fn notification_perpetual_close_description(&self, pnl: &str, price: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_perpetual_close_description", pnl = pnl, price = price)
+    }
+
     pub fn notification_stake_rewards(&self, value: &str, chain: &str) -> LanguageNotification {
         LanguageNotification {
             title: fl!(self.loader.as_ref(), "notification_stake_rewards_title"),

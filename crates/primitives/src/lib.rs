@@ -131,7 +131,9 @@ pub use self::scan::{AddressType, ScanAddress, ScanAddressTarget, ScanTransactio
 pub mod hex;
 pub use self::hex::{HexError, decode_hex};
 pub mod transaction_metadata_types;
-pub use self::transaction_metadata_types::{TransactionNFTTransferMetadata, TransactionPerpetualMetadata, TransactionResourceTypeMetadata, TransactionSwapMetadata};
+pub use self::transaction_metadata_types::{
+    TransactionNFTTransferMetadata, TransactionPerpetualMetadata, TransactionResourceTypeMetadata, TransactionSmartContractMetadata, TransactionSwapMetadata,
+};
 pub mod wallet_connect_namespace;
 pub use self::wallet_connect_namespace::WalletConnectCAIP2;
 pub mod wallet_connect;

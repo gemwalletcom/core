@@ -57,3 +57,7 @@ notification_rewards_enabled_title = 💎 Rewards Enabled
 notification_rewards_enabled_description = You can now earn rewards by inviting friends.
 notification_rewards_redeem_points_title = 🎁 Reward Redeemed
 notification_rewards_redeem_points_description = You redeemed {$value} points.
+notification_perpetual_long_title = 📈 Long {$coin}
+notification_perpetual_open_description = {$amount} at {$price}
+notification_perpetual_short_title = 📉 Short {$coin}
+notification_perpetual_close_description = {$pnl} at {$price}  💰

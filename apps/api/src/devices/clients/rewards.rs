@@ -99,7 +99,7 @@ impl RewardsClient {
     pub fn get_rewards_by_wallet_id(&self, wallet_id: i32) -> Result<Rewards, Box<dyn Error + Send + Sync>> {
         let mut rewards = match self.db.rewards()?.get_reward_by_wallet_id(wallet_id) {
             Ok(r) => r,
-            Err(storage::DatabaseError::NotFound) => return Ok(Rewards::default()),
+            Err(error) if error.is_not_found() => return Ok(Rewards::default()),
             Err(e) => return Err(e.into()),
         };
         rewards.referral_allowance = self.calculate_referral_allowance(wallet_id, &rewards.status)?;

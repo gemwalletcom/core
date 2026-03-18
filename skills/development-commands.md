@@ -30,9 +30,9 @@ just fix                        # Auto-fix clippy issues
 just unused                     # Find unused dependencies with cargo-machete
 ```
 
-**Formatting and Linting** — only format files touched in the PR. Running `just format` reformats the entire workspace and inflates diffs, making review impractical.
+**Formatting and Linting**:
 ```sh
-rustfmt --edition 2024 <file1> <file2> ...
+just format
 cargo clippy -p <crate> -- -D warnings
 ```
 
@@ -80,7 +80,8 @@ Generated files: `gemstone/generated/kotlin/` → copied to `gemstone/android/ge
 ## Utilities
 
 ```sh
-just localize                   # Update localization files
+just localize                   # Update English localization files only
+just localize-all               # Update all localization files
 just generate-ts-primitives     # Generate TypeScript types from Rust
 just outdated                   # Check for outdated dependencies
 ```

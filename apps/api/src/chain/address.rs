@@ -22,8 +22,13 @@ pub async fn get_assets(chain: ChainParam, address: AddressParam, client: &State
     Ok(client.lock().await.get_balances_assets(request).await?.into())
 }
 
-#[get("/chain/address/<chain>/<address>/transactions")]
-pub async fn get_transactions(chain: ChainParam, address: AddressParam, client: &State<Mutex<ChainClient>>) -> Result<ApiResponse<Vec<Transaction>>, ApiError> {
+#[get("/chain/address/<chain>/<address>/transactions?<from_timestamp>")]
+pub async fn get_transactions(
+    chain: ChainParam,
+    address: AddressParam,
+    from_timestamp: Option<u64>,
+    client: &State<Mutex<ChainClient>>,
+) -> Result<ApiResponse<Vec<Transaction>>, ApiError> {
     let request = ChainAddress::new(chain.0, address.0);
-    Ok(client.lock().await.get_transactions(request).await?.into())
+    Ok(client.lock().await.get_transactions(request, from_timestamp).await?.into())
 }

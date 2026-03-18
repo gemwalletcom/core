@@ -3,6 +3,7 @@ use std::str::FromStr;
 
 pub mod across;
 pub mod address;
+pub mod address_deserializer;
 pub mod call_decoder;
 pub mod chainlink;
 pub mod constants;

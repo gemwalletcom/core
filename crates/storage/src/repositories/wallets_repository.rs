@@ -1,7 +1,7 @@
 use crate::database::wallets::WalletsStore;
 use crate::models::{DeviceRow, NewWalletAddressRow, NewWalletRow, NewWalletSubscriptionRow, SubscriptionAddressExcludeRow, WalletAddressRow, WalletRow, WalletSubscriptionRow};
 use crate::sql_types::ChainRow;
-use crate::{DatabaseClient, DatabaseError};
+use crate::{DatabaseClient, DatabaseError, DieselResultExt};
 use primitives::{Chain, DeviceSubscription};
 use std::collections::{HashMap, HashSet};
 
@@ -28,43 +28,43 @@ pub trait WalletsRepository {
 
 impl WalletsRepository for DatabaseClient {
     fn get_wallet(&mut self, identifier: &str) -> Result<WalletRow, DatabaseError> {
-        WalletsStore::get_wallet(self, identifier)
+        WalletsStore::get_wallet(self, identifier).or_not_found(identifier.to_string())
     }
 
     fn get_wallet_by_id(&mut self, id: i32) -> Result<WalletRow, DatabaseError> {
-        WalletsStore::get_wallet_by_id(self, id)
+        WalletsStore::get_wallet_by_id(self, id).or_not_found_internal(id.to_string())
     }
 
     fn get_wallets(&mut self, identifiers: Vec<String>) -> Result<Vec<WalletRow>, DatabaseError> {
-        WalletsStore::get_wallets(self, identifiers)
+        Ok(WalletsStore::get_wallets(self, identifiers)?)
     }
 
     fn create_wallets(&mut self, wallets: Vec<NewWalletRow>) -> Result<usize, DatabaseError> {
-        WalletsStore::create_wallets(self, wallets)
+        Ok(WalletsStore::create_wallets(self, wallets)?)
     }
 
     fn get_or_create_wallet(&mut self, wallet: NewWalletRow) -> Result<WalletRow, DatabaseError> {
         match WalletsStore::get_wallet(self, &wallet.identifier) {
             Ok(existing) => Ok(existing),
-            Err(DatabaseError::NotFound) => WalletsStore::create_wallet(self, wallet),
-            Err(e) => Err(e),
+            Err(diesel::result::Error::NotFound) => Ok(WalletsStore::create_wallet(self, wallet)?),
+            Err(error) => Err(error.into()),
         }
     }
 
     fn get_subscriptions(&mut self, device_id: i32) -> Result<Vec<(WalletRow, WalletSubscriptionRow, WalletAddressRow)>, DatabaseError> {
-        WalletsStore::get_subscriptions_by_device_id(self, device_id)
+        Ok(WalletsStore::get_subscriptions_by_device_id(self, device_id)?)
     }
 
     fn get_subscriptions_by_wallet_id(&mut self, device_id: i32, wallet_id: i32) -> Result<Vec<(WalletSubscriptionRow, WalletAddressRow)>, DatabaseError> {
-        WalletsStore::get_subscriptions_by_device_and_wallet(self, device_id, wallet_id)
+        Ok(WalletsStore::get_subscriptions_by_device_and_wallet(self, device_id, wallet_id)?)
     }
 
     fn subscriptions_wallet_address_for_chain(&mut self, device_id: i32, wallet_id: i32, chain: Chain) -> Result<String, DatabaseError> {
-        WalletsStore::subscriptions_wallet_address_for_chain(self, device_id, wallet_id, ChainRow::from(chain))
+        WalletsStore::subscriptions_wallet_address_for_chain(self, device_id, wallet_id, ChainRow::from(chain)).or_not_found_for::<WalletAddressRow>(chain.as_ref().to_string())
     }
 
     fn get_devices_by_wallet_id(&mut self, wallet_id: i32) -> Result<Vec<DeviceRow>, DatabaseError> {
-        WalletsStore::get_devices_by_wallet_id(self, wallet_id)
+        Ok(WalletsStore::get_devices_by_wallet_id(self, wallet_id)?)
     }
 
     fn add_subscriptions(&mut self, device_id: i32, subscriptions: Vec<(i32, Chain, String)>) -> Result<usize, DatabaseError> {
@@ -109,7 +109,7 @@ impl WalletsRepository for DatabaseClient {
             return Ok(0);
         }
 
-        WalletsStore::add_subscriptions(self, rows)
+        Ok(WalletsStore::add_subscriptions(self, rows)?)
     }
 
     fn delete_subscriptions(&mut self, device_id: i32, subscriptions: Vec<(i32, Chain, String)>) -> Result<usize, DatabaseError> {
@@ -142,11 +142,11 @@ impl WalletsRepository for DatabaseClient {
     }
 
     fn delete_wallet_subscriptions(&mut self, device_id: i32, wallet_ids: Vec<i32>) -> Result<usize, DatabaseError> {
-        WalletsStore::delete_wallet_subscriptions(self, device_id, wallet_ids)
+        Ok(WalletsStore::delete_wallet_subscriptions(self, device_id, wallet_ids)?)
     }
 
     fn delete_wallet_chains(&mut self, device_id: i32, wallet_id: i32, chains: Vec<Chain>) -> Result<usize, DatabaseError> {
-        WalletsStore::delete_wallet_chains(self, device_id, wallet_id, chains)
+        Ok(WalletsStore::delete_wallet_chains(self, device_id, wallet_id, chains)?)
     }
 
     fn get_subscriptions_by_chain_addresses(&mut self, chain: Chain, addresses: Vec<String>) -> Result<Vec<DeviceSubscription>, DatabaseError> {
@@ -162,14 +162,14 @@ impl WalletsRepository for DatabaseClient {
     }
 
     fn get_subscription_address_exists(&mut self, chain: Chain, address: &str) -> Result<bool, DatabaseError> {
-        WalletsStore::get_subscription_address_exists(self, chain, address)
+        Ok(WalletsStore::get_subscription_address_exists(self, chain, address)?)
     }
 
     fn add_subscriptions_exclude_addresses(&mut self, values: Vec<SubscriptionAddressExcludeRow>) -> Result<usize, DatabaseError> {
-        WalletsStore::add_subscriptions_exclude_addresses(self, values)
+        Ok(WalletsStore::add_subscriptions_exclude_addresses(self, values)?)
     }
 
     fn get_subscriptions_exclude_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<String>, DatabaseError> {
-        WalletsStore::get_subscriptions_exclude_addresses(self, addresses)
+        Ok(WalletsStore::get_subscriptions_exclude_addresses(self, addresses)?)
     }
 }

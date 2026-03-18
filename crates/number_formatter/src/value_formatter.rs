@@ -20,6 +20,18 @@ impl ValueFormatter {
         }
     }
 
+    pub fn format_f64(style: ValueStyle, value: f64) -> String {
+        let decimal: BigDecimal = value.to_string().parse().unwrap_or_default();
+        match style {
+            ValueStyle::Full => format_full(&decimal),
+            ValueStyle::Auto => format_auto(&decimal),
+        }
+    }
+
+    pub fn format_f64_currency(style: ValueStyle, value: f64, symbol: &str) -> String {
+        format!("{}{}", symbol, Self::format_f64(style, value))
+    }
+
     pub fn format_with_symbol(style: ValueStyle, value: &str, decimals: i32, symbol: &str) -> Result<String, NumberFormatterError> {
         let formatted = Self::format(style, value, decimals)?;
         Ok(format!("{} {}", formatted, symbol))
@@ -154,5 +166,24 @@ mod tests {
     #[test]
     fn test_invalid_input() {
         assert!(ValueFormatter::format(ValueStyle::Auto, "abc", 0).is_err());
+    }
+
+    #[test]
+    fn test_format_f64() {
+        assert_eq!(ValueFormatter::format_f64(ValueStyle::Auto, 25432.50), "25,432.50");
+        assert_eq!(ValueFormatter::format_f64(ValueStyle::Auto, 0.0), "0");
+        assert_eq!(ValueFormatter::format_f64(ValueStyle::Auto, 1.5), "1.50");
+        assert_eq!(ValueFormatter::format_f64(ValueStyle::Auto, 100000.0), "100,000.00");
+        assert_eq!(ValueFormatter::format_f64(ValueStyle::Auto, 0.005), "0.005");
+        assert_eq!(ValueFormatter::format_f64(ValueStyle::Auto, -123.45), "-123.45");
+        assert_eq!(ValueFormatter::format_f64(ValueStyle::Auto, -1500.0), "-1,500.00");
+        assert_eq!(ValueFormatter::format_f64(ValueStyle::Full, -123.456), "-123.456");
+    }
+
+    #[test]
+    fn test_format_f64_currency() {
+        assert_eq!(ValueFormatter::format_f64_currency(ValueStyle::Auto, 25432.50, "$"), "$25,432.50");
+        assert_eq!(ValueFormatter::format_f64_currency(ValueStyle::Auto, -123.45, "$"), "$-123.45");
+        assert_eq!(ValueFormatter::format_f64_currency(ValueStyle::Auto, 0.0, "$"), "$0");
     }
 }

@@ -3,7 +3,7 @@ use std::error::Error;
 use async_trait::async_trait;
 use cacher::{CacheKey, CacherClient};
 use primitives::{Chain, Transaction};
-use settings_chain::ChainProviders;
+use settings_chain::{ChainProviders, TransactionsRequest};
 use storage::Database;
 use streamer::{ChainAddressPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
 
@@ -38,7 +38,10 @@ impl MessageConsumer<ChainAddressPayload, usize> for FetchAddressTransactionsCon
             .await
     }
     async fn process(&self, payload: ChainAddressPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let transactions = self.providers.get_transactions_by_address(payload.value.chain, payload.value.address.clone()).await?;
+        let transactions = self
+            .providers
+            .get_transactions_by_address(payload.value.chain, TransactionsRequest::new(payload.value.address.clone()))
+            .await?;
         let _ = self.process_result(payload.value.chain, transactions.clone()).await;
         Ok(transactions.len())
     }

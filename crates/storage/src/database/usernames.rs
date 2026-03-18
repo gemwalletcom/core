@@ -12,7 +12,6 @@ pub enum UsernameLookup<'a> {
 
 pub(crate) trait UsernamesStore {
     fn get_username(&mut self, lookup: UsernameLookup) -> Result<UsernameRow, diesel::result::Error>;
-    fn username_exists(&mut self, lookup: UsernameLookup) -> Result<bool, diesel::result::Error>;
     fn create_username(&mut self, username: NewUsernameRow) -> Result<UsernameRow, diesel::result::Error>;
     fn update_username(&mut self, wallet_id: i32, new_username: &str) -> Result<UsernameRow, diesel::result::Error>;
     fn change_username(&mut self, old_username: &str, new_username: &str) -> Result<(), diesel::result::Error>;
@@ -30,14 +29,6 @@ impl UsernamesStore for DatabaseClient {
                 .filter(dsl::wallet_id.eq(wallet_id))
                 .select(UsernameRow::as_select())
                 .first(&mut self.connection),
-        }
-    }
-
-    fn username_exists(&mut self, lookup: UsernameLookup) -> Result<bool, diesel::result::Error> {
-        match self.get_username(lookup) {
-            Ok(_) => Ok(true),
-            Err(diesel::result::Error::NotFound) => Ok(false),
-            Err(e) => Err(e),
         }
     }
 

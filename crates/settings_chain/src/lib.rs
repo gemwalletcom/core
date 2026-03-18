@@ -1,6 +1,7 @@
 mod chain_providers;
 mod provider_config;
 pub use chain_providers::ChainProviders;
+pub use chain_traits::TransactionsRequest;
 use gem_algorand::{
     AlgorandClient,
     rpc::{AlgorandClientIndexer, client_indexer::ALGORAND_INDEXER_URL},

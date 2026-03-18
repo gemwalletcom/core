@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use chain_traits::ChainTransactions;
+use chain_traits::{ChainTransactions, TransactionsRequest};
 use std::error::Error;
 
 use gem_client::Client;
@@ -21,8 +21,9 @@ impl<C: Client> ChainTransactions for AptosClient<C> {
         Ok(map_transactions(self.get_block_transactions(block).await?.transactions))
     }
 
-    async fn get_transactions_by_address(&self, _address: String, _limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
-        Ok(map_transactions(self.get_transactions_by_address(_address).await?))
+    async fn get_transactions_by_address(&self, request: TransactionsRequest) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        let TransactionsRequest { address, .. } = request;
+        Ok(map_transactions(self.get_transactions_by_address(address).await?))
     }
 }
 

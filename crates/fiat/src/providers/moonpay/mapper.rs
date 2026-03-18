@@ -85,7 +85,7 @@ pub fn map_order(payload: Transaction) -> Result<FiatTransaction, Box<dyn std::e
         asset_id: Some(asset_id),
         transaction_type,
         symbol: asset.symbol,
-        provider_id: MoonPayClient::NAME.id(),
+        provider_id: MoonPayClient::NAME,
         provider_transaction_id: payload.id,
         status,
         country: payload.country,
@@ -100,6 +100,7 @@ pub fn map_order(payload: Transaction) -> Result<FiatTransaction, Box<dyn std::e
 mod tests {
     use super::*;
     use crate::providers::moonpay::models::{Data, Transaction};
+    use primitives::FiatProviderName;
 
     #[test]
     fn test_map_order_buy_failed() {
@@ -108,7 +109,7 @@ mod tests {
 
         let result = map_order(payload).expect("Failed to map order");
 
-        assert_eq!(result.provider_id, "moonpay");
+        assert_eq!(result.provider_id, FiatProviderName::MoonPay);
         assert_eq!(result.provider_transaction_id, "1b6cdb1e-9299-45b1-9670-54db1ea5a21f");
         assert!(matches!(result.status, FiatTransactionStatus::Failed));
         assert!(matches!(result.transaction_type, FiatQuoteType::Buy));
@@ -126,7 +127,7 @@ mod tests {
 
         let result = map_order(payload).expect("Failed to map order");
 
-        assert_eq!(result.provider_id, "moonpay");
+        assert_eq!(result.provider_id, FiatProviderName::MoonPay);
         assert_eq!(result.provider_transaction_id, "557d8fc1-0657-4505-8702-6bd9e1cd6241");
         assert!(matches!(result.status, FiatTransactionStatus::Pending));
         assert!(matches!(result.transaction_type, FiatQuoteType::Sell));
@@ -143,7 +144,7 @@ mod tests {
 
         let result = map_order(webhook_data).expect("Failed to map order");
 
-        assert_eq!(result.provider_id, "moonpay");
+        assert_eq!(result.provider_id, FiatProviderName::MoonPay);
         assert_eq!(result.provider_transaction_id, "bcd0315e-4264-48bb-8c10-1a5207297341");
         assert!(matches!(result.status, FiatTransactionStatus::Complete));
         assert!(matches!(result.transaction_type, FiatQuoteType::Sell));
@@ -161,7 +162,7 @@ mod tests {
 
         let result = map_order(webhook_data).expect("Failed to map order");
 
-        assert_eq!(result.provider_id, "moonpay");
+        assert_eq!(result.provider_id, FiatProviderName::MoonPay);
         assert_eq!(result.provider_transaction_id, "bcd0315e-4264-48bb-8c10-1a5207297341");
         assert!(matches!(result.status, FiatTransactionStatus::Failed));
         assert!(matches!(result.transaction_type, FiatQuoteType::Sell));

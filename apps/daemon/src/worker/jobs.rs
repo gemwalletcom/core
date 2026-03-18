@@ -137,6 +137,10 @@ pub enum WorkerJob {
     UpdateInTransitTransactions,
     UpdateSwapVaultAddresses,
     AlertStakeRewards,
+    ClassifyPerpetualAddresses,
+    ObservePerpetualActiveAddresses,
+    ObservePerpetualPriorityAddresses,
+    RefreshPerpetualTrackedAddresses,
 }
 
 impl WorkerJob {
@@ -186,6 +190,10 @@ impl WorkerJob {
             UpdateInTransitTransactions => JobSpec::new(WorkerService::Transactions, JobInterval::Config(ConfigKey::TransactionTimerInTransitUpdate)),
             UpdateSwapVaultAddresses => JobSpec::new(WorkerService::Transactions, JobInterval::Duration(Duration::from_secs(300))),
             AlertStakeRewards => JobSpec::new(WorkerService::Alerter, JobInterval::Config(ConfigKey::AlerterStakeRewardsTimer)),
+            ClassifyPerpetualAddresses => JobSpec::new(WorkerService::Perpetuals, JobInterval::Config(ConfigKey::PerpetualClassifierInterval)),
+            ObservePerpetualActiveAddresses => JobSpec::new(WorkerService::Perpetuals, JobInterval::Config(ConfigKey::PerpetualObserverInterval)),
+            ObservePerpetualPriorityAddresses => JobSpec::new(WorkerService::Perpetuals, JobInterval::Config(ConfigKey::PerpetualPriorityObserverInterval)),
+            RefreshPerpetualTrackedAddresses => JobSpec::new(WorkerService::Perpetuals, JobInterval::Config(ConfigKey::PerpetualAddressRefreshInterval)),
         }
     }
 

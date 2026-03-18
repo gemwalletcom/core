@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use serde_serializers::deserialize_f64_from_str;
+use serde_serializers::{deserialize_f64_from_str, deserialize_option_f64_from_str};
 
 use crate::models::UInt64;
 
@@ -35,11 +35,15 @@ pub struct PerpetualFill {
     pub coin: String,
     pub hash: String,
     pub oid: UInt64,
+    pub sz: String,
     #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub closed_pnl: f64,
     #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub fee: f64,
+    #[serde(default, deserialize_with = "deserialize_option_f64_from_str")]
+    pub builder_fee: Option<f64>,
     #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub px: f64,
     pub dir: String,
+    pub time: u64,
 }

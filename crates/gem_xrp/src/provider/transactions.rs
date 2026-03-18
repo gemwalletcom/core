@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use chain_traits::ChainTransactions;
+use chain_traits::{ChainTransactions, TransactionsRequest};
 use std::error::Error;
 
 use gem_client::Client;
@@ -20,7 +20,8 @@ impl<C: Client + Clone> ChainTransactions for XRPClient<C> {
         Ok(map_transactions_by_block(ledger))
     }
 
-    async fn get_transactions_by_address(&self, address: String, limit: Option<usize>) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+    async fn get_transactions_by_address(&self, request: TransactionsRequest) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
+        let TransactionsRequest { address, limit, .. } = request;
         let limit = limit.unwrap_or(100);
         let account_ledger = self.get_account_transactions(address, limit).await?;
         Ok(map_transactions_by_address(account_ledger))

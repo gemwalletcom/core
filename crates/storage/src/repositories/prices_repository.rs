@@ -1,4 +1,4 @@
-use crate::DatabaseError;
+use crate::{DatabaseError, DieselResultExt};
 use chrono::NaiveDateTime;
 use primitives::Price;
 
@@ -41,11 +41,11 @@ impl PricesRepository for DatabaseClient {
     }
 
     fn get_price(&mut self, asset_id: &str) -> Result<Price, DatabaseError> {
-        Ok(PricesStore::get_price(self, asset_id)?.as_primitive())
+        Ok(PricesStore::get_price(self, asset_id).or_not_found(asset_id.to_string())?.as_primitive())
     }
 
     fn get_coin_id(&mut self, asset_id: &str) -> Result<String, DatabaseError> {
-        Ok(PricesStore::get_price(self, asset_id)?.id)
+        Ok(PricesStore::get_price(self, asset_id).or_not_found(asset_id.to_string())?.id)
     }
 
     fn get_prices_assets_for_asset_id(&mut self, id: &str) -> Result<Vec<PriceAssetRow>, DatabaseError> {

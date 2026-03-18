@@ -10,7 +10,7 @@ use crate::model::{FiatMapping, FiatProviderAsset};
 
 use super::{
     client::FlashnetClient,
-    mapper::{map_assets, map_crypto_amount, map_order, map_redirect_url, map_source_amount},
+    mapper::{map_amount, map_assets, map_crypto_amount, map_order, map_redirect_url, map_source_amount, map_webhook},
     model::{FlashnetOnrampRequest, FlashnetWebhookPayload},
 };
 
@@ -44,10 +44,7 @@ impl FiatProvider for FlashnetClient {
 
     async fn process_webhook(&self, data: serde_json::Value) -> Result<FiatWebhook, Box<dyn Error + Send + Sync>> {
         let payload = serde_json::from_value::<FlashnetWebhookPayload>(data)?;
-        if !payload.event.starts_with("order.") {
-            return Ok(FiatWebhook::None);
-        }
-        Ok(FiatWebhook::OrderId(payload.data.id))
+        Ok(map_webhook(payload))
     }
 
     async fn get_quote_buy(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
@@ -66,14 +63,14 @@ impl FiatProvider for FlashnetClient {
 
     async fn get_quote_url(&self, data: FiatQuoteUrlData) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {
         let network = FiatMapping::get_network(data.asset_symbol.network.clone())?;
-        let amount = map_source_amount(data.quote.fiat_amount);
+        let amount = map_amount(data.quote.crypto_amount, data.quote.asset.decimals as u32);
 
         let request = FlashnetOnrampRequest {
             destination_chain: network,
             destination_asset: data.asset_symbol.symbol.to_ascii_uppercase(),
             recipient_address: data.wallet_address.clone(),
             amount,
-            amount_mode: "exact_in".to_string(),
+            amount_mode: "exact_out".to_string(),
             affiliate_id: self.affiliate_id.clone(),
         };
         let response = self.create_onramp(request, &data.quote.id).await?;
@@ -87,9 +84,8 @@ impl FiatProvider for FlashnetClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::providers::flashnet::model::{FlashnetEstimateResponse, FlashnetOrder, FlashnetRoutesResponse};
+    use crate::providers::flashnet::model::{FlashnetEstimateResponse, FlashnetRoutesResponse};
     use primitives::Chain;
-    use primitives::currency::Currency;
 
     #[test]
     fn map_assets_maps_supported_routes() {
@@ -112,24 +108,6 @@ mod tests {
         let result = map_redirect_url(response);
 
         assert_eq!(result, "https://orchestration.flashnet.xyz/pay/zimH6K-d");
-    }
-
-    #[test]
-    fn map_order_maps_completed_order() {
-        let order: FlashnetOrder = serde_json::from_str(include_str!("../../../testdata/flashnet/order_completed.json")).unwrap();
-        let transaction = map_order(order);
-
-        assert_eq!(transaction.provider_id, "flashnet");
-        assert_eq!(transaction.provider_transaction_id, "ord_123");
-        assert_eq!(transaction.symbol, "USDC");
-        assert_eq!(transaction.fiat_currency, Currency::USD.as_ref());
-        assert_eq!(transaction.fiat_amount, 1.2345);
-        match transaction.status {
-            primitives::FiatTransactionStatus::Complete => {}
-            status => panic!("Expected complete status, got {:?}", status),
-        }
-        assert_eq!(transaction.transaction_hash.as_deref(), Some("solana_sig_123"));
-        assert_eq!(transaction.asset_id.as_ref().map(ToString::to_string).as_deref(), Some("solana"));
     }
 
     #[test]

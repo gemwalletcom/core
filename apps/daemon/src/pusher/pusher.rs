@@ -4,7 +4,7 @@ use localizer::LanguageLocalizer;
 use number_formatter::{ValueFormatter, ValueStyle};
 use primitives::{
     AddressFormatter, Asset, AssetVecExt, Chain, DeviceSubscription, GorushNotification, NFTAssetId, PushNotification, PushNotificationTransaction, PushNotificationTypes,
-    Transaction, TransactionNFTTransferMetadata, TransactionSwapMetadata, TransactionType,
+    Transaction, TransactionNFTTransferMetadata, TransactionPerpetualMetadata, TransactionSwapMetadata, TransactionType,
 };
 use storage::{Database, ScanAddressesRepository};
 
@@ -12,6 +12,15 @@ use api_connector::pusher::model::Message;
 
 pub struct Pusher {
     database: Database,
+}
+
+fn format_currency_amount(value: &str, decimals: i32) -> Result<String, Box<dyn Error + Send + Sync>> {
+    Ok(format!("${}", ValueFormatter::format(ValueStyle::Auto, value, decimals)?))
+}
+
+fn format_signed_currency(value: f64) -> String {
+    let amount = ValueFormatter::format_f64(ValueStyle::Auto, value.abs());
+    if value >= 0.0 { format!("+${}", amount) } else { format!("-${}", amount) }
 }
 
 impl Pusher {
@@ -95,15 +104,26 @@ impl Pusher {
                     message: Some(localizer.notification_swap_description(&from_amount, &to_amount)),
                 })
             }
-            TransactionType::PerpetualOpenPosition => {
-                let title = format!("Opened Perpetual Position: {amount}");
-                let message = format!("Opened perpetual position for {amount} at {to_address}");
-                Ok(Message { title, message: Some(message) })
-            }
-            TransactionType::PerpetualClosePosition => {
-                let title = format!("Closed Perpetual Position: {amount}");
-                let message = format!("Closed perpetual position for {amount} at {to_address}");
-                Ok(Message { title, message: Some(message) })
+            TransactionType::PerpetualOpenPosition | TransactionType::PerpetualClosePosition => {
+                let metadata: TransactionPerpetualMetadata = serde_json::from_value(transaction.metadata.ok_or("Missing metadata")?)?;
+                let coin = &asset.symbol;
+                let fee_asset = assets.asset_result(transaction.fee_asset_id.clone())?;
+                let amount = format_currency_amount(transaction.value.as_str(), fee_asset.decimals)?;
+                let price = ValueFormatter::format_f64_currency(ValueStyle::Auto, metadata.price, "$");
+                let title = match metadata.direction {
+                    primitives::PerpetualDirection::Long => localizer.notification_perpetual_long_title(coin),
+                    primitives::PerpetualDirection::Short => localizer.notification_perpetual_short_title(coin),
+                };
+                let description = if transaction.transaction_type == TransactionType::PerpetualOpenPosition {
+                    localizer.notification_perpetual_open_description(&amount, &price)
+                } else {
+                    let pnl = format_signed_currency(metadata.pnl);
+                    localizer.notification_perpetual_close_description(&pnl, &price)
+                };
+                Ok(Message {
+                    title,
+                    message: Some(description),
+                })
             }
             TransactionType::AssetActivation | TransactionType::PerpetualModifyPosition | TransactionType::EarnDeposit | TransactionType::EarnWithdraw => todo!(),
             TransactionType::StakeFreeze => Ok(Message {
@@ -144,5 +164,22 @@ impl Pusher {
                 .into_iter()
                 .collect(),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_format_currency_amount() {
+        assert_eq!(format_currency_amount("25002495", 6).unwrap(), "$25.00");
+    }
+
+    #[test]
+    fn test_format_signed_currency() {
+        assert_eq!(format_signed_currency(5.50), "+$5.50");
+        assert_eq!(format_signed_currency(-3.25), "-$3.25");
+        assert_eq!(format_signed_currency(0.0), "+$0");
     }
 }

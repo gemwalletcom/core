@@ -2,8 +2,14 @@ use chrono::{Duration, Utc};
 use fiat::{FiatProvider, model::FiatProviderAsset};
 use gem_tracing::info_with_fields;
 use primitives::{AssetTag, Diff, FiatProviderName, currency::Currency};
-use storage::{AssetFilter, AssetUpdate};
+use storage::{AssetFilter, AssetUpdate, FiatAssetFilter, FiatAssetRowsExt};
 use storage::{AssetsRepository, Database, TagRepository};
+
+#[derive(Clone, Copy)]
+enum FiatAssetDirection {
+    Buy,
+    Sell,
+}
 
 pub struct FiatAssetsUpdater {
     database: Database,
@@ -16,7 +22,7 @@ impl FiatAssetsUpdater {
     }
 
     pub async fn update_buyable_assets(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let enabled_asset_ids = self.database.fiat()?.get_fiat_assets_is_enabled()?;
+        let enabled_asset_ids = self.enabled_fiat_asset_ids(FiatAssetDirection::Buy)?;
         let buyable_assets_ids = self
             .database
             .assets()?
@@ -33,7 +39,7 @@ impl FiatAssetsUpdater {
     }
 
     pub async fn update_sellable_assets(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
-        let enabled_asset_ids = self.database.fiat()?.get_fiat_assets_is_enabled()?;
+        let enabled_asset_ids = self.enabled_fiat_asset_ids(FiatAssetDirection::Sell)?;
         let sellable_assets_ids = self
             .database
             .assets()?
@@ -48,6 +54,25 @@ impl FiatAssetsUpdater {
         self.database.assets()?.update_assets(result.different.clone(), vec![AssetUpdate::IsSellable(false)])?;
 
         Ok(result.missing.len() + result.different.len())
+    }
+
+    fn enabled_fiat_asset_ids(&self, direction: FiatAssetDirection) -> Result<Vec<String>, Box<dyn std::error::Error + Send + Sync>> {
+        Ok(self.database.fiat()?.get_fiat_assets_by_filter(Self::fiat_asset_filters(direction))?.asset_ids())
+    }
+
+    fn fiat_asset_filters(direction: FiatAssetDirection) -> Vec<FiatAssetFilter> {
+        [
+            FiatAssetFilter::HasAssetId,
+            FiatAssetFilter::IsEnabled(true),
+            FiatAssetFilter::IsEnabledByProvider(true),
+            FiatAssetFilter::ProviderEnabled(true),
+        ]
+        .into_iter()
+        .chain(match direction {
+            FiatAssetDirection::Buy => [FiatAssetFilter::IsBuyEnabled(true), FiatAssetFilter::ProviderBuyEnabled(true)],
+            FiatAssetDirection::Sell => [FiatAssetFilter::IsSellEnabled(true), FiatAssetFilter::ProviderSellEnabled(true)],
+        })
+        .collect()
     }
 
     pub async fn update_trending_fiat_assets(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {

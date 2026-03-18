@@ -1,4 +1,4 @@
-use cacher::{CacheKey, CacherClient};
+use cacher::{CacheError, CacheKey, CacherClient};
 use primitives::{FiatAssetSymbol, FiatQuote};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
@@ -25,6 +25,9 @@ impl FiatCacherClient {
     }
 
     pub async fn get_quote(&self, quote_id: &str) -> Result<CachedFiatQuoteData, Box<dyn Error + Send + Sync>> {
-        self.cacher.get_cached(CacheKey::FiatQuote(quote_id)).await
+        match self.cacher.get_cached_optional(CacheKey::FiatQuote(quote_id)).await? {
+            Some(quote) => Ok(quote),
+            None => Err(Box::new(CacheError::not_found("FiatQuote", quote_id.to_string()))),
+        }
     }
 }

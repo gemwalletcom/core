@@ -71,6 +71,14 @@ json_obj_key() {
     python3 -c "import json,sys;obj=json.load(sys.stdin); print(obj[\"${key}\"]);"
 }
 
+core_download_data() {
+    if [[ "$1" == "en" ]]; then
+        python3 -c 'import json,sys; obj=json.load(sys.stdin); obj["filter_langs"]=["en"]; print(json.dumps(obj))' <<< "$core_data"
+    else
+        printf '%s' "$core_data"
+    fi
+}
+
 download_bundle() {
     temp_file=$(mktemp)
     echo "Downloading bundle ${1} config... to ${3}"
@@ -112,6 +120,6 @@ case $1 in
     download_bundle "android" "$android_data" $2 $mobile_project_id
   ;;
   "core")
-    download_bundle "core" "$core_data" $2 $core_project_id
+    download_bundle "core" "$(core_download_data "$3")" $2 $core_project_id
   ;;
 esac

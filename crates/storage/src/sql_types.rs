@@ -10,9 +10,9 @@ use primitives::rewards::{
 };
 use primitives::scan::AddressType as PrimitiveAddressType;
 use primitives::{
-    AssetType as PrimitiveAssetType, Chain, IpUsageType as PrimitiveIpUsageType, LinkType as PrimitiveLinkType, NotificationType as PrimitiveNotificationType,
-    Platform as PrimitivePlatform, PlatformStore as PrimitivePlatformStore, TransactionState as PrimitiveTransactionState, TransactionType as PrimitiveTransactionType,
-    UsernameStatus as PrimitiveUsernameStatus, WalletSource as PrimitiveWalletSource, WalletType as PrimitiveWalletType,
+    AssetType as PrimitiveAssetType, Chain, FiatProviderName as PrimitiveFiatProviderName, IpUsageType as PrimitiveIpUsageType, LinkType as PrimitiveLinkType,
+    NotificationType as PrimitiveNotificationType, Platform as PrimitivePlatform, PlatformStore as PrimitivePlatformStore, TransactionState as PrimitiveTransactionState,
+    TransactionType as PrimitiveTransactionType, UsernameStatus as PrimitiveUsernameStatus, WalletSource as PrimitiveWalletSource, WalletType as PrimitiveWalletType,
 };
 use serde::{Deserialize, Serialize};
 use std::io::Write;
@@ -224,6 +224,7 @@ macro_rules! diesel_varchar {
 }
 
 diesel_varchar!(ChainRow, Chain);
+diesel_varchar!(FiatProviderNameRow, PrimitiveFiatProviderName);
 
 macro_rules! diesel_varchar_display {
     ($wrapper:ident, $inner:ty) => {

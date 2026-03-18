@@ -1,4 +1,4 @@
-use crate::DatabaseError;
+use crate::{DatabaseError, DieselResultExt};
 use chrono::NaiveDateTime;
 use primitives::{Device, DevicePriceAlert, PriceAlert, PriceAlerts, PriceData};
 
@@ -35,13 +35,13 @@ impl PriceAlertsRepository for DatabaseClient {
     }
 
     fn add_price_alerts(&mut self, device_id: &str, price_alerts: PriceAlerts) -> Result<usize, DatabaseError> {
-        let device = DevicesStore::get_device(self, device_id)?;
+        let device = DevicesStore::get_device(self, device_id).or_not_found(device_id.to_string())?;
         let values = price_alerts.into_iter().map(|x| crate::models::PriceAlertRow::new_price_alert(x, device.id)).collect();
         Ok(PriceAlertsStore::add_price_alerts(self, values)?)
     }
 
     fn delete_price_alerts(&mut self, device_id: &str, ids: Vec<String>) -> Result<usize, DatabaseError> {
-        let device = DevicesStore::get_device(self, device_id)?;
+        let device = DevicesStore::get_device(self, device_id).or_not_found(device_id.to_string())?;
         Ok(PriceAlertsStore::delete_price_alerts(self, device.id, ids)?)
     }
 

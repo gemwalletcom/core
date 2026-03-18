@@ -1,0 +1,36 @@
+[
+  {
+    "coin": "SOL",
+    "px": "77.922",
+    "sz": "0.72",
+    "side": "A",
+    "time": 1771816452802,
+    "startPosition": "0.72",
+    "dir": "Close Long",
+    "closedPnl": "-43.76736",
+    "hash": "0xshared",
+    "oid": 327271591086,
+    "crossed": true,
+    "fee": "0.024236",
+    "tid": 286942367586253,
+    "feeToken": "USDC",
+    "twapId": null
+  },
+  {
+    "coin": "HYPE",
+    "px": "27.283",
+    "sz": "7.27",
+    "side": "A",
+    "time": 1771816452802,
+    "startPosition": "7.27",
+    "dir": "Close Long",
+    "closedPnl": "-101.585891",
+    "hash": "0xshared",
+    "oid": 327271591087,
+    "crossed": true,
+    "fee": "0.085686",
+    "tid": 794561431105279,
+    "feeToken": "USDC",
+    "twapId": null
+  }
+]

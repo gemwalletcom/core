@@ -1,13 +1,12 @@
-use crate::DatabaseClient;
-use crate::DatabaseError;
 use crate::database::transactions::{TransactionFilter, TransactionUpdate, TransactionsStore};
 use crate::models::{AddressChainIdResultRow, TransactionRow};
 use crate::sql_types::TransactionType;
+use crate::{DatabaseClient, DatabaseError, DieselResultExt};
 use chrono::NaiveDateTime;
-use primitives::Transaction;
+use primitives::{Transaction, TransactionId};
 
 pub trait TransactionsRepository {
-    fn get_transaction_by_id(&mut self, chain: &str, hash: &str) -> Result<TransactionRow, DatabaseError>;
+    fn get_transaction_by_id(&mut self, id: &TransactionId) -> Result<TransactionRow, DatabaseError>;
     fn add_transactions(&mut self, transactions: Vec<Transaction>) -> Result<usize, DatabaseError>;
     fn get_transactions_by_device_id(
         &mut self,
@@ -27,8 +26,8 @@ pub trait TransactionsRepository {
 }
 
 impl TransactionsRepository for DatabaseClient {
-    fn get_transaction_by_id(&mut self, chain: &str, hash: &str) -> Result<TransactionRow, DatabaseError> {
-        Ok(TransactionsStore::get_transaction_by_id(self, chain, hash)?)
+    fn get_transaction_by_id(&mut self, id: &TransactionId) -> Result<TransactionRow, DatabaseError> {
+        TransactionsStore::get_transaction_by_id(self, id.chain.as_ref(), &id.hash).or_not_found(id.to_string())
     }
 
     fn add_transactions(&mut self, transactions: Vec<Transaction>) -> Result<usize, DatabaseError> {

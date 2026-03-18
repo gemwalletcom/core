@@ -1,5 +1,10 @@
+use std::sync::LazyLock;
+
 use primitives::{AssetId, Chain};
 use serde::{Deserialize, Serialize};
+
+pub const HYPERCORE_USDC_TOKEN_ID: &str = "USDC::0x6d1e7cde53ba9467b783cb7c530ce054::0";
+pub static HYPERCORE_USDC_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from(Chain::HyperCore, Some(HYPERCORE_USDC_TOKEN_ID.to_string())));
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -39,6 +44,6 @@ mod tests {
         let asset_id = token.asset_id(Chain::HyperCore);
 
         assert_eq!(asset_id.chain, Chain::HyperCore);
-        assert_eq!(asset_id.token_id, Some("USDC::0x6d1e7cde53ba9467b783cb7c530ce054::0".to_string()));
+        assert_eq!(asset_id.token_id, Some(HYPERCORE_USDC_TOKEN_ID.to_string()));
     }
 }

@@ -1,11 +1,11 @@
 use crate::database::rewards::{ReferralUpdate, RewardsStore};
 use crate::database::usernames::{UsernameLookup, UsernamesStore};
 use crate::database::wallets::WalletsStore;
-use crate::models::{NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, NewUsernameRow, ReferralAttemptRow, RewardsRow};
+use crate::models::{NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, NewUsernameRow, ReferralAttemptRow, RewardEventRow, RewardsRow, UsernameRow, WalletRow};
 use crate::repositories::rewards_redemptions_repository::RewardsRedemptionsRepository;
 use crate::sql_types::ChainRow;
 use crate::sql_types::{RewardEventType, RewardRedemptionType, RewardStatus, UsernameStatus};
-use crate::{DatabaseClient, DatabaseError, ReferralValidationError};
+use crate::{DatabaseClient, DatabaseError, DieselResultExt, ReferralValidationError};
 use chrono::Duration as ChronoDuration;
 use chrono::NaiveDateTime;
 use primitives::rewards::{ReferralActivation, ReferralCodeActivation};
@@ -37,6 +37,41 @@ fn validate_username(username: &str) -> Result<(), DatabaseError> {
     Ok(())
 }
 
+fn find_username(client: &mut DatabaseClient, lookup: UsernameLookup<'_>) -> Result<Option<UsernameRow>, DatabaseError> {
+    match UsernamesStore::get_username(client, lookup) {
+        Ok(username) => Ok(Some(username)),
+        Err(diesel::result::Error::NotFound) => Ok(None),
+        Err(error) => Err(error.into()),
+    }
+}
+
+fn require_username(client: &mut DatabaseClient, lookup: UsernameLookup<'_>) -> Result<UsernameRow, DatabaseError> {
+    match lookup {
+        UsernameLookup::Username(username) => UsernamesStore::get_username(client, lookup).or_not_found(username.to_string()),
+        UsernameLookup::WalletId(wallet_id) => UsernamesStore::get_username(client, lookup).or_not_found_internal(wallet_id.to_string()),
+    }
+}
+
+fn require_rewards(client: &mut DatabaseClient, username: &str) -> Result<RewardsRow, DatabaseError> {
+    RewardsStore::get_rewards(client, username).or_not_found(username.to_string())
+}
+
+fn require_reward_event(client: &mut DatabaseClient, event_id: i32) -> Result<RewardEventRow, DatabaseError> {
+    RewardsStore::get_event(client, event_id).or_not_found_internal(event_id.to_string())
+}
+
+fn find_wallet(client: &mut DatabaseClient, identifier: &str) -> Result<Option<WalletRow>, DatabaseError> {
+    match WalletsStore::get_wallet(client, identifier) {
+        Ok(wallet) => Ok(Some(wallet)),
+        Err(diesel::result::Error::NotFound) => Ok(None),
+        Err(error) => Err(error.into()),
+    }
+}
+
+fn require_wallet_by_id(client: &mut DatabaseClient, wallet_id: i32) -> Result<WalletRow, DatabaseError> {
+    WalletsStore::get_wallet_by_id(client, wallet_id).or_not_found_internal(wallet_id.to_string())
+}
+
 pub trait RewardsRepository {
     fn get_reward_by_wallet_id(&mut self, wallet_id: i32) -> Result<Rewards, DatabaseError>;
     fn get_reward_events_by_wallet_id(&mut self, wallet_id: i32) -> Result<Vec<RewardEvent>, DatabaseError>;
@@ -63,8 +98,8 @@ pub trait RewardsRepository {
 
 impl RewardsRepository for DatabaseClient {
     fn get_reward_by_wallet_id(&mut self, wallet_id: i32) -> Result<Rewards, DatabaseError> {
-        let username = UsernamesStore::get_username(self, UsernameLookup::WalletId(wallet_id))?;
-        let rewards = RewardsStore::get_rewards(self, &username.username)?;
+        let username = require_username(self, UsernameLookup::WalletId(wallet_id))?;
+        let rewards = require_rewards(self, &username.username)?;
 
         let has_custom_code = username.has_custom_username();
         let code = if has_custom_code { Some(username.username.clone()) } else { None };
@@ -101,19 +136,19 @@ impl RewardsRepository for DatabaseClient {
     }
 
     fn get_reward_events_by_wallet_id(&mut self, wallet_id: i32) -> Result<Vec<RewardEvent>, DatabaseError> {
-        let username = UsernamesStore::get_username(self, UsernameLookup::WalletId(wallet_id))?;
+        let username = require_username(self, UsernameLookup::WalletId(wallet_id))?;
         let events = RewardsStore::get_events(self, &username.username)?;
         Ok(events.iter().map(|e| e.as_primitive()).collect())
     }
 
     fn get_reward_event(&mut self, event_id: i32) -> Result<RewardEvent, DatabaseError> {
-        let event = RewardsStore::get_event(self, event_id)?;
+        let event = require_reward_event(self, event_id)?;
         Ok(event.as_primitive())
     }
 
     fn get_reward_event_devices(&mut self, event_id: i32) -> Result<Vec<Device>, DatabaseError> {
-        let event = RewardsStore::get_event(self, event_id)?;
-        let username = UsernamesStore::get_username(self, UsernameLookup::Username(&event.username))?;
+        let event = require_reward_event(self, event_id)?;
+        let username = require_username(self, UsernameLookup::Username(&event.username))?;
         let devices = WalletsStore::get_devices_by_wallet_id(self, username.wallet_id)?;
         Ok(devices.into_iter().map(|d| d.as_primitive()).collect())
     }
@@ -121,20 +156,19 @@ impl RewardsRepository for DatabaseClient {
     fn create_reward(&mut self, wallet_id: i32, username: &str, device_id: i32) -> Result<(Rewards, i32), DatabaseError> {
         validate_username(username)?;
 
-        if UsernamesStore::username_exists(self, UsernameLookup::Username(username))? {
+        if find_username(self, UsernameLookup::Username(username))?.is_some() {
             return Err(DatabaseError::Error("Username already taken".into()));
         }
 
-        if UsernamesStore::username_exists(self, UsernameLookup::WalletId(wallet_id))? {
-            let existing = UsernamesStore::get_username(self, UsernameLookup::WalletId(wallet_id))?;
+        if let Some(existing) = find_username(self, UsernameLookup::WalletId(wallet_id))? {
             if existing.has_custom_username() {
                 return Err(DatabaseError::Error("Wallet already has a username".into()));
             }
-            let existing_rewards = RewardsStore::get_rewards(self, &existing.username)?;
+            let existing_rewards = require_rewards(self, &existing.username)?;
             if !existing_rewards.status.is_enabled() {
                 return Err(DatabaseError::Error("Rewards are not enabled for this user".into()));
             }
-            UsernamesStore::update_username(self, wallet_id, username)?;
+            UsernamesStore::update_username(self, wallet_id, username).or_not_found_internal(wallet_id.to_string())?;
         } else {
             UsernamesStore::create_username(
                 self,
@@ -177,7 +211,7 @@ impl RewardsRepository for DatabaseClient {
     fn change_username(&mut self, wallet_id: i32, new_username: &str) -> Result<Rewards, DatabaseError> {
         validate_username(new_username)?;
 
-        let existing = UsernamesStore::get_username(self, UsernameLookup::WalletId(wallet_id))?;
+        let existing = require_username(self, UsernameLookup::WalletId(wallet_id))?;
 
         if !existing.has_custom_username() {
             return Err(DatabaseError::Error("No custom username to change".into()));
@@ -187,11 +221,11 @@ impl RewardsRepository for DatabaseClient {
             return Err(DatabaseError::Error("New username is the same as current".into()));
         }
 
-        if UsernamesStore::username_exists(self, UsernameLookup::Username(new_username))? {
+        if find_username(self, UsernameLookup::Username(new_username))?.is_some() {
             return Err(DatabaseError::Error("Username already taken".into()));
         }
 
-        let rewards = RewardsStore::get_rewards(self, &existing.username)?;
+        let rewards = require_rewards(self, &existing.username)?;
         if !rewards.status.is_enabled() {
             return Err(DatabaseError::Error("Rewards are not enabled for this user".into()));
         }
@@ -202,16 +236,12 @@ impl RewardsRepository for DatabaseClient {
     }
 
     fn get_referral_code(&mut self, code: &str) -> Result<Option<String>, DatabaseError> {
-        match UsernamesStore::get_username(self, UsernameLookup::Username(code)) {
-            Ok(username) => Ok(Some(username.username)),
-            Err(diesel::result::Error::NotFound) => Ok(None),
-            Err(e) => Err(e.into()),
-        }
+        Ok(find_username(self, UsernameLookup::Username(code))?.map(|username| username.username))
     }
 
     fn validate_referral_use(&mut self, referrer_username: &str, device_id: i32, eligibility_days: i64) -> Result<(), ReferralValidationError> {
-        let referrer = UsernamesStore::get_username(self, UsernameLookup::Username(referrer_username))?;
-        let referrer_rewards = RewardsStore::get_rewards(self, referrer_username)?;
+        let referrer = require_username(self, UsernameLookup::Username(referrer_username))?;
+        let referrer_rewards = require_rewards(self, referrer_username)?;
 
         if !referrer_rewards.status.is_enabled() {
             return Err(ReferralValidationError::RewardsNotEnabled(referrer_username.to_string()));
@@ -221,11 +251,10 @@ impl RewardsRepository for DatabaseClient {
 
         for address in &device_subscriptions {
             let wallet_identifier = WalletId::Multicoin(address.clone()).id();
-            if let Ok(wallet) = WalletsStore::get_wallet(self, &wallet_identifier)
-                && UsernamesStore::username_exists(self, UsernameLookup::WalletId(wallet.id))?
+            if let Some(wallet) = find_wallet(self, &wallet_identifier)?
+                && let Some(username) = find_username(self, UsernameLookup::WalletId(wallet.id))?
             {
-                let username = UsernamesStore::get_username(self, UsernameLookup::WalletId(wallet.id))?;
-                let rewards = RewardsStore::get_rewards(self, &username.username)?;
+                let rewards = require_rewards(self, &username.username)?;
                 if rewards.created_at.is_older_than_days(eligibility_days) {
                     return Err(ReferralValidationError::EligibilityExpired(eligibility_days));
                 }
@@ -257,11 +286,11 @@ impl RewardsRepository for DatabaseClient {
     }
 
     fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, DatabaseError> {
-        WalletsStore::get_first_subscription_date(self, addresses)
+        Ok(WalletsStore::get_first_subscription_date(self, addresses)?)
     }
 
     fn get_wallet_id_by_username(&mut self, username: &str) -> Result<i32, DatabaseError> {
-        let username = UsernamesStore::get_username(self, UsernameLookup::Username(username))?;
+        let username = require_username(self, UsernameLookup::Username(username))?;
         Ok(username.wallet_id)
     }
 
@@ -271,26 +300,22 @@ impl RewardsRepository for DatabaseClient {
     }
 
     fn get_address_by_username(&mut self, username: &str) -> Result<String, DatabaseError> {
-        let username_row = UsernamesStore::get_username(self, UsernameLookup::Username(username))?;
-        let wallet = WalletsStore::get_wallet_by_id(self, username_row.wallet_id)?;
+        let username_row = require_username(self, UsernameLookup::Username(username))?;
+        let wallet = require_wallet_by_id(self, username_row.wallet_id)?;
         Ok(wallet.wallet_id.address().to_string())
     }
 
     fn get_username_by_wallet_id(&mut self, wallet_id: i32) -> Result<Option<String>, DatabaseError> {
-        match UsernamesStore::get_username(self, UsernameLookup::WalletId(wallet_id)) {
-            Ok(username) => Ok(Some(username.username)),
-            Err(diesel::result::Error::NotFound) => Ok(None),
-            Err(e) => Err(e.into()),
-        }
+        Ok(find_username(self, UsernameLookup::WalletId(wallet_id))?.map(|username| username.username))
     }
 
     fn is_verified_by_username(&mut self, username: &str) -> Result<bool, DatabaseError> {
-        let rewards = RewardsStore::get_rewards(self, username)?;
+        let rewards = require_rewards(self, username)?;
         Ok(rewards.status.is_verified())
     }
 
     fn get_status_by_username(&mut self, username: &str) -> Result<primitives::rewards::RewardStatus, DatabaseError> {
-        let rewards = RewardsStore::get_rewards(self, username)?;
+        let rewards = require_rewards(self, username)?;
         Ok(*rewards.status)
     }
 
@@ -336,14 +361,13 @@ impl RewardsRepository for DatabaseClient {
         let verification_date = self.get_referral_verification_date(now())?;
         let verified_at = if verification_date.is_none() { Some(now()) } else { None };
 
-        let referred_identifier = match UsernamesStore::get_username(self, UsernameLookup::WalletId(referred_wallet_id)) {
-            Ok(u) => u.username,
-            Err(diesel::result::Error::NotFound) => {
-                let wallet = WalletsStore::get_wallet_by_id(self, referred_wallet_id)?;
+        let referred_identifier = match find_username(self, UsernameLookup::WalletId(referred_wallet_id))? {
+            Some(username) => username.username,
+            None => {
+                let wallet = require_wallet_by_id(self, referred_wallet_id)?;
                 let address = wallet.wallet_id.address().to_string();
                 create_username_and_rewards(self, referred_wallet_id, &address, device_id)?.username
             }
-            Err(e) => return Err(e.into()),
         };
 
         match RewardsStore::get_referral_by_username(self, &referred_identifier)? {
