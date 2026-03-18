@@ -35,13 +35,9 @@ impl AssetsIndexUpdater {
 
         let now = Utc::now().naive_utc();
         let last_updated_at = self.config.get_datetime(ConfigKey::SearchAssetsLastUpdatedAt)?;
-
         let updated_prices: Vec<_> = prices.into_iter().filter(|x| Self::is_updated(x, last_updated_at)).collect();
         let documents = Self::build_documents(&updated_prices, &assets_tags_map, &usage_ranks_map);
-        let count = documents.len();
-        if count > 0 {
-            self.search_index.add_documents(ASSETS_INDEX_NAME, documents).await?;
-        }
+        let count = self.search_index.index_documents(ASSETS_INDEX_NAME, documents).await?;
 
         self.config.set_datetime(ConfigKey::SearchAssetsLastUpdatedAt, now)?;
         Ok(count)
