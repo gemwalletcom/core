@@ -1,5 +1,6 @@
 mod in_transit_updater;
 mod perpetual_address_refresher;
+mod perpetual_classifier;
 mod perpetual_observer;
 mod vault_addresses_updater;
 
@@ -7,6 +8,7 @@ use cacher::CacherClient;
 use in_transit_updater::{InTransitConfig, InTransitUpdater};
 use job_runner::{JobHandle, ShutdownReceiver};
 use perpetual_address_refresher::PerpetualAddressRefresher;
+use perpetual_classifier::{PerpetualPositionClassifier, PerpetualPriorityConfig};
 use perpetual_observer::PerpetualPositionObserver;
 use primitives::{Chain, ConfigKey, ParamConfigKey, SwapProvider};
 use settings_chain::{ChainProviders, ProviderFactory};
@@ -47,6 +49,10 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
         &settings,
         &settings::service_user_agent("daemon", Some("perpetual_observer")),
     ));
+    let priority_config = PerpetualPriorityConfig {
+        trigger_distance: config.get_f64(ConfigKey::TransactionPerpetualPriorityTriggerDistance)?,
+        liquidation_distance: config.get_f64(ConfigKey::TransactionPerpetualPriorityLiquidationDistance)?,
+    };
     let refresher = Arc::new(PerpetualAddressRefresher::new(perpetual_providers.clone(), database.clone(), cacher.clone()));
 
     JobPlanBuilder::with_config(WorkerService::Transactions, runtime.plan(shutdown_rx), &config)
@@ -60,14 +66,28 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                 async move { updater.update().await }
             }
         })
-        .jobs(WorkerJob::ObservePerpetualPositions, Chain::perpetual_chains(), |chain, _| {
+        .jobs(WorkerJob::ClassifyPerpetualAddresses, Chain::perpetual_chains(), |chain, _| {
+            let classifier = Arc::new(PerpetualPositionClassifier::new(chain, perpetual_providers.clone(), cacher.clone(), priority_config));
+            move |_| {
+                let classifier = classifier.clone();
+                async move { classifier.classify().await }
+            }
+        })
+        .jobs(WorkerJob::ObservePerpetualActiveAddresses, Chain::perpetual_chains(), |chain, _| {
             let observer = Arc::new(PerpetualPositionObserver::new(chain, perpetual_providers.clone(), cacher.clone(), stream_producer.clone()));
             move |_| {
                 let observer = observer.clone();
-                async move { observer.observe().await }
+                async move { observer.observe_active().await }
             }
         })
-        .jobs(WorkerJob::RefreshPerpetualActiveAddresses, Chain::perpetual_chains(), |chain, _| {
+        .jobs(WorkerJob::ObservePerpetualPriorityAddresses, Chain::perpetual_chains(), |chain, _| {
+            let observer = Arc::new(PerpetualPositionObserver::new(chain, perpetual_providers.clone(), cacher.clone(), stream_producer.clone()));
+            move |_| {
+                let observer = observer.clone();
+                async move { observer.observe_priority().await }
+            }
+        })
+        .jobs(WorkerJob::RefreshPerpetualTrackedAddresses, Chain::perpetual_chains(), |chain, _| {
             let refresher = refresher.clone();
             move |_| {
                 let refresher = refresher.clone();

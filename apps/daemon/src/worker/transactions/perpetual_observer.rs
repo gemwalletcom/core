@@ -1,8 +1,8 @@
+use std::collections::HashSet;
 use std::error::Error;
 use std::sync::Arc;
 
-use cacher::CacheKey;
-use cacher::CacherClient;
+use cacher::{CacheKey, CacherClient};
 use chain_traits::TransactionsRequest;
 use gem_tracing::error_with_fields;
 use primitives::Chain;
@@ -27,11 +27,27 @@ impl PerpetualPositionObserver {
         }
     }
 
-    pub async fn observe(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let key = CacheKey::PerpetualActiveAddresses(self.chain.as_ref());
-        let addresses = self.cacher.get_set_members_cached(vec![key.key()]).await?;
+    pub async fn observe_active(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        let active = self.get_addresses(CacheKey::PerpetualActiveAddresses(self.chain.as_ref())).await?;
+        let priority = self.get_addresses(CacheKey::PerpetualPriorityAddresses(self.chain.as_ref())).await?;
+        let excluded: HashSet<&str> = priority.iter().map(String::as_str).collect();
+        let addresses: Vec<_> = active.into_iter().filter(|a| !excluded.contains(a.as_str())).collect();
 
-        for address in &addresses {
+        self.observe_addresses(&addresses).await
+    }
+
+    pub async fn observe_priority(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        let addresses = self.get_addresses(CacheKey::PerpetualPriorityAddresses(self.chain.as_ref())).await?;
+
+        self.observe_addresses(&addresses).await
+    }
+
+    async fn get_addresses(&self, key: CacheKey<'_>) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
+        Ok(self.cacher.get_cached_optional::<Vec<String>>(key).await?.unwrap_or_default())
+    }
+
+    async fn observe_addresses(&self, addresses: &[String]) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        for address in addresses {
             if let Err(error) = self.observe_address(address).await {
                 error_with_fields!("perpetual_observer", &*error, chain = self.chain.as_ref(), address = address);
             }

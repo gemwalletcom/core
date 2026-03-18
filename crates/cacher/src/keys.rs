@@ -50,7 +50,9 @@ pub enum CacheKey<'a> {
     AlerterStakeRewards(&'a str, &'a str),
 
     // Perpetual keys
+    PerpetualTrackedAddresses(&'a str),
     PerpetualActiveAddresses(&'a str),
+    PerpetualPriorityAddresses(&'a str),
     PerpetualObserverCheckpoint(&'a str, &'a str),
 }
 
@@ -87,7 +89,9 @@ impl CacheKey<'_> {
             Self::SwapDepositAddresses(provider) => format!("swap:deposit_addresses:{}", provider),
             Self::SwapSendAddresses(provider) => format!("swap:send_addresses:{}", provider),
             Self::AlerterStakeRewards(chain, address) => format!("alerter:stake_rewards:{}:{}", chain, address),
+            Self::PerpetualTrackedAddresses(chain) => format!("perpetual:tracked_addresses:{}", chain),
             Self::PerpetualActiveAddresses(chain) => format!("perpetual:active_addresses:{}", chain),
+            Self::PerpetualPriorityAddresses(chain) => format!("perpetual:priority_addresses:{}", chain),
             Self::PerpetualObserverCheckpoint(chain, address) => format!("perpetual:last_seen:{}:{}", chain, address),
         }
     }
@@ -120,7 +124,9 @@ impl CacheKey<'_> {
             Self::SwapDepositAddresses(_) => SECONDS_PER_DAY,
             Self::SwapSendAddresses(_) => SECONDS_PER_DAY,
             Self::AlerterStakeRewards(_, _) => 30 * SECONDS_PER_DAY,
-            Self::PerpetualActiveAddresses(_) => 2 * 60 * SECONDS_PER_MINUTE,
+            Self::PerpetualTrackedAddresses(_) => 2 * 60 * SECONDS_PER_MINUTE,
+            Self::PerpetualActiveAddresses(_) => 30 * SECONDS_PER_MINUTE,
+            Self::PerpetualPriorityAddresses(_) => 30 * SECONDS_PER_MINUTE,
             Self::PerpetualObserverCheckpoint(_, _) => 30 * SECONDS_PER_DAY,
         }
     }

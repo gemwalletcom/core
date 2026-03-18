@@ -1,8 +1,7 @@
 use std::error::Error;
 
 use chain_traits::{ChainTraits, TransactionsRequest};
-use primitives::perpetual::PerpetualPositionsSummary;
-use primitives::{Asset, AssetBalance, Chain, DelegationBase, StakeValidator, Transaction};
+use primitives::{Asset, AssetBalance, Chain, DelegationBase, PerpetualPositionsSummary, StakeValidator, Transaction};
 use settings::Settings;
 
 use crate::ProviderFactory;

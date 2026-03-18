@@ -14,6 +14,10 @@ pub struct Pusher {
     database: Database,
 }
 
+fn format_currency_amount(value: &str, decimals: i32) -> Result<String, Box<dyn Error + Send + Sync>> {
+    Ok(format!("${}", ValueFormatter::format(ValueStyle::Auto, value, decimals)?))
+}
+
 impl Pusher {
     pub fn new(database: Database) -> Self {
         Self { database }
@@ -98,21 +102,20 @@ impl Pusher {
             TransactionType::PerpetualOpenPosition | TransactionType::PerpetualClosePosition => {
                 let metadata: TransactionPerpetualMetadata = serde_json::from_value(transaction.metadata.ok_or("Missing metadata")?)?;
                 let coin = &asset.symbol;
-                let direction = metadata.direction.as_ref();
+                let fee_asset = assets.asset_result(transaction.fee_asset_id.clone())?;
+                let amount = format_currency_amount(transaction.value.as_str(), fee_asset.decimals)?;
                 let price = ValueFormatter::format_f64_currency(ValueStyle::Auto, metadata.price, "$");
                 let title = match metadata.direction {
-                    primitives::PerpetualDirection::Long => localizer.notification_perpetual_long_title(direction, coin),
-                    primitives::PerpetualDirection::Short => localizer.notification_perpetual_short_title(direction, coin),
+                    primitives::PerpetualDirection::Long => localizer.notification_perpetual_long_title(coin),
+                    primitives::PerpetualDirection::Short => localizer.notification_perpetual_short_title(coin),
                 };
-                let description = match transaction.transaction_type {
-                    TransactionType::PerpetualOpenPosition => Some(localizer.notification_perpetual_open_description(&amount, &price)),
-                    TransactionType::PerpetualClosePosition => {
-                        let pnl = ValueFormatter::format_f64_currency(ValueStyle::Auto, metadata.pnl, "$");
-                        Some(localizer.notification_perpetual_close_description(&pnl, &price))
-                    }
-                    _ => None,
+                let description = if transaction.transaction_type == TransactionType::PerpetualOpenPosition {
+                    localizer.notification_perpetual_open_description(&amount, &price)
+                } else {
+                    let pnl = ValueFormatter::format_f64_currency(ValueStyle::Auto, metadata.pnl, "$");
+                    localizer.notification_perpetual_close_description(&pnl, &price)
                 };
-                Ok(Message { title, message: description })
+                Ok(Message { title, message: Some(description) })
             }
             TransactionType::AssetActivation | TransactionType::PerpetualModifyPosition | TransactionType::EarnDeposit | TransactionType::EarnWithdraw => todo!(),
             TransactionType::StakeFreeze => Ok(Message {
@@ -153,5 +156,15 @@ impl Pusher {
                 .into_iter()
                 .collect(),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_format_currency_amount_formats_perpetual_notional() {
+        assert_eq!(format_currency_amount("25002495", 6).unwrap(), "$25.00");
     }
 }

@@ -2,8 +2,7 @@ use std::collections::HashSet;
 use std::error::Error;
 use std::sync::Arc;
 
-use cacher::CacheKey;
-use cacher::CacherClient;
+use cacher::{CacheKey, CacherClient};
 use primitives::Chain;
 use settings_chain::ChainProviders;
 use storage::{Database, WalletsRepository};
@@ -21,11 +20,13 @@ impl PerpetualAddressRefresher {
 
     pub async fn update(&self, chain: Chain) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let referred_addresses = self.providers.get_perpetual_referred_addresses(chain).await?;
+        let key = CacheKey::PerpetualTrackedAddresses(chain.as_ref());
         if referred_addresses.is_empty() {
+            self.cacher.set_cached(key, &Vec::<String>::new()).await?;
             return Ok(0);
         }
 
-        let active_addresses: Vec<String> = self
+        let tracked_addresses: Vec<String> = self
             .database
             .wallets()?
             .get_subscriptions_by_chain_addresses(chain, referred_addresses)?
@@ -35,10 +36,7 @@ impl PerpetualAddressRefresher {
             .into_iter()
             .collect();
 
-        if active_addresses.is_empty() {
-            return Ok(0);
-        }
-
-        self.cacher.add_to_set_cached(CacheKey::PerpetualActiveAddresses(chain.as_ref()), &active_addresses).await
+        self.cacher.set_cached(key, &tracked_addresses).await?;
+        Ok(tracked_addresses.len())
     }
 }

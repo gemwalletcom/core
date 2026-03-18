@@ -1,38 +1,17 @@
 use std::error::Error;
 
-use primitives::{AssetId, Chain, Transaction, TransactionId, TransactionsResponse};
-use settings_chain::{ChainProviders, TransactionsRequest};
+use primitives::{AssetId, Transaction, TransactionId, TransactionsResponse};
 use storage::{Database, ScanAddressesRepository, TransactionsRepository, WalletsRepository};
 
 use chrono::{DateTime, Utc};
 
-const LIVE_SYNC_CHAINS: &[Chain] = &[Chain::HyperCore];
-
 pub struct TransactionsClient {
     database: Database,
-    providers: ChainProviders,
 }
 
 impl TransactionsClient {
-    pub fn new(database: Database, providers: ChainProviders) -> Self {
-        Self { database, providers }
-    }
-
-    async fn sync_transactions(&self, device_row_id: i32, wallet_id: i32, asset_id: &AssetId, from_timestamp: Option<u64>) -> Result<(), Box<dyn Error + Send + Sync>> {
-        if !LIVE_SYNC_CHAINS.contains(&asset_id.chain) {
-            return Ok(());
-        }
-        let address = self.database.wallets()?.subscriptions_wallet_address_for_chain(device_row_id, wallet_id, asset_id.chain)?;
-        let transactions = self
-            .providers
-            .get_transactions_by_address(
-                asset_id.chain,
-                TransactionsRequest::new(address).with_asset_id(asset_id.clone()).with_from_timestamp(from_timestamp),
-            )
-            .await?;
-        self.database.transactions()?.add_transactions(transactions)?;
-
-        Ok(())
+    pub fn new(database: Database) -> Self {
+        Self { database }
     }
 
     pub async fn get_transactions_by_wallet_id(
@@ -43,9 +22,6 @@ impl TransactionsClient {
         asset_id: Option<AssetId>,
         from_timestamp: Option<u64>,
     ) -> Result<TransactionsResponse, Box<dyn Error + Send + Sync>> {
-        if let Some(asset_id) = asset_id.as_ref() {
-            let _ = self.sync_transactions(device_row_id, wallet_id, asset_id, from_timestamp).await;
-        }
         let subscriptions = self.database.wallets()?.get_subscriptions_by_wallet_id(device_row_id, wallet_id)?;
         let addresses = subscriptions.iter().map(|(_, addr)| addr.address.clone()).collect::<Vec<_>>();
         let chains = subscriptions.iter().map(|(sub, _)| sub.chain.0.as_ref().to_string()).collect::<Vec<_>>();
