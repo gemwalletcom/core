@@ -14,10 +14,10 @@ struct SecurePreferencesTests {
     @Test
     func testDefaultPreferences() {
         #expect(throws: Never.self) {
-            let devivceId = try preferences.get(key: .deviceId)
+            let deviceId = try preferences.get(key: .deviceId)
             let deviceToken = try preferences.get(key: .deviceToken)
 
-            #expect(devivceId == nil)
+            #expect(deviceId == nil)
             #expect(deviceToken == nil)
         }
     }
@@ -38,7 +38,7 @@ struct SecurePreferencesTests {
 
         #expect(throws: Never.self) {
             let deviceId = try preferences.get(key: .deviceId)
-            #expect( deviceId == mockDeviceId)
+            #expect(deviceId == mockDeviceId)
         }
     }
 
@@ -62,24 +62,32 @@ struct SecurePreferencesTests {
     }
 
     @Test
+    func testGetDeviceIdUsesInstanceStorage() {
+        #expect(throws: Never.self) {
+            try preferences.set(value: mockDeviceId, key: .deviceId)
+            #expect(try preferences.getDeviceId() == mockDeviceId)
+        }
+    }
+
+    @Test
     func testClear() {
         #expect(throws: Never.self) {
             try preferences.set(value: mockDeviceId, key: .deviceId)
             let deviceId = try preferences.get(key: .deviceId)
             #expect(deviceId == mockDeviceId)
 
-            try preferences.set(value: mockDeviceToken, key: .deviceId)
-            let deviceToken = try preferences.get(key: .deviceId)
+            try preferences.set(value: mockDeviceToken, key: .deviceToken)
+            let deviceToken = try preferences.get(key: .deviceToken)
             #expect(deviceToken == mockDeviceToken)
 
             try preferences.clear()
         }
 
         #expect(throws: Never.self) {
-            let devivceId = try preferences.get(key: .deviceId)
+            let deviceId = try preferences.get(key: .deviceId)
             let deviceToken = try preferences.get(key: .deviceToken)
 
-            #expect(devivceId == nil)
+            #expect(deviceId == nil)
             #expect(deviceToken == nil)
         }
     }

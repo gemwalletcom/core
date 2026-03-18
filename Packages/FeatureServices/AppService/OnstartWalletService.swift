@@ -11,14 +11,14 @@ import ChainService
 public final class OnstartWalletService: Sendable {
 
     private let preferences: Preferences
-    private let deviceService: DeviceService
+    private let deviceService: any DeviceServiceable
     private let bannerSetupService: BannerSetupService
     private let addressStatusService: AddressStatusService
     private let pushNotificationEnablerService: PushNotificationEnablerService
 
     public init(
         preferences: Preferences,
-        deviceService: DeviceService,
+        deviceService: any DeviceServiceable,
         bannerSetupService: BannerSetupService,
         addressStatusService: AddressStatusService,
         pushNotificationEnablerService: PushNotificationEnablerService

@@ -8,7 +8,7 @@ public actor DeviceObserverService {
     private let subscriptionsService: SubscriptionService
     private let subscriptionsObserver: SubscriptionsObserver
 
-    private var authTokenTask: Task<Void, Never>?
+    private var nodeAuthTokenUpdateTask: Task<Void, Never>?
 
     public init(
         deviceService: any DeviceServiceable,
@@ -22,25 +22,29 @@ public actor DeviceObserverService {
 
     public func startSubscriptionsObserver() async throws {
         for try await _ in subscriptionsObserver.observe().dropFirst() {
-            subscriptionsService.incrementSubscriptionsVersion()
-            try await deviceService.update()
+            try await handleSubscriptionsChange()
         }
     }
 
-    public func startAuthTokenRefresh() {
-        guard authTokenTask == nil else { return }
+    public func startNodeAuthTokenUpdates() {
+        guard nodeAuthTokenUpdateTask == nil else { return }
 
-        authTokenTask = Task { [deviceService] in
-            try? await deviceService.updateAuthTokenIfNeeded()
+        nodeAuthTokenUpdateTask = Task { [deviceService] in
+            try? await deviceService.updateNodeAuthTokenIfNeeded()
             while !Task.isCancelled {
-                try? await Task.sleep(for: DeviceService.authTokenRefreshInterval)
-                try? await deviceService.updateAuthTokenIfNeeded()
+                try? await Task.sleep(for: DeviceService.nodeAuthTokenUpdateInterval)
+                try? await deviceService.updateNodeAuthTokenIfNeeded()
             }
         }
     }
 
-    public func stopAuthTokenRefresh() {
-        authTokenTask?.cancel()
-        authTokenTask = nil
+    public func stopNodeAuthTokenUpdates() {
+        nodeAuthTokenUpdateTask?.cancel()
+        nodeAuthTokenUpdateTask = nil
+    }
+
+    func handleSubscriptionsChange() async throws {
+        subscriptionsService.invalidateSubscriptions()
+        try await deviceService.update()
     }
 }

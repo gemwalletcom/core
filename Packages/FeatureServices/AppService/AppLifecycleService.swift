@@ -100,8 +100,8 @@ extension AppLifecycleService {
     private func connectObservers() async {
         async let price: () = streamObserverService.connect()
         async let perpetual: () = connectPerpetual()
-        async let authToken: () = deviceObserverService.startAuthTokenRefresh()
-        _ = await (price, perpetual, authToken)
+        async let nodeAuthToken: () = deviceObserverService.startNodeAuthTokenUpdates()
+        _ = await (price, perpetual, nodeAuthToken)
     }
 
     private func connectPerpetual() async {
@@ -115,7 +115,7 @@ extension AppLifecycleService {
     private func disconnectObservers() async {
         async let price: () = streamObserverService.disconnect()
         async let perpetual: () = hyperliquidObserverService.disconnect()
-        async let authToken: () = deviceObserverService.stopAuthTokenRefresh()
-        _ = await (price, perpetual, authToken)
+        async let nodeAuthToken: () = deviceObserverService.stopNodeAuthTokenUpdates()
+        _ = await (price, perpetual, nodeAuthToken)
     }
 }

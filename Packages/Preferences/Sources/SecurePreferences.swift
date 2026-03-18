@@ -12,7 +12,7 @@ public final class SecurePreferences: Sendable {
         case deviceToken
         case devicePrivateKey
         case devicePublicKey
-        case authToken
+        case nodeAuthToken = "authToken"
     }
 
     public static let standard = SecurePreferences()
@@ -48,19 +48,19 @@ public final class SecurePreferences: Sendable {
     }
 
     public func getDeviceId() throws -> String  {
-        guard let deviceId = try SecurePreferences.standard.get(key: .deviceId) else {
+        guard let deviceId = try get(key: .deviceId) else {
             throw AnyError("no device id")
         }
         return deviceId
     }
 
-    public func setAuthToken(_ token: DeviceToken) throws {
+    public func setNodeAuthToken(_ token: DeviceToken) throws {
         let data = try JSONEncoder().encode(token)
-        try set(value: data, key: .authToken)
+        try set(value: data, key: .nodeAuthToken)
     }
 
-    public func authToken() throws -> DeviceToken? {
-        guard let data = try getData(key: .authToken) else { return nil }
+    public func nodeAuthToken() throws -> DeviceToken? {
+        guard let data = try getData(key: .nodeAuthToken) else { return nil }
         return try JSONDecoder().decode(DeviceToken.self, from: data)
     }
 

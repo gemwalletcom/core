@@ -5,7 +5,6 @@ import TransactionsService
 import GemAPITestKit
 import StoreTestKit
 import AssetsServiceTestKit
-import DeviceServiceTestKit
 
 public extension TransactionsService {
     static func mock() -> TransactionsService {
@@ -14,7 +13,6 @@ public extension TransactionsService {
             transactionStore: .mock(),
             assetsService: .mock(),
             walletStore: .mock(),
-            deviceService: DeviceServiceMock(),
             addressStore: .mock()
         )
     }

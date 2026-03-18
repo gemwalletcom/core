@@ -62,16 +62,23 @@ struct ServicesFactory {
         }
         let provider = Provider<GemAPI>()
         let deviceProvider = Provider<GemDeviceAPI>(options: ProviderOptions(baseUrl: nil, requestInterceptor: interceptor))
-        let apiService = GemAPIService(provider: provider, deviceProvider: deviceProvider)
+        let deviceAPIService = GemDeviceService(deviceProvider: deviceProvider)
 
         let subscriptionService = Self.makeSubscriptionService(
-            apiService: apiService,
+            subscriptionProvider: deviceAPIService,
             walletStore: storeManager.walletStore
         )
         let deviceService = Self.makeDeviceService(
-            apiService: apiService,
+            deviceProvider: deviceAPIService,
             subscriptionService: subscriptionService,
             securePreferences: securePreferences
+        )
+        let apiService = GemAPIService(
+            provider: provider,
+            deviceProvider: deviceProvider,
+            walletRequestPreflight: {
+                try await deviceService.prepareForWalletRequest()
+            }
         )
         let deviceObserverService = Self.makeDeviceObserverService(
             deviceService: deviceService,
@@ -115,15 +122,13 @@ struct ServicesFactory {
         )
         let nftService = Self.makeNftService(
             apiService: apiService,
-            nftStore: storeManager.nftStore,
-            deviceService: deviceService
+            nftStore: storeManager.nftStore
         )
         let transactionsService = Self.makeTransactionsService(
             apiService: apiService,
             transactionStore: storeManager.transactionStore,
             assetsService: assetsService,
             walletStore: storeManager.walletStore,
-            deviceService: deviceService,
             addressStore: storeManager.addressStore
         )
         let transactionStateService = Self.makeTransactionService(
@@ -215,7 +220,6 @@ struct ServicesFactory {
             priceUpdater: streamSubscriptionService
         )
         let assetDiscoveryService = AssetDiscoveryService(
-            deviceService: deviceService,
             assetsListService: apiService,
             assetService: assetsService,
             assetsEnabler: assetsEnabler
@@ -386,22 +390,22 @@ extension ServicesFactory {
     }
 
     private static func makeSubscriptionService(
-        apiService: GemAPIService,
+        subscriptionProvider: any GemAPISubscriptionService,
         walletStore: WalletStore
     ) -> SubscriptionService {
         SubscriptionService(
-            subscriptionProvider: apiService,
+            subscriptionProvider: subscriptionProvider,
             walletStore: walletStore
         )
     }
 
     private static func makeDeviceService(
-        apiService: GemAPIService,
+        deviceProvider: any GemAPIDeviceService,
         subscriptionService: SubscriptionService,
         securePreferences: SecurePreferences
     ) -> DeviceService {
         DeviceService(
-            deviceProvider: apiService,
+            deviceProvider: deviceProvider,
             subscriptionsService: subscriptionService,
             securePreferences: securePreferences
         )
@@ -474,7 +478,6 @@ extension ServicesFactory {
         transactionStore: TransactionStore,
         assetsService: AssetsService,
         walletStore: WalletStore,
-        deviceService: any DeviceServiceable,
         addressStore: AddressStore
     ) -> TransactionsService {
         TransactionsService(
@@ -482,7 +485,6 @@ extension ServicesFactory {
             transactionStore: transactionStore,
             assetsService: assetsService,
             walletStore: walletStore,
-            deviceService: deviceService,
             addressStore: addressStore
         )
     }
@@ -520,7 +522,7 @@ extension ServicesFactory {
     private static func makePriceAlertService(
         apiService: GemAPIService,
         priceAlertStore: PriceAlertStore,
-        deviceService: DeviceService,
+        deviceService: any DeviceServiceable,
         priceUpdater: any PriceUpdater,
         preferences: Preferences
     ) -> PriceAlertService {
@@ -602,7 +604,7 @@ extension ServicesFactory {
 
     private static func makeOnstartWalletService(
         preferences: Preferences,
-        deviceService: DeviceService,
+        deviceService: any DeviceServiceable,
         bannerSetupService: BannerSetupService,
         addressStatusService: AddressStatusService,
         pushNotificationEnablerService: PushNotificationEnablerService
@@ -618,13 +620,11 @@ extension ServicesFactory {
     
     private static func makeNftService(
         apiService: GemAPIService,
-        nftStore: NFTStore,
-        deviceService: any DeviceServiceable
+        nftStore: NFTStore
     ) -> NFTService {
         NFTService(
             apiService: apiService,
-            nftStore: nftStore,
-            deviceService: deviceService
+            nftStore: nftStore
         )
     }
     

@@ -12,6 +12,10 @@ public final class ObservablePreferences: Sendable {
         self.preferences = preferences
     }
 
+    public func invalidateSubscriptions() {
+        preferences.invalidateSubscriptions()
+    }
+
     @ObservationIgnored
     public var isHideBalanceEnabled: Bool {
         get {
@@ -109,4 +113,3 @@ public final class ObservablePreferences: Sendable {
 extension EnvironmentValues {
     @Entry public var observablePreferences: ObservablePreferences = .default
 }
-

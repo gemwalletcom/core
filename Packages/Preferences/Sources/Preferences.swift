@@ -171,7 +171,8 @@ public final class Preferences: @unchecked Sendable {
         }
     }
 
-    public func incrementSubscriptionVersion() {
+    public func invalidateSubscriptions() {
+        guard !subscriptionsVersionHasChange else { return }
         subscriptionsVersion += 1
         subscriptionsVersionHasChange = true
     }

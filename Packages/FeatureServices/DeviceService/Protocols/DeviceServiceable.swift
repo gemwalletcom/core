@@ -3,9 +3,7 @@
 import Foundation
 
 public protocol DeviceServiceable: Sendable {
-    func getDeviceId() throws -> String
-    // returns same device ID as getDeviceId(), but making sure subscriptions has been updated.
-    func getSubscriptionsDeviceId() async throws -> String
+    func prepareForWalletRequest() async throws
     func update() async throws
-    func updateAuthTokenIfNeeded() async throws
+    func updateNodeAuthTokenIfNeeded() async throws
 }

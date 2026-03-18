@@ -21,12 +21,8 @@ public struct SubscriptionService: Sendable {
         self.preferences = preferences
     }
 
-    var subscriptionsVersion: Int {
-        preferences.subscriptionsVersion
-    }
-
-    public func incrementSubscriptionsVersion() {
-        preferences.incrementSubscriptionVersion()
+    public func invalidateSubscriptions() {
+        preferences.invalidateSubscriptions()
     }
 
     public func update() async throws {

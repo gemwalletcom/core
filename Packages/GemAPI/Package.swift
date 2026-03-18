@@ -41,6 +41,8 @@ let package = Package(
             name: "GemAPITests",
             dependencies: [
                 "GemAPI",
+                "Primitives",
+                "SwiftHTTPClient",
             ]
         ),
     ]

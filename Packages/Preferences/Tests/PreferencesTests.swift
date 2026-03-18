@@ -43,6 +43,20 @@ struct PreferencesTests {
     }
 
     @Test
+    func invalidateSubscriptionsIsIdempotent() {
+        preferences.subscriptionsVersion = 8
+        preferences.subscriptionsVersionHasChange = false
+
+        preferences.invalidateSubscriptions()
+        let version = preferences.subscriptionsVersion
+        preferences.invalidateSubscriptions()
+
+        #expect(version == 9)
+        #expect(preferences.subscriptionsVersion == version)
+        #expect(preferences.subscriptionsVersionHasChange)
+    }
+
+    @Test
     func testUpdatePreferences() {
         preferences.currency = Currency.eur.rawValue
         #expect(preferences.currency == Currency.eur.rawValue)

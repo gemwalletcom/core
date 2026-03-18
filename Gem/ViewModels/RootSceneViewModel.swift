@@ -30,7 +30,7 @@ final class RootSceneViewModel {
     private let releaseAlertService: ReleaseAlertService
     private let rateService: RateService
     private let eventPresenterService: EventPresenterService
-    private let deviceService: DeviceService
+    private let deviceService: any DeviceServiceable
 
     let observablePreferences: ObservablePreferences
     let walletSetupService: WalletSetupService
@@ -86,7 +86,7 @@ final class RootSceneViewModel {
         rateService: RateService,
         eventPresenterService: EventPresenterService,
         avatarService: AvatarService,
-        deviceService: DeviceService
+        deviceService: any DeviceServiceable
     ) {
         self.observablePreferences = observablePreferences
         self.walletConnectorPresenter = walletConnectorPresenter

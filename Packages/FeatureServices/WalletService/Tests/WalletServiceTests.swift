@@ -235,4 +235,99 @@ struct WalletServiceTests {
             try await service.delete(wallet)
         }
     }
+
+    @Test
+    func loadOrCreateWalletMarksSubscriptionsDirty() async throws {
+        let rawPreferences = Preferences.mock()
+        rawPreferences.subscriptionsVersion = 4
+        rawPreferences.subscriptionsVersionHasChange = false
+
+        let service = WalletService.mock(
+            walletStore: .mock(db: .mockWithChains([.ethereum])),
+            preferences: .mock(preferences: rawPreferences)
+        )
+
+        _ = try await service.loadOrCreateWallet(
+            name: "Wallet",
+            type: .phrase(words: LocalKeystore.words, chains: [.ethereum]),
+            source: .import
+        )
+
+        #expect(rawPreferences.subscriptionsVersion == 5)
+        #expect(rawPreferences.subscriptionsVersionHasChange)
+    }
+
+    @Test
+    func deleteWalletMarksSubscriptionsDirty() async throws {
+        let rawPreferences = Preferences.mock()
+        let service = WalletService.mock(
+            walletStore: .mock(db: .mockWithChains([.ethereum])),
+            preferences: .mock(preferences: rawPreferences)
+        )
+
+        let wallet = try await service.loadOrCreateWallet(
+            name: "Wallet",
+            type: .phrase(words: LocalKeystore.words, chains: [.ethereum]),
+            source: .import
+        )
+        _ = try await service.loadOrCreateWallet(
+            name: "Second Wallet",
+            type: .phrase(words: try service.createWallet(), chains: [.ethereum]),
+            source: .import
+        )
+
+        rawPreferences.subscriptionsVersion = 7
+        rawPreferences.subscriptionsVersionHasChange = false
+
+        try await service.delete(wallet)
+
+        #expect(rawPreferences.subscriptionsVersion == 8)
+        #expect(rawPreferences.subscriptionsVersionHasChange)
+    }
+
+    @Test
+    func deleteLastWalletMarksSubscriptionsDirty() async throws {
+        let rawPreferences = Preferences.mock()
+        let service = WalletService.mock(
+            walletStore: .mock(db: .mockWithChains([.ethereum])),
+            preferences: .mock(preferences: rawPreferences)
+        )
+
+        let wallet = try await service.loadOrCreateWallet(
+            name: "Wallet",
+            type: .phrase(words: LocalKeystore.words, chains: [.ethereum]),
+            source: .import
+        )
+
+        rawPreferences.subscriptionsVersion = 7
+        rawPreferences.subscriptionsVersionHasChange = false
+
+        try await service.delete(wallet)
+
+        #expect(rawPreferences.subscriptionsVersion == 1)
+        #expect(rawPreferences.subscriptionsVersionHasChange)
+    }
+
+    @Test
+    func setupChainsMarksSubscriptionsDirty() async throws {
+        let rawPreferences = Preferences.mock()
+        let service = WalletService.mock(
+            walletStore: .mock(db: .mockWithChains([.ethereum, .bitcoin])),
+            preferences: .mock(preferences: rawPreferences)
+        )
+
+        _ = try await service.loadOrCreateWallet(
+            name: "Wallet",
+            type: .phrase(words: LocalKeystore.words, chains: [.ethereum]),
+            source: .import
+        )
+
+        rawPreferences.subscriptionsVersion = 10
+        rawPreferences.subscriptionsVersionHasChange = false
+
+        try service.setup(chains: [.bitcoin])
+
+        #expect(rawPreferences.subscriptionsVersion == 11)
+        #expect(rawPreferences.subscriptionsVersionHasChange)
+    }
 }

@@ -1,17 +1,19 @@
 // Copyright (c). Gem Wallet. All rights reserved.
 
-import Foundation
 import DeviceService
 
-public struct DeviceServiceMock: DeviceServiceable {
-    
+public actor DeviceServiceMock: DeviceServiceable {
+    public private(set) var updateCalls = 0
+
     public init() {}
 
-    public func update() async throws {}
-    public func updateAuthTokenIfNeeded() async throws {}
-    
-    public func getDeviceId() throws -> String { .empty }
-    public func getSubscriptionsDeviceId() async throws -> String {
-        try self.getDeviceId()
+    public func update() async throws {
+        updateCalls += 1
+    }
+
+    public func updateNodeAuthTokenIfNeeded() async throws {
+    }
+
+    public func prepareForWalletRequest() async throws {
     }
 }

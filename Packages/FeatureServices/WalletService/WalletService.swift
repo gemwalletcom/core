@@ -83,6 +83,7 @@ public struct WalletService: Sendable {
             source: source
         )
         try walletStore.addWallet(wallet)
+        preferences.invalidateSubscriptions()
         return wallet
     }
 
@@ -109,7 +110,10 @@ public struct WalletService: Sendable {
 
         if wallets.isEmpty {
             preferences.preferences.clear()
+            preferences.preferences.subscriptionsVersionHasChange = false
         }
+
+        preferences.invalidateSubscriptions()
     }
 
     public func setup(chains: [Chain]) throws {
@@ -119,6 +123,9 @@ public struct WalletService: Sendable {
         let setupWallets = try keystore.setupChains(chains: chains, for: wallets)
         for wallet in setupWallets {
             try walletStore.addWallet(wallet)
+        }
+        if setupWallets.isNotEmpty {
+            preferences.invalidateSubscriptions()
         }
     }
 

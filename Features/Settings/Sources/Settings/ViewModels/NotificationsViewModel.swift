@@ -11,7 +11,7 @@ import Preferences
 @Observable
 @MainActor
 public final class NotificationsViewModel {
-    private let deviceService: DeviceService
+    private let deviceService: any DeviceServiceable
     private let preferences: Preferences
     private let pushNotificationService: PushNotificationEnablerService
     private let bannerService: BannerService
@@ -19,7 +19,7 @@ public final class NotificationsViewModel {
     var isEnabled: Bool
 
     public init(
-        deviceService: DeviceService,
+        deviceService: any DeviceServiceable,
         bannerService: BannerService,
         preferences: Preferences = .standard
     ) {

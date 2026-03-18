@@ -6,14 +6,12 @@ import Primitives
 import Store
 import Preferences
 import AssetsService
-import DeviceService
 
 public final class TransactionsService: Sendable {
     let provider: any GemAPITransactionService
     public let transactionStore: TransactionStore
     let assetsService: AssetsService
     let walletStore: WalletStore
-    private let deviceService: any DeviceServiceable
     private let addressStore: AddressStore
     
     public init(
@@ -21,14 +19,12 @@ public final class TransactionsService: Sendable {
         transactionStore: TransactionStore,
         assetsService: AssetsService,
         walletStore: WalletStore,
-        deviceService: any DeviceServiceable,
         addressStore: AddressStore
     ) {
         self.provider = provider
         self.transactionStore = transactionStore
         self.assetsService = assetsService
         self.walletStore = walletStore
-        self.deviceService = deviceService
         self.addressStore = addressStore
     }
 

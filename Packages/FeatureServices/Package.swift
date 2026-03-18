@@ -150,7 +150,6 @@ let package = Package(
                 "Primitives",
                 "Store",
                 "GemAPI",
-                "DeviceService",
             ],
             path: "NFTService",
             exclude: ["TestKit"]
@@ -161,7 +160,6 @@ let package = Package(
                 .product(name: "StoreTestKit", package: "Store"),
                 .product(name: "GemAPITestKit", package: "GemAPI"),
                 "NFTService",
-                "DeviceServiceTestKit",
             ],
             path: "NFTService/TestKit"
         ),
@@ -296,7 +294,6 @@ let package = Package(
                 "Store",
                 "Preferences",
                 "AssetsService",
-                "DeviceService",
             ],
             path: "TransactionsService",
             exclude: ["TestKit"]
@@ -309,7 +306,6 @@ let package = Package(
                 .product(name: "PreferencesTestKit", package: "Preferences"),
                 "AssetsServiceTestKit",
                 "TransactionsService",
-                "DeviceServiceTestKit",
             ],
             path: "TransactionsService/TestKit"
         ),
@@ -319,7 +315,6 @@ let package = Package(
                 "Primitives",
                 "BalanceService",
                 "AssetsService",
-                "DeviceService",
                 "Preferences",
                 "GemAPI",
             ],
@@ -700,7 +695,11 @@ let package = Package(
             name: "DeviceServiceTests",
             dependencies: [
                 "DeviceService",
+                "DeviceServiceTestKit",
                 "Primitives",
+                .product(name: "GemAPITestKit", package: "GemAPI"),
+                .product(name: "PreferencesTestKit", package: "Preferences"),
+                .product(name: "StoreTestKit", package: "Store"),
             ],
             path: "DeviceService/Tests"
         ),

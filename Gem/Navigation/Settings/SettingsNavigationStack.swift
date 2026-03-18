@@ -77,7 +77,7 @@ struct SettingsNavigationStack: View {
                 ),
                 isPresentingWallets: $isPresentingWallets,
                 isPresentingSupport: $isPresentingSupport,
-                deviceId: (try? deviceService.getDeviceId()) ?? ""
+                deviceId: (try? SecurePreferences.standard.getDeviceId()) ?? ""
             )
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: Scenes.Security.self) { _ in

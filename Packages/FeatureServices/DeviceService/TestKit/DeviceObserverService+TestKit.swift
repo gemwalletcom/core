@@ -1,6 +1,5 @@
 // Copyright (c). Gem Wallet. All rights reserved.
 
-import Foundation
 import DeviceService
 import Store
 import StoreTestKit
