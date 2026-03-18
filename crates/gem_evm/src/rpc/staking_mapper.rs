@@ -23,7 +23,7 @@ const EVENT_EVERSTAKE_STAKED: &str = "0x7d194e8dc0f902cdc51bde00649039561dbd0b01
 const EVENT_EVERSTAKE_UNSTAKED: &str = "0x0750a71dce555de583ab0225a108df42b9402d22123d7cc9cd95793e43e7db0e";
 const EVENT_EVERSTAKE_WITHDRAWN: &str = "0x262159451c4018521811107ecbe27e3de7d95a70a4a534f733aa59bc4346f03e";
 
-fn ethereum_value_from_log_data(data: &str, start: usize, end: usize) -> Option<BigUint> {
+pub fn ethereum_value_from_log_data(data: &str, start: usize, end: usize) -> Option<BigUint> {
     data.trim_start_matches("0x").get(start..end).and_then(|s| BigUint::from_str_radix(s, 16).ok())
 }
 

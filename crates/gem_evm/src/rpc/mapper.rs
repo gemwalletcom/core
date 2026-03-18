@@ -3,7 +3,10 @@ use num_bigint::BigUint;
 use num_traits::Num;
 use std::sync::LazyLock;
 
-use super::{staking_mapper::StakingMapper, swap_mapper::SwapMapper};
+use super::{
+    staking_mapper::{StakingMapper, ethereum_value_from_log_data},
+    swap_mapper::SwapMapper,
+};
 use crate::{
     address::{ethereum_address_checksum, ethereum_address_from_topic},
     registry::ContractRegistry,
@@ -22,6 +25,10 @@ pub const TRANSFER_TOPIC: &str = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4
 pub const APPROVAL_TOPIC: &str = "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925";
 pub const TRANSFER_SINGLE: &str = "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62";
 pub const TRANSFER_GAS_LIMIT: u64 = 21000;
+
+const YO_PROTOCOL_CONTRACT: &str = "0xF1EeE0957267b1A474323Ff9CfF7719E964969FA";
+const FUNCTION_YO_DEPOSIT: &str = "0x82b78ba7";
+const FUNCTION_YO_WITHDRAW: &str = "0x99519ab8";
 
 pub static CONTRACT_REGISTRY: LazyLock<ContractRegistry> = LazyLock::new(ContractRegistry::default);
 pub struct EthereumMapper;
@@ -205,6 +212,42 @@ impl EthereumMapper {
             }
         }
 
+        // Yo protocol earn transactions (deposit: user sends tokens, withdraw: user receives tokens)
+        if transaction.to.as_ref().is_some_and(|to| to.eq_ignore_ascii_case(YO_PROTOCOL_CONTRACT)) {
+            let (transaction_type, topic_index) = if transaction.input.starts_with(FUNCTION_YO_DEPOSIT) {
+                (TransactionType::EarnDeposit, 1)
+            } else if transaction.input.starts_with(FUNCTION_YO_WITHDRAW) {
+                (TransactionType::EarnWithdraw, 2)
+            } else {
+                (TransactionType::SmartContractCall, 0)
+            };
+
+            if let Some(log) = transaction_reciept.logs.iter().find(|log| {
+                log.topics.len() == 3
+                    && log.topics.first().is_some_and(|t| t == TRANSFER_TOPIC)
+                    && log.topics.get(topic_index).is_some_and(|t| ethereum_address_from_topic(t).is_some_and(|a| a == from))
+            }) {
+                let token_id = ethereum_address_checksum(&log.address).ok()?;
+                let value = ethereum_value_from_log_data(&log.data, 0, 64)?;
+
+                return Some(PrimitivesTransaction::new(
+                    hash,
+                    AssetId::from_token(chain, &token_id),
+                    from,
+                    to,
+                    None,
+                    transaction_type,
+                    state,
+                    fee,
+                    fee_asset_id,
+                    value.to_string(),
+                    None,
+                    None,
+                    created_at,
+                ));
+            }
+        }
+
         // Try to decode BSC staking transaction
         if let Some(tx) = StakingMapper::map_transaction(&chain, transaction, transaction_reciept, trace, created_at) {
             return Some(tx);
@@ -256,7 +299,7 @@ mod tests {
     use num_bigint::BigUint;
     use primitives::{
         Chain, JsonRpcResult,
-        asset_constants::{DAI_ETH_ASSET_ID, USDC_ARB_ASSET_ID, USDC_ETH_ASSET_ID, USDT_ARB_ASSET_ID},
+        asset_constants::{DAI_ETH_ASSET_ID, USDC_ARB_ASSET_ID, USDC_ETH_ASSET_ID, USDT_ARB_ASSET_ID, USDT_ETH_ASSET_ID},
         testkit::json_rpc::load_json_rpc_result,
     };
 
@@ -511,5 +554,33 @@ mod tests {
         assert_eq!(tx.from, "0x34DeFF97889f3A6A483E3b9255cAFCB9a6e03588");
         assert_eq!(tx.to, "0x0533d3A18D3f812eCFcC838B59B34fEc4d18E4AC");
         assert_eq!(tx.value, "3900075892");
+    }
+
+    #[test]
+    fn test_yo_deposit() {
+        let transaction = load_json_rpc_result::<Transaction>(include_str!("../../testdata/yo_deposit_tx.json"));
+        let receipt = load_json_rpc_result::<TransactionReciept>(include_str!("../../testdata/yo_deposit_receipt.json"));
+
+        let tx = EthereumMapper::map_transaction(Chain::Ethereum, &transaction, &receipt, None, &BigUint::from(1735671600u64), None).unwrap();
+
+        assert_eq!(tx.transaction_type, TransactionType::EarnDeposit);
+        assert_eq!(tx.asset_id, USDT_ETH_ASSET_ID.into());
+        assert_eq!(tx.from, "0x8d7460E51bCf4eD26877cb77E56f3ce7E9f5EB8F");
+        assert_eq!(tx.to, YO_PROTOCOL_CONTRACT);
+        assert_eq!(tx.value, "1466009");
+    }
+
+    #[test]
+    fn test_yo_withdraw() {
+        let transaction = load_json_rpc_result::<Transaction>(include_str!("../../testdata/yo_withdraw_tx.json"));
+        let receipt = load_json_rpc_result::<TransactionReciept>(include_str!("../../testdata/yo_withdraw_receipt.json"));
+
+        let tx = EthereumMapper::map_transaction(Chain::Ethereum, &transaction, &receipt, None, &BigUint::from(1735671600u64), None).unwrap();
+
+        assert_eq!(tx.transaction_type, TransactionType::EarnWithdraw);
+        assert_eq!(tx.asset_id, USDT_ETH_ASSET_ID.into());
+        assert_eq!(tx.from, "0x8d7460E51bCf4eD26877cb77E56f3ce7E9f5EB8F");
+        assert_eq!(tx.to, YO_PROTOCOL_CONTRACT);
+        assert_eq!(tx.value, "1466126");
     }
 }

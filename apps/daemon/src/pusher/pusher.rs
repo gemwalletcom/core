@@ -66,25 +66,25 @@ impl Pusher {
                 title: localizer.notification_token_approval_title(asset.symbol.as_str(), to_address.as_str()),
                 message: None,
             }),
-            TransactionType::StakeDelegate => Ok(Message {
-                title: localizer.notification_stake_title(&amount, to_address.as_str()),
-                message: None,
+            TransactionType::StakeDelegate | TransactionType::EarnDeposit => Ok(Message {
+                title: localizer.notification_stake_title(&amount),
+                message: Some(localizer.notification_stake_to_description(&to_address)),
             }),
             TransactionType::StakeUndelegate => Ok(Message {
-                title: localizer.notification_unstake_title(&amount, to_address.as_str()),
-                message: None,
+                title: localizer.notification_unstake_title(&amount),
+                message: Some(localizer.notification_stake_from_description(&to_address)),
             }),
             TransactionType::StakeRedelegate => Ok(Message {
-                title: localizer.notification_redelegate_title(&amount, to_address.as_str()),
-                message: None,
+                title: localizer.notification_redelegate_title(&amount),
+                message: Some(localizer.notification_stake_to_description(&to_address)),
             }),
             TransactionType::StakeRewards => Ok(Message {
                 title: localizer.notification_claim_rewards_title(&amount),
                 message: None,
             }),
-            TransactionType::StakeWithdraw => Ok(Message {
-                title: localizer.notification_withdraw_stake_title(&amount, to_address.as_str()),
-                message: None,
+            TransactionType::StakeWithdraw | TransactionType::EarnWithdraw => Ok(Message {
+                title: localizer.notification_withdraw_title(&amount),
+                message: Some(localizer.notification_stake_from_description(&to_address)),
             }),
             TransactionType::Swap => {
                 let metadata = transaction.metadata.ok_or("Missing metadata")?;
@@ -122,7 +122,7 @@ impl Pusher {
                     message: Some(description),
                 })
             }
-            TransactionType::AssetActivation | TransactionType::PerpetualModifyPosition | TransactionType::EarnDeposit | TransactionType::EarnWithdraw => todo!(),
+            TransactionType::AssetActivation | TransactionType::PerpetualModifyPosition => todo!(),
             TransactionType::StakeFreeze => Ok(Message {
                 title: localizer.notification_freeze_title(&amount),
                 message: None,
