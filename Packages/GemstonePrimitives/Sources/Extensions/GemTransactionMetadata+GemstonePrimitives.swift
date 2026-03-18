@@ -12,6 +12,7 @@ extension Gemstone.TransactionMetadata {
                 pnl: perpetualMetadata.pnl,
                 price: perpetualMetadata.price,
                 direction: perpetualMetadata.direction.map(),
+                isLiquidation: perpetualMetadata.isLiquidation,
                 provider: perpetualMetadata.provider?.map()
             ))
         }

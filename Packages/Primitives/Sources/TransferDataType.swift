@@ -82,7 +82,9 @@ public enum TransferDataType: Hashable, Equatable, Sendable {
             return .encode(TransactionNFTTransferMetadata(assetId: asset.id, name: asset.name))
         case .perpetual(_, let type):
             guard let direction = type.data?.direction else { return nil }
-            return .encode(TransactionPerpetualMetadata(pnl: 0, price: 0, direction: direction, provider: nil))
+            return .encode(
+                TransactionPerpetualMetadata(pnl: 0, price: 0, direction: direction, isLiquidation: .none, provider: nil)
+            )
         case .stake(_, let type):
             switch type {
             case .freeze(let data):

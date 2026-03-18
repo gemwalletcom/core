@@ -18,12 +18,14 @@ public struct TransactionPerpetualMetadata: Codable, Sendable {
 	public let pnl: Double
 	public let price: Double
 	public let direction: PerpetualDirection
+	public let isLiquidation: Bool?
 	public let provider: PerpetualProvider?
 
-	public init(pnl: Double, price: Double, direction: PerpetualDirection, provider: PerpetualProvider?) {
+	public init(pnl: Double, price: Double, direction: PerpetualDirection, isLiquidation: Bool?, provider: PerpetualProvider?) {
 		self.pnl = pnl
 		self.price = price
 		self.direction = direction
+		self.isLiquidation = isLiquidation
 		self.provider = provider
 	}
 }
