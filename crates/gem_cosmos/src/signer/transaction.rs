@@ -4,6 +4,7 @@ use crate::constants::{MESSAGE_EXECUTE_CONTRACT, MESSAGE_IBC_TRANSFER};
 
 use super::protobuf::*;
 
+const MESSAGE_SEND_TYPE_URL: &str = "/cosmos.bank.v1beta1.MsgSend";
 pub const COSMOS_SECP256K1_PUBKEY_TYPE: &str = "/cosmos.crypto.secp256k1.PubKey";
 pub const INJECTIVE_ETHSECP256K1_PUBKEY_TYPE: &str = "/injective.crypto.v1beta1.ethsecp256k1.PubKey";
 const SIGN_MODE_DIRECT: u64 = 1;
@@ -21,6 +22,7 @@ pub struct CosmosTxParams<'a> {
 impl CosmosMessage {
     fn type_url(&self) -> &str {
         match self {
+            Self::Send { .. } => MESSAGE_SEND_TYPE_URL,
             Self::ExecuteContract { .. } => MESSAGE_EXECUTE_CONTRACT,
             Self::IbcTransfer { .. } => MESSAGE_IBC_TRANSFER,
         }
@@ -28,6 +30,10 @@ impl CosmosMessage {
 
     fn encode_value(&self) -> Vec<u8> {
         match self {
+            Self::Send { from_address, to_address, amount } => {
+                let coin_fields: Vec<u8> = amount.iter().flat_map(|c| encode_message_field(3, &encode_coin(&c.denom, &c.amount))).collect();
+                [encode_string_field(1, from_address), encode_string_field(2, to_address), coin_fields].concat()
+            }
             Self::ExecuteContract { sender, contract, msg, funds } => {
                 let fund_fields: Vec<u8> = funds.iter().flat_map(|c| encode_message_field(5, &encode_coin(&c.denom, &c.amount))).collect();
                 [encode_string_field(1, sender), encode_string_field(2, contract), encode_bytes_field(3, msg), fund_fields].concat()

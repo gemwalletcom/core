@@ -10,10 +10,10 @@ gem_hash = { path = "../gem_hash" }
 base64 = { workspace = true }
 primitives = { path = "../primitives" }
 serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
 serde_serializers = { path = "../serde_serializers" }
 
 # Optional RPC dependencies
-serde_json = { workspace = true, optional = true }
 chrono = { workspace = true, features = ["serde"], optional = true }
 async-trait = { workspace = true, optional = true }
 gem_client = { path = "../gem_client", optional = true }
@@ -28,7 +28,6 @@ num-bigint = { workspace = true }
 [features]
 default = []
 rpc = [
-    "dep:serde_json",
     "dep:chrono",
     "dep:async-trait",
     "dep:gem_client",
@@ -36,7 +35,7 @@ rpc = [
     "dep:futures",
     "dep:number_formatter",
 ]
-signer = ["dep:signer", "dep:serde_json"]
+signer = ["dep:signer"]
 reqwest = ["gem_client/reqwest"]
 chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 

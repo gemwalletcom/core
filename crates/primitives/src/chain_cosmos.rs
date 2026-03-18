@@ -29,6 +29,18 @@ impl CosmosChain {
         Chain::from_str(self.as_ref()).unwrap()
     }
 
+    pub fn hrp(&self) -> &str {
+        match self {
+            Self::Cosmos => "cosmos",
+            Self::Osmosis => "osmo",
+            Self::Celestia => "celestia",
+            Self::Thorchain => "thor",
+            Self::Injective => "inj",
+            Self::Sei => "sei",
+            Self::Noble => "noble",
+        }
+    }
+
     pub fn denom(&self) -> CosmosDenom {
         match self {
             Self::Cosmos => CosmosDenom::Uatom,

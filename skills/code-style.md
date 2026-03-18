@@ -98,6 +98,8 @@ fn process_data() {
 - **Avoid `#[serde(default)]`**: Only use when the field is genuinely optional in the API response; if the field is always present, omit it
 - **Use accessor methods for enum variants**: Instead of destructuring enum variants with `match`, use typed accessor methods (e.g., `metadata.get_sequence()` instead of `match &metadata { Cosmos { sequence, .. } => ... }`)
 - **No `assert!` with `contains`**: Use `assert_eq!` with concrete values; `assert!(x.contains(...))` gives useless failure messages
+- **No fallback, fail fast**: Don't silently return defaults on errors (e.g., `unwrap_or(0)`). Propagate errors explicitly with `?` or return `Result`. If a value is required, fail rather than mask the issue with a fallback.
+- **Methods over free functions**: Place helper functions as methods on the relevant struct (`impl Provider { fn get_fee_address(...) }`) rather than top-level free functions — keeps related logic scoped and discoverable
 - **No unused fields**: Remove unused fields from structs/models; don't keep fields "for future use"
 - **Constants for magic numbers**: Extract magic numbers into named constants with clear meaning
 - **Minimum interface**: Don't expose unnecessary functions; if client only needs one function, don't add multiple variants

@@ -37,8 +37,9 @@ impl ChainSigner for CosmosChainSigner {
         let chain_id = input.metadata.get_chain_id().map_err(SignerError::from_display)?;
         let chain = CosmosChain::from_str(input.input_type.get_asset().chain.as_ref()).map_err(|_| SignerError::invalid_input("unsupported cosmos chain"))?;
 
-        let message = CosmosMessage::parse(&swap_data.data.data)?;
-        let body_bytes = encode_tx_body(&[message.encode_as_any()], input.memo.as_deref().unwrap_or(""));
+        let messages = CosmosMessage::parse_array(&swap_data.data.data)?;
+        let encoded: Vec<Vec<u8>> = messages.iter().map(|m| m.encode_as_any()).collect();
+        let body_bytes = encode_tx_body(&encoded, input.memo.as_deref().unwrap_or(""));
 
         let gas_limit = swap_data
             .data

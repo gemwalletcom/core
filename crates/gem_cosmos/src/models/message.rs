@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use super::{ExecuteContractValue, IbcTransferValue};
 use crate::constants;
 #[cfg(feature = "signer")]
-use crate::constants::{MESSAGE_EXECUTE_CONTRACT, MESSAGE_IBC_TRANSFER};
+use crate::constants::{MESSAGE_EXECUTE_CONTRACT, MESSAGE_IBC_TRANSFER, MESSAGE_SEND_BETA};
 #[cfg(feature = "signer")]
 use primitives::SignerError;
 
@@ -107,6 +107,11 @@ pub struct MessageEnvelope {
 
 #[cfg(feature = "signer")]
 pub enum CosmosMessage {
+    Send {
+        from_address: String,
+        to_address: String,
+        amount: Vec<Coin>,
+    },
     ExecuteContract {
         sender: String,
         contract: String,
@@ -124,12 +129,36 @@ pub enum CosmosMessage {
     },
 }
 
+pub fn send_msg_json(from: &str, to: &str, denom: &str, amount: &str) -> serde_json::Value {
+    serde_json::json!({
+        "typeUrl": constants::MESSAGE_SEND_BETA,
+        "value": {
+            "from_address": from,
+            "to_address": to,
+            "amount": [{"denom": denom, "amount": amount}]
+        }
+    })
+}
+
 #[cfg(feature = "signer")]
 impl CosmosMessage {
+    pub fn parse_array(data: &str) -> Result<Vec<Self>, SignerError> {
+        let arr: Vec<serde_json::Value> = serde_json::from_str(data)?;
+        arr.iter().map(|v| Self::parse(&v.to_string())).collect()
+    }
+
     pub fn parse(data: &str) -> Result<Self, SignerError> {
         let envelope: MessageEnvelope = serde_json::from_str(data)?;
 
         match envelope.type_url.as_str() {
+            MESSAGE_SEND_BETA => {
+                let v: MsgSend = serde_json::from_value(envelope.value)?;
+                Ok(Self::Send {
+                    from_address: v.from_address,
+                    to_address: v.to_address,
+                    amount: v.amount,
+                })
+            }
             MESSAGE_EXECUTE_CONTRACT => {
                 let v: ExecuteContractValue = serde_json::from_value(envelope.value)?;
                 Ok(Self::ExecuteContract {
