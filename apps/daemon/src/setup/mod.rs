@@ -249,6 +249,7 @@ fn setup_dev_devices(database: &Database) -> Result<(), Box<dyn std::error::Erro
     let solana_address = "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H";
     let subscriptions = vec![
         (wallet.id, Chain::Ethereum, wallet_address.to_string()),
+        (wallet.id, Chain::HyperCore, wallet_address.to_string()),
         (wallet.id, Chain::Solana, solana_address.to_string()),
     ];
 
