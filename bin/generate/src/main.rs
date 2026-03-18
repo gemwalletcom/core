@@ -7,12 +7,12 @@ use std::{
     vec,
 };
 
-static ANDROID_PACKAGE_PREFIX: &str = "com.wallet.core";
-static LANGUAGE_SWIFT: &str = "swift";
-static LANGUAGE_KOTLIN: &str = "kotlin";
-static LANG_KOTLIN_ETX: &str = "kt";
-static LANGUAGE_TYPESCRIPT: &str = "typescript";
-static LANG_TYPESCRIPT_EXT: &str = "ts";
+const ANDROID_PACKAGE_PREFIX: &str = "com.wallet.core";
+const LANGUAGE_SWIFT: &str = "swift";
+const LANGUAGE_KOTLIN: &str = "kotlin";
+const LANG_KOTLIN_ETX: &str = "kt";
+const LANGUAGE_TYPESCRIPT: &str = "typescript";
+const LANG_TYPESCRIPT_EXT: &str = "ts";
 
 #[derive(Clone, Copy)]
 enum GeneratorType {

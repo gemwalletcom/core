@@ -111,7 +111,7 @@ impl THORChainName {
 
 #[cfg(test)]
 mod tests {
-    use primitives::Chain;
+    use primitives::{Chain, asset_constants::USDT_ETH_ASSET_ID};
 
     use super::*;
 
@@ -183,7 +183,7 @@ mod tests {
             Some("=:d:0x1234567890abcdef:0/1/0:g1:50".into())
         );
         assert_eq!(
-            THORChainAsset::from_asset_id("ethereum_0xdAC17F958D2ee523a2206206994597C13D831ec7")
+            THORChainAsset::from_asset_id(USDT_ETH_ASSET_ID)
                 .unwrap()
                 .get_memo(destination_address.clone(), 0, 1, 0, fee_address.clone(), bps),
             Some("=:ETH.USDT:0x1234567890abcdef:0/1/0:g1:50".into())

@@ -681,7 +681,7 @@ mod tests {
     #[test]
     fn test_resolve_token_asset_usdc_checksummed() {
         let result = resolve_token_asset(Chain::Ethereum, "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48");
-        assert_eq!(result, Some(AssetId::from_token(Chain::Ethereum, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")));
+        assert_eq!(result, Some(USDC_ETH_ASSET_ID.into()));
     }
 
     #[test]

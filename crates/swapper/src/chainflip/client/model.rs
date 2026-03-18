@@ -188,7 +188,7 @@ pub fn map_swap_result(response: &SwapTxResponse) -> SwapResult {
 #[cfg(test)]
 pub mod test {
     use super::*;
-    use primitives::AssetId;
+    use primitives::{AssetId, asset_constants::USDC_ETH_ASSET_ID};
 
     fn swap_response(json: &str) -> SwapTxResponse {
         serde_json::from_str(json).unwrap()
@@ -225,7 +225,7 @@ pub mod test {
             SwapResult {
                 status: SwapStatus::Completed,
                 metadata: Some(TransactionSwapMetadata {
-                    from_asset: AssetId::from_token(Chain::Ethereum, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"),
+                    from_asset: USDC_ETH_ASSET_ID.into(),
                     from_value: "100000000".to_string(),
                     to_asset: AssetId::from_chain(Chain::Solana),
                     to_value: "1143469990".to_string(),

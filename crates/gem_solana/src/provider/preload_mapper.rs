@@ -118,7 +118,7 @@ pub fn calculate_fee_rates(input_type: &TransactionInputType, prioritization_fee
 mod tests {
     use super::*;
     use primitives::swap::SwapData;
-    use primitives::{Asset, AssetId, AssetType, Chain, SwapProvider};
+    use primitives::{Asset, AssetId, AssetType, Chain, SwapProvider, asset_constants::USDC_SOLANA_ASSET_ID};
 
     fn mock_swap_data_with_gas_limit(provider: SwapProvider, gas_limit: Option<&str>) -> SwapData {
         let mut data = SwapData::mock_with_provider(provider);
@@ -337,7 +337,7 @@ mod tests {
     fn test_calculate_transaction_fee_token_recipient_exists() {
         let gas_price_type = GasPriceType::eip1559(BigInt::from(5000u64), BigInt::from(15000u64));
         let asset = Asset {
-            id: AssetId::new("solana_EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v").unwrap(),
+            id: USDC_SOLANA_ASSET_ID.into(),
             chain: Chain::Solana,
             token_id: Some("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string()),
             name: "USDC".to_string(),
@@ -357,7 +357,7 @@ mod tests {
     fn test_calculate_transaction_fee_token_recipient_new() {
         let gas_price_type = GasPriceType::eip1559(BigInt::from(5000u64), BigInt::from(15000u64));
         let asset = Asset {
-            id: AssetId::new("solana_EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v").unwrap(),
+            id: USDC_SOLANA_ASSET_ID.into(),
             chain: Chain::Solana,
             token_id: Some("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string()),
             name: "USDC".to_string(),

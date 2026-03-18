@@ -1,10 +1,10 @@
 use crate::{SwapperSlippage, SwapperSlippageMode};
 use primitives::Chain;
 
-pub static DEFAULT_SLIPPAGE_BPS: u32 = 100;
-pub static DEFAULT_SWAP_FEE_BPS: u32 = 50;
-pub static DEFAULT_CHAINFLIP_FEE_BPS: u32 = 45;
-pub static DEFAULT_STABLE_SWAP_REFERRAL_BPS: u32 = 25;
+pub const DEFAULT_SLIPPAGE_BPS: u32 = 100;
+pub const DEFAULT_SWAP_FEE_BPS: u32 = 50;
+pub const DEFAULT_CHAINFLIP_FEE_BPS: u32 = 45;
+pub const DEFAULT_STABLE_SWAP_REFERRAL_BPS: u32 = 25;
 
 pub const API_BASE_URL: &str = "https://api.gemwallet.com/proxy/swap";
 pub const EVM_REFERRAL_ADDRESS: &str = "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC";

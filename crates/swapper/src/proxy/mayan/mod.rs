@@ -96,7 +96,7 @@ pub fn map_swap_result(result: &MayanTransactionResult) -> SwapResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::swap::SwapStatus;
+    use primitives::{asset_constants::USDC_ETH_ASSET_ID, swap::SwapStatus};
 
     fn result(json: &str) -> MayanTransactionResult {
         serde_json::from_str(json).unwrap()
@@ -122,7 +122,7 @@ mod tests {
     fn test_resolve_asset_id_evm_token_checksummed() {
         assert_eq!(
             resolve_asset_id(Chain::Ethereum, "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"),
-            Some(AssetId::from_token(Chain::Ethereum, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"))
+            Some(USDC_ETH_ASSET_ID.into())
         );
     }
 

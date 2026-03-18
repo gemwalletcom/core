@@ -262,7 +262,10 @@ mod tests {
 
     use std::{borrow::Cow, collections::BTreeSet, sync::Arc, vec};
 
-    use primitives::{AssetId, Chain, asset_constants::USDT_ETH_ASSET_ID};
+    use primitives::{
+        AssetId, Chain,
+        asset_constants::{USDC_ETH_ASSET_ID, USDT_ETH_ASSET_ID},
+    };
 
     use super::*;
     use crate::{
@@ -443,7 +446,7 @@ mod tests {
     async fn test_fetch_quote_input_amount_error() {
         let request = mock_quote(
             SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
-            SwapperQuoteAsset::from(AssetId::from_token(Chain::Ethereum, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")),
+            SwapperQuoteAsset::from(AssetId::new(USDC_ETH_ASSET_ID).unwrap()),
         );
 
         let gem_swapper = GemSwapper {

@@ -3,7 +3,7 @@ use std::error::Error;
 use super::{contract::Contract, normalizer::normalize_domain};
 use primitives::Chain;
 
-static REGISTRY: &str = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e";
+const REGISTRY: &str = "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e";
 pub struct Provider {
     contract: Contract,
 }
