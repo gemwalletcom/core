@@ -14,13 +14,8 @@ pub struct Pusher {
     database: Database,
 }
 
-fn format_currency_amount(value: &str, decimals: i32) -> Result<String, Box<dyn Error + Send + Sync>> {
-    Ok(format!("${}", ValueFormatter::format(ValueStyle::Auto, value, decimals)?))
-}
-
-fn format_signed_currency(value: f64) -> String {
-    let amount = ValueFormatter::format_f64(ValueStyle::Auto, value.abs());
-    if value >= 0.0 { format!("+${}", amount) } else { format!("-${}", amount) }
+fn format_currency(value: f64) -> String {
+    format!("${}", ValueFormatter::format_f64(ValueStyle::Auto, value.abs()))
 }
 
 impl Pusher {
@@ -107,18 +102,20 @@ impl Pusher {
             TransactionType::PerpetualOpenPosition | TransactionType::PerpetualClosePosition => {
                 let metadata: TransactionPerpetualMetadata = serde_json::from_value(transaction.metadata.ok_or("Missing metadata")?)?;
                 let coin = &asset.symbol;
-                let fee_asset = assets.asset_result(transaction.fee_asset_id.clone())?;
-                let amount = format_currency_amount(transaction.value.as_str(), fee_asset.decimals)?;
                 let price = ValueFormatter::format_f64_currency(ValueStyle::Auto, metadata.price, "$");
                 let title = match metadata.direction {
                     primitives::PerpetualDirection::Long => localizer.notification_perpetual_long_title(coin),
                     primitives::PerpetualDirection::Short => localizer.notification_perpetual_short_title(coin),
                 };
                 let description = if transaction.transaction_type == TransactionType::PerpetualOpenPosition {
-                    localizer.notification_perpetual_open_description(&amount, &price)
+                    localizer.notification_perpetual_open_description(&price)
                 } else {
-                    let pnl = format_signed_currency(metadata.pnl);
-                    localizer.notification_perpetual_close_description(&pnl, &price)
+                    let pnl = format_currency(metadata.pnl);
+                    if metadata.pnl >= 0.0 {
+                        localizer.notification_perpetual_close_positive_description(&pnl)
+                    } else {
+                        localizer.notification_perpetual_close_negative_description(&pnl)
+                    }
                 };
                 Ok(Message {
                     title,
@@ -172,14 +169,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_format_currency_amount() {
-        assert_eq!(format_currency_amount("25002495", 6).unwrap(), "$25.00");
-    }
-
-    #[test]
-    fn test_format_signed_currency() {
-        assert_eq!(format_signed_currency(5.50), "+$5.50");
-        assert_eq!(format_signed_currency(-3.25), "-$3.25");
-        assert_eq!(format_signed_currency(0.0), "+$0");
+    fn test_format_currency() {
+        assert_eq!(format_currency(5.50), "$5.50");
+        assert_eq!(format_currency(-3.25), "$3.25");
+        assert_eq!(format_currency(0.0), "$0");
     }
 }

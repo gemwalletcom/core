@@ -291,12 +291,16 @@ impl LanguageLocalizer {
         fl!(self.loader.as_ref(), "notification_perpetual_short_title", coin = coin)
     }
 
-    pub fn notification_perpetual_open_description(&self, amount: &str, price: &str) -> String {
-        fl!(self.loader.as_ref(), "notification_perpetual_open_description", amount = amount, price = price)
+    pub fn notification_perpetual_open_description(&self, price: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_perpetual_open_description", price = price)
     }
 
-    pub fn notification_perpetual_close_description(&self, pnl: &str, price: &str) -> String {
-        fl!(self.loader.as_ref(), "notification_perpetual_close_description", pnl = pnl, price = price)
+    pub fn notification_perpetual_close_positive_description(&self, pnl: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_perpetual_close_positive_description", pnl = pnl)
+    }
+
+    pub fn notification_perpetual_close_negative_description(&self, pnl: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_perpetual_close_negative_description", pnl = pnl)
     }
 
     pub fn notification_stake_rewards(&self, value: &str, chain: &str) -> LanguageNotification {
