@@ -58,7 +58,7 @@ impl YoGatewayClient {
     pub async fn get_positions(&self, assets: &[YoAsset], owner: Address) -> Result<Vec<PositionData>, YielderError> {
         Ok(self
             .ethereum_client
-            .multicall3_batch(
+            .multicall3_map(
                 assets,
                 |a| {
                     let vault = a.yo_token.to_string();

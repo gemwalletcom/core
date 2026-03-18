@@ -288,7 +288,7 @@ impl<C: Client + Clone> EthereumClient<C> {
     }
 
     #[cfg(feature = "rpc")]
-    pub async fn multicall3_batch<T, R, const N: usize>(
+    pub async fn multicall3_map<T, R, const N: usize>(
         &self,
         items: &[T],
         build: impl Fn(&T) -> [Call3; N],
