@@ -15,8 +15,8 @@ pub enum SearchSyncAction {
 impl fmt::Display for SearchSyncAction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            SearchSyncAction::ReplaceIndex => write!(f, "Replace"),
-            SearchSyncAction::IncrementalUpdate => write!(f, "Incremental"),
+            SearchSyncAction::ReplaceIndex => write!(f, "replace"),
+            SearchSyncAction::IncrementalUpdate => write!(f, "incremental"),
         }
     }
 }
