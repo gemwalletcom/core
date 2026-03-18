@@ -3,6 +3,7 @@ use std::error::Error;
 use std::sync::Arc;
 
 use cacher::{CacheKey, CacherClient};
+use gem_tracing::info_with_fields;
 use primitives::Chain;
 use settings_chain::ChainProviders;
 use storage::{Database, WalletsRepository};
@@ -37,6 +38,9 @@ impl PerpetualAddressRefresher {
             .collect();
 
         self.cacher.set_cached(key, &tracked_addresses).await?;
+
+        info_with_fields!("perpetual_refresher", chain = chain.as_ref(), tracked = tracked_addresses.len());
+
         Ok(tracked_addresses.len())
     }
 }

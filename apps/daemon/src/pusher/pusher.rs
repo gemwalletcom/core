@@ -20,11 +20,7 @@ fn format_currency_amount(value: &str, decimals: i32) -> Result<String, Box<dyn 
 
 fn format_signed_currency(value: f64) -> String {
     let amount = ValueFormatter::format_f64(ValueStyle::Auto, value.abs());
-    if value >= 0.0 {
-        format!("+${}", amount)
-    } else {
-        format!("-${}", amount)
-    }
+    if value >= 0.0 { format!("+${}", amount) } else { format!("-${}", amount) }
 }
 
 impl Pusher {
@@ -124,7 +120,10 @@ impl Pusher {
                     let pnl = format_signed_currency(metadata.pnl);
                     localizer.notification_perpetual_close_description(&pnl, &price)
                 };
-                Ok(Message { title, message: Some(description) })
+                Ok(Message {
+                    title,
+                    message: Some(description),
+                })
             }
             TransactionType::AssetActivation | TransactionType::PerpetualModifyPosition | TransactionType::EarnDeposit | TransactionType::EarnWithdraw => todo!(),
             TransactionType::StakeFreeze => Ok(Message {

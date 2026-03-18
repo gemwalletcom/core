@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use cacher::{CacheKey, CacherClient};
 use chain_traits::TransactionsRequest;
-use gem_tracing::error_with_fields;
+use gem_tracing::{error_with_fields, info_with_fields};
 use primitives::Chain;
 use settings_chain::ChainProviders;
 use streamer::steam_producer_queue::StreamProducerQueue;
@@ -33,12 +33,14 @@ impl PerpetualPositionObserver {
         let excluded: HashSet<&str> = priority.iter().map(String::as_str).collect();
         let addresses: Vec<_> = active.into_iter().filter(|a| !excluded.contains(a.as_str())).collect();
 
+        info_with_fields!("perpetual_observer_active", chain = self.chain.as_ref(), addresses = addresses.len());
         self.observe_addresses(&addresses).await
     }
 
     pub async fn observe_priority(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let addresses = self.get_addresses(CacheKey::PerpetualPriorityAddresses(self.chain.as_ref())).await?;
 
+        info_with_fields!("perpetual_observer_priority", chain = self.chain.as_ref(), addresses = addresses.len());
         self.observe_addresses(&addresses).await
     }
 

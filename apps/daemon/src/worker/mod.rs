@@ -4,6 +4,7 @@ pub mod context;
 pub mod fiat;
 pub mod job_schedule;
 pub mod jobs;
+pub mod perpetuals;
 pub mod plan;
 pub mod prices;
 pub mod rewards;
@@ -33,6 +34,7 @@ impl WorkerService {
             WorkerService::Search => search::jobs(ctx, shutdown_rx).await,
             WorkerService::Rewards => rewards::jobs(ctx, shutdown_rx).await,
             WorkerService::Transactions => transactions::jobs(ctx, shutdown_rx).await,
+            WorkerService::Perpetuals => perpetuals::jobs(ctx, shutdown_rx).await,
         }
     }
 }

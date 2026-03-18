@@ -3,7 +3,7 @@ use std::error::Error;
 use std::sync::Arc;
 
 use cacher::{CacheKey, CacherClient};
-use gem_tracing::error_with_fields;
+use gem_tracing::{error_with_fields, info_with_fields};
 use primitives::{Chain, PerpetualPosition};
 use settings_chain::ChainProviders;
 
@@ -65,6 +65,14 @@ impl PerpetualPositionClassifier {
             .set_cached(CacheKey::PerpetualPriorityAddresses(self.chain.as_ref()), &priority_addresses)
             .await?;
 
+        info_with_fields!(
+            "perpetual_classifier",
+            chain = self.chain.as_ref(),
+            tracked = addresses.len(),
+            active = active_addresses.len(),
+            priority = priority_addresses.len()
+        );
+
         Ok(addresses.len())
     }
 
@@ -86,13 +94,11 @@ fn is_priority_position(position: &PerpetualPosition, config: PerpetualPriorityC
         return false;
     };
 
-    let near = |target: f64, threshold_bps: i64| {
-        relative_distance(mark_price, target).is_some_and(|d| d <= bps_to_ratio(threshold_bps))
-    };
+    let near = |target: f64, threshold_bps: i64| relative_distance(mark_price, target).is_some_and(|d| d <= bps_to_ratio(threshold_bps));
 
     let near_liquidation = position.liquidation_price.is_some_and(|p| near(p, config.liquidation_bps));
-    let near_auto_close = position.take_profit.as_ref().is_some_and(|o| near(o.price, config.trigger_bps))
-        || position.stop_loss.as_ref().is_some_and(|o| near(o.price, config.trigger_bps));
+    let near_auto_close =
+        position.take_profit.as_ref().is_some_and(|o| near(o.price, config.trigger_bps)) || position.stop_loss.as_ref().is_some_and(|o| near(o.price, config.trigger_bps));
 
     near_liquidation || near_auto_close
 }
