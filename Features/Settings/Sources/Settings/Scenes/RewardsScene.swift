@@ -127,7 +127,7 @@ public struct RewardsScene: View {
                         .font(.title2.bold())
                         .multilineTextAlignment(.center)
 
-                    Text(model.createCodeDescription)
+                    Text(.init(model.createCodeDescription))
                         .textStyle(.calloutSecondary)
                         .multilineTextAlignment(.center)
                 }

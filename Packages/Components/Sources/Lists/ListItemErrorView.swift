@@ -43,7 +43,7 @@ public struct ListItemErrorView: View {
                     Image(systemName: errorSystemNameImage)
                         .foregroundStyle(errorImageColor)
                         .frame(width: .list.image, height: .list.image)
-                    Text(errorTitle ?? error.localizedDescription)
+                    Text(.init(errorTitle ?? error.localizedDescription))
                         .textStyle(.headline)
                     Spacer()
                 }

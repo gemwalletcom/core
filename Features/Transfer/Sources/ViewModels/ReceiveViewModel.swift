@@ -53,12 +53,10 @@ public final class ReceiveViewModel: Sendable {
     }
 
 
-    var warningMessage: AttributedString {
-        let warning = Localized.Receive.warning(assetModel.symbol.boldMarkdown(), assetModel.networkFullName.boldMarkdown())
-        guard let message = try? AttributedString(markdown: [warning, memoWarningText].compactMap { $0 }.joined(separator: " ")) else {
-            return AttributedString()
-        }
-        return message
+    var warningMessage: String {
+        [Localized.Receive.warning(assetModel.symbol.boldMarkdown(), assetModel.networkFullName.boldMarkdown()), memoWarningText]
+            .compactMap { $0 }
+            .joined(separator: " ")
     }
 
     private var memoWarningText: String? {

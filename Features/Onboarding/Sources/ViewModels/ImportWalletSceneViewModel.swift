@@ -78,10 +78,10 @@ final class ImportWalletSceneViewModel {
         }
     }
 
-    var footerText: AttributedString? {
+    var footerText: String? {
         switch importType {
         case .phrase, .privateKey: .none
-        case .address: try? AttributedString(markdown: Localized.Wallet.importAddressWarning)
+        case .address: Localized.Wallet.importAddressWarning
         }
     }
 

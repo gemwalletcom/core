@@ -70,7 +70,7 @@ struct ImportWalletScene: View {
                 .listRowBackground(Colors.white)
             } footer: {
                 if let text = model.footerText {
-                    Text(text)
+                    Text(.init(text))
                 }
             }
             

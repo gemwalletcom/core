@@ -46,7 +46,7 @@ public struct ReceiveScene: View {
                             .shadow(color: Color.black.opacity(.opacity25), radius: Sizing.shadow.radius, x: .zero, y: Sizing.shadow.yOffset)
                     )
                 }
-                Text(model.warningMessage)
+                Text(.init(model.warningMessage))
                     .textStyle(.subHeadline)
                     .multilineTextAlignment(.center)
                     .padding(.top, .small)

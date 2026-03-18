@@ -32,10 +32,8 @@ struct InfoSheetView: View {
             VStack(spacing: .small) {
                 Text(model.title)
                     .textStyle(model.titleStyle)
-                if let descriptionText = try? AttributedString(markdown: model.description) {
-                    Text(descriptionText)
-                        .textStyle(model.descriptionStyle)
-                }
+                Text(.init(model.description))
+                    .textStyle(model.descriptionStyle)
             }
             .multilineTextAlignment(.center)
             .minimumScaleFactor(0.85)

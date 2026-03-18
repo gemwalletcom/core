@@ -33,7 +33,7 @@ public struct CurrencyInputValidationView: View {
                     if let action = infoAction(error) {
                         InfoButton(action: action)
                     }
-                    Text(error.localizedDescription)
+                    Text(.init(error.localizedDescription))
                         .multilineTextAlignment(.center)
                         .textStyle(TextStyle(font: .footnote, color: Colors.red))
                         .transition(.opacity)
