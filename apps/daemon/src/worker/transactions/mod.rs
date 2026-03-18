@@ -50,8 +50,8 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
         &settings::service_user_agent("daemon", Some("perpetual_observer")),
     ));
     let priority_config = PerpetualPriorityConfig {
-        trigger_distance: config.get_f64(ConfigKey::TransactionPerpetualPriorityTriggerDistance)?,
-        liquidation_distance: config.get_f64(ConfigKey::TransactionPerpetualPriorityLiquidationDistance)?,
+        trigger_bps: config.get_i64(ConfigKey::TransactionPerpetualPriorityTriggerBps)?,
+        liquidation_bps: config.get_i64(ConfigKey::TransactionPerpetualPriorityLiquidationBps)?,
     };
     let refresher = Arc::new(PerpetualAddressRefresher::new(perpetual_providers.clone(), database.clone(), cacher.clone()));
 

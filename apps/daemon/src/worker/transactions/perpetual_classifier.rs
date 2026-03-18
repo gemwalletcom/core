@@ -9,8 +9,8 @@ use settings_chain::ChainProviders;
 
 #[derive(Clone, Copy)]
 pub struct PerpetualPriorityConfig {
-    pub trigger_distance: f64,
-    pub liquidation_distance: f64,
+    pub trigger_bps: i64,
+    pub liquidation_bps: i64,
 }
 
 pub struct PerpetualPositionClassifier {
@@ -77,16 +77,22 @@ impl PerpetualPositionClassifier {
     }
 }
 
+fn bps_to_ratio(bps: i64) -> f64 {
+    bps as f64 / 10_000.0
+}
+
 fn is_priority_position(position: &PerpetualPosition, config: PerpetualPriorityConfig) -> bool {
     let Some(mark_price) = current_mark_price(position) else {
         return false;
     };
 
-    let near = |target: f64, threshold: f64| relative_distance(mark_price, target).is_some_and(|d| d <= threshold);
+    let near = |target: f64, threshold_bps: i64| {
+        relative_distance(mark_price, target).is_some_and(|d| d <= bps_to_ratio(threshold_bps))
+    };
 
-    let near_liquidation = position.liquidation_price.is_some_and(|p| near(p, config.liquidation_distance));
-    let near_auto_close = position.take_profit.as_ref().is_some_and(|o| near(o.price, config.trigger_distance))
-        || position.stop_loss.as_ref().is_some_and(|o| near(o.price, config.trigger_distance));
+    let near_liquidation = position.liquidation_price.is_some_and(|p| near(p, config.liquidation_bps));
+    let near_auto_close = position.take_profit.as_ref().is_some_and(|o| near(o.price, config.trigger_bps))
+        || position.stop_loss.as_ref().is_some_and(|o| near(o.price, config.trigger_bps));
 
     near_liquidation || near_auto_close
 }
@@ -114,8 +120,8 @@ mod tests {
 
     fn config() -> PerpetualPriorityConfig {
         PerpetualPriorityConfig {
-            trigger_distance: 0.01,
-            liquidation_distance: 0.06,
+            trigger_bps: 100,
+            liquidation_bps: 600,
         }
     }
 
@@ -154,8 +160,8 @@ mod tests {
             order_id: "1".to_string(),
         });
         let config = PerpetualPriorityConfig {
-            trigger_distance: 0.01,
-            liquidation_distance: 0.01,
+            trigger_bps: 100,
+            liquidation_bps: 100,
         };
 
         assert!(is_priority_position(&position, config));
@@ -171,8 +177,8 @@ mod tests {
             order_id: "2".to_string(),
         });
         let config = PerpetualPriorityConfig {
-            trigger_distance: 0.01,
-            liquidation_distance: 0.01,
+            trigger_bps: 100,
+            liquidation_bps: 100,
         };
 
         assert!(!is_priority_position(&position, config));

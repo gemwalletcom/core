@@ -183,8 +183,8 @@ pub enum ConfigKey {
     TransactionPerpetualObserverInterval,
     TransactionPerpetualAddressRefreshInterval,
     TransactionPerpetualPriorityObserverInterval,
-    TransactionPerpetualPriorityTriggerDistance,
-    TransactionPerpetualPriorityLiquidationDistance,
+    TransactionPerpetualPriorityTriggerBps,
+    TransactionPerpetualPriorityLiquidationBps,
 
     // Search
     SearchAssetsUpdateInterval,
@@ -364,8 +364,8 @@ impl ConfigKey {
             Self::TransactionPerpetualObserverInterval => "1m",
             Self::TransactionPerpetualAddressRefreshInterval => "1h",
             Self::TransactionPerpetualPriorityObserverInterval => "10s",
-            Self::TransactionPerpetualPriorityTriggerDistance => "0.01",
-            Self::TransactionPerpetualPriorityLiquidationDistance => "0.03",
+            Self::TransactionPerpetualPriorityTriggerBps => "100",
+            Self::TransactionPerpetualPriorityLiquidationBps => "300",
             Self::SearchAssetsUpdateInterval => "30m",
             Self::SearchPerpetualsUpdateInterval => "30m",
             Self::SearchNftsUpdateInterval => "30m",
