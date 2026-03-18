@@ -18,6 +18,15 @@ fn format_currency_amount(value: &str, decimals: i32) -> Result<String, Box<dyn 
     Ok(format!("${}", ValueFormatter::format(ValueStyle::Auto, value, decimals)?))
 }
 
+fn format_signed_currency(value: f64) -> String {
+    let amount = ValueFormatter::format_f64(ValueStyle::Auto, value.abs());
+    if value >= 0.0 {
+        format!("+${}", amount)
+    } else {
+        format!("-${}", amount)
+    }
+}
+
 impl Pusher {
     pub fn new(database: Database) -> Self {
         Self { database }
@@ -112,7 +121,7 @@ impl Pusher {
                 let description = if transaction.transaction_type == TransactionType::PerpetualOpenPosition {
                     localizer.notification_perpetual_open_description(&amount, &price)
                 } else {
-                    let pnl = ValueFormatter::format_f64_currency(ValueStyle::Auto, metadata.pnl, "$");
+                    let pnl = format_signed_currency(metadata.pnl);
                     localizer.notification_perpetual_close_description(&pnl, &price)
                 };
                 Ok(Message { title, message: Some(description) })
@@ -164,7 +173,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_format_currency_amount_formats_perpetual_notional() {
+    fn test_format_currency_amount() {
         assert_eq!(format_currency_amount("25002495", 6).unwrap(), "$25.00");
+    }
+
+    #[test]
+    fn test_format_signed_currency() {
+        assert_eq!(format_signed_currency(5.50), "+$5.50");
+        assert_eq!(format_signed_currency(-3.25), "-$3.25");
+        assert_eq!(format_signed_currency(0.0), "+$0");
     }
 }
