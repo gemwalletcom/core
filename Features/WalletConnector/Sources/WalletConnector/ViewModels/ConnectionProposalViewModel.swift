@@ -31,6 +31,8 @@ public struct ConnectionProposalViewModel {
     var buttonTitle: String { Localized.Transfer.confirm }
     var walletTitle: String { Localized.Common.wallet }
     var appTitle: String { Localized.WalletConnect.app }
+    var connectionTitle: String { Localized.WalletConnect.Connection.title }
+    var connectionText: String { Localized.WalletConnect.brandName }
 
     var walletName: String {
         walletSelectorModel.selectedItems.first?.name ?? .empty
@@ -81,6 +83,34 @@ public struct ConnectionProposalViewModel {
 
     var statusAssetImage: AssetImage {
         .image(verificationImage)
+    }
+
+    var permissionsTitle: String { Localized.WalletConnect.Permissions.title }
+
+    var permissions: [ListItemModel] {
+        [
+            ListItemModel(
+                title: Localized.WalletConnect.Permissions.viewBalance,
+                imageStyle: .accessory(assetImage: .image(Images.System.checkmark))
+            ),
+            ListItemModel(
+                title: Localized.WalletConnect.Permissions.approvalRequests,
+                imageStyle: .accessory(assetImage: .image(Images.System.checkmark))
+            ),
+            ListItemModel(
+                title: Localized.WalletConnect.Permissions.moveFunds,
+                titleStyle: TextStyle(font: .body, color: Colors.secondaryText),
+                imageStyle: .accessory(assetImage: .image(Images.System.xmark), foregroundColor: Colors.gray)
+            ),
+        ]
+    }
+
+    var appPreview: AppPreviewModel {
+        AppPreviewModel(
+            assetImage: AssetImage(imageURL: imageUrl),
+            name: appName,
+            subtitleSymbol: websiteText
+        )
     }
 
     private var payload: WalletConnectionSessionProposal {

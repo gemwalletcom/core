@@ -558,3 +558,9 @@
 "simulation.warning.nft_collection_approval.title" = "התבקשה גישה מלאה לאוסף NFT";
 "simulation.warning.unlimited_token_approval.title" = "אישור אסימונים ללא הגבלה";
 "transfer.review_request" = "בקשת סקירה";
+"wallet.portfolio.title" = "תִיק";
+"wallet.portfolio.footer" = "שווי משוער המבוסס על אחזקות נוכחיות ומחירי שוק.";
+"wallet_connect.permissions.title" = "הרשאות";
+"wallet_connect.permissions.view_balance" = "צפה ביתרה ובפעילות שלך";
+"wallet_connect.permissions.approval_requests" = "שלח בקשות אישור";
+"wallet_connect.permissions.move_funds" = "העברת כספים ללא אישור";

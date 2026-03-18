@@ -2,7 +2,7 @@ import Foundation
 import Primitives
 import Components
 
-public struct AssetViewModel: Sendable, Identifiable {
+public struct AssetViewModel: Sendable, Identifiable, AssetPreviewable {
     public let asset: Asset
 
     public init(asset: Asset) {

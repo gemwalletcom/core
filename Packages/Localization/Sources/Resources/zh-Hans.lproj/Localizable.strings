@@ -558,3 +558,9 @@
 "simulation.warning.nft_collection_approval.title" = "请求访问完整的NFT收藏集";
 "simulation.warning.unlimited_token_approval.title" = "无限代币批准";
 "transfer.review_request" = "审查请求";
+"wallet.portfolio.title" = "文件夹";
+"wallet.portfolio.footer" = "根据现有持仓和市场价格估算的价值。";
+"wallet_connect.permissions.title" = "权限";
+"wallet_connect.permissions.view_balance" = "查看您的余额和活动";
+"wallet_connect.permissions.approval_requests" = "发送审批请求";
+"wallet_connect.permissions.move_funds" = "未经许可转移资金";

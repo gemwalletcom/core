@@ -100,6 +100,14 @@ public final class SignMessageSceneViewModel {
         appName
     }
 
+    public var appPreview: AppPreviewModel {
+        AppPreviewModel(
+            assetImage: appAssetImage,
+            name: appName,
+            subtitleSymbol: connectionViewModel.hostText
+        )
+    }
+
     var textMessageViewModel: TextMessageViewModel {
         TextMessageViewModel(message: plainMessage)
     }

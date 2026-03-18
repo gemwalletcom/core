@@ -558,3 +558,9 @@
 "simulation.warning.nft_collection_approval.title" = "ขอสิทธิ์เข้าถึงคอลเลกชัน NFT ทั้งหมด";
 "simulation.warning.unlimited_token_approval.title" = "อนุมัติโทเค็นได้ไม่จำกัดจำนวน";
 "transfer.review_request" = "คำขอตรวจสอบ";
+"wallet.portfolio.title" = "ผลงาน";
+"wallet.portfolio.footer" = "มูลค่าโดยประมาณคำนวณจากสินทรัพย์ที่มีอยู่และราคาตลาด";
+"wallet_connect.permissions.title" = "สิทธิ์การเข้าถึง";
+"wallet_connect.permissions.view_balance" = "ตรวจสอบยอดเงินคงเหลือและกิจกรรมของคุณ";
+"wallet_connect.permissions.approval_requests" = "ส่งคำขออนุมัติ";
+"wallet_connect.permissions.move_funds" = "โอนเงินโดยไม่ได้รับอนุญาต";

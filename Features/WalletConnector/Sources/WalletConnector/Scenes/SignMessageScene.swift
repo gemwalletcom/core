@@ -21,15 +21,14 @@ public struct SignMessageScene: View {
 
     public var body: some View {
         List {
+            Section { } header: {
+                AssetPreviewView(model: model.appPreview, subtitleLayout: .vertical)
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, .small)
+            }
+            .cleanListRow()
+
             Section {
-                ListItemImageView(
-                    title: Localized.WalletConnect.app,
-                    subtitle: model.appText,
-                    assetImage: model.appAssetImage
-                )
-                .contextMenu(
-                    .url(title: Localized.WalletConnect.website, onOpen: model.onViewWebsite)
-                )
                 ListItemImageView(
                     title: Localized.Common.wallet,
                     subtitle: model.walletText,
@@ -66,6 +65,7 @@ public struct SignMessageScene: View {
                 }
             }
         }
+        .contentMargins(.top, .scene.top, for: .scrollContent)
         .listSectionSpacing(.compact)
         .taskOnce { model.fetch() }
         .safeAreaButton {

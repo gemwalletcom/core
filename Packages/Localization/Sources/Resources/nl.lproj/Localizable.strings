@@ -558,3 +558,9 @@
 "simulation.warning.nft_collection_approval.title" = "Volledige toegang tot de NFT-collectie aangevraagd";
 "simulation.warning.unlimited_token_approval.title" = "Onbeperkte tokengoedkeuring";
 "transfer.review_request" = "Beoordelingsverzoek";
+"wallet.portfolio.title" = "Portefeuille";
+"wallet.portfolio.footer" = "Geschatte waarde op basis van de huidige portefeuille en marktprijzen.";
+"wallet_connect.permissions.title" = "Toestemmingen";
+"wallet_connect.permissions.view_balance" = "Bekijk je saldo en activiteit";
+"wallet_connect.permissions.approval_requests" = "Verzoeken om goedkeuring verzenden";
+"wallet_connect.permissions.move_funds" = "Geld overmaken zonder toestemming";

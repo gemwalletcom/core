@@ -2,6 +2,7 @@
 
 import SwiftUI
 import Components
+import PrimitivesComponents
 import Style
 import Primitives
 import Localization
@@ -21,10 +22,9 @@ public struct ConnectionProposalScene: View {
     public var body: some View {
         List {
             Section { } header: {
-                VStack(alignment: .center) {
-                    AsyncImageView(url: model.imageUrl, size: .image.semiLarge)
-                }
-                .padding(.top, .small)
+                AssetPreviewView(model: model.appPreview, subtitleLayout: .vertical)
+                    .frame(maxWidth: .infinity)
+                    .padding(.bottom, .small)
             }
             .cleanListRow()
 
@@ -35,13 +35,22 @@ public struct ConnectionProposalScene: View {
                         subtitle: model.walletName
                     )
                 }
-                ListItemView(title: model.appTitle, subtitle: model.appText)
+                ListItemView(
+                    title: model.connectionTitle,
+                    subtitle: model.connectionText
+                )
                 ListItemImageView(
-                    title: Localized.WalletConnect.Connection.title,
+                    title: Localized.Transaction.status,
                     subtitle: model.statusText,
                     subtitleStyle: model.statusTextStyle,
                     assetImage: model.statusAssetImage
                 )
+            }
+
+            Section(model.permissionsTitle) {
+                ForEach(model.permissions, id: \.title) { permission in
+                    ListItemView(model: permission)
+                }
             }
         }
         .safeAreaButton {
@@ -50,6 +59,8 @@ public struct ConnectionProposalScene: View {
                 action: onAccept
             )
         }
+        .contentMargins(.top, .scene.top, for: .scrollContent)
+        .listSectionSpacing(.compact)
         .navigationTitle(model.title)
         .navigationDestination(for: Scenes.SelectWallet.self) { _ in
             SelectWalletScene(model: $model.walletSelectorModel)

@@ -558,3 +558,9 @@
 "simulation.warning.nft_collection_approval.title" = "Se solicita acceso completo a la colección NFT";
 "simulation.warning.unlimited_token_approval.title" = "Aprobación ilimitada de tokens";
 "transfer.review_request" = "Solicitud de revisión";
+"wallet.portfolio.title" = "Cartera";
+"wallet.portfolio.footer" = "Valor estimado basado en las tenencias actuales y los precios de mercado.";
+"wallet_connect.permissions.title" = "Permisos";
+"wallet_connect.permissions.view_balance" = "Consulta tu saldo y actividad.";
+"wallet_connect.permissions.approval_requests" = "Enviar solicitudes de aprobación";
+"wallet_connect.permissions.move_funds" = "Transferir fondos sin autorización";

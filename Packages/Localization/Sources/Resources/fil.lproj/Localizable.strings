@@ -558,3 +558,9 @@
 "simulation.warning.nft_collection_approval.title" = "Hiniling ang kumpletong access sa koleksyon ng NFT";
 "simulation.warning.unlimited_token_approval.title" = "Walang limitasyong pag-apruba ng token";
 "transfer.review_request" = "Kahilingan sa Pagsusuri";
+"wallet.portfolio.title" = "Portfolio";
+"wallet.portfolio.footer" = "Tinatayang halaga batay sa kasalukuyang mga hawak at presyo sa merkado.";
+"wallet_connect.permissions.title" = "Mga Pahintulot";
+"wallet_connect.permissions.view_balance" = "Tingnan ang iyong balanse at aktibidad";
+"wallet_connect.permissions.approval_requests" = "Magpadala ng mga kahilingan sa pag-apruba";
+"wallet_connect.permissions.move_funds" = "Ilipat ang mga pondo nang walang pahintulot";

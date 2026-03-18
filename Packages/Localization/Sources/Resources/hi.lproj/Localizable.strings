@@ -558,3 +558,9 @@
 "simulation.warning.nft_collection_approval.title" = "संपूर्ण एनएफटी संग्रह तक पहुंच का अनुरोध किया गया है";
 "simulation.warning.unlimited_token_approval.title" = "असीमित टोकन अनुमोदन";
 "transfer.review_request" = "समीक्षा अनुरोध";
+"wallet.portfolio.title" = "पोर्टफोलियो";
+"wallet.portfolio.footer" = "वर्तमान होल्डिंग्स और बाजार मूल्यों के आधार पर अनुमानित मूल्य।";
+"wallet_connect.permissions.title" = "अनुमतियां";
+"wallet_connect.permissions.view_balance" = "अपना बैलेंस और गतिविधि देखें";
+"wallet_connect.permissions.approval_requests" = "अनुमोदन अनुरोध भेजें";
+"wallet_connect.permissions.move_funds" = "बिना अनुमति के धनराशि स्थानांतरित करना";

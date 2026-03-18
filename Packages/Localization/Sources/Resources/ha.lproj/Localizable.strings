@@ -558,3 +558,9 @@
 "simulation.warning.nft_collection_approval.title" = "An nemi cikakken damar tattara NFT";
 "simulation.warning.unlimited_token_approval.title" = "Amincewa da alamar mara iyaka";
 "transfer.review_request" = "Buƙatar Bita";
+"wallet.portfolio.title" = "Fayil ɗin Fayil";
+"wallet.portfolio.footer" = "Kimanta darajar bisa ga hannun jari na yanzu da farashin kasuwa.";
+"wallet_connect.permissions.title" = "Izini";
+"wallet_connect.permissions.view_balance" = "Duba ma'aunin ku da ayyukan ku";
+"wallet_connect.permissions.approval_requests" = "Aika buƙatun amincewa";
+"wallet_connect.permissions.move_funds" = "Motsa kuɗi ba tare da izini ba";

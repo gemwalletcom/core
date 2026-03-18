@@ -558,3 +558,9 @@
 "simulation.warning.nft_collection_approval.title" = "مکمل NFT جمع کرنے تک رسائی کی درخواست کی گئی۔";
 "simulation.warning.unlimited_token_approval.title" = "لامحدود ٹوکن کی منظوری";
 "transfer.review_request" = "نظرثانی کی درخواست";
+"wallet.portfolio.title" = "پورٹ فولیو";
+"wallet.portfolio.footer" = "موجودہ ہولڈنگز اور مارکیٹ کی قیمتوں کی بنیاد پر تخمینی قیمت۔";
+"wallet_connect.permissions.title" = "اجازتیں";
+"wallet_connect.permissions.view_balance" = "اپنا توازن اور سرگرمی دیکھیں";
+"wallet_connect.permissions.approval_requests" = "منظوری کی درخواستیں بھیجیں۔";
+"wallet_connect.permissions.move_funds" = "اجازت کے بغیر فنڈز منتقل کریں۔";

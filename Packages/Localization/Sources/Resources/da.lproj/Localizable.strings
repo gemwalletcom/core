@@ -558,3 +558,9 @@
 "simulation.warning.nft_collection_approval.title" = "Fuld adgang til NFT-samling anmodes";
 "simulation.warning.unlimited_token_approval.title" = "Ubegrænset tokengodkendelse";
 "transfer.review_request" = "Anmodning om gennemgang";
+"wallet.portfolio.title" = "Portefølje";
+"wallet.portfolio.footer" = "Estimeret værdi baseret på nuværende beholdninger og markedspriser.";
+"wallet_connect.permissions.title" = "Tilladelser";
+"wallet_connect.permissions.view_balance" = "Se din saldo og aktivitet";
+"wallet_connect.permissions.approval_requests" = "Send godkendelsesanmodninger";
+"wallet_connect.permissions.move_funds" = "Flytte penge uden tilladelse";
