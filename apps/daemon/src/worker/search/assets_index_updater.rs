@@ -1,28 +1,26 @@
 use std::collections::HashMap;
 
-use chrono::{NaiveDateTime, Utc};
+use super::sync::{SearchSyncClient, SearchSyncResult};
+use chrono::NaiveDateTime;
 use primitives::ConfigKey;
 use search_index::{ASSETS_INDEX_NAME, AssetDocument, SearchIndexClient, sanitize_index_primary_id};
 use storage::models::PriceAssetDataRow;
-use storage::{AssetsUsageRanksRepository, ConfigCacher, Database, PricesRepository, TagRepository};
+use storage::{AssetsUsageRanksRepository, Database, PricesRepository, TagRepository};
 
 pub struct AssetsIndexUpdater {
     database: Database,
-    config: ConfigCacher,
-    search_index: SearchIndexClient,
+    sync_client: SearchSyncClient,
 }
 
 impl AssetsIndexUpdater {
     pub fn new(database: Database, search_index: &SearchIndexClient) -> Self {
-        let config = ConfigCacher::new(database.clone());
         Self {
+            sync_client: SearchSyncClient::new(database.clone(), search_index),
             database,
-            config,
-            search_index: search_index.clone(),
         }
     }
 
-    pub async fn update(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn update(&self) -> Result<SearchSyncResult, Box<dyn std::error::Error + Send + Sync>> {
         let prices = self.database.prices()?.get_prices_assets_list()?;
         let assets_tags = self.database.tag()?.get_assets_tags()?;
         let usage_ranks = self.database.assets_usage_ranks()?.get_all_usage_ranks()?;
@@ -33,23 +31,31 @@ impl AssetsIndexUpdater {
         });
         let usage_ranks_map: HashMap<String, i32> = usage_ranks.into_iter().map(|r| (r.asset_id, r.usage_rank)).collect();
 
-        let now = Utc::now().naive_utc();
-        let last_updated_at = self.config.get_datetime(ConfigKey::SearchAssetsLastUpdatedAt)?;
-        let updated_prices: Vec<_> = prices.into_iter().filter(|x| Self::is_updated(x, last_updated_at)).collect();
-        let documents = Self::build_documents(&updated_prices, &assets_tags_map, &usage_ranks_map);
-        let count = self.search_index.index_documents(ASSETS_INDEX_NAME, documents).await?;
+        let sync = self.sync_client.for_key(ConfigKey::SearchAssetsLastUpdatedAt)?;
+        let documents = if sync.should_replace_index() {
+            Self::build_documents(prices.iter(), &assets_tags_map, &usage_ranks_map)
+        } else {
+            Self::build_documents(
+                prices.iter().filter(|data| Self::is_updated(data, sync.last_updated_at())),
+                &assets_tags_map,
+                &usage_ranks_map,
+            )
+        };
 
-        self.config.set_datetime(ConfigKey::SearchAssetsLastUpdatedAt, now)?;
-        Ok(count)
+        sync.write(ASSETS_INDEX_NAME, documents).await
     }
 
     fn is_updated(data: &PriceAssetDataRow, since: NaiveDateTime) -> bool {
         data.asset.updated_at > since || data.price.as_ref().is_some_and(|p| p.last_updated_at > since)
     }
 
-    fn build_documents(prices: &[PriceAssetDataRow], assets_tags_map: &HashMap<String, Vec<String>>, usage_ranks_map: &HashMap<String, i32>) -> Vec<AssetDocument> {
+    fn build_documents<'a>(
+        prices: impl IntoIterator<Item = &'a PriceAssetDataRow>,
+        assets_tags_map: &HashMap<String, Vec<String>>,
+        usage_ranks_map: &HashMap<String, i32>,
+    ) -> Vec<AssetDocument> {
         prices
-            .iter()
+            .into_iter()
             .map(|x| {
                 let asset_id = x.asset.id.as_str();
                 let usage_rank = usage_ranks_map.get(asset_id).copied().unwrap_or(0);

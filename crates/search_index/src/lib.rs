@@ -28,6 +28,15 @@ impl SearchIndexClient {
         Ok(self.client.index(index).add_documents(&documents, None).await?)
     }
 
+    pub async fn delete_all_documents(&self, index: &str) -> Result<TaskInfo, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.index(index).delete_all_documents().await?)
+    }
+
+    pub async fn replace_documents<T: Serialize + Send + Sync>(&self, index: &str, documents: Vec<T>) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        self.delete_all_documents(index).await?;
+        self.index_documents(index, documents).await
+    }
+
     pub async fn index_documents<T: Serialize + Send + Sync>(&self, index: &str, documents: Vec<T>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let count = documents.len();
         if count > 0 {
