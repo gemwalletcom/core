@@ -2,12 +2,50 @@ use chrono::DateTime;
 use num_bigint::Sign;
 
 use crate::{
-    COMPUTE_BUDGET_PROGRAM_ID, JUPITER_PROGRAM_ID, SYSTEM_PROGRAM_ID, SYSTEM_PROGRAMS, TOKEN_PROGRAM,
+    COMPUTE_BUDGET_PROGRAM_ID, JUPITER_PROGRAM_ID, OKX_DEX_V2_PROGRAM_ID, SYSTEM_PROGRAM_ID, SYSTEM_PROGRAMS, TOKEN_PROGRAM,
     models::{BlockTransaction, BlockTransactions, Signature},
 };
 use primitives::{AssetId, Chain, SwapProvider, Transaction, TransactionState, TransactionSwapMetadata, TransactionType};
 
 const CHAIN: Chain = Chain::Solana;
+const SWAP_PROGRAMS: &[(SwapProvider, &str)] = &[(SwapProvider::Jupiter, JUPITER_PROGRAM_ID), (SwapProvider::Okx, OKX_DEX_V2_PROGRAM_ID)];
+
+fn get_swap_provider(account_keys: &[String]) -> Option<(SwapProvider, &'static str)> {
+    SWAP_PROGRAMS.iter().copied().find(|(_, program_id)| account_keys.iter().any(|key| key == program_id))
+}
+
+fn map_swap_metadata(transaction: &BlockTransaction, owner: &str, provider: SwapProvider) -> Option<TransactionSwapMetadata> {
+    let balance_changes = transaction.get_balance_changes_by_owner(owner);
+    let token_balance_changes = transaction.meta.get_token_balance_changes_by_owner(owner);
+
+    let (from_asset, from_value, to_asset, to_value) = match token_balance_changes.as_slice() {
+        [change] => {
+            let (from, to) = match change.amount.sign() {
+                Sign::Plus => (&balance_changes, change),
+                Sign::Minus => (change, &balance_changes),
+                Sign::NoSign => return None,
+            };
+            (from.asset_id.clone(), from.amount.magnitude().clone(), to.asset_id.clone(), to.amount.magnitude().clone())
+        }
+        [a, b] => {
+            let (from, to) = match a.amount.sign() {
+                Sign::Plus => (b, a),
+                Sign::Minus => (a, b),
+                Sign::NoSign => return None,
+            };
+            (from.asset_id.clone(), from.amount.magnitude().clone(), to.asset_id.clone(), to.amount.magnitude().clone())
+        }
+        _ => return None,
+    };
+
+    Some(TransactionSwapMetadata {
+        from_asset,
+        from_value: from_value.to_string(),
+        to_asset,
+        to_value: to_value.to_string(),
+        provider: Some(provider.id().to_owned()),
+    })
+}
 
 pub fn map_block_transactions(transactions: &BlockTransactions) -> Vec<primitives::Transaction> {
     transactions
@@ -128,44 +166,23 @@ pub fn map_transaction(transaction: &BlockTransaction, block_time: i64) -> Optio
         }
     }
 
-    if account_keys.contains(&JUPITER_PROGRAM_ID.to_string()) {
+    if let Some((provider, program_id)) = get_swap_provider(&account_keys) {
         let sender = account_keys.first()?.clone();
-        let balance_changes = transaction.get_balance_changes_by_owner(&sender);
-        let token_balance_changes = transaction.meta.get_token_balance_changes_by_owner(&sender);
-
-        let (from_asset, from_value, to_asset, to_value) = match token_balance_changes.as_slice() {
-            [a] => {
-                let (from, to) = if a.amount.sign() == Sign::Plus { (&balance_changes, a) } else { (a, &balance_changes) };
-                (from.asset_id.clone(), from.amount.magnitude().clone(), to.asset_id.clone(), to.amount.magnitude().clone())
-            }
-            [a, b] => {
-                let (from, to) = if a.amount.sign() == Sign::Plus { (b, a) } else { (a, b) };
-                (from.asset_id.clone(), from.amount.magnitude().clone(), to.asset_id.clone(), to.amount.magnitude().clone())
-            }
-            _ => return None,
-        };
-
-        let swap = TransactionSwapMetadata {
-            from_asset: from_asset.clone(),
-            from_value: from_value.clone().to_string(),
-            to_asset: to_asset.clone(),
-            to_value: to_value.clone().to_string(),
-            provider: Some(SwapProvider::Jupiter.id().to_owned()),
-        };
+        let swap = map_swap_metadata(transaction, &sender, provider)?;
 
         let transaction = Transaction::new(
             hash.clone(),
             swap.from_asset.clone(),
             sender.clone(),
             sender.clone(),
-            Some(JUPITER_PROGRAM_ID.to_string()),
+            Some(program_id.to_string()),
             TransactionType::Swap,
             state,
             fee.to_string(),
             chain.as_asset_id(),
-            swap.from_value.clone().to_string(),
+            swap.from_value.clone(),
             None,
-            serde_json::to_value(swap.clone()).ok(),
+            serde_json::to_value(swap).ok(),
             created_at,
         );
         return Some(transaction);
@@ -252,6 +269,26 @@ mod tests {
             provider: Some(SwapProvider::Jupiter.id().to_owned()),
         };
 
+        assert_eq!(transaction.metadata, Some(serde_json::to_value(expected).unwrap()));
+    }
+
+    #[test]
+    fn test_transaction_swap_okx_token_to_token() {
+        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(include_str!("../../testdata/swap_okx_token_to_token.json")).unwrap();
+
+        let transaction = map_transaction(&result.result, 1).unwrap();
+        let expected = TransactionSwapMetadata {
+            from_asset: AssetId::from_token(Chain::Solana, "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"),
+            from_value: "56061275".to_string(),
+            to_asset: AssetId::from_token(Chain::Solana, "HmMubgKx91Tpq3jmfcKQwsv5HrErqnCTTRJMB6afFR2u"),
+            to_value: "2190151370200".to_string(),
+            provider: Some(SwapProvider::Okx.id().to_owned()),
+        };
+
+        assert_eq!(transaction.transaction_type, TransactionType::Swap);
+        assert_eq!(transaction.asset_id, AssetId::from_token(Chain::Solana, "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"));
+        assert_eq!(transaction.contract, Some(OKX_DEX_V2_PROGRAM_ID.to_string()));
+        assert_eq!(transaction.value, "56061275");
         assert_eq!(transaction.metadata, Some(serde_json::to_value(expected).unwrap()));
     }
 
