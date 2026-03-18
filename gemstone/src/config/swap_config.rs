@@ -1,8 +1,8 @@
 use primitives::Chain;
-use swapper::{SwapperSlippage, config as swap_config};
+use swapper::{SwapperSlippage, config as swap_config, fees as swap_fees};
 
-pub use swap_config::get_swap_config;
-pub use swap_config::{Config as SwapConfig, ReferralFee as SwapReferralFee, ReferralFees as SwapReferralFees};
+pub use swap_config::{Config as SwapConfig, get_swap_config};
+pub use swap_fees::{ReferralFee as SwapReferralFee, ReferralFees as SwapReferralFees};
 
 #[uniffi::remote(Record)]
 pub struct SwapConfig {

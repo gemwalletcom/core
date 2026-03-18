@@ -10,7 +10,8 @@ use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperError, SwapperProvider, SwapperProviderMode, SwapperQuoteData,
     alien::{RpcClient, RpcProvider},
     approval::evm::check_approval_erc20,
-    config::{DEFAULT_SWAP_FEE_BPS, get_swap_api_url},
+    config::get_swap_api_url,
+fees::DEFAULT_SWAP_FEE_BPS,
     cross_chain::VaultAddresses,
     models::{ApprovalType, SwapperChainAsset},
 };

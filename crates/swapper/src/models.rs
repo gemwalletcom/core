@@ -1,7 +1,7 @@
 use super::permit2_data::Permit2Data;
 use crate::{
     SwapperMode, SwapperProvider, SwapperQuoteAsset, SwapperSlippage,
-    config::{DEFAULT_SLIPPAGE_BPS, ReferralFees},
+    config::DEFAULT_SLIPPAGE_BPS, fees::ReferralFees,
 };
 pub use primitives::swap::SwapResult;
 use primitives::{

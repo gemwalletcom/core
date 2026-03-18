@@ -11,7 +11,7 @@ use crate::{
     approval::check_approval_erc20,
     chainlink::ChainlinkPriceFeed,
     client_factory::create_eth_client,
-    config::ReferralFee,
+    fees::ReferralFee,
     cross_chain::VaultAddresses,
     eth_address,
     models::*,

@@ -16,7 +16,8 @@ use super::{
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData,
-    alien::RpcProvider, amount_to_value, approval::check_approval_erc20, config::DEFAULT_CHAINFLIP_FEE_BPS, cross_chain::VaultAddresses, slippage,
+    alien::RpcProvider, amount_to_value, approval::check_approval_erc20, cross_chain::VaultAddresses,
+    fees::{DEFAULT_CHAINFLIP_FEE_BPS, apply_slippage_in_bp}
 };
 use primitives::{ChainType, chain::Chain, swap::QuoteAsset};
 
@@ -218,7 +219,7 @@ where
             })
         } else if from_asset.chain.chain_type() == ChainType::Bitcoin {
             let output_amount: U256 = quote.to_value.parse()?;
-            let min_output_amount = slippage::apply_slippage_in_bp(&output_amount, quote.data.slippage_bps);
+            let min_output_amount = apply_slippage_in_bp(&output_amount, quote.data.slippage_bps);
             VaultSwapExtras::Bitcoin(VaultSwapBtcExtras {
                 chain,
                 min_output_amount: BigUint::from_bytes_le(&min_output_amount.to_le_bytes::<32>()),

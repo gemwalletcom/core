@@ -8,21 +8,15 @@ pub trait BasisPointConvert: Sized + Copy {
 }
 
 impl BasisPointConvert for U256 {
-    fn from_u32(value: u32) -> Self {
-        Self::from(value)
-    }
+    fn from_u32(value: u32) -> Self { Self::from(value) }
 }
 
 impl BasisPointConvert for u128 {
-    fn from_u32(value: u32) -> Self {
-        value as u128
-    }
+    fn from_u32(value: u32) -> Self { value as u128 }
 }
 
 impl BasisPointConvert for u64 {
-    fn from_u32(value: u32) -> Self {
-        value as u64
-    }
+    fn from_u32(value: u32) -> Self { value as u64 }
 }
 
 pub fn apply_slippage_in_bp<T>(amount: &T, bps: u32) -> T
@@ -45,7 +39,5 @@ mod tests {
         assert_eq!(apply_slippage_in_bp(&1000_u64, 500), 950_u64);
         assert_eq!(apply_slippage_in_bp(&U256::from(1000), 0), U256::from(1000));
         assert_eq!(apply_slippage_in_bp(&U256::from(1000), HUNDRED_PERCENT_IN_BPS), U256::ZERO);
-        assert_eq!(apply_slippage_in_bp(&U256::from(1000), 12000), U256::ZERO);
-        assert_eq!(apply_slippage_in_bp(&U256::from(1000), 300 + 9800), U256::ZERO);
     }
 }

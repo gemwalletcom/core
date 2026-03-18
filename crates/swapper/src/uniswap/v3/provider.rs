@@ -4,7 +4,7 @@ use crate::{
     approval::{check_approval_erc20_with_client, check_approval_permit2_with_client},
     eth_address,
     models::*,
-    slippage::apply_slippage_in_bp,
+    fees::apply_slippage_in_bp,
     uniswap::{
         deadline::get_sig_deadline,
         fee_token::get_fee_token,

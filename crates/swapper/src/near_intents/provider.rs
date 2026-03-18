@@ -11,7 +11,7 @@ use crate::{
     cross_chain::VaultAddresses,
     fees::resolve_max_quote_value,
     near_intents::client::{base_url, explorer_url},
-    referrer::DEFAULT_REFERRER,
+    fees::DEFAULT_REFERRER,
 };
 use async_trait::async_trait;
 use chrono::{Duration, Utc};
