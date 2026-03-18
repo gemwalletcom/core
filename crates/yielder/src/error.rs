@@ -1,5 +1,5 @@
 use std::error::Error;
-use std::fmt::{self, Display, Formatter};
+use std::fmt::{self, Formatter};
 
 use alloy_primitives::hex::FromHexError;
 use alloy_primitives::ruint::ParseError;

@@ -1,7 +1,7 @@
 use super::AlienProvider;
 use super::provider::AlienProviderWrapper;
 use std::sync::Arc;
-use swapper::{RpcClient, RpcProvider};
+use swapper::RpcClient;
 
 pub type AlienClient = RpcClient;
 
