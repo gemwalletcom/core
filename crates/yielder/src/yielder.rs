@@ -15,9 +15,11 @@ pub struct Yielder {
 
 impl Yielder {
     pub fn new(rpc_provider: Arc<dyn RpcProvider>) -> Self {
-        Self {
-            providers: vec![Arc::new(YoEarnProvider::new(rpc_provider))],
-        }
+        Self::with_providers(vec![Arc::new(YoEarnProvider::new(rpc_provider))])
+    }
+
+    pub fn with_providers(providers: Vec<Arc<dyn EarnProvider>>) -> Self {
+        Self { providers }
     }
 
     pub fn get_providers(&self, asset_id: &AssetId) -> Vec<DelegationValidator> {
@@ -35,6 +37,15 @@ impl Yielder {
         Self::map_earn_balances(balances)
     }
 
+    pub async fn get_data(&self, asset_id: &AssetId, address: &str, value: &str, earn_type: &EarnType) -> Result<ContractCallData, YielderError> {
+        self.providers
+            .iter()
+            .find(|p| p.get_provider(asset_id).is_some_and(|v| v.id == earn_type.provider_id()))
+            .ok_or(YielderError::NotSupportedAsset)?
+            .get_data(asset_id, address, value, earn_type)
+            .await
+    }
+
     fn map_earn_balances(balances: Vec<AssetBalance>) -> Vec<AssetBalance> {
         balances
             .into_iter()
@@ -47,9 +58,4 @@ impl Yielder {
             .collect()
     }
 
-    pub async fn get_data(&self, asset_id: &AssetId, address: &str, value: &str, earn_type: &EarnType) -> Result<ContractCallData, YielderError> {
-        let provider_id = earn_type.provider_id();
-        let provider = self.providers.iter().find(|p| p.get_provider(asset_id).is_some_and(|v| v.id == provider_id)).ok_or_else(|| YielderError::unsupported_asset(asset_id))?;
-        provider.get_data(asset_id, address, value, earn_type).await
-    }
 }

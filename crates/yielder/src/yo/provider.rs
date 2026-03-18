@@ -45,7 +45,7 @@ impl YoEarnProvider {
             .iter()
             .find(|a| a.asset_id() == *asset_id)
             .copied()
-            .ok_or_else(|| YielderError::unsupported_asset(asset_id))
+            .ok_or(YielderError::NotSupportedAsset)
     }
 
     fn get_client(&self, chain: Chain) -> Result<YoGatewayClient, YielderError> {

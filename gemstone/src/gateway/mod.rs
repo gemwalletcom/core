@@ -153,8 +153,7 @@ impl GemGateway {
     #[uniffi::constructor]
     pub fn new(provider: Arc<dyn AlienProvider>, preferences: Arc<dyn GemPreferences>, secure_preferences: Arc<dyn GemPreferences>, api_url: String) -> Self {
         let api_client = GemApiClient::new(api_url, provider.clone());
-        let wrapper = AlienProviderWrapper { provider: provider.clone() };
-        let yielder = Yielder::new(Arc::new(wrapper));
+        let yielder = Yielder::new(Arc::new(AlienProviderWrapper::new(provider.clone())));
         Self {
             provider,
             preferences,

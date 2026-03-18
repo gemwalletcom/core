@@ -14,7 +14,13 @@ pub trait AlienProvider: Send + Sync + Debug {
 
 #[derive(Debug)]
 pub struct AlienProviderWrapper {
-    pub provider: Arc<dyn AlienProvider>,
+    provider: Arc<dyn AlienProvider>,
+}
+
+impl AlienProviderWrapper {
+    pub fn new(provider: Arc<dyn AlienProvider>) -> Self {
+        Self { provider }
+    }
 }
 
 #[async_trait]
