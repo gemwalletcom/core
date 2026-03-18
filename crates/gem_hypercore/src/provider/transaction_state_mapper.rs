@@ -16,6 +16,7 @@ fn perpetual_fill_type_and_direction(dir: &str) -> Option<(TransactionType, Perp
 pub fn prepare_perpetual_fill(matching_fills: &[&PerpetualFill], last_fill: &PerpetualFill) -> Option<(TransactionType, TransactionPerpetualMetadata)> {
     let (transaction_type, direction) = perpetual_fill_type_and_direction(&last_fill.dir)?;
     let pnl: f64 = matching_fills.iter().map(|fill| fill.closed_pnl).sum();
+    let is_liquidation = matching_fills.iter().any(|fill| fill.liquidation.is_some());
 
     Some((
         transaction_type,
@@ -23,6 +24,7 @@ pub fn prepare_perpetual_fill(matching_fills: &[&PerpetualFill], last_fill: &Per
             pnl,
             price: last_fill.px,
             direction,
+            is_liquidation: Some(is_liquidation),
             provider: Some(PerpetualProvider::Hypercore),
         },
     ))
@@ -81,6 +83,7 @@ mod tests {
         assert_eq!(metadata.pnl, 36.5);
         assert_eq!(metadata.price, 47.904);
         assert_eq!(metadata.direction, PerpetualDirection::Long);
+        assert_eq!(metadata.is_liquidation, Some(false));
         assert_eq!(metadata.provider, Some(PerpetualProvider::Hypercore));
 
         let hash_change = update.changes.iter().find_map(|change| {
@@ -117,6 +120,7 @@ mod tests {
             px: 42.0,
             dir: String::new(),
             time: 0,
+            liquidation: None,
         }];
 
         let update = map_transaction_state_order(fills, 123, "123".to_string());
@@ -135,6 +139,7 @@ mod tests {
         let (transaction_type, metadata) = prepare_perpetual_fill(&matching, last_fill).unwrap();
         assert_eq!(transaction_type, TransactionType::PerpetualOpenPosition);
         assert_eq!(metadata.direction, PerpetualDirection::Long);
+        assert_eq!(metadata.is_liquidation, Some(false));
     }
 
     #[test]
@@ -150,8 +155,19 @@ mod tests {
             px: 42.0,
             dir: "Unsupported".to_string(),
             time: 0,
+            liquidation: None,
         };
 
         assert!(prepare_perpetual_fill(&[&fill], &fill).is_none());
+    }
+
+    #[test]
+    fn test_prepare_perpetual_fill_marks_liquidation() {
+        let fills: Vec<PerpetualFill> = serde_json::from_str(include_str!("../../testdata/user_fills_liquidation.json")).unwrap();
+        let matching: Vec<_> = fills.iter().collect();
+        let last_fill = matching.last().copied().unwrap();
+
+        let (_, metadata) = prepare_perpetual_fill(&matching, last_fill).unwrap();
+        assert_eq!(metadata.is_liquidation, Some(true));
     }
 }

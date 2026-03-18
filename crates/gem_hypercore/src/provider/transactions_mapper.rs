@@ -111,6 +111,7 @@ mod tests {
 
         let metadata: TransactionPerpetualMetadata = serde_json::from_value(transactions[0].metadata.clone().unwrap()).unwrap();
         assert_eq!(metadata.direction, PerpetualDirection::Long);
+        assert_eq!(metadata.is_liquidation, Some(false));
     }
 
     #[test]
@@ -126,6 +127,7 @@ mod tests {
             px: 42.0,
             dir: "Buy".to_string(),
             time: 1,
+            liquidation: None,
         }];
 
         assert!(map_perpetual_fills("0xabc", fills).is_empty());
@@ -141,6 +143,7 @@ mod tests {
 
         let metadata: TransactionPerpetualMetadata = serde_json::from_value(transactions[0].metadata.clone().unwrap()).unwrap();
         assert_eq!(metadata.direction, PerpetualDirection::Long);
+        assert_eq!(metadata.is_liquidation, Some(true));
     }
 
     #[test]
