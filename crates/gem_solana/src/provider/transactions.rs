@@ -6,7 +6,8 @@ use gem_client::Client;
 use primitives::{BroadcastOptions, Transaction};
 
 use crate::{
-    provider::transaction_mapper::{map_block_transactions, map_signatures_transactions},
+    models::{BlockTransaction, SingleTransaction},
+    provider::transaction_mapper::{map_block_transactions, map_signatures_transactions, map_transaction},
     rpc::{client::SolanaClient, constants::MISSING_BLOCKS_ERRORS},
 };
 
@@ -26,6 +27,17 @@ impl<C: Client + Clone> ChainTransactions for SolanaClient<C> {
                 Err(Box::new(error))
             }
         }
+    }
+
+    async fn get_transaction_by_hash(&self, hash: String) -> Result<Option<Transaction>, Box<dyn Error + Sync + Send>> {
+        let transaction = self
+            .rpc_call::<SingleTransaction>("getTransaction", serde_json::json!([hash, { "encoding": "json", "maxSupportedTransactionVersion": 0 }]))
+            .await?;
+        let block_transaction = BlockTransaction {
+            meta: transaction.meta,
+            transaction: transaction.transaction,
+        };
+        Ok(map_transaction(&block_transaction, transaction.block_time))
     }
 
     async fn get_transactions_by_address(&self, request: TransactionsRequest) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {

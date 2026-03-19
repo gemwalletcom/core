@@ -14,11 +14,13 @@ use super::{
     seed::generate_random_seed,
     tx_builder,
 };
-use gem_evm::slippage::apply_slippage_in_bp;
-
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData,
-    alien::RpcProvider, amount_to_value, approval::check_approval_erc20, config::DEFAULT_CHAINFLIP_FEE_BPS, cross_chain::VaultAddresses,
+    alien::RpcProvider,
+    amount_to_value,
+    approval::check_approval_erc20,
+    cross_chain::VaultAddresses,
+    fees::{DEFAULT_CHAINFLIP_FEE_BPS, apply_slippage_in_bp},
 };
 use primitives::{ChainType, chain::Chain, swap::QuoteAsset};
 

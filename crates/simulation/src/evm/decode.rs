@@ -237,7 +237,10 @@ mod tests {
     use alloy_primitives::{U256, address};
     use alloy_sol_types::SolCall;
     use gem_evm::eip712::parse_eip712_json;
-    use primitives::{Chain, SimulationPayloadFieldKind, SimulationResult, SimulationWarningType};
+    use primitives::{
+        Chain, SimulationPayloadFieldKind, SimulationResult, SimulationWarningType,
+        asset_constants::{ETHEREUM_USDC_ASSET_ID, ETHEREUM_USDC_TOKEN_ID},
+    };
     use serde_json::Value;
 
     use super::{decode_eip712_approval, simulate_eip712_message, simulate_evm_calldata};
@@ -312,10 +315,7 @@ mod tests {
         assert_eq!(result.payload[3].value, "Unlimited");
         assert_eq!(result.payload[4].kind, SimulationPayloadFieldKind::Custom);
         assert_eq!(result.payload[4].label.as_deref(), Some("expiration"));
-        assert_eq!(
-            result.header.as_ref().map(|header| header.asset_id.clone()),
-            Some("ethereum_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48".into())
-        );
+        assert_eq!(result.header.as_ref().map(|header| header.asset_id.clone()), Some(ETHEREUM_USDC_ASSET_ID.clone()));
         assert_eq!(result.header.as_ref().map(|header| header.value.as_str()), Some("Unlimited"));
     }
 
@@ -415,7 +415,7 @@ mod tests {
         let value = U256::MAX;
         let calldata = gem_evm::contracts::IERC20::approveCall { spender, value }.abi_encode();
 
-        let result = simulate_evm_calldata(Chain::Ethereum, &calldata, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
+        let result = simulate_evm_calldata(Chain::Ethereum, &calldata, ETHEREUM_USDC_TOKEN_ID);
 
         assert!(is_token_warning(warning(&result)));
         assert_eq!(result.payload[0].kind, SimulationPayloadFieldKind::Contract);
@@ -432,7 +432,7 @@ mod tests {
         let mut calldata = gem_evm::contracts::IERC20::approveCall { spender, value }.abi_encode();
         calldata[..4].copy_from_slice(&[0_u8; 4]);
 
-        let result = simulate_evm_calldata(Chain::Ethereum, &calldata, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
+        let result = simulate_evm_calldata(Chain::Ethereum, &calldata, ETHEREUM_USDC_TOKEN_ID);
 
         assert_eq!(result, SimulationResult::default());
     }

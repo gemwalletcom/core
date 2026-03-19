@@ -1,10 +1,9 @@
-use gem_evm::slippage::apply_slippage_in_bp;
-
 use crate::{
     FetchQuoteData, Permit2ApprovalData, ProviderData, ProviderType, Quote, QuoteRequest, Swapper, SwapperError, SwapperQuoteData,
     alien::{RpcClient, RpcProvider},
     approval::{check_approval_erc20_with_client, check_approval_permit2_with_client},
     eth_address,
+    fees::apply_slippage_in_bp,
     models::*,
     uniswap::{
         deadline::get_sig_deadline,

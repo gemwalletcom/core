@@ -1,6 +1,6 @@
 use crate::{
     AssetList, FetchQuoteData, Permit2ApprovalData, ProviderType, Quote, QuoteRequest, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderMode,
-    SwapperQuoteData, across, alien::RpcProvider, chainflip, config::DEFAULT_STABLE_SWAP_REFERRAL_BPS, cross_chain::VaultAddresses, hyperliquid, jupiter, near_intents,
+    SwapperQuoteData, across, alien::RpcProvider, chainflip, cross_chain::VaultAddresses, fees::DEFAULT_STABLE_SWAP_REFERRAL_BPS, hyperliquid, jupiter, near_intents,
     proxy::provider_factory, relay, thorchain, uniswap,
 };
 use num_bigint::BigInt;
@@ -262,13 +262,16 @@ mod tests {
 
     use std::{borrow::Cow, collections::BTreeSet, sync::Arc, vec};
 
-    use primitives::{AssetId, Chain, asset_constants::USDT_ETH_ASSET_ID};
+    use primitives::{
+        AssetId, Chain,
+        asset_constants::{ETHEREUM_USDC_ASSET_ID, ETHEREUM_USDT_ASSET_ID},
+    };
 
     use super::*;
     use crate::{
         Options, SwapperChainAsset, SwapperMode, SwapperProvider, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode,
         alien::reqwest_provider::NativeProvider,
-        config::{DEFAULT_STABLE_SWAP_REFERRAL_BPS, DEFAULT_SWAP_FEE_BPS, ReferralFees},
+        fees::{DEFAULT_STABLE_SWAP_REFERRAL_BPS, DEFAULT_SWAP_FEE_BPS, ReferralFees},
         testkit::{MockSwapper, mock_quote},
         uniswap::default::{new_pancakeswap, new_uniswap_v3},
     };
@@ -384,7 +387,7 @@ mod tests {
     #[test]
     fn test_filter_supported_assets() {
         let asset_id = AssetId::from_chain(Chain::Ethereum);
-        let asset_id_usdt: AssetId = USDT_ETH_ASSET_ID.into();
+        let asset_id_usdt: AssetId = ETHEREUM_USDT_ASSET_ID.clone();
         let supported_assets_all = vec![SwapperChainAsset::All(Chain::Ethereum)];
         assert!(GemSwapper::filter_supported_assets(supported_assets_all, asset_id.clone()));
 
@@ -419,7 +422,6 @@ mod tests {
         let adjusted_fees = adjusted_request.options.fee.unwrap();
 
         assert_eq!(adjusted_fees.evm.bps, DEFAULT_STABLE_SWAP_REFERRAL_BPS);
-        assert_eq!(adjusted_fees.evm_bridge.bps, DEFAULT_STABLE_SWAP_REFERRAL_BPS);
         assert_eq!(adjusted_fees.solana.bps, DEFAULT_STABLE_SWAP_REFERRAL_BPS);
         assert_eq!(adjusted_fees.thorchain.bps, DEFAULT_STABLE_SWAP_REFERRAL_BPS);
         assert_eq!(adjusted_fees.sui.bps, DEFAULT_STABLE_SWAP_REFERRAL_BPS);
@@ -443,7 +445,7 @@ mod tests {
     async fn test_fetch_quote_input_amount_error() {
         let request = mock_quote(
             SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
-            SwapperQuoteAsset::from(AssetId::from_token(Chain::Ethereum, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")),
+            SwapperQuoteAsset::from(ETHEREUM_USDC_ASSET_ID.clone()),
         );
 
         let gem_swapper = GemSwapper {

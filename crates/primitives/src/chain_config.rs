@@ -1,9 +1,6 @@
-use crate::asset_constants::{
-    WETH_ARB_CONTRACT, WETH_BASE_CONTRACT, WETH_BLAST_CONTRACT, WETH_ETH_CONTRACT, WETH_INK_CONTRACT, WETH_LINEA_CONTRACT, WETH_OP_CONTRACT, WETH_OPSTACK_CONTRACT,
-    WETH_UNICHAIN_CONTRACT, WETH_WORLD_CONTRACT, WETH_ZKSYNC_CONTRACT,
-};
 use crate::chain_cosmos::CosmosChain;
-use crate::{AssetType, Chain, ChainType};
+use crate::contract_constants::{BASE_WETH_CONTRACT, OPSTACK_WETH_CONTRACT};
+use crate::{AssetType, Chain, ChainType, asset_constants::*};
 use std::sync::LazyLock;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -128,7 +125,7 @@ static CHAIN_CONFIGS: LazyLock<Vec<ChainConfig>> = LazyLock::new(|| {
                 min_priority_fee: 100_000_000,
                 chain_stack: ChainStack::Native,
                 is_ethereum_layer2: false,
-                weth_contract: Some(WETH_ETH_CONTRACT),
+                weth_contract: Some(ETHEREUM_WETH_TOKEN_ID),
             }),
             stake: Some(StakeChainConfig {
                 lock_time: 259200,
@@ -309,7 +306,7 @@ static CHAIN_CONFIGS: LazyLock<Vec<ChainConfig>> = LazyLock::new(|| {
                 min_priority_fee: 10_000_000,
                 chain_stack: ChainStack::Native,
                 is_ethereum_layer2: true,
-                weth_contract: Some(WETH_ARB_CONTRACT),
+                weth_contract: Some(ARBITRUM_WETH_TOKEN_ID),
             }),
             stake: None,
         },
@@ -412,7 +409,7 @@ static CHAIN_CONFIGS: LazyLock<Vec<ChainConfig>> = LazyLock::new(|| {
                 min_priority_fee: 1_000_000,
                 chain_stack: ChainStack::Optimism,
                 is_ethereum_layer2: true,
-                weth_contract: Some(WETH_OP_CONTRACT),
+                weth_contract: Some(OPTIMISM_WETH_TOKEN_ID),
             }),
             stake: None,
         },
@@ -461,7 +458,7 @@ static CHAIN_CONFIGS: LazyLock<Vec<ChainConfig>> = LazyLock::new(|| {
                 min_priority_fee: 5_000_000,
                 chain_stack: ChainStack::Optimism,
                 is_ethereum_layer2: true,
-                weth_contract: Some(WETH_BASE_CONTRACT),
+                weth_contract: Some(BASE_WETH_CONTRACT),
             }),
             stake: None,
         },
@@ -551,7 +548,7 @@ static CHAIN_CONFIGS: LazyLock<Vec<ChainConfig>> = LazyLock::new(|| {
                 min_priority_fee: 1_000_000,
                 chain_stack: ChainStack::Optimism,
                 is_ethereum_layer2: false,
-                weth_contract: Some(WETH_OPSTACK_CONTRACT),
+                weth_contract: Some(OPSTACK_WETH_CONTRACT),
             }),
             stake: None,
         },
@@ -721,7 +718,7 @@ static CHAIN_CONFIGS: LazyLock<Vec<ChainConfig>> = LazyLock::new(|| {
                 min_priority_fee: 200_000_000,
                 chain_stack: ChainStack::Native,
                 is_ethereum_layer2: true,
-                weth_contract: Some(WETH_BLAST_CONTRACT),
+                weth_contract: Some(BLAST_WETH_TOKEN_ID),
             }),
             stake: None,
         },
@@ -762,7 +759,7 @@ static CHAIN_CONFIGS: LazyLock<Vec<ChainConfig>> = LazyLock::new(|| {
                 min_priority_fee: 20_000_000,
                 chain_stack: ChainStack::ZkSync,
                 is_ethereum_layer2: true,
-                weth_contract: Some(WETH_ZKSYNC_CONTRACT),
+                weth_contract: Some(ZKSYNC_WETH_TOKEN_ID),
             }),
             stake: None,
         },
@@ -785,7 +782,7 @@ static CHAIN_CONFIGS: LazyLock<Vec<ChainConfig>> = LazyLock::new(|| {
                 min_priority_fee: 50_000_000,
                 chain_stack: ChainStack::Native,
                 is_ethereum_layer2: true,
-                weth_contract: Some(WETH_LINEA_CONTRACT),
+                weth_contract: Some(LINEA_WETH_TOKEN_ID),
             }),
             stake: None,
         },
@@ -872,7 +869,7 @@ static CHAIN_CONFIGS: LazyLock<Vec<ChainConfig>> = LazyLock::new(|| {
                 min_priority_fee: 1_000_000,
                 chain_stack: ChainStack::Optimism,
                 is_ethereum_layer2: true,
-                weth_contract: Some(WETH_WORLD_CONTRACT),
+                weth_contract: Some(WORLD_WETH_TOKEN_ID),
             }),
             stake: None,
         },
@@ -1059,7 +1056,7 @@ static CHAIN_CONFIGS: LazyLock<Vec<ChainConfig>> = LazyLock::new(|| {
                 min_priority_fee: 1_000_000,
                 chain_stack: ChainStack::Optimism,
                 is_ethereum_layer2: true,
-                weth_contract: Some(WETH_INK_CONTRACT),
+                weth_contract: Some(INK_WETH_TOKEN_ID),
             }),
             stake: None,
         },
@@ -1082,7 +1079,7 @@ static CHAIN_CONFIGS: LazyLock<Vec<ChainConfig>> = LazyLock::new(|| {
                 min_priority_fee: 1_000_000,
                 chain_stack: ChainStack::Optimism,
                 is_ethereum_layer2: true,
-                weth_contract: Some(WETH_UNICHAIN_CONTRACT),
+                weth_contract: Some(UNICHAIN_WETH_TOKEN_ID),
             }),
             stake: None,
         },

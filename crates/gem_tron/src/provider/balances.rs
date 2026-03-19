@@ -65,7 +65,7 @@ impl<C: Client> ChainBalances for TronClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use super::*;
-    use crate::provider::testkit::{TEST_ADDRESS, create_test_client};
+    use crate::provider::testkit::{TEST_ADDRESS, TEST_USDT_TOKEN_ID, create_test_client};
     use num_bigint::BigUint;
     use primitives::Chain;
 
@@ -84,9 +84,7 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_get_balance_tokens() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_test_client();
-        let token_ids = vec![
-            "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t".to_string(), // USDT
-        ];
+        let token_ids = vec![TEST_USDT_TOKEN_ID.to_string()];
 
         let balances = client.get_balance_tokens(TEST_ADDRESS.to_string(), token_ids.clone()).await?;
 

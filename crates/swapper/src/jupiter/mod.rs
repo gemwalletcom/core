@@ -4,4 +4,4 @@ mod model;
 mod provider;
 pub use provider::Jupiter;
 
-pub const PROGRAM_ADDRESS: &str = "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4";
+pub const PROGRAM_ADDRESS: &str = gem_solana::JUPITER_PROGRAM_ID;

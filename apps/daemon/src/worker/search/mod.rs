@@ -1,6 +1,7 @@
 mod assets_index_updater;
 mod nfts_index_updater;
 mod perpetuals_index_updater;
+mod sync;
 
 use crate::model::WorkerService;
 use crate::worker::context::WorkerContext;

@@ -95,6 +95,7 @@ fn mount_routes(rocket: Rocket<Build>, metrics_path: &str) -> Rocket<Build> {
                 chain::address::get_balances,
                 chain::address::get_assets,
                 chain::address::get_transactions,
+                chain::transaction::get_transaction,
                 webhooks::create_support_webhook,
                 webhooks::create_support_bot_webhook,
                 referral::get_rewards_leaderboard,

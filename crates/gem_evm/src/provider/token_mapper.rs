@@ -31,23 +31,23 @@ pub fn map_is_token_address(token_id: &str) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use primitives::AssetType;
-
     use super::*;
+    use crate::provider::testkit::TOKEN_USDC_ADDRESS;
+    use primitives::AssetType;
 
     #[test]
     fn test_map_is_token_address() {
-        assert!(map_is_token_address("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"));
+        assert!(map_is_token_address(TOKEN_USDC_ADDRESS));
         assert!(!map_is_token_address("0x1234"));
-        assert!(!map_is_token_address("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48123"));
-        assert!(!map_is_token_address("A0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"));
+        assert!(!map_is_token_address(&format!("{TOKEN_USDC_ADDRESS}123")));
+        assert!(!map_is_token_address(TOKEN_USDC_ADDRESS.trim_start_matches("0x")));
         assert!(!map_is_token_address(""));
         assert!(!map_is_token_address("0x"));
     }
 
     #[test]
     fn test_map_token_data() {
-        let token_id = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48".to_string();
+        let token_id = TOKEN_USDC_ADDRESS.to_ascii_lowercase();
         let chain = Chain::Ethereum;
         let name_hex = "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000855534420436f696e000000000000000000000000000000000000000000000000".to_string();
         let symbol_hex = "0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000045553444300000000000000000000000000000000000000000000000000000000".to_string();
@@ -60,13 +60,13 @@ mod tests {
         assert_eq!(result.decimals, 6);
         assert_eq!(result.id.chain, Chain::Ethereum);
         assert_eq!(result.chain, Chain::Ethereum);
-        assert_eq!(result.token_id, Some("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48".to_string()));
+        assert_eq!(result.token_id, Some(TOKEN_USDC_ADDRESS.to_string()));
         assert_eq!(result.asset_type, AssetType::ERC20);
     }
 
     #[test]
     fn test_map_token_data_invalid_metadata() {
-        let token_id = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48".to_string();
+        let token_id = TOKEN_USDC_ADDRESS.to_ascii_lowercase();
         let name_hex = "0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000855534420436f696e000000000000000000000000000000000000000000000000".to_string();
         let symbol_hex = "0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000045553444300000000000000000000000000000000000000000000000000000000".to_string();
         let decimals_hex = "0x0000000000000000000000000000000000000000000000000000000000000006".to_string();

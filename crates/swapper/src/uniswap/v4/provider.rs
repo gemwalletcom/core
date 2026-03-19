@@ -2,13 +2,12 @@ use alloy_primitives::{Address, U256, hex::encode_prefixed as HexEncode};
 use async_trait::async_trait;
 use std::{collections::HashSet, fmt, str::FromStr, sync::Arc, vec};
 
-use gem_evm::slippage::apply_slippage_in_bp;
-
 use crate::{
     FetchQuoteData, Permit2ApprovalData, ProviderData, ProviderType, Quote, QuoteRequest, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData,
     alien::{RpcClient, RpcProvider},
     approval::evm::{check_approval_erc20_with_client, check_approval_permit2_with_client},
     eth_address,
+    fees::apply_slippage_in_bp,
     uniswap::{
         deadline::get_sig_deadline,
         fee_token::get_fee_token,

@@ -21,6 +21,7 @@ CREATE TABLE prices (
 SELECT diesel_manage_updated_at('prices');
 
 CREATE INDEX prices_market_cap_idx ON prices (market_cap DESC);
+CREATE INDEX prices_last_updated_at_idx ON prices (last_updated_at);
 
 CREATE TABLE prices_assets (
     asset_id VARCHAR(256) PRIMARY KEY NOT NULL REFERENCES assets (id) ON DELETE CASCADE,

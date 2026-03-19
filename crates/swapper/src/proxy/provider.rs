@@ -10,14 +10,15 @@ use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperError, SwapperProvider, SwapperProviderMode, SwapperQuoteData,
     alien::{RpcClient, RpcProvider},
     approval::evm::check_approval_erc20,
-    asset::*,
-    config::{DEFAULT_SWAP_FEE_BPS, get_swap_api_url},
+    config::get_swap_api_url,
     cross_chain::VaultAddresses,
+    fees::DEFAULT_SWAP_FEE_BPS,
     models::{ApprovalType, SwapperChainAsset},
 };
 use gem_client::Client;
 use primitives::{
     Chain, ChainType,
+    known_assets::*,
     swap::{ApprovalData, ProxyQuote, ProxyQuoteRequest, SwapQuoteData},
 };
 
@@ -319,9 +320,9 @@ mod swap_integration_tests {
     use super::*;
     use crate::{
         alien::reqwest_provider::NativeProvider,
-        {SwapperMode, SwapperQuoteAsset, asset::SUI_USDC_TOKEN_ID, models::Options},
+        {SwapperMode, SwapperQuoteAsset, models::Options},
     };
-    use primitives::{AssetId, swap::SwapStatus};
+    use primitives::{AssetId, asset_constants::SUI_USDC_TOKEN_ID, swap::SwapStatus};
 
     #[tokio::test]
     async fn test_mayan_provider_fetch_quote() -> Result<(), SwapperError> {

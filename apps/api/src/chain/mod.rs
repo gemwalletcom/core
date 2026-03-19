@@ -4,5 +4,6 @@ pub mod client;
 pub mod staking;
 pub mod swap;
 pub mod token;
+pub mod transaction;
 
 pub use client::ChainClient;

@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use url::Url;
 use url::form_urlencoded;
 pub const SOLANA_PAY_SCHEME: &str = "solana";
+pub const SOLANA_PAY_USDC_SPL_TOKEN: &str = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 
 #[derive(Debug, Clone)]
 pub enum RequestType {
@@ -91,14 +92,16 @@ mod tests {
 
     #[test]
     fn test_parse_transfer() {
-        let uri = "solana:mvines9iiHiQTysrwkJjGf2gb9Ex9jXJX8ns3qwf2kN?amount=1&spl-token=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v&reference=82ZJ7nbGpixjeDCmEhUcmwXYfvurzAgGdtSMuHnUgyny&label=Michael&message=Thanks%20for%20all%20the%20fish&memo=OrderId5678";
-        let pay_url = match parse(uri).unwrap() {
+        let uri = format!(
+            "solana:mvines9iiHiQTysrwkJjGf2gb9Ex9jXJX8ns3qwf2kN?amount=1&spl-token={SOLANA_PAY_USDC_SPL_TOKEN}&reference=82ZJ7nbGpixjeDCmEhUcmwXYfvurzAgGdtSMuHnUgyny&label=Michael&message=Thanks%20for%20all%20the%20fish&memo=OrderId5678"
+        );
+        let pay_url = match parse(&uri).unwrap() {
             RequestType::Transfer(pay_url) => pay_url,
             _ => panic!("Wrong type"),
         };
         assert_eq!(pay_url.recipient, "mvines9iiHiQTysrwkJjGf2gb9Ex9jXJX8ns3qwf2kN");
         assert_eq!(pay_url.amount.unwrap(), "1");
-        assert_eq!(pay_url.spl_token.unwrap(), "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
+        assert_eq!(pay_url.spl_token.unwrap(), SOLANA_PAY_USDC_SPL_TOKEN);
         assert_eq!(pay_url.reference.unwrap(), vec!["82ZJ7nbGpixjeDCmEhUcmwXYfvurzAgGdtSMuHnUgyny".to_string()]);
         assert_eq!(pay_url.label.unwrap(), "Michael");
         assert_eq!(pay_url.message.unwrap(), "Thanks for all the fish");

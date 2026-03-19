@@ -227,6 +227,7 @@ impl ErrorResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use primitives::asset_constants::{ETHEREUM_USDT_ASSET_ID, TRON_USDT_ASSET_ID};
 
     #[test]
     fn test_tx_status_completed_ltc_to_tron() {
@@ -345,12 +346,9 @@ mod tests {
         assert_eq!(coin("THOR.RUNE").resolve_asset_id(), Some(Chain::Thorchain.as_asset_id()));
         assert_eq!(
             coin("ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7").resolve_asset_id(),
-            Some(AssetId::from_token(Chain::Ethereum, "0xdAC17F958D2ee523a2206206994597C13D831ec7"))
+            Some(ETHEREUM_USDT_ASSET_ID.clone())
         );
-        assert_eq!(
-            coin("TRON.USDT-TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t").resolve_asset_id(),
-            Some(AssetId::from_token(Chain::Tron, "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"))
-        );
+        assert_eq!(coin("TRON.USDT-TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t").resolve_asset_id(), Some(TRON_USDT_ASSET_ID.clone()));
         assert_eq!(coin("THOR.TCY").resolve_asset_id(), Some(AssetId::from_token(Chain::Thorchain, "tcy")));
         assert_eq!(coin("ETH.UNKNOWN-0x1234567890abcdef1234567890abcdef12345678").resolve_asset_id(), None);
         assert_eq!(coin("INVALID").resolve_asset_id(), None);

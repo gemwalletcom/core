@@ -9,9 +9,9 @@ use crate::{
     SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, amount_to_value,
     client_factory::create_client_with_chain,
     cross_chain::VaultAddresses,
+    fees::DEFAULT_REFERRER,
     fees::resolve_max_quote_value,
     near_intents::client::{base_url, explorer_url},
-    referrer::DEFAULT_REFERRER,
 };
 use async_trait::async_trait;
 use chrono::{Duration, Utc};
@@ -384,7 +384,7 @@ mod tests {
     use super::*;
     use crate::{SwapperError, SwapperMode, SwapperQuoteAsset, fees::reserved_tx_fees, models::Options};
     use alloy_primitives::U256;
-    use primitives::asset_constants::USDT_SMARTCHAIN_ASSET_ID;
+    use primitives::asset_constants::SMARTCHAIN_USDT_ASSET_ID;
     use primitives::{AssetId, Chain};
     use serde_json::json;
 
@@ -476,7 +476,7 @@ mod tests {
             SwapResult {
                 status: SwapStatus::Completed,
                 metadata: Some(TransactionSwapMetadata {
-                    from_asset: AssetId::new(USDT_SMARTCHAIN_ASSET_ID).unwrap(),
+                    from_asset: SMARTCHAIN_USDT_ASSET_ID.clone(),
                     from_value: "82000000000000000000".to_string(),
                     to_asset: AssetId::from_chain(Chain::Bitcoin),
                     to_value: "120496".to_string(),
@@ -554,7 +554,7 @@ mod swap_integration_tests {
     use crate::{FetchQuoteData, SwapperMode, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode, alien::reqwest_provider::NativeProvider, models::Options};
     use primitives::{
         AssetId, Chain,
-        asset_constants::{USDC_ARB_ASSET_ID, USDC_BASE_ASSET_ID},
+        asset_constants::{ARBITRUM_USDC_ASSET_ID, BASE_USDC_ASSET_ID},
     };
     use std::sync::Arc;
 
@@ -577,8 +577,8 @@ mod swap_integration_tests {
         };
 
         let request = QuoteRequest {
-            from_asset: SwapperQuoteAsset::from(AssetId::new(USDC_ARB_ASSET_ID).unwrap()),
-            to_asset: SwapperQuoteAsset::from(AssetId::new(USDC_BASE_ASSET_ID).unwrap()),
+            from_asset: SwapperQuoteAsset::from(ARBITRUM_USDC_ASSET_ID.clone()),
+            to_asset: SwapperQuoteAsset::from(BASE_USDC_ASSET_ID.clone()),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             value: "500000".to_string(),

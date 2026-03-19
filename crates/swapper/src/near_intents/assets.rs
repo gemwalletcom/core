@@ -2,11 +2,11 @@ use crate::{SwapperError, SwapperQuoteAsset, models::SwapperChainAsset};
 use primitives::{
     AssetId, Chain,
     asset_constants::{
-        AAVE_ETH_ASSET_ID, ARB_ARB_ASSET_ID, CBBTC_BASE_ASSET_ID, CBBTC_ETH_ASSET_ID, DAI_ETH_ASSET_ID, LINK_ETH_ASSET_ID, OP_OP_ASSET_ID, UNI_ETH_ASSET_ID, USDC_ARB_ASSET_ID,
-        USDC_AVAX_ASSET_ID, USDC_BASE_ASSET_ID, USDC_ETH_ASSET_ID, USDC_GNOSIS_ASSET_ID, USDC_MONAD_ASSET_ID, USDC_OP_ASSET_ID, USDC_POLYGON_ASSET_ID, USDC_SMARTCHAIN_ASSET_ID,
-        USDC_SOLANA_ASSET_ID, USDC_SUI_ASSET_ID, USDC_XLAYER_ASSET_ID, USDT_APTOS_ASSET_ID, USDT_ARB_ASSET_ID, USDT_AVAX_ASSET_ID, USDT_BERA_ASSET_ID, USDT_ETH_ASSET_ID,
-        USDT_GNOSIS_ASSET_ID, USDT_MONAD_ASSET_ID, USDT_OP_ASSET_ID, USDT_PLASMA_ASSET_ID, USDT_POLYGON_ASSET_ID, USDT_SMARTCHAIN_ASSET_ID, USDT_SOLANA_ASSET_ID,
-        USDT_TON_ASSET_ID, USDT_TRON_ASSET_ID, USDT_XLAYER_ASSET_ID, WBTC_ETH_ASSET_ID,
+        APTOS_USDT_ASSET_ID, ARBITRUM_ARB_ASSET_ID, ARBITRUM_USDC_ASSET_ID, ARBITRUM_USDT_ASSET_ID, AVALANCHE_USDC_ASSET_ID, AVALANCHE_USDT_ASSET_ID, BASE_CBBTC_ASSET_ID,
+        BASE_USDC_ASSET_ID, BERACHAIN_USDT_ASSET_ID, ETHEREUM_AAVE_ASSET_ID, ETHEREUM_CBBTC_ASSET_ID, ETHEREUM_DAI_ASSET_ID, ETHEREUM_LINK_ASSET_ID, ETHEREUM_UNI_ASSET_ID,
+        ETHEREUM_USDC_ASSET_ID, ETHEREUM_USDT_ASSET_ID, ETHEREUM_WBTC_ASSET_ID, GNOSIS_USDC_ASSET_ID, GNOSIS_USDT_ASSET_ID, MONAD_USDC_ASSET_ID, MONAD_USDT_ASSET_ID,
+        OPTIMISM_OP_ASSET_ID, OPTIMISM_USDC_ASSET_ID, OPTIMISM_USDT_ASSET_ID, PLASMA_USDT_ASSET_ID, POLYGON_USDC_ASSET_ID, POLYGON_USDT_ASSET_ID, SMARTCHAIN_USDC_ASSET_ID,
+        SMARTCHAIN_USDT_ASSET_ID, SOLANA_USDC_ASSET_ID, SOLANA_USDT_ASSET_ID, SUI_USDC_ASSET_ID, TON_USDT_ASSET_ID, TRON_USDT_ASSET_ID, XLAYER_USDC_ASSET_ID, XLAYER_USDT_ASSET_ID,
     },
 };
 use std::{collections::HashMap, sync::LazyLock};
@@ -77,158 +77,164 @@ pub const NEAR_INTENTS_XLAYER_USDC: &str = "nep245:v2_1.omni.hot.tg:196_2dK9kLNR
 pub const NEAR_INTENTS_PLASMA_NATIVE: &str = "nep245:v2_1.omni.hot.tg:9745_11111111111111111111";
 pub const NEAR_INTENTS_PLASMA_USDT: &str = "nep245:v2_1.omni.hot.tg:9745_3aL9skCy1yhPoDB8oKMmRHRN7SJW";
 
-type AssetsMap = HashMap<&'static str, &'static str>;
+type AssetsMap = HashMap<AssetId, &'static str>;
 
 pub static NEAR_INTENTS_ASSETS: LazyLock<HashMap<Chain, AssetsMap>> = LazyLock::new(|| {
     let mut map: HashMap<Chain, AssetsMap> = HashMap::new();
 
-    map.insert(Chain::Near, HashMap::from([(Chain::Near.as_ref(), NEAR_INTENTS_WRAP_NEAR)]));
+    map.insert(Chain::Near, HashMap::from([(Chain::Near.as_asset_id(), NEAR_INTENTS_WRAP_NEAR)]));
 
     map.insert(
         Chain::Ethereum,
         HashMap::from([
-            (Chain::Ethereum.as_ref(), NEAR_INTENTS_ETH_NATIVE),
-            (USDC_ETH_ASSET_ID, NEAR_INTENTS_ETH_USDC),
-            (USDT_ETH_ASSET_ID, NEAR_INTENTS_ETH_USDT),
-            (WBTC_ETH_ASSET_ID, NEAR_INTENTS_ETH_WBTC),
-            (DAI_ETH_ASSET_ID, NEAR_INTENTS_ETH_DAI),
-            (CBBTC_ETH_ASSET_ID, NEAR_INTENTS_ETH_CBBTC),
-            (LINK_ETH_ASSET_ID, NEAR_INTENTS_ETH_LINK),
-            (UNI_ETH_ASSET_ID, NEAR_INTENTS_ETH_UNI),
-            (AAVE_ETH_ASSET_ID, NEAR_INTENTS_ETH_AAVE),
+            (Chain::Ethereum.as_asset_id(), NEAR_INTENTS_ETH_NATIVE),
+            (ETHEREUM_USDC_ASSET_ID.clone(), NEAR_INTENTS_ETH_USDC),
+            (ETHEREUM_USDT_ASSET_ID.clone(), NEAR_INTENTS_ETH_USDT),
+            (ETHEREUM_WBTC_ASSET_ID.clone(), NEAR_INTENTS_ETH_WBTC),
+            (ETHEREUM_DAI_ASSET_ID.clone(), NEAR_INTENTS_ETH_DAI),
+            (ETHEREUM_CBBTC_ASSET_ID.clone(), NEAR_INTENTS_ETH_CBBTC),
+            (ETHEREUM_LINK_ASSET_ID.clone(), NEAR_INTENTS_ETH_LINK),
+            (ETHEREUM_UNI_ASSET_ID.clone(), NEAR_INTENTS_ETH_UNI),
+            (ETHEREUM_AAVE_ASSET_ID.clone(), NEAR_INTENTS_ETH_AAVE),
         ]),
     );
 
-    map.insert(Chain::Bitcoin, HashMap::from([(Chain::Bitcoin.as_ref(), NEAR_INTENTS_BTC_NATIVE)]));
+    map.insert(Chain::Bitcoin, HashMap::from([(Chain::Bitcoin.as_asset_id(), NEAR_INTENTS_BTC_NATIVE)]));
 
     map.insert(
         Chain::Solana,
         HashMap::from([
-            (Chain::Solana.as_ref(), NEAR_INTENTS_SOL_NATIVE),
-            (USDC_SOLANA_ASSET_ID, NEAR_INTENTS_SOL_USDC),
-            (USDT_SOLANA_ASSET_ID, NEAR_INTENTS_SOL_USDT),
+            (Chain::Solana.as_asset_id(), NEAR_INTENTS_SOL_NATIVE),
+            (SOLANA_USDC_ASSET_ID.clone(), NEAR_INTENTS_SOL_USDC),
+            (SOLANA_USDT_ASSET_ID.clone(), NEAR_INTENTS_SOL_USDT),
         ]),
     );
 
     map.insert(
         Chain::Sui,
-        HashMap::from([(Chain::Sui.as_ref(), NEAR_INTENTS_SUI_NATIVE), (USDC_SUI_ASSET_ID, NEAR_INTENTS_SUI_USDC)]),
+        HashMap::from([(Chain::Sui.as_asset_id(), NEAR_INTENTS_SUI_NATIVE), (SUI_USDC_ASSET_ID.clone(), NEAR_INTENTS_SUI_USDC)]),
     );
 
     map.insert(
         Chain::Arbitrum,
         HashMap::from([
-            (Chain::Arbitrum.as_ref(), NEAR_INTENTS_ARB_NATIVE),
-            (USDC_ARB_ASSET_ID, NEAR_INTENTS_ARB_USDC),
-            (USDT_ARB_ASSET_ID, NEAR_INTENTS_ARB_USDT),
-            (ARB_ARB_ASSET_ID, NEAR_INTENTS_ARB_ARB),
+            (Chain::Arbitrum.as_asset_id(), NEAR_INTENTS_ARB_NATIVE),
+            (ARBITRUM_USDC_ASSET_ID.clone(), NEAR_INTENTS_ARB_USDC),
+            (ARBITRUM_USDT_ASSET_ID.clone(), NEAR_INTENTS_ARB_USDT),
+            (ARBITRUM_ARB_ASSET_ID.clone(), NEAR_INTENTS_ARB_ARB),
         ]),
     );
 
     map.insert(
         Chain::Base,
         HashMap::from([
-            (Chain::Base.as_ref(), NEAR_INTENTS_BASE_NATIVE),
-            (USDC_BASE_ASSET_ID, NEAR_INTENTS_BASE_USDC),
-            (CBBTC_BASE_ASSET_ID, NEAR_INTENTS_BASE_CBBTC),
+            (Chain::Base.as_asset_id(), NEAR_INTENTS_BASE_NATIVE),
+            (BASE_USDC_ASSET_ID.clone(), NEAR_INTENTS_BASE_USDC),
+            (BASE_CBBTC_ASSET_ID.clone(), NEAR_INTENTS_BASE_CBBTC),
         ]),
     );
 
     map.insert(
         Chain::Optimism,
         HashMap::from([
-            (Chain::Optimism.as_ref(), NEAR_INTENTS_OPT_NATIVE),
-            (USDC_OP_ASSET_ID, NEAR_INTENTS_OPT_USDC),
-            (USDT_OP_ASSET_ID, NEAR_INTENTS_OPT_USDT),
-            (OP_OP_ASSET_ID, NEAR_INTENTS_OPT_OP),
+            (Chain::Optimism.as_asset_id(), NEAR_INTENTS_OPT_NATIVE),
+            (OPTIMISM_USDC_ASSET_ID.clone(), NEAR_INTENTS_OPT_USDC),
+            (OPTIMISM_USDT_ASSET_ID.clone(), NEAR_INTENTS_OPT_USDT),
+            (OPTIMISM_OP_ASSET_ID.clone(), NEAR_INTENTS_OPT_OP),
         ]),
     );
 
     map.insert(
         Chain::AvalancheC,
         HashMap::from([
-            (Chain::AvalancheC.as_ref(), NEAR_INTENTS_AVAX_NATIVE),
-            (USDC_AVAX_ASSET_ID, NEAR_INTENTS_AVAX_USDC),
-            (USDT_AVAX_ASSET_ID, NEAR_INTENTS_AVAX_USDT),
+            (Chain::AvalancheC.as_asset_id(), NEAR_INTENTS_AVAX_NATIVE),
+            (AVALANCHE_USDC_ASSET_ID.clone(), NEAR_INTENTS_AVAX_USDC),
+            (AVALANCHE_USDT_ASSET_ID.clone(), NEAR_INTENTS_AVAX_USDT),
         ]),
     );
 
     map.insert(
         Chain::SmartChain,
         HashMap::from([
-            (Chain::SmartChain.as_ref(), NEAR_INTENTS_BSC_NATIVE),
-            (USDC_SMARTCHAIN_ASSET_ID, NEAR_INTENTS_BSC_USDC),
-            (USDT_SMARTCHAIN_ASSET_ID, NEAR_INTENTS_BSC_USDT),
+            (Chain::SmartChain.as_asset_id(), NEAR_INTENTS_BSC_NATIVE),
+            (SMARTCHAIN_USDC_ASSET_ID.clone(), NEAR_INTENTS_BSC_USDC),
+            (SMARTCHAIN_USDT_ASSET_ID.clone(), NEAR_INTENTS_BSC_USDT),
         ]),
     );
 
     map.insert(
         Chain::Polygon,
         HashMap::from([
-            (Chain::Polygon.as_ref(), NEAR_INTENTS_POL_NATIVE),
-            (USDC_POLYGON_ASSET_ID, NEAR_INTENTS_POL_USDC),
-            (USDT_POLYGON_ASSET_ID, NEAR_INTENTS_POL_USDT),
+            (Chain::Polygon.as_asset_id(), NEAR_INTENTS_POL_NATIVE),
+            (POLYGON_USDC_ASSET_ID.clone(), NEAR_INTENTS_POL_USDC),
+            (POLYGON_USDT_ASSET_ID.clone(), NEAR_INTENTS_POL_USDT),
         ]),
     );
 
     map.insert(
         Chain::Ton,
-        HashMap::from([(Chain::Ton.as_ref(), NEAR_INTENTS_TON_NATIVE), (USDT_TON_ASSET_ID, NEAR_INTENTS_TON_USDT)]),
+        HashMap::from([(Chain::Ton.as_asset_id(), NEAR_INTENTS_TON_NATIVE), (TON_USDT_ASSET_ID.clone(), NEAR_INTENTS_TON_USDT)]),
     );
 
     map.insert(
         Chain::Tron,
-        HashMap::from([(Chain::Tron.as_ref(), NEAR_INTENTS_TRON_NATIVE), (USDT_TRON_ASSET_ID, NEAR_INTENTS_TRON_USDT)]),
+        HashMap::from([(Chain::Tron.as_asset_id(), NEAR_INTENTS_TRON_NATIVE), (TRON_USDT_ASSET_ID.clone(), NEAR_INTENTS_TRON_USDT)]),
     );
 
-    map.insert(Chain::Doge, HashMap::from([(Chain::Doge.as_ref(), NEAR_INTENTS_DOGE_NATIVE)]));
-    map.insert(Chain::Xrp, HashMap::from([(Chain::Xrp.as_ref(), NEAR_INTENTS_XRP_NATIVE)]));
-    map.insert(Chain::Cardano, HashMap::from([(Chain::Cardano.as_ref(), NEAR_INTENTS_CARDANO_NATIVE)]));
+    map.insert(Chain::Doge, HashMap::from([(Chain::Doge.as_asset_id(), NEAR_INTENTS_DOGE_NATIVE)]));
+    map.insert(Chain::Xrp, HashMap::from([(Chain::Xrp.as_asset_id(), NEAR_INTENTS_XRP_NATIVE)]));
+    map.insert(Chain::Cardano, HashMap::from([(Chain::Cardano.as_asset_id(), NEAR_INTENTS_CARDANO_NATIVE)]));
     map.insert(
         Chain::Berachain,
-        HashMap::from([(Chain::Berachain.as_ref(), NEAR_INTENTS_BERA_NATIVE), (USDT_BERA_ASSET_ID, NEAR_INTENTS_BERA_USDT)]),
+        HashMap::from([
+            (Chain::Berachain.as_asset_id(), NEAR_INTENTS_BERA_NATIVE),
+            (BERACHAIN_USDT_ASSET_ID.clone(), NEAR_INTENTS_BERA_USDT),
+        ]),
     );
     map.insert(
         Chain::Aptos,
-        HashMap::from([(Chain::Aptos.as_ref(), NEAR_INTENTS_APT_NATIVE), (USDT_APTOS_ASSET_ID, NEAR_INTENTS_APT_USDT)]),
+        HashMap::from([(Chain::Aptos.as_asset_id(), NEAR_INTENTS_APT_NATIVE), (APTOS_USDT_ASSET_ID.clone(), NEAR_INTENTS_APT_USDT)]),
     );
-    map.insert(Chain::Zcash, HashMap::from([(Chain::Zcash.as_ref(), NEAR_INTENTS_ZEC_NATIVE)]));
+    map.insert(Chain::Zcash, HashMap::from([(Chain::Zcash.as_asset_id(), NEAR_INTENTS_ZEC_NATIVE)]));
 
     map.insert(
         Chain::Gnosis,
         HashMap::from([
-            (Chain::Gnosis.as_ref(), NEAR_INTENTS_GNOSIS_NATIVE),
-            (USDC_GNOSIS_ASSET_ID, NEAR_INTENTS_GNOSIS_USDC),
-            (USDT_GNOSIS_ASSET_ID, NEAR_INTENTS_GNOSIS_USDT),
+            (Chain::Gnosis.as_asset_id(), NEAR_INTENTS_GNOSIS_NATIVE),
+            (GNOSIS_USDC_ASSET_ID.clone(), NEAR_INTENTS_GNOSIS_USDC),
+            (GNOSIS_USDT_ASSET_ID.clone(), NEAR_INTENTS_GNOSIS_USDT),
         ]),
     );
 
-    map.insert(Chain::Stellar, HashMap::from([(Chain::Stellar.as_ref(), NEAR_INTENTS_STELLAR_NATIVE)]));
+    map.insert(Chain::Stellar, HashMap::from([(Chain::Stellar.as_asset_id(), NEAR_INTENTS_STELLAR_NATIVE)]));
 
-    map.insert(Chain::Litecoin, HashMap::from([(Chain::Litecoin.as_ref(), NEAR_INTENTS_LTC_NATIVE)]));
-    map.insert(Chain::BitcoinCash, HashMap::from([(Chain::BitcoinCash.as_ref(), NEAR_INTENTS_BCH_NATIVE)]));
+    map.insert(Chain::Litecoin, HashMap::from([(Chain::Litecoin.as_asset_id(), NEAR_INTENTS_LTC_NATIVE)]));
+    map.insert(Chain::BitcoinCash, HashMap::from([(Chain::BitcoinCash.as_asset_id(), NEAR_INTENTS_BCH_NATIVE)]));
 
     map.insert(
         Chain::Monad,
         HashMap::from([
-            (Chain::Monad.as_ref(), NEAR_INTENTS_MONAD_NATIVE),
-            (USDT_MONAD_ASSET_ID, NEAR_INTENTS_MONAD_USDT),
-            (USDC_MONAD_ASSET_ID, NEAR_INTENTS_MONAD_USDC),
+            (Chain::Monad.as_asset_id(), NEAR_INTENTS_MONAD_NATIVE),
+            (MONAD_USDT_ASSET_ID.clone(), NEAR_INTENTS_MONAD_USDT),
+            (MONAD_USDC_ASSET_ID.clone(), NEAR_INTENTS_MONAD_USDC),
         ]),
     );
 
     map.insert(
         Chain::XLayer,
         HashMap::from([
-            (Chain::XLayer.as_ref(), NEAR_INTENTS_XLAYER_NATIVE),
-            (USDT_XLAYER_ASSET_ID, NEAR_INTENTS_XLAYER_USDT),
-            (USDC_XLAYER_ASSET_ID, NEAR_INTENTS_XLAYER_USDC),
+            (Chain::XLayer.as_asset_id(), NEAR_INTENTS_XLAYER_NATIVE),
+            (XLAYER_USDT_ASSET_ID.clone(), NEAR_INTENTS_XLAYER_USDT),
+            (XLAYER_USDC_ASSET_ID.clone(), NEAR_INTENTS_XLAYER_USDC),
         ]),
     );
 
     map.insert(
         Chain::Plasma,
-        HashMap::from([(Chain::Plasma.as_ref(), NEAR_INTENTS_PLASMA_NATIVE), (USDT_PLASMA_ASSET_ID, NEAR_INTENTS_PLASMA_USDT)]),
+        HashMap::from([
+            (Chain::Plasma.as_asset_id(), NEAR_INTENTS_PLASMA_NATIVE),
+            (PLASMA_USDT_ASSET_ID.clone(), NEAR_INTENTS_PLASMA_USDT),
+        ]),
     );
 
     map
@@ -236,14 +242,9 @@ pub static NEAR_INTENTS_ASSETS: LazyLock<HashMap<Chain, AssetsMap>> = LazyLock::
 
 pub fn get_near_intents_asset_id(asset: &SwapperQuoteAsset) -> Result<String, SwapperError> {
     let asset_id = asset.asset_id();
-    let key = asset_id.to_string();
     let chain_assets = NEAR_INTENTS_ASSETS.get(&asset_id.chain).ok_or(SwapperError::NotSupportedChain)?;
 
-    chain_assets
-        .iter()
-        .find(|(k, _)| k.eq_ignore_ascii_case(&key))
-        .map(|(_, v)| v.to_string())
-        .ok_or(SwapperError::NotSupportedAsset)
+    chain_assets.get(&asset_id).map(|v| v.to_string()).ok_or(SwapperError::NotSupportedAsset)
 }
 
 pub fn get_asset_id_from_near_intents(near_intents_id: &str) -> Option<AssetId> {
@@ -251,16 +252,13 @@ pub fn get_asset_id_from_near_intents(near_intents_id: &str) -> Option<AssetId> 
         .values()
         .flat_map(|assets| assets.iter())
         .find(|(_, v)| **v == near_intents_id)
-        .and_then(|(k, _)| AssetId::new(k))
+        .map(|(k, _)| k.clone())
 }
 
 pub fn supported_assets() -> Vec<SwapperChainAsset> {
     NEAR_INTENTS_ASSETS
         .iter()
-        .map(|(chain, assets)| {
-            let asset_ids = assets.keys().filter_map(|x| AssetId::new(x)).collect::<Vec<_>>();
-            SwapperChainAsset::Assets(*chain, asset_ids)
-        })
+        .map(|(chain, assets)| SwapperChainAsset::Assets(*chain, assets.keys().cloned().collect()))
         .collect()
 }
 
@@ -271,7 +269,7 @@ mod tests {
     #[test]
     fn test_get_asset_id() {
         let asset = SwapperQuoteAsset {
-            id: "ethereum_0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48".into(),
+            id: "ethereum_0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48".into(),
             symbol: "USDC".into(),
             decimals: 6,
         };

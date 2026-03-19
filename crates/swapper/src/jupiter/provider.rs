@@ -227,12 +227,12 @@ mod swap_integration_tests {
         assert_eq!(quote.data.routes.len(), 1);
 
         let route = &quote.data.routes[0];
-        assert_eq!(route.input, AssetId::from(Chain::Solana, Some("So11111111111111111111111111111111111111112".to_string())));
+        assert_eq!(route.input, AssetId::from(Chain::Solana, Some(WSOL_TOKEN_ADDRESS.to_string())));
         assert_eq!(route.output, AssetId::from(Chain::Solana, Some(USDC_TOKEN_MINT.to_string())));
         assert!(!route.route_data.is_empty());
 
         let quote_response: QuoteResponse = serde_json::from_str(&route.route_data)?;
-        assert_eq!(quote_response.input_mint, "So11111111111111111111111111111111111111112");
+        assert_eq!(quote_response.input_mint, WSOL_TOKEN_ADDRESS);
         assert_eq!(quote_response.output_mint, USDC_TOKEN_MINT);
 
         let quote_data = provider.get_quote_data(&quote, FetchQuoteData::None).await?;

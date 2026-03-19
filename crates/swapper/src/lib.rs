@@ -3,14 +3,13 @@ mod approval;
 mod chainlink;
 pub mod cross_chain;
 mod eth_address;
-pub(crate) mod fees;
+pub mod fees;
 mod swapper_trait;
 
 #[cfg(test)]
 pub mod testkit;
 
 pub mod across;
-pub mod asset;
 pub mod chainflip;
 pub mod client_factory;
 pub mod config;
@@ -21,7 +20,6 @@ pub mod models;
 pub mod near_intents;
 pub mod permit2_data;
 pub mod proxy;
-pub mod referrer;
 pub mod relay;
 pub mod swapper;
 pub mod thorchain;

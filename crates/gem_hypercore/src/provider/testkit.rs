@@ -6,12 +6,14 @@ use gem_client::ReqwestClient;
 use std::sync::Arc;
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
+use primitives::asset_constants::HYPERCORE_SPOT_USDC_TOKEN_ID;
+#[cfg(all(test, feature = "chain_integration_tests"))]
 use settings::testkit::get_test_settings;
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 pub const TEST_ADDRESS: &str = "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4";
 #[cfg(all(test, feature = "chain_integration_tests"))]
-pub const USDC_TOKEN_ID: &str = "USDC::0x6d1e7cde53ba9467b783cb7c530ce054::0";
+pub const USDC_TOKEN_ID: &str = HYPERCORE_SPOT_USDC_TOKEN_ID;
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 pub fn create_hypercore_test_client() -> HyperCoreClient<ReqwestClient> {

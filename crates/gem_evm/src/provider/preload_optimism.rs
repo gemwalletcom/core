@@ -1,7 +1,7 @@
 use alloy_primitives::hex;
 use num_bigint::BigInt;
 use num_traits::Num;
-use primitives::{EVMChain, TransactionFee, TransactionInputType, TransactionLoadInput};
+use primitives::{EVMChain, TransactionFee, TransactionInputType, TransactionLoadInput, contract_constants::OPTIMISM_GAS_PRICE_ORACLE_CONTRACT};
 use serde_serializers::bigint::bigint_from_hex_str;
 use std::collections::HashMap;
 use std::error::Error;
@@ -13,8 +13,6 @@ use gem_client::Client;
 use primitives::GasPriceType;
 
 use super::preload_mapper::{bytes_to_hex_string, get_extra_fee_gas_limit, get_transaction_params};
-
-const OPTIMISM_GAS_ORACLE_CONTRACT: &str = "0x420000000000000000000000000000000000000F";
 
 #[cfg(feature = "rpc")]
 pub struct OptimismGasOracle<C: Client + Clone> {
@@ -90,7 +88,7 @@ impl<C: Client + Clone> OptimismGasOracle<C> {
         let data_padding = data.len().div_ceil(32) * 32 - data.len();
         call_data.extend_from_slice(&vec![0u8; data_padding]);
 
-        let result = self.client.eth_call(OPTIMISM_GAS_ORACLE_CONTRACT, &bytes_to_hex_string(&call_data)).await?;
+        let result = self.client.eth_call(OPTIMISM_GAS_PRICE_ORACLE_CONTRACT, &bytes_to_hex_string(&call_data)).await?;
 
         let result_str: String = result;
         bigint_from_hex_str(&result_str)

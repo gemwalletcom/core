@@ -6,14 +6,7 @@ pub use asset::*;
 pub use nft::*;
 pub use perpetual::*;
 
-use serde::{Deserialize, Serialize};
-
 pub const INDEX_PRIMARY_KEY: &str = "id";
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct DocumentId {
-    pub id: String,
-}
 
 pub struct IndexConfig {
     pub name: &'static str,

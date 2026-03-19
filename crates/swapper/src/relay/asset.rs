@@ -1,16 +1,17 @@
 use std::sync::LazyLock;
 
+use crate::{SwapperChainAsset, SwapperError};
 use gem_evm::address::ethereum_address_checksum;
 use gem_solana::{SYSTEM_PROGRAM_ID, WSOL_TOKEN_ADDRESS};
 use primitives::{
     AssetId, Chain, ChainType,
     asset_constants::{
-        USDC_ARB_ASSET_ID, USDC_HYPEREVM_ASSET_ID, USDC_OP_ASSET_ID, USDC_POLYGON_ASSET_ID, USDT_ARB_ASSET_ID, USDT_HYPEREVM_ASSET_ID, USDT_LINEA_ASSET_ID, USDT_OP_ASSET_ID,
-        USDT_POLYGON_ASSET_ID, USDT_ZKSYNC_ASSET_ID,
+        ARBITRUM_USDC_ASSET_ID, ARBITRUM_USDT_ASSET_ID, AVALANCHE_USDC_ASSET_ID, AVALANCHE_USDT_ASSET_ID, BASE_USDC_ASSET_ID, ETHEREUM_USDC_ASSET_ID, ETHEREUM_USDT_ASSET_ID,
+        HYPEREVM_USDC_ASSET_ID, HYPEREVM_USDT_ASSET_ID, LINEA_USDT_ASSET_ID, OPTIMISM_USDC_ASSET_ID, OPTIMISM_USDT_ASSET_ID, POLYGON_USDC_ASSET_ID, POLYGON_USDT_ASSET_ID,
+        SMARTCHAIN_USDC_ASSET_ID, SMARTCHAIN_USDT_ASSET_ID, ZKSYNC_USDT_ASSET_ID,
     },
+    contract_constants::EVM_ZERO_ADDRESS,
 };
-
-use crate::{SwapperChainAsset, SwapperError, asset::*};
 
 fn is_native_currency(chain: Chain, currency: &str) -> bool {
     match chain {
@@ -35,34 +36,16 @@ pub fn map_currency_to_asset_id(chain: Chain, currency: &str) -> AssetId {
 
 pub static SUPPORTED_CHAINS: LazyLock<Vec<SwapperChainAsset>> = LazyLock::new(|| {
     vec![
-        SwapperChainAsset::Assets(
-            Chain::Ethereum,
-            vec![
-                AssetId::from_token(Chain::Ethereum, ETHEREUM_USDC_TOKEN_ID),
-                AssetId::from_token(Chain::Ethereum, ETHEREUM_USDT_TOKEN_ID),
-            ],
-        ),
-        SwapperChainAsset::Assets(
-            Chain::SmartChain,
-            vec![
-                AssetId::from_token(Chain::SmartChain, SMARTCHAIN_USDC_TOKEN_ID),
-                AssetId::from_token(Chain::SmartChain, SMARTCHAIN_USDT_TOKEN_ID),
-            ],
-        ),
-        SwapperChainAsset::Assets(Chain::Base, vec![AssetId::from_token(Chain::Base, BASE_USDC_TOKEN_ID)]),
-        SwapperChainAsset::Assets(Chain::Arbitrum, vec![USDC_ARB_ASSET_ID.into(), USDT_ARB_ASSET_ID.into()]),
-        SwapperChainAsset::Assets(Chain::Optimism, vec![USDC_OP_ASSET_ID.into(), USDT_OP_ASSET_ID.into()]),
-        SwapperChainAsset::Assets(Chain::Polygon, vec![USDC_POLYGON_ASSET_ID.into(), USDT_POLYGON_ASSET_ID.into()]),
-        SwapperChainAsset::Assets(
-            Chain::AvalancheC,
-            vec![
-                AssetId::from_token(Chain::AvalancheC, AVALANCHE_USDC_TOKEN_ID),
-                AssetId::from_token(Chain::AvalancheC, AVALANCHE_USDT_TOKEN_ID),
-            ],
-        ),
-        SwapperChainAsset::Assets(Chain::Linea, vec![USDT_LINEA_ASSET_ID.into()]),
-        SwapperChainAsset::Assets(Chain::ZkSync, vec![USDT_ZKSYNC_ASSET_ID.into()]),
-        SwapperChainAsset::Assets(Chain::Hyperliquid, vec![USDC_HYPEREVM_ASSET_ID.into(), USDT_HYPEREVM_ASSET_ID.into()]),
+        SwapperChainAsset::Assets(Chain::Ethereum, vec![ETHEREUM_USDC_ASSET_ID.clone(), ETHEREUM_USDT_ASSET_ID.clone()]),
+        SwapperChainAsset::Assets(Chain::SmartChain, vec![SMARTCHAIN_USDC_ASSET_ID.clone(), SMARTCHAIN_USDT_ASSET_ID.clone()]),
+        SwapperChainAsset::Assets(Chain::Base, vec![BASE_USDC_ASSET_ID.clone()]),
+        SwapperChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDC_ASSET_ID.clone(), ARBITRUM_USDT_ASSET_ID.clone()]),
+        SwapperChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_USDC_ASSET_ID.clone(), OPTIMISM_USDT_ASSET_ID.clone()]),
+        SwapperChainAsset::Assets(Chain::Polygon, vec![POLYGON_USDC_ASSET_ID.clone(), POLYGON_USDT_ASSET_ID.clone()]),
+        SwapperChainAsset::Assets(Chain::AvalancheC, vec![AVALANCHE_USDC_ASSET_ID.clone(), AVALANCHE_USDT_ASSET_ID.clone()]),
+        SwapperChainAsset::Assets(Chain::Linea, vec![LINEA_USDT_ASSET_ID.clone()]),
+        SwapperChainAsset::Assets(Chain::ZkSync, vec![ZKSYNC_USDT_ASSET_ID.clone()]),
+        SwapperChainAsset::Assets(Chain::Hyperliquid, vec![HYPEREVM_USDC_ASSET_ID.clone(), HYPEREVM_USDT_ASSET_ID.clone()]),
         SwapperChainAsset::Assets(Chain::Berachain, vec![]),
         SwapperChainAsset::Assets(Chain::Manta, vec![]),
         SwapperChainAsset::Assets(Chain::Sonic, vec![]),
@@ -88,7 +71,7 @@ pub fn asset_to_currency(asset_id: &AssetId) -> Result<String, SwapperError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::Chain;
+    use primitives::{Chain, asset_constants::ETHEREUM_USDC_TOKEN_ID};
 
     #[test]
     fn test_evm_native_asset() {
@@ -98,7 +81,7 @@ mod tests {
 
     #[test]
     fn test_evm_token_asset() {
-        let token_address = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+        let token_address = ETHEREUM_USDC_TOKEN_ID;
         let result = asset_to_currency(&AssetId::from_token(Chain::Ethereum, token_address)).unwrap();
         assert_eq!(result, token_address);
     }

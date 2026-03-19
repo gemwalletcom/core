@@ -14,7 +14,7 @@ use super::{
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider,
-    SwapperQuoteData, approval::check_approval_erc20, config::get_swap_api_url, cross_chain::VaultAddresses, fees::resolve_max_quote_value, referrer::DEFAULT_REFERRER,
+    SwapperQuoteData, approval::check_approval_erc20, config::get_swap_api_url, cross_chain::VaultAddresses, fees::DEFAULT_REFERRER, fees::resolve_max_quote_value,
 };
 
 #[derive(Debug)]
@@ -173,14 +173,14 @@ mod swap_integration_tests {
 
     #[tokio::test]
     async fn test_relay_eth_to_base() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        use primitives::asset_constants::{USDC_ARB_ASSET_ID, USDC_BASE_ASSET_ID};
+        use primitives::asset_constants::{ARBITRUM_USDC_ASSET_ID, BASE_USDC_ASSET_ID};
 
         let provider = Arc::new(NativeProvider::default());
         let relay = Relay::new(provider);
 
         let request = QuoteRequest {
-            from_asset: SwapperQuoteAsset::from(AssetId::new(USDC_ARB_ASSET_ID).unwrap()),
-            to_asset: SwapperQuoteAsset::from(AssetId::new(USDC_BASE_ASSET_ID).unwrap()),
+            from_asset: SwapperQuoteAsset::from(ARBITRUM_USDC_ASSET_ID.clone()),
+            to_asset: SwapperQuoteAsset::from(BASE_USDC_ASSET_ID.clone()),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             value: "500000".to_string(),
@@ -203,13 +203,13 @@ mod swap_integration_tests {
 
     #[tokio::test]
     async fn test_relay_usdt_eth_to_base() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        use primitives::asset_constants::USDT_ETH_ASSET_ID;
+        use primitives::asset_constants::ETHEREUM_USDT_ASSET_ID;
 
         let provider = Arc::new(NativeProvider::default());
         let relay = Relay::new(provider);
 
         let request = QuoteRequest {
-            from_asset: SwapperQuoteAsset::from(AssetId::new(USDT_ETH_ASSET_ID).unwrap()),
+            from_asset: SwapperQuoteAsset::from(ETHEREUM_USDT_ASSET_ID.clone()),
             to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Base)),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),

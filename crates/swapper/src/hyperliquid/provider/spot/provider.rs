@@ -12,12 +12,14 @@ use gem_hypercore::{
 };
 use num_bigint::BigUint;
 use number_formatter::{BigNumberFormatter, NumberFormatterError};
-use primitives::Chain;
+use primitives::{
+    Chain,
+    known_assets::{HYPERCORE_HYPE, HYPERCORE_SPOT_HYPE, HYPERCORE_SPOT_UBTC, HYPERCORE_SPOT_USDC},
+};
 
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData,
     alien::{RpcClient, RpcProvider},
-    asset::{HYPERCORE_HYPE, HYPERCORE_SPOT_HYPE, HYPERCORE_SPOT_UBTC, HYPERCORE_SPOT_USDC},
     error::INVALID_AMOUNT,
 };
 

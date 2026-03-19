@@ -39,7 +39,7 @@ pub fn map_token_data_spl_token_2022(chain: Chain, token_id: String, token_info:
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::ResultTokenInfo;
+    use crate::{PYUSD_TOKEN_MINT, models::ResultTokenInfo};
     use primitives::{AssetType, JsonRpcResult};
 
     #[test]
@@ -52,7 +52,7 @@ mod tests {
             .parsed
             .info;
 
-        let token_data = map_token_data_spl_token_2022(Chain::Solana, "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo".to_string(), &result).unwrap();
+        let token_data = map_token_data_spl_token_2022(Chain::Solana, PYUSD_TOKEN_MINT.to_string(), &result).unwrap();
 
         assert_eq!(token_data.name, "PayPal USD");
         assert_eq!(token_data.symbol, "PYUSD");

@@ -3,11 +3,10 @@ use std::sync::LazyLock;
 
 use num_bigint::BigUint;
 use primitives::swap::SwapStatus;
-use primitives::{AssetId, Chain, TransactionSwapMetadata};
+use primitives::{AssetId, Chain, TransactionSwapMetadata, known_assets::*};
 use serde::{Deserialize, Serialize};
 use serde_serializers::{deserialize_biguint_from_str, serialize_biguint};
 
-use crate::asset::*;
 use crate::{SwapResult, SwapperChainAsset, SwapperProvider};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -188,7 +187,10 @@ pub fn map_swap_result(response: &SwapTxResponse) -> SwapResult {
 #[cfg(test)]
 pub mod test {
     use super::*;
-    use primitives::AssetId;
+    use primitives::{
+        AssetId,
+        asset_constants::{ETHEREUM_USDC_ASSET_ID, ETHEREUM_USDT_ASSET_ID},
+    };
 
     fn swap_response(json: &str) -> SwapTxResponse {
         serde_json::from_str(json).unwrap()
@@ -225,7 +227,7 @@ pub mod test {
             SwapResult {
                 status: SwapStatus::Completed,
                 metadata: Some(TransactionSwapMetadata {
-                    from_asset: AssetId::from_token(Chain::Ethereum, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"),
+                    from_asset: ETHEREUM_USDC_ASSET_ID.clone(),
                     from_value: "100000000".to_string(),
                     to_asset: AssetId::from_chain(Chain::Solana),
                     to_value: "1143469990".to_string(),
@@ -268,7 +270,7 @@ pub mod test {
                 metadata: Some(TransactionSwapMetadata {
                     from_asset: AssetId::from_chain(Chain::Bitcoin),
                     from_value: "1508475".to_string(),
-                    to_asset: AssetId::from_token(Chain::Ethereum, "0xdAC17F958D2ee523a2206206994597C13D831ec7"),
+                    to_asset: ETHEREUM_USDT_ASSET_ID.clone(),
                     to_value: "0".to_string(),
                     provider: Some("chainflip".to_string()),
                 }),

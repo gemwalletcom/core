@@ -40,8 +40,11 @@ pub fn map_swap_result(response: &TransactionStatus) -> SwapResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::asset::ETHEREUM_USDT_TOKEN_ID;
-    use primitives::{AssetId, Chain, swap::SwapStatus};
+    use primitives::{
+        AssetId, Chain,
+        asset_constants::{ETHEREUM_USDT_TOKEN_ID, TRON_USDT_TOKEN_ID},
+        swap::SwapStatus,
+    };
 
     fn status(json: &str) -> TransactionStatus {
         serde_json::from_str(json).unwrap()
@@ -58,7 +61,7 @@ mod tests {
                 metadata: Some(TransactionSwapMetadata {
                     from_asset: Chain::Litecoin.as_asset_id(),
                     from_value: "160661010".to_string(),
-                    to_asset: AssetId::from_token(Chain::Tron, crate::asset::TRON_USDT_TOKEN_ID),
+                    to_asset: AssetId::from_token(Chain::Tron, TRON_USDT_TOKEN_ID),
                     to_value: "79158429".to_string(),
                     provider: Some("thorchain".to_string()),
                 }),

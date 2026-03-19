@@ -1,17 +1,23 @@
 use crate::{DatabaseClient, models::*};
 
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use nft_asset::UpdateNftAssetImageUrlRow;
 use nft_collection::UpdateNftCollectionImageUrlRow;
 use nft_link::NftLinkRow;
 use nft_report::NewNftReportRow;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum NftCollectionFilter {
+    UpdatedSince(NaiveDateTime),
+}
+
 pub(crate) trait NftStore {
     fn get_nft_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<NftAssetRow>, diesel::result::Error>;
     fn get_nft_asset(&mut self, asset_id: &str) -> Result<NftAssetRow, diesel::result::Error>;
     fn add_nft_assets(&mut self, values: Vec<NftAssetRow>) -> Result<usize, diesel::result::Error>;
     fn update_nft_asset_image_url(&mut self, update: UpdateNftAssetImageUrlRow) -> Result<usize, diesel::result::Error>;
-    fn get_nft_collections_all(&mut self) -> Result<Vec<NftCollectionRow>, diesel::result::Error>;
+    fn get_nft_collections_by_filter(&mut self, filters: Vec<NftCollectionFilter>) -> Result<Vec<NftCollectionRow>, diesel::result::Error>;
     fn get_nft_collection(&mut self, collection_id: &str) -> Result<NftCollectionRow, diesel::result::Error>;
     fn get_nft_collections(&mut self, ids: Vec<String>) -> Result<Vec<NftCollectionRow>, diesel::result::Error>;
     fn get_nft_collection_links(&mut self, collection_id: &str) -> Result<Vec<NftLinkRow>, diesel::result::Error>;
@@ -45,9 +51,19 @@ impl NftStore for DatabaseClient {
     }
 
     // collections
-    fn get_nft_collections_all(&mut self) -> Result<Vec<NftCollectionRow>, diesel::result::Error> {
+    fn get_nft_collections_by_filter(&mut self, filters: Vec<NftCollectionFilter>) -> Result<Vec<NftCollectionRow>, diesel::result::Error> {
         use crate::schema::nft_collections::dsl::*;
-        nft_collections.select(NftCollectionRow::as_select()).load(&mut self.connection)
+        let mut query = nft_collections.into_boxed();
+
+        for filter in filters {
+            match filter {
+                NftCollectionFilter::UpdatedSince(value) => {
+                    query = query.filter(updated_at.gt(value));
+                }
+            }
+        }
+
+        query.select(NftCollectionRow::as_select()).load(&mut self.connection)
     }
 
     fn get_nft_collection(&mut self, collection_id: &str) -> Result<NftCollectionRow, diesel::result::Error> {

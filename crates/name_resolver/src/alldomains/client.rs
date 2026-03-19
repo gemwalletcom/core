@@ -8,17 +8,17 @@ use serde_json::{self, json};
 use gem_client::ReqwestClient;
 use gem_jsonrpc::JsonRpcClient;
 use gem_solana::{COMMITMENT_CONFIRMED, pubkey::Pubkey};
-use primitives::{chain::Chain, name::NameProvider};
+use primitives::{
+    chain::Chain,
+    contract_constants::{SOLANA_ALLDOMAINS_ANS_PROGRAM_ID, SOLANA_ALLDOMAINS_NAME_HOUSE_PROGRAM_ID, SOLANA_ALLDOMAINS_ROOT_PUBLIC_KEY, SOLANA_ALLDOMAINS_TLD_HOUSE_PROGRAM_ID},
+    name::NameProvider,
+};
 
 use crate::client::NameClient;
 use crate::model::NameQuery;
 
 use super::model::NameRecordHeader;
 
-const ANS_PROGRAM_ID: &str = "ALTNSZ46uaAUU7XUV6awvdorLGqAsPwa9shm7h4uP2FK";
-const TLD_HOUSE_PROGRAM_ID: &str = "TLDHkysf5pCnKsVA4gXpNvmy7psXLPEu4LAdDJthT9S";
-const NAME_HOUSE_PROGRAM_ID: &str = "NH3uX6FtVE2fNREAioP7hm5RaozotZxeL6khU1EHx51";
-const ROOT_ANS_PUBLIC_KEY: &str = "3mX9b4AZaQehNoQGfckVcmgmA6bkBoFcbLj9RMmMyNcU";
 const HASH_PREFIX: &str = "ALT Name Service";
 const TLD_HOUSE_PREFIX: &str = "tld_house";
 const NAME_HOUSE_PREFIX: &str = "name_house";
@@ -55,7 +55,7 @@ impl AllDomainsClient {
         seeds.push(name_class_key.as_ref());
         seeds.push(parent_name_key.as_ref());
 
-        let ans_program_id = Pubkey::from_str(ANS_PROGRAM_ID)?;
+        let ans_program_id = Pubkey::from_str(SOLANA_ALLDOMAINS_ANS_PROGRAM_ID)?;
         if let Some((pda, bump)) = Pubkey::try_find_program_address(&seeds, &ans_program_id) {
             Ok((pda, bump))
         } else {
@@ -67,7 +67,7 @@ impl AllDomainsClient {
         let tld_lower = tld_string.to_lowercase();
         let seeds = &[TLD_HOUSE_PREFIX.as_bytes(), tld_lower.as_bytes()];
 
-        let tld_house_program_id = Pubkey::from_str(TLD_HOUSE_PROGRAM_ID)?;
+        let tld_house_program_id = Pubkey::from_str(SOLANA_ALLDOMAINS_TLD_HOUSE_PROGRAM_ID)?;
         if let Some((pda, bump)) = Pubkey::try_find_program_address(seeds, &tld_house_program_id) {
             Ok((pda, bump))
         } else {
@@ -77,7 +77,7 @@ impl AllDomainsClient {
 
     fn find_name_house(&self, tld_house: Pubkey) -> Result<(Pubkey, u8), Box<dyn Error + Send + Sync>> {
         let seeds = &[NAME_HOUSE_PREFIX.as_bytes(), tld_house.as_ref()];
-        let name_house_program_id = Pubkey::from_str(NAME_HOUSE_PROGRAM_ID)?;
+        let name_house_program_id = Pubkey::from_str(SOLANA_ALLDOMAINS_NAME_HOUSE_PROGRAM_ID)?;
         if let Some((pda, bump)) = Pubkey::try_find_program_address(seeds, &name_house_program_id) {
             Ok((pda, bump))
         } else {
@@ -87,7 +87,7 @@ impl AllDomainsClient {
 
     fn find_nft_record(&self, name_account: Pubkey, name_house_account: Pubkey) -> Result<(Pubkey, u8), Box<dyn Error + Send + Sync>> {
         let seeds = &[NFT_RECORD_PREFIX.as_bytes(), name_house_account.as_ref(), name_account.as_ref()];
-        let name_house_program_id = Pubkey::from_str(NAME_HOUSE_PROGRAM_ID)?;
+        let name_house_program_id = Pubkey::from_str(SOLANA_ALLDOMAINS_NAME_HOUSE_PROGRAM_ID)?;
         if let Some((pda, bump)) = Pubkey::try_find_program_address(seeds, &name_house_program_id) {
             Ok((pda, bump))
         } else {
@@ -96,7 +96,7 @@ impl AllDomainsClient {
     }
 
     async fn get_origin_name_account_key(&self) -> Result<Pubkey, Box<dyn Error + Send + Sync>> {
-        let root_pubkey = Pubkey::from_str(ROOT_ANS_PUBLIC_KEY)?;
+        let root_pubkey = Pubkey::from_str(SOLANA_ALLDOMAINS_ROOT_PUBLIC_KEY)?;
         Ok(root_pubkey)
     }
 

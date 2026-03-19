@@ -3,7 +3,7 @@ use std::sync::Arc;
 use alloy_primitives::{Address, U256, hex::decode as HexDecode};
 use alloy_sol_types::SolCall;
 use num_bigint::{BigInt, Sign};
-use primitives::Chain;
+use primitives::{Chain, contract_constants::ETHEREUM_ACROSS_HUB_POOL_CONTRACT};
 
 use crate::{
     SwapperError,
@@ -11,7 +11,7 @@ use crate::{
     client_factory::create_client_with_chain,
 };
 use gem_evm::{
-    across::{contracts::HubPoolInterface, deployment::ACROSS_HUBPOOL},
+    across::contracts::HubPoolInterface,
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
     multicall3::{IMulticall3, create_call3, decode_call3_return},
 };
@@ -26,7 +26,7 @@ pub struct HubPoolClient {
 impl HubPoolClient {
     pub fn new(provider: Arc<dyn RpcProvider>, chain: Chain) -> HubPoolClient {
         HubPoolClient {
-            contract: ACROSS_HUBPOOL.into(),
+            contract: ETHEREUM_ACROSS_HUB_POOL_CONTRACT.into(),
             client: create_client_with_chain(provider.clone(), chain),
             chain,
         }

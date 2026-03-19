@@ -2,9 +2,7 @@ use std::str::FromStr;
 use std::sync::LazyLock;
 
 use num_bigint::BigInt;
-use primitives::{Asset, AssetId};
-
-use crate::asset::*;
+use primitives::{Asset, AssetId, asset_constants::*, known_assets::*};
 
 use super::chain::THORChainName;
 
@@ -64,8 +62,7 @@ impl THORChainAsset {
         self.is_token() && self.chain.is_evm_chain()
     }
 
-    pub fn from_asset_id(asset_id: &str) -> Option<THORChainAsset> {
-        let asset_id = AssetId::new(asset_id)?;
+    pub fn from_id(asset_id: &AssetId) -> Option<THORChainAsset> {
         let chain = THORChainName::from_chain(&asset_id.chain)?;
         if let Some(token_id) = &asset_id.token_id {
             THORChainAsset::from(chain, token_id)
@@ -78,6 +75,10 @@ impl THORChainAsset {
                 decimals: asset.decimals as u32,
             })
         }
+    }
+
+    pub fn from_asset_id(asset_id: &str) -> Option<THORChainAsset> {
+        THORChainAsset::from_id(&AssetId::new(asset_id)?)
     }
 
     pub fn from(chain: THORChainName, token_id: &str) -> Option<THORChainAsset> {
@@ -111,15 +112,18 @@ impl THORChainName {
 
 #[cfg(test)]
 mod tests {
-    use primitives::Chain;
+    use primitives::{
+        Chain,
+        asset_constants::{ETHEREUM_USDT_ASSET_ID, TRON_USDT_ASSET_ID},
+    };
 
     use super::*;
 
     #[test]
     fn test_thorchain_name_token() {
         let test_cases = vec![
-            ("0xdAC17F958D2ee523a2206206994597C13D831ec7", THORChainName::Ethereum, "USDT", 6),
-            ("0x55d398326f99059fF775485246999027B3197955", THORChainName::SmartChain, "USDT", 18),
+            (ETHEREUM_USDT_TOKEN_ID, THORChainName::Ethereum, "USDT", 6),
+            (SMARTCHAIN_USDT_TOKEN_ID, THORChainName::SmartChain, "USDT", 18),
         ];
 
         for (token_id, chain, expected_symbol, expected_decimals) in test_cases {
@@ -136,7 +140,7 @@ mod tests {
         let asset_with_token = THORChainAsset {
             symbol: "USDT".to_string(),
             chain: THORChainName::Ethereum,
-            token_id: Some("0xdAC17F958D2ee523a2206206994597C13D831ec7".to_string()),
+            token_id: Some(ETHEREUM_USDT_TOKEN_ID.to_string()),
             decimals: 6,
         };
         assert_eq!(asset_with_token.asset_name(), "ETH.USDT");
@@ -144,7 +148,7 @@ mod tests {
         let asset_with_token = THORChainAsset {
             symbol: "USDT".to_string(),
             chain: THORChainName::SmartChain,
-            token_id: Some("0x55d398326f99059fF775485246999027B3197955".to_string()),
+            token_id: Some(SMARTCHAIN_USDT_TOKEN_ID.to_string()),
             decimals: 6,
         };
         assert_eq!(asset_with_token.asset_name(), "BSC.USDT");
@@ -183,7 +187,7 @@ mod tests {
             Some("=:d:0x1234567890abcdef:0/1/0:g1:50".into())
         );
         assert_eq!(
-            THORChainAsset::from_asset_id("ethereum_0xdAC17F958D2ee523a2206206994597C13D831ec7")
+            THORChainAsset::from_id(&ETHEREUM_USDT_ASSET_ID)
                 .unwrap()
                 .get_memo(destination_address.clone(), 0, 1, 0, fee_address.clone(), bps),
             Some("=:ETH.USDT:0x1234567890abcdef:0/1/0:g1:50".into())
@@ -234,8 +238,7 @@ mod tests {
         let fee_address = "g1".to_string();
         let bps = 50;
 
-        let tron_usdt_asset_id = &AssetId::from_token(Chain::Tron, "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t").to_string();
-        let asset = THORChainAsset::from_asset_id(tron_usdt_asset_id);
+        let asset = THORChainAsset::from_id(&TRON_USDT_ASSET_ID);
 
         assert!(asset.is_some(), "TRON USDT asset should be recognized");
 

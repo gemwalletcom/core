@@ -66,6 +66,8 @@ pub mod asset_details;
 pub use self::asset_details::{AssetBasic, AssetFull, AssetLink, AssetMarketPrice, AssetPriceMetadata, AssetProperties};
 pub mod asset_constants;
 pub mod asset_order;
+pub mod contract_constants;
+pub mod known_assets;
 pub use self::asset_order::AssetOrder;
 pub mod fiat_assets;
 pub mod fiat_quote;
@@ -287,7 +289,7 @@ pub use self::simulation::{
 pub mod ip_usage_type;
 pub use self::ip_usage_type::IpUsageType;
 pub mod metrics;
-pub use self::metrics::{ConsumerStatus, JobStatus, ParserStatus, ReportedError};
+pub use self::metrics::{ConsumerStatus, ParserStatus, ReportedError};
 pub mod value_access;
 pub use self::value_access::ValueAccess;
 

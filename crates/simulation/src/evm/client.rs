@@ -66,7 +66,7 @@ mod tests {
     use gem_evm::eip712::parse_eip712_json;
     use gem_evm::rpc::EthereumClient;
     use gem_jsonrpc::testkit::mock_jsonrpc_client;
-    use primitives::{Chain, EVMChain, SimulationSeverity, SimulationWarning, SimulationWarningType};
+    use primitives::{Chain, EVMChain, SimulationSeverity, SimulationWarning, SimulationWarningType, asset_constants::ETHEREUM_USDC_TOKEN_ID};
     use serde_json::Value;
 
     use super::SimulationClient;
@@ -102,7 +102,7 @@ mod tests {
 
         let client = ethereum_client("0x1234");
         let result = SimulationClient::new(&client)
-            .simulate_evm_calldata(Chain::Ethereum, &calldata, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")
+            .simulate_evm_calldata(Chain::Ethereum, &calldata, ETHEREUM_USDC_TOKEN_ID)
             .await?;
 
         assert_eq!(result.warnings.len(), 1);

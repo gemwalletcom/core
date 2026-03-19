@@ -2,13 +2,13 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 
-use primitives::{Chain, swap::SwapResult};
-
-use crate::{
-    FetchQuoteData, ProviderType, Quote, QuoteRequest, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData,
-    alien::RpcProvider,
-    asset::{HYPERCORE_HYPE, HYPEREVM_HYPE},
+use primitives::{
+    Chain,
+    known_assets::{HYPERCORE_HYPE, HYPEREVM_HYPE},
+    swap::SwapResult,
 };
+
+use crate::{FetchQuoteData, ProviderType, Quote, QuoteRequest, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData, alien::RpcProvider};
 use gem_hypercore::is_spot_swap;
 
 use super::{bridge::HyperCoreBridge, spot::HyperCoreSpot};

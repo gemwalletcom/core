@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use serde_serializers::{deserialize_f64_from_str, deserialize_option_f64_from_str};
 
 use crate::models::UInt64;
@@ -46,4 +47,6 @@ pub struct PerpetualFill {
     pub px: f64,
     pub dir: String,
     pub time: u64,
+    #[serde(default)]
+    pub liquidation: Option<Value>,
 }

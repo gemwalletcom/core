@@ -3,7 +3,7 @@ use crate::chain_evm::EVMChain;
 
 use super::EtherScan;
 
-static BLOCKSEC_NAME: &str = "Blocksec Phalcon";
+const BLOCKSEC_NAME: &str = "Blocksec Phalcon";
 
 pub struct Blocksec {
     pub chain: EVMChain,

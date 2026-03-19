@@ -9,12 +9,11 @@ use crate::{
     across::{DEFAULT_DEPOSIT_GAS_LIMIT, DEFAULT_FILL_GAS_LIMIT},
     alien::RpcProvider,
     approval::check_approval_erc20,
-    asset::*,
     chainlink::ChainlinkPriceFeed,
     client_factory::create_eth_client,
-    config::ReferralFee,
     cross_chain::VaultAddresses,
     eth_address,
+    fees::ReferralFee,
     models::*,
 };
 use alloy_primitives::{
@@ -38,7 +37,7 @@ use gem_evm::{
     weth::WETH9,
 };
 use num_bigint::{BigInt, Sign};
-use primitives::{AssetId, Chain, EVMChain, TransactionSwapMetadata, swap::ApprovalData};
+use primitives::{AssetId, Chain, EVMChain, TransactionSwapMetadata, known_assets::*, swap::ApprovalData};
 use serde_serializers::biguint_from_hex_str;
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
@@ -443,7 +442,7 @@ impl Swapper for Across {
         let relayer_fee_percent = relayer_calc.capital_fee_percent(&BigInt::from_str(&request.value).unwrap(), cost_config);
         let relayer_fee = fees::multiply(from_amount, relayer_fee_percent, cost_config.decimals);
 
-        let referral_config = request.options.fee.clone().unwrap_or_default().evm_bridge;
+        let referral_config = request.options.fee.clone().unwrap_or_default().evm;
 
         // Calculate gas limit / price for relayer
         let remain_amount = from_amount - lpfee - relayer_fee;
@@ -613,20 +612,20 @@ mod tests {
     use super::*;
     use alloy_sol_types::SolEvent;
     use gem_evm::{multicall3::IMulticall3, rpc::model::Log};
-    use primitives::asset_constants::*;
+    use primitives::{asset_constants::*, contract_constants::*};
 
     #[test]
     fn test_is_supported_pair() {
-        let weth_eth = AssetId::from_token(Chain::Ethereum, WETH_ETH_CONTRACT);
-        let weth_op = AssetId::from_token(Chain::Optimism, WETH_OP_CONTRACT);
-        let weth_arb = AssetId::from_token(Chain::Arbitrum, WETH_ARB_CONTRACT);
-        let weth_bsc: AssetId = ETH_SMARTCHAIN_ASSET_ID.into();
+        let weth_eth: AssetId = ETHEREUM_WETH_ASSET_ID.clone();
+        let weth_op: AssetId = OPTIMISM_WETH_ASSET_ID.clone();
+        let weth_arb: AssetId = ARBITRUM_WETH_ASSET_ID.clone();
+        let weth_bsc: AssetId = SMARTCHAIN_ETH_ASSET_ID.clone();
 
-        let usdc_eth: AssetId = USDC_ETH_ASSET_ID.into();
-        let usdc_arb: AssetId = USDC_ARB_ASSET_ID.into();
-        let usdc_monad: AssetId = USDC_MONAD_ASSET_ID.into();
-        let usdt_eth: AssetId = USDT_ETH_ASSET_ID.into();
-        let usdt_monad: AssetId = USDT_MONAD_ASSET_ID.into();
+        let usdc_eth: AssetId = ETHEREUM_USDC_ASSET_ID.clone();
+        let usdc_arb: AssetId = ARBITRUM_USDC_ASSET_ID.clone();
+        let usdc_monad: AssetId = MONAD_USDC_ASSET_ID.clone();
+        let usdt_eth: AssetId = ETHEREUM_USDT_ASSET_ID.clone();
+        let usdt_monad: AssetId = MONAD_USDT_ASSET_ID.clone();
 
         assert!(Across::is_supported_pair(&weth_eth, &weth_op));
         assert!(Across::is_supported_pair(&weth_op, &weth_arb));
@@ -668,20 +667,20 @@ mod tests {
 
     #[test]
     fn test_resolve_token_asset_native_eth_via_weth() {
-        let result = resolve_token_asset(Chain::Ethereum, WETH_ETH_CONTRACT);
+        let result = resolve_token_asset(Chain::Ethereum, ETHEREUM_WETH_TOKEN_ID);
         assert_eq!(result, Some(AssetId::from_chain(Chain::Ethereum)));
     }
 
     #[test]
     fn test_resolve_token_asset_native_arb_via_weth() {
-        let result = resolve_token_asset(Chain::Arbitrum, WETH_ARB_CONTRACT);
+        let result = resolve_token_asset(Chain::Arbitrum, ARBITRUM_WETH_TOKEN_ID);
         assert_eq!(result, Some(AssetId::from_chain(Chain::Arbitrum)));
     }
 
     #[test]
     fn test_resolve_token_asset_usdc_checksummed() {
         let result = resolve_token_asset(Chain::Ethereum, "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48");
-        assert_eq!(result, Some(AssetId::from_token(Chain::Ethereum, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")));
+        assert_eq!(result, Some(ETHEREUM_USDC_ASSET_ID.clone()));
     }
 
     #[test]
@@ -801,6 +800,7 @@ mod tests {
         use crate::{
             FetchQuoteData, NativeProvider, Options, QuoteRequest, SwapperError, SwapperMode,
             config::{ReferralFee, ReferralFees},
+            fees::DEFAULT_STABLE_SWAP_REFERRAL_BPS,
         };
         use primitives::{AssetId, Chain, swap::SwapStatus};
         use std::{sync::Arc, time::SystemTime};
@@ -809,18 +809,14 @@ mod tests {
         async fn test_across_quote() -> Result<(), SwapperError> {
             let network_provider = Arc::new(NativeProvider::default());
             let swap_provider = Across::boxed(network_provider.clone());
-            let mut options = Options {
+            let options = Options {
                 slippage: 100.into(),
                 fee: Some(ReferralFees::evm(ReferralFee {
-                    bps: 25,
+                    bps: DEFAULT_STABLE_SWAP_REFERRAL_BPS,
                     address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
                 })),
                 preferred_providers: vec![],
                 use_max_amount: false,
-            };
-            options.fee.as_mut().unwrap().evm_bridge = ReferralFee {
-                bps: 25,
-                address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
             };
 
             let request = QuoteRequest {
@@ -859,8 +855,8 @@ mod tests {
             };
 
             let wallet = "0x9b1fe00135e0ff09389bfaeff0c8f299ec818d4a";
-            let from_asset: AssetId = USDC_ETH_ASSET_ID.into();
-            let to_asset: AssetId = USDC_MONAD_ASSET_ID.into();
+            let from_asset: AssetId = ETHEREUM_USDC_ASSET_ID.clone();
+            let to_asset: AssetId = MONAD_USDC_ASSET_ID.clone();
             let request = QuoteRequest {
                 from_asset: from_asset.into(),
                 to_asset: to_asset.into(),

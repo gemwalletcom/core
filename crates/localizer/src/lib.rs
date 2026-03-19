@@ -137,36 +137,28 @@ impl LanguageLocalizer {
         fl!(self.loader.as_ref(), "notification_unfreeze_title", value = value)
     }
 
-    pub fn notification_stake_title(&self, value: &str, validator: &str) -> String {
-        if validator.len() < 12 {
-            fl!(self.loader.as_ref(), "notification_stake_validator_title", value = value, validator = validator)
-        } else {
-            fl!(self.loader.as_ref(), "notification_stake_title", value = value)
-        }
+    pub fn notification_stake_title(&self, value: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_stake_title", value = value)
     }
 
-    pub fn notification_unstake_title(&self, value: &str, validator: &str) -> String {
-        if validator.len() < 12 {
-            fl!(self.loader.as_ref(), "notification_unstake_validator_title", value = value, validator = validator)
-        } else {
-            fl!(self.loader.as_ref(), "notification_unstake_title", value = value)
-        }
+    pub fn notification_unstake_title(&self, value: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_unstake_title", value = value)
     }
 
-    pub fn notification_redelegate_title(&self, value: &str, validator: &str) -> String {
-        if validator.len() < 12 {
-            fl!(self.loader.as_ref(), "notification_redelegate_validator_title", value = value, validator = validator)
-        } else {
-            fl!(self.loader.as_ref(), "notification_redelegate_title", value = value)
-        }
+    pub fn notification_redelegate_title(&self, value: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_redelegate_title", value = value)
     }
 
-    pub fn notification_withdraw_stake_title(&self, value: &str, validator: &str) -> String {
-        if validator.len() < 12 {
-            fl!(self.loader.as_ref(), "notification_withdraw_stake_validator_title", value = value, validator = validator)
-        } else {
-            fl!(self.loader.as_ref(), "notification_withdraw_stake_title", value = value)
-        }
+    pub fn notification_withdraw_title(&self, value: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_withdraw_title", value = value)
+    }
+
+    pub fn notification_stake_to_description(&self, validator: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_stake_to_description", validator = validator)
+    }
+
+    pub fn notification_stake_from_description(&self, validator: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_stake_from_description", validator = validator)
     }
 
     pub fn notification_claim_rewards_title(&self, value: &str) -> String {
@@ -291,12 +283,16 @@ impl LanguageLocalizer {
         fl!(self.loader.as_ref(), "notification_perpetual_short_title", coin = coin)
     }
 
-    pub fn notification_perpetual_open_description(&self, amount: &str, price: &str) -> String {
-        fl!(self.loader.as_ref(), "notification_perpetual_open_description", amount = amount, price = price)
+    pub fn notification_perpetual_open_description(&self, price: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_perpetual_open_description", price = price)
     }
 
-    pub fn notification_perpetual_close_description(&self, pnl: &str, price: &str) -> String {
-        fl!(self.loader.as_ref(), "notification_perpetual_close_description", pnl = pnl, price = price)
+    pub fn notification_perpetual_close_positive_description(&self, pnl: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_perpetual_close_positive_description", pnl = pnl)
+    }
+
+    pub fn notification_perpetual_close_negative_description(&self, pnl: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_perpetual_close_negative_description", pnl = pnl)
     }
 
     pub fn notification_stake_rewards(&self, value: &str, chain: &str) -> LanguageNotification {
