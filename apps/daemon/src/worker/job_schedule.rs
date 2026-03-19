@@ -1,7 +1,6 @@
 use async_trait::async_trait;
 use cacher::CacherClient;
 use job_runner::{JobContext, JobError, JobSchedule, RunDecision};
-use primitives::JobStatus;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 pub struct CacherJobTracker {
@@ -21,22 +20,17 @@ impl CacherJobTracker {
         format!("{}:{}", self.service, job_name)
     }
 
-    async fn load_status(&self, job_name: &str) -> Option<JobStatus> {
-        let cache_key = cacher::CacheKey::JobStatus(&self.job_key(job_name));
+    async fn get_last_success(&self, job_name: &str) -> Option<u64> {
+        let key = self.job_key(job_name);
+        let cache_key = cacher::CacheKey::JobStatus(&key);
         self.cacher.get_value(&cache_key.key()).await.ok()
-    }
-
-    async fn persist_status(&self, job_name: &str, status: &JobStatus) -> Result<(), JobError> {
-        let cache_key = cacher::CacheKey::JobStatus(&self.job_key(job_name));
-        self.cacher.set_cached(cache_key, status).await
     }
 }
 
 #[async_trait]
 impl JobSchedule for CacherJobTracker {
     async fn evaluate(&self, job_name: &str, interval: Duration, now: SystemTime) -> Result<RunDecision, JobError> {
-        let status = self.load_status(job_name).await;
-        let last_success_at = status.as_ref().and_then(|s| s.last_success);
+        let last_success_at = self.get_last_success(job_name).await;
         let ctx = JobContext { last_success_at };
 
         if let Some(last_success) = last_success_at {
@@ -50,9 +44,9 @@ impl JobSchedule for CacherJobTracker {
     }
 
     async fn mark_success(&self, job_name: &str, timestamp: SystemTime) -> Result<(), JobError> {
-        let mut status = self.load_status(job_name).await.unwrap_or_default();
         let seconds = timestamp.duration_since(UNIX_EPOCH).map_err(|err| Box::new(err) as JobError)?.as_secs();
-        status.last_success = Some(seconds);
-        self.persist_status(job_name, &status).await
+        let key = self.job_key(job_name);
+        let cache_key = cacher::CacheKey::JobStatus(&key);
+        self.cacher.set_cached(cache_key, &seconds).await
     }
 }

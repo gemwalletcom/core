@@ -21,9 +21,7 @@ impl<C: Client> ChainToken for TronClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use super::*;
-    use crate::provider::testkit::create_test_client;
-
-    const TEST_USDT_TOKEN_ID: &str = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
+    use crate::provider::testkit::{TEST_USDT_TOKEN_ID, create_test_client};
 
     #[tokio::test]
     async fn test_get_token_data() {

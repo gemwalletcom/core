@@ -249,6 +249,7 @@ impl SwapMapper {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::provider::testkit::TOKEN_USDC_ADDRESS;
     use crate::rpc::swap_mapper::SwapMapper;
     use primitives::{Chain, JsonRpcResult};
 
@@ -464,7 +465,7 @@ mod tests {
             metadata.from_asset,
             AssetId {
                 chain: Chain::Ethereum,
-                token_id: Some("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48".to_string()),
+                token_id: Some(TOKEN_USDC_ADDRESS.to_string()),
             }
         );
         assert_eq!(metadata.from_value, "29850000");

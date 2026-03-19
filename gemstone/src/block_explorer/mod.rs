@@ -83,6 +83,7 @@ impl Explorer {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use gem_solana::USDT_TOKEN_MINT;
     use primitives::block_explorer::get_block_explorers;
 
     #[test]
@@ -178,8 +179,8 @@ mod tests {
             "https://solscan.io/tx/58UdzFXAz6Vk58jEM6UsWmNb7kcJ1YvR2nQmkp8YQSW2gabmGra1u67SEjNZzTHCyuAn8NqzcQcn6qBLKx7uhVK7"
         );
         assert_eq!(
-            explorer.get_token_url(&explorers[1].name(), "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",).unwrap(),
-            "https://solana.fm/address/Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"
+            explorer.get_token_url(&explorers[1].name(), USDT_TOKEN_MINT,).unwrap(),
+            format!("https://solana.fm/address/{USDT_TOKEN_MINT}")
         );
     }
 

@@ -7,6 +7,8 @@ pub mod models;
 pub mod repositories;
 pub mod schema;
 pub mod sql_types;
+#[cfg(test)]
+pub mod testkit;
 
 pub use config_cacher::ConfigCacher;
 
@@ -16,6 +18,9 @@ pub use self::database::{
     DatabaseClient,
     assets::{AssetFilter, AssetUpdate},
     fiat::FiatAssetFilter,
+    nft::NftCollectionFilter,
+    perpetuals::PerpetualFilter,
+    prices::AssetsWithPricesFilter,
     rewards::{AbusePatterns, ReferralUpdate},
     rewards_redemptions::RedemptionUpdate,
     transactions::{TransactionFilter, TransactionUpdate},

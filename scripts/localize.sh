@@ -71,31 +71,35 @@ json_obj_key() {
     python3 -c "import json,sys;obj=json.load(sys.stdin); print(obj[\"${key}\"]);"
 }
 
-core_download_data() {
-    if [[ "$1" == "en" ]]; then
-        python3 -c 'import json,sys; obj=json.load(sys.stdin); obj["filter_langs"]=["en"]; print(json.dumps(obj))' <<< "$core_data"
-    else
-        printf '%s' "$core_data"
-    fi
+json_add_filter_langs() {
+    langs="${1}"
+    python3 -c 'import json, sys; obj = json.load(sys.stdin); obj["filter_langs"] = sys.argv[1].split(","); print(json.dumps(obj))' "$langs"
 }
 
 download_bundle() {
     temp_file=$(mktemp)
+    data="${2}"
+    langs="${5:-}"
+
+    if [[ -n "$langs" ]]; then
+        data=$(printf '%s' "$data" | json_add_filter_langs "$langs")
+    fi
+
     echo "Downloading bundle ${1} config... to ${3}"
 
     bundle_url=$(curl --silent --request POST \
-    --url https://api.lokalise.com/api2/projects/$4/files/download \
+    --url "https://api.lokalise.com/api2/projects/$4/files/download" \
     --header "content-type: application/json" \
     --header "x-api-token: $token" \
-    --data "${2}" | json_obj_key "bundle_url"
+    --data "$data" | json_obj_key "bundle_url"
     )
 
     echo "Downloading ${1} bundle file..."
-    curl --silent $bundle_url -o ${temp_file}
+    curl --silent "$bundle_url" -o "$temp_file"
 
     echo "Unzipping ${1} bundle..."
 
-    unzip -o -qq ${temp_file} -d ${3}
+    unzip -o -qq "$temp_file" -d "$3"
 
     echo "Localization update for ${1} complete"
 }
@@ -111,15 +115,15 @@ check_localization() {
 
 case $1 in
   "ios")
-    download_bundle "ios" "$ios_data" $2 $mobile_project_id
-    download_bundle "ios_plist" "$ios_plist_data" $2 $mobile_project_id
-    download_bundle "ios_widget" "$ios_widget_data" "Packages/Localization/WidgetSources/Resources" $mobile_project_id
+    download_bundle "ios" "$ios_data" "$2" "$mobile_project_id" "${3:-}"
+    download_bundle "ios_plist" "$ios_plist_data" "$2" "$mobile_project_id" "${3:-}"
+    download_bundle "ios_widget" "$ios_widget_data" "Packages/Localization/WidgetSources/Resources" "$mobile_project_id" "${3:-}"
     check_localization
   ;;
   "android")
-    download_bundle "android" "$android_data" $2 $mobile_project_id
+    download_bundle "android" "$android_data" "$2" "$mobile_project_id" "${3:-}"
   ;;
   "core")
-    download_bundle "core" "$(core_download_data "$3")" $2 $core_project_id
+    download_bundle "core" "$core_data" "$2" "$core_project_id" "${3:-}"
   ;;
 esac

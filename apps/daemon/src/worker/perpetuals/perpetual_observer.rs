@@ -56,7 +56,13 @@ impl PerpetualPositionObserver {
         }
 
         if !addresses.is_empty() {
-            info_with_fields!("perpetual_observer", tier = tier, chain = self.chain.as_ref(), addresses = addresses.len(), transactions = total_transactions);
+            info_with_fields!(
+                "perpetual_observer",
+                tier = tier,
+                chain = self.chain.as_ref(),
+                addresses = addresses.len(),
+                transactions = total_transactions
+            );
         }
 
         Ok(addresses.len())

@@ -19,8 +19,9 @@ impl<C: Client> ChainStaking for CosmosClient<C> {
         match chain {
             CosmosChain::Noble | CosmosChain::Thorchain => Ok(None),
             CosmosChain::Cosmos | CosmosChain::Injective => {
-                let (inflation, staking_pool) = try_join!(self.get_inflation(), self.get_staking_pool())?;
-                Ok(calculate_network_apy_cosmos(inflation, staking_pool))
+                let denom = chain.denom();
+                let (inflation, supply, staking_pool) = try_join!(self.get_inflation(), self.get_supply_by_denom(denom.as_ref()), self.get_staking_pool())?;
+                Ok(calculate_network_apy_cosmos(inflation, supply, staking_pool))
             }
             CosmosChain::Osmosis => {
                 let (mint_params, epoch_provisions, staking_pool) = try_join!(self.get_osmosis_mint_params(), self.get_osmosis_epoch_provisions(), self.get_staking_pool())?;

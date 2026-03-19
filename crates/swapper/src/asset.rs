@@ -1,3 +1,4 @@
+use gem_solana::{USDC_TOKEN_MINT, USDS_TOKEN_MINT, USDT_TOKEN_MINT};
 use primitives::{Asset, AssetId, AssetType, Chain, asset_constants::*};
 use std::sync::LazyLock;
 
@@ -41,9 +42,9 @@ pub const BASE_USDS_TOKEN_ID: &str = "0x820C137fa70C8691f0e44Dc420a5e53c168921Dc
 pub const BASE_CBBTC_TOKEN_ID: &str = "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf";
 pub const BASE_WBTC_TOKEN_ID: &str = "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c";
 // Solana
-pub const SOLANA_USDC_TOKEN_ID: &str = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
-pub const SOLANA_USDT_TOKEN_ID: &str = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB";
-pub const SOLANA_USDS_TOKEN_ID: &str = "USDSwr9ApdHk5bvJKMjzff41FfuX8bSxdKcR81vTwcA";
+pub const SOLANA_USDC_TOKEN_ID: &str = USDC_TOKEN_MINT;
+pub const SOLANA_USDT_TOKEN_ID: &str = USDT_TOKEN_MINT;
+pub const SOLANA_USDS_TOKEN_ID: &str = USDS_TOKEN_MINT;
 pub const SOLANA_WBTC_TOKEN_ID: &str = "3NZ9JMVBmGAqocybic2c7LQCJScmgsAZ6vQqTDzcqmJh";
 pub const SOLANA_CBBTC_TOKEN_ID: &str = "cbbtcf3aa214zXHbiAZQwf4122FBYbraNdFqgw4iMij";
 pub const SOLANA_JITO_SOL_TOKEN_ID: &str = "J1toso1uCk3RLmjorhTtrVwY9HJ7X8V9yYac6Y7kGCPn";
@@ -67,43 +68,11 @@ pub const INJECTIVE_USDC_TOKEN_ID: &str = "ibc/7E1AF94AD246BE522892751046F0C959B
 pub const SEI_USDC_TOKEN_ID: &str = "ibc/CA6FBFAF399474A06263E10D0CE5AEBBE15189D6D4B2DD9ADE61007E68EB9DB0";
 
 // ethereum
-pub static ETHEREUM_USDT: LazyLock<Asset> = LazyLock::new(|| {
-    Asset::new(
-        AssetId::from_token(Chain::Ethereum, ETHEREUM_USDT_TOKEN_ID),
-        USDT_NAME.to_owned(),
-        USDT_SYMBOL.to_owned(),
-        6,
-        AssetType::ERC20,
-    )
-});
+pub static ETHEREUM_USDT: LazyLock<Asset> = LazyLock::new(|| Asset::new(USDT_ETH_ASSET_ID.into(), USDT_NAME.to_owned(), USDT_SYMBOL.to_owned(), 6, AssetType::ERC20));
 
-pub static ETHEREUM_USDC: LazyLock<Asset> = LazyLock::new(|| {
-    Asset::new(
-        AssetId::from_token(Chain::Ethereum, ETHEREUM_USDC_TOKEN_ID),
-        USDC_NAME.to_owned(),
-        USDC_SYMBOL.to_owned(),
-        6,
-        AssetType::ERC20,
-    )
-});
-pub static ETHEREUM_WBTC: LazyLock<Asset> = LazyLock::new(|| {
-    Asset::new(
-        AssetId::from_token(Chain::Ethereum, ETHEREUM_WBTC_TOKEN_ID),
-        WBTC_NAME.to_owned(),
-        WBTC_SYMBOL.to_owned(),
-        8,
-        AssetType::ERC20,
-    )
-});
-pub static ETHEREUM_DAI: LazyLock<Asset> = LazyLock::new(|| {
-    Asset::new(
-        AssetId::from_token(Chain::Ethereum, ETHEREUM_DAI_TOKEN_ID),
-        DAI_NAME.to_owned(),
-        DAI_SYMBOL.to_owned(),
-        18,
-        AssetType::ERC20,
-    )
-});
+pub static ETHEREUM_USDC: LazyLock<Asset> = LazyLock::new(|| Asset::new(USDC_ETH_ASSET_ID.into(), USDC_NAME.to_owned(), USDC_SYMBOL.to_owned(), 6, AssetType::ERC20));
+pub static ETHEREUM_WBTC: LazyLock<Asset> = LazyLock::new(|| Asset::new(WBTC_ETH_ASSET_ID.into(), WBTC_NAME.to_owned(), WBTC_SYMBOL.to_owned(), 8, AssetType::ERC20));
+pub static ETHEREUM_DAI: LazyLock<Asset> = LazyLock::new(|| Asset::new(DAI_ETH_ASSET_ID.into(), DAI_NAME.to_owned(), DAI_SYMBOL.to_owned(), 18, AssetType::ERC20));
 pub static ETHEREUM_WETH: LazyLock<Asset> = LazyLock::new(|| {
     Asset::new(
         AssetId::from_token(Chain::Ethereum, WETH_ETH_CONTRACT),
@@ -131,15 +100,7 @@ pub static ETHEREUM_STETH: LazyLock<Asset> = LazyLock::new(|| {
         AssetType::ERC20,
     )
 });
-pub static ETHEREUM_CBBTC: LazyLock<Asset> = LazyLock::new(|| {
-    Asset::new(
-        AssetId::from_token(Chain::Ethereum, ETHEREUM_CBBTC_TOKEN_ID),
-        CBBTC_NAME.to_owned(),
-        CBBTC_SYMBOL.to_owned(),
-        8,
-        AssetType::ERC20,
-    )
-});
+pub static ETHEREUM_CBBTC: LazyLock<Asset> = LazyLock::new(|| Asset::new(CBBTC_ETH_ASSET_ID.into(), CBBTC_NAME.to_owned(), CBBTC_SYMBOL.to_owned(), 8, AssetType::ERC20));
 pub static ETHEREUM_FLIP: LazyLock<Asset> = LazyLock::new(|| {
     Asset::new(
         AssetId::from_token(Chain::Ethereum, ETHEREUM_FLIP_TOKEN_ID),
@@ -171,24 +132,8 @@ pub static BASE_WETH: LazyLock<Asset> = LazyLock::new(|| {
         AssetType::ERC20,
     )
 });
-pub static BASE_USDC: LazyLock<Asset> = LazyLock::new(|| {
-    Asset::new(
-        AssetId::from_token(Chain::Base, BASE_USDC_TOKEN_ID),
-        USDC_NAME.to_owned(),
-        USDC_SYMBOL.to_owned(),
-        6,
-        AssetType::ERC20,
-    )
-});
-pub static BASE_CBBTC: LazyLock<Asset> = LazyLock::new(|| {
-    Asset::new(
-        AssetId::from_token(Chain::Base, BASE_CBBTC_TOKEN_ID),
-        CBBTC_NAME.to_owned(),
-        CBBTC_SYMBOL.to_owned(),
-        8,
-        AssetType::ERC20,
-    )
-});
+pub static BASE_USDC: LazyLock<Asset> = LazyLock::new(|| Asset::new(USDC_BASE_ASSET_ID.into(), USDC_NAME.to_owned(), USDC_SYMBOL.to_owned(), 6, AssetType::ERC20));
+pub static BASE_CBBTC: LazyLock<Asset> = LazyLock::new(|| Asset::new(CBBTC_BASE_ASSET_ID.into(), CBBTC_NAME.to_owned(), CBBTC_SYMBOL.to_owned(), 8, AssetType::ERC20));
 pub static BASE_USDS: LazyLock<Asset> = LazyLock::new(|| {
     Asset::new(
         AssetId::from_token(Chain::Base, BASE_USDS_TOKEN_ID),
@@ -276,24 +221,8 @@ pub static WORLD_WETH: LazyLock<Asset> = LazyLock::new(|| {
 });
 // smartchain
 pub static SMARTCHAIN_ETH: LazyLock<Asset> = LazyLock::new(|| Asset::new(ETH_SMARTCHAIN_ASSET_ID.into(), "Binance-Peg Ethereum".into(), "ETH".into(), 18, AssetType::ERC20));
-pub static SMARTCHAIN_USDT: LazyLock<Asset> = LazyLock::new(|| {
-    Asset::new(
-        AssetId::from_token(Chain::SmartChain, SMARTCHAIN_USDT_TOKEN_ID),
-        USDT_NAME.to_owned(),
-        USDT_SYMBOL.to_owned(),
-        18,
-        AssetType::BEP20,
-    )
-});
-pub static SMARTCHAIN_USDC: LazyLock<Asset> = LazyLock::new(|| {
-    Asset::new(
-        AssetId::from_token(Chain::SmartChain, SMARTCHAIN_USDC_TOKEN_ID),
-        USDC_NAME.to_owned(),
-        USDC_SYMBOL.to_owned(),
-        18,
-        AssetType::BEP20,
-    )
-});
+pub static SMARTCHAIN_USDT: LazyLock<Asset> = LazyLock::new(|| Asset::new(USDT_SMARTCHAIN_ASSET_ID.into(), USDT_NAME.to_owned(), USDT_SYMBOL.to_owned(), 18, AssetType::BEP20));
+pub static SMARTCHAIN_USDC: LazyLock<Asset> = LazyLock::new(|| Asset::new(USDC_SMARTCHAIN_ASSET_ID.into(), USDC_NAME.to_owned(), USDC_SYMBOL.to_owned(), 18, AssetType::BEP20));
 pub static SMARTCHAIN_WBTC: LazyLock<Asset> = LazyLock::new(|| {
     Asset::new(
         AssetId::from_token(Chain::SmartChain, SMARTCHAIN_WBTC_TOKEN_ID),
@@ -304,24 +233,8 @@ pub static SMARTCHAIN_WBTC: LazyLock<Asset> = LazyLock::new(|| {
     )
 });
 // avalanche
-pub static AVALANCHE_USDT: LazyLock<Asset> = LazyLock::new(|| {
-    Asset::new(
-        AssetId::from_token(Chain::AvalancheC, AVALANCHE_USDT_TOKEN_ID),
-        USDT_NAME.to_owned(),
-        USDT_SYMBOL.to_owned(),
-        6,
-        AssetType::ERC20,
-    )
-});
-pub static AVALANCHE_USDC: LazyLock<Asset> = LazyLock::new(|| {
-    Asset::new(
-        AssetId::from_token(Chain::AvalancheC, AVALANCHE_USDC_TOKEN_ID),
-        USDC_NAME.to_owned(),
-        USDC_SYMBOL.to_owned(),
-        6,
-        AssetType::ERC20,
-    )
-});
+pub static AVALANCHE_USDT: LazyLock<Asset> = LazyLock::new(|| Asset::new(USDT_AVAX_ASSET_ID.into(), USDT_NAME.to_owned(), USDT_SYMBOL.to_owned(), 6, AssetType::ERC20));
+pub static AVALANCHE_USDC: LazyLock<Asset> = LazyLock::new(|| Asset::new(USDC_AVAX_ASSET_ID.into(), USDC_NAME.to_owned(), USDC_SYMBOL.to_owned(), 6, AssetType::ERC20));
 // ink
 pub static INK_WETH: LazyLock<Asset> = LazyLock::new(|| {
     Asset::new(
@@ -385,24 +298,8 @@ pub static HYPEREVM_USDT: LazyLock<Asset> = LazyLock::new(|| Asset::new(USDT_HYP
 // Plasma
 pub static PLASMA_USDT: LazyLock<Asset> = LazyLock::new(|| Asset::new(USDT_PLASMA_ASSET_ID.into(), USDT_NAME.to_owned(), USDT_SYMBOL.to_owned(), 6, AssetType::ERC20));
 // Solana
-pub static SOLANA_USDC: LazyLock<Asset> = LazyLock::new(|| {
-    Asset::new(
-        AssetId::from_token(Chain::Solana, SOLANA_USDC_TOKEN_ID),
-        USDC_NAME.to_owned(),
-        USDC_SYMBOL.to_owned(),
-        6,
-        AssetType::SPL,
-    )
-});
-pub static SOLANA_USDT: LazyLock<Asset> = LazyLock::new(|| {
-    Asset::new(
-        AssetId::from_token(Chain::Solana, SOLANA_USDT_TOKEN_ID),
-        USDT_NAME.to_owned(),
-        USDT_SYMBOL.to_owned(),
-        6,
-        AssetType::SPL,
-    )
-});
+pub static SOLANA_USDC: LazyLock<Asset> = LazyLock::new(|| Asset::new(USDC_SOLANA_ASSET_ID.into(), USDC_NAME.to_owned(), USDC_SYMBOL.to_owned(), 6, AssetType::SPL));
+pub static SOLANA_USDT: LazyLock<Asset> = LazyLock::new(|| Asset::new(USDT_SOLANA_ASSET_ID.into(), USDT_NAME.to_owned(), USDT_SYMBOL.to_owned(), 6, AssetType::SPL));
 pub static SOLANA_USDS: LazyLock<Asset> = LazyLock::new(|| {
     Asset::new(
         AssetId::from_token(Chain::Solana, SOLANA_USDS_TOKEN_ID),
@@ -440,15 +337,7 @@ pub static SOLANA_JITO_SOL: LazyLock<Asset> = LazyLock::new(|| {
     )
 });
 // Sui
-pub static SUI_USDC: LazyLock<Asset> = LazyLock::new(|| {
-    Asset::new(
-        AssetId::from_token(Chain::Sui, SUI_USDC_TOKEN_ID),
-        USDC_NAME.to_owned(),
-        USDC_SYMBOL.to_owned(),
-        6,
-        AssetType::TOKEN,
-    )
-});
+pub static SUI_USDC: LazyLock<Asset> = LazyLock::new(|| Asset::new(USDC_SUI_ASSET_ID.into(), USDC_NAME.to_owned(), USDC_SYMBOL.to_owned(), 6, AssetType::TOKEN));
 pub static SUI_SBUSDT: LazyLock<Asset> = LazyLock::new(|| {
     Asset::new(
         AssetId::from_token(Chain::Sui, SUI_SBUSDT_TOKEN_ID),
@@ -478,12 +367,4 @@ pub static THORCHAIN_TCY: LazyLock<Asset> = LazyLock::new(|| {
     )
 });
 // TRON
-pub static TRON_USDT: LazyLock<Asset> = LazyLock::new(|| {
-    Asset::new(
-        AssetId::from_token(Chain::Tron, TRON_USDT_TOKEN_ID),
-        USDT_NAME.to_owned(),
-        USDT_SYMBOL.to_owned(),
-        6,
-        AssetType::TRC20,
-    )
-});
+pub static TRON_USDT: LazyLock<Asset> = LazyLock::new(|| Asset::new(USDT_TRON_ASSET_ID.into(), USDT_NAME.to_owned(), USDT_SYMBOL.to_owned(), 6, AssetType::TRC20));

@@ -49,7 +49,7 @@ pub fn wormhole_chain_id_to_chain(chain_id: u16) -> Option<Chain> {
 }
 
 pub fn resolve_asset_id(chain: Chain, token_address: &str) -> Option<AssetId> {
-    let is_native = token_address == EVM_ZERO_ADDRESS || token_address == WSOL_TOKEN_ADDRESS || chain.config().denom.is_some_and(|d| d == token_address);
+    let is_native = token_address == EVM_ZERO_ADDRESS || token_address == WSOL_TOKEN_ADDRESS || chain.as_denom().is_some_and(|denom| denom == token_address);
     if is_native {
         return Some(AssetId::from_chain(chain));
     }
@@ -96,7 +96,10 @@ pub fn map_swap_result(result: &MayanTransactionResult) -> SwapResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::swap::SwapStatus;
+    use primitives::{
+        asset_constants::{USDC_ETH_ASSET_ID, USDT_POLYGON_ASSET_ID},
+        swap::SwapStatus,
+    };
 
     fn result(json: &str) -> MayanTransactionResult {
         serde_json::from_str(json).unwrap()
@@ -122,7 +125,7 @@ mod tests {
     fn test_resolve_asset_id_evm_token_checksummed() {
         assert_eq!(
             resolve_asset_id(Chain::Ethereum, "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"),
-            Some(AssetId::from_token(Chain::Ethereum, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"))
+            Some(USDC_ETH_ASSET_ID.into())
         );
     }
 
@@ -201,7 +204,7 @@ mod tests {
             SwapResult {
                 status: SwapStatus::Completed,
                 metadata: Some(TransactionSwapMetadata {
-                    from_asset: AssetId::from_token(Chain::Polygon, "0xc2132D05D31c914a87C6611C10748AEb04B58e8F"),
+                    from_asset: USDT_POLYGON_ASSET_ID.into(),
                     from_value: "35243141".to_string(),
                     to_asset: AssetId::from_token(Chain::Base, "0xEF5997c2cf2f6c138196f8A6203afc335206b3c1"),
                     to_value: "398724622644505839482".to_string(),

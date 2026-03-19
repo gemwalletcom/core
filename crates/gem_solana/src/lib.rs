@@ -46,6 +46,7 @@ pub const BPF_LOADER_PROGRAM_ID: &str = "BPFLoaderUpgradeab1e1111111111111111111
 pub const MEMO_PROGRAM_ID: &str = "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr";
 pub const JITO_TIP_PROGRAM_ID: &str = "9H6tua7jkLhdm3w8BvgpTn5LZNU7g4ZynDmCiNN3q6Rp";
 pub const JUPITER_PROGRAM_ID: &str = "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4";
+pub const OKX_DEX_V2_PROGRAM_ID: &str = "proVF4pMXVaYqmy4NjniPh4pqKNfMmsihgd4wdkCX3u";
 pub const SYSTEM_PROGRAMS: &[&str] = &[
     SYSTEM_PROGRAM_ID,
     COMPUTE_BUDGET_PROGRAM_ID,

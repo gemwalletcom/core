@@ -58,7 +58,10 @@ impl<C: Client + Clone> ChainBalances for SolanaClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use super::*;
-    use crate::provider::testkit::{TEST_ADDRESS, create_solana_test_client};
+    use crate::{
+        PYUSD_TOKEN_MINT, USDC_TOKEN_MINT, USDT_TOKEN_MINT,
+        provider::testkit::{TEST_ADDRESS, create_solana_test_client},
+    };
     use primitives::Chain;
 
     #[tokio::test]
@@ -76,11 +79,7 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_solana_get_balance_tokens() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_solana_test_client();
-        let token_ids = vec![
-            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string(), // USDC
-            "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB".to_string(), // USDT
-            "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo".to_string(), // PYUSD
-        ];
+        let token_ids = vec![USDC_TOKEN_MINT.to_string(), USDT_TOKEN_MINT.to_string(), PYUSD_TOKEN_MINT.to_string()];
 
         let balances = client.get_balance_tokens(TEST_ADDRESS.to_string(), token_ids.clone()).await?;
 

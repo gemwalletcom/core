@@ -2,9 +2,14 @@ use crate::models::price::NewPriceRow;
 use crate::schema::prices_assets;
 use crate::{DatabaseClient, models::*};
 use chrono::NaiveDateTime;
-use diesel::prelude::*;
 use diesel::upsert::excluded;
+use diesel::{NullableExpressionMethods, prelude::*};
 use price::PriceAssetDataRow;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AssetsWithPricesFilter {
+    UpdatedSince(NaiveDateTime),
+}
 
 pub(crate) trait PricesStore {
     fn add_prices(&mut self, values: Vec<NewPriceRow>) -> Result<usize, diesel::result::Error>;
@@ -16,7 +21,7 @@ pub(crate) trait PricesStore {
     fn get_prices_assets_for_asset_id(&mut self, id: &str) -> Result<Vec<PriceAssetRow>, diesel::result::Error>;
     fn get_prices_assets_for_price_ids(&mut self, ids: Vec<String>) -> Result<Vec<PriceAssetRow>, diesel::result::Error>;
     fn delete_prices_updated_at_before(&mut self, time: NaiveDateTime) -> Result<usize, diesel::result::Error>;
-    fn get_prices_assets_list(&mut self) -> Result<Vec<PriceAssetDataRow>, diesel::result::Error>;
+    fn get_assets_with_prices_by_filter(&mut self, filters: Vec<AssetsWithPricesFilter>) -> Result<Vec<PriceAssetDataRow>, diesel::result::Error>;
 }
 
 impl PricesStore for DatabaseClient {
@@ -87,15 +92,25 @@ impl PricesStore for DatabaseClient {
         diesel::delete(prices.filter(last_updated_at.lt(time).or(last_updated_at.is_null()))).execute(&mut self.connection)
     }
 
-    fn get_prices_assets_list(&mut self) -> Result<Vec<PriceAssetDataRow>, diesel::result::Error> {
+    fn get_assets_with_prices_by_filter(&mut self, filters: Vec<AssetsWithPricesFilter>) -> Result<Vec<PriceAssetDataRow>, diesel::result::Error> {
         use crate::schema::{assets, prices, prices_assets};
 
-        let query = assets::table
+        let mut query = assets::table
             .left_join(prices_assets::table.on(prices_assets::asset_id.eq(assets::id)))
             .left_join(prices::table.on(prices_assets::price_id.eq(prices::id)))
-            .select((AssetRow::as_select(), Option::<PriceRow>::as_select()));
+            .into_boxed();
 
-        query.load::<PriceAssetDataRow>(&mut self.connection)
+        for filter in filters {
+            match filter {
+                AssetsWithPricesFilter::UpdatedSince(value) => {
+                    query = query.filter(assets::updated_at.gt(value).or(prices::last_updated_at.nullable().gt(value)));
+                }
+            }
+        }
+
+        query
+            .select((AssetRow::as_select(), Option::<PriceRow>::as_select()))
+            .load::<PriceAssetDataRow>(&mut self.connection)
     }
 }
 

@@ -8,8 +8,8 @@ use std::{error::Error, str::FromStr};
 use sui_transaction_builder::{Function, ObjectInput, TransactionBuilder};
 use sui_types::{Address, Identifier};
 
-pub static SUI_REQUEST_ADD_STAKE: &str = "request_add_stake";
-pub static SUI_REQUEST_WITHDRAW_STAKE: &str = "request_withdraw_stake";
+pub const SUI_REQUEST_ADD_STAKE: &str = "request_add_stake";
+pub const SUI_REQUEST_WITHDRAW_STAKE: &str = "request_withdraw_stake";
 
 pub fn encode_split_and_stake(input: &StakeInput) -> Result<TxOutput, Box<dyn Error + Send + Sync>> {
     if let Some(err) = crate::validate_enough_balance(&input.coins, input.stake_amount) {

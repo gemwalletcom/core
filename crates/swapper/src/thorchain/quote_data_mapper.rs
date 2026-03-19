@@ -50,8 +50,9 @@ pub fn map_quote_data(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::asset::ETHEREUM_USDC_TOKEN_ID;
     use crate::thorchain::chain::THORChainName;
-    use primitives::Chain;
+    use primitives::{Chain, swap::ApprovalData};
 
     fn asset(chain: Chain, token_id: Option<String>) -> THORChainAsset {
         THORChainAsset {
@@ -71,10 +72,11 @@ mod tests {
 
     #[test]
     fn evm_router() {
+        let usdc_eth = ETHEREUM_USDC_TOKEN_ID.to_string();
         let result = map_quote_data(
-            &asset(Chain::Ethereum, Some("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48".to_string())),
+            &asset(Chain::Ethereum, Some(usdc_eth.clone())),
             &route_data(Some("0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146".to_string()), "0x1234567890123456789012345678901234567890"),
-            Some("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48".to_string()),
+            Some(usdc_eth),
             "1000000".to_string(),
             "memo".to_string(),
             None,
@@ -118,16 +120,17 @@ mod tests {
 
     #[test]
     fn evm_router_with_approval() {
+        let usdc_eth = ETHEREUM_USDC_TOKEN_ID.to_string();
         let approval = Some(ApprovalData {
-            token: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48".to_string(),
+            token: usdc_eth.clone(),
             spender: "0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146".to_string(),
             value: "2000".to_string(),
         });
 
         let result = map_quote_data(
-            &asset(Chain::Ethereum, Some("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48".to_string())),
+            &asset(Chain::Ethereum, Some(usdc_eth.clone())),
             &route_data(Some("0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146".to_string()), "0x1234567890123456789012345678901234567890"),
-            Some("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48".to_string()),
+            Some(usdc_eth),
             "1000000".to_string(),
             "memo".to_string(),
             approval.clone(),

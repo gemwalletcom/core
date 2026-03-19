@@ -82,24 +82,11 @@ impl NewScanAddressRow {
 #[cfg(test)]
 mod tests {
     use super::ScanAddressRow;
-    use crate::sql_types::{AddressType, ChainRow};
-    use chrono::DateTime;
-    use primitives::{AddressType as PrimitiveAddressType, Chain};
+    use primitives::Chain;
 
     #[test]
     fn as_primitive_returns_none_without_name() {
-        let row = ScanAddressRow {
-            id: 1,
-            chain: ChainRow::from(Chain::Ethereum),
-            address: "0x0000000000000000000000000000000000000001".to_string(),
-            name: None,
-            type_: AddressType::from(PrimitiveAddressType::Address),
-            is_verified: false,
-            is_fraudulent: false,
-            is_memo_required: false,
-            updated_at: DateTime::UNIX_EPOCH.naive_utc(),
-            created_at: DateTime::UNIX_EPOCH.naive_utc(),
-        };
+        let row = ScanAddressRow::mock(1, Chain::Ethereum, "0x0000000000000000000000000000000000000001", None);
 
         assert_eq!(row.as_primitive(), None);
     }

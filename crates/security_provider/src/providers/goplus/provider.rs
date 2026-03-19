@@ -5,7 +5,7 @@ use gem_client::{ClientExt, ReqwestClient, build_path_with_query};
 use std::collections::HashMap;
 use std::result::Result;
 
-static PROVIDER_NAME: &str = "GoPlus";
+const PROVIDER_NAME: &str = "GoPlus";
 
 pub struct GoPlusProvider {
     client: ReqwestClient,

@@ -10,6 +10,8 @@ pub struct TransactionPerpetualMetadata {
     pub pnl: f64,
     pub price: f64,
     pub direction: PerpetualDirection,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_liquidation: Option<bool>,
     pub provider: Option<PerpetualProvider>,
 }
 

@@ -51,7 +51,7 @@ pub fn get_validators() -> HashMap<String, Vec<String>> {
             vec![
                 "9QU2QSxhb24FUX3Tu2FpczXjpK3VYrvRudywSZaM29mF".to_string(), // everstake
                 "4PsiLMyoUQ7QRn1FFiFCvej4hsUTFzfvJnyN4bj1tmSN".to_string(), // stakin
-                "9hQqNe3DQTiwhspatewA8EXhz12e6sq5UJVJ2qNRwnTf".to_string(), // stakeshark
+                "2Y2opv8Kq8zFATg6ipqb2AjgCf18tkv1CLMLXQGif2NH".to_string(), // stakeshark
             ],
         ),
         (

@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
 type HmacSha256 = Hmac<Sha256>;
 
-static PROVIDER_NAME: &str = "HashDit";
+const PROVIDER_NAME: &str = "HashDit";
 
 pub struct HashDitProvider {
     client: ReqwestClient,

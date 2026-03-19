@@ -80,6 +80,7 @@ pub struct TransactionPerpetualMetadata {
     pub pnl: f64,
     pub price: f64,
     pub direction: PerpetualDirection,
+    pub is_liquidation: Option<bool>,
     pub provider: Option<PerpetualProvider>,
 }
 

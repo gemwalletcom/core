@@ -287,7 +287,7 @@ pub use self::simulation::{
 pub mod ip_usage_type;
 pub use self::ip_usage_type::IpUsageType;
 pub mod metrics;
-pub use self::metrics::{ConsumerStatus, JobStatus, ParserStatus, ReportedError};
+pub use self::metrics::{ConsumerStatus, ParserStatus, ReportedError};
 pub mod value_access;
 pub use self::value_access::ValueAccess;
 

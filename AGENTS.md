@@ -23,3 +23,27 @@ Before finishing a task:
 3. **Run tests**: `just test <CRATE>`
 4. **Run clippy**: `cargo clippy -p <crate> -- -D warnings`
 5. **Format**: `just format`
+
+## Test Rules
+
+- Do not write tolerance-based assertions against live network values or values recomputed from separate RPC/API calls in integration tests. These tests are flaky and low-signal.
+- For integration tests, assert stable invariants only. For exact numeric behavior, cover the pure calculation in unit tests with deterministic inputs.
+
+## Testkit Mocks
+
+- Put reusable mocks in a crate `testkit` file and attach them to the type with `impl Type { pub fn mock() -> Self }`.
+- Use `mock()` for the default case; use `mock_with_*` or a clearly named variant only when needed.
+- Keep mocks small, valid, and fixed. If a fixture is only used once, an inline literal is fine.
+
+Mock example:
+```rust
+impl Asset {
+    pub fn mock() -> Self {
+        Asset::from_chain(Chain::Ethereum)
+    }
+}
+```
+
+Examples:
+- [crates/primitives/src/testkit/asset_mock.rs](crates/primitives/src/testkit/asset_mock.rs)
+- [crates/storage/src/testkit/scan_address_mock.rs](crates/storage/src/testkit/scan_address_mock.rs)
