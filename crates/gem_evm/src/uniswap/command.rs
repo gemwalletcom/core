@@ -243,12 +243,16 @@ mod tests {
         aliases::U48,
         hex::{decode as HexDecode, encode_prefixed as HexEncode},
     };
+    use primitives::{
+        asset_constants::{OPTIMISM_USDC_E_TOKEN_ID, OPTIMISM_USDC_TOKEN_ID, OPTIMISM_WETH_TOKEN_ID},
+        contract_constants::OPTIMISM_UNISWAP_V3_UNIVERSAL_ROUTER_CONTRACT,
+    };
     use std::str::FromStr;
 
-    const OP_USDC: &str = "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85";
+    const OP_USDC: &str = OPTIMISM_USDC_TOKEN_ID;
     const OP_AAVE: &str = "0x76fb31fb4af56892a25e32cfc43de717950c9278";
-    const OP_WETH: &str = "0x4200000000000000000000000000000000000006";
-    const OP_ROUTER: &str = "0xCb1355ff08Ab38bBCE60111F1bb2B784bE25D7e8";
+    const OP_WETH: &str = OPTIMISM_WETH_TOKEN_ID;
+    const OP_ROUTER: &str = OPTIMISM_UNISWAP_V3_UNIVERSAL_ROUTER_CONTRACT;
 
     #[test]
     fn test_encode_eth_to_usdc() {
@@ -366,7 +370,7 @@ mod tests {
     #[test]
     fn test_encode_usdce_to_eth() {
         // https://optimistic.etherscan.io/tx/0x4a81ba47adfb9720f792eb08cef9a4d444db7f6ff574c9adc4870188acb1cb18
-        let token_usdce = Address::from_str("0x7F5c764cBc14f9669B88837ca1490cCa17c31607").unwrap();
+        let token_usdce = Address::from_str(OPTIMISM_USDC_E_TOKEN_ID).unwrap();
         let token_weth = Address::from_str(OP_WETH).unwrap();
         let op_router = Address::from_str(OP_ROUTER).unwrap();
         let commands: Vec<UniversalRouterCommand> = vec![

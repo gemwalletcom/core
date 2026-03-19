@@ -17,13 +17,13 @@ pub mod jsonrpc;
 pub mod message;
 pub mod monad;
 pub mod multicall3;
-pub mod slippage;
 pub mod permit2;
 #[cfg(feature = "rpc")]
 pub mod registry;
 #[cfg(feature = "signer")]
 pub mod signer;
 pub mod siwe;
+pub mod slippage;
 pub mod thorchain;
 pub mod u256;
 pub mod uniswap;

@@ -2,8 +2,9 @@ use primitives::currency::Currency;
 use primitives::{
     AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus, PaymentType,
     asset_constants::{
-        ARBITRUM_ARB_ASSET_ID, BASE_USDC_ASSET_ID, ETHEREUM_DAI_ASSET_ID, ETHEREUM_USDC_ASSET_ID, ETHEREUM_USDT_ASSET_ID, OPTIMISM_OP_ASSET_ID, POLYGON_USDC_ASSET_ID,
-        POLYGON_USDT_ASSET_ID, SOLANA_USDC_ASSET_ID, SOLANA_USDT_ASSET_ID, TRON_USDT_ASSET_ID,
+        ARBITRUM_ARB_ASSET_ID, BASE_USDC_ASSET_ID, ETHEREUM_AAVE_ASSET_ID, ETHEREUM_DAI_ASSET_ID, ETHEREUM_LINK_ASSET_ID, ETHEREUM_UNI_ASSET_ID, ETHEREUM_USDC_ASSET_ID,
+        ETHEREUM_USDT_ASSET_ID, OPTIMISM_OP_ASSET_ID, POLYGON_USDC_ASSET_ID, POLYGON_USDT_ASSET_ID, SOLANA_USDC_ASSET_ID, SOLANA_USDT_ASSET_ID, STELLAR_USDC_ASSET_ID,
+        TRON_USDT_ASSET_ID,
     },
 };
 use streamer::FiatWebhook;
@@ -65,9 +66,9 @@ pub fn map_symbol_to_asset_id(symbol: &str) -> Option<AssetId> {
         "USDT" => Some(ETHEREUM_USDT_ASSET_ID.clone()),
         "DAI" => Some(ETHEREUM_DAI_ASSET_ID.clone()),
 
-        "LINK" => Some(AssetId::token(Chain::Ethereum, "0x514910771AF9Ca656af840dff83E8264EcF986CA")),
-        "AAVE" => Some(AssetId::token(Chain::Ethereum, "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9")),
-        "UNI" => Some(AssetId::token(Chain::Ethereum, "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984")),
+        "LINK" => Some(ETHEREUM_LINK_ASSET_ID.clone()),
+        "AAVE" => Some(ETHEREUM_AAVE_ASSET_ID.clone()),
+        "UNI" => Some(ETHEREUM_UNI_ASSET_ID.clone()),
         "MKR" => Some(AssetId::token(Chain::Ethereum, "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2")),
         "COMP" => Some(AssetId::token(Chain::Ethereum, "0xc00e94Cb662C3520282E6f5717214004A7f26888")),
         "CRV" => Some(AssetId::token(Chain::Ethereum, "0xD533a949740bb3306d119CC777fa900bA034cd52")),
@@ -122,7 +123,7 @@ pub fn map_symbol_to_asset_id(symbol: &str) -> Option<AssetId> {
         "ARB" => Some(ARBITRUM_ARB_ASSET_ID.clone()),
         "OP" => Some(OPTIMISM_OP_ASSET_ID.clone()),
 
-        "USDC-STELLAR" => Some(AssetId::token(Chain::Stellar, "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN::USDC")),
+        "USDC-STELLAR" => Some(STELLAR_USDC_ASSET_ID.clone()),
 
         _ => None,
     }

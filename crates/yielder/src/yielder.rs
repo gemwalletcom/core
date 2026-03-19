@@ -57,5 +57,4 @@ impl Yielder {
             .map(|(id, earn)| AssetBalance::new_earn(id, earn))
             .collect()
     }
-
 }

@@ -1,6 +1,10 @@
 use chain_primitives::format_token_id;
 use primitives::fiat_assets::FiatAssetLimits;
-use primitives::{Asset, AssetId, Chain, CosmosDenom, FiatAssetSymbol, FiatProviderName};
+use primitives::{
+    Asset, AssetId, Chain, CosmosDenom, FiatAssetSymbol, FiatProviderName,
+    asset_constants::WORLD_WETH_TOKEN_ID,
+    contract_constants::{EVM_ZERO_ADDRESS, SOLANA_SYSTEM_PROGRAM_ID},
+};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
@@ -53,9 +57,9 @@ pub fn filter_token_id(chain: Option<Chain>, token_id: Option<String>) -> Option
     let token_id = token_id.filter(|contract_address| {
         ![
             "0x0000000000000000000000000000000000001010", // matic
-            "0x0000000000000000000000000000000000000000",
+            EVM_ZERO_ADDRESS,
             "0x471ece3750da237f93b8e339c536989b8978a438", // celo
-            "0x4200000000000000000000000000000000000006", // worldchain
+            WORLD_WETH_TOKEN_ID,                          // worldchain
             CosmosDenom::Uosmo.as_ref(),                  // osmosis
             CosmosDenom::Usei.as_ref(),                   // sei
             CosmosDenom::Inj.as_ref(),                    // osmosis
@@ -65,7 +69,7 @@ pub fn filter_token_id(chain: Option<Chain>, token_id: Option<String>) -> Option
             CosmosDenom::Utia.as_ref(),                   // celestia
             "bip122:1a91e3dace36e2be3bf030a65679fe82",    // banxa::DOGE
             "bip122:12a765e31ffd4059bada1e25190f6e98",    // banxa::LTC
-            "11111111111111111111111111111111",
+            SOLANA_SYSTEM_PROGRAM_ID,
         ]
         .contains(&contract_address.as_str())
     });

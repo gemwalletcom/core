@@ -300,6 +300,7 @@ mod tests {
     use primitives::{
         Chain, JsonRpcResult,
         asset_constants::{ARBITRUM_USDC_ASSET_ID, ARBITRUM_USDT_ASSET_ID, ETHEREUM_DAI_ASSET_ID, ETHEREUM_USDC_ASSET_ID, ETHEREUM_USDT_ASSET_ID},
+        contract_constants::{ETHEREUM_YO_PROTOCOL_CONTRACT, UNISWAP_PERMIT2_CONTRACT},
         testkit::json_rpc::load_json_rpc_result,
     };
 
@@ -437,7 +438,7 @@ mod tests {
         assert_eq!(result.transaction_type, TransactionType::TokenApproval);
         assert_eq!(result.asset_id, ETHEREUM_DAI_ASSET_ID.clone());
         assert_eq!(result.from, "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4");
-        assert_eq!(result.to, "0x000000000022D473030F116dDEE9F6B43aC78BA3");
+        assert_eq!(result.to, UNISWAP_PERMIT2_CONTRACT);
         assert_eq!(result.value, "115792089237316195423570985008687907853269984665640564039457584007913129639935");
     }
 

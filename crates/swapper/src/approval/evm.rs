@@ -117,14 +117,15 @@ where
 mod tests {
     use super::*;
     use crate::alien::mock::{MockFn, ProviderMock};
+    use primitives::contract_constants::{OPTIMISM_UNISWAP_V3_UNIVERSAL_ROUTER_CONTRACT, UNISWAP_PERMIT2_CONTRACT};
     use std::time::Duration;
 
     #[tokio::test]
     async fn test_approval_tx_spender_is_permit2() -> Result<(), SwapperError> {
         let token = "0xdC6fF44d5d932Cbd77B52E5612Ba0529DC6226F1".to_string();
         let owner = "0x1085c5f70F7F7591D97da281A64688385455c2bD".to_string();
-        let spender = "0xCb1355ff08Ab38bBCE60111F1bb2B784bE25D7e8".to_string();
-        let permit2_contract = "0x000000000022D473030F116dDEE9F6B43aC78BA3".to_string();
+        let spender = OPTIMISM_UNISWAP_V3_UNIVERSAL_ROUTER_CONTRACT.to_string();
+        let permit2_contract = UNISWAP_PERMIT2_CONTRACT.to_string();
         let amount = U256::from(1000000000000000000u64);
         let chain: Chain = Chain::Optimism;
 

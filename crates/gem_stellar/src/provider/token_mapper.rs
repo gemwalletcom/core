@@ -17,6 +17,7 @@ pub fn map_token_data(asset: &StellarAsset, token_id: String, chain: Chain) -> A
 #[cfg(test)]
 mod tests {
     use super::*;
+    use primitives::asset_constants::STELLAR_USDC_TOKEN_ID;
 
     #[test]
     fn test_map_token_data() {
@@ -25,7 +26,7 @@ mod tests {
             asset_issuer: "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN".to_string(),
             contract_id: None,
         };
-        let token_id = "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN::USDC".to_string();
+        let token_id = STELLAR_USDC_TOKEN_ID.to_string();
         let chain = Chain::Stellar;
 
         let result = map_token_data(&stellar_asset, token_id, chain);

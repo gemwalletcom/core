@@ -240,6 +240,7 @@ pub fn map_transaction(transaction: Transaction) -> Option<PrimitivesTransaction
 mod tests {
     use super::*;
     use crate::models::TransactionResponse;
+    use primitives::asset_constants::APTOS_USDT_TOKEN_ID;
 
     #[test]
     fn test_map_transaction_broadcast() {
@@ -316,10 +317,7 @@ mod tests {
         assert!(tx.metadata.is_some());
 
         let metadata: primitives::TransactionSwapMetadata = serde_json::from_value(tx.metadata.unwrap()).unwrap();
-        assert_eq!(
-            metadata.from_asset,
-            AssetId::from_token(Chain::Aptos, "0x357b0b74bc833e95a115ad22604854d6b0fca151cecd94111770e5d6ffc9dc2b")
-        );
+        assert_eq!(metadata.from_asset, AssetId::from_token(Chain::Aptos, APTOS_USDT_TOKEN_ID));
         assert_eq!(metadata.from_value, "2346314");
         assert_eq!(metadata.to_asset, Chain::Aptos.as_asset_id());
         assert_eq!(metadata.to_value, "120590251");

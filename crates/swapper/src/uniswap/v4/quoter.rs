@@ -52,15 +52,19 @@ mod tests {
     use alloy_sol_types::SolValue;
     use gem_evm::uniswap::{FeeTier, path::get_base_pair};
     use gem_hash::keccak::keccak256;
-    use primitives::EVMChain;
+    use primitives::{
+        EVMChain,
+        asset_constants::UNICHAIN_USDC_TOKEN_ID,
+        contract_constants::{OPTIMISM_UNISWAP_V4_QUOTER_CONTRACT, UNICHAIN_UNISWAP_V4_QUOTER_CONTRACT},
+    };
 
     #[test]
     fn test_build_quote_exact_single_request() {
         let token_in = address!("0x0000000000000000000000000000000000000000");
-        let token_out = address!("0x078D782b760474a361dDA0AF3839290b0EF57AD6"); // USDC
+        let token_out = UNICHAIN_USDC_TOKEN_ID.parse().unwrap();
         let fee_tiers = vec![FeeTier::ThreeThousand];
 
-        let v4_quoter = "0x333E3C607B141b18fF6de9f258db6e77fE7491E0";
+        let v4_quoter = UNICHAIN_UNISWAP_V4_QUOTER_CONTRACT;
         let amount_in = 10000000000000000_u128;
         let pool_keys = build_pool_keys(&token_in, &token_out, &fee_tiers);
 
@@ -86,7 +90,7 @@ mod tests {
         let fee_tiers = vec![FeeTier::ThreeThousand, FeeTier::FiveHundred, FeeTier::Hundred];
         let base_pair = get_base_pair(&EVMChain::Optimism, false).unwrap();
 
-        let v4_quoter = "0x1f3131a13296fb91c90870043742c3cdbff1a8d7";
+        let v4_quoter = OPTIMISM_UNISWAP_V4_QUOTER_CONTRACT;
         let amount_in = 10000000000000000_u128;
 
         let quote_params = build_quote_exact_params(amount_in, &token_in, &token_out, &fee_tiers, &base_pair.path_building_array());

@@ -227,7 +227,7 @@ impl ErrorResponse {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::asset_constants::{ETHEREUM_USDT_ASSET_ID, TRON_USDT_ASSET_ID};
+    use primitives::asset_constants::{ETHEREUM_USDT_ASSET_ID, ETHEREUM_USDT_TOKEN_ID, THORCHAIN_TCY_ASSET_ID, TRON_USDT_ASSET_ID, TRON_USDT_TOKEN_ID};
 
     #[test]
     fn test_tx_status_completed_ltc_to_tron() {
@@ -286,14 +286,14 @@ mod tests {
         assert_eq!(native_18.native_value(Chain::Ethereum), Some("25096740000000000".to_string()));
 
         let token_with_decimals = TransactionCoin {
-            asset: "ETH.USDT-0xDAC17F958D2ee523a2206206994597C13D831ec7".to_string(),
+            asset: format!("ETH.USDT-{ETHEREUM_USDT_TOKEN_ID}"),
             amount: "380962656200".to_string(),
             decimals: Some(6),
         };
         assert_eq!(token_with_decimals.native_value(Chain::Ethereum), Some("3809626562".to_string()));
 
         let token_no_decimals = TransactionCoin {
-            asset: "ETH.USDT-0xDAC17F958D2ee523a2206206994597C13D831ec7".to_string(),
+            asset: format!("ETH.USDT-{ETHEREUM_USDT_TOKEN_ID}"),
             amount: "380962656200".to_string(),
             decimals: None,
         };
@@ -348,8 +348,8 @@ mod tests {
             coin("ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7").resolve_asset_id(),
             Some(ETHEREUM_USDT_ASSET_ID.clone())
         );
-        assert_eq!(coin("TRON.USDT-TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t").resolve_asset_id(), Some(TRON_USDT_ASSET_ID.clone()));
-        assert_eq!(coin("THOR.TCY").resolve_asset_id(), Some(AssetId::from_token(Chain::Thorchain, "tcy")));
+        assert_eq!(coin(&format!("TRON.USDT-{TRON_USDT_TOKEN_ID}")).resolve_asset_id(), Some(TRON_USDT_ASSET_ID.clone()));
+        assert_eq!(coin("THOR.TCY").resolve_asset_id(), Some(THORCHAIN_TCY_ASSET_ID.clone()));
         assert_eq!(coin("ETH.UNKNOWN-0x1234567890abcdef1234567890abcdef12345678").resolve_asset_id(), None);
         assert_eq!(coin("INVALID").resolve_asset_id(), None);
     }

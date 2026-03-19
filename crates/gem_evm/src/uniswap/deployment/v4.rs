@@ -1,5 +1,8 @@
 use super::{Deployment, get_uniswap_permit2_by_chain};
-use primitives::Chain;
+use primitives::{
+    Chain,
+    contract_constants::{OPTIMISM_UNISWAP_V4_QUOTER_CONTRACT, UNICHAIN_UNISWAP_V4_QUOTER_CONTRACT, UNICHAIN_UNISWAP_V4_UNIVERSAL_ROUTER_CONTRACT},
+};
 
 pub struct V4Deployment {
     pub quoter: &'static str, // V4 Quoter
@@ -31,7 +34,7 @@ pub fn get_uniswap_deployment_by_chain(chain: &Chain) -> Option<V4Deployment> {
             universal_router: "0x66a9893cc07d91d95644aedd05d03f95e1dba8af",
         }),
         Chain::Optimism => Some(V4Deployment {
-            quoter: "0x1f3131a13296fb91c90870043742c3cdbff1a8d7",
+            quoter: OPTIMISM_UNISWAP_V4_QUOTER_CONTRACT,
             permit2,
             universal_router: "0x851116d9223fabed8e56c0e6b8ad0c31d98b3507",
         }),
@@ -71,9 +74,9 @@ pub fn get_uniswap_deployment_by_chain(chain: &Chain) -> Option<V4Deployment> {
             universal_router: "0x8ac7bee993bb44dab564ea4bc9ea67bf9eb5e743",
         }),
         Chain::Unichain => Some(V4Deployment {
-            quoter: "0x333E3C607B141b18fF6de9f258db6e77fE7491E0",
+            quoter: UNICHAIN_UNISWAP_V4_QUOTER_CONTRACT,
             permit2,
-            universal_router: "0xEf740bf23aCaE26f6492B10de645D6B98dC8Eaf3",
+            universal_router: UNICHAIN_UNISWAP_V4_UNIVERSAL_ROUTER_CONTRACT,
         }),
         Chain::Celo => Some(V4Deployment {
             quoter: "0x28566da1093609182dFf2cB2A91CFD72e61d66cd",

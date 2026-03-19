@@ -81,6 +81,7 @@ pub fn format_token_id(chain: Chain, token_id: String) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
+    use primitives::asset_constants::{STELLAR_USDC_TOKEN_ID, SUI_WAL_TOKEN_ID, TRON_USDT_TOKEN_ID};
 
     use super::*;
 
@@ -103,10 +104,7 @@ mod tests {
             None
         );
         assert_eq!(format_token_id(chain, "0x2::sui::SUI".to_string()), None);
-        assert_eq!(
-            format_token_id(chain, "0x356a26eb9e012a68958082340d4c4116e7f55615cf27affcff209cf0ae544f59::wal::WAL".to_string()),
-            Some("0x356a26eb9e012a68958082340d4c4116e7f55615cf27affcff209cf0ae544f59::wal::WAL".to_string())
-        );
+        assert_eq!(format_token_id(chain, SUI_WAL_TOKEN_ID.to_string()), Some(SUI_WAL_TOKEN_ID.to_string()));
         assert_eq!(
             format_token_id(chain, "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI".to_string()),
             None
@@ -117,7 +115,7 @@ mod tests {
     fn test_format_token_id_tron() {
         let chain = Chain::Tron;
 
-        let valid_token_id = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t".to_string();
+        let valid_token_id = TRON_USDT_TOKEN_ID.to_string();
         let formatted_valid_token_id = format_token_id(chain, valid_token_id.clone());
         assert_eq!(formatted_valid_token_id, Some(valid_token_id));
 
@@ -143,10 +141,7 @@ mod tests {
     fn test_format_token_id_stellar() {
         let chain = Chain::Stellar;
 
-        assert_eq!(
-            format_token_id(chain, "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN::USDC".to_string()),
-            Some("GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN::USDC".to_string())
-        );
+        assert_eq!(format_token_id(chain, STELLAR_USDC_TOKEN_ID.to_string()), Some(STELLAR_USDC_TOKEN_ID.to_string()));
         assert_eq!(format_token_id(chain, "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN".to_string()), None);
         assert_eq!(format_token_id(chain, "invalid".to_string()), None);
         assert_eq!(format_token_id(chain, "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN::".to_string()), None);

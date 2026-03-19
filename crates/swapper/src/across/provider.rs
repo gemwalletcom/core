@@ -612,7 +612,7 @@ mod tests {
     use super::*;
     use alloy_sol_types::SolEvent;
     use gem_evm::{multicall3::IMulticall3, rpc::model::Log};
-    use primitives::{asset_constants::*, contract_constants::*};
+    use primitives::asset_constants::*;
 
     #[test]
     fn test_is_supported_pair() {
@@ -679,7 +679,7 @@ mod tests {
 
     #[test]
     fn test_resolve_token_asset_usdc_checksummed() {
-        let result = resolve_token_asset(Chain::Ethereum, "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48");
+        let result = resolve_token_asset(Chain::Ethereum, &ETHEREUM_USDC_TOKEN_ID.to_ascii_lowercase());
         assert_eq!(result, Some(ETHEREUM_USDC_ASSET_ID.clone()));
     }
 
@@ -696,8 +696,8 @@ mod tests {
         let log = build_event_log(
             V3SpokePoolInterface::V3FundsDeposited::SIGNATURE_HASH,
             &[42161, 12345, 0],
-            "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-            "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+            ETHEREUM_WETH_TOKEN_ID,
+            ARBITRUM_WETH_TOKEN_ID,
             input_amount,
             output_amount,
         );
@@ -706,8 +706,8 @@ mod tests {
         assert_eq!(result.deposit_id, 12345);
         assert_eq!(result.origin_chain_id, 1);
         assert_eq!(result.destination_chain_id.unwrap(), 42161);
-        assert_eq!(result.input_token.unwrap(), "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
-        assert_eq!(result.output_token.unwrap(), "0x82af49447d8a07e3bd95bd0d56f35241523fbab1");
+        assert_eq!(result.input_token.unwrap(), ETHEREUM_WETH_TOKEN_ID.to_ascii_lowercase());
+        assert_eq!(result.output_token.unwrap(), ARBITRUM_WETH_TOKEN_ID.to_ascii_lowercase());
         assert_eq!(result.input_amount.unwrap(), input_amount.to_string());
         assert_eq!(result.output_amount.unwrap(), output_amount.to_string());
     }
@@ -719,8 +719,8 @@ mod tests {
         let log = build_event_log(
             V3SpokePoolInterface::FundsDeposited::SIGNATURE_HASH,
             &[8453, 5452553, 0],
-            "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-            "0x4200000000000000000000000000000000000006",
+            ETHEREUM_WETH_TOKEN_ID,
+            BASE_WETH_TOKEN_ID,
             input_amount,
             output_amount,
         );
@@ -728,8 +728,8 @@ mod tests {
         let result = parse_deposit_from_logs(&[log], 1).unwrap();
         assert_eq!(result.deposit_id, 5452553);
         assert_eq!(result.destination_chain_id.unwrap(), 8453);
-        assert_eq!(result.input_token.unwrap(), "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
-        assert_eq!(result.output_token.unwrap(), "0x4200000000000000000000000000000000000006");
+        assert_eq!(result.input_token.unwrap(), ETHEREUM_WETH_TOKEN_ID.to_ascii_lowercase());
+        assert_eq!(result.output_token.unwrap(), BASE_WETH_TOKEN_ID.to_ascii_lowercase());
         assert_eq!(result.input_amount.unwrap(), input_amount.to_string());
         assert_eq!(result.output_amount.unwrap(), output_amount.to_string());
     }
@@ -741,8 +741,8 @@ mod tests {
         let log = build_event_log(
             V3SpokePoolInterface::FilledRelay::SIGNATURE_HASH,
             &[1, 3708468, 0],
-            "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-            "0x4200000000000000000000000000000000000006",
+            ETHEREUM_WETH_TOKEN_ID,
+            BASE_WETH_TOKEN_ID,
             input_amount,
             output_amount,
         );
@@ -751,8 +751,8 @@ mod tests {
         assert_eq!(result.deposit_id, 3708468);
         assert_eq!(result.origin_chain_id, 1);
         assert!(result.destination_chain_id.is_none());
-        assert_eq!(result.input_token.unwrap(), "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
-        assert_eq!(result.output_token.unwrap(), "0x4200000000000000000000000000000000000006");
+        assert_eq!(result.input_token.unwrap(), ETHEREUM_WETH_TOKEN_ID.to_ascii_lowercase());
+        assert_eq!(result.output_token.unwrap(), BASE_WETH_TOKEN_ID.to_ascii_lowercase());
     }
 
     #[test]
@@ -799,8 +799,7 @@ mod tests {
         use super::*;
         use crate::{
             FetchQuoteData, NativeProvider, Options, QuoteRequest, SwapperError, SwapperMode,
-            config::{ReferralFee, ReferralFees},
-            fees::DEFAULT_STABLE_SWAP_REFERRAL_BPS,
+            fees::{DEFAULT_STABLE_SWAP_REFERRAL_BPS, ReferralFee, ReferralFees},
         };
         use primitives::{AssetId, Chain, swap::SwapStatus};
         use std::{sync::Arc, time::SystemTime};

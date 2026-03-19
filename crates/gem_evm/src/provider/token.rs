@@ -31,6 +31,7 @@ impl<C: Client + Clone> ChainToken for EthereumClient<C> {
 mod chain_integration_tests {
     use super::*;
     use crate::provider::testkit::{TOKEN_USDC_ADDRESS, create_ethereum_test_client, create_smartchain_test_client};
+    use primitives::asset_constants::{ETHEREUM_USDT_TOKEN_ID, SMARTCHAIN_USDT_TOKEN_ID};
     use primitives::{AssetType, Chain};
 
     #[tokio::test]
@@ -55,7 +56,7 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_ethereum_get_token_data_usdt() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_ethereum_test_client();
-        let usdt_address = "0xdAC17F958D2ee523a2206206994597C13D831ec7".to_string();
+        let usdt_address = ETHEREUM_USDT_TOKEN_ID.to_string();
 
         let asset = client.get_token_data(usdt_address.clone()).await?;
 
@@ -74,7 +75,7 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_smartchain_get_token_data_usdt() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_smartchain_test_client();
-        let usdt_address = "0x55d398326f99059fF775485246999027B3197955".to_string();
+        let usdt_address = SMARTCHAIN_USDT_TOKEN_ID.to_string();
 
         let asset = client.get_token_data(usdt_address.clone()).await?;
 

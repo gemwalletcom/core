@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use url::Url;
 use url::form_urlencoded;
 pub const SOLANA_PAY_SCHEME: &str = "solana";
-pub const SOLANA_PAY_USDC_SPL_TOKEN: &str = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+pub const SOLANA_PAY_USDC_SPL_TOKEN: &str = crate::asset_constants::SOLANA_USDC_TOKEN_ID;
 
 #[derive(Debug, Clone)]
 pub enum RequestType {

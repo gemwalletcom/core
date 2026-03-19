@@ -244,7 +244,7 @@ pub fn get_near_intents_asset_id(asset: &SwapperQuoteAsset) -> Result<String, Sw
     let asset_id = asset.asset_id();
     let chain_assets = NEAR_INTENTS_ASSETS.get(&asset_id.chain).ok_or(SwapperError::NotSupportedChain)?;
 
-    chain_assets.get(&asset_id).map(|v| v.to_string()).ok_or(SwapperError::NotSupportedAsset)
+    chain_assets.get(&asset_id).map(|value| (*value).to_string()).ok_or(SwapperError::NotSupportedAsset)
 }
 
 pub fn get_asset_id_from_near_intents(near_intents_id: &str) -> Option<AssetId> {

@@ -41,8 +41,8 @@ pub fn map_swap_result(response: &TransactionStatus) -> SwapResult {
 mod tests {
     use super::*;
     use primitives::{
-        AssetId, Chain,
-        asset_constants::{ETHEREUM_USDT_TOKEN_ID, TRON_USDT_TOKEN_ID},
+        Chain,
+        asset_constants::{ETHEREUM_USDT_ASSET_ID, THORCHAIN_TCY_ASSET_ID, TRON_USDT_ASSET_ID},
         swap::SwapStatus,
     };
 
@@ -61,7 +61,7 @@ mod tests {
                 metadata: Some(TransactionSwapMetadata {
                     from_asset: Chain::Litecoin.as_asset_id(),
                     from_value: "160661010".to_string(),
-                    to_asset: AssetId::from_token(Chain::Tron, TRON_USDT_TOKEN_ID),
+                    to_asset: TRON_USDT_ASSET_ID.clone(),
                     to_value: "79158429".to_string(),
                     provider: Some("thorchain".to_string()),
                 }),
@@ -131,7 +131,7 @@ mod tests {
                 metadata: Some(TransactionSwapMetadata {
                     from_asset: Chain::SmartChain.as_asset_id(),
                     from_value: "21300000000000000".to_string(),
-                    to_asset: AssetId::from_token(Chain::Ethereum, ETHEREUM_USDT_TOKEN_ID),
+                    to_asset: ETHEREUM_USDT_ASSET_ID.clone(),
                     to_value: "12973781".to_string(),
                     provider: Some("thorchain".to_string()),
                 }),
@@ -167,7 +167,7 @@ mod tests {
             SwapResult {
                 status: SwapStatus::Completed,
                 metadata: Some(TransactionSwapMetadata {
-                    from_asset: AssetId::from_token(Chain::Ethereum, ETHEREUM_USDT_TOKEN_ID),
+                    from_asset: ETHEREUM_USDT_ASSET_ID.clone(),
                     from_value: "8366000000".to_string(),
                     to_asset: Chain::Thorchain.as_asset_id(),
                     to_value: "2096315169517".to_string(),
@@ -186,9 +186,9 @@ mod tests {
             SwapResult {
                 status: SwapStatus::Completed,
                 metadata: Some(TransactionSwapMetadata {
-                    from_asset: AssetId::from_token(Chain::Thorchain, "tcy"),
+                    from_asset: THORCHAIN_TCY_ASSET_ID.clone(),
                     from_value: "11921829956942".to_string(),
-                    to_asset: AssetId::from_token(Chain::Ethereum, ETHEREUM_USDT_TOKEN_ID),
+                    to_asset: ETHEREUM_USDT_ASSET_ID.clone(),
                     to_value: "3809626562".to_string(),
                     provider: Some("thorchain".to_string()),
                 }),

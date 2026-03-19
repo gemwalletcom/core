@@ -1,5 +1,4 @@
 use crate::chain_cosmos::CosmosChain;
-use crate::contract_constants::{BASE_WETH_CONTRACT, OPSTACK_WETH_CONTRACT};
 use crate::{AssetType, Chain, ChainType, asset_constants::*};
 use std::sync::LazyLock;
 
@@ -458,7 +457,7 @@ static CHAIN_CONFIGS: LazyLock<Vec<ChainConfig>> = LazyLock::new(|| {
                 min_priority_fee: 5_000_000,
                 chain_stack: ChainStack::Optimism,
                 is_ethereum_layer2: true,
-                weth_contract: Some(BASE_WETH_CONTRACT),
+                weth_contract: Some(BASE_WETH_TOKEN_ID),
             }),
             stake: None,
         },
@@ -548,7 +547,7 @@ static CHAIN_CONFIGS: LazyLock<Vec<ChainConfig>> = LazyLock::new(|| {
                 min_priority_fee: 1_000_000,
                 chain_stack: ChainStack::Optimism,
                 is_ethereum_layer2: false,
-                weth_contract: Some(OPSTACK_WETH_CONTRACT),
+                weth_contract: Some(OPBNB_WETH_TOKEN_ID),
             }),
             stake: None,
         },

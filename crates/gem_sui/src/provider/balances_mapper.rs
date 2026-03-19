@@ -82,6 +82,7 @@ fn coin_type_matches(coin_type: &str, token_id: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use primitives::asset_constants::SUI_USDC_TOKEN_ID;
     use serde_json;
 
     #[test]
@@ -100,7 +101,7 @@ mod tests {
         let balances: Vec<SuiBalance> = serde_json::from_value(response["result"].clone()).unwrap();
 
         let token_ids = vec![
-            "0xdba34672e30cb065b1f93e3ab55318768fd6fef66c15942c9f7cb846e2f900e7::usdc::USDC".to_string(),
+            SUI_USDC_TOKEN_ID.to_string(),
             "0xda1644f58a955833a15abae24f8cc65b5bd8152ce013fde8be0a6a3dcf51fe36::token::TOKEN".to_string(),
         ];
 

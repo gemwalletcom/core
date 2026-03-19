@@ -99,8 +99,7 @@ pub fn map_order(order: FlashnetOrder) -> FiatTransaction {
     let asset_id = chain.map(AssetId::from_chain);
     let symbol = order.destination_asset().map(str::to_ascii_uppercase).unwrap_or_default();
     let fiat_amount = order
-        .amount_out
-        .as_deref()
+        .effective_amount_out()
         .and_then(|value| BigNumberFormatter::value_as_f64(value, USDB_DECIMALS).ok())
         .unwrap_or_default();
 
@@ -220,7 +219,7 @@ mod tests {
     }
 
     #[test]
-    fn map_order_defaults_missing_amount_out_to_zero() {
+    fn map_order_falls_back_to_payment_intent_target_amount() {
         let payload: serde_json::Value = serde_json::from_str(include_str!("../../../testdata/flashnet/webhook_pending.json")).unwrap();
         let order: FlashnetOrder = serde_json::from_value(payload["data"].clone()).unwrap();
 
@@ -234,7 +233,7 @@ mod tests {
                 status: FiatTransactionStatus::Pending,
                 country: None,
                 symbol: "USDC".to_string(),
-                fiat_amount: 0.0,
+                fiat_amount: 49.47525,
                 fiat_currency: Currency::USD.as_ref().to_string(),
                 transaction_hash: None,
                 address: Some("solana_test_recipient_processing".to_string()),

@@ -185,6 +185,9 @@ pub static OPTIMISM_WBTC_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId:
 pub const POLYGON_WBTC_TOKEN_ID: &str = "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6";
 pub static POLYGON_WBTC_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::Polygon, POLYGON_WBTC_TOKEN_ID));
 
+pub const SONIC_WBTC_TOKEN_ID: &str = "0x0555E30da8f98308EdB960aa94C0Db47230d2B9c";
+pub static SONIC_WBTC_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::Sonic, SONIC_WBTC_TOKEN_ID));
+
 pub const WORLD_WBTC_TOKEN_ID: &str = "0x03C7054BCB39f7b2e5B2c7AcB37583e32D70Cfa3";
 pub static WORLD_WBTC_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::World, WORLD_WBTC_TOKEN_ID));
 
@@ -208,6 +211,9 @@ pub static BASE_WETH_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::fro
 
 pub const OPTIMISM_WETH_TOKEN_ID: &str = "0x4200000000000000000000000000000000000006";
 pub static OPTIMISM_WETH_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::Optimism, OPTIMISM_WETH_TOKEN_ID));
+
+pub const OPBNB_WETH_TOKEN_ID: &str = "0x4200000000000000000000000000000000000006";
+pub static OPBNB_WETH_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::OpBNB, OPBNB_WETH_TOKEN_ID));
 
 pub const POLYGON_WETH_TOKEN_ID: &str = "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619";
 pub static POLYGON_WETH_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::Polygon, POLYGON_WETH_TOKEN_ID));

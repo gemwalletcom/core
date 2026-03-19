@@ -1,5 +1,11 @@
 use super::{Deployment, get_uniswap_permit2_by_chain};
-use primitives::Chain;
+use primitives::{
+    Chain,
+    contract_constants::{
+        BASE_UNISWAP_V3_UNIVERSAL_ROUTER_CONTRACT, ETHEREUM_UNISWAP_V3_UNIVERSAL_ROUTER_CONTRACT, OPTIMISM_UNISWAP_V3_UNIVERSAL_ROUTER_CONTRACT,
+        UNICHAIN_UNISWAP_V3_UNIVERSAL_ROUTER_CONTRACT, UNISWAP_PERMIT2_CONTRACT,
+    },
+};
 
 pub struct V3Deployment {
     pub quoter_v2: &'static str,
@@ -28,12 +34,12 @@ pub fn get_uniswap_router_deployment_by_chain(chain: &Chain) -> Option<V3Deploym
         Chain::Ethereum => Some(V3Deployment {
             quoter_v2: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
             permit2,
-            universal_router: "0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD",
+            universal_router: ETHEREUM_UNISWAP_V3_UNIVERSAL_ROUTER_CONTRACT,
         }),
         Chain::Optimism => Some(V3Deployment {
             quoter_v2: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
             permit2,
-            universal_router: "0xCb1355ff08Ab38bBCE60111F1bb2B784bE25D7e8",
+            universal_router: OPTIMISM_UNISWAP_V3_UNIVERSAL_ROUTER_CONTRACT,
         }),
         Chain::Arbitrum => Some(V3Deployment {
             quoter_v2: "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",
@@ -53,7 +59,7 @@ pub fn get_uniswap_router_deployment_by_chain(chain: &Chain) -> Option<V3Deploym
         Chain::Base => Some(V3Deployment {
             quoter_v2: "0x3d4e44Eb1374240CE5F1B871ab261CD16335B76a",
             permit2,
-            universal_router: "0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD",
+            universal_router: BASE_UNISWAP_V3_UNIVERSAL_ROUTER_CONTRACT,
         }),
         Chain::SmartChain => Some(V3Deployment {
             quoter_v2: "0x78D78E420Da98ad378D7799bE8f4AF69033EB077",
@@ -84,7 +90,7 @@ pub fn get_uniswap_router_deployment_by_chain(chain: &Chain) -> Option<V3Deploym
         Chain::Unichain => Some(V3Deployment {
             quoter_v2: "0x385A5cf5F83e99f7BB2852b6A19C3538b9FA7658",
             permit2,
-            universal_router: "0xEf740bf23aCaE26f6492B10de645D6B98dC8Eaf3",
+            universal_router: UNICHAIN_UNISWAP_V3_UNIVERSAL_ROUTER_CONTRACT,
         }),
         // See: https://github.com/Uniswap/contracts/blob/main/deployments/143.md
         Chain::Monad => Some(V3Deployment {
@@ -151,12 +157,12 @@ pub fn get_oku_deployment_by_chain(chain: &Chain) -> Option<V3Deployment> {
         Chain::Gnosis => Some(V3Deployment {
             quoter_v2: "0x7E9cB3499A6cee3baBe5c8a3D328EA7FD36578f4",
             universal_router: "0x75FC67473A91335B5b8F8821277262a13B38c9b3",
-            permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+            permit2: UNISWAP_PERMIT2_CONTRACT,
         }),
         Chain::Plasma => Some(V3Deployment {
             quoter_v2: "0xaa52bB8110fE38D0d2d2AF0B85C3A3eE622CA455",
             universal_router: "0x1b35fbA9357fD9bda7ed0429C8BbAbe1e8CC88fc",
-            permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+            permit2: UNISWAP_PERMIT2_CONTRACT,
         }),
         _ => None,
     }

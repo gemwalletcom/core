@@ -31,9 +31,12 @@ pub fn get_fee_token(mode: &SwapperMode, base_pair: Option<&BasePair>, input: &A
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloy_primitives::address;
+    use alloy_primitives::Address;
     use gem_evm::uniswap::path::get_base_pair;
-    use primitives::EVMChain;
+    use primitives::{
+        EVMChain,
+        asset_constants::{ETHEREUM_UNI_TOKEN_ID, ETHEREUM_USDC_TOKEN_ID, ETHEREUM_WBTC_TOKEN_ID, ETHEREUM_WETH_TOKEN_ID},
+    };
 
     #[test]
     fn test_get_fee_token() {
@@ -41,10 +44,10 @@ mod tests {
         let mode = SwapperMode::ExactIn;
         let base_pair = get_base_pair(&evm_chain, true);
 
-        let weth = address!("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2");
-        let uni = address!("0x1f9840a85d5af5bf1d1762f925bdaddc4201f984");
-        let usdc = address!("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48");
-        let wbtc = address!("0x2260fac5e5542a773aa44fbcfedf7c193bc2c599");
+        let weth: Address = ETHEREUM_WETH_TOKEN_ID.parse().unwrap();
+        let uni: Address = ETHEREUM_UNI_TOKEN_ID.parse().unwrap();
+        let usdc: Address = ETHEREUM_USDC_TOKEN_ID.parse().unwrap();
+        let wbtc: Address = ETHEREUM_WBTC_TOKEN_ID.parse().unwrap();
 
         // WETH -> UNI (fee_token is WETH)
         let fee_preference = get_fee_token(&mode, base_pair.as_ref(), &weth, &uni);

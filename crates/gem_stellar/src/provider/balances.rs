@@ -40,7 +40,7 @@ impl<C: Client> ChainBalances for StellarClient<C> {
 mod chain_integration_tests {
     use super::*;
     use crate::provider::testkit::{TEST_ADDRESS, TEST_EMPTY_ADDRESS, create_test_client};
-    use primitives::Chain;
+    use primitives::{Chain, asset_constants::STELLAR_USDC_TOKEN_ID};
 
     #[tokio::test]
     async fn test_stellar_get_balance_coin() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -69,9 +69,7 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_get_balance_tokens() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_test_client();
-        let token_ids = vec![
-            "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN::USDC".to_string(), // USDC token
-        ];
+        let token_ids = vec![STELLAR_USDC_TOKEN_ID.to_string()];
 
         let balances = client.get_balance_tokens(TEST_ADDRESS.to_string(), token_ids.clone()).await?;
 

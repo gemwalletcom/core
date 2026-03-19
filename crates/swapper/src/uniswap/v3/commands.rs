@@ -131,14 +131,18 @@ mod tests {
     };
     use alloy_primitives::aliases::U256;
     use gem_evm::uniswap::{FeeTier, path::build_direct_pair};
-    use primitives::{AssetId, Chain};
+    use primitives::{
+        AssetId, Chain,
+        asset_constants::{ETHEREUM_USDC_TOKEN_ID, ETHEREUM_WETH_TOKEN_ID, OPTIMISM_USDC_E_TOKEN_ID, OPTIMISM_USDC_TOKEN_ID, OPTIMISM_USDT_TOKEN_ID, OPTIMISM_WETH_TOKEN_ID},
+        contract_constants::OPTIMISM_UNISWAP_V3_UNIVERSAL_ROUTER_CONTRACT,
+    };
 
     #[test]
     fn test_build_commands_eth_to_token() {
         let mut request = QuoteRequest {
             // ETH -> USDC
             from_asset: AssetId::from(Chain::Ethereum, None).into(),
-            to_asset: AssetId::from(Chain::Ethereum, Some("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48".into())).into(),
+            to_asset: AssetId::from(Chain::Ethereum, Some(ETHEREUM_USDC_TOKEN_ID.into())).into(),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "10000000000000000".into(),
@@ -146,8 +150,8 @@ mod tests {
             options: Options::default(),
         };
 
-        let token_in = eth_address::parse_str("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2").unwrap();
-        let token_out = eth_address::parse_str("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48").unwrap();
+        let token_in = eth_address::parse_str(ETHEREUM_WETH_TOKEN_ID).unwrap();
+        let token_out = eth_address::parse_str(ETHEREUM_USDC_TOKEN_ID).unwrap();
         let amount_in = U256::from(1000000000000000u64);
 
         let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred);
@@ -184,8 +188,8 @@ mod tests {
     fn test_build_commands_usdc_to_usdt() {
         let request = QuoteRequest {
             // USDC -> USDT
-            from_asset: AssetId::from(Chain::Optimism, Some("0x0b2c639c533813f4aa9d7837caf62653d097ff85".into())).into(),
-            to_asset: AssetId::from(Chain::Optimism, Some("0x94b008aa00579c1307b0ef2c499ad98a8ce58e58".into())).into(),
+            from_asset: AssetId::from(Chain::Optimism, Some(OPTIMISM_USDC_TOKEN_ID.into())).into(),
+            to_asset: AssetId::from(Chain::Optimism, Some(OPTIMISM_USDT_TOKEN_ID.into())).into(),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "6500000".into(),
@@ -200,12 +204,12 @@ mod tests {
         let permit2_data = Permit2Data {
             permit_single: PermitSingle {
                 details: Permit2Detail {
-                    token: "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85".into(),
+                    token: OPTIMISM_USDC_TOKEN_ID.into(),
                     amount: "1461501637330902918203684832716283019655932542975".into(),
                     expiration: 1732667593,
                     nonce: 0,
                 },
-                spender: "0xCb1355ff08Ab38bBCE60111F1bb2B784bE25D7e8".into(),
+                spender: OPTIMISM_UNISWAP_V3_UNIVERSAL_ROUTER_CONTRACT.into(),
                 sig_deadline: 1730077393,
             },
             signature: hex::decode("8f32d2e66506a4f424b1b23309ed75d338534d0912129a8aa3381fab4eb8032f160e0988f10f512b19a58c2a689416366c61cc0c483c3b5322dc91f8b60107671b").unwrap(),
@@ -268,7 +272,7 @@ mod tests {
     fn test_build_commands_usdce_to_eth() {
         let request = QuoteRequest {
             // USDCE -> ETH
-            from_asset: AssetId::from(Chain::Optimism, Some("0x7F5c764cBc14f9669B88837ca1490cCa17c31607".into())).into(),
+            from_asset: AssetId::from(Chain::Optimism, Some(OPTIMISM_USDC_E_TOKEN_ID.into())).into(),
             to_asset: AssetId::from(Chain::Ethereum, None).into(),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
@@ -286,7 +290,7 @@ mod tests {
         };
 
         let token_in = eth_address::parse_str(request.from_asset.asset_id().token_id.as_ref().unwrap()).unwrap();
-        let token_out = eth_address::parse_str("0x4200000000000000000000000000000000000006").unwrap();
+        let token_out = eth_address::parse_str(OPTIMISM_WETH_TOKEN_ID).unwrap();
         let amount_in = U256::from_str(&request.value).unwrap();
 
         let permit2_data = Permit2Data {
@@ -297,7 +301,7 @@ mod tests {
                     expiration: 1732667502,
                     nonce: 0,
                 },
-                spender: "0xCb1355ff08Ab38bBCE60111F1bb2B784bE25D7e8".into(),
+                spender: OPTIMISM_UNISWAP_V3_UNIVERSAL_ROUTER_CONTRACT.into(),
                 sig_deadline: 1730077302,
             },
             signature: hex::decode("00e96ed0f5bf5cca62dc9d9753960d83c8be83224456559a1e93a66d972a019f6f328a470f8257d3950b4cb7cd0024d789b4fcd9e80c4eb43d82a38d9e5332f31b").unwrap(),
@@ -346,7 +350,7 @@ mod tests {
             },
         };
 
-        let token_in = eth_address::parse_str("0x4200000000000000000000000000000000000006").unwrap();
+        let token_in = eth_address::parse_str(OPTIMISM_WETH_TOKEN_ID).unwrap();
         let token_out = eth_address::parse_str(&request.to_asset.asset_id().token_id.unwrap()).unwrap();
         let amount_in = U256::from_str(request.value.as_str()).unwrap();
 

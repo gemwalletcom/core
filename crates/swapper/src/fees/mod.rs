@@ -10,4 +10,3 @@ pub const DEFAULT_SWAP_FEE_BPS: u32 = 50;
 pub const DEFAULT_CHAINFLIP_FEE_BPS: u32 = 45;
 pub const DEFAULT_STABLE_SWAP_REFERRAL_BPS: u32 = 25;
 pub const DEFAULT_REFERRER: &str = "gemwallet";
-

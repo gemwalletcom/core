@@ -1,7 +1,7 @@
 use alloy_primitives::{Address, U256};
 use alloy_sol_types::SolCall;
-use gem_evm::contracts::erc4626::IERC4626;
 use gem_evm::contracts::IERC20;
+use gem_evm::contracts::erc4626::IERC4626;
 use gem_evm::jsonrpc::TransactionObject;
 use gem_evm::multicall3::{create_call3, decode_call3_return};
 use gem_evm::rpc::EthereumClient;

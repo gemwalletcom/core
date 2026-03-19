@@ -1,6 +1,7 @@
 pub mod v3;
 pub mod v4;
 
+use primitives::contract_constants::{UNISWAP_PERMIT2_CONTRACT, ZKSYNC_UNISWAP_PERMIT2_CONTRACT};
 use primitives::{Chain, SwapProvider};
 
 pub trait Deployment {
@@ -24,8 +25,8 @@ pub fn get_uniswap_permit2_by_chain(chain: &Chain) -> Option<&'static str> {
         | Chain::Unichain
         | Chain::Ink
         | Chain::Monad
-        | Chain::Stable => Some("0x000000000022D473030F116dDEE9F6B43aC78BA3"),
-        Chain::ZkSync | Chain::Abstract => Some("0x0000000000225e31d15943971f47ad3022f714fa"),
+        | Chain::Stable => Some(UNISWAP_PERMIT2_CONTRACT),
+        Chain::ZkSync | Chain::Abstract => Some(ZKSYNC_UNISWAP_PERMIT2_CONTRACT),
         _ => None,
     }
 }

@@ -102,7 +102,10 @@ mod fiat_integration_tests {
     use crate::testkit::*;
     use crate::{FiatProvider, model::FiatMapping};
     use primitives::FiatProviderName;
-    use primitives::asset_constants::{ETHEREUM_USDC_TOKEN_ID, SOLANA_USDC_TOKEN_ID, SOLANA_USDT_TOKEN_ID};
+    use primitives::asset_constants::{
+        BASE_USDC_TOKEN_ID, ETHEREUM_USDC_TOKEN_ID, ETHEREUM_USDT_TOKEN_ID, POLYGON_USDC_TOKEN_ID, POLYGON_USDT_TOKEN_ID, SOLANA_USDC_TOKEN_ID, SOLANA_USDT_TOKEN_ID,
+        TRON_USDT_TOKEN_ID,
+    };
     use primitives::currency::Currency;
     use primitives::{Chain, FiatBuyQuote, FiatQuoteRequest};
     use streamer::FiatWebhook;
@@ -154,13 +157,13 @@ mod fiat_integration_tests {
         assert!(!result.is_empty());
 
         let expected_assets = vec![
-            ("USDT-TRC20", Chain::Tron, Some("TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t".to_string())),
+            ("USDT-TRC20", Chain::Tron, Some(TRON_USDT_TOKEN_ID.to_string())),
             ("USDT-SOL", Chain::Solana, Some(SOLANA_USDT_TOKEN_ID.to_string())),
-            ("USDT-POLYGON", Chain::Polygon, Some("0xc2132D05D31c914a87C6611C10748AEb04B58e8F".to_string())),
-            ("USDT", Chain::Ethereum, Some("0xdAC17F958D2ee523a2206206994597C13D831ec7".to_string())),
+            ("USDT-POLYGON", Chain::Polygon, Some(POLYGON_USDT_TOKEN_ID.to_string())),
+            ("USDT", Chain::Ethereum, Some(ETHEREUM_USDT_TOKEN_ID.to_string())),
             ("USDC-SOL", Chain::Solana, Some(SOLANA_USDC_TOKEN_ID.to_string())),
-            ("USDC-POLYGON", Chain::Polygon, Some("0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359".to_string())),
-            ("USDC-BASE", Chain::Base, Some("0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".to_string())),
+            ("USDC-POLYGON", Chain::Polygon, Some(POLYGON_USDC_TOKEN_ID.to_string())),
+            ("USDC-BASE", Chain::Base, Some(BASE_USDC_TOKEN_ID.to_string())),
             ("USDC", Chain::Ethereum, Some(ETHEREUM_USDC_TOKEN_ID.to_string())),
             ("TRX", Chain::Tron, None),
             ("XRP", Chain::Xrp, None),

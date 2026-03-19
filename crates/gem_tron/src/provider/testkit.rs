@@ -3,13 +3,15 @@ use crate::rpc::client::TronClient;
 #[cfg(all(test, feature = "chain_integration_tests"))]
 use gem_client::ReqwestClient;
 #[cfg(all(test, feature = "chain_integration_tests"))]
+use primitives::asset_constants::TRON_USDT_TOKEN_ID;
+#[cfg(all(test, feature = "chain_integration_tests"))]
 use settings::testkit::get_test_settings;
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 pub const TEST_ADDRESS: &str = "TFdTEn9dJuqh351y8fyJ3eMmghFsZNwakb";
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
-pub const TEST_USDT_TOKEN_ID: &str = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
+pub const TEST_USDT_TOKEN_ID: &str = TRON_USDT_TOKEN_ID;
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 pub fn create_test_client() -> TronClient<ReqwestClient> {

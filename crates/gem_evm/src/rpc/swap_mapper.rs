@@ -251,7 +251,11 @@ mod tests {
     use super::*;
     use crate::provider::testkit::TOKEN_USDC_ADDRESS;
     use crate::rpc::swap_mapper::SwapMapper;
-    use primitives::{Chain, JsonRpcResult};
+    use primitives::{
+        Chain, JsonRpcResult,
+        asset_constants::{POLYGON_USDT_TOKEN_ID, UNICHAIN_DAI_TOKEN_ID, UNICHAIN_USDC_TOKEN_ID},
+        contract_constants::{ETHEREUM_UNISWAP_V3_UNIVERSAL_ROUTER_CONTRACT, UNICHAIN_UNISWAP_V4_UNIVERSAL_ROUTER_CONTRACT},
+    };
 
     #[test]
     fn test_map_v4_swap_eth_dai() {
@@ -267,7 +271,7 @@ mod tests {
 
         assert_eq!(swap_tx.from, "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7");
         assert_eq!(swap_tx.to, "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7");
-        assert_eq!(swap_tx.contract.unwrap(), "0xEf740bf23aCaE26f6492B10de645D6B98dC8Eaf3");
+        assert_eq!(swap_tx.contract.unwrap(), UNICHAIN_UNISWAP_V4_UNIVERSAL_ROUTER_CONTRACT);
         assert_eq!(swap_tx.transaction_type, TransactionType::Swap);
         assert_eq!(swap_tx.fee_asset_id, AssetId::from_chain(Chain::Unichain));
         assert_eq!(swap_tx.value, "1000000000000000");
@@ -284,7 +288,7 @@ mod tests {
             metadata.to_asset,
             AssetId {
                 chain: Chain::Unichain,
-                token_id: Some("0x20CAb320A855b39F724131C69424240519573f81".to_string()),
+                token_id: Some(UNICHAIN_DAI_TOKEN_ID.to_string()),
             }
         );
         assert_eq!(metadata.to_value, "2696771430516915192");
@@ -304,7 +308,7 @@ mod tests {
 
         assert_eq!(swap_tx.from, "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7");
         assert_eq!(swap_tx.to, "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7");
-        assert_eq!(swap_tx.contract.unwrap(), "0xEf740bf23aCaE26f6492B10de645D6B98dC8Eaf3");
+        assert_eq!(swap_tx.contract.unwrap(), UNICHAIN_UNISWAP_V4_UNIVERSAL_ROUTER_CONTRACT);
         assert_eq!(swap_tx.transaction_type, TransactionType::Swap);
         assert_eq!(swap_tx.fee_asset_id, AssetId::from_chain(Chain::Unichain));
         assert_eq!(swap_tx.value, "0");
@@ -313,7 +317,7 @@ mod tests {
             metadata.from_asset,
             AssetId {
                 chain: Chain::Unichain,
-                token_id: Some("0x078D782b760474a361dDA0AF3839290b0EF57AD6".to_string()),
+                token_id: Some(UNICHAIN_USDC_TOKEN_ID.to_string()),
             }
         );
         assert_eq!(metadata.from_value, "2132953");
@@ -342,7 +346,7 @@ mod tests {
 
         assert_eq!(swap_tx.from, "0x10E11c7368552D5Ab9ef5eED496f614fBAAe9F0D");
         assert_eq!(swap_tx.to, "0x10E11c7368552D5Ab9ef5eED496f614fBAAe9F0D");
-        assert_eq!(swap_tx.contract.unwrap(), "0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD");
+        assert_eq!(swap_tx.contract.unwrap(), ETHEREUM_UNISWAP_V3_UNIVERSAL_ROUTER_CONTRACT);
         assert_eq!(swap_tx.transaction_type, TransactionType::Swap);
         assert_eq!(swap_tx.fee_asset_id, AssetId::from_chain(Chain::Ethereum));
         assert_eq!(swap_tx.value, "18000000000000000");
@@ -435,7 +439,7 @@ mod tests {
             metadata.to_asset,
             AssetId {
                 chain: Chain::Polygon,
-                token_id: Some("0xc2132D05D31c914a87C6611C10748AEb04B58e8F".to_string()),
+                token_id: Some(POLYGON_USDT_TOKEN_ID.to_string()),
             }
         );
         assert_eq!(metadata.to_value, "78290151");
@@ -456,7 +460,7 @@ mod tests {
 
         assert_eq!(swap_tx.from, "0xBa38FE5b73eA5b93d0733CF9eb10aDea6E1E3a2a");
         assert_eq!(swap_tx.to, "0xBa38FE5b73eA5b93d0733CF9eb10aDea6E1E3a2a");
-        assert_eq!(swap_tx.contract.unwrap(), "0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD");
+        assert_eq!(swap_tx.contract.unwrap(), ETHEREUM_UNISWAP_V3_UNIVERSAL_ROUTER_CONTRACT);
         assert_eq!(swap_tx.transaction_type, TransactionType::Swap);
         assert_eq!(swap_tx.fee_asset_id, AssetId::from_chain(Chain::Ethereum));
         assert_eq!(swap_tx.value, "0");

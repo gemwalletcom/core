@@ -22,10 +22,10 @@ pub fn map_to_delegation(asset_id: AssetId, data: &PositionData, provider_id: &s
 }
 
 pub fn map_to_asset_balance(asset: &YoAsset, data: &PositionData) -> AssetBalance {
-    let balance = if data.share_balance != U256::ZERO { 
-        u256_to_biguint(&data.asset_balance) 
+    let balance = if data.share_balance != U256::ZERO {
+        u256_to_biguint(&data.asset_balance)
     } else {
-         BigUint::ZERO 
+        BigUint::ZERO
     };
     AssetBalance::new_earn(asset.asset_id(), balance)
 }
@@ -83,8 +83,30 @@ mod tests {
 
     #[test]
     fn test_map_to_asset_balance() {
-        assert_eq!(map_to_asset_balance(&YO_USDC, &PositionData { share_balance: U256::from(1_000_000), asset_balance: U256::from(1_050_000) }).balance.earn, BigUint::from(1_050_000u64));
-        assert_eq!(map_to_asset_balance(&YO_USDC, &PositionData { share_balance: U256::ZERO, asset_balance: U256::from(1_050_000) }).balance.earn, BigUint::ZERO);
+        assert_eq!(
+            map_to_asset_balance(
+                &YO_USDC,
+                &PositionData {
+                    share_balance: U256::from(1_000_000),
+                    asset_balance: U256::from(1_050_000)
+                }
+            )
+            .balance
+            .earn,
+            BigUint::from(1_050_000u64)
+        );
+        assert_eq!(
+            map_to_asset_balance(
+                &YO_USDC,
+                &PositionData {
+                    share_balance: U256::ZERO,
+                    asset_balance: U256::from(1_050_000)
+                }
+            )
+            .balance
+            .earn,
+            BigUint::ZERO
+        );
     }
 
     #[test]

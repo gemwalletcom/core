@@ -299,7 +299,7 @@ mod tests {
         use super::*;
         use crate::{
             FetchQuoteData, NativeProvider, Options, QuoteRequest, SwapperError, SwapperMode, SwapperProvider,
-            config::{ReferralFee, ReferralFees},
+            fees::{ReferralFee, ReferralFees},
             uniswap,
         };
         use primitives::{AssetId, Chain};

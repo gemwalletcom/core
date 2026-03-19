@@ -49,7 +49,7 @@ fn encode_erc20_transfer(to: &str, amount: U256) -> Result<Bytes, Box<dyn Error 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::Chain;
+    use primitives::{Chain, asset_constants::SMARTCHAIN_USDT_TOKEN_ID};
 
     #[test]
     fn test_create_native_transfer() {
@@ -72,7 +72,7 @@ mod tests {
 
     #[test]
     fn test_create_token_transfer() {
-        let asset_id = AssetId::from_token(Chain::SmartChain, "0x55d398326f99059fF775485246999027B3197955");
+        let asset_id = AssetId::from_token(Chain::SmartChain, SMARTCHAIN_USDT_TOKEN_ID);
         let tx = create_transfer_tx(
             &asset_id,
             "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4",

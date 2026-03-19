@@ -56,6 +56,7 @@ fn token_id_kind(token_id: &str) -> Option<TokenIdKind> {
 mod chain_integration_tests {
     use crate::provider::testkit::create_aptos_test_client;
     use chain_traits::ChainToken;
+    use primitives::asset_constants::APTOS_USDT_TOKEN_ID;
 
     #[tokio::test]
     async fn test_aptos_get_token_data() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -84,9 +85,7 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_aptos_get_fungible_asset_data() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_aptos_test_client();
-        let token_data = client
-            .get_token_data("0x357b0b74bc833e95a115ad22604854d6b0fca151cecd94111770e5d6ffc9dc2b".to_string())
-            .await?;
+        let token_data = client.get_token_data(APTOS_USDT_TOKEN_ID.to_string()).await?;
         assert_eq!(token_data.symbol, "USDt");
         assert_eq!(token_data.decimals, 6);
         println!("Fungible asset data: {:?}", token_data);

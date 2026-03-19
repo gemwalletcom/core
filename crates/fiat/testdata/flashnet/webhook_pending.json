@@ -3,6 +3,9 @@
     "id": "ord_test_pending",
     "status": "processing",
     "amountOut": null,
+    "paymentIntent": {
+      "targetAmountOut": "49475250"
+    },
     "destination": {
       "asset": "USDC",
       "chain": "solana",

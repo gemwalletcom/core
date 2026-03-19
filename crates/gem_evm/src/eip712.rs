@@ -226,6 +226,7 @@ pub fn parse_value(type_name: &str, json_value: &Value, all_types: &HashMap<Stri
 #[cfg(test)]
 mod tests {
     use super::*;
+    use primitives::{asset_constants::ETHEREUM_USDT_TOKEN_ID, contract_constants::ETHEREUM_UNISWAP_V3_UNIVERSAL_ROUTER_CONTRACT};
 
     #[test]
     fn test_permit2_json_parsing() {
@@ -246,7 +247,7 @@ mod tests {
                 // 1.1 token (address)
                 assert_eq!(fields[0].name, "token");
                 match &fields[0].value {
-                    EIP712TypedValue::Address { value } => assert_eq!(value, "0xdAC17F958D2ee523a2206206994597C13D831ec7"),
+                    EIP712TypedValue::Address { value } => assert_eq!(value, ETHEREUM_USDT_TOKEN_ID),
                     _ => panic!("Incorrect type for details.token"),
                 }
                 // 1.2 amount (uint160 - parsed as Uint256 for now)
@@ -275,7 +276,7 @@ mod tests {
         assert_eq!(message.message[1].name, "spender");
         match &message.message[1].value {
             EIP712TypedValue::Address { value } => {
-                assert_eq!(value.to_lowercase(), "0x3fc91a3afd70395cd496c647d5a6cc9d4b2b7fad");
+                assert_eq!(value.to_lowercase(), ETHEREUM_UNISWAP_V3_UNIVERSAL_ROUTER_CONTRACT.to_lowercase());
             }
             _ => panic!("Expected spender field to be an Address"),
         }

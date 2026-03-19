@@ -240,6 +240,7 @@ mod tests {
     use primitives::{
         Chain, SimulationPayloadFieldKind, SimulationResult, SimulationWarningType,
         asset_constants::{ETHEREUM_USDC_ASSET_ID, ETHEREUM_USDC_TOKEN_ID},
+        contract_constants::UNISWAP_PERMIT2_CONTRACT,
     };
     use serde_json::Value;
 
@@ -386,7 +387,7 @@ mod tests {
         let approval = decode_eip712_approval(Chain::Ethereum, &message).unwrap();
 
         assert_eq!(approval.spender_address, "0x3333333333333333333333333333333333333333");
-        assert_ne!(approval.spender_address, "0x000000000022D473030F116dDEE9F6B43aC78BA3");
+        assert_ne!(approval.spender_address, UNISWAP_PERMIT2_CONTRACT);
     }
 
     #[test]
