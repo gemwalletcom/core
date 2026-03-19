@@ -1,9 +1,8 @@
-use super::{DEFAULT_STABLE_SWAP_REFERRAL_BPS, DEFAULT_SWAP_FEE_BPS, EVM_REFERRAL_ADDRESS};
+use super::DEFAULT_SWAP_FEE_BPS;
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct ReferralFees {
     pub evm: ReferralFee,
-    pub evm_bridge: ReferralFee,
     pub solana: ReferralFee,
     pub thorchain: ReferralFee,
     pub sui: ReferralFee,
@@ -31,7 +30,6 @@ impl ReferralFees {
     fn iter_mut(&mut self) -> impl Iterator<Item = &mut ReferralFee> {
         [
             &mut self.evm,
-            &mut self.evm_bridge,
             &mut self.solana,
             &mut self.thorchain,
             &mut self.sui,
@@ -55,12 +53,8 @@ impl ReferralFee {
 pub fn default_referral_fees() -> ReferralFees {
     ReferralFees {
         evm: ReferralFee {
-            address: EVM_REFERRAL_ADDRESS.into(),
+            address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
             bps: DEFAULT_SWAP_FEE_BPS,
-        },
-        evm_bridge: ReferralFee {
-            address: EVM_REFERRAL_ADDRESS.into(),
-            bps: DEFAULT_STABLE_SWAP_REFERRAL_BPS,
         },
         solana: ReferralFee {
             address: "5fmLrs2GuhfDP1B51ziV5Kd1xtAr9rw1jf3aQ4ihZ2gy".into(),

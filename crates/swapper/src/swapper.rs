@@ -422,7 +422,6 @@ mod tests {
         let adjusted_fees = adjusted_request.options.fee.unwrap();
 
         assert_eq!(adjusted_fees.evm.bps, DEFAULT_STABLE_SWAP_REFERRAL_BPS);
-        assert_eq!(adjusted_fees.evm_bridge.bps, DEFAULT_STABLE_SWAP_REFERRAL_BPS);
         assert_eq!(adjusted_fees.solana.bps, DEFAULT_STABLE_SWAP_REFERRAL_BPS);
         assert_eq!(adjusted_fees.thorchain.bps, DEFAULT_STABLE_SWAP_REFERRAL_BPS);
         assert_eq!(adjusted_fees.sui.bps, DEFAULT_STABLE_SWAP_REFERRAL_BPS);

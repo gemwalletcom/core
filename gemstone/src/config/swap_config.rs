@@ -16,7 +16,6 @@ pub struct SwapConfig {
 #[uniffi::remote(Record)]
 pub struct SwapReferralFees {
     pub evm: SwapReferralFee,
-    pub evm_bridge: SwapReferralFee,
     pub solana: SwapReferralFee,
     pub thorchain: SwapReferralFee,
     pub sui: SwapReferralFee,
