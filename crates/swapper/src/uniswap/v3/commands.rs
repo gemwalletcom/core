@@ -1,4 +1,4 @@
-use crate::{SwapperError, SwapperMode, eth_address, models::*, fees::apply_slippage_in_bp};
+use crate::{SwapperError, SwapperMode, eth_address, fees::apply_slippage_in_bp, models::*};
 use gem_evm::uniswap::command::{ADDRESS_THIS, PayPortion, Permit2Permit, Sweep, Transfer, UniversalRouterCommand, UnwrapWeth, V3SwapExactIn, WrapEth};
 
 use alloy_primitives::{Address, Bytes, U256};

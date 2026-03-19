@@ -11,9 +11,9 @@ use crate::{
     approval::check_approval_erc20,
     chainlink::ChainlinkPriceFeed,
     client_factory::create_eth_client,
-    fees::ReferralFee,
     cross_chain::VaultAddresses,
     eth_address,
+    fees::ReferralFee,
     models::*,
 };
 use alloy_primitives::{

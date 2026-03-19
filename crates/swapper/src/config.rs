@@ -1,4 +1,7 @@
-use crate::{SwapperSlippage, SwapperSlippageMode, fees::{ReferralFees, default_referral_fees}};
+use crate::{
+    SwapperSlippage, SwapperSlippageMode,
+    fees::{ReferralFees, default_referral_fees},
+};
 use primitives::Chain;
 
 pub const DEFAULT_SLIPPAGE_BPS: u32 = 100;
@@ -28,7 +31,7 @@ pub fn get_swap_config() -> Config {
             mode: SwapperSlippageMode::Exact,
         },
         permit2_expiration: 2_592_000, // 30 days
-        permit2_sig_deadline: 1800,   // 30 minutes
+        permit2_sig_deadline: 1800,    // 30 minutes
         referral_fee: default_referral_fees(),
         high_price_impact_percent: 10,
     }

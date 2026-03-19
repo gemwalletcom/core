@@ -1,6 +1,6 @@
 use crate::{
     AssetList, FetchQuoteData, Permit2ApprovalData, ProviderType, Quote, QuoteRequest, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderMode,
-    SwapperQuoteData, across, alien::RpcProvider, chainflip, fees::DEFAULT_STABLE_SWAP_REFERRAL_BPS, cross_chain::VaultAddresses, hyperliquid, jupiter, near_intents,
+    SwapperQuoteData, across, alien::RpcProvider, chainflip, cross_chain::VaultAddresses, fees::DEFAULT_STABLE_SWAP_REFERRAL_BPS, hyperliquid, jupiter, near_intents,
     proxy::provider_factory, relay, thorchain, uniswap,
 };
 use num_bigint::BigInt;

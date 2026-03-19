@@ -11,8 +11,8 @@ use crate::{
     alien::{RpcClient, RpcProvider},
     approval::evm::check_approval_erc20,
     config::get_swap_api_url,
-fees::DEFAULT_SWAP_FEE_BPS,
     cross_chain::VaultAddresses,
+    fees::DEFAULT_SWAP_FEE_BPS,
     models::{ApprovalType, SwapperChainAsset},
 };
 use gem_client::Client;

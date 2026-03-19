@@ -9,9 +9,9 @@ use crate::{
     SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, amount_to_value,
     client_factory::create_client_with_chain,
     cross_chain::VaultAddresses,
+    fees::DEFAULT_REFERRER,
     fees::resolve_max_quote_value,
     near_intents::client::{base_url, explorer_url},
-    fees::DEFAULT_REFERRER,
 };
 use async_trait::async_trait;
 use chrono::{Duration, Utc};
