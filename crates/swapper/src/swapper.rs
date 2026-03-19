@@ -446,7 +446,7 @@ mod tests {
     async fn test_fetch_quote_input_amount_error() {
         let request = mock_quote(
             SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
-            SwapperQuoteAsset::from(AssetId::new(USDC_ETH_ASSET_ID).unwrap()),
+            SwapperQuoteAsset::from(USDC_ETH_ASSET_ID.into()),
         );
 
         let gem_swapper = GemSwapper {

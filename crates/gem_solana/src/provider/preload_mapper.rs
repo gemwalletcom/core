@@ -117,6 +117,7 @@ pub fn calculate_fee_rates(input_type: &TransactionInputType, prioritization_fee
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::USDC_TOKEN_MINT;
     use primitives::swap::SwapData;
     use primitives::{Asset, AssetId, AssetType, Chain, SwapProvider, asset_constants::USDC_SOLANA_ASSET_ID};
 
@@ -257,7 +258,7 @@ mod tests {
         let input_type = TransactionInputType::Transfer(Asset {
             id: AssetId::from_chain(Chain::Solana),
             chain: Chain::Solana,
-            token_id: Some("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string()),
+            token_id: Some(USDC_TOKEN_MINT.to_string()),
             name: "USDC".to_string(),
             symbol: "USDC".to_string(),
             decimals: 6,
@@ -339,7 +340,7 @@ mod tests {
         let asset = Asset {
             id: USDC_SOLANA_ASSET_ID.into(),
             chain: Chain::Solana,
-            token_id: Some("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string()),
+            token_id: Some(USDC_TOKEN_MINT.to_string()),
             name: "USDC".to_string(),
             symbol: "USDC".to_string(),
             decimals: 6,
@@ -359,7 +360,7 @@ mod tests {
         let asset = Asset {
             id: USDC_SOLANA_ASSET_ID.into(),
             chain: Chain::Solana,
-            token_id: Some("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string()),
+            token_id: Some(USDC_TOKEN_MINT.to_string()),
             name: "USDC".to_string(),
             symbol: "USDC".to_string(),
             decimals: 6,

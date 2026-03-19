@@ -476,7 +476,7 @@ mod tests {
             SwapResult {
                 status: SwapStatus::Completed,
                 metadata: Some(TransactionSwapMetadata {
-                    from_asset: AssetId::new(USDT_SMARTCHAIN_ASSET_ID).unwrap(),
+                    from_asset: USDT_SMARTCHAIN_ASSET_ID.into(),
                     from_value: "82000000000000000000".to_string(),
                     to_asset: AssetId::from_chain(Chain::Bitcoin),
                     to_value: "120496".to_string(),
@@ -577,8 +577,8 @@ mod swap_integration_tests {
         };
 
         let request = QuoteRequest {
-            from_asset: SwapperQuoteAsset::from(AssetId::new(USDC_ARB_ASSET_ID).unwrap()),
-            to_asset: SwapperQuoteAsset::from(AssetId::new(USDC_BASE_ASSET_ID).unwrap()),
+            from_asset: SwapperQuoteAsset::from(USDC_ARB_ASSET_ID.into()),
+            to_asset: SwapperQuoteAsset::from(USDC_BASE_ASSET_ID.into()),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             value: "500000".to_string(),

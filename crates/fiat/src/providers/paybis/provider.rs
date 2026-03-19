@@ -106,6 +106,10 @@ mod fiat_integration_tests {
     use primitives::{Chain, FiatBuyQuote, FiatQuoteRequest};
     use streamer::FiatWebhook;
 
+    const ETHEREUM_USDC_TOKEN_ID: &str = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+    const SOLANA_USDC_TOKEN_ID: &str = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+    const SOLANA_USDT_TOKEN_ID: &str = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB";
+
     #[tokio::test]
     async fn test_paybis_get_buy_quote() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_paybis_test_client();
@@ -153,14 +157,14 @@ mod fiat_integration_tests {
         assert!(!result.is_empty());
 
         let expected_assets = vec![
-            ("USDT-TRC20", Chain::Tron, Some("TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t")),
-            ("USDT-SOL", Chain::Solana, Some("Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB")),
-            ("USDT-POLYGON", Chain::Polygon, Some("0xc2132D05D31c914a87C6611C10748AEb04B58e8F")),
-            ("USDT", Chain::Ethereum, Some("0xdAC17F958D2ee523a2206206994597C13D831ec7")),
-            ("USDC-SOL", Chain::Solana, Some("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")),
-            ("USDC-POLYGON", Chain::Polygon, Some("0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359")),
-            ("USDC-BASE", Chain::Base, Some("0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913")),
-            ("USDC", Chain::Ethereum, Some("0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")),
+            ("USDT-TRC20", Chain::Tron, Some("TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t".to_string())),
+            ("USDT-SOL", Chain::Solana, Some(SOLANA_USDT_TOKEN_ID.to_string())),
+            ("USDT-POLYGON", Chain::Polygon, Some("0xc2132D05D31c914a87C6611C10748AEb04B58e8F".to_string())),
+            ("USDT", Chain::Ethereum, Some("0xdAC17F958D2ee523a2206206994597C13D831ec7".to_string())),
+            ("USDC-SOL", Chain::Solana, Some(SOLANA_USDC_TOKEN_ID.to_string())),
+            ("USDC-POLYGON", Chain::Polygon, Some("0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359".to_string())),
+            ("USDC-BASE", Chain::Base, Some("0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".to_string())),
+            ("USDC", Chain::Ethereum, Some(ETHEREUM_USDC_TOKEN_ID.to_string())),
             ("TRX", Chain::Tron, None),
             ("XRP", Chain::Xrp, None),
         ];
@@ -171,7 +175,7 @@ mod fiat_integration_tests {
 
             if let Some(asset) = asset {
                 assert_eq!(asset.chain, Some(expected_chain));
-                assert_eq!(asset.token_id.as_deref(), expected_token_id);
+                assert_eq!(asset.token_id, expected_token_id);
 
                 println!("{} asset: {:?}", symbol, asset);
             }

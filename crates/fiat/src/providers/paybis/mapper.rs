@@ -1,5 +1,11 @@
 use primitives::currency::Currency;
-use primitives::{AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus, PaymentType};
+use primitives::{
+    AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus, PaymentType,
+    asset_constants::{
+        ARB_ARB_ASSET_ID, DAI_ETH_ASSET_ID, OP_OP_ASSET_ID, USDC_BASE_ASSET_ID, USDC_ETH_ASSET_ID, USDC_POLYGON_ASSET_ID, USDC_SOLANA_ASSET_ID, USDT_ETH_ASSET_ID,
+        USDT_POLYGON_ASSET_ID, USDT_SOLANA_ASSET_ID, USDT_TRON_ASSET_ID,
+    },
+};
 use streamer::FiatWebhook;
 
 use crate::model::FiatProviderAsset;
@@ -36,17 +42,17 @@ pub fn map_symbol_to_asset_id(symbol: &str) -> Option<AssetId> {
         "AVAXC" => Some(AssetId::from_chain(Chain::AvalancheC)),
 
         "ETH-BASE" => Some(AssetId::from_chain(Chain::Base)),
-        "USDC-BASE" => Some(AssetId::from(Chain::Base, Some("0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".to_string()))),
+        "USDC-BASE" => Some(USDC_BASE_ASSET_ID.into()),
 
         "POL" => Some(AssetId::from_chain(Chain::Polygon)),
-        "USDC-POLYGON" => Some(AssetId::from(Chain::Polygon, Some("0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359".to_string()))),
-        "USDT-POLYGON" => Some(AssetId::from(Chain::Polygon, Some("0xc2132D05D31c914a87C6611C10748AEb04B58e8F".to_string()))),
+        "USDC-POLYGON" => Some(USDC_POLYGON_ASSET_ID.into()),
+        "USDT-POLYGON" => Some(USDT_POLYGON_ASSET_ID.into()),
 
-        "USDC-SOL" => Some(AssetId::token(Chain::Solana, "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")),
-        "USDT-SOL" => Some(AssetId::token(Chain::Solana, "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB")),
+        "USDC-SOL" => Some(USDC_SOLANA_ASSET_ID.into()),
+        "USDT-SOL" => Some(USDT_SOLANA_ASSET_ID.into()),
         "BONK-SOL" => Some(AssetId::token(Chain::Solana, "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263")),
 
-        "USDT-TRC20" => Some(AssetId::token(Chain::Tron, "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t")),
+        "USDT-TRC20" => Some(USDT_TRON_ASSET_ID.into()),
 
         "BNB" | "BNBSC" => Some(AssetId::from_chain(Chain::SmartChain)),
         "CAKE" => Some(AssetId::token(Chain::SmartChain, "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82")),
@@ -55,9 +61,9 @@ pub fn map_symbol_to_asset_id(symbol: &str) -> Option<AssetId> {
         "XEC" => Some(AssetId::token(Chain::SmartChain, "0x0Ef2e7602adD1733Bfdb17aC3094d0421B502cA3")),
         "ZIL" => Some(AssetId::token(Chain::SmartChain, "0xb86AbCb37C3A4B64f74f59301AFF131a1BEcC787")),
 
-        "USDC" => Some(AssetId::token(Chain::Ethereum, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")),
-        "USDT" => Some(AssetId::token(Chain::Ethereum, "0xdAC17F958D2ee523a2206206994597C13D831ec7")),
-        "DAI" => Some(AssetId::token(Chain::Ethereum, "0x6B175474E89094C44Da98b954EedeAC495271d0F")),
+        "USDC" => Some(USDC_ETH_ASSET_ID.into()),
+        "USDT" => Some(USDT_ETH_ASSET_ID.into()),
+        "DAI" => Some(DAI_ETH_ASSET_ID.into()),
 
         "LINK" => Some(AssetId::token(Chain::Ethereum, "0x514910771AF9Ca656af840dff83E8264EcF986CA")),
         "AAVE" => Some(AssetId::token(Chain::Ethereum, "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9")),
@@ -113,8 +119,8 @@ pub fn map_symbol_to_asset_id(symbol: &str) -> Option<AssetId> {
         "WOO" => Some(AssetId::token(Chain::Ethereum, "0x4691937a7508860F876c9c0a2a617E7d9E945D4B")),
         "YFI" => Some(AssetId::token(Chain::Ethereum, "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e")),
 
-        "ARB" => Some(AssetId::token(Chain::Arbitrum, "0x912CE59144191C1204E64559FE8253a0e49E6548")),
-        "OP" => Some(AssetId::token(Chain::Optimism, "0x4200000000000000000000000000000000000042")),
+        "ARB" => Some(ARB_ARB_ASSET_ID.into()),
+        "OP" => Some(OP_OP_ASSET_ID.into()),
 
         "USDC-STELLAR" => Some(AssetId::token(Chain::Stellar, "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN::USDC")),
 
@@ -250,10 +256,7 @@ mod tests {
         assert_eq!(map_symbol_to_asset_id("TON"), Some(AssetId::from_chain(Chain::Ton)));
         assert_eq!(map_symbol_to_asset_id("DOGE"), Some(AssetId::from_chain(Chain::Doge)));
 
-        assert_eq!(
-            map_symbol_to_asset_id("ARB"),
-            Some(AssetId::from(Chain::Arbitrum, Some("0x912CE59144191C1204E64559FE8253a0e49E6548".to_string())))
-        );
+        assert_eq!(map_symbol_to_asset_id("ARB"), Some(ARB_ARB_ASSET_ID.into()));
         assert_eq!(map_symbol_to_asset_id("AVAXC"), Some(AssetId::from_chain(Chain::AvalancheC)));
         assert_eq!(map_symbol_to_asset_id("POL"), Some(AssetId::from_chain(Chain::Polygon)));
         assert_eq!(map_symbol_to_asset_id("BNBSC"), Some(AssetId::from_chain(Chain::SmartChain)));
@@ -266,27 +269,26 @@ mod tests {
     #[test]
     fn test_map_symbol_to_asset_id_tokens() {
         let token_tests = vec![
-            ("USDC", Chain::Ethereum, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"),
-            ("USDC-BASE", Chain::Base, "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"),
-            ("USDC-POLYGON", Chain::Polygon, "0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359"),
-            ("USDC-SOL", Chain::Solana, "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"),
-            ("USDT", Chain::Ethereum, "0xdAC17F958D2ee523a2206206994597C13D831ec7"),
-            ("USDT-POLYGON", Chain::Polygon, "0xc2132D05D31c914a87C6611C10748AEb04B58e8F"),
-            ("USDT-SOL", Chain::Solana, "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"),
-            ("USDT-TRC20", Chain::Tron, "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t"),
-            ("LINK", Chain::Ethereum, "0x514910771AF9Ca656af840dff83E8264EcF986CA"),
-            ("PEPE", Chain::Ethereum, "0x6982508145454Ce325dDbE47a25d4ec3d2311933"),
-            ("MKR", Chain::Ethereum, "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2"),
-            ("CRV", Chain::Ethereum, "0xD533a949740bb3306d119CC777fa900bA034cd52"),
-            ("COMP", Chain::Ethereum, "0xc00e94Cb662C3520282E6f5717214004A7f26888"),
-            ("CAKE", Chain::SmartChain, "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82"),
-            ("BONK-SOL", Chain::Solana, "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"),
+            ("USDC", USDC_ETH_ASSET_ID.into()),
+            ("USDC-BASE", USDC_BASE_ASSET_ID.into()),
+            ("USDC-POLYGON", USDC_POLYGON_ASSET_ID.into()),
+            ("USDC-SOL", USDC_SOLANA_ASSET_ID.into()),
+            ("USDT", USDT_ETH_ASSET_ID.into()),
+            ("USDT-POLYGON", USDT_POLYGON_ASSET_ID.into()),
+            ("USDT-SOL", USDT_SOLANA_ASSET_ID.into()),
+            ("USDT-TRC20", USDT_TRON_ASSET_ID.into()),
+            ("LINK", AssetId::token(Chain::Ethereum, "0x514910771AF9Ca656af840dff83E8264EcF986CA")),
+            ("PEPE", AssetId::token(Chain::Ethereum, "0x6982508145454Ce325dDbE47a25d4ec3d2311933")),
+            ("MKR", AssetId::token(Chain::Ethereum, "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2")),
+            ("CRV", AssetId::token(Chain::Ethereum, "0xD533a949740bb3306d119CC777fa900bA034cd52")),
+            ("COMP", AssetId::token(Chain::Ethereum, "0xc00e94Cb662C3520282E6f5717214004A7f26888")),
+            ("CAKE", AssetId::token(Chain::SmartChain, "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82")),
+            ("BONK-SOL", AssetId::token(Chain::Solana, "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263")),
         ];
 
-        for (symbol, expected_chain, expected_token_id) in token_tests {
+        for (symbol, expected) in token_tests {
             let result = map_symbol_to_asset_id(symbol);
-            let expected = Some(AssetId::from(expected_chain, Some(expected_token_id.to_string())));
-            assert_eq!(result, expected, "Failed for symbol: {}", symbol);
+            assert_eq!(result, Some(expected), "Failed for symbol: {}", symbol);
         }
     }
 

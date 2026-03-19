@@ -71,6 +71,8 @@ mod tests {
 
     use super::SimulationClient;
 
+    const ETHEREUM_USDC_TOKEN_ID: &str = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+
     #[tokio::test]
     async fn eip712_permit_with_externally_owned_spender_adds_critical_warning() -> Result<(), Box<dyn Error + Send + Sync>> {
         let json: Value = serde_json::from_str(include_str!("../../../gem_evm/testdata/1inch_permit.json"))?;
@@ -102,7 +104,7 @@ mod tests {
 
         let client = ethereum_client("0x1234");
         let result = SimulationClient::new(&client)
-            .simulate_evm_calldata(Chain::Ethereum, &calldata, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48")
+            .simulate_evm_calldata(Chain::Ethereum, &calldata, ETHEREUM_USDC_TOKEN_ID)
             .await?;
 
         assert_eq!(result.warnings.len(), 1);

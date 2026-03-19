@@ -87,6 +87,8 @@ mod tests {
     use crate::providers::flashnet::model::{FlashnetEstimateResponse, FlashnetRoutesResponse};
     use primitives::Chain;
 
+    const SOLANA_USDC_TOKEN_ID: &str = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+
     #[test]
     fn map_assets_maps_supported_routes() {
         let response: FlashnetRoutesResponse = serde_json::from_str(include_str!("../../../testdata/flashnet/routes.json")).unwrap();
@@ -95,7 +97,7 @@ mod tests {
         assert_eq!(assets.len(), 2);
         assert_eq!(assets[0].chain, Some(Chain::Solana));
         assert_eq!(assets[0].symbol, "USDC");
-        assert_eq!(assets[0].token_id, Some("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string()));
+        assert_eq!(assets[0].token_id, Some(SOLANA_USDC_TOKEN_ID.to_string()));
         assert_eq!(assets[1].chain, Some(Chain::Base));
         assert_eq!(assets[1].symbol, "USDC");
         assert!(assets.iter().all(|asset| asset.provider == FiatProviderName::Flashnet));

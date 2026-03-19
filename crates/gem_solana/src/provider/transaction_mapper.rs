@@ -220,7 +220,10 @@ pub fn map_transaction(transaction: &BlockTransaction, block_time: i64) -> Optio
 mod tests {
 
     use super::*;
-    use crate::models::{SingleTransaction, SolanaTransaction};
+    use crate::{
+        PYUSD_TOKEN_MINT, USDT_TOKEN_MINT,
+        models::{SingleTransaction, SolanaTransaction},
+    };
     use gem_jsonrpc::types::JsonRpcErrorResponse;
     use primitives::{JsonRpcResult, asset_constants::USDC_SOLANA_ASSET_ID};
 
@@ -246,9 +249,9 @@ mod tests {
 
         let transaction = map_transaction(&result.result, 1).unwrap();
         let expected = TransactionSwapMetadata {
-            from_asset: AssetId::from_token(Chain::Solana, "2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo"),
+            from_asset: AssetId::from_token(Chain::Solana, PYUSD_TOKEN_MINT),
             from_value: "1000000".to_string(),
-            to_asset: AssetId::from_token(Chain::Solana, "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"),
+            to_asset: AssetId::from_token(Chain::Solana, USDT_TOKEN_MINT),
             to_value: "999932".to_string(),
             provider: Some(SwapProvider::Jupiter.id().to_owned()),
         };
@@ -264,7 +267,7 @@ mod tests {
         let expected = TransactionSwapMetadata {
             from_asset: Chain::Solana.as_asset_id(),
             from_value: "10000000".to_string(),
-            to_asset: AssetId::from_token(Chain::Solana, "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"),
+            to_asset: AssetId::from_token(Chain::Solana, USDT_TOKEN_MINT),
             to_value: "1678930".to_string(),
             provider: Some(SwapProvider::Jupiter.id().to_owned()),
         };

@@ -242,6 +242,8 @@ mod tests {
 
     use super::{decode_eip712_approval, simulate_eip712_message, simulate_evm_calldata};
 
+    const ETHEREUM_USDC_TOKEN_ID: &str = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+
     fn warning(result: &SimulationResult) -> &SimulationWarningType {
         assert_eq!(result.warnings.len(), 1);
         &result.warnings[0].warning
@@ -412,7 +414,7 @@ mod tests {
         let value = U256::MAX;
         let calldata = gem_evm::contracts::IERC20::approveCall { spender, value }.abi_encode();
 
-        let result = simulate_evm_calldata(Chain::Ethereum, &calldata, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
+        let result = simulate_evm_calldata(Chain::Ethereum, &calldata, ETHEREUM_USDC_TOKEN_ID);
 
         assert!(is_token_warning(warning(&result)));
         assert_eq!(result.payload[0].kind, SimulationPayloadFieldKind::Contract);
@@ -429,7 +431,7 @@ mod tests {
         let mut calldata = gem_evm::contracts::IERC20::approveCall { spender, value }.abi_encode();
         calldata[..4].copy_from_slice(&[0_u8; 4]);
 
-        let result = simulate_evm_calldata(Chain::Ethereum, &calldata, "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48");
+        let result = simulate_evm_calldata(Chain::Ethereum, &calldata, ETHEREUM_USDC_TOKEN_ID);
 
         assert_eq!(result, SimulationResult::default());
     }

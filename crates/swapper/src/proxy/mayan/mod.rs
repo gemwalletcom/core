@@ -96,7 +96,10 @@ pub fn map_swap_result(result: &MayanTransactionResult) -> SwapResult {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::{asset_constants::USDC_ETH_ASSET_ID, swap::SwapStatus};
+    use primitives::{
+        asset_constants::{USDC_ETH_ASSET_ID, USDT_POLYGON_ASSET_ID},
+        swap::SwapStatus,
+    };
 
     fn result(json: &str) -> MayanTransactionResult {
         serde_json::from_str(json).unwrap()
@@ -201,7 +204,7 @@ mod tests {
             SwapResult {
                 status: SwapStatus::Completed,
                 metadata: Some(TransactionSwapMetadata {
-                    from_asset: AssetId::from_token(Chain::Polygon, "0xc2132D05D31c914a87C6611C10748AEb04B58e8F"),
+                    from_asset: USDT_POLYGON_ASSET_ID.into(),
                     from_value: "35243141".to_string(),
                     to_asset: AssetId::from_token(Chain::Base, "0xEF5997c2cf2f6c138196f8A6203afc335206b3c1"),
                     to_value: "398724622644505839482".to_string(),

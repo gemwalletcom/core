@@ -123,7 +123,7 @@ fn new_stake_balance(
 mod tests {
     use super::*;
     use crate::models::{TronAccount, TronFrozen, TronReward, TronSmartContractResult, TronUnfrozen, TronVote};
-    use primitives::{AssetId, Chain};
+    use primitives::{AssetId, Chain, asset_constants::USDT_TRON_ASSET_ID};
     use serde_json;
 
     #[test]
@@ -138,7 +138,7 @@ mod tests {
     #[test]
     fn test_map_token_balance_with_real_payload() {
         let response: TronSmartContractResult = serde_json::from_str(include_str!("../../testdata/balance_token.json")).unwrap();
-        let asset_id = AssetId::from(Chain::Tron, Some("TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t".to_string()));
+        let asset_id: AssetId = USDT_TRON_ASSET_ID.into();
         let balance = map_token_balance(&response.constant_result[0], asset_id.clone()).unwrap();
 
         assert_eq!(balance.asset_id, asset_id);
@@ -147,7 +147,7 @@ mod tests {
 
     #[test]
     fn test_map_token_balance_edge_cases() {
-        let asset_id = AssetId::from(Chain::Tron, Some("TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t".to_string()));
+        let asset_id: AssetId = USDT_TRON_ASSET_ID.into();
 
         let balance = map_token_balance("", asset_id.clone()).unwrap();
         assert_eq!(balance.balance.available, BigUint::from(0u32));

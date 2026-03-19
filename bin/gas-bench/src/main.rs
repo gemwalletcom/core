@@ -18,9 +18,10 @@ use crate::{
     gasflow::GasflowClient,
     helius::{HeliusClient, HeliusPriorityFees},
     jito::{JitoClient, JitoTipFloor},
-    solana_client::{JUPITER_PROGRAM, SolanaFeeData, SolanaGasClient},
+    solana_client::{SolanaFeeData, SolanaGasClient},
 };
 use gem_evm::ether_conv::EtherConv;
+use gem_solana::JUPITER_PROGRAM_ID;
 use gemstone::alien::reqwest_provider::NativeProvider;
 use primitives::fee::FeePriority;
 
@@ -282,7 +283,7 @@ async fn run_solana(args: Cli) -> Result<(), Box<dyn Error + Send + Sync>> {
         };
         let helius_future = async {
             match &helius_client {
-                Some(client) => Some(client.fetch_priority_fee_estimate(Some(vec![JUPITER_PROGRAM.to_string()])).await),
+                Some(client) => Some(client.fetch_priority_fee_estimate(Some(vec![JUPITER_PROGRAM_ID.to_string()])).await),
                 None => None,
             }
         };
