@@ -1,18 +1,18 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use async_trait::async_trait;
-use gem_hypercore::core::{HYPE_SYSTEM_ADDRESS, HYPERCORE_HYPE_TOKEN, actions::user::spot_send::SpotSend, hypercore::transfer_to_hyper_evm_typed_data};
+use gem_hypercore::core::{actions::user::spot_send::SpotSend, hypercore::transfer_to_hyper_evm_typed_data};
 use number_formatter::BigNumberFormatter;
 
 use primitives::{
     Chain,
+    asset_constants::HYPERCORE_CORE_HYPE_TOKEN_ID,
+    contract_constants::HYPERCORE_SYSTEM_ADDRESS,
+    known_assets::{HYPERCORE_HYPE, HYPEREVM_HYPE},
     swap::{SwapResult, SwapStatus},
 };
 
-use crate::{
-    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData,
-    asset::{HYPERCORE_HYPE, HYPEREVM_HYPE},
-};
+use crate::{FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData};
 
 use super::spot::scale_quote_value;
 
@@ -77,11 +77,11 @@ impl Swapper for HyperCoreBridge {
                 let amount = BigNumberFormatter::value(&quote.request.value, decimals)?;
                 let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).expect("Time went backwards").as_millis() as u64;
 
-                let spot_send = SpotSend::new(amount, HYPE_SYSTEM_ADDRESS.to_string(), timestamp, HYPERCORE_HYPE_TOKEN.to_string());
+                let spot_send = SpotSend::new(amount, HYPERCORE_SYSTEM_ADDRESS.to_string(), timestamp, HYPERCORE_CORE_HYPE_TOKEN_ID.to_string());
                 let typed_data = transfer_to_hyper_evm_typed_data(spot_send);
 
                 Ok(SwapperQuoteData::new_contract(
-                    HYPE_SYSTEM_ADDRESS.to_string(),
+                    HYPERCORE_SYSTEM_ADDRESS.to_string(),
                     quote.request.value.clone(),
                     typed_data,
                     None,
@@ -89,7 +89,7 @@ impl Swapper for HyperCoreBridge {
                 ))
             }
             Chain::Hyperliquid => Ok(SwapperQuoteData::new_contract(
-                HYPE_SYSTEM_ADDRESS.to_string(),
+                HYPERCORE_SYSTEM_ADDRESS.to_string(),
                 quote.request.value.clone(),
                 "0x".to_string(),
                 None,

@@ -119,7 +119,7 @@ mod tests {
     use super::*;
     use crate::USDC_TOKEN_MINT;
     use primitives::swap::SwapData;
-    use primitives::{Asset, AssetId, AssetType, Chain, SwapProvider, asset_constants::USDC_SOLANA_ASSET_ID};
+    use primitives::{Asset, AssetId, AssetType, Chain, SwapProvider, asset_constants::SOLANA_USDC_ASSET_ID};
 
     fn mock_swap_data_with_gas_limit(provider: SwapProvider, gas_limit: Option<&str>) -> SwapData {
         let mut data = SwapData::mock_with_provider(provider);
@@ -338,7 +338,7 @@ mod tests {
     fn test_calculate_transaction_fee_token_recipient_exists() {
         let gas_price_type = GasPriceType::eip1559(BigInt::from(5000u64), BigInt::from(15000u64));
         let asset = Asset {
-            id: USDC_SOLANA_ASSET_ID.into(),
+            id: SOLANA_USDC_ASSET_ID.clone(),
             chain: Chain::Solana,
             token_id: Some(USDC_TOKEN_MINT.to_string()),
             name: "USDC".to_string(),
@@ -358,7 +358,7 @@ mod tests {
     fn test_calculate_transaction_fee_token_recipient_new() {
         let gas_price_type = GasPriceType::eip1559(BigInt::from(5000u64), BigInt::from(15000u64));
         let asset = Asset {
-            id: USDC_SOLANA_ASSET_ID.into(),
+            id: SOLANA_USDC_ASSET_ID.clone(),
             chain: Chain::Solana,
             token_id: Some(USDC_TOKEN_MINT.to_string()),
             name: "USDC".to_string(),

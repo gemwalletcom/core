@@ -2,9 +2,7 @@ use std::str::FromStr;
 use std::sync::LazyLock;
 
 use num_bigint::BigInt;
-use primitives::{Asset, AssetId};
-
-use crate::asset::*;
+use primitives::{Asset, AssetId, asset_constants::*, known_assets::*};
 
 use super::chain::THORChainName;
 
@@ -64,8 +62,7 @@ impl THORChainAsset {
         self.is_token() && self.chain.is_evm_chain()
     }
 
-    pub fn from_asset_id(asset_id: &str) -> Option<THORChainAsset> {
-        let asset_id = AssetId::new(asset_id)?;
+    pub fn from_id(asset_id: &AssetId) -> Option<THORChainAsset> {
         let chain = THORChainName::from_chain(&asset_id.chain)?;
         if let Some(token_id) = &asset_id.token_id {
             THORChainAsset::from(chain, token_id)
@@ -78,6 +75,10 @@ impl THORChainAsset {
                 decimals: asset.decimals as u32,
             })
         }
+    }
+
+    pub fn from_asset_id(asset_id: &str) -> Option<THORChainAsset> {
+        THORChainAsset::from_id(&AssetId::new(asset_id)?)
     }
 
     pub fn from(chain: THORChainName, token_id: &str) -> Option<THORChainAsset> {
@@ -113,7 +114,7 @@ impl THORChainName {
 mod tests {
     use primitives::{
         Chain,
-        asset_constants::{USDT_ETH_ASSET_ID, USDT_TRON_ASSET_ID},
+        asset_constants::{ETHEREUM_USDT_ASSET_ID, TRON_USDT_ASSET_ID},
     };
 
     use super::*;
@@ -186,7 +187,7 @@ mod tests {
             Some("=:d:0x1234567890abcdef:0/1/0:g1:50".into())
         );
         assert_eq!(
-            THORChainAsset::from_asset_id(USDT_ETH_ASSET_ID)
+            THORChainAsset::from_id(&ETHEREUM_USDT_ASSET_ID)
                 .unwrap()
                 .get_memo(destination_address.clone(), 0, 1, 0, fee_address.clone(), bps),
             Some("=:ETH.USDT:0x1234567890abcdef:0/1/0:g1:50".into())
@@ -237,7 +238,7 @@ mod tests {
         let fee_address = "g1".to_string();
         let bps = 50;
 
-        let asset = THORChainAsset::from_asset_id(USDT_TRON_ASSET_ID);
+        let asset = THORChainAsset::from_id(&TRON_USDT_ASSET_ID);
 
         assert!(asset.is_some(), "TRON USDT asset should be recognized");
 

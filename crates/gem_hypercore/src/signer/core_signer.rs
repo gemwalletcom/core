@@ -3,7 +3,7 @@ use alloy_primitives::hex;
 use number_formatter::BigNumberFormatter;
 use primitives::{
     ChainSigner, HyperliquidOrder, NumberIncrementer, PerpetualConfirmData, PerpetualDirection, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualType,
-    SignerError, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, stake_type::StakeType, swap::SwapData,
+    SignerError, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, asset_constants::HYPERCORE_CORE_HYPE_TOKEN_ID, stake_type::StakeType, swap::SwapData,
 };
 use serde::Serialize;
 use serde_json::{self, Value};
@@ -27,7 +27,6 @@ use crate::{
 const AGENT_NAME_PREFIX: &str = "gemwallet_";
 const REFERRAL_CODE: &str = "GEMWALLET";
 const BUILDER_ADDRESS: &str = "0x0d9dab1a248f63b0a48965ba8435e4de7497a3dc";
-const NATIVE_SPOT_TOKEN: &str = "HYPE:0x0d01dc56dcaaca66ad901c959b4011ec";
 
 type SignerResult<T> = Result<T, SignerError>;
 
@@ -38,7 +37,7 @@ impl HyperCoreSigner {
     fn sign_transfer_action(&self, input: &TransactionLoadInput, private_key: &[u8]) -> SignerResult<String> {
         let asset = input.input_type.get_asset();
         let amount = BigNumberFormatter::value(&input.value, asset.decimals).map_err(|err| SignerError::InvalidInput(err.to_string()))?;
-        self.sign_spot_send(&amount, &input.destination_address, NATIVE_SPOT_TOKEN, private_key)
+        self.sign_spot_send(&amount, &input.destination_address, HYPERCORE_CORE_HYPE_TOKEN_ID, private_key)
     }
 
     fn sign_approval_transactions(&self, order: &HyperliquidOrder, private_key: &[u8], timestamp_incrementer: &mut NumberIncrementer) -> SignerResult<Vec<String>> {

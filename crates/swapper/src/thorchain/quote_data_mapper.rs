@@ -50,9 +50,8 @@ pub fn map_quote_data(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::asset::ETHEREUM_USDC_TOKEN_ID;
     use crate::thorchain::chain::THORChainName;
-    use primitives::{Chain, swap::ApprovalData};
+    use primitives::{Chain, asset_constants::ETHEREUM_USDC_TOKEN_ID, swap::ApprovalData};
 
     fn asset(chain: Chain, token_id: Option<String>) -> THORChainAsset {
         THORChainAsset {

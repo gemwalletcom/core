@@ -4,7 +4,7 @@ use std::sync::Arc;
 use alloy_primitives::U256;
 use async_trait::async_trait;
 use gem_client::Client;
-use primitives::{Chain, swap::ApprovalData};
+use primitives::{Chain, known_assets::*, swap::ApprovalData};
 
 use num_bigint::BigInt;
 
@@ -17,7 +17,7 @@ use super::{
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperQuoteData,
-    approval::check_approval_erc20, asset::*, cross_chain::VaultAddresses, thorchain::client::ThorChainSwapClient,
+    approval::check_approval_erc20, cross_chain::VaultAddresses, thorchain::client::ThorChainSwapClient,
 };
 
 pub struct ThorchainCrossChain;

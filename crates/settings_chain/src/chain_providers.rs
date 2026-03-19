@@ -67,6 +67,10 @@ impl ChainProviders {
         self.get_provider(chain)?.get_block_latest_number().await
     }
 
+    pub async fn get_transaction_by_hash(&self, chain: Chain, hash: String) -> Result<Option<Transaction>, Box<dyn Error + Send + Sync>> {
+        self.get_provider(chain)?.get_transaction_by_hash(hash).await
+    }
+
     pub async fn get_block_transactions(&self, chain: Chain, block_number: u64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         self.get_provider(chain)?.get_transactions_by_block(block_number).await
     }

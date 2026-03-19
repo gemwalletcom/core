@@ -2,8 +2,8 @@ use primitives::currency::Currency;
 use primitives::{
     AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus, PaymentType,
     asset_constants::{
-        ARB_ARB_ASSET_ID, DAI_ETH_ASSET_ID, OP_OP_ASSET_ID, USDC_BASE_ASSET_ID, USDC_ETH_ASSET_ID, USDC_POLYGON_ASSET_ID, USDC_SOLANA_ASSET_ID, USDT_ETH_ASSET_ID,
-        USDT_POLYGON_ASSET_ID, USDT_SOLANA_ASSET_ID, USDT_TRON_ASSET_ID,
+        ARBITRUM_ARB_ASSET_ID, BASE_USDC_ASSET_ID, ETHEREUM_DAI_ASSET_ID, ETHEREUM_USDC_ASSET_ID, ETHEREUM_USDT_ASSET_ID, OPTIMISM_OP_ASSET_ID, POLYGON_USDC_ASSET_ID,
+        POLYGON_USDT_ASSET_ID, SOLANA_USDC_ASSET_ID, SOLANA_USDT_ASSET_ID, TRON_USDT_ASSET_ID,
     },
 };
 use streamer::FiatWebhook;
@@ -42,17 +42,17 @@ pub fn map_symbol_to_asset_id(symbol: &str) -> Option<AssetId> {
         "AVAXC" => Some(AssetId::from_chain(Chain::AvalancheC)),
 
         "ETH-BASE" => Some(AssetId::from_chain(Chain::Base)),
-        "USDC-BASE" => Some(USDC_BASE_ASSET_ID.into()),
+        "USDC-BASE" => Some(BASE_USDC_ASSET_ID.clone()),
 
         "POL" => Some(AssetId::from_chain(Chain::Polygon)),
-        "USDC-POLYGON" => Some(USDC_POLYGON_ASSET_ID.into()),
-        "USDT-POLYGON" => Some(USDT_POLYGON_ASSET_ID.into()),
+        "USDC-POLYGON" => Some(POLYGON_USDC_ASSET_ID.clone()),
+        "USDT-POLYGON" => Some(POLYGON_USDT_ASSET_ID.clone()),
 
-        "USDC-SOL" => Some(USDC_SOLANA_ASSET_ID.into()),
-        "USDT-SOL" => Some(USDT_SOLANA_ASSET_ID.into()),
+        "USDC-SOL" => Some(SOLANA_USDC_ASSET_ID.clone()),
+        "USDT-SOL" => Some(SOLANA_USDT_ASSET_ID.clone()),
         "BONK-SOL" => Some(AssetId::token(Chain::Solana, "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263")),
 
-        "USDT-TRC20" => Some(USDT_TRON_ASSET_ID.into()),
+        "USDT-TRC20" => Some(TRON_USDT_ASSET_ID.clone()),
 
         "BNB" | "BNBSC" => Some(AssetId::from_chain(Chain::SmartChain)),
         "CAKE" => Some(AssetId::token(Chain::SmartChain, "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82")),
@@ -61,9 +61,9 @@ pub fn map_symbol_to_asset_id(symbol: &str) -> Option<AssetId> {
         "XEC" => Some(AssetId::token(Chain::SmartChain, "0x0Ef2e7602adD1733Bfdb17aC3094d0421B502cA3")),
         "ZIL" => Some(AssetId::token(Chain::SmartChain, "0xb86AbCb37C3A4B64f74f59301AFF131a1BEcC787")),
 
-        "USDC" => Some(USDC_ETH_ASSET_ID.into()),
-        "USDT" => Some(USDT_ETH_ASSET_ID.into()),
-        "DAI" => Some(DAI_ETH_ASSET_ID.into()),
+        "USDC" => Some(ETHEREUM_USDC_ASSET_ID.clone()),
+        "USDT" => Some(ETHEREUM_USDT_ASSET_ID.clone()),
+        "DAI" => Some(ETHEREUM_DAI_ASSET_ID.clone()),
 
         "LINK" => Some(AssetId::token(Chain::Ethereum, "0x514910771AF9Ca656af840dff83E8264EcF986CA")),
         "AAVE" => Some(AssetId::token(Chain::Ethereum, "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9")),
@@ -119,8 +119,8 @@ pub fn map_symbol_to_asset_id(symbol: &str) -> Option<AssetId> {
         "WOO" => Some(AssetId::token(Chain::Ethereum, "0x4691937a7508860F876c9c0a2a617E7d9E945D4B")),
         "YFI" => Some(AssetId::token(Chain::Ethereum, "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e")),
 
-        "ARB" => Some(ARB_ARB_ASSET_ID.into()),
-        "OP" => Some(OP_OP_ASSET_ID.into()),
+        "ARB" => Some(ARBITRUM_ARB_ASSET_ID.clone()),
+        "OP" => Some(OPTIMISM_OP_ASSET_ID.clone()),
 
         "USDC-STELLAR" => Some(AssetId::token(Chain::Stellar, "GA5ZSEJYB37JRC5AVCIA5MOP4RHTM335X2KGX3IHOJAPP5RE34K4KZVN::USDC")),
 
@@ -256,7 +256,7 @@ mod tests {
         assert_eq!(map_symbol_to_asset_id("TON"), Some(AssetId::from_chain(Chain::Ton)));
         assert_eq!(map_symbol_to_asset_id("DOGE"), Some(AssetId::from_chain(Chain::Doge)));
 
-        assert_eq!(map_symbol_to_asset_id("ARB"), Some(ARB_ARB_ASSET_ID.into()));
+        assert_eq!(map_symbol_to_asset_id("ARB"), Some(ARBITRUM_ARB_ASSET_ID.clone()));
         assert_eq!(map_symbol_to_asset_id("AVAXC"), Some(AssetId::from_chain(Chain::AvalancheC)));
         assert_eq!(map_symbol_to_asset_id("POL"), Some(AssetId::from_chain(Chain::Polygon)));
         assert_eq!(map_symbol_to_asset_id("BNBSC"), Some(AssetId::from_chain(Chain::SmartChain)));
@@ -269,14 +269,14 @@ mod tests {
     #[test]
     fn test_map_symbol_to_asset_id_tokens() {
         let token_tests = vec![
-            ("USDC", USDC_ETH_ASSET_ID.into()),
-            ("USDC-BASE", USDC_BASE_ASSET_ID.into()),
-            ("USDC-POLYGON", USDC_POLYGON_ASSET_ID.into()),
-            ("USDC-SOL", USDC_SOLANA_ASSET_ID.into()),
-            ("USDT", USDT_ETH_ASSET_ID.into()),
-            ("USDT-POLYGON", USDT_POLYGON_ASSET_ID.into()),
-            ("USDT-SOL", USDT_SOLANA_ASSET_ID.into()),
-            ("USDT-TRC20", USDT_TRON_ASSET_ID.into()),
+            ("USDC", ETHEREUM_USDC_ASSET_ID.clone()),
+            ("USDC-BASE", BASE_USDC_ASSET_ID.clone()),
+            ("USDC-POLYGON", POLYGON_USDC_ASSET_ID.clone()),
+            ("USDC-SOL", SOLANA_USDC_ASSET_ID.clone()),
+            ("USDT", ETHEREUM_USDT_ASSET_ID.clone()),
+            ("USDT-POLYGON", POLYGON_USDT_ASSET_ID.clone()),
+            ("USDT-SOL", SOLANA_USDT_ASSET_ID.clone()),
+            ("USDT-TRC20", TRON_USDT_ASSET_ID.clone()),
             ("LINK", AssetId::token(Chain::Ethereum, "0x514910771AF9Ca656af840dff83E8264EcF986CA")),
             ("PEPE", AssetId::token(Chain::Ethereum, "0x6982508145454Ce325dDbE47a25d4ec3d2311933")),
             ("MKR", AssetId::token(Chain::Ethereum, "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2")),

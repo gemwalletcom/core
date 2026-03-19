@@ -1,6 +1,6 @@
 use crate::{
     Asset, AssetId, AssetType, Chain,
-    asset_constants::{USDC_ETH_ASSET_ID, USDC_SOLANA_ASSET_ID},
+    asset_constants::{ETHEREUM_USDC_ASSET_ID, SOLANA_USDC_ASSET_ID},
 };
 
 impl Asset {
@@ -13,11 +13,11 @@ impl Asset {
     }
 
     pub fn mock_spl_token() -> Self {
-        Asset::new(USDC_SOLANA_ASSET_ID.into(), "USD Coin".to_string(), "USDC".to_string(), 6, AssetType::SPL)
+        Asset::new(SOLANA_USDC_ASSET_ID.clone(), "USD Coin".to_string(), "USDC".to_string(), 6, AssetType::SPL)
     }
 
     pub fn mock_ethereum_usdc() -> Self {
-        Asset::new(USDC_ETH_ASSET_ID.into(), "USD Coin".to_string(), "USDC".to_string(), 6, AssetType::ERC20)
+        Asset::new(ETHEREUM_USDC_ASSET_ID.clone(), "USD Coin".to_string(), "USDC".to_string(), 6, AssetType::ERC20)
     }
 
     pub fn mock_eth() -> Self {

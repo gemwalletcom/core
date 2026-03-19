@@ -6,12 +6,12 @@ use crate::{
 use alloy_primitives::{Address, hex::decode as HexDecode};
 use alloy_sol_types::SolCall;
 use gem_evm::{
-    across::{contracts::AcrossConfigStore, deployment::ACROSS_CONFIG_STORE, fees},
+    across::{contracts::AcrossConfigStore, fees},
     jsonrpc::{BlockParameter, EthereumRpc, TransactionObject},
     multicall3::IMulticall3,
 };
 use gem_jsonrpc::{JsonRpcClient, types::JsonRpcResult};
-use primitives::Chain;
+use primitives::{Chain, contract_constants::ETHEREUM_ACROSS_CONFIG_STORE_CONTRACT};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Arc};
 
@@ -55,7 +55,7 @@ pub struct ConfigStoreClient {
 impl ConfigStoreClient {
     pub fn new(provider: Arc<dyn RpcProvider>, chain: Chain) -> ConfigStoreClient {
         ConfigStoreClient {
-            contract: ACROSS_CONFIG_STORE.into(),
+            contract: ETHEREUM_ACROSS_CONFIG_STORE_CONTRACT.into(),
             client: create_client_with_chain(provider.clone(), chain),
         }
     }

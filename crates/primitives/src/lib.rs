@@ -66,6 +66,8 @@ pub mod asset_details;
 pub use self::asset_details::{AssetBasic, AssetFull, AssetLink, AssetMarketPrice, AssetPriceMetadata, AssetProperties};
 pub mod asset_constants;
 pub mod asset_order;
+pub mod contract_constants;
+pub mod known_assets;
 pub use self::asset_order::AssetOrder;
 pub mod fiat_assets;
 pub mod fiat_quote;
