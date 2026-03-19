@@ -140,7 +140,7 @@ pub fn get_swap_config() -> Config {
                 bps: DEFAULT_SWAP_FEE_BPS,
             },
             injective: ReferralFee {
-                address: "inj1299uk8u64wusfessd0gs22mx6fcxmwahl32n4j".into(),
+                address: "inj1pkw6kx3y3a3mpfyfvkaggd0yme6f0g7uylvm5y".into(),
                 bps: DEFAULT_SWAP_FEE_BPS,
             },
         },
