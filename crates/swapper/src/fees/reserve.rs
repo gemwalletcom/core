@@ -4,7 +4,6 @@ use std::{collections::HashMap, str::FromStr, sync::LazyLock};
 
 use crate::{QuoteRequest, SwapperError};
 
-// Reserved fees represent approximately two simple native transfers per chain, in base units.
 pub static RESERVED_NATIVE_FEES: LazyLock<HashMap<Chain, &'static str>> = LazyLock::new(|| {
     HashMap::from([
         (Chain::Near, "50000000000000000000000"), // 0.05 NEAR
@@ -33,11 +32,11 @@ pub static RESERVED_NATIVE_FEES: LazyLock<HashMap<Chain, &'static str>> = LazyLo
         (Chain::Monad, "5000000000000000"),       // 0.005 MON
         (Chain::XLayer, "5000000000000000"),      // 0.005 OKB
         (Chain::Plasma, "5000000000000000"),      // 0.005 XPL
-        (Chain::Cosmos, "39000"),                 // 0.039 ATOM (2.6M gas × 3000 / 200K)
-        (Chain::Osmosis, "130000"),               // 0.13 OSMO (2.6M gas × 10000 / 200K)
-        (Chain::Celestia, "39000"),               // 0.039 TIA (2.6M gas × 3000 / 200K)
-        (Chain::Injective, "1300000000000000"),   // 0.0013 INJ (2.6M gas × 100T / 200K)
-        (Chain::Sei, "1300000"),                  // 1.3 SEI (2.6M gas × 100000 / 200K)
+        (Chain::Cosmos, "39000"),                 // 0.039 ATOM
+        (Chain::Osmosis, "130000"),               // 0.13 OSMO
+        (Chain::Celestia, "39000"),               // 0.039 TIA
+        (Chain::Injective, "1300000000000000"),   // 0.0013 INJ
+        (Chain::Sei, "1300000"),                  // 1.3 SEI
         (Chain::Noble, "25000"),                  // 0.025 USDC
     ])
 });

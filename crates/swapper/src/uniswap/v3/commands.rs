@@ -1,4 +1,4 @@
-use crate::{SwapperError, SwapperMode, eth_address, models::*, slippage::apply_slippage_in_bp};
+use crate::{SwapperError, SwapperMode, eth_address, fees::apply_slippage_in_bp, models::*};
 use gem_evm::uniswap::command::{ADDRESS_THIS, PayPortion, Permit2Permit, Sweep, Transfer, UniversalRouterCommand, UnwrapWeth, V3SwapExactIn, WrapEth};
 
 use alloy_primitives::{Address, Bytes, U256};
@@ -126,7 +126,7 @@ pub fn build_commands(
 mod tests {
     use super::*;
     use crate::{
-        config::{ReferralFee, ReferralFees},
+        fees::{ReferralFee, ReferralFees},
         permit2_data::*,
     };
     use alloy_primitives::aliases::U256;

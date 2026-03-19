@@ -11,9 +11,9 @@ use crate::{
     approval::check_approval_erc20,
     chainlink::ChainlinkPriceFeed,
     client_factory::create_eth_client,
-    config::ReferralFee,
     cross_chain::VaultAddresses,
     eth_address,
+    fees::ReferralFee,
     models::*,
 };
 use alloy_primitives::{
@@ -442,7 +442,7 @@ impl Swapper for Across {
         let relayer_fee_percent = relayer_calc.capital_fee_percent(&BigInt::from_str(&request.value).unwrap(), cost_config);
         let relayer_fee = fees::multiply(from_amount, relayer_fee_percent, cost_config.decimals);
 
-        let referral_config = request.options.fee.clone().unwrap_or_default().evm_bridge;
+        let referral_config = request.options.fee.clone().unwrap_or_default().evm;
 
         // Calculate gas limit / price for relayer
         let remain_amount = from_amount - lpfee - relayer_fee;
@@ -800,6 +800,7 @@ mod tests {
         use crate::{
             FetchQuoteData, NativeProvider, Options, QuoteRequest, SwapperError, SwapperMode,
             config::{ReferralFee, ReferralFees},
+            fees::DEFAULT_STABLE_SWAP_REFERRAL_BPS,
         };
         use primitives::{AssetId, Chain, swap::SwapStatus};
         use std::{sync::Arc, time::SystemTime};
@@ -808,18 +809,14 @@ mod tests {
         async fn test_across_quote() -> Result<(), SwapperError> {
             let network_provider = Arc::new(NativeProvider::default());
             let swap_provider = Across::boxed(network_provider.clone());
-            let mut options = Options {
+            let options = Options {
                 slippage: 100.into(),
                 fee: Some(ReferralFees::evm(ReferralFee {
-                    bps: 25,
+                    bps: DEFAULT_STABLE_SWAP_REFERRAL_BPS,
                     address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
                 })),
                 preferred_providers: vec![],
                 use_max_amount: false,
-            };
-            options.fee.as_mut().unwrap().evm_bridge = ReferralFee {
-                bps: 25,
-                address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
             };
 
             let request = QuoteRequest {
