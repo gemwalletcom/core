@@ -559,7 +559,6 @@
 "simulation.warning.unlimited_token_approval.title" = "Aprobare nelimitată de tokenuri";
 "transfer.review_request" = "Cerere de revizuire";
 "wallet.portfolio.title" = "Portofoliu";
-"wallet.portfolio.footer" = "Valoare estimată pe baza deținerilor actuale și a prețurilor de piață.";
 "wallet_connect.permissions.title" = "Permisiuni";
 "wallet_connect.permissions.view_balance" = "Vizualizați soldul și activitatea dvs.";
 "wallet_connect.permissions.approval_requests" = "Trimiteți cereri de aprobare";

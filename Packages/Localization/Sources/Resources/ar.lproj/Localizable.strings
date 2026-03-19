@@ -559,7 +559,6 @@
 "simulation.warning.unlimited_token_approval.title" = "الموافقة على الرموز المميزة غير محدودة";
 "transfer.review_request" = "طلب مراجعة";
 "wallet.portfolio.title" = "مَلَفّ";
-"wallet.portfolio.footer" = "القيمة التقديرية مبنية على الحيازات الحالية وأسعار السوق.";
 "wallet_connect.permissions.title" = "الأذونات";
 "wallet_connect.permissions.view_balance" = "اطلع على رصيدك ونشاطك";
 "wallet_connect.permissions.approval_requests" = "إرسال طلبات الموافقة";

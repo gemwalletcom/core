@@ -559,7 +559,6 @@
 "simulation.warning.unlimited_token_approval.title" = "Unbegrenzte Token-Genehmigung";
 "transfer.review_request" = "Überprüfungsanfrage";
 "wallet.portfolio.title" = "Portfolio";
-"wallet.portfolio.footer" = "Geschätzter Wert basierend auf dem aktuellen Bestand und den Marktpreisen.";
 "wallet_connect.permissions.title" = "Berechtigungen";
 "wallet_connect.permissions.view_balance" = "Sehen Sie Ihren Kontostand und Ihre Aktivitäten ein.";
 "wallet_connect.permissions.approval_requests" = "Genehmigungsanfragen senden";

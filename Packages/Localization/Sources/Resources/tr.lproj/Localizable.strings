@@ -559,7 +559,6 @@
 "simulation.warning.unlimited_token_approval.title" = "Sınırsız token onayı";
 "transfer.review_request" = "İnceleme Talebi";
 "wallet.portfolio.title" = "Portföy";
-"wallet.portfolio.footer" = "Mevcut varlıklar ve piyasa fiyatlarına göre tahmini değer.";
 "wallet_connect.permissions.title" = "İzinler";
 "wallet_connect.permissions.view_balance" = "Bakiyenizi ve işlemlerinizi görüntüleyin.";
 "wallet_connect.permissions.approval_requests" = "Onay isteklerini gönderin";

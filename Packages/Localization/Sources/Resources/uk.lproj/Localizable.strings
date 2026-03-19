@@ -559,7 +559,6 @@
 "simulation.warning.unlimited_token_approval.title" = "Необмежене схвалення токенів";
 "transfer.review_request" = "Запит на перегляд";
 "wallet.portfolio.title" = "Портфоліо";
-"wallet.portfolio.footer" = "Оціночна вартість базується на поточних запасах та ринкових цінах.";
 "wallet_connect.permissions.title" = "Дозволи";
 "wallet_connect.permissions.view_balance" = "Перегляд вашого балансу та активності";
 "wallet_connect.permissions.approval_requests" = "Надсилати запити на схвалення";

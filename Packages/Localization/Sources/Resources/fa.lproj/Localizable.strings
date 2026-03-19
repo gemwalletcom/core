@@ -559,7 +559,6 @@
 "simulation.warning.unlimited_token_approval.title" = "تایید نامحدود توکن";
 "transfer.review_request" = "درخواست بررسی";
 "wallet.portfolio.title" = "نمونه کارها";
-"wallet.portfolio.footer" = "ارزش تخمینی بر اساس دارایی‌های فعلی و قیمت‌های بازار.";
 "wallet_connect.permissions.title" = "مجوزها";
 "wallet_connect.permissions.view_balance" = "مشاهده موجودی و فعالیت خود";
 "wallet_connect.permissions.approval_requests" = "ارسال درخواست‌های تأیید";

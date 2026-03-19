@@ -4,6 +4,7 @@ import Foundation
 import Primitives
 import Components
 import Formatters
+import Localization
 import PrimitivesComponents
 import PriceService
 import Store
@@ -23,8 +24,6 @@ public final class WalletPortfolioSceneViewModel: ChartListViewable {
 
     public let assetsQuery: ObservableQuery<AssetsRequest>
 
-    private var assets: [AssetData] { assetsQuery.value }
-
     var state: StateViewType<WalletPortfolioData> = .loading
     public var selectedPeriod: ChartPeriod = .day
 
@@ -38,18 +37,21 @@ public final class WalletPortfolioSceneViewModel: ChartListViewable {
         self.priceService = priceService
         self.wallet = wallet
 
+        self.assetsQuery = ObservableQuery(AssetsRequest(walletId: wallet.walletId, filters: [.enabledBalance]), initialValue: [])
         self.currencyCode = currencyCode
         self.currencyFormatter = CurrencyFormatter(type: .currency, currencyCode: currencyCode)
         self.priceFormatter = CurrencyFormatter(currencyCode: currencyCode)
         self.percentFormatter = CurrencyFormatter(type: .percent, currencyCode: currencyCode)
-
-        self.assetsQuery = ObservableQuery(AssetsRequest(walletId: wallet.walletId, filters: [.enabledBalance]), initialValue: [])
     }
 
-    var navigationTitle: String { wallet.name }
+    var navigationTitle: String { Localized.Wallet.Portfolio.title }
+    private var assets: [AssetData] { assetsQuery.value }
 
     public var periods: [ChartPeriod] { [.day, .week, .month, .year, .all] }
-    public var chartState: StateViewType<ChartValuesViewModel> { state.map { $0.chart } }
+    public var chartState: StateViewType<ChartValuesViewModel> {
+        guard assets.isNotEmpty else { return .noData }
+        return state.map { $0.chart }
+    }
 
     var allTimeValues: [ListItemModel] {
         guard case .data(let data) = state else { return [] }
@@ -65,7 +67,6 @@ public final class WalletPortfolioSceneViewModel: ChartListViewable {
 
 extension WalletPortfolioSceneViewModel {
     public func fetch() async {
-        guard !assets.isEmpty else { return }
         state = .loading
         do {
             let rate = try priceService.getRate(currency: currencyCode)

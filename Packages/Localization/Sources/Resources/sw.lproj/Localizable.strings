@@ -559,7 +559,6 @@
 "simulation.warning.unlimited_token_approval.title" = "Idhini ya tokeni isiyo na kikomo";
 "transfer.review_request" = "Ombi la Uhakiki";
 "wallet.portfolio.title" = "Kwingineko";
-"wallet.portfolio.footer" = "Thamani inayokadiriwa kulingana na hisa za sasa na bei za soko.";
 "wallet_connect.permissions.title" = "Ruhusa";
 "wallet_connect.permissions.view_balance" = "Tazama salio na shughuli zako";
 "wallet_connect.permissions.approval_requests" = "Tuma maombi ya idhini";

@@ -559,7 +559,6 @@
 "simulation.warning.unlimited_token_approval.title" = "무제한 토큰 승인";
 "transfer.review_request" = "검토 요청";
 "wallet.portfolio.title" = "포트폴리오";
-"wallet.portfolio.footer" = "현재 보유량과 시장 가격을 기준으로 산정한 추정 가치입니다.";
 "wallet_connect.permissions.title" = "권한";
 "wallet_connect.permissions.view_balance" = "잔액과 활동 내역을 확인하세요";
 "wallet_connect.permissions.approval_requests" = "승인 요청 보내기";

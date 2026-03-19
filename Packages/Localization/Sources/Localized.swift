@@ -1601,8 +1601,6 @@ public enum Localized {
       public static let title = Localized.tr("Localizable", "wallet.new.title", fallback: "New Wallet")
     }
     public enum Portfolio {
-      /// Estimated value based on current holdings and market prices.
-      public static let footer = Localized.tr("Localizable", "wallet.portfolio.footer", fallback: "Estimated value based on current holdings and market prices.")
       /// Portfolio
       public static let title = Localized.tr("Localizable", "wallet.portfolio.title", fallback: "Portfolio")
     }

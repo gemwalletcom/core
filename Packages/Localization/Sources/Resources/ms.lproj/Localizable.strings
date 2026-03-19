@@ -559,7 +559,6 @@
 "simulation.warning.unlimited_token_approval.title" = "Kelulusan token tanpa had";
 "transfer.review_request" = "Permintaan Semakan";
 "wallet.portfolio.title" = "Portfolio";
-"wallet.portfolio.footer" = "Anggaran nilai berdasarkan pegangan semasa dan harga pasaran.";
 "wallet_connect.permissions.title" = "Kebenaran";
 "wallet_connect.permissions.view_balance" = "Lihat keseimbangan dan aktiviti anda";
 "wallet_connect.permissions.approval_requests" = "Hantar permintaan kelulusan";

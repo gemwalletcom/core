@@ -2,6 +2,7 @@
 
 import SwiftUI
 import Components
+import Localization
 import PrimitivesComponents
 import Store
 
@@ -15,18 +16,18 @@ public struct WalletPortfolioScene: View {
     public var body: some View {
         NavigationStack {
             ChartListView(model: model) {
-                Section {
-                    ForEach(model.allTimeValues, id: \.title) {
-                        ListItemView(model: $0)
+                if model.allTimeValues.isNotEmpty {
+                    Section {
+                        ForEach(model.allTimeValues, id: \.title) {
+                            ListItemView(model: $0)
+                        }
                     }
                 }
             }
             .navigationTitle(model.navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbarDismissItem(type: .close, placement: .cancellationAction)
-            .onChangeBindQuery(model.assetsQuery) { _, _ in
-                Task { await model.fetch() }
-            }
+            .bindQuery(model.assetsQuery)
         }
     }
 }

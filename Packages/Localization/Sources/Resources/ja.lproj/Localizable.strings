@@ -559,7 +559,6 @@
 "simulation.warning.unlimited_token_approval.title" = "無制限のトークン承認";
 "transfer.review_request" = "レビューリクエスト";
 "wallet.portfolio.title" = "ポートフォリオ";
-"wallet.portfolio.footer" = "現在の保有資産と市場価格に基づいた推定値。";
 "wallet_connect.permissions.title" = "権限";
 "wallet_connect.permissions.view_balance" = "残高とアクティビティを確認する";
 "wallet_connect.permissions.approval_requests" = "承認依頼を送信する";

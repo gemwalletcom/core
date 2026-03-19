@@ -559,7 +559,6 @@
 "simulation.warning.unlimited_token_approval.title" = "無限代幣批准";
 "transfer.review_request" = "審查請求";
 "wallet.portfolio.title" = "資料夾";
-"wallet.portfolio.footer" = "根據現有持倉和市場價格估算的價值。";
 "wallet_connect.permissions.title" = "權限";
 "wallet_connect.permissions.view_balance" = "查看您的餘額和活動";
 "wallet_connect.permissions.approval_requests" = "發送審批請求";

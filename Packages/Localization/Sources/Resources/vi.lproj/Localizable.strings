@@ -559,7 +559,6 @@
 "simulation.warning.unlimited_token_approval.title" = "Phê duyệt mã thông báo không giới hạn";
 "transfer.review_request" = "Yêu cầu xem xét";
 "wallet.portfolio.title" = "Danh mục đầu tư";
-"wallet.portfolio.footer" = "Giá trị ước tính dựa trên lượng hàng tồn kho hiện có và giá thị trường.";
 "wallet_connect.permissions.title" = "Quyền hạn";
 "wallet_connect.permissions.view_balance" = "Xem số dư và hoạt động của bạn";
 "wallet_connect.permissions.approval_requests" = "Gửi yêu cầu phê duyệt";

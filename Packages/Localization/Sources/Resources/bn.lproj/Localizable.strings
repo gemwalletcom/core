@@ -559,7 +559,6 @@
 "simulation.warning.unlimited_token_approval.title" = "সীমাহীন টোকেন অনুমোদন";
 "transfer.review_request" = "পর্যালোচনার অনুরোধ";
 "wallet.portfolio.title" = "পোর্টফোলিও";
-"wallet.portfolio.footer" = "বর্তমান মালিকানা এবং বাজার মূল্যের উপর ভিত্তি করে আনুমানিক মূল্য।";
 "wallet_connect.permissions.title" = "অনুমতি";
 "wallet_connect.permissions.view_balance" = "আপনার ব্যালেন্স এবং কার্যকলাপ দেখুন";
 "wallet_connect.permissions.approval_requests" = "অনুমোদনের অনুরোধ পাঠান";

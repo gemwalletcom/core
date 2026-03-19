@@ -559,7 +559,6 @@
 "simulation.warning.unlimited_token_approval.title" = "Persetujuan token tanpa batas";
 "transfer.review_request" = "Permintaan Peninjauan";
 "wallet.portfolio.title" = "Portofolio";
-"wallet.portfolio.footer" = "Perkiraan nilai berdasarkan kepemilikan saat ini dan harga pasar.";
 "wallet_connect.permissions.title" = "Izin";
 "wallet_connect.permissions.view_balance" = "Lihat saldo dan aktivitas Anda";
 "wallet_connect.permissions.approval_requests" = "Kirim permintaan persetujuan";
