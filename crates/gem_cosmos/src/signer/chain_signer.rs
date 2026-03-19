@@ -5,7 +5,7 @@ use gem_hash::{keccak::keccak256, sha2::sha256};
 use primitives::{ChainSigner, SignerError, TransactionLoadInput, chain_cosmos::CosmosChain};
 use signer::{SignatureScheme, Signer};
 
-use super::transaction::{COSMOS_SECP256K1_PUBKEY_TYPE, CosmosTxParams, INJECTIVE_ETHSECP256K1_PUBKEY_TYPE, encode_auth_info, encode_sign_doc, encode_tx_body, encode_tx_raw};
+use super::transaction::{COSMOS_SECP256K1_PUBKEY_TYPE, CosmosTxParams, INJECTIVE_ETHSECP256K1_PUBKEY_TYPE};
 use crate::models::{Coin, CosmosMessage};
 
 const BASE_FEE_GAS_UNITS: u64 = 200_000;
@@ -14,20 +14,6 @@ const GAS_BUFFER_DENOMINATOR: u64 = 10;
 
 #[derive(Default)]
 pub struct CosmosChainSigner;
-
-fn pubkey_type(chain: CosmosChain) -> &'static str {
-    match chain {
-        CosmosChain::Injective => INJECTIVE_ETHSECP256K1_PUBKEY_TYPE,
-        _ => COSMOS_SECP256K1_PUBKEY_TYPE,
-    }
-}
-
-fn sign_doc_digest(chain: CosmosChain, sign_doc_bytes: &[u8]) -> [u8; 32] {
-    match chain {
-        CosmosChain::Injective => keccak256(sign_doc_bytes),
-        _ => sha256(sign_doc_bytes),
-    }
-}
 
 impl ChainSigner for CosmosChainSigner {
     fn sign_swap(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
@@ -39,7 +25,7 @@ impl ChainSigner for CosmosChainSigner {
 
         let messages = CosmosMessage::parse_array(&swap_data.data.data)?;
         let encoded: Vec<Vec<u8>> = messages.iter().map(|m| m.encode_as_any()).collect();
-        let body_bytes = encode_tx_body(&encoded, input.memo.as_deref().unwrap_or(""));
+        let body_bytes = CosmosTxParams::encode_tx_body(&encoded, input.memo.as_deref().unwrap_or(""));
 
         let gas_limit = swap_data
             .data
@@ -47,7 +33,7 @@ impl ChainSigner for CosmosChainSigner {
             .as_ref()
             .and_then(|g| g.parse::<u64>().ok())
             .filter(|&g| g > 0)
-            .unwrap_or(BASE_FEE_GAS_UNITS);
+            .ok_or_else(|| SignerError::invalid_input("missing or invalid gas_limit"))?;
         let gas_limit = gas_limit * GAS_BUFFER_NUMERATOR / GAS_BUFFER_DENOMINATOR;
 
         let base_fee: u64 = input.gas_price.gas_price().to_string().parse().map_err(|_| SignerError::invalid_input("invalid gas price"))?;
@@ -60,7 +46,7 @@ impl ChainSigner for CosmosChainSigner {
             sequence,
             fee_coins: vec![Coin { denom: chain.denom().as_ref().to_string(), amount: fee_amount }],
             gas_limit,
-            pubkey_type: pubkey_type(chain),
+            pubkey_type: Self::pubkey_type(chain),
         };
 
         Ok(vec![Self::encode_and_sign_tx(chain, &params, private_key)?])
@@ -68,19 +54,33 @@ impl ChainSigner for CosmosChainSigner {
 }
 
 impl CosmosChainSigner {
+    fn pubkey_type(chain: CosmosChain) -> &'static str {
+        match chain {
+            CosmosChain::Injective => INJECTIVE_ETHSECP256K1_PUBKEY_TYPE,
+            _ => COSMOS_SECP256K1_PUBKEY_TYPE,
+        }
+    }
+
+    fn sign_doc_digest(chain: CosmosChain, sign_doc_bytes: &[u8]) -> [u8; 32] {
+        match chain {
+            CosmosChain::Injective => keccak256(sign_doc_bytes),
+            _ => sha256(sign_doc_bytes),
+        }
+    }
+
     pub fn encode_and_sign_tx(chain: CosmosChain, params: &CosmosTxParams, private_key: &[u8]) -> Result<String, SignerError> {
         let pubkey_bytes = signer::secp256k1_public_key(private_key)?;
-        let auth_info_bytes = encode_auth_info(params.pubkey_type, &pubkey_bytes, params.sequence, &params.fee_coins, params.gas_limit);
-        let sign_doc_bytes = encode_sign_doc(&params.body_bytes, &auth_info_bytes, params.chain_id, params.account_number);
+        let auth_info_bytes = params.encode_auth_info(&pubkey_bytes);
+        let sign_doc_bytes = params.encode_sign_doc(&params.body_bytes, &auth_info_bytes);
 
-        let digest = sign_doc_digest(chain, &sign_doc_bytes);
+        let digest = Self::sign_doc_digest(chain, &sign_doc_bytes);
         let mut signature = Signer::sign_digest(SignatureScheme::Secp256k1, digest.to_vec(), private_key.to_vec())?;
         if signature.len() < 64 {
             return Err(SignerError::signing_error("secp256k1 signature too short"));
         }
         signature.truncate(64);
 
-        let tx_raw = encode_tx_raw(&params.body_bytes, &auth_info_bytes, &signature);
+        let tx_raw = CosmosTxParams::encode_tx_raw(&params.body_bytes, &auth_info_bytes, &signature);
         let tx_base64 = STANDARD.encode(&tx_raw);
         Ok(serde_json::json!({
             "mode": "BROADCAST_MODE_SYNC",

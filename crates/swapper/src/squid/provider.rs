@@ -61,13 +61,6 @@ where
         }
     }
 
-    fn compute_fee(amount: &str, bps: u32) -> Option<(String, String)> {
-        let value: u128 = amount.parse().ok()?;
-        let fee = value * bps as u128 / 10_000;
-        if fee == 0 { return None; }
-        Some((fee.to_string(), (value - fee).to_string()))
-    }
-
     fn build_route_request(request: &QuoteRequest, from_value: &str, quote_only: bool) -> Result<SquidRouteRequest, SwapperError> {
         let from_asset_id = request.from_asset.asset_id();
         let to_asset_id = request.to_asset.asset_id();
@@ -82,6 +75,21 @@ where
             slippage_config: SlippageConfig { auto_mode: 1 },
             quote_only,
         })
+    }
+}
+
+impl<C> Squid<C>
+where
+    C: Client + Clone + Send + Sync + std::fmt::Debug + 'static,
+{
+    async fn fetch_route(&self, request: &QuoteRequest, from_value: &str, quote_only: bool) -> Result<(SquidRouteResponse, u128, Option<String>), SwapperError> {
+        let fee_address = Self::get_fee_address(request);
+        let value: u128 = from_value.parse().unwrap_or(0);
+        let fee = if fee_address.is_some() { value * DEFAULT_SWAP_FEE_BPS as u128 / 10_000 } else { 0 };
+        let swap_value = (value - fee).to_string();
+        let squid_request = Self::build_route_request(request, &swap_value, quote_only)?;
+        let response = self.client.get_route(&squid_request).await?;
+        Ok((response, fee, fee_address))
     }
 }
 
@@ -100,19 +108,7 @@ where
 
     async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let from_value = resolve_max_quote_value(request)?;
-        let fee_address = Self::get_fee_address(request);
-
-        let (fee_amount, swap_amount) = if fee_address.is_some() {
-            Self::compute_fee(&from_value, DEFAULT_SWAP_FEE_BPS).unwrap_or((String::new(), from_value.clone()))
-        } else {
-            (String::new(), from_value.clone())
-        };
-
-        let squid_request = Self::build_route_request(request, &swap_amount, true)?;
-        let response = self.client.get_route(&squid_request).await?;
-
-        let from_asset_id = request.from_asset.asset_id();
-        let to_asset_id = request.to_asset.asset_id();
+        let (response, _, _) = self.fetch_route(request, &from_value, true).await?;
 
         Ok(Quote {
             from_value,
@@ -120,9 +116,9 @@ where
             data: ProviderData {
                 provider: self.provider().clone(),
                 routes: vec![Route {
-                    input: from_asset_id,
-                    output: to_asset_id,
-                    route_data: fee_amount,
+                    input: request.from_asset.asset_id(),
+                    output: request.to_asset.asset_id(),
+                    route_data: String::new(),
                 }],
                 slippage_bps: request.options.slippage.bps,
             },
@@ -132,24 +128,14 @@ where
     }
 
     async fn get_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
-        let fee_address = Self::get_fee_address(&quote.request);
-        let fee_amount = quote.data.routes.first().map(|r| r.route_data.as_str()).unwrap_or("");
-
-        let swap_amount = if fee_address.is_some() && !fee_amount.is_empty() {
-            Self::compute_fee(&quote.from_value, DEFAULT_SWAP_FEE_BPS).map(|(_, s)| s).unwrap_or(quote.from_value.clone())
-        } else {
-            quote.from_value.clone()
-        };
-
-        let request = Self::build_route_request(&quote.request, &swap_amount, false)?;
-        let response = self.client.get_route(&request).await?;
+        let (response, fee, fee_address) = self.fetch_route(&quote.request, &quote.from_value, false).await?;
         let tx = response.route.transaction_request.ok_or(SwapperError::InvalidRoute)?;
 
         let swap_msg: serde_json::Value = serde_json::from_str(&tx.data).map_err(|e| SwapperError::TransactionError(e.to_string()))?;
-        let messages = match (fee_address, fee_amount) {
-            (Some(addr), amount) if !amount.is_empty() => {
+        let messages = match fee_address {
+            Some(addr) if fee > 0 => {
                 let denom = Self::get_token_id(&quote.request.from_asset.asset_id())?;
-                vec![send_msg_json(&quote.request.wallet_address, &addr, &denom, amount), swap_msg]
+                vec![send_msg_json(&quote.request.wallet_address, &addr, &denom, &fee.to_string()), swap_msg]
             }
             _ => vec![swap_msg],
         };
@@ -180,23 +166,6 @@ where
             status: result.squid_transaction_status.swap_status(),
             metadata: None,
         })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_compute_fee() {
-        let (fee, swap) = Squid::<RpcClient>::compute_fee("10000000", 50).unwrap();
-        assert_eq!(fee, "50000");
-        assert_eq!(swap, "9950000");
-    }
-
-    #[test]
-    fn test_compute_fee_zero() {
-        assert!(Squid::<RpcClient>::compute_fee("100", 50).is_none());
     }
 }
 
