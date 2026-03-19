@@ -53,6 +53,7 @@ members = [
     "crates/tracing",
     "crates/claude",
     "crates/support",
+    "crates/yielder",
 ]
 
 [workspace.dependencies]

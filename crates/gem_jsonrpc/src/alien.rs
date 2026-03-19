@@ -1,5 +1,10 @@
+use std::sync::Arc;
+
 use gem_client::ClientError;
-use gem_jsonrpc::RpcClientError;
+use primitives::Chain;
+
+use crate::client::JsonRpcClient;
+use crate::rpc::{RpcClient as GenericRpcClient, RpcClientError, RpcProvider as GenericRpcProvider};
 
 #[derive(Debug, Clone)]
 pub enum AlienError {
@@ -28,9 +33,9 @@ impl AlienError {
 impl std::fmt::Display for AlienError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::RequestError { msg } => write!(f, "Request error: {}", msg),
-            Self::ResponseError { msg } => write!(f, "Response error: {}", msg),
-            Self::Http { status, .. } => write!(f, "HTTP error: status {}", status),
+            Self::RequestError { msg } => write!(f, "Request error: {msg}"),
+            Self::ResponseError { msg } => write!(f, "Response error: {msg}"),
+            Self::Http { status, .. } => write!(f, "HTTP error: status {status}"),
         }
     }
 }
@@ -40,9 +45,20 @@ impl std::error::Error for AlienError {}
 impl RpcClientError for AlienError {
     fn into_client_error(self) -> ClientError {
         match self {
-            Self::RequestError { msg } => ClientError::Network(msg),
-            Self::ResponseError { msg } => ClientError::Network(msg),
+            Self::RequestError { msg } | Self::ResponseError { msg } => ClientError::Network(msg),
             Self::Http { status, .. } => ClientError::Http { status, body: Vec::new() },
         }
     }
+}
+
+pub type RpcClient = GenericRpcClient<AlienError>;
+
+pub trait RpcProvider: GenericRpcProvider<Error = AlienError> {}
+
+impl<T> RpcProvider for T where T: GenericRpcProvider<Error = AlienError> {}
+
+pub fn create_client(provider: Arc<dyn RpcProvider>, chain: Chain) -> Result<JsonRpcClient<RpcClient>, AlienError> {
+    let endpoint = provider.get_endpoint(chain)?;
+    let client = RpcClient::new(endpoint, provider);
+    Ok(JsonRpcClient::new(client))
 }

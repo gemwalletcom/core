@@ -5,7 +5,8 @@ use primitives::{Chain, node_config::get_nodes_for_chain};
 
 use async_trait::async_trait;
 use futures::TryFutureExt;
-use gem_jsonrpc::{RpcProvider as GenericRpcProvider, RpcResponse};
+use gem_jsonrpc::RpcResponse;
+use gem_jsonrpc::rpc::RpcProvider as GenericRpcProvider;
 use reqwest::Client;
 
 #[derive(Debug)]

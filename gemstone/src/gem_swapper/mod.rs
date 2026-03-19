@@ -19,9 +19,8 @@ pub struct GemSwapper {
 impl GemSwapper {
     #[uniffi::constructor]
     pub fn new(rpc_provider: Arc<dyn AlienProvider>) -> Self {
-        let wrapper = AlienProviderWrapper { provider: rpc_provider };
         Self {
-            inner: Swapper::new(Arc::new(wrapper)),
+            inner: Swapper::new(Arc::new(AlienProviderWrapper::new(rpc_provider))),
         }
     }
 
