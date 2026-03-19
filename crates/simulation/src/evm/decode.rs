@@ -237,12 +237,13 @@ mod tests {
     use alloy_primitives::{U256, address};
     use alloy_sol_types::SolCall;
     use gem_evm::eip712::parse_eip712_json;
-    use primitives::{Chain, SimulationPayloadFieldKind, SimulationResult, SimulationWarningType, asset_constants::USDC_ETH_ASSET_ID};
+    use primitives::{
+        Chain, SimulationPayloadFieldKind, SimulationResult, SimulationWarningType,
+        asset_constants::{ETHEREUM_USDC_ASSET_ID, ETHEREUM_USDC_TOKEN_ID},
+    };
     use serde_json::Value;
 
     use super::{decode_eip712_approval, simulate_eip712_message, simulate_evm_calldata};
-
-    const ETHEREUM_USDC_TOKEN_ID: &str = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 
     fn warning(result: &SimulationResult) -> &SimulationWarningType {
         assert_eq!(result.warnings.len(), 1);
@@ -314,7 +315,7 @@ mod tests {
         assert_eq!(result.payload[3].value, "Unlimited");
         assert_eq!(result.payload[4].kind, SimulationPayloadFieldKind::Custom);
         assert_eq!(result.payload[4].label.as_deref(), Some("expiration"));
-        assert_eq!(result.header.as_ref().map(|header| header.asset_id.clone()), Some(USDC_ETH_ASSET_ID.into()));
+        assert_eq!(result.header.as_ref().map(|header| header.asset_id.clone()), Some(ETHEREUM_USDC_ASSET_ID.clone()));
         assert_eq!(result.header.as_ref().map(|header| header.value.as_str()), Some("Unlimited"));
     }
 

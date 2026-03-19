@@ -31,10 +31,7 @@ impl<C: Client + Clone> ChainToken for EthereumClient<C> {
 mod chain_integration_tests {
     use super::*;
     use crate::provider::testkit::{TOKEN_USDC_ADDRESS, create_ethereum_test_client, create_smartchain_test_client};
-    use primitives::{
-        AssetId, AssetType, Chain,
-        asset_constants::{USDT_ETH_ASSET_ID, USDT_SMARTCHAIN_ASSET_ID},
-    };
+    use primitives::{AssetType, Chain};
 
     #[tokio::test]
     async fn test_ethereum_get_token_data_usdc() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {

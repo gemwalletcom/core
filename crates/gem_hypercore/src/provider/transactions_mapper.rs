@@ -2,12 +2,11 @@ use std::collections::HashMap;
 use std::error::Error;
 
 use chrono::{DateTime, Utc};
-use primitives::{Transaction, TransactionState};
+use primitives::{Transaction, TransactionState, asset_constants::HYPERCORE_SPOT_USDC_ASSET_ID};
 
 use crate::models::action::{ACTION_ID_PREFIX, ExchangeRequest};
 use crate::models::order::PerpetualFill;
 use crate::models::response::{BroadcastResult, TransactionBroadcastResponse};
-use crate::models::token::HYPERCORE_USDC_ASSET_ID;
 use crate::perpetual_formatter::usdc_value;
 use crate::provider::perpetual_mapper::create_perpetual_asset_id;
 use crate::provider::transaction_state_mapper::prepare_perpetual_fill;
@@ -51,7 +50,7 @@ fn map_perpetual_fill_group(address: &str, fills: Vec<PerpetualFill>) -> Option<
         transaction_type,
         TransactionState::Confirmed,
         usdc_value(fee),
-        HYPERCORE_USDC_ASSET_ID.clone(),
+        HYPERCORE_SPOT_USDC_ASSET_ID.clone(),
         usdc_value(value),
         None,
         Some(metadata),
@@ -62,7 +61,6 @@ fn map_perpetual_fill_group(address: &str, fills: Vec<PerpetualFill>) -> Option<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::token::HYPERCORE_USDC_ASSET_ID;
     use primitives::{PerpetualDirection, TransactionPerpetualMetadata, TransactionType};
 
     #[test]
@@ -105,7 +103,7 @@ mod tests {
         assert_eq!(transactions[0].transaction_type, TransactionType::PerpetualOpenPosition);
         assert_eq!(transactions[0].hash, "0x9b4d63110c57f2e19cc7042ce90e300202f500f6a75b11b33f160e63cb5bcccc");
         assert_eq!(transactions[0].asset_id.to_string(), "hypercore_perpetual::HYPE");
-        assert_eq!(transactions[0].fee_asset_id, *HYPERCORE_USDC_ASSET_ID);
+        assert_eq!(transactions[0].fee_asset_id, HYPERCORE_SPOT_USDC_ASSET_ID.clone());
         assert_eq!(transactions[0].from, "0xabc");
         assert_eq!(transactions[0].to, "0xabc");
 

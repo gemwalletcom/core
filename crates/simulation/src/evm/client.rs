@@ -66,12 +66,10 @@ mod tests {
     use gem_evm::eip712::parse_eip712_json;
     use gem_evm::rpc::EthereumClient;
     use gem_jsonrpc::testkit::mock_jsonrpc_client;
-    use primitives::{Chain, EVMChain, SimulationSeverity, SimulationWarning, SimulationWarningType};
+    use primitives::{Chain, EVMChain, SimulationSeverity, SimulationWarning, SimulationWarningType, asset_constants::ETHEREUM_USDC_TOKEN_ID};
     use serde_json::Value;
 
     use super::SimulationClient;
-
-    const ETHEREUM_USDC_TOKEN_ID: &str = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 
     #[tokio::test]
     async fn eip712_permit_with_externally_owned_spender_adds_critical_warning() -> Result<(), Box<dyn Error + Send + Sync>> {

@@ -102,13 +102,10 @@ mod fiat_integration_tests {
     use crate::testkit::*;
     use crate::{FiatProvider, model::FiatMapping};
     use primitives::FiatProviderName;
+    use primitives::asset_constants::{ETHEREUM_USDC_TOKEN_ID, SOLANA_USDC_TOKEN_ID, SOLANA_USDT_TOKEN_ID};
     use primitives::currency::Currency;
     use primitives::{Chain, FiatBuyQuote, FiatQuoteRequest};
     use streamer::FiatWebhook;
-
-    const ETHEREUM_USDC_TOKEN_ID: &str = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
-    const SOLANA_USDC_TOKEN_ID: &str = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
-    const SOLANA_USDT_TOKEN_ID: &str = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB";
 
     #[tokio::test]
     async fn test_paybis_get_buy_quote() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {

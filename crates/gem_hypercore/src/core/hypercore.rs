@@ -101,6 +101,7 @@ pub fn token_delegate_typed_data(token_delegate: TokenDelegate) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use primitives::{asset_constants::HYPERCORE_CORE_HYPE_TOKEN_ID, contract_constants::HYPERCORE_SYSTEM_ADDRESS};
 
     #[test]
     fn test_action_open_long() {
@@ -265,9 +266,9 @@ mod tests {
     fn test_eip712_spot_send_core_to_evm() {
         let spot_send = SpotSend::new(
             "0.1".to_string(),
-            "0x2222222222222222222222222222222222222222".to_string(),
+            HYPERCORE_SYSTEM_ADDRESS.to_string(),
             1754996222238,
-            "HYPE:0x0d01dc56dcaaca66ad901c959b4011ec".to_string(),
+            HYPERCORE_CORE_HYPE_TOKEN_ID.to_string(),
         );
 
         let eip712_json = transfer_to_hyper_evm_typed_data(spot_send);

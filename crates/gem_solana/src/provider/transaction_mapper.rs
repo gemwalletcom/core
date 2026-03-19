@@ -225,7 +225,7 @@ mod tests {
         models::{SingleTransaction, SolanaTransaction},
     };
     use gem_jsonrpc::types::JsonRpcErrorResponse;
-    use primitives::{JsonRpcResult, asset_constants::USDC_SOLANA_ASSET_ID};
+    use primitives::{JsonRpcResult, asset_constants::SOLANA_USDC_ASSET_ID};
 
     #[test]
     fn test_transaction_swap_token_to_sol() {
@@ -281,7 +281,7 @@ mod tests {
 
         let transaction = map_transaction(&result.result, 1).unwrap();
         let expected = TransactionSwapMetadata {
-            from_asset: USDC_SOLANA_ASSET_ID.into(),
+            from_asset: SOLANA_USDC_ASSET_ID.clone(),
             from_value: "56061275".to_string(),
             to_asset: AssetId::from_token(Chain::Solana, "HmMubgKx91Tpq3jmfcKQwsv5HrErqnCTTRJMB6afFR2u"),
             to_value: "2190151370200".to_string(),
@@ -289,7 +289,7 @@ mod tests {
         };
 
         assert_eq!(transaction.transaction_type, TransactionType::Swap);
-        assert_eq!(transaction.asset_id, USDC_SOLANA_ASSET_ID.into());
+        assert_eq!(transaction.asset_id, SOLANA_USDC_ASSET_ID.clone());
         assert_eq!(transaction.contract, Some(OKX_DEX_V2_PROGRAM_ID.to_string()));
         assert_eq!(transaction.value, "56061275");
         assert_eq!(transaction.metadata, Some(serde_json::to_value(expected).unwrap()));
@@ -355,7 +355,7 @@ mod tests {
         let transaction = map_transaction(&block_transaction, result.result.block_time).unwrap();
         let expected = Transaction::new(
             "4dHnggcXjvmMJY2J6iGqse12PeCYQzuTySgwJa36K8MuntmwNrCNztvYRX5ZGpQXzKjaf7g5vaZM7LTuXLNbi2Zx".to_string(),
-            USDC_SOLANA_ASSET_ID.into(),
+            SOLANA_USDC_ASSET_ID.clone(),
             "37BenMAXFJMo3GaXKb2XLsNQXmd6VbbdShZWnwDj9D6k".to_string(),
             "3UJQqKq8Xyx4aVRmHgEwpQZiW7toYRQCTy6Bgp1RdKnK".to_string(),
             None,

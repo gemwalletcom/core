@@ -3,9 +3,10 @@ use num_traits::FromBytes;
 
 use crate::SwapperError;
 use gem_evm::{
-    chainlink::contract::{AggregatorInterface, CHAINLINK_ETH_USD_FEED, CHAINLINK_MON_USD_FEED},
+    chainlink::contract::AggregatorInterface,
     multicall3::{IMulticall3, create_call3, decode_call3_return},
 };
+use primitives::contract_constants::{ETHEREUM_CHAINLINK_ETH_USD_FEED_CONTRACT, MONAD_CHAINLINK_USD_FEED_CONTRACT};
 
 pub struct ChainlinkPriceFeed {
     pub contract: String,
@@ -14,7 +15,7 @@ pub struct ChainlinkPriceFeed {
 impl ChainlinkPriceFeed {
     pub fn new_eth_usd_feed() -> ChainlinkPriceFeed {
         ChainlinkPriceFeed {
-            contract: CHAINLINK_ETH_USD_FEED.into(),
+            contract: ETHEREUM_CHAINLINK_ETH_USD_FEED_CONTRACT.into(),
         }
     }
 
@@ -27,7 +28,7 @@ impl ChainlinkPriceFeed {
 
     pub fn new_mon_usd_feed() -> ChainlinkPriceFeed {
         ChainlinkPriceFeed {
-            contract: CHAINLINK_MON_USD_FEED.into(),
+            contract: MONAD_CHAINLINK_USD_FEED_CONTRACT.into(),
         }
     }
 

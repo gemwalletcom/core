@@ -6,11 +6,11 @@ pub use explorer::MayanExplorer;
 pub use model::{MayanChain, MayanClientStatus, MayanTransactionResult};
 pub use price::MayanPrice;
 
-use crate::{SwapResult, SwapperProvider, asset::EVM_ZERO_ADDRESS};
+use crate::{SwapResult, SwapperProvider};
 use gem_evm::ethereum_address_checksum;
 use gem_solana::WSOL_TOKEN_ADDRESS;
 use number_formatter::BigNumberFormatter;
-use primitives::{Asset, AssetId, Chain, ChainType, TransactionSwapMetadata};
+use primitives::{Asset, AssetId, Chain, ChainType, TransactionSwapMetadata, contract_constants::EVM_ZERO_ADDRESS};
 
 const MAYAN_FORWARDER: &str = "0x337685fdaB40D39bd02028545a4FfA7D287cC3E2";
 const MAYAN_MCTP: &str = "0x875d6d37EC55c8cF220B9E5080717549d8Aa8EcA";
@@ -97,7 +97,7 @@ pub fn map_swap_result(result: &MayanTransactionResult) -> SwapResult {
 mod tests {
     use super::*;
     use primitives::{
-        asset_constants::{USDC_ETH_ASSET_ID, USDT_POLYGON_ASSET_ID},
+        asset_constants::{ETHEREUM_USDC_ASSET_ID, POLYGON_USDT_ASSET_ID},
         swap::SwapStatus,
     };
 
@@ -125,7 +125,7 @@ mod tests {
     fn test_resolve_asset_id_evm_token_checksummed() {
         assert_eq!(
             resolve_asset_id(Chain::Ethereum, "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"),
-            Some(USDC_ETH_ASSET_ID.into())
+            Some(ETHEREUM_USDC_ASSET_ID.clone())
         );
     }
 
@@ -204,7 +204,7 @@ mod tests {
             SwapResult {
                 status: SwapStatus::Completed,
                 metadata: Some(TransactionSwapMetadata {
-                    from_asset: USDT_POLYGON_ASSET_ID.into(),
+                    from_asset: POLYGON_USDT_ASSET_ID.clone(),
                     from_value: "35243141".to_string(),
                     to_asset: AssetId::from_token(Chain::Base, "0xEF5997c2cf2f6c138196f8A6203afc335206b3c1"),
                     to_value: "398724622644505839482".to_string(),

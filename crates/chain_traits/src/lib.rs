@@ -104,6 +104,10 @@ pub trait ChainTransactions: Send + Sync {
         Ok(vec![])
     }
 
+    async fn get_transaction_by_hash(&self, _hash: String) -> Result<Option<Transaction>, Box<dyn Error + Sync + Send>> {
+        Ok(None)
+    }
+
     async fn get_transactions_in_blocks(&self, blocks: Vec<u64>) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
         let futures = blocks.into_iter().map(|x| self.get_transactions_by_block(x));
         let results = futures::future::try_join_all(futures).await?;

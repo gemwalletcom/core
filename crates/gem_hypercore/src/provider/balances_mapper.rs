@@ -60,7 +60,7 @@ pub fn map_balance_staking(balance: &StakeBalance, chain: Chain) -> Result<Asset
 mod tests {
     use super::*;
     use crate::models::balance::Balance;
-    use primitives::Chain;
+    use primitives::{Chain, asset_constants::HYPERCORE_SPOT_USDC_TOKEN_ID};
 
     #[test]
     fn test_map_balance_coin() {
@@ -106,7 +106,7 @@ mod tests {
         assert_eq!(results[0].asset_id.chain, Chain::HyperCore);
         assert_eq!(results[0].balance.available, "5600353700000000".parse::<BigUint>().unwrap());
 
-        let token_ids_full = vec!["USDC::0x6d1e7cde53ba9467b783cb7c530ce054::0".to_string()];
+        let token_ids_full = vec![HYPERCORE_SPOT_USDC_TOKEN_ID.to_string()];
         let results_full = map_balance_tokens(&spot_balances, &spot_tokens, &token_ids_full, Chain::HyperCore);
 
         assert_eq!(results_full.len(), 1);

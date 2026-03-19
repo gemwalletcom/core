@@ -85,9 +85,7 @@ impl FiatProvider for FlashnetClient {
 mod tests {
     use super::*;
     use crate::providers::flashnet::model::{FlashnetEstimateResponse, FlashnetRoutesResponse};
-    use primitives::Chain;
-
-    const SOLANA_USDC_TOKEN_ID: &str = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+    use primitives::{Chain, asset_constants::SOLANA_USDC_TOKEN_ID};
 
     #[test]
     fn map_assets_maps_supported_routes() {
