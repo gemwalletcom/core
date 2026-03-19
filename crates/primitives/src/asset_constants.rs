@@ -306,3 +306,18 @@ pub static SUI_SBUSDT_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::fr
 
 pub const THORCHAIN_TCY_TOKEN_ID: &str = "tcy";
 pub static THORCHAIN_TCY_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::Thorchain, THORCHAIN_TCY_TOKEN_ID));
+
+pub const COSMOS_USDC_TOKEN_ID: &str = "ibc/F663521BF1836B00F5F177680F74BFB9A8B5654A694D0D2BC249E03CF2509013";
+pub static COSMOS_USDC_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::Cosmos, COSMOS_USDC_TOKEN_ID));
+
+pub const OSMOSIS_USDC_TOKEN_ID: &str = "ibc/498A0751C798A0D9A389AA3691123DADA57DAA4FE165D5C75894505B876BA6E4";
+pub static OSMOSIS_USDC_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::Osmosis, OSMOSIS_USDC_TOKEN_ID));
+
+pub const OSMOSIS_USDT_TOKEN_ID: &str = "ibc/4ABBEF4C8926DDDB320AE5188CFD63267ABBCEFC0583E4AE05D6E5AA2401DDAB";
+pub static OSMOSIS_USDT_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::Osmosis, OSMOSIS_USDT_TOKEN_ID));
+
+pub const INJECTIVE_USDC_TOKEN_ID: &str = "ibc/7E1AF94AD246BE522892751046F0C959B768642E5671CC3742264068D49553C0";
+pub static INJECTIVE_USDC_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::Injective, INJECTIVE_USDC_TOKEN_ID));
+
+pub const SEI_USDC_TOKEN_ID: &str = "ibc/CA6FBFAF399474A06263E10D0CE5AEBBE15189D6D4B2DD9ADE61007E68EB9DB0";
+pub static SEI_USDC_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::Sei, SEI_USDC_TOKEN_ID));

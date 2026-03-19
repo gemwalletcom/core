@@ -8,7 +8,10 @@ use primitives::{AssetId, Chain, chain_cosmos::CosmosChain, swap::SwapQuoteDataT
 use super::{SQUID_COSMOS_MULTICALL, SUPPORTED_CHAINS, client::SquidClient, model::*};
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider,
-    SwapperQuoteData, config::{DEFAULT_SWAP_FEE_BPS, get_swap_api_url}, cross_chain::VaultAddresses, fees::resolve_max_quote_value,
+    SwapperQuoteData,
+    config::{DEFAULT_SWAP_FEE_BPS, get_swap_api_url},
+    cross_chain::VaultAddresses,
+    fees::resolve_max_quote_value,
 };
 
 #[derive(Debug)]
@@ -55,7 +58,9 @@ where
             _ => {
                 let cosmos_chain = CosmosChain::from_chain(chain)?;
                 let base = &fees.cosmos.address;
-                if base.is_empty() { return None; }
+                if base.is_empty() {
+                    return None;
+                }
                 convert_cosmos_address(base, cosmos_chain.hrp()).ok()
             }
         }
@@ -198,7 +203,12 @@ mod swap_integration_tests {
         };
 
         let quote = squid.get_quote(&request).await?;
-        println!("OSMO->ATOM quote: from={}, to={}, eta={}s", quote.from_value, quote.to_value, quote.eta_in_seconds.unwrap_or(0));
+        println!(
+            "OSMO->ATOM quote: from={}, to={}, eta={}s",
+            quote.from_value,
+            quote.to_value,
+            quote.eta_in_seconds.unwrap_or(0)
+        );
         assert_eq!(quote.from_value, "10000000");
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
 
@@ -224,7 +234,12 @@ mod swap_integration_tests {
         };
 
         let quote = squid.get_quote(&request).await?;
-        println!("ATOM->OSMO quote: from={}, to={}, eta={}s", quote.from_value, quote.to_value, quote.eta_in_seconds.unwrap_or(0));
+        println!(
+            "ATOM->OSMO quote: from={}, to={}, eta={}s",
+            quote.from_value,
+            quote.to_value,
+            quote.eta_in_seconds.unwrap_or(0)
+        );
         assert_eq!(quote.from_value, "1000000");
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
 

@@ -36,7 +36,12 @@ impl ChainSigner for CosmosChainSigner {
             .ok_or_else(|| SignerError::invalid_input("missing or invalid gas_limit"))?;
         let gas_limit = gas_limit * GAS_BUFFER_NUMERATOR / GAS_BUFFER_DENOMINATOR;
 
-        let base_fee: u64 = input.gas_price.gas_price().to_string().parse().map_err(|_| SignerError::invalid_input("invalid gas price"))?;
+        let base_fee: u64 = input
+            .gas_price
+            .gas_price()
+            .to_string()
+            .parse()
+            .map_err(|_| SignerError::invalid_input("invalid gas price"))?;
         let fee_amount = ((gas_limit as u128 * base_fee as u128 / BASE_FEE_GAS_UNITS as u128) as u64).to_string();
 
         let params = CosmosTxParams {
@@ -44,7 +49,10 @@ impl ChainSigner for CosmosChainSigner {
             chain_id: &chain_id,
             account_number,
             sequence,
-            fee_coins: vec![Coin { denom: chain.denom().as_ref().to_string(), amount: fee_amount }],
+            fee_coins: vec![Coin {
+                denom: chain.denom().as_ref().to_string(),
+                amount: fee_amount,
+            }],
             gas_limit,
             pubkey_type: Self::pubkey_type(chain),
         };

@@ -89,7 +89,15 @@ impl CosmosMessage {
                 let fund_fields: Vec<u8> = funds.iter().flat_map(|c| encode_message_field(5, &encode_coin(&c.denom, &c.amount))).collect();
                 [encode_string_field(1, sender), encode_string_field(2, contract), encode_bytes_field(3, msg), fund_fields].concat()
             }
-            Self::IbcTransfer { source_port, source_channel, token, sender, receiver, timeout_timestamp, memo } => [
+            Self::IbcTransfer {
+                source_port,
+                source_channel,
+                token,
+                sender,
+                receiver,
+                timeout_timestamp,
+                memo,
+            } => [
                 encode_string_field(1, source_port),
                 encode_string_field(2, source_channel),
                 encode_message_field(3, &encode_coin(&token.denom, &token.amount)),
@@ -117,7 +125,10 @@ mod tests {
             sender: "osmo1test".to_string(),
             contract: "osmo1contract".to_string(),
             msg: b"{\"swap\":{}}".to_vec(),
-            funds: vec![Coin { denom: "uosmo".to_string(), amount: "1000000".to_string() }],
+            funds: vec![Coin {
+                denom: "uosmo".to_string(),
+                amount: "1000000".to_string(),
+            }],
         };
         assert_eq!(
             hex::encode(msg.encode_as_any()),
@@ -130,7 +141,10 @@ mod tests {
         let msg = CosmosMessage::IbcTransfer {
             source_port: "transfer".to_string(),
             source_channel: "channel-0".to_string(),
-            token: Coin { denom: "uatom".to_string(), amount: "1000000".to_string() },
+            token: Coin {
+                denom: "uatom".to_string(),
+                amount: "1000000".to_string(),
+            },
             sender: "cosmos1test".to_string(),
             receiver: "osmo1test".to_string(),
             timeout_timestamp: 1773382733549000000,

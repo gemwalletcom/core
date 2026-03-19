@@ -208,7 +208,15 @@ mod tests {
     fn test_parse_ibc_transfer() {
         let msg = CosmosMessage::parse(include_str!("../../testdata/swap_ibc_transfer.json")).unwrap();
         match msg {
-            CosmosMessage::IbcTransfer { source_port, source_channel, sender, receiver, timeout_timestamp, memo, .. } => {
+            CosmosMessage::IbcTransfer {
+                source_port,
+                source_channel,
+                sender,
+                receiver,
+                timeout_timestamp,
+                memo,
+                ..
+            } => {
                 assert_eq!(source_port, "transfer");
                 assert_eq!(source_channel, "channel-141");
                 assert_eq!(sender, "cosmos1tkvyjqeq204rmrrz3w4hcrs336qahsfwmugljt");

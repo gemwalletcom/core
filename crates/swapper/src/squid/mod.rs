@@ -4,11 +4,11 @@ mod provider;
 
 use std::sync::LazyLock;
 
-use crate::{
-    asset::{COSMOS_USDC_TOKEN_ID, INJECTIVE_USDC_TOKEN_ID, OSMOSIS_USDC_TOKEN_ID, OSMOSIS_USDT_TOKEN_ID, SEI_USDC_TOKEN_ID},
-    models::SwapperChainAsset,
+use crate::models::SwapperChainAsset;
+use primitives::{
+    AssetId, Chain,
+    asset_constants::{COSMOS_USDC_TOKEN_ID, INJECTIVE_USDC_TOKEN_ID, OSMOSIS_USDC_TOKEN_ID, OSMOSIS_USDT_TOKEN_ID, SEI_USDC_TOKEN_ID},
 };
-use primitives::{AssetId, Chain};
 
 pub use provider::Squid;
 
