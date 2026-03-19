@@ -566,7 +566,7 @@ mod tests {
         assert_eq!(tx.transaction_type, TransactionType::EarnDeposit);
         assert_eq!(tx.asset_id, ETHEREUM_USDT_ASSET_ID.clone());
         assert_eq!(tx.from, "0x8d7460E51bCf4eD26877cb77E56f3ce7E9f5EB8F");
-        assert_eq!(tx.to, YO_PROTOCOL_CONTRACT);
+        assert_eq!(tx.to, ETHEREUM_YO_PROTOCOL_CONTRACT);
         assert_eq!(tx.value, "1466009");
     }
 
@@ -580,7 +580,7 @@ mod tests {
         assert_eq!(tx.transaction_type, TransactionType::EarnWithdraw);
         assert_eq!(tx.asset_id, ETHEREUM_USDT_ASSET_ID.clone());
         assert_eq!(tx.from, "0x8d7460E51bCf4eD26877cb77E56f3ce7E9f5EB8F");
-        assert_eq!(tx.to, YO_PROTOCOL_CONTRACT);
+        assert_eq!(tx.to, ETHEREUM_YO_PROTOCOL_CONTRACT);
         assert_eq!(tx.value, "1466126");
     }
 }

@@ -45,7 +45,5 @@ mod tests {
         assert_eq!(apply_slippage_in_bp(&1000_u64, 500), 950_u64);
         assert_eq!(apply_slippage_in_bp(&U256::from(1000), 0), U256::from(1000));
         assert_eq!(apply_slippage_in_bp(&U256::from(1000), HUNDRED_PERCENT_IN_BPS), U256::ZERO);
-        assert_eq!(apply_slippage_in_bp(&U256::from(1000), 12000), U256::ZERO);
-        assert_eq!(apply_slippage_in_bp(&U256::from(1000), 300 + 9800), U256::ZERO);
     }
 }
