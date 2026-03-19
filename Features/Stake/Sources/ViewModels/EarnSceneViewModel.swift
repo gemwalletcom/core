@@ -6,7 +6,6 @@ import Foundation
 import Localization
 import Primitives
 import Store
-import Style
 import EarnService
 import PrimitivesComponents
 
@@ -51,7 +50,6 @@ public final class EarnSceneViewModel {
 
     var title: String { Localized.Common.earn }
     var assetTitle: String { AssetViewModel(asset: asset).title }
-
 
     private var apr: Double? {
         providers.first.map(\.apr).flatMap { $0 > 0 ? $0 : nil }

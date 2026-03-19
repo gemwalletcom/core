@@ -137,7 +137,7 @@ public struct TransactionViewModel: Sendable {
             case .perpetualModifyPosition:
                 return .empty
             case .earnDeposit:
-                return Localized.Transfer.Stake.title
+                return Localized.Common.earn
             case .earnWithdraw:
                 return Localized.Transfer.Withdraw.title
             }
@@ -212,15 +212,17 @@ public struct TransactionViewModel: Sendable {
             case .stakeUnfreeze:
                 guard let title = getResourceTitle() else { return .none }
                 return String(format: "%@ %@", Localized.Transfer.from, title)
+            case .earnDeposit:
+                return String(format: "%@ %@", Localized.Transfer.to, getDisplayName(address: transaction.transaction.to, chain: chain))
+            case .earnWithdraw:
+                return String(format: "%@ %@", Localized.Transfer.from, getDisplayName(address: transaction.transaction.to, chain: chain))
             case .swap,
                     .stakeRewards,
                     .stakeWithdraw,
                     .assetActivation,
                     .perpetualModifyPosition,
                     .perpetualOpenPosition,
-                    .perpetualClosePosition,
-                    .earnDeposit,
-                    .earnWithdraw:
+                    .perpetualClosePosition:
                 guard let metadata = transaction.transaction.metadata?.decode(TransactionPerpetualMetadata.self) else {
                     return .none
                 }

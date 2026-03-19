@@ -64,11 +64,7 @@ final class AmountEarnViewModel: AmountDataProvidable {
     }
 
     func recipientData() -> RecipientData {
-        let provider = switch action {
-        case .deposit(let provider): provider
-        case .withdraw(let delegation): delegation.validator
-        }
-        return RecipientData(
+        RecipientData(
             recipient: Recipient(name: provider.name, address: provider.id, memo: nil),
             amount: nil
         )
@@ -84,7 +80,10 @@ final class AmountEarnViewModel: AmountDataProvidable {
         )
         return TransferData(
             type: .earn(asset, action, earnData),
-            recipientData: recipientData(),
+            recipientData: RecipientData(
+                recipient: Recipient(name: provider.name, address: earnData.contractAddress, memo: nil),
+                amount: nil
+            ),
             value: value,
             canChangeValue: canChangeValue
         )

@@ -20,6 +20,15 @@ public struct StakeStore: Sendable {
                 .map { $0.stakingApr } ?? .none
         }
     }
+
+    public func getEarnApr(assetId: AssetId) throws -> Double? {
+        try db.read { db in
+            try AssetRecord
+                .filter(key: assetId.identifier)
+                .fetchOne(db)
+                .map { $0.earnApr } ?? .none
+        }
+    }
     
     public func updateDelegations(walletId: WalletId, delegations: [DelegationBase]) throws {
         try db.write { db in

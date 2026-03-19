@@ -60,15 +60,15 @@ extension BalanceService: BalanceUpdater {
                     group.addTask {
                         await updateCoinStakeBalance(walletId: walletId, asset: chain.assetId, address: address)
                     }
-                    group.addTask {
-                        await updateEarnBalance(walletId: walletId, chain: chain, address: address)
-                    }
                 }
 
                 // token balance
                 if !tokenIds.isEmpty {
                     group.addTask {
                         await updateTokenBalances(walletId: walletId, chain: chain, tokenIds: tokenIds, address: address)
+                    }
+                    group.addTask {
+                        await updateEarnBalance(walletId: walletId, chain: chain, address: address, tokenIds: tokenIds)
                     }
                 }
             }
@@ -132,11 +132,11 @@ extension BalanceService {
     }
 
     @discardableResult
-    private func updateEarnBalance(walletId: WalletId, chain: Chain, address: String) async -> [AssetBalanceChange] {
+    private func updateEarnBalance(walletId: WalletId, chain: Chain, address: String, tokenIds: [AssetId]) async -> [AssetBalanceChange] {
         await updateBalanceAsync(
             walletId: walletId,
             chain: chain,
-            fetchBalance: { try await fetcher.getEarnBalance(chain: chain, address: address) },
+            fetchBalance: { try await fetcher.getEarnBalance(chain: chain, address: address, tokenIds: tokenIds) },
             mapBalance: { $0.earnChange }
         )
     }

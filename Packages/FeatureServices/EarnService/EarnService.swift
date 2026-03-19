@@ -1,7 +1,6 @@
 // Copyright (c). Gem Wallet. All rights reserved.
 
 import Blockchain
-import Foundation
 import Primitives
 import Store
 
@@ -19,11 +18,12 @@ public struct EarnService: Sendable {
     }
 
     public func update(walletId: WalletId, assetId: AssetId, address: String) async throws {
-        let providers = await gatewayService.earnProviders(assetId: assetId)
+        let apr = try store.getEarnApr(assetId: assetId) ?? 0
+        let providers = try await gatewayService.earnProviders(assetId: assetId)
+            .map { DelegationValidator(chain: $0.chain, id: $0.id, name: $0.name, isActive: $0.isActive, commission: $0.commission, apr: apr, providerType: $0.providerType) }
         try store.updateValidators(providers)
 
-        let positions = try await gatewayService.earnPositions(chain: assetId.chain, address: address, assetIds: [assetId])
-
+        let positions = try await gatewayService.earnPositions(address: address, assetId: assetId)
         try updatePositions(walletId: walletId, assetId: assetId, positions: positions)
     }
 
