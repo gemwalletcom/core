@@ -61,6 +61,7 @@ fn map_perpetual_fill_group(address: &str, fills: Vec<PerpetualFill>) -> Option<
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::order::FillDirection;
     use primitives::{PerpetualDirection, TransactionPerpetualMetadata, TransactionType};
 
     #[test]
@@ -123,7 +124,7 @@ mod tests {
             fee: 0.1,
             builder_fee: None,
             px: 42.0,
-            dir: "Buy".to_string(),
+            dir: FillDirection::Buy,
             time: 1,
             liquidation: None,
         }];

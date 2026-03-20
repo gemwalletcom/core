@@ -26,7 +26,7 @@ pub struct ReferrerState {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ReferrerData {
-    pub referral_states: Vec<ReferralUser>,
+    pub referral_states: Option<Vec<ReferralUser>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -34,4 +34,17 @@ pub struct ReferrerData {
 pub struct ReferralUser {
     #[serde(deserialize_with = "deserialize_ethereum_address_checksum")]
     pub user: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Referral;
+
+    #[test]
+    fn test_deserialize_referral_without_referral_states() {
+        let referral: Referral = serde_json::from_str(include_str!("../../testdata/referral_need_to_trade.json")).unwrap();
+
+        assert_eq!(referral.cum_vlm, 0.0);
+        assert!(referral.referrer_state.unwrap().data.referral_states.is_none());
+    }
 }

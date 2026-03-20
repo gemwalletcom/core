@@ -1,0 +1,20 @@
+[
+  {
+    "coin": "@107",
+    "px": "39.415",
+    "sz": "0.3",
+    "side": "A",
+    "time": 1773977221812,
+    "startPosition": "0.49426753",
+    "dir": "Sell",
+    "closedPnl": "-1.8255637",
+    "hash": "0xd16518b18533f577d2de043763f8ad020482009720371449752dc4044437cf62",
+    "oid": 355101232455,
+    "crossed": true,
+    "fee": "0.01326708",
+    "builderFee": "0.00532102",
+    "tid": 610219818487575,
+    "feeToken": "USDC",
+    "twapId": null
+  }
+]

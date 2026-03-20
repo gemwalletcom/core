@@ -1,0 +1,10 @@
+{
+  "referredBy": null,
+  "cumVlm": "0.0",
+  "referrerState": {
+    "stage": "needToTrade",
+    "data": {
+      "required": "10000.0"
+    }
+  }
+}

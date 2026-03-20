@@ -1,15 +1,15 @@
-use crate::models::order::PerpetualFill;
+use crate::models::order::{FillDirection, PerpetualFill};
 use primitives::{
     PerpetualDirection, PerpetualProvider, TransactionChange, TransactionMetadata, TransactionPerpetualMetadata, TransactionState, TransactionType, TransactionUpdate,
 };
 
-fn perpetual_fill_type_and_direction(dir: &str) -> Option<(TransactionType, PerpetualDirection)> {
+fn perpetual_fill_type_and_direction(dir: &FillDirection) -> Option<(TransactionType, PerpetualDirection)> {
     match dir {
-        "Open Long" => Some((TransactionType::PerpetualOpenPosition, PerpetualDirection::Long)),
-        "Open Short" => Some((TransactionType::PerpetualOpenPosition, PerpetualDirection::Short)),
-        "Close Long" => Some((TransactionType::PerpetualClosePosition, PerpetualDirection::Long)),
-        "Close Short" => Some((TransactionType::PerpetualClosePosition, PerpetualDirection::Short)),
-        _ => None,
+        FillDirection::OpenLong => Some((TransactionType::PerpetualOpenPosition, PerpetualDirection::Long)),
+        FillDirection::OpenShort => Some((TransactionType::PerpetualOpenPosition, PerpetualDirection::Short)),
+        FillDirection::CloseLong => Some((TransactionType::PerpetualClosePosition, PerpetualDirection::Long)),
+        FillDirection::CloseShort => Some((TransactionType::PerpetualClosePosition, PerpetualDirection::Short)),
+        FillDirection::Buy | FillDirection::Sell | FillDirection::Other(_) => None,
     }
 }
 
@@ -38,13 +38,16 @@ pub fn map_transaction_state_order(fills: Vec<PerpetualFill>, oid: u64, request_
         None => return TransactionUpdate::new_state(TransactionState::Pending),
     };
 
-    let (_, metadata) = match prepare_perpetual_fill(&matching_fills, last_fill) {
-        Some(result) => result,
-        None => return TransactionUpdate::new_state(TransactionState::Pending),
-    };
-
     let mut update = TransactionUpdate::new_state(TransactionState::Confirmed);
-    update.changes.push(TransactionChange::Metadata(TransactionMetadata::Perpetual(metadata)));
+
+    match &last_fill.dir {
+        FillDirection::Buy | FillDirection::Sell => {}
+        FillDirection::OpenLong | FillDirection::OpenShort | FillDirection::CloseLong | FillDirection::CloseShort => {
+            let (_, metadata) = prepare_perpetual_fill(&matching_fills, last_fill).unwrap();
+            update.changes.push(TransactionChange::Metadata(TransactionMetadata::Perpetual(metadata)));
+        }
+        FillDirection::Other(_) => return TransactionUpdate::new_state(TransactionState::Pending),
+    }
 
     if !last_fill.hash.is_empty() && last_fill.hash != request_id {
         update.changes.push(TransactionChange::HashChange {
@@ -59,7 +62,7 @@ pub fn map_transaction_state_order(fills: Vec<PerpetualFill>, oid: u64, request_
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::order::PerpetualFill;
+    use crate::models::order::{FillDirection, PerpetualFill};
 
     #[test]
     fn test_map_transaction_state_order() {
@@ -118,7 +121,7 @@ mod tests {
             fee: 0.0,
             builder_fee: None,
             px: 42.0,
-            dir: String::new(),
+            dir: FillDirection::Other(String::new()),
             time: 0,
             liquidation: None,
         }];
@@ -127,6 +130,24 @@ mod tests {
 
         assert_eq!(update.state, TransactionState::Pending);
         assert!(update.changes.is_empty());
+    }
+
+    #[test]
+    fn test_map_transaction_state_order_spot_fill_confirms() {
+        let fills: Vec<PerpetualFill> = serde_json::from_str(include_str!("../../testdata/user_fills_spot_swap.json")).unwrap();
+
+        let request_id = "355101232455".to_string();
+        let update = map_transaction_state_order(fills, 355101232455, request_id.clone());
+
+        assert_eq!(update.state, TransactionState::Confirmed);
+        assert_eq!(update.changes.len(), 1);
+        assert_eq!(
+            update.changes[0],
+            TransactionChange::HashChange {
+                old: request_id,
+                new: "0xd16518b18533f577d2de043763f8ad020482009720371449752dc4044437cf62".to_string(),
+            }
+        );
     }
 
     #[test]
@@ -153,12 +174,21 @@ mod tests {
             fee: 0.0,
             builder_fee: None,
             px: 42.0,
-            dir: "Unsupported".to_string(),
+            dir: FillDirection::Other("Unsupported".to_string()),
             time: 0,
             liquidation: None,
         };
 
         assert!(prepare_perpetual_fill(&[&fill], &fill).is_none());
+    }
+
+    #[test]
+    fn test_prepare_perpetual_fill_returns_none_for_spot_fill() {
+        let fills: Vec<PerpetualFill> = serde_json::from_str(include_str!("../../testdata/user_fills_spot_swap.json")).unwrap();
+        let matching: Vec<_> = fills.iter().collect();
+        let last_fill = matching.last().copied().unwrap();
+
+        assert!(prepare_perpetual_fill(&matching, last_fill).is_none());
     }
 
     #[test]
