@@ -37,7 +37,10 @@ public final class WalletPortfolioSceneViewModel: ChartListViewable {
         self.priceService = priceService
         self.wallet = wallet
 
-        self.assetsQuery = ObservableQuery(AssetsRequest(walletId: wallet.walletId, filters: [.enabledBalance]), initialValue: [])
+        self.assetsQuery = ObservableQuery(
+            AssetsRequest(walletId: wallet.walletId, filters: [.enabledBalance, .hasBalance]),
+            initialValue: []
+        )
         self.currencyCode = currencyCode
         self.currencyFormatter = CurrencyFormatter(type: .currency, currencyCode: currencyCode)
         self.priceFormatter = CurrencyFormatter(currencyCode: currencyCode)
