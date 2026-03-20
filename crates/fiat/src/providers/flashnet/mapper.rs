@@ -98,6 +98,7 @@ pub fn map_order(order: FlashnetOrder) -> FiatTransaction {
     let chain = order.destination_chain().and_then(map_chain);
     let asset_id = chain.map(AssetId::from_chain);
     let symbol = order.destination_asset().map(str::to_ascii_uppercase).unwrap_or_default();
+    let provider_transaction_id = order.id.clone();
     let fiat_amount = order
         .effective_amount_out()
         .and_then(|value| BigNumberFormatter::value_as_f64(value, USDB_DECIMALS).ok())
@@ -107,6 +108,7 @@ pub fn map_order(order: FlashnetOrder) -> FiatTransaction {
         asset_id,
         transaction_type: FiatQuoteType::Buy,
         provider_id: FlashnetClient::NAME,
+        provider_transaction_id,
         status: map_status(&order.status),
         country: None,
         symbol,
@@ -114,7 +116,6 @@ pub fn map_order(order: FlashnetOrder) -> FiatTransaction {
         fiat_currency: Currency::USD.as_ref().to_string(),
         transaction_hash: order.destination_tx_hash().map(str::to_string),
         address: order.recipient_address().map(str::to_string),
-        provider_transaction_id: order.id,
     }
 }
 

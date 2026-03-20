@@ -7,6 +7,7 @@ pub mod model;
 pub mod provider;
 pub mod providers;
 pub mod rsa_signature;
+pub mod transaction_info_mapper;
 
 pub use provider::FiatProvider;
 
@@ -16,6 +17,7 @@ use settings::Settings;
 pub use client::FiatClient;
 pub use fiat_cacher_client::{CachedFiatQuoteData, FiatCacherClient};
 pub use ip_check_client::{IPAddressInfo, IPCheckClient};
+pub use transaction_info_mapper::fiat_transaction_info;
 
 #[cfg(all(test, feature = "fiat_integration_tests"))]
 pub mod testkit;

@@ -4,10 +4,11 @@ use crate::{
     providers::banxa::mapper::map_asset_with_limits,
 };
 use async_trait::async_trait;
-use primitives::{FiatBuyQuote, FiatQuoteOld, FiatQuoteRequest, FiatQuoteResponse, FiatSellQuote};
+use primitives::{FiatBuyQuote, FiatQuoteOld, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType};
 use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteUrl, FiatQuoteUrlData, FiatTransaction};
 use std::error::Error;
 use streamer::FiatWebhook;
+use uuid::Uuid;
 
 use super::{client::BanxaClient, mapper::map_order, models::Webhook};
 
@@ -25,34 +26,12 @@ impl FiatProvider for BanxaClient {
         Ok(self.get_fiat_buy_quote(request, request_map, quote))
     }
 
-    async fn get_sell_quote_old(&self, _request: FiatSellQuote, _request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn Error + Send + Sync>> {
-        Err("Not implemented".into())
-        // v2/payment-methods/sell
-        // let method = self
-        //     .get_payment_methods(ORDER_TYPE_SELL)
-        //     .await?
-        //     .into_iter()
-        //     .find(|x| x.supported_fiats.contains(&request.fiat_currency.as_ref().to_string()))
-        //     .ok_or("Payment method not found")?;
-
-        // let quote = self
-        //     .get_quote_sell(
-        //         &method.id,
-        //         &request_map.asset_symbol.symbol,
-        //         &request_map.clone().network.unwrap_or_default(),
-        //         request.fiat_currency.as_ref(),
-        //         request.crypto_amount,
-        //     )
-        //     .await?;
-        // Ok(self.get_fiat_sell_quote(request, request_map, quote))
-    }
-
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
-        let (assets, buy_fiat_currencies, sell_fiat_currencies) = tokio::try_join!(self.get_assets_buy(), self.get_fiat_currencies("buy"), self.get_fiat_currencies("sell"))?;
+        let (assets, buy_fiat_currencies) = tokio::try_join!(self.get_assets_buy(), self.get_fiat_currencies("buy"))?;
 
         let assets = assets
             .into_iter()
-            .flat_map(|x| map_asset_with_limits(x, &buy_fiat_currencies, &sell_fiat_currencies))
+            .flat_map(|x| map_asset_with_limits(x, &buy_fiat_currencies, &[]))
             .collect::<Vec<FiatProviderAsset>>();
         Ok(assets)
     }
@@ -81,16 +60,25 @@ impl FiatProvider for BanxaClient {
         Ok(FiatWebhook::OrderId(order_id))
     }
 
-    async fn get_quote_buy(&self, _request: FiatQuoteRequest, _request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
-        Err("not implemented".into())
+    async fn get_quote_buy(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
+        let network = request_map.asset_symbol.network.unwrap_or_default();
+        let quote = self.get_quote_buy(&request_map.asset_symbol.symbol, &network, &request.currency, request.amount).await?;
+
+        Ok(FiatQuoteResponse::new(Uuid::new_v4().to_string(), request.amount, quote.crypto_amount))
     }
 
     async fn get_quote_sell(&self, _request: FiatQuoteRequest, _request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
-        Err("not implemented".into())
+        Err("not supported".into())
     }
 
-    async fn get_quote_url(&self, _data: FiatQuoteUrlData) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {
-        Err("not implemented".into())
+    async fn get_quote_url(&self, data: FiatQuoteUrlData) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {
+        match data.quote.quote_type {
+            FiatQuoteType::Buy => {
+                let network = data.asset_symbol.network.unwrap_or_default();
+                Ok(self.build_quote_url(data.quote.fiat_amount, &data.quote.fiat_currency, &data.asset_symbol.symbol, &network, &data.wallet_address))
+            }
+            FiatQuoteType::Sell => Err("not supported".into()),
+        }
     }
 }
 

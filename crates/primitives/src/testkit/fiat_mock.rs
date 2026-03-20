@@ -2,7 +2,7 @@ use crate::currency::Currency;
 use crate::fiat_assets::FiatAssetLimits;
 use crate::{
     Asset, AssetId, Chain, FiatBuyQuote, FiatProvider, FiatProviderName, FiatQuote, FiatQuoteOld, FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType,
-    PaymentType,
+    FiatTransaction, FiatTransactionStatus, PaymentType,
 };
 impl FiatBuyQuote {
     pub fn mock() -> Self {
@@ -124,6 +124,24 @@ impl FiatQuoteResponse {
             fiat_amount,
             crypto_amount,
             payment_methods: vec![],
+        }
+    }
+}
+
+impl FiatTransaction {
+    pub fn mock() -> Self {
+        FiatTransaction {
+            asset_id: Some(AssetId::from_chain(Chain::Bitcoin)),
+            transaction_type: FiatQuoteType::Buy,
+            provider_id: FiatProviderName::MoonPay,
+            provider_transaction_id: "tx_123".to_string(),
+            status: FiatTransactionStatus::Pending,
+            country: Some("US".to_string()),
+            symbol: "BTC".to_string(),
+            fiat_amount: 100.0,
+            fiat_currency: "USD".to_string(),
+            transaction_hash: None,
+            address: Some("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh".to_string()),
         }
     }
 }

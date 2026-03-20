@@ -334,16 +334,23 @@ pub async fn get_device_fiat_order_v2(
     provider: &str,
     order_id: &str,
     client: &State<Mutex<FiatQuotesClient>>,
-) -> Result<ApiResponse<primitives::FiatTransaction>, ApiError> {
-    Ok(client.lock().await.get_order_status(provider, order_id).await?.into())
+) -> Result<ApiResponse<primitives::FiatTransactionInfo>, ApiError> {
+    Ok(fiat::fiat_transaction_info(client.lock().await.get_order_status(provider, order_id).await?).into())
 }
 
 #[get("/devices/fiat/transactions")]
 pub async fn get_device_fiat_transactions_v2(
     device: AuthenticatedDeviceWallet,
     client: &State<Mutex<FiatQuotesClient>>,
-) -> Result<ApiResponse<Vec<primitives::FiatTransaction>>, ApiError> {
-    Ok(client.lock().await.get_transactions_by_wallet_id(device.device_row.id, device.wallet_id)?.into())
+) -> Result<ApiResponse<Vec<primitives::FiatTransactionInfo>>, ApiError> {
+    Ok(client
+        .lock()
+        .await
+        .get_transactions_by_wallet_id(device.device_row.id, device.wallet_id)?
+        .into_iter()
+        .map(fiat::fiat_transaction_info)
+        .collect::<Vec<_>>()
+        .into())
 }
 
 #[get("/devices/fiat/assets/<quote_type>")]

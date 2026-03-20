@@ -1,6 +1,6 @@
 use crate::model::FiatMapping;
 use number_formatter::BigNumberFormatter;
-use primitives::{FiatBuyQuote, FiatProviderName, FiatQuoteOld, FiatQuoteType, FiatSellQuote};
+use primitives::{FiatBuyQuote, FiatProviderName, FiatQuoteOld, FiatQuoteType, FiatQuoteUrl};
 use reqwest::{
     Client,
     header::{HeaderMap, HeaderValue},
@@ -62,19 +62,6 @@ impl BanxaClient {
         Ok(self.client.get(&url).query(&query).headers(self.get_headers()).send().await?.json().await?)
     }
 
-    pub async fn get_quote_sell(&self, method: &str, symbol: &str, chain: &str, fiat_currency: &str, crypto_amount: f64) -> Result<Quote, reqwest::Error> {
-        let crypto_amount_str = crypto_amount.to_string();
-        let query = vec![
-            ("paymentMethodId", method),
-            ("crypto", symbol),
-            ("blockchain", chain),
-            ("fiat", fiat_currency),
-            ("cryptoAmount", crypto_amount_str.as_str()),
-        ];
-        let url = format!("{}/{}/v2/quotes/sell", API_URL, self.merchant_key);
-        self.client.get(&url).query(&query).headers(self.get_headers()).send().await?.json().await
-    }
-
     pub async fn get_countries(&self) -> Result<Vec<Country>, reqwest::Error> {
         let url = format!("{}/{}/v2/countries", API_URL, self.merchant_key);
         self.client.get(&url).headers(self.get_headers()).send().await?.json().await
@@ -100,20 +87,6 @@ impl BanxaClient {
         }
     }
 
-    pub fn get_fiat_sell_quote(&self, request: FiatSellQuote, fiat_mapping: FiatMapping, quote: Quote) -> FiatQuoteOld {
-        let redirect_url = self.get_redirect_sell_url(request.clone(), fiat_mapping);
-
-        FiatQuoteOld {
-            provider: Self::NAME.as_fiat_provider(),
-            quote_type: FiatQuoteType::Sell,
-            fiat_amount: quote.fiat_amount,
-            fiat_currency: request.fiat_currency.as_ref().to_string(),
-            crypto_amount: request.crypto_amount,
-            crypto_value: request.crypto_value,
-            redirect_url,
-        }
-    }
-
     // URL Parametization https://docs.banxa.com/docs/referral-link
 
     pub fn get_redirect_buy_url(&self, request: FiatBuyQuote, fiat_mapping: FiatMapping) -> String {
@@ -129,16 +102,19 @@ impl BanxaClient {
         components.as_str().to_string()
     }
 
-    pub fn get_redirect_sell_url(&self, request: FiatSellQuote, fiat_mapping: FiatMapping) -> String {
+    pub fn build_quote_url(&self, amount: f64, fiat_currency: &str, symbol: &str, network: &str, wallet_address: &str) -> FiatQuoteUrl {
         let mut components = Url::parse(&self.url).unwrap();
         components
             .query_pairs_mut()
-            .append_pair("orderType", "sell")
-            .append_pair("coinType", &fiat_mapping.asset_symbol.symbol)
-            .append_pair("blockchain", &fiat_mapping.asset_symbol.network.unwrap_or_default())
-            .append_pair("fiatType", request.fiat_currency.as_ref())
-            .append_pair("coinAmount", request.crypto_amount.to_string().as_str())
-            .append_pair("walletAddress", &request.wallet_address);
-        components.as_str().to_string()
+            .append_pair("orderType", ORDER_TYPE_BUY)
+            .append_pair("coinType", symbol)
+            .append_pair("blockchain", network)
+            .append_pair("fiatType", fiat_currency)
+            .append_pair("fiatAmount", &amount.to_string())
+            .append_pair("walletAddress", wallet_address);
+
+        FiatQuoteUrl {
+            redirect_url: components.as_str().to_string(),
+        }
     }
 }
