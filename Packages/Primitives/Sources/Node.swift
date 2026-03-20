@@ -40,13 +40,3 @@ public struct ChainNodes: Codable, Sendable {
 		self.nodes = nodes
 	}
 }
-
-public struct NodesResponse: Codable, Sendable {
-	public let version: Int32
-	public let nodes: [ChainNodes]
-
-	public init(version: Int32, nodes: [ChainNodes]) {
-		self.version = version
-		self.nodes = nodes
-	}
-}

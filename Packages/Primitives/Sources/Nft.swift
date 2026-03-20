@@ -101,18 +101,6 @@ public struct NFTAssetData: Codable, Equatable, Hashable, Sendable {
 	}
 }
 
-public struct NFTAssetId: Codable, Equatable, Hashable, Sendable {
-	public let chain: Chain
-	public let contractAddress: String
-	public let tokenId: String
-
-	public init(chain: Chain, contractAddress: String, tokenId: String) {
-		self.chain = chain
-		self.contractAddress = contractAddress
-		self.tokenId = tokenId
-	}
-}
-
 public struct NFTData: Codable, Equatable, Hashable, Sendable {
 	public let collection: NFTCollection
 	public let assets: [NFTAsset]

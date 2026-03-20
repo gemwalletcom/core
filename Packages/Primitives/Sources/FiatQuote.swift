@@ -24,16 +24,6 @@ public struct FiatQuote: Codable, Equatable, Hashable, Sendable {
 	}
 }
 
-public struct FiatQuoteError: Codable, Sendable {
-	public let provider: String?
-	public let error: String
-
-	public init(provider: String?, error: String) {
-		self.provider = provider
-		self.error = error
-	}
-}
-
 public struct FiatQuoteUrl: Codable, Sendable {
 	public let redirectUrl: String
 

@@ -8,3 +8,44 @@ public enum FiatQuoteType: String, Codable, Equatable, Hashable, Sendable {
 	case buy
 	case sell
 }
+
+public enum FiatTransactionStatus: String, Codable, Equatable, Hashable, Sendable {
+	case complete
+	case pending
+	case failed
+	case unknown
+}
+
+public struct FiatTransaction: Codable, Equatable, Sendable {
+	public let assetId: AssetId?
+	public let transactionType: FiatQuoteType
+	public let providerId: FiatProviderName
+	public let providerTransactionId: String
+	public let status: FiatTransactionStatus
+	public let fiatAmount: Double
+	public let fiatCurrency: String
+	public let transactionHash: String?
+	public let address: String?
+
+	public init(assetId: AssetId?, transactionType: FiatQuoteType, providerId: FiatProviderName, providerTransactionId: String, status: FiatTransactionStatus, fiatAmount: Double, fiatCurrency: String, transactionHash: String?, address: String?) {
+		self.assetId = assetId
+		self.transactionType = transactionType
+		self.providerId = providerId
+		self.providerTransactionId = providerTransactionId
+		self.status = status
+		self.fiatAmount = fiatAmount
+		self.fiatCurrency = fiatCurrency
+		self.transactionHash = transactionHash
+		self.address = address
+	}
+}
+
+public struct FiatTransactionInfo: Codable, Equatable, Sendable {
+	public let transaction: FiatTransaction
+	public let detailsUrl: String?
+
+	public init(transaction: FiatTransaction, detailsUrl: String?) {
+		self.transaction = transaction
+		self.detailsUrl = detailsUrl
+	}
+}

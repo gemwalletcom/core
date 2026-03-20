@@ -14,18 +14,6 @@ public struct AuthNonce: Codable, Sendable {
 	}
 }
 
-public struct AuthMessage: Codable, Sendable {
-	public let chain: Chain
-	public let address: String
-	public let authNonce: AuthNonce
-
-	public init(chain: Chain, address: String, authNonce: AuthNonce) {
-		self.chain = chain
-		self.address = address
-		self.authNonce = authNonce
-	}
-}
-
 public struct AuthPayload: Codable, Sendable {
 	public let deviceId: String
 	public let chain: Chain

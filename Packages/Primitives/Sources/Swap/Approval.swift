@@ -16,18 +16,6 @@ public struct ApprovalData: Codable, Equatable, Hashable, Sendable {
 	}
 }
 
-public struct QuoteAsset: Codable {
-	public let id: String
-	public let symbol: String
-	public let decimals: UInt32
-
-	public init(id: String, symbol: String, decimals: UInt32) {
-		self.id = id
-		self.symbol = symbol
-		self.decimals = decimals
-	}
-}
-
 public struct SwapProviderData: Codable, Equatable, Hashable, Sendable {
 	public let provider: SwapProvider
 	public let name: String
