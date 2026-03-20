@@ -65,7 +65,7 @@ pub fn map_order(payload: Transaction) -> Result<FiatTransaction, Box<dyn std::e
         "pending" | "waitingForDeposit" => FiatTransactionStatus::Pending,
         "failed" => FiatTransactionStatus::Failed,
         "completed" => FiatTransactionStatus::Complete,
-        _ => FiatTransactionStatus::Unknown(payload.status),
+        _ => FiatTransactionStatus::Unknown,
     };
     let fee_provider = payload.fee_amount.unwrap_or_default();
     let fee_network = payload.network_fee_amount.unwrap_or_default();

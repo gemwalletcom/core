@@ -158,7 +158,7 @@ fn map_status(status: &str, withdraw_status: Option<&str>) -> FiatTransactionSta
             }
         }
         "completed" | "succeeded" => FiatTransactionStatus::Complete,
-        _ => FiatTransactionStatus::Unknown(status.to_string()),
+        _ => FiatTransactionStatus::Unknown,
     }
 }
 

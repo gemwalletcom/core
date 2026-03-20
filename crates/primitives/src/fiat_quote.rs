@@ -62,7 +62,6 @@ pub struct FiatQuoteUrl {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Sendable")]
 pub struct FiatQuoteError {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,

@@ -31,17 +31,18 @@ pub struct FiatTransactionInfo {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, AsRefStr, EnumString)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum FiatTransactionStatus {
     Complete,
     Pending,
     Failed,
-    Unknown(String),
+    Unknown,
 }
 
-#[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, AsRefStr, EnumString)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum FiatQuoteType {

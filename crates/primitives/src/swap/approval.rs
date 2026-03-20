@@ -72,7 +72,6 @@ pub struct SwapData {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[typeshare]
 pub struct QuoteAsset {
     pub id: String,
     pub symbol: String,

@@ -55,7 +55,7 @@ pub fn map_order(order: Order) -> Result<FiatTransaction, Box<dyn std::error::Er
         "pendingPayment" | "waitingPayment" | "paymentReceived" | "inProgress" | "coinTransferred" | "cryptoTransferred" | "extraVerification" => FiatTransactionStatus::Pending,
         "cancelled" | "declined" | "expired" | "refunded" => FiatTransactionStatus::Failed,
         "complete" | "completed" | "succeeded" => FiatTransactionStatus::Complete,
-        _ => FiatTransactionStatus::Unknown(order.status.clone()),
+        _ => FiatTransactionStatus::Unknown,
     };
 
     let transaction_type = match order.order_type.as_str() {

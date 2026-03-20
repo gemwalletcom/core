@@ -11,7 +11,6 @@ pub struct AuthNonce {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct AuthMessage {
     pub chain: Chain,

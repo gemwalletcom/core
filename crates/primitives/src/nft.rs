@@ -92,7 +92,6 @@ pub struct NFTAssetData {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct NFTAssetId {
     pub chain: Chain,

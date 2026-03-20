@@ -62,7 +62,7 @@ fn map_status(status: &str) -> FiatTransactionStatus {
         "ORDER_PAYMENT_VERIFYING" | "PAYMENT_DONE_MARKED_BY_USER" | "PENDING_DELIVERY_FROM_TRANSAK" | "AWAITING_PAYMENT_FROM_USER" | "PROCESSING" => FiatTransactionStatus::Pending,
         "EXPIRED" | "FAILED" | "CANCELLED" | "REFUNDED" => FiatTransactionStatus::Failed,
         "COMPLETED" => FiatTransactionStatus::Complete,
-        _ => FiatTransactionStatus::Unknown(status.to_string()),
+        _ => FiatTransactionStatus::Unknown,
     }
 }
 

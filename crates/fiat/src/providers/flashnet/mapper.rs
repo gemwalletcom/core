@@ -124,7 +124,7 @@ fn map_status(status: &str) -> FiatTransactionStatus {
         "processing" | "confirming" | "bridging" | "swapping" | "awaiting_approval" | "refunding" | "delivering" => FiatTransactionStatus::Pending,
         "completed" => FiatTransactionStatus::Complete,
         "failed" | "refunded" => FiatTransactionStatus::Failed,
-        other => FiatTransactionStatus::Unknown(other.to_string()),
+        _ => FiatTransactionStatus::Unknown,
     }
 }
 

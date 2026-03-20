@@ -138,7 +138,7 @@ pub fn map_status(status: &str) -> FiatTransactionStatus {
         "started" | "pending" | "confirming" | "payment-authorized" | "paid" => FiatTransactionStatus::Pending,
         "completed" | "success" => FiatTransactionStatus::Complete,
         "failed" | "cancelled" | "canceled" | "rejected" => FiatTransactionStatus::Failed,
-        _ => FiatTransactionStatus::Unknown(status.to_string()),
+        _ => FiatTransactionStatus::Unknown,
     }
 }
 
