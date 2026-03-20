@@ -43,6 +43,14 @@ struct FiatQuoteViewModel: Sendable {
         selectedQuote?.provider == quote.provider
     }
 
+    private var buyComparisonAmountText: String {
+        guard let selectedQuote, selectedQuote.cryptoAmount > 0 else {
+            return formatter.string(quote.fiatAmount)
+        }
+
+        let rate = selectedQuote.fiatAmount / selectedQuote.cryptoAmount
+        return formatter.string(rate * quote.cryptoAmount)
+    }
 }
 
 extension FiatQuoteViewModel: Identifiable {
@@ -54,6 +62,10 @@ extension FiatQuoteViewModel: Identifiable {
 // MARK: - SimpleListItemViewable
 
 extension FiatQuoteViewModel: SimpleListItemViewable {
+    var titleStyle: TextStyle {
+        TextStyle(font: .callout, color: Colors.black, fontWeight: .semibold)
+    }
+
     var assetImage: AssetImage {
         AssetImage(
             placeholder: quote.provider.image,
@@ -62,6 +74,21 @@ extension FiatQuoteViewModel: SimpleListItemViewable {
     }
 
     var subtitle: String? { amountText }
+
+    var subtitleExtra: String? {
+        switch quote.type {
+        case .buy: buyComparisonAmountText
+        case .sell: formatter.string(quote.fiatAmount)
+        }
+    }
+
+    var subtitleStyle: TextStyle {
+        TextStyle(font: .callout, color: Colors.black, fontWeight: .semibold)
+    }
+
+    var subtitleStyleExtra: TextStyle {
+        TextStyle(font: .footnote, color: Colors.gray)
+    }
 }
 
 // MARK: - Hashable

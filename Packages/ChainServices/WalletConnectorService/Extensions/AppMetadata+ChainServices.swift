@@ -11,7 +11,7 @@ extension AppMetadata {
             description: description,
             url: url,
             icon: icons.first { icon in
-                [".png", ".jpg", ".jpeg"].contains { icon.contains($0) }
+                [".png", ".jpg", ".jpeg", ".ico"].contains { icon.contains($0) }
             } ?? icons.first ?? .empty
         )
     }

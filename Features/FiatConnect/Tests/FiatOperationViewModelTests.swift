@@ -3,6 +3,7 @@
 import Foundation
 import Testing
 import Primitives
+import PrimitivesTestKit
 import Formatters
 import BigInt
 import Validators
@@ -13,11 +14,12 @@ import Validators
 final class FiatOperationViewModelTests {
 
     private struct MockFiatOperation: FiatOperation {
+        var quotes: [FiatQuote] = []
         var defaultAmount: Int = 50
         var emptyAmountTitle: String = "Mock Title"
 
         func fetch(amount: Double) async throws -> [FiatQuote] {
-            []
+            quotes
         }
 
         func validators(availableBalance: BigInt, selectedQuote: FiatQuote?) -> [any TextValidator] {

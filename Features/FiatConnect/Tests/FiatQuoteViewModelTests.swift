@@ -27,6 +27,24 @@ struct FiatQuoteViewModelTests {
     }
 
     @Test
+    func fiatEquivalentTextUsesSelectedQuoteRate() {
+        let selectedQuote = FiatQuote.mock(fiatAmount: 50, cryptoAmount: 0.025)
+        let quote = FiatQuote.mock(fiatAmount: 50, cryptoAmount: 0.02)
+        let model = FiatQuoteViewModel(asset: .mock(), quote: quote, selectedQuote: selectedQuote, formatter: usFormatter)
+
+        #expect(model.subtitleExtra == "$40.00")
+    }
+
+    @Test
+    func sellSecondaryAmountTextUsesQuoteFiatAmount() {
+        let selectedQuote = FiatQuote.mock(fiatAmount: 100, cryptoAmount: 0.04937, type: .sell)
+        let quote = FiatQuote.mock(fiatAmount: 100, cryptoAmount: 0.05117, type: .sell)
+        let model = FiatQuoteViewModel(asset: .mock(), quote: quote, selectedQuote: selectedQuote, formatter: usFormatter)
+
+        #expect(model.subtitleExtra == "$100.00")
+    }
+
+    @Test
     func testRateText() {
         #expect(FiatQuoteViewModel(asset: .mock(), quote: .mock(fiatAmount: 0, cryptoAmount: 0), formatter: usFormatter).rateText == "NaN")
         #expect(FiatQuoteViewModel(asset: .mock(), quote: .mock(fiatAmount: 10.123, cryptoAmount: 15.12), formatter: usFormatter).rateText == "$0.6695")
