@@ -1,0 +1,29 @@
+{
+  "tokens": [
+    {
+      "name": "USDC",
+      "szDecimals": 8,
+      "weiDecimals": 8,
+      "index": 0,
+      "tokenId": "0x6d1e7cde53ba9467b783cb7c530ce054"
+    },
+    {
+      "name": "HYPE",
+      "szDecimals": 2,
+      "weiDecimals": 8,
+      "index": 150,
+      "tokenId": "0x0d01dc56dcaaca66ad901c959b4011ec"
+    }
+  ],
+  "universe": [
+    {
+      "tokens": [
+        150,
+        0
+      ],
+      "name": "@107",
+      "index": 107,
+      "isCanonical": false
+    }
+  ]
+}

@@ -2,11 +2,11 @@ use crate::models::{
     balance::{Balances, DelegationBalance, StakeBalance, Validator},
     candlestick::Candlestick,
     metadata::HypercoreMetadataResponse,
-    order::{OpenOrder, PerpetualFill},
+    order::{OpenOrder, UserFill},
     portfolio::HypercorePortfolioResponse,
     position::AssetPositions,
     referral::Referral,
-    spot::{OrderbookResponse, SpotMeta, SpotMetaRaw},
+    spot::{OrderbookResponse, SpotMeta},
     user::{AgentSession, LedgerUpdate, UserFee, UserRole},
 };
 use chain_traits::ChainTraits;
@@ -139,7 +139,7 @@ impl<C: Client> HyperCoreClient<C> {
         .await
     }
 
-    pub async fn get_user_fills_by_time(&self, user: &str, start_time: i64) -> Result<Vec<PerpetualFill>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_user_fills_by_time(&self, user: &str, start_time: i64) -> Result<Vec<UserFill>, Box<dyn Error + Send + Sync>> {
         self.info(json!({
             "type": "userFillsByTime",
             "user": user,
@@ -166,8 +166,7 @@ impl<C: Client> HyperCoreClient<C> {
             (String::from(X_CACHE_TTL), SPOT_META_CACHE_TTL_SECS.to_string()),
         ]);
         let response = self.client.post_with_headers("/info", &json!({ "type": "spotMeta" }), headers).await?;
-        let raw: SpotMetaRaw = serde_json::from_value(response)?;
-        Ok(raw.into())
+        Ok(serde_json::from_value(response)?)
     }
 
     pub async fn get_spot_orderbook(&self, coin: &str) -> Result<OrderbookResponse, Box<dyn Error + Send + Sync>> {

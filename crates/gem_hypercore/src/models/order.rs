@@ -67,7 +67,7 @@ impl From<FillDirection> for String {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct PerpetualFill {
+pub struct UserFill {
     pub coin: String,
     pub hash: String,
     pub oid: UInt64,
@@ -78,6 +78,7 @@ pub struct PerpetualFill {
     pub fee: f64,
     #[serde(default, deserialize_with = "deserialize_option_f64_from_str")]
     pub builder_fee: Option<f64>,
+    pub fee_token: Option<String>,
     #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub px: f64,
     pub dir: FillDirection,

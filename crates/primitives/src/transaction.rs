@@ -250,6 +250,10 @@ impl Transaction {
         values.iter().filter(|x| addresses.contains(&x.address)).filter_map(|x| x.value.parse::<i64>().ok()).sum()
     }
 
+    fn swap_metadata(&self) -> Option<TransactionSwapMetadata> {
+        self.metadata.as_ref().and_then(|value| TransactionSwapMetadata::deserialize(value).ok())
+    }
+
     pub fn asset_ids(&self) -> Vec<AssetId> {
         match self.transaction_type {
             TransactionType::Transfer
@@ -269,12 +273,7 @@ impl Transaction {
             | TransactionType::PerpetualModifyPosition
             | TransactionType::EarnDeposit
             | TransactionType::EarnWithdraw => vec![self.asset_id.clone()],
-            TransactionType::Swap => self
-                .metadata
-                .clone()
-                .and_then(|x| serde_json::from_value::<TransactionSwapMetadata>(x).ok())
-                .map(|x| vec![x.from_asset, x.to_asset])
-                .unwrap_or_default(),
+            TransactionType::Swap => self.swap_metadata().map(|metadata| vec![metadata.from_asset, metadata.to_asset]).unwrap_or_default(),
         }
         .into_iter()
         .collect::<HashSet<_>>()
@@ -307,13 +306,11 @@ impl Transaction {
             | TransactionType::EarnDeposit
             | TransactionType::EarnWithdraw => vec![AssetAddress::new(self.asset_id.clone(), self.to.clone(), None)],
             TransactionType::Swap => self
-                .metadata
-                .clone()
-                .and_then(|x| serde_json::from_value::<TransactionSwapMetadata>(x).ok())
-                .map(|x| {
+                .swap_metadata()
+                .map(|metadata| {
                     vec![
-                        AssetAddress::new(x.from_asset.clone(), self.from.clone(), None),
-                        AssetAddress::new(x.to_asset.clone(), self.to.clone(), None),
+                        AssetAddress::new(metadata.from_asset, self.from.clone(), None),
+                        AssetAddress::new(metadata.to_asset, self.to.clone(), None),
                     ]
                 })
                 .unwrap_or_default(),

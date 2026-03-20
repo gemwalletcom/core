@@ -1,4 +1,4 @@
-use crate::models::order::{FillDirection, PerpetualFill};
+use crate::models::order::{FillDirection, UserFill};
 use primitives::{
     PerpetualDirection, PerpetualProvider, TransactionChange, TransactionMetadata, TransactionPerpetualMetadata, TransactionState, TransactionType, TransactionUpdate,
 };
@@ -13,7 +13,7 @@ fn perpetual_fill_type_and_direction(dir: &FillDirection) -> Option<(Transaction
     }
 }
 
-pub fn prepare_perpetual_fill(matching_fills: &[&PerpetualFill], last_fill: &PerpetualFill) -> Option<(TransactionType, TransactionPerpetualMetadata)> {
+pub fn prepare_perpetual_fill(matching_fills: &[&UserFill], last_fill: &UserFill) -> Option<(TransactionType, TransactionPerpetualMetadata)> {
     let (transaction_type, direction) = perpetual_fill_type_and_direction(&last_fill.dir)?;
     let pnl: f64 = matching_fills.iter().map(|fill| fill.closed_pnl).sum();
     let is_liquidation = matching_fills.iter().any(|fill| fill.liquidation.is_some());
@@ -30,7 +30,7 @@ pub fn prepare_perpetual_fill(matching_fills: &[&PerpetualFill], last_fill: &Per
     ))
 }
 
-pub fn map_transaction_state_order(fills: Vec<PerpetualFill>, oid: u64, request_id: String) -> TransactionUpdate {
+pub fn map_transaction_state_order(fills: Vec<UserFill>, oid: u64, request_id: String) -> TransactionUpdate {
     let matching_fills: Vec<_> = fills.iter().filter(|fill| fill.oid == oid).collect();
 
     let last_fill = match matching_fills.last() {
@@ -62,11 +62,11 @@ pub fn map_transaction_state_order(fills: Vec<PerpetualFill>, oid: u64, request_
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::order::{FillDirection, PerpetualFill};
+    use crate::models::order::{FillDirection, UserFill};
 
     #[test]
     fn test_map_transaction_state_order() {
-        let fills: Vec<PerpetualFill> = serde_json::from_str(include_str!("../../testdata/user_fills_multiple.json")).unwrap();
+        let fills: Vec<UserFill> = serde_json::from_str(include_str!("../../testdata/user_fills_multiple.json")).unwrap();
         let oid = 187530505765u64;
         let request_id = oid.to_string();
 
@@ -103,7 +103,7 @@ mod tests {
 
     #[test]
     fn test_map_transaction_state_order_no_matching_fills() {
-        let fills: Vec<PerpetualFill> = serde_json::from_str(include_str!("../../testdata/user_fills_multiple.json")).unwrap();
+        let fills: Vec<UserFill> = serde_json::from_str(include_str!("../../testdata/user_fills_multiple.json")).unwrap();
         let update = map_transaction_state_order(fills, 999999999u64, "999999999".to_string());
 
         assert_eq!(update.state, TransactionState::Pending);
@@ -112,7 +112,7 @@ mod tests {
 
     #[test]
     fn test_map_transaction_state_order_non_perpetual_fill_stays_pending() {
-        let fills = vec![PerpetualFill {
+        let fills = vec![UserFill {
             coin: "HYPE".to_string(),
             hash: String::new(),
             oid: 123,
@@ -120,6 +120,7 @@ mod tests {
             closed_pnl: 0.0,
             fee: 0.0,
             builder_fee: None,
+            fee_token: None,
             px: 42.0,
             dir: FillDirection::Other(String::new()),
             time: 0,
@@ -134,7 +135,7 @@ mod tests {
 
     #[test]
     fn test_map_transaction_state_order_spot_fill_confirms() {
-        let fills: Vec<PerpetualFill> = serde_json::from_str(include_str!("../../testdata/user_fills_spot_swap.json")).unwrap();
+        let fills: Vec<UserFill> = serde_json::from_str(include_str!("../../testdata/user_fills_spot_swap.json")).unwrap();
 
         let request_id = "355101232455".to_string();
         let update = map_transaction_state_order(fills, 355101232455, request_id.clone());
@@ -152,7 +153,7 @@ mod tests {
 
     #[test]
     fn test_prepare_perpetual_fill_maps_transaction_type() {
-        let fills: Vec<PerpetualFill> = serde_json::from_str(include_str!("../../testdata/user_fills_multiple.json")).unwrap();
+        let fills: Vec<UserFill> = serde_json::from_str(include_str!("../../testdata/user_fills_multiple.json")).unwrap();
         let oid = 187530505765u64;
         let matching: Vec<_> = fills.iter().filter(|fill| fill.oid == oid).collect();
         let last_fill = matching.last().copied().unwrap();
@@ -165,7 +166,7 @@ mod tests {
 
     #[test]
     fn test_prepare_perpetual_fill_returns_none_for_unknown_direction() {
-        let fill = PerpetualFill {
+        let fill = UserFill {
             coin: "HYPE".to_string(),
             hash: String::new(),
             oid: 123,
@@ -173,6 +174,7 @@ mod tests {
             closed_pnl: 0.0,
             fee: 0.0,
             builder_fee: None,
+            fee_token: None,
             px: 42.0,
             dir: FillDirection::Other("Unsupported".to_string()),
             time: 0,
@@ -184,7 +186,7 @@ mod tests {
 
     #[test]
     fn test_prepare_perpetual_fill_returns_none_for_spot_fill() {
-        let fills: Vec<PerpetualFill> = serde_json::from_str(include_str!("../../testdata/user_fills_spot_swap.json")).unwrap();
+        let fills: Vec<UserFill> = serde_json::from_str(include_str!("../../testdata/user_fills_spot_swap.json")).unwrap();
         let matching: Vec<_> = fills.iter().collect();
         let last_fill = matching.last().copied().unwrap();
 
@@ -193,7 +195,7 @@ mod tests {
 
     #[test]
     fn test_prepare_perpetual_fill_marks_liquidation() {
-        let fills: Vec<PerpetualFill> = serde_json::from_str(include_str!("../../testdata/user_fills_liquidation.json")).unwrap();
+        let fills: Vec<UserFill> = serde_json::from_str(include_str!("../../testdata/user_fills_liquidation.json")).unwrap();
         let matching: Vec<_> = fills.iter().collect();
         let last_fill = matching.last().copied().unwrap();
 

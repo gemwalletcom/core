@@ -17,6 +17,13 @@ impl SwapData {
             data: SwapQuoteData::mock(),
         }
     }
+
+    pub fn mock_with_values(provider: SwapProvider, from_value: &str, to_value: &str) -> Self {
+        SwapData {
+            quote: SwapQuote::mock_with_values(provider, from_value, to_value),
+            data: SwapQuoteData::mock(),
+        }
+    }
 }
 
 impl SwapQuote {
@@ -34,9 +41,13 @@ impl SwapQuote {
     }
 
     pub fn mock_with_provider(provider: SwapProvider) -> Self {
+        Self::mock_with_values(provider, "1000000000", "1000000")
+    }
+
+    pub fn mock_with_values(provider: SwapProvider, from_value: &str, to_value: &str) -> Self {
         SwapQuote {
-            from_value: "1000000000".to_string(),
-            to_value: "1000000".to_string(),
+            from_value: from_value.to_string(),
+            to_value: to_value.to_string(),
             provider_data: SwapProviderData::mock_with_provider(provider),
             from_address: "0x742d35Cc6C6C6e5b57a9C9E9E4b8b8b8b8b8b8b8".to_string(),
             to_address: "0x742d35Cc6C6C6e5b57a9C9E9E4b8b8b8b8b8b8b8".to_string(),

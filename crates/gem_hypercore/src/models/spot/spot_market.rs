@@ -9,32 +9,7 @@ pub struct SpotMarket {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SpotMetaRaw {
+pub struct SpotMeta {
     pub tokens: Vec<SpotToken>,
     pub universe: Vec<SpotMarket>,
-}
-
-#[derive(Debug, Clone)]
-pub struct SpotMeta {
-    tokens: Vec<SpotToken>,
-    universe: Vec<SpotMarket>,
-}
-
-impl From<SpotMetaRaw> for SpotMeta {
-    fn from(value: SpotMetaRaw) -> Self {
-        Self {
-            tokens: value.tokens,
-            universe: value.universe,
-        }
-    }
-}
-
-impl SpotMeta {
-    pub fn tokens(&self) -> &[SpotToken] {
-        &self.tokens
-    }
-
-    pub fn universe(&self) -> &[SpotMarket] {
-        &self.universe
-    }
 }

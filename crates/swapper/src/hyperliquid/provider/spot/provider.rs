@@ -85,7 +85,7 @@ impl HyperCoreSpot {
         });
 
         let (symbol, contract, index) = components.ok_or(SwapperError::NotSupportedAsset)?;
-        let token = meta.tokens().iter().find(|token| token.name == symbol).ok_or(SwapperError::NotSupportedAsset)?;
+        let token = meta.tokens.iter().find(|token| token.name == symbol).ok_or(SwapperError::NotSupportedAsset)?;
 
         if let Some(contract) = contract
             && token.token_id != contract
@@ -107,7 +107,7 @@ impl HyperCoreSpot {
         from_token: &'a SpotToken,
         to_token: &'a SpotToken,
     ) -> Result<(&'a SpotMarket, &'a SpotToken, &'a SpotToken, SpotSide), SwapperError> {
-        for market in meta.universe().iter().filter(|m| m.tokens.len() == 2) {
+        for market in meta.universe.iter().filter(|m| m.tokens.len() == 2) {
             if market.tokens[0] == from_token.index && market.tokens[1] == to_token.index {
                 return Ok((market, from_token, to_token, SpotSide::Sell));
             }

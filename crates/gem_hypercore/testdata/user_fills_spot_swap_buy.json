@@ -1,0 +1,19 @@
+[
+  {
+    "coin": "@107",
+    "px": "39.93",
+    "sz": "0.3",
+    "side": "B",
+    "time": 1773980617879,
+    "startPosition": "0.19426753",
+    "dir": "Buy",
+    "closedPnl": "0.0",
+    "hash": "0xbf8b52bd13095a59c105043764964e02028200a2ae0c792b6353fe0fd20d3444",
+    "oid": 355138434755,
+    "crossed": true,
+    "fee": "0.00020159",
+    "tid": 514401432714589,
+    "feeToken": "HYPE",
+    "twapId": null
+  }
+]
