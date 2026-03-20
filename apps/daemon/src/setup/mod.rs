@@ -1,8 +1,8 @@
 use gem_tracing::info_with_fields;
 use prices_dex::PriceFeedProvider;
 use primitives::{
-    Asset, AssetId, AssetTag, Chain, ConfigKey, FiatProviderName, NFTChain, NotificationType, ParamConfigKey, PlatformStore as PrimitivePlatformStore, PriceAlert,
-    PriceAlertDirection,
+    Asset, AssetId, AssetTag, Chain, ConfigKey, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus, NFTChain, NotificationType, ParamConfigKey,
+    PlatformStore as PrimitivePlatformStore, PriceAlert, PriceAlertDirection,
 };
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
@@ -10,8 +10,9 @@ use storage::Database;
 use storage::models::{ChartRow, ConfigRow, FiatAssetRow, FiatProviderCountryRow, FiatRateRow, PriceAssetRow, PriceRow, UpdateDeviceRow};
 use storage::sql_types::{Platform, PlatformStore};
 use storage::{
-    AssetsRepository, ChainsRepository, ChartsRepository, ConfigRepository, DevicesRepository, MigrationsRepository, NewNotificationRow, NewWalletRow, NotificationsRepository,
-    PriceAlertsRepository, PricesDexRepository, PricesRepository, ReleasesRepository, RewardsRepository, TagRepository, WalletSource, WalletType, WalletsRepository,
+    AssetsRepository, ChainsRepository, ChartsRepository, ConfigRepository, DevicesRepository, FiatRepository, MigrationsRepository, NewNotificationRow, NewWalletRow,
+    NotificationsRepository, PriceAlertsRepository, PricesDexRepository, PricesRepository, ReleasesRepository, RewardsRepository, TagRepository, WalletSource, WalletType,
+    WalletsRepository,
 };
 use streamer::{ExchangeKind, ExchangeName, QueueName, StreamProducer, StreamProducerConfig};
 
@@ -259,6 +260,8 @@ fn setup_dev_devices(database: &Database) -> Result<(), Box<dyn std::error::Erro
     let result = WalletsRepository::add_subscriptions(&mut database.wallets()?, android_device_row_id, subscriptions)?;
     info_with_fields!("setup_dev", step = "android wallet subscription added", count = result);
 
+    setup_dev_fiat_transactions(database, wallet_address, solana_address)?;
+
     info_with_fields!("setup_dev", step = "add rewards");
     let devices = database.wallets()?.get_devices_by_wallet_id(wallet.id)?;
     if let Some(device) = devices.first() {
@@ -313,6 +316,59 @@ fn setup_dev_devices(database: &Database) -> Result<(), Box<dyn std::error::Erro
     let result = database.price_alerts()?.add_price_alerts(&ios_device_id, price_alerts)?;
     info_with_fields!("setup_dev", step = "price alerts added", count = result);
 
+    Ok(())
+}
+
+fn setup_dev_fiat_transactions(database: &Database, evm_address: &str, solana_address: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    info_with_fields!("setup_dev", step = "add fiat transactions");
+
+    let mock = || FiatTransaction {
+        asset_id: Some(AssetId::from_chain(Chain::Ethereum)),
+        transaction_type: FiatQuoteType::Buy,
+        provider_id: FiatProviderName::MoonPay,
+        provider_transaction_id: "setup-dev-mock".to_string(),
+        status: FiatTransactionStatus::Pending,
+        country: Some("US".to_string()),
+        symbol: "ETH".to_string(),
+        fiat_amount: 150.0,
+        fiat_currency: "USD".to_string(),
+        transaction_hash: None,
+        address: Some(evm_address.to_string()),
+    };
+
+    let transactions = vec![
+        FiatTransaction {
+            provider_transaction_id: "setup-dev-moonpay-pending".to_string(),
+            ..mock()
+        },
+        FiatTransaction {
+            provider_id: FiatProviderName::Mercuryo,
+            provider_transaction_id: "setup-dev-mercuryo-complete".to_string(),
+            status: FiatTransactionStatus::Complete,
+            fiat_amount: 320.5,
+            transaction_hash: Some("0xsetupdevcomplete".to_string()),
+            ..mock()
+        },
+        FiatTransaction {
+            asset_id: Some(AssetId::from_chain(Chain::Solana)),
+            transaction_type: FiatQuoteType::Sell,
+            provider_id: FiatProviderName::Transak,
+            provider_transaction_id: "setup-dev-transak-failed".to_string(),
+            status: FiatTransactionStatus::Failed,
+            symbol: "SOL".to_string(),
+            fiat_amount: 95.25,
+            address: Some(solana_address.to_string()),
+            ..mock()
+        },
+    ];
+
+    let mut fiat = database.fiat()?;
+    let mut count = 0;
+    for transaction in transactions {
+        count += FiatRepository::add_fiat_transaction(&mut fiat, transaction)?;
+    }
+
+    info_with_fields!("setup_dev", step = "fiat transactions added", count = count);
     Ok(())
 }
 

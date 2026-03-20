@@ -106,6 +106,7 @@ fn mount_routes(rocket: Rocket<Build>, metrics_path: &str) -> Rocket<Build> {
             "/v2",
             routes![
                 devices::get_device_fiat_order_v2,
+                devices::get_device_fiat_transactions_v2,
                 devices::get_device_fiat_assets_v2,
                 devices::get_fiat_quotes_v2,
                 devices::get_fiat_quote_url_v2,
@@ -195,7 +196,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         fiat_ip_check_client.clone(),
         stream_producer.clone(),
     );
-    let fiat_quotes_client = FiatQuotesClient::new(fiat_client);
+    let fiat_quotes_client = FiatQuotesClient::new(database.clone(), fiat_client);
     let nft_config = NFTProviderConfig::new(settings.nft.opensea.key.secret.clone(), settings.nft.magiceden.key.secret.clone());
     let nft_client = NFTClient::new(database.clone(), nft_config);
     let auth_client = Arc::new(AuthClient::new(cacher_client.clone()));

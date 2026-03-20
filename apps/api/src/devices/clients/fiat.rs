@@ -1,15 +1,18 @@
+use std::collections::BTreeSet;
 use std::error::Error;
 
 use fiat::FiatClient;
 use primitives::{FiatQuote, FiatQuoteRequest, FiatQuoteUrl, FiatQuotes};
+use storage::{Database, FiatRepository, WalletsRepository};
 
 pub struct FiatQuotesClient {
+    database: Database,
     fiat_client: FiatClient,
 }
 
 impl FiatQuotesClient {
-    pub fn new(fiat_client: FiatClient) -> Self {
-        Self { fiat_client }
+    pub fn new(database: Database, fiat_client: FiatClient) -> Self {
+        Self { database, fiat_client }
     }
 
     pub async fn get_quotes(&self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
@@ -41,5 +44,13 @@ impl FiatQuotesClient {
 
     pub async fn get_order_status(&self, provider: &str, order_id: &str) -> Result<primitives::FiatTransaction, Box<dyn Error + Send + Sync>> {
         self.fiat_client.get_order_status(provider, order_id).await
+    }
+
+    pub fn get_transactions_by_wallet_id(&self, device_row_id: i32, wallet_id: i32) -> Result<Vec<primitives::FiatTransaction>, Box<dyn Error + Send + Sync>> {
+        let subscriptions = self.database.wallets()?.get_subscriptions_by_wallet_id(device_row_id, wallet_id)?;
+        let addresses = subscriptions.into_iter().map(|(_, address)| address.address).collect::<BTreeSet<_>>().into_iter().collect();
+
+        let mut database = self.database.fiat()?;
+        Ok(FiatRepository::get_fiat_transactions_by_addresses(&mut database, addresses)?)
     }
 }

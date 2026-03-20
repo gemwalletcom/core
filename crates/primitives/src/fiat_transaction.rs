@@ -4,6 +4,7 @@ use strum::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct FiatTransaction {
     pub asset_id: Option<AssetId>,
@@ -11,7 +12,9 @@ pub struct FiatTransaction {
     pub provider_id: FiatProviderName,
     pub provider_transaction_id: String,
     pub status: FiatTransactionStatus,
+    #[typeshare(skip)]
     pub country: Option<String>,
+    #[typeshare(skip)]
     pub symbol: String,
     pub fiat_amount: f64,
     pub fiat_currency: String,
