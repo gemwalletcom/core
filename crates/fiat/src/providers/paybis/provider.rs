@@ -9,7 +9,7 @@ use std::error::Error;
 use super::models::country::country_status;
 use super::{
     client::PaybisClient,
-    mapper::{map_assets, map_process_webhook},
+    mapper::{map_assets, map_process_webhook, supported_payment_methods},
 };
 use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatTransaction, PaymentType};
 use streamer::FiatWebhook;
@@ -21,7 +21,7 @@ impl FiatProvider for PaybisClient {
     }
 
     async fn payment_methods(&self) -> Vec<PaymentType> {
-        vec![PaymentType::Card]
+        supported_payment_methods()
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {

@@ -17,6 +17,10 @@ use super::{
     models::{Currency as PaybisCurrency, PaybisData, PaybisWebhookData},
 };
 
+pub fn supported_payment_methods() -> Vec<PaymentType> {
+    vec![PaymentType::Card, PaymentType::ApplePay, PaymentType::GooglePay]
+}
+
 pub fn map_asset_id(currency: PaybisCurrency) -> Option<AssetId> {
     if !currency.is_crypto() {
         return None;
@@ -166,12 +170,15 @@ pub fn map_webhook_data(webhook_data: PaybisWebhookData) -> FiatWebhook {
 }
 
 fn default_limits() -> Vec<FiatAssetLimits> {
-    vec![FiatAssetLimits {
-        currency: Currency::USD,
-        payment_type: PaymentType::Card,
-        min_amount: None,
-        max_amount: None,
-    }]
+    supported_payment_methods()
+        .into_iter()
+        .map(|payment_type| FiatAssetLimits {
+            currency: Currency::USD,
+            payment_type,
+            min_amount: None,
+            max_amount: None,
+        })
+        .collect()
 }
 
 use std::collections::HashSet;
@@ -355,11 +362,13 @@ mod tests {
     fn test_default_limits() {
         let limits = default_limits();
 
-        assert_eq!(limits.len(), 1);
-        assert_eq!(limits[0].currency, Currency::USD);
-        assert_eq!(limits[0].payment_type, PaymentType::Card);
-        assert_eq!(limits[0].min_amount, None);
-        assert_eq!(limits[0].max_amount, None);
+        assert_eq!(limits.len(), 3);
+        assert!(limits.iter().all(|limit| limit.currency == Currency::USD));
+        assert!(limits.iter().all(|limit| limit.min_amount.is_none()));
+        assert!(limits.iter().all(|limit| limit.max_amount.is_none()));
+        assert!(limits.iter().any(|limit| limit.payment_type == PaymentType::Card));
+        assert!(limits.iter().any(|limit| limit.payment_type == PaymentType::ApplePay));
+        assert!(limits.iter().any(|limit| limit.payment_type == PaymentType::GooglePay));
     }
 
     #[test]
@@ -385,13 +394,21 @@ mod tests {
         let eth = assets.iter().find(|a| a.symbol == "ETH").unwrap();
         assert!(eth.is_buy_enabled);
         assert!(eth.is_sell_enabled);
+        assert_eq!(eth.buy_limits.len(), 3);
+        assert!(eth.buy_limits.iter().any(|limit| limit.payment_type == PaymentType::ApplePay));
+        assert!(eth.buy_limits.iter().any(|limit| limit.payment_type == PaymentType::GooglePay));
+        assert_eq!(eth.sell_limits.len(), 3);
 
         let btc = assets.iter().find(|a| a.symbol == "BTC").unwrap();
         assert!(btc.is_buy_enabled);
         assert!(!btc.is_sell_enabled);
+        assert_eq!(btc.buy_limits.len(), 3);
+        assert!(btc.sell_limits.is_empty());
 
         let sol = assets.iter().find(|a| a.symbol == "SOL").unwrap();
         assert!(sol.is_buy_enabled);
         assert!(sol.is_sell_enabled);
+        assert_eq!(sol.buy_limits.len(), 3);
+        assert_eq!(sol.sell_limits.len(), 3);
     }
 }
