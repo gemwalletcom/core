@@ -10,7 +10,7 @@ pub trait FiatRepository {
     fn add_fiat_providers(&mut self, values: Vec<crate::models::FiatProviderRow>) -> Result<usize, DatabaseError>;
     fn add_fiat_providers_countries(&mut self, values: Vec<crate::models::FiatProviderCountryRow>) -> Result<usize, DatabaseError>;
     fn get_fiat_providers_countries(&mut self) -> Result<Vec<FiatProviderCountry>, DatabaseError>;
-    fn add_fiat_transaction(&mut self, transaction: FiatTransaction) -> Result<usize, DatabaseError>;
+    fn add_fiat_transaction(&mut self, transactions: Vec<FiatTransaction>) -> Result<usize, DatabaseError>;
     fn get_fiat_transactions_by_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<FiatTransaction>, DatabaseError>;
     fn get_fiat_assets_by_filter(&mut self, filters: Vec<FiatAssetFilter>) -> Result<Vec<crate::models::FiatAssetRow>, DatabaseError>;
     fn get_fiat_assets_popular(&mut self, from: NaiveDateTime, limit: i64) -> Result<Vec<String>, DatabaseError>;
@@ -43,8 +43,9 @@ impl FiatRepository for DatabaseClient {
         Ok(result.into_iter().map(|x| x.as_primitive()).collect())
     }
 
-    fn add_fiat_transaction(&mut self, transaction: FiatTransaction) -> Result<usize, DatabaseError> {
-        Ok(FiatStore::add_fiat_transaction(self, crate::models::FiatTransactionRow::from_primitive(transaction))?)
+    fn add_fiat_transaction(&mut self, transactions: Vec<FiatTransaction>) -> Result<usize, DatabaseError> {
+        let rows = transactions.into_iter().map(crate::models::FiatTransactionRow::from_primitive).collect::<Vec<_>>();
+        Ok(FiatStore::add_fiat_transaction(self, rows)?)
     }
 
     fn get_fiat_transactions_by_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<FiatTransaction>, DatabaseError> {

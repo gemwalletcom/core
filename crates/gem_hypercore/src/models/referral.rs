@@ -41,7 +41,7 @@ mod tests {
     use super::Referral;
 
     #[test]
-    fn test_deserialize_referral_without_referral_states() {
+    fn referral_need_to_trade_payload() {
         let referral: Referral = serde_json::from_str(include_str!("../../testdata/referral_need_to_trade.json")).unwrap();
 
         assert_eq!(referral.cum_vlm, 0.0);

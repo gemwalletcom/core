@@ -363,10 +363,7 @@ fn setup_dev_fiat_transactions(database: &Database, evm_address: &str, solana_ad
     ];
 
     let mut fiat = database.fiat()?;
-    let mut count = 0;
-    for transaction in transactions {
-        count += FiatRepository::add_fiat_transaction(&mut fiat, transaction)?;
-    }
+    let count = FiatRepository::add_fiat_transaction(&mut fiat, transactions)?;
 
     info_with_fields!("setup_dev", step = "fiat transactions added", count = count);
     Ok(())

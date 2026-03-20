@@ -23,7 +23,7 @@ pub(crate) trait FiatStore {
     fn add_fiat_providers(&mut self, values: Vec<FiatProviderRow>) -> Result<usize, diesel::result::Error>;
     fn add_fiat_providers_countries(&mut self, values: Vec<FiatProviderCountryRow>) -> Result<usize, diesel::result::Error>;
     fn get_fiat_providers_countries(&mut self) -> Result<Vec<FiatProviderCountryRow>, diesel::result::Error>;
-    fn add_fiat_transaction(&mut self, transaction: FiatTransactionRow) -> Result<usize, diesel::result::Error>;
+    fn add_fiat_transaction(&mut self, transactions: Vec<FiatTransactionRow>) -> Result<usize, diesel::result::Error>;
     fn get_fiat_transactions_by_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<FiatTransactionRow>, diesel::result::Error>;
     fn get_fiat_assets_by_filter(&mut self, filters: Vec<FiatAssetFilter>) -> Result<Vec<FiatAssetRow>, diesel::result::Error>;
     fn get_fiat_assets_popular(&mut self, from: NaiveDateTime, limit: i64) -> Result<Vec<String>, diesel::result::Error>;
@@ -81,17 +81,26 @@ impl FiatStore for DatabaseClient {
         fiat_providers_countries.select(FiatProviderCountryRow::as_select()).load(&mut self.connection)
     }
 
-    fn add_fiat_transaction(&mut self, transaction: FiatTransactionRow) -> Result<usize, diesel::result::Error> {
+    fn add_fiat_transaction(&mut self, transactions: Vec<FiatTransactionRow>) -> Result<usize, diesel::result::Error> {
         use crate::schema::fiat_transactions::dsl::*;
 
-        let update = FiatTransactionUpdateRow::from_row(&transaction);
+        if transactions.is_empty() {
+            return Ok(0);
+        }
 
-        diesel::insert_into(fiat_transactions)
-            .values(&transaction)
-            .on_conflict((provider_id, provider_transaction_id))
-            .do_update()
-            .set(update)
-            .execute(&mut self.connection)
+        let mut count = 0;
+        for transaction in transactions {
+            let update = FiatTransactionUpdateRow::from_row(&transaction);
+
+            count += diesel::insert_into(fiat_transactions)
+                .values(&transaction)
+                .on_conflict((provider_id, provider_transaction_id))
+                .do_update()
+                .set(update)
+                .execute(&mut self.connection)?;
+        }
+
+        Ok(count)
     }
 
     fn get_fiat_transactions_by_addresses(&mut self, addresses_list: Vec<String>) -> Result<Vec<FiatTransactionRow>, diesel::result::Error> {
@@ -243,8 +252,8 @@ impl DatabaseClient {
         FiatStore::get_fiat_providers_countries(self)
     }
 
-    pub fn add_fiat_transaction(&mut self, transaction: FiatTransactionRow) -> Result<usize, diesel::result::Error> {
-        FiatStore::add_fiat_transaction(self, transaction)
+    pub fn add_fiat_transaction(&mut self, transactions: Vec<FiatTransactionRow>) -> Result<usize, diesel::result::Error> {
+        FiatStore::add_fiat_transaction(self, transactions)
     }
 
     pub fn get_fiat_transactions_by_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<FiatTransactionRow>, diesel::result::Error> {

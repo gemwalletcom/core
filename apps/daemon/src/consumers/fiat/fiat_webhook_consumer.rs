@@ -60,7 +60,7 @@ impl MessageConsumer<FiatWebhookPayload, bool> for FiatWebhookConsumer {
                     status = format!("{:?}", transaction.status)
                 );
 
-                match self.database.fiat()?.add_fiat_transaction(FiatTransactionRow::from_primitive(transaction)) {
+                match self.database.fiat()?.add_fiat_transaction(vec![FiatTransactionRow::from_primitive(transaction)]) {
                     Ok(_) => return Ok(true),
                     Err(e) => {
                         error_with_fields!("add_fiat_transaction", &e, provider = provider.name().id());
