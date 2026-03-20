@@ -1,6 +1,4 @@
-use crate::model::FiatMapping;
-use number_formatter::BigNumberFormatter;
-use primitives::{FiatBuyQuote, FiatProviderName, FiatQuoteOld, FiatQuoteType, FiatQuoteUrl};
+use primitives::{FiatProviderName, FiatQuoteUrl};
 use reqwest::{
     Client,
     header::{HeaderMap, HeaderValue},
@@ -70,36 +68,6 @@ impl BanxaClient {
     pub async fn get_fiat_currencies(&self, order_type: &str) -> Result<Vec<FiatCurrency>, reqwest::Error> {
         let url = format!("{}/{}/v2/fiats/{}", API_URL, self.merchant_key, order_type);
         self.client.get(&url).headers(self.get_headers()).send().await?.json().await
-    }
-
-    pub fn get_fiat_buy_quote(&self, request: FiatBuyQuote, fiat_mapping: FiatMapping, quote: Quote) -> FiatQuoteOld {
-        let redirect_url = self.get_redirect_buy_url(request.clone(), fiat_mapping);
-        let crypto_value = BigNumberFormatter::f64_as_value(quote.crypto_amount, request.asset.decimals as u32).unwrap_or_default();
-
-        FiatQuoteOld {
-            provider: Self::NAME.as_fiat_provider(),
-            quote_type: FiatQuoteType::Buy,
-            fiat_amount: request.fiat_amount,
-            fiat_currency: request.fiat_currency.as_ref().to_string(),
-            crypto_amount: quote.crypto_amount,
-            crypto_value,
-            redirect_url,
-        }
-    }
-
-    // URL Parametization https://docs.banxa.com/docs/referral-link
-
-    pub fn get_redirect_buy_url(&self, request: FiatBuyQuote, fiat_mapping: FiatMapping) -> String {
-        let mut components = Url::parse(&self.url).unwrap();
-        components
-            .query_pairs_mut()
-            .append_pair("orderType", "buy")
-            .append_pair("coinType", &fiat_mapping.asset_symbol.symbol)
-            .append_pair("blockchain", &fiat_mapping.asset_symbol.network.unwrap_or_default())
-            .append_pair("fiatType", request.fiat_currency.as_ref())
-            .append_pair("fiatAmount", &request.fiat_amount.to_string())
-            .append_pair("walletAddress", &request.wallet_address);
-        components.as_str().to_string()
     }
 
     pub fn build_quote_url(&self, amount: f64, fiat_currency: &str, symbol: &str, network: &str, wallet_address: &str) -> FiatQuoteUrl {

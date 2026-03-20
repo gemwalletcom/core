@@ -4,8 +4,8 @@ use crate::{
     providers::banxa::mapper::map_asset_with_limits,
 };
 use async_trait::async_trait;
-use primitives::{FiatBuyQuote, FiatQuoteOld, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType};
 use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteUrl, FiatQuoteUrlData, FiatTransaction};
+use primitives::{FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType};
 use std::error::Error;
 use streamer::FiatWebhook;
 use uuid::Uuid;
@@ -16,14 +16,6 @@ use super::{client::BanxaClient, mapper::map_order, models::Webhook};
 impl FiatProvider for BanxaClient {
     fn name(&self) -> FiatProviderName {
         Self::NAME
-    }
-
-    async fn get_buy_quote_old(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>> {
-        let symbol = &request_map.asset_symbol.symbol;
-        let network = request_map.asset_symbol.network.as_deref().unwrap_or_default();
-        let quote = self.get_quote_buy(symbol, network, request.fiat_currency.as_ref(), request.fiat_amount).await?;
-
-        Ok(self.get_fiat_buy_quote(request, request_map, quote))
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
@@ -86,23 +78,22 @@ impl FiatProvider for BanxaClient {
 mod fiat_integration_tests {
     use crate::testkit::*;
     use crate::{FiatProvider, model::FiatMapping};
-    use primitives::{FiatBuyQuote, FiatProviderName};
+    use primitives::FiatQuoteRequest;
 
     #[tokio::test]
     async fn test_banxa_get_buy_quote() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_banxa_test_client();
 
-        let request = FiatBuyQuote::mock();
+        let request = FiatQuoteRequest::mock();
         let mut mapping = FiatMapping::mock();
         mapping.asset_symbol.network = Some("BTC".to_string());
 
-        let quote = FiatProvider::get_buy_quote_old(&client, request, mapping).await?;
+        let quote = FiatProvider::get_quote_buy(&client, request.clone(), mapping).await?;
 
         println!("Banxa buy quote: {:?}", quote);
-        assert_eq!(quote.provider.id, FiatProviderName::Banxa);
-        assert_eq!(quote.fiat_currency, "USD");
+        assert!(!quote.quote_id.is_empty());
         assert!(quote.crypto_amount > 0.0);
-        assert_eq!(quote.fiat_amount, 100.0);
+        assert_eq!(quote.fiat_amount, request.amount);
 
         Ok(())
     }

@@ -80,7 +80,10 @@ impl FiatProvider for PaybisClient {
     }
 
     async fn get_quote_url(&self, data: FiatQuoteUrlData) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {
-        let is_buy = matches!(data.quote.quote_type, primitives::FiatQuoteType::Buy);
+        let is_buy = match data.quote.quote_type {
+            primitives::FiatQuoteType::Buy => true,
+            primitives::FiatQuoteType::Sell => false,
+        };
         let redirect_url = self
             .get_redirect_url(
                 &data.wallet_address,
@@ -101,30 +104,28 @@ impl FiatProvider for PaybisClient {
 mod fiat_integration_tests {
     use crate::testkit::*;
     use crate::{FiatProvider, model::FiatMapping};
-    use primitives::FiatProviderName;
     use primitives::asset_constants::{
         BASE_USDC_TOKEN_ID, ETHEREUM_USDC_TOKEN_ID, ETHEREUM_USDT_TOKEN_ID, POLYGON_USDC_TOKEN_ID, POLYGON_USDT_TOKEN_ID, SOLANA_USDC_TOKEN_ID, SOLANA_USDT_TOKEN_ID,
         TRON_USDT_TOKEN_ID,
     };
     use primitives::currency::Currency;
-    use primitives::{Chain, FiatBuyQuote, FiatQuoteRequest};
+    use primitives::{Chain, FiatQuoteRequest};
     use streamer::FiatWebhook;
 
     #[tokio::test]
     async fn test_paybis_get_buy_quote() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_paybis_test_client();
 
-        let request = FiatBuyQuote::mock();
+        let request = FiatQuoteRequest::mock();
         let mut mapping = FiatMapping::mock();
         mapping.asset_symbol.network = Some("bitcoin".to_string());
 
-        let quote = FiatProvider::get_buy_quote_old(&client, request, mapping).await?;
+        let quote = FiatProvider::get_quote_buy(&client, request.clone(), mapping).await?;
 
         println!("Paybis buy quote: {:?}", quote);
-        assert_eq!(quote.provider.id, FiatProviderName::Paybis);
-        assert_eq!(quote.fiat_currency, "USD");
+        assert!(!quote.quote_id.is_empty());
         assert!(quote.crypto_amount > 0.0);
-        assert_eq!(quote.fiat_amount, 100.0);
+        assert_eq!(quote.fiat_amount, request.amount);
 
         Ok(())
     }
@@ -217,7 +218,10 @@ mod fiat_integration_tests {
         let verification_webhook: serde_json::Value = serde_json::from_str(include_str!("../../../testdata/paybis/webhook_transaction_no_changes.json"))?;
 
         let result = client.process_webhook(verification_webhook).await?;
-        assert!(matches!(result, FiatWebhook::None), "Verification webhooks should map to FiatWebhook::None");
+        match result {
+            FiatWebhook::None => {}
+            _ => panic!("Verification webhooks should map to FiatWebhook::None"),
+        }
 
         Ok(())
     }

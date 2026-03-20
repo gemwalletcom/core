@@ -6,8 +6,7 @@ use crate::{
 use async_trait::async_trait;
 use futures::future;
 use primitives::currency::Currency;
-use primitives::{FiatBuyQuote, FiatQuoteRequest, FiatQuoteResponse, FiatSellQuote};
-use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteOld, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatTransaction};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatTransaction};
 use std::error::Error;
 use streamer::FiatWebhook;
 
@@ -17,32 +16,6 @@ use super::{client::MercuryoClient, mapper::map_order_from_response, models::Web
 impl FiatProvider for MercuryoClient {
     fn name(&self) -> FiatProviderName {
         Self::NAME
-    }
-
-    async fn get_buy_quote_old(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>> {
-        let quote = self
-            .get_quote_buy(
-                request.fiat_currency.as_ref().to_string(),
-                request_map.asset_symbol.symbol.clone(),
-                request.fiat_amount,
-                request_map.asset_symbol.network.clone().unwrap_or_default(),
-            )
-            .await?;
-
-        Ok(self.get_fiat_buy_quote(request, request_map.clone(), quote))
-    }
-
-    async fn get_sell_quote_old(&self, _request: FiatSellQuote, _request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn Error + Send + Sync>> {
-        Err("Not implemented".into())
-        // let quote = self
-        //     .get_quote_sell(
-        //         request.fiat_currency.as_ref().to_string(),
-        //         request_map.asset_symbol.symbol.clone(),
-        //         request.crypto_amount,
-        //         request_map.asset_symbol.network.clone().unwrap_or_default(),
-        //     )
-        //     .await?;
-        // Ok(self.get_fiat_sell_quote(request, request_map, quote))
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
@@ -142,22 +115,21 @@ impl FiatProvider for MercuryoClient {
 mod fiat_integration_tests {
     use crate::testkit::*;
     use crate::{FiatProvider, model::FiatMapping};
-    use primitives::{FiatBuyQuote, FiatProviderName};
+    use primitives::FiatQuoteRequest;
 
     #[tokio::test]
     async fn test_mercuryo_get_buy_quote() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_mercuryo_test_client();
 
-        let request = FiatBuyQuote::mock();
+        let request = FiatQuoteRequest::mock();
         let mapping = FiatMapping::mock();
 
-        let quote = FiatProvider::get_buy_quote_old(&client, request, mapping).await?;
+        let quote = FiatProvider::get_quote_buy(&client, request.clone(), mapping).await?;
 
         println!("Mercuryo buy quote: {:?}", quote);
-        assert_eq!(quote.provider.id, FiatProviderName::Mercuryo);
-        assert_eq!(quote.fiat_currency, "USD");
+        assert!(!quote.quote_id.is_empty());
         assert!(quote.crypto_amount > 0.0);
-        assert_eq!(quote.fiat_amount, 100.0);
+        assert_eq!(quote.fiat_amount, request.amount);
 
         Ok(())
     }

@@ -1,31 +1,27 @@
 use cacher::{CacheKey, CacherClient};
-use number_formatter::BigNumberFormatter;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::error::Error;
 use std::time::Duration;
 
 use crate::ip_check_client::{IPAddressInfo, IPCheckClient};
 use crate::{
     CachedFiatQuoteData, FiatCacherClient, FiatProvider,
-    error::FiatQuoteError,
     model::{FiatMapping, FiatMappingMap},
 };
 use futures::future::join_all;
 use primitives::{
-    Asset, ConfigKey, FiatAssetSymbol, FiatAssets, FiatProvider as PrimitiveFiatProvider, FiatProviderCountry, FiatQuote, FiatQuoteError as PrimitiveFiatQuoteError, FiatQuoteOld,
-    FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatQuotes, FiatQuotesOld,
+    Asset, FiatAssetSymbol, FiatAssets, FiatProvider as PrimitiveFiatProvider, FiatProviderCountry, FiatQuote, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData,
+    FiatQuotes,
 };
 use reqwest::Client as RequestClient;
 use storage::{
-    AssetFilter, AssetsRepository, ConfigCacher, Database, WalletsRepository,
-    database::devices::DevicesStore,
+    AssetFilter, AssetsRepository, Database, WalletsRepository,
     models::{FiatQuoteRequestRow, FiatQuoteRow, NewFiatWebhookRow},
 };
 use streamer::{FiatWebhook, FiatWebhookPayload, StreamProducer};
 
 pub struct FiatClient {
     database: Database,
-    config: ConfigCacher,
     cacher: CacherClient,
     fiat_cacher: FiatCacherClient,
     providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
@@ -41,10 +37,8 @@ impl FiatClient {
         ip_check_client: IPCheckClient,
         stream_producer: StreamProducer,
     ) -> Self {
-        let config = ConfigCacher::new(database.clone());
         Self {
             database,
-            config,
             cacher: cacher.clone(),
             fiat_cacher: FiatCacherClient::new(cacher),
             providers,
@@ -166,70 +160,6 @@ impl FiatClient {
             .filter(|x| provider_id.as_deref().is_none_or(|id| x.name().id() == id))
             .map(|x| x.as_ref())
             .collect()
-    }
-
-    pub fn get_providers_for_request(&self, request: &FiatQuoteOldRequest) -> Vec<&(dyn FiatProvider + Send + Sync)> {
-        self.get_providers(request.provider_id.clone())
-    }
-
-    pub async fn get_asset(&self, asset_id: &str) -> Result<Asset, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.assets()?.get_asset(asset_id)?)
-    }
-
-    pub async fn get_quotes_old(&self, request: FiatQuoteOldRequest) -> Result<FiatQuotesOld, Box<dyn Error + Send + Sync>> {
-        let asset = self.database.assets()?.get_asset(&request.asset_id)?;
-        let validate_subscription = self.config.get_bool(ConfigKey::FiatValidateSubscription)?;
-
-        if validate_subscription {
-            let is_subscribed = self.is_address_subscribed(&asset, &request.wallet_address)?;
-            if !is_subscribed {
-                let error = FiatQuoteError::AddressNotSubscribed(request.wallet_address.to_string());
-                return Ok(FiatQuotesOld::new_error(PrimitiveFiatQuoteError::new(None, error.to_string())));
-            }
-        }
-
-        let fiat_providers_countries = self.get_fiat_providers_countries().await?;
-        let ip_address_info = match self.get_ip_address(&request.ip_address).await {
-            Ok(info) => info,
-            Err(e) => {
-                let error = FiatQuoteError::IpAddressValidationFailed(e.to_string());
-                return Ok(FiatQuotesOld::new_error(PrimitiveFiatQuoteError::new(None, error.to_string())));
-            }
-        };
-        let (fiat_mapping_map, providers) = self.get_fiat_mapping(&asset, &request.quote_type)?;
-
-        let quotes = match request.clone().quote_type {
-            FiatQuoteType::Buy => {
-                let fiat_amount = request.clone().fiat_amount.unwrap();
-                let fiat_value = BigNumberFormatter::f64_as_value(fiat_amount, asset.decimals as u32).unwrap_or_default();
-                self.get_quotes_in_parallel(
-                    request.clone(),
-                    fiat_mapping_map,
-                    ip_address_info.clone(),
-                    fiat_providers_countries.clone(),
-                    &providers,
-                    |provider, request, mapping| provider.get_buy_quote_old(request.get_buy_quote(asset.clone(), fiat_value.clone()), mapping),
-                    sort_by_crypto_amount,
-                )
-                .await
-            }
-            FiatQuoteType::Sell => {
-                let crypto_value = &request.clone().crypto_value.unwrap();
-                let crypto_amount = BigNumberFormatter::value_as_f64(crypto_value, asset.decimals as u32).unwrap_or_default();
-
-                self.get_quotes_in_parallel(
-                    request.clone(),
-                    fiat_mapping_map,
-                    ip_address_info.clone(),
-                    fiat_providers_countries,
-                    &providers,
-                    |provider, request, mapping| provider.get_sell_quote_old(request.get_sell_quote(asset.clone(), crypto_amount), mapping),
-                    sort_by_fiat_amount,
-                )
-                .await
-            }
-        }?;
-        Ok(quotes)
     }
 
     pub async fn get_quotes(&self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
@@ -357,40 +287,6 @@ impl FiatClient {
         Ok(FiatQuotes { quotes, errors })
     }
 
-    pub async fn get_quote_url_legacy(
-        &self,
-        quote_id: &str,
-        wallet_address: &str,
-        ip_address: &str,
-        device_id: &str,
-    ) -> Result<(FiatQuoteUrl, FiatQuote), Box<dyn Error + Send + Sync>> {
-        let mut client = self.database.client()?;
-        let device = DevicesStore::get_device(&mut client, device_id)?;
-
-        let quote = self.fiat_cacher.get_quote(quote_id).await?;
-        let provider = self.provider(quote.quote.provider.id.as_ref())?;
-
-        let data = FiatQuoteUrlData {
-            quote: quote.quote.clone(),
-            asset_symbol: quote.asset_symbol,
-            wallet_address: wallet_address.to_string(),
-            ip_address: ip_address.to_string(),
-            locale: device.locale.as_str().to_string(),
-        };
-
-        let url = provider.get_quote_url(data).await?;
-
-        let db_quote = FiatQuoteRow::from_primitive(&quote.quote);
-        self.database.fiat()?.add_fiat_quotes(vec![db_quote])?;
-
-        self.database.fiat()?.add_fiat_quote_request(FiatQuoteRequestRow {
-            device_id: device.id,
-            quote_id: quote_id.to_string(),
-        })?;
-
-        Ok((url, quote.quote))
-    }
-
     pub async fn get_quote_url(
         &self,
         quote_id: &str,
@@ -432,130 +328,9 @@ impl FiatClient {
             .get_or_set_cached(CacheKey::FiatIpCheck(ip_address), || self.ip_check_client.get_ip_address(ip_address))
             .await
     }
-
-    fn is_address_subscribed(&self, asset: &Asset, wallet_address: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.wallets()?.get_subscription_address_exists(asset.chain, wallet_address)?)
-    }
-
-    fn check_asset_limits_old(request: &FiatQuoteOldRequest, mapping: &FiatMapping) -> Result<(), FiatQuoteError> {
-        let fiat_currency = request.fiat_currency.clone();
-
-        let limits = match request.quote_type {
-            FiatQuoteType::Buy => &mapping.buy_limits,
-            FiatQuoteType::Sell => &mapping.sell_limits,
-        };
-
-        if limits.is_empty() {
-            return Ok(());
-        }
-
-        let amount = match request.quote_type {
-            FiatQuoteType::Buy => request.fiat_amount.unwrap_or(0.0),
-            FiatQuoteType::Sell => request.fiat_amount.unwrap_or(0.0),
-        };
-
-        for limit in limits {
-            if limit.currency == fiat_currency {
-                if let Some(min_amount) = limit.min_amount
-                    && amount < min_amount
-                {
-                    return Err(FiatQuoteError::InsufficientAmount(amount, min_amount));
-                }
-                if let Some(max_amount) = limit.max_amount
-                    && amount > max_amount
-                {
-                    return Err(FiatQuoteError::ExcessiveAmount(amount, max_amount));
-                }
-                return Ok(());
-            }
-        }
-
-        Ok(())
-    }
-
-    async fn get_quotes_in_parallel<F>(
-        &self,
-        request: FiatQuoteOldRequest,
-        fiat_mapping_map: HashMap<String, FiatMapping>,
-        ip_address_info: IPAddressInfo,
-        countries: Vec<FiatProviderCountry>,
-        provider_priorities: &[PrimitiveFiatProvider],
-        quote_fn: F,
-        sort_fn: fn(&FiatQuoteOld, &FiatQuoteOld, &[PrimitiveFiatProvider]) -> std::cmp::Ordering,
-    ) -> Result<FiatQuotesOld, Box<dyn Error + Send + Sync>>
-    where
-        F: Fn(&dyn FiatProvider, FiatQuoteOldRequest, FiatMapping) -> futures::future::BoxFuture<'_, Result<FiatQuoteOld, Box<dyn Error + Send + Sync>>> + Send + Sync,
-    {
-        let providers = self.get_providers_for_request(&request);
-        let futures = providers.into_iter().filter_map(|provider| {
-            let provider_id = provider.name().id().to_string();
-            let countries = countries.iter().filter(|x| x.provider == provider_id).map(|x| x.alpha2.clone()).collect::<HashSet<_>>();
-
-            fiat_mapping_map.get(&provider_id).map(|mapping| {
-                let quote_fn = &quote_fn;
-                let request = request.clone();
-                let mapping = mapping.clone();
-                let country_code = ip_address_info.clone().alpha2;
-
-                async move {
-                    if !countries.contains(&country_code) {
-                        Err(PrimitiveFiatQuoteError::new(
-                            Some(provider_id.clone()),
-                            FiatQuoteError::UnsupportedCountry(country_code).to_string(),
-                        ))
-                    } else if mapping.unsupported_countries.clone().contains_key(&country_code) {
-                        Err(PrimitiveFiatQuoteError::new(
-                            Some(provider_id.clone()),
-                            FiatQuoteError::UnsupportedCountryAsset(country_code, mapping.asset_symbol.symbol.clone()).to_string(),
-                        ))
-                    } else {
-                        match Self::check_asset_limits_old(&request, &mapping) {
-                            Ok(_) => match quote_fn(provider, request, mapping).await {
-                                Ok(quote) => Ok(quote),
-                                Err(e) => Err(PrimitiveFiatQuoteError::new(Some(provider_id), e.to_string())),
-                            },
-                            Err(limit_error) => Err(PrimitiveFiatQuoteError::new(Some(provider_id), limit_error.to_string())),
-                        }
-                    }
-                }
-            })
-        });
-
-        let results = join_all(futures).await;
-
-        let mut quotes = Vec::new();
-        let mut errors = Vec::new();
-
-        for result in results {
-            match result {
-                Ok(quote) => quotes.push(quote),
-                Err(e) => errors.push(e),
-            }
-        }
-
-        for quote in &mut quotes {
-            quote.crypto_amount = precision(quote.crypto_amount, 5);
-        }
-
-        quotes.sort_by(|a, b| sort_fn(a, b, provider_priorities));
-
-        Ok(FiatQuotesOld { quotes, errors })
-    }
-}
-
-fn precision(val: f64, precision: usize) -> f64 {
-    format!("{val:.precision$}").parse::<f64>().unwrap()
 }
 
 use primitives::sort_by_priority_then_amount;
-
-fn sort_by_crypto_amount(a: &FiatQuoteOld, b: &FiatQuoteOld, providers: &[PrimitiveFiatProvider]) -> std::cmp::Ordering {
-    sort_by_priority_then_amount(a.provider.id.as_ref(), b.provider.id.as_ref(), &a.crypto_amount, &b.crypto_amount, providers, false)
-}
-
-fn sort_by_fiat_amount(a: &FiatQuoteOld, b: &FiatQuoteOld, providers: &[PrimitiveFiatProvider]) -> std::cmp::Ordering {
-    sort_by_priority_then_amount(a.provider.id.as_ref(), b.provider.id.as_ref(), &a.fiat_amount, &b.fiat_amount, providers, false)
-}
 
 fn sort_quotes_by_crypto_amount_desc(a: &FiatQuote, b: &FiatQuote, providers: &[PrimitiveFiatProvider]) -> std::cmp::Ordering {
     sort_by_priority_then_amount(a.provider.id.as_ref(), b.provider.id.as_ref(), &a.crypto_amount, &b.crypto_amount, providers, false)
@@ -570,28 +345,28 @@ mod tests {
     use super::*;
     use primitives::FiatProviderName;
 
-    #[test]
-    fn test_precision() {
-        assert_eq!(precision(1.123, 2), 1.12);
-        assert_eq!(precision(1.123, 5), 1.123);
+    fn mock_quote(provider: FiatProviderName, crypto_amount: f64) -> FiatQuote {
+        let mut quote = FiatQuote::mock(provider);
+        quote.crypto_amount = crypto_amount;
+        quote
     }
 
     #[test]
-    fn sort_quotes_by_priority() {
+    fn sort_buy_quotes_by_priority() {
         let providers = vec![
             PrimitiveFiatProvider::mock_with_priority(FiatProviderName::MoonPay, 1, None),
             PrimitiveFiatProvider::mock_with_priority(FiatProviderName::Mercuryo, 2, None),
             PrimitiveFiatProvider::mock_with_priority(FiatProviderName::Transak, 3, None),
         ];
 
-        let moonpay = FiatQuoteOld::mock(FiatProviderName::MoonPay, 0.45, 100.0);
-        let mercuryo = FiatQuoteOld::mock(FiatProviderName::Mercuryo, 0.48, 100.0);
-        let transak = FiatQuoteOld::mock(FiatProviderName::Transak, 0.47, 100.0);
-        let paybis = FiatQuoteOld::mock(FiatProviderName::Paybis, 0.50, 100.0);
-        let banxa = FiatQuoteOld::mock(FiatProviderName::Banxa, 0.40, 100.0);
-
-        let mut quotes = [paybis.clone(), moonpay.clone(), banxa.clone(), transak.clone(), mercuryo.clone()];
-        quotes.sort_by(|a, b| sort_by_crypto_amount(a, b, &providers));
+        let mut quotes = [
+            mock_quote(FiatProviderName::Paybis, 0.50),
+            mock_quote(FiatProviderName::MoonPay, 0.45),
+            mock_quote(FiatProviderName::Banxa, 0.40),
+            mock_quote(FiatProviderName::Transak, 0.47),
+            mock_quote(FiatProviderName::Mercuryo, 0.48),
+        ];
+        quotes.sort_by(|a, b| sort_quotes_by_crypto_amount_desc(a, b, &providers));
 
         assert_eq!(quotes[0].provider.id, FiatProviderName::MoonPay);
         assert_eq!(quotes[1].provider.id, FiatProviderName::Mercuryo);
@@ -601,20 +376,20 @@ mod tests {
     }
 
     #[test]
-    fn sort_quotes_with_threshold_override() {
+    fn sort_buy_quotes_with_threshold_override() {
         let providers = vec![
             PrimitiveFiatProvider::mock_with_priority(FiatProviderName::MoonPay, 1, Some(1000)),
             PrimitiveFiatProvider::mock_with_priority(FiatProviderName::Mercuryo, 2, Some(500)),
             PrimitiveFiatProvider::mock_with_priority(FiatProviderName::Transak, 3, None),
         ];
 
-        let moonpay = FiatQuoteOld::mock(FiatProviderName::MoonPay, 0.45, 100.0);
-        let mercuryo = FiatQuoteOld::mock(FiatProviderName::Mercuryo, 0.48, 100.0);
-        let transak = FiatQuoteOld::mock(FiatProviderName::Transak, 0.60, 100.0);
-        let paybis = FiatQuoteOld::mock(FiatProviderName::Paybis, 0.52, 100.0);
-
-        let mut quotes = [paybis.clone(), transak.clone(), mercuryo.clone(), moonpay.clone()];
-        quotes.sort_by(|a, b| sort_by_crypto_amount(a, b, &providers));
+        let mut quotes = [
+            mock_quote(FiatProviderName::Paybis, 0.52),
+            mock_quote(FiatProviderName::Transak, 0.60),
+            mock_quote(FiatProviderName::Mercuryo, 0.48),
+            mock_quote(FiatProviderName::MoonPay, 0.45),
+        ];
+        quotes.sort_by(|a, b| sort_quotes_by_crypto_amount_desc(a, b, &providers));
 
         assert_eq!(quotes[0].provider.id, FiatProviderName::Transak);
         assert_eq!(quotes[1].provider.id, FiatProviderName::MoonPay);
@@ -623,25 +398,14 @@ mod tests {
     }
 
     #[test]
-    fn sort_new_quotes_by_amount_no_priority() {
+    fn sort_buy_quotes_by_amount_without_priority_override() {
         let providers = vec![PrimitiveFiatProvider::mock_with_priority(FiatProviderName::MoonPay, 1, Some(100))];
 
-        let moonpay = FiatQuote::mock(FiatProviderName::MoonPay);
-        let mercuryo = FiatQuote::mock(FiatProviderName::Mercuryo);
-        let transak = FiatQuote::mock(FiatProviderName::Transak);
-        let paybis = FiatQuote::mock(FiatProviderName::Paybis);
-
         let mut quotes = [
-            FiatQuote { crypto_amount: 0.0773, ..moonpay },
-            FiatQuote {
-                crypto_amount: 0.0759,
-                ..mercuryo
-            },
-            FiatQuote {
-                crypto_amount: 0.07505,
-                ..transak
-            },
-            FiatQuote { crypto_amount: 0.07721, ..paybis },
+            mock_quote(FiatProviderName::MoonPay, 0.0773),
+            mock_quote(FiatProviderName::Mercuryo, 0.0759),
+            mock_quote(FiatProviderName::Transak, 0.07505),
+            mock_quote(FiatProviderName::Paybis, 0.07721),
         ];
 
         quotes.sort_by(|a, b| sort_quotes_by_crypto_amount_desc(a, b, &providers));
@@ -656,23 +420,10 @@ mod tests {
     fn sort_sell_quotes_by_crypto_amount_ascending() {
         let providers: Vec<PrimitiveFiatProvider> = vec![];
 
-        let moonpay = FiatQuote::mock(FiatProviderName::MoonPay);
-        let mercuryo = FiatQuote::mock(FiatProviderName::Mercuryo);
-        let transak = FiatQuote::mock(FiatProviderName::Transak);
-
         let mut quotes = [
-            FiatQuote {
-                crypto_amount: 0.036108,
-                ..moonpay
-            },
-            FiatQuote {
-                crypto_amount: 0.03311059,
-                ..mercuryo
-            },
-            FiatQuote {
-                crypto_amount: 0.03086637,
-                ..transak
-            },
+            mock_quote(FiatProviderName::MoonPay, 0.036108),
+            mock_quote(FiatProviderName::Mercuryo, 0.03311059),
+            mock_quote(FiatProviderName::Transak, 0.03086637),
         ];
 
         quotes.sort_by(|a, b| sort_quotes_by_crypto_amount_asc(a, b, &providers));

@@ -3,19 +3,6 @@ use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FiatQuoteOld {
-    pub provider: FiatProvider,
-    #[serde(rename = "type")]
-    pub quote_type: FiatQuoteType,
-    pub fiat_amount: f64,
-    pub fiat_currency: String,
-    pub crypto_amount: f64,
-    pub crypto_value: String,
-    pub redirect_url: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "camelCase")]
 pub struct FiatQuote {
@@ -68,33 +55,10 @@ pub struct FiatQuotes {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FiatQuoteUrlRequest {
-    pub quote_id: String,
-    pub wallet_address: String,
-    pub device_id: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 #[typeshare(swift = "Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct FiatQuoteUrl {
     pub redirect_url: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FiatQuotesOld {
-    pub quotes: Vec<FiatQuoteOld>,
-    pub errors: Vec<FiatQuoteError>,
-}
-
-impl FiatQuotesOld {
-    pub fn new_error(error: FiatQuoteError) -> Self {
-        Self {
-            quotes: vec![],
-            errors: vec![error],
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

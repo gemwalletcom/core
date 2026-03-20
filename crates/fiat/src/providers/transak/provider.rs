@@ -9,10 +9,7 @@ use crate::{
     providers::transak::mapper::map_asset_with_limits,
 };
 use async_trait::async_trait;
-use primitives::{
-    FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuoteOld, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatSellQuote,
-    FiatTransaction,
-};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatTransaction};
 use std::error::Error;
 use streamer::FiatWebhook;
 
@@ -20,23 +17,6 @@ use streamer::FiatWebhook;
 impl FiatProvider for TransakClient {
     fn name(&self) -> FiatProviderName {
         Self::NAME
-    }
-
-    async fn get_buy_quote_old(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(self
-            .get_fiat_quote_with_redirect(
-                request.clone(),
-                request_map.asset_symbol.symbol.clone(),
-                request.fiat_currency.as_ref().to_string(),
-                request.fiat_amount,
-                request_map.asset_symbol.network.unwrap_or_default(),
-                request.ip_address.clone(),
-            )
-            .await?)
-    }
-
-    async fn get_sell_quote_old(&self, _request: FiatSellQuote, _request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn Error + Send + Sync>> {
-        Err(Box::from("not supported"))
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
@@ -128,23 +108,22 @@ impl FiatProvider for TransakClient {
 mod fiat_integration_tests {
     use crate::testkit::*;
     use crate::{FiatProvider, model::FiatMapping};
-    use primitives::{FiatBuyQuote, FiatProviderName, FiatQuoteRequest};
+    use primitives::FiatQuoteRequest;
 
     #[tokio::test]
     async fn test_transak_get_buy_quote() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_transak_test_client();
 
-        let request = FiatBuyQuote::mock();
+        let request = FiatQuoteRequest::mock();
         let mut mapping = FiatMapping::mock();
         mapping.asset_symbol.network = Some("mainnet".to_string());
 
-        let quote = FiatProvider::get_buy_quote_old(&client, request, mapping).await?;
+        let quote = FiatProvider::get_quote_buy(&client, request.clone(), mapping).await?;
 
         println!("Transak buy quote: {:?}", quote);
-        assert_eq!(quote.provider.id, FiatProviderName::Transak);
-        assert_eq!(quote.fiat_currency, "USD");
+        assert!(!quote.quote_id.is_empty());
         assert!(quote.crypto_amount > 0.0);
-        assert_eq!(quote.fiat_amount, 100.0);
+        assert_eq!(quote.fiat_amount, request.amount);
 
         Ok(())
     }

@@ -2,23 +2,12 @@ use std::sync::Arc;
 
 use crate::model::{FiatMapping, FiatProviderAsset};
 use async_trait::async_trait;
-use primitives::{
-    FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuoteOld, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatSellQuote, FiatTransaction,
-    PaymentType,
-};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatTransaction, PaymentType};
 use streamer::FiatWebhook;
 
 #[async_trait]
 pub trait FiatProvider: Send + Sync {
     fn name(&self) -> FiatProviderName;
-
-    async fn get_buy_quote_old(&self, _request: FiatBuyQuote, _request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>> {
-        Err("not implemented".into())
-    }
-
-    async fn get_sell_quote_old(&self, _request: FiatSellQuote, _request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>> {
-        Err("not implemented".into())
-    }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>>;
     async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn std::error::Error + Send + Sync>>;
@@ -42,14 +31,6 @@ where
 {
     fn name(&self) -> FiatProviderName {
         (**self).name()
-    }
-
-    async fn get_buy_quote_old(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>> {
-        (**self).get_buy_quote_old(request, request_map).await
-    }
-
-    async fn get_sell_quote_old(&self, request: FiatSellQuote, request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>> {
-        (**self).get_sell_quote_old(request, request_map).await
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {

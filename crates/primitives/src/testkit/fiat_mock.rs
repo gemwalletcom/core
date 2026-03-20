@@ -1,37 +1,8 @@
 use crate::currency::Currency;
 use crate::fiat_assets::FiatAssetLimits;
 use crate::{
-    Asset, AssetId, Chain, FiatBuyQuote, FiatProvider, FiatProviderName, FiatQuote, FiatQuoteOld, FiatQuoteOldRequest, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType,
-    FiatTransaction, FiatTransactionStatus, PaymentType,
+    Asset, AssetId, Chain, FiatProvider, FiatProviderName, FiatQuote, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatTransaction, FiatTransactionStatus, PaymentType,
 };
-impl FiatBuyQuote {
-    pub fn mock() -> Self {
-        FiatBuyQuote {
-            asset: Asset::from_chain(Chain::Bitcoin),
-            asset_id: Chain::Bitcoin.as_asset_id().to_string(),
-            ip_address: "192.168.1.1".to_string(),
-            fiat_currency: Currency::USD,
-            fiat_amount: 100.0,
-            fiat_value: "100.0".to_string(),
-            wallet_address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh".to_string(),
-        }
-    }
-}
-
-impl FiatQuoteOldRequest {
-    pub fn mock() -> Self {
-        FiatQuoteOldRequest {
-            asset_id: Chain::Bitcoin.as_asset_id().to_string(),
-            quote_type: FiatQuoteType::Buy,
-            ip_address: "192.168.1.1".to_string(),
-            fiat_currency: Currency::USD,
-            fiat_amount: Some(100.0),
-            crypto_value: None,
-            wallet_address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh".to_string(),
-            provider_id: None,
-        }
-    }
-}
 
 impl FiatQuoteRequest {
     pub fn mock() -> Self {
@@ -83,20 +54,6 @@ impl FiatProvider {
             buy_enabled: true,
             sell_enabled: true,
             payment_methods: vec![],
-        }
-    }
-}
-
-impl FiatQuoteOld {
-    pub fn mock(provider_id: FiatProviderName, crypto_amount: f64, fiat_amount: f64) -> Self {
-        FiatQuoteOld {
-            provider: FiatProvider::mock(provider_id),
-            quote_type: FiatQuoteType::Buy,
-            fiat_amount,
-            fiat_currency: "USD".to_string(),
-            crypto_amount,
-            crypto_value: crypto_amount.to_string(),
-            redirect_url: "".to_string(),
         }
     }
 }

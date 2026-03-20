@@ -3,10 +3,9 @@ use crate::model::{FiatProviderAsset, filter_token_id};
 
 use super::mapper::map_asset_chain;
 use super::models::{Asset, Country, MoonPayBuyQuote, MoonPayIpAddress, MoonPayResponse, MoonPaySellQuote, Transaction};
-use number_formatter::BigNumberFormatter;
 use primitives::currency::Currency;
 use primitives::fiat_assets::FiatAssetLimits;
-use primitives::{FiatBuyQuote, FiatProviderName, FiatQuoteOld, FiatQuoteType, FiatQuoteTypeResult, FiatSellQuote, PaymentType};
+use primitives::{FiatProviderName, FiatQuoteType, PaymentType};
 use reqwest::Client;
 use url::Url;
 
@@ -178,45 +177,6 @@ impl MoonPayClient {
             buy_limits,
             sell_limits,
         })
-    }
-
-    pub fn get_buy_fiat_quote(&self, request: FiatBuyQuote, quote: MoonPayBuyQuote) -> FiatQuoteOld {
-        let crypto_value = BigNumberFormatter::f64_as_value(quote.quote_currency_amount, quote.quote_currency.decimals).unwrap_or_default();
-
-        FiatQuoteOld {
-            provider: Self::NAME.as_fiat_provider(),
-            quote_type: FiatQuoteType::Buy,
-            fiat_amount: request.clone().fiat_amount,
-            fiat_currency: request.clone().fiat_currency.as_ref().to_string(),
-            crypto_amount: quote.quote_currency_amount,
-            crypto_value,
-            redirect_url: self.redirect_url(FiatQuoteTypeResult::Buy(request.clone()), request.fiat_amount, &quote.quote_currency_code),
-        }
-    }
-
-    pub fn get_sell_fiat_quote(&self, request: FiatSellQuote, quote: MoonPaySellQuote) -> FiatQuoteOld {
-        let crypto_value = request.clone().crypto_value;
-        let crypto_amount = quote.base_currency_amount;
-        FiatQuoteOld {
-            provider: Self::NAME.as_fiat_provider(),
-            quote_type: FiatQuoteType::Sell,
-            fiat_amount: quote.quote_currency_amount,
-            fiat_currency: request.clone().fiat_currency.as_ref().to_string(),
-            crypto_amount,
-            crypto_value,
-            redirect_url: self.redirect_url(FiatQuoteTypeResult::Sell(request), crypto_amount, &quote.base_currency_code),
-        }
-    }
-
-    // docs: https://dev.moonpay.com/docs/ramps-sdk-buy-params
-    // docs: https://dev.moonpay.com/docs/ramps-sdk-sell-params
-    pub fn redirect_url(&self, quote_type: FiatQuoteTypeResult, amount: f64, symbol: &str) -> String {
-        let wallet_address = quote_type.get_wallet_address();
-        let fiat_quote_type = match quote_type {
-            FiatQuoteTypeResult::Buy(_) => FiatQuoteType::Buy,
-            FiatQuoteTypeResult::Sell(_) => FiatQuoteType::Sell,
-        };
-        self.generate_quote_url(fiat_quote_type, amount, symbol, &wallet_address)
     }
 
     fn generate_quote_url(&self, quote_type: FiatQuoteType, amount: f64, symbol: &str, wallet_address: &str) -> String {

@@ -268,12 +268,12 @@ impl Transaction {
             | TransactionType::PerpetualClosePosition
             | TransactionType::PerpetualModifyPosition
             | TransactionType::EarnDeposit
-            | TransactionType::EarnWithdraw => vec![self.asset_id.clone(), self.fee_asset_id.clone()],
+            | TransactionType::EarnWithdraw => vec![self.asset_id.clone()],
             TransactionType::Swap => self
                 .metadata
                 .clone()
                 .and_then(|x| serde_json::from_value::<TransactionSwapMetadata>(x).ok())
-                .map(|x| vec![x.from_asset, x.to_asset, self.fee_asset_id.clone()])
+                .map(|x| vec![x.from_asset, x.to_asset])
                 .unwrap_or_default(),
         }
         .into_iter()
@@ -365,7 +365,7 @@ mod tests {
             asset_id: Asset::mock_ethereum_usdc().id,
             ..Transaction::mock()
         };
-        assert_eq!(transaction.asset_ids().len(), 2);
+        assert_eq!(transaction.asset_ids().len(), 1);
     }
 
     #[test]
@@ -400,7 +400,7 @@ mod tests {
             ),
             ..Transaction::mock()
         };
-        assert_eq!(transaction.asset_ids().len(), 3);
+        assert_eq!(transaction.asset_ids().len(), 2);
     }
 
     #[test]

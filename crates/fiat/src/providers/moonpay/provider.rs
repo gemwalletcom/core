@@ -1,6 +1,5 @@
 use crate::{
     FiatProvider,
-    error::FiatQuoteError,
     model::{FiatMapping, FiatProviderAsset},
     providers::moonpay::models::{Data, WebhookOrderId},
 };
@@ -9,48 +8,12 @@ use std::error::Error;
 use streamer::FiatWebhook;
 
 use super::{client::MoonPayClient, mapper::map_order};
-use primitives::{
-    FiatBuyQuote, FiatProviderCountry, FiatProviderName, FiatQuoteOld, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatSellQuote,
-    FiatTransaction,
-};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatTransaction};
 
 #[async_trait]
 impl FiatProvider for MoonPayClient {
     fn name(&self) -> FiatProviderName {
         Self::NAME
-    }
-
-    async fn get_buy_quote_old(&self, request: FiatBuyQuote, request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>> {
-        let quote = self
-            .get_buy_quote(
-                request_map.asset_symbol.symbol.to_lowercase(),
-                request.fiat_currency.as_ref().to_lowercase(),
-                request.fiat_amount,
-            )
-            .await?;
-
-        if quote.total_amount > request.fiat_amount {
-            return Err(FiatQuoteError::MinimumAmount(quote.total_amount).into());
-        }
-
-        Ok(self.get_buy_fiat_quote(request, quote))
-    }
-
-    async fn get_sell_quote_old(&self, _request: FiatSellQuote, _request_map: FiatMapping) -> Result<FiatQuoteOld, Box<dyn Error + Send + Sync>> {
-        Err("Not implemented".into())
-        // let ip_address_check = self.get_ip_address(&request.ip_address).await?;
-        // if !ip_address_check.is_allowed && !ip_address_check.is_sell_allowed {
-        //     return Err(FiatQuoteError::FiatSellNotAllowed.into());
-        // }
-        // let quote = self
-        //     .get_sell_quote(
-        //         request_map.asset_symbol.symbol.to_lowercase(),
-        //         request.fiat_currency.as_ref().to_lowercase(),
-        //         request.crypto_amount,
-        //     )
-        //     .await?;
-
-        // Ok(self.get_sell_fiat_quote(request, quote))
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
@@ -117,23 +80,22 @@ impl FiatProvider for MoonPayClient {
 mod fiat_integration_tests {
     use crate::testkit::*;
     use crate::{FiatProvider, model::FiatMapping};
-    use primitives::{FiatBuyQuote, FiatProviderName};
+    use primitives::FiatQuoteRequest;
 
     #[tokio::test]
     async fn test_moonpay_get_buy_quote() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_moonpay_test_client();
 
-        let request = FiatBuyQuote::mock();
+        let request = FiatQuoteRequest::mock();
         let mut mapping = FiatMapping::mock();
         mapping.asset_symbol.network = Some("bitcoin".to_string());
 
-        let quote = FiatProvider::get_buy_quote_old(&client, request, mapping).await?;
+        let quote = FiatProvider::get_quote_buy(&client, request.clone(), mapping).await?;
 
         println!("MoonPay buy quote: {:?}", quote);
-        assert_eq!(quote.provider.id, FiatProviderName::MoonPay);
-        assert_eq!(quote.fiat_currency, "USD");
+        assert!(!quote.quote_id.is_empty());
         assert!(quote.crypto_amount > 0.0);
-        assert_eq!(quote.fiat_amount, 100.0);
+        assert_eq!(quote.fiat_amount, request.amount);
 
         Ok(())
     }

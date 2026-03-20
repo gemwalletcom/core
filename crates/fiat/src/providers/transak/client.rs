@@ -2,9 +2,7 @@ use super::models::{
     Asset, CachedToken, Country, CreateWidgetUrlRequest, CreateWidgetUrlResponse, Data, FiatCurrency, Response, TokenResponse, TransakOrderResponse, TransakQuote, TransakResponse,
 };
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD as BASE64};
-use number_formatter::BigNumberFormatter;
-use primitives::FiatBuyQuote;
-use primitives::{FiatProviderName, FiatQuoteOld, FiatQuoteType};
+use primitives::{FiatProviderName, FiatQuoteType};
 use reqwest::Client;
 use serde_json::{Value, json};
 use std::collections::HashMap;
@@ -104,34 +102,6 @@ impl TransakClient {
         }
 
         self.client.get(url).query(&query).send().await?.json::<TransakResponse<TransakQuote>>().await?.into()
-    }
-
-    pub async fn get_fiat_quote_with_redirect(
-        &self,
-        request: FiatBuyQuote,
-        symbol: String,
-        fiat_currency: String,
-        fiat_amount: f64,
-        network: String,
-        ip_address: String,
-    ) -> Result<FiatQuoteOld, Box<dyn std::error::Error + Send + Sync>> {
-        let transak_quote = self.get_buy_quote(symbol, fiat_currency, fiat_amount, network, ip_address).await?;
-
-        let crypto_value = BigNumberFormatter::f64_as_value(transak_quote.crypto_amount, request.asset.decimals as u32)
-            .ok_or_else(|| format!("Failed to convert crypto amount {} with decimals {}", transak_quote.crypto_amount, request.asset.decimals))?;
-        let redirect_url = self
-            .redirect_url(transak_quote.clone(), request.wallet_address, FiatQuoteType::Buy, request.fiat_amount)
-            .await?;
-
-        Ok(FiatQuoteOld {
-            provider: Self::NAME.as_fiat_provider(),
-            quote_type: FiatQuoteType::Buy,
-            fiat_amount: request.fiat_amount,
-            fiat_currency: request.fiat_currency.as_ref().to_string(),
-            crypto_amount: transak_quote.crypto_amount,
-            crypto_value,
-            redirect_url,
-        })
     }
 
     pub async fn create_widget_url(&self, params: HashMap<String, Value>) -> Result<String, reqwest::Error> {

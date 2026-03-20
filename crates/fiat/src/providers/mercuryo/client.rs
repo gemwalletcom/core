@@ -1,13 +1,9 @@
-use crate::model::FiatMapping;
-use number_formatter::BigNumberFormatter;
-use primitives::{FiatBuyQuote, FiatQuoteType, FiatSellQuote};
-use primitives::{FiatProviderName, FiatQuoteOld};
+use primitives::FiatProviderName;
 use reqwest::Client;
 use std::collections::HashMap;
 
 use super::mapper::map_sell_quote;
 use super::models::{Asset, Currencies, CurrencyLimits, MercuryoResponse, MercuryoTransactionResponse, Quote, QuoteQuery, QuoteSellQuery, Response};
-use super::widget::MercuryoWidget;
 
 const MERCURYO_API_BASE_URL: &str = "https://api.mercuryo.io";
 pub struct MercuryoClient {
@@ -101,50 +97,5 @@ impl MercuryoClient {
         let query = [("from", from), ("to", to), ("widget_id", self.widget_id.clone())];
         let url = format!("{MERCURYO_API_BASE_URL}/v1.6/public/currency-limits");
         self.client.get(&url).query(&query).send().await?.json().await
-    }
-
-    pub fn get_fiat_buy_quote(&self, request: FiatBuyQuote, request_map: FiatMapping, quote: Quote) -> FiatQuoteOld {
-        let crypto_value = BigNumberFormatter::f64_as_value(quote.clone().amount, request.asset.decimals as u32).unwrap_or_default();
-        let widget = MercuryoWidget::new(
-            self.widget_id.clone(),
-            self.secret_key.clone(),
-            request.wallet_address.clone(),
-            request.ip_address.clone(),
-            quote.clone(),
-            FiatQuoteType::Buy,
-            request_map.asset_symbol.network.unwrap_or_default(),
-        );
-
-        FiatQuoteOld {
-            provider: Self::NAME.as_fiat_provider(),
-            quote_type: FiatQuoteType::Buy,
-            fiat_amount: request.fiat_amount,
-            fiat_currency: request.fiat_currency.as_ref().to_string(),
-            crypto_amount: quote.amount,
-            crypto_value,
-            redirect_url: widget.to_url(),
-        }
-    }
-
-    pub fn get_fiat_sell_quote(&self, request: FiatSellQuote, request_map: FiatMapping, quote: Quote) -> FiatQuoteOld {
-        let widget = MercuryoWidget::new(
-            self.widget_id.clone(),
-            self.secret_key.clone(),
-            request.wallet_address.clone(),
-            request.ip_address.clone(),
-            quote.clone(),
-            FiatQuoteType::Sell,
-            request_map.asset_symbol.network.unwrap_or_default(),
-        );
-
-        FiatQuoteOld {
-            provider: Self::NAME.as_fiat_provider(),
-            quote_type: FiatQuoteType::Sell,
-            fiat_amount: quote.fiat_amount,
-            fiat_currency: request.fiat_currency.as_ref().to_string(),
-            crypto_amount: quote.amount,
-            crypto_value: request.crypto_value,
-            redirect_url: widget.to_url(),
-        }
     }
 }
