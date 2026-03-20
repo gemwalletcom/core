@@ -145,7 +145,7 @@ mod tests {
         assert_eq!(map_status("failed"), FiatTransactionStatus::Failed);
         assert_eq!(map_status("refunded"), FiatTransactionStatus::Failed);
 
-        assert_eq!(map_status("unexpected"), FiatTransactionStatus::Unknown("unexpected".to_string()));
+        assert_eq!(map_status("unexpected"), FiatTransactionStatus::Unknown);
     }
 
     #[test]
