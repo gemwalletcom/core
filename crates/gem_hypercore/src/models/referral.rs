@@ -20,7 +20,7 @@ pub struct ReferredBy {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ReferrerState {
-    pub data: ReferrerData,
+    pub data: Option<ReferrerData>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -45,6 +45,13 @@ mod tests {
         let referral: Referral = serde_json::from_str(include_str!("../../testdata/referral_need_to_trade.json")).unwrap();
 
         assert_eq!(referral.cum_vlm, 0.0);
-        assert!(referral.referrer_state.unwrap().data.referral_states.is_none());
+        assert!(referral.referrer_state.unwrap().data.unwrap().referral_states.is_none());
+    }
+
+    #[test]
+    fn referral_need_to_create_code_payload() {
+        let referral: Referral = serde_json::from_str(include_str!("../../testdata/referral_need_to_create_code.json")).unwrap();
+
+        assert!(referral.referrer_state.unwrap().data.is_none());
     }
 }
