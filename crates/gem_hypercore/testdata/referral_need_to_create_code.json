@@ -1,1 +1,14 @@
-{"referredBy":{"code":"GEMWALLET"},"cumVlm":"46615331.93","unclaimedRewards":"0.0","claimedRewards":"0.0","builderRewards":"0.0","referrerState":{"stage":"needToCreateCode"},"rewardHistory":[],"tokenToState":[]}
+{
+  "referredBy": {
+    "code": "GEMWALLET"
+  },
+  "cumVlm": "46615331.93",
+  "unclaimedRewards": "0.0",
+  "claimedRewards": "0.0",
+  "builderRewards": "0.0",
+  "referrerState": {
+    "stage": "needToCreateCode"
+  },
+  "rewardHistory": [],
+  "tokenToState": []
+}
