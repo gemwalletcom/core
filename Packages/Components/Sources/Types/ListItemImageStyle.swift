@@ -9,6 +9,7 @@ public struct ListItemImageStyle: Sendable {
     public let imageSize: CGFloat
     public let alignment: VerticalAlignment
     public let foregroundColor: Color?
+    public let fontWeight: Font.Weight?
     private let cornerRadiusType: CornerRadiusType
 
     public var cornerRadius: CGFloat {
@@ -24,6 +25,7 @@ public struct ListItemImageStyle: Sendable {
         imageSize: CGFloat,
         alignment: VerticalAlignment = .center,
         foregroundColor: Color? = nil,
+        fontWeight: Font.Weight? = nil,
         cornerRadiusType: CornerRadiusType
     ) {
         guard let assetImage else { return nil }
@@ -32,6 +34,7 @@ public struct ListItemImageStyle: Sendable {
         self.cornerRadiusType = cornerRadiusType
         self.alignment = alignment
         self.foregroundColor = foregroundColor
+        self.fontWeight = fontWeight
     }
     
     public enum CornerRadiusType: Sendable {
@@ -58,11 +61,12 @@ public extension ListItemImageStyle {
         )
     }
     
-    static func accessory(assetImage: AssetImage?, foregroundColor: Color? = nil) -> Self? {
+    static func accessory(assetImage: AssetImage?, foregroundColor: Color? = nil, fontWeight: Font.Weight? = nil) -> Self? {
         ListItemImageStyle(
             assetImage: assetImage,
             imageSize: .space12,
             foregroundColor: foregroundColor,
+            fontWeight: fontWeight,
             cornerRadiusType: .none
         )
     }

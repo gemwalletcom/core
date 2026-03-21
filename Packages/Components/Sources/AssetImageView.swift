@@ -43,6 +43,9 @@ public struct AssetImageView: View {
         )
         .frame(width: size, height: size)
         .cornerRadius(cornerRadius)
+        .ifLet(style?.fontWeight) { view, weight in
+            view.fontWeight(weight)
+        }
         .ifLet(style?.foregroundColor) { view, color in
             view.foregroundStyle(color)
         }
@@ -110,13 +113,16 @@ extension AssetImageView {
     public struct Style: Sendable, Equatable {
         public let foregroundColor: Color?
         public let cornerRadius: CGFloat?
+        public let fontWeight: Font.Weight?
 
         public init(
             foregroundColor: Color? = nil,
-            cornerRadius: CGFloat? = nil
+            cornerRadius: CGFloat? = nil,
+            fontWeight: Font.Weight? = nil
         ) {
             self.foregroundColor = foregroundColor
             self.cornerRadius = cornerRadius
+            self.fontWeight = fontWeight
         }
     }
 }
