@@ -19,6 +19,10 @@ impl FiatQuotesClient {
         self.fiat_client.get_quotes(request).await
     }
 
+    pub async fn get_quote(&self, quote_id: &str) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
+        self.fiat_client.get_quote(quote_id).await
+    }
+
     pub async fn get_quote_url(
         &self,
         quote_id: &str,

@@ -1,9 +1,9 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::{AssetId, Chain, Transaction, TransactionDirection, TransactionId, TransactionUtxoInput};
+use primitives::{Chain, Transaction, TransactionDirection, TransactionId, TransactionUtxoInput};
 use serde::{Deserialize, Serialize};
 
-use crate::sql_types::{ChainRow, TransactionState, TransactionType};
+use crate::sql_types::{AssetId, ChainRow, TransactionState, TransactionType};
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::transactions)]
@@ -18,11 +18,11 @@ pub struct TransactionRow {
     pub state: TransactionState,
     pub kind: TransactionType,
     pub value: Option<String>,
-    pub asset_id: String,
+    pub asset_id: AssetId,
     pub fee: Option<String>,
     pub utxo_inputs: Option<serde_json::Value>,
     pub utxo_outputs: Option<serde_json::Value>,
-    pub fee_asset_id: String,
+    pub fee_asset_id: AssetId,
     pub metadata: Option<serde_json::Value>,
     pub created_at: NaiveDateTime,
 }
@@ -39,11 +39,11 @@ pub struct NewTransactionRow {
     pub state: TransactionState,
     pub kind: TransactionType,
     pub value: Option<String>,
-    pub asset_id: String,
+    pub asset_id: AssetId,
     pub fee: Option<String>,
     pub utxo_inputs: Option<serde_json::Value>,
     pub utxo_outputs: Option<serde_json::Value>,
-    pub fee_asset_id: String,
+    pub fee_asset_id: AssetId,
     pub metadata: Option<serde_json::Value>,
     pub created_at: NaiveDateTime,
 }
@@ -60,7 +60,7 @@ impl TransactionRow {
     pub fn as_primitive(&self, addresses: Vec<String>) -> Transaction {
         let chain = self.chain();
         let transaction_id = TransactionId::new(chain, self.hash.clone());
-        let asset_id = AssetId::new(self.asset_id.clone().as_str()).unwrap();
+        let asset_id = self.asset_id.0.clone();
         let from = self.from_address.clone().unwrap_or_default();
         let to_address = self.to_address.clone().unwrap_or_default();
         let inputs: Option<Vec<TransactionUtxoInput>> = serde_json::from_value(self.utxo_inputs.clone().into()).ok();
@@ -87,7 +87,7 @@ impl TransactionRow {
             block_number: None,
             sequence: None,
             fee: self.fee.clone().unwrap(),
-            fee_asset_id: AssetId::new(self.fee_asset_id.clone().as_str()).unwrap(),
+            fee_asset_id: self.fee_asset_id.0.clone(),
             value: self.value.clone().unwrap_or("0".to_string()),
             memo: self.memo.clone(),
             direction,
@@ -129,10 +129,10 @@ impl NewTransactionRow {
             chain: transaction.asset_id.chain.into(),
             hash: transaction.hash,
             memo: transaction.memo,
-            asset_id: transaction.asset_id.to_string(),
+            asset_id: transaction.asset_id.into(),
             value,
             fee: transaction.fee.into(),
-            fee_asset_id: transaction.fee_asset_id.to_string(),
+            fee_asset_id: transaction.fee_asset_id.into(),
             from_address,
             to_address,
             kind: transaction.transaction_type.into(),

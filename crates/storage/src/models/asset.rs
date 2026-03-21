@@ -2,10 +2,10 @@ use std::str::FromStr;
 
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::{Asset, AssetBasic, AssetId, AssetLink, AssetProperties, AssetScore};
+use primitives::{Asset, AssetBasic, AssetId as PrimitiveAssetId, AssetLink, AssetProperties, AssetScore};
 use serde::{Deserialize, Serialize};
 
-use crate::sql_types::{AssetType, ChainRow, LinkType};
+use crate::sql_types::{AssetId, AssetType, ChainRow, LinkType};
 
 #[derive(Debug, Queryable, Selectable, Identifiable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::assets)]
@@ -88,7 +88,7 @@ impl NewAssetRow {
 impl AssetRow {
     pub fn as_primitive(&self) -> Asset {
         Asset::new(
-            AssetId {
+            PrimitiveAssetId {
                 chain: self.chain.0,
                 token_id: self.token_id.clone(),
             },
@@ -126,7 +126,7 @@ impl AssetRow {
 #[diesel(table_name = crate::schema::assets_links)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct AssetLinkRow {
-    pub asset_id: String,
+    pub asset_id: AssetId,
     pub link_type: LinkType,
     pub url: String,
 }
@@ -139,9 +139,9 @@ impl AssetLinkRow {
         }
     }
 
-    pub fn from_primitive(asset_id: &str, link: AssetLink) -> Self {
+    pub fn from_primitive(asset_id: &PrimitiveAssetId, link: AssetLink) -> Self {
         Self {
-            asset_id: asset_id.to_string(),
+            asset_id: asset_id.into(),
             link_type: primitives::LinkType::from_str(&link.name).unwrap().into(),
             url: link.url.clone(),
         }

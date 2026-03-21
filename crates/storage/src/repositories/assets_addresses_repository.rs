@@ -21,7 +21,7 @@ impl AssetsAddressesRepository for DatabaseClient {
     fn get_assets_by_addresses(&mut self, values: Vec<ChainAddress>, from_datetime: Option<NaiveDateTime>, include_with_prices: bool) -> Result<Vec<AssetId>, DatabaseError> {
         Ok(AssetsAddressesStore::get_assets_by_addresses(self, values, from_datetime, include_with_prices)?
             .into_iter()
-            .flat_map(|x| AssetId::new(x.asset_id.as_str()))
+            .map(|x| x.asset_id.0)
             .collect())
     }
 

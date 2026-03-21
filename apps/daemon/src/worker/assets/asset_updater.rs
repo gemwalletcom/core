@@ -53,7 +53,7 @@ impl AssetProcessor {
 
         let price_assets = assets
             .iter()
-            .map(|(asset, _)| PriceAssetRow::new(asset.id.to_string(), coin_id.to_string()))
+            .map(|(asset, _)| PriceAssetRow::new(asset.id.clone(), coin_id.to_string()))
             .collect::<Vec<_>>();
 
         self.database.prices()?.set_prices_assets(price_assets)?;
@@ -63,7 +63,7 @@ impl AssetProcessor {
     fn store_assets(&self, assets: &[(Asset, AssetScore)], links: &[AssetLink], coin_id: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
         if assets.is_empty() {
             if let Some(chain) = COINGECKO_CHAIN_MAP.get(coin_id) {
-                self.store_links(&chain.as_asset_id().to_string(), links)?;
+                self.store_links(&chain.as_asset_id(), links)?;
             }
         } else {
             for (asset, score) in assets {
@@ -75,15 +75,14 @@ impl AssetProcessor {
 
     fn store_asset(&self, asset: &Asset, score: &AssetScore, links: &[AssetLink]) -> Result<(), Box<dyn Error + Send + Sync>> {
         let properties = AssetProperties::default(asset.id.clone());
-        let asset_id = asset.id.to_string();
         let asset_basic = AssetBasic::new(asset.clone(), properties, score.clone());
         self.database.assets()?.add_assets(vec![asset_basic])?;
-        self.database.assets()?.update_assets(vec![asset_id.clone()], vec![AssetUpdate::Rank(score.rank)])?;
-        self.store_links(&asset_id, links)?;
+        self.database.assets()?.update_assets(vec![asset.id.to_string()], vec![AssetUpdate::Rank(score.rank)])?;
+        self.store_links(&asset.id, links)?;
         Ok(())
     }
 
-    fn store_links(&self, asset_id: &str, links: &[AssetLink]) -> Result<(), Box<dyn Error + Send + Sync>> {
+    fn store_links(&self, asset_id: &AssetId, links: &[AssetLink]) -> Result<(), Box<dyn Error + Send + Sync>> {
         self.database.assets_links()?.add_assets_links(asset_id, links.to_vec())?;
         Ok(())
     }
@@ -247,7 +246,7 @@ impl AssetUpdater {
     pub async fn update_native_prices_assets(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let native_assets = Chain::all()
             .into_iter()
-            .map(|x| PriceAssetRow::new(x.as_ref().to_string(), get_coingecko_market_id_for_chain(x).to_string()))
+            .map(|x| PriceAssetRow::new(x.as_asset_id(), get_coingecko_market_id_for_chain(x).to_string()))
             .collect::<Vec<_>>();
 
         let ids = native_assets.iter().map(|x| x.price_id.clone()).collect();

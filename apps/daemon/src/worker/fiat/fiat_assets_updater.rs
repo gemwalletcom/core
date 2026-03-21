@@ -77,8 +77,9 @@ impl FiatAssetsUpdater {
 
     pub async fn update_trending_fiat_assets(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let from = Utc::now() - Duration::days(30);
-        let asset_ids = self.database.fiat()?.get_fiat_assets_popular(from.naive_utc(), 30)?;
-        Ok(self.database.tag()?.set_assets_tags_for_tag(AssetTag::TrendingFiatPurchase.as_ref(), asset_ids.clone())?)
+        let mut fiat_client = self.database.fiat()?;
+        let asset_ids = fiat_client.fiat().get_fiat_assets_popular(from.naive_utc(), 30)?;
+        Ok(self.database.tag()?.set_assets_tags_for_tag(AssetTag::TrendingFiatPurchase.as_ref(), asset_ids)?)
     }
 
     fn get_provider(&self, provider_name: FiatProviderName) -> Result<&(dyn FiatProvider + Send + Sync), Box<dyn std::error::Error + Send + Sync>> {
@@ -94,7 +95,7 @@ impl FiatAssetsUpdater {
 
         let payment_methods = provider.payment_methods().await;
         let payment_methods_json = serde_json::to_value(&payment_methods)?;
-        self.database.fiat()?.update_fiat_provider_payment_methods(&provider_name.id(), payment_methods_json)?;
+        self.database.fiat()?.update_fiat_provider_payment_methods(provider_name.id(), payment_methods_json)?;
 
         let assets = provider.get_assets().await?;
         let asset_count = assets.len();
@@ -145,7 +146,7 @@ impl FiatAssetsUpdater {
         primitives::FiatAsset {
             id: fiat_asset.id,
             asset_id,
-            provider: fiat_asset.provider.id(),
+            provider: fiat_asset.provider.id().to_string(),
             symbol: fiat_asset.symbol,
             network: fiat_asset.network,
             token_id: fiat_asset.token_id,

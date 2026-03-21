@@ -14,6 +14,7 @@ pub struct FlashnetOnrampRequest {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FlashnetOnrampResponse {
+    pub order_id: String,
     pub payment_links: FlashnetPaymentLinks,
 }
 

@@ -1,5 +1,5 @@
 use num_bigint::BigUint;
-use primitives::{AssetId, AssetIdVecExt, AssetVecExt};
+use primitives::{AssetIdVecExt, AssetVecExt};
 use std::error::Error;
 
 use async_trait::async_trait;
@@ -43,25 +43,22 @@ impl MessageConsumer<ChainAddressPayload, usize> for FetchTokenAddressesConsumer
 
         for asset in all_assets {
             if asset.balance.available == BigUint::ZERO {
-                zero_balance_addresses.push(AssetAddressRow::new(asset.asset_id.chain, asset.asset_id.to_string(), payload.value.address.clone(), None));
+                zero_balance_addresses.push(AssetAddressRow::new(asset.asset_id.chain, asset.asset_id.clone(), payload.value.address.clone(), None));
             } else {
                 non_zero_addresses.push(AssetAddressRow::new(
                     payload.value.chain,
-                    asset.asset_id.to_string(),
+                    asset.asset_id.clone(),
                     payload.value.address.clone(),
                     Some(asset.balance.available.to_string()),
                 ));
             }
         }
 
-        let asset_ids: Vec<_> = non_zero_addresses.iter().flat_map(|x| AssetId::new(&x.asset_id)).collect();
+        let asset_ids: Vec<_> = non_zero_addresses.iter().map(|x| x.asset_id.0.clone()).collect();
         let existing_ids = self.database.assets()?.get_assets(asset_ids.ids())?.ids();
 
         let missing_ids: Vec<_> = asset_ids.into_iter().filter(|id| !existing_ids.contains(id)).collect();
-        let existing_addresses: Vec<_> = non_zero_addresses
-            .into_iter()
-            .filter(|addr| AssetId::new(&addr.asset_id).is_some_and(|id| existing_ids.contains(&id)))
-            .collect();
+        let existing_addresses: Vec<_> = non_zero_addresses.into_iter().filter(|addr| existing_ids.contains(&addr.asset_id.0)).collect();
 
         let _ = self
             .database

@@ -3,7 +3,7 @@ use diesel::prelude::*;
 use primitives::rewards::{RewardRedemption, RewardRedemptionOption};
 use primitives::{Asset, RewardEvent};
 
-use crate::sql_types::{IpUsageType, Platform, PlatformStore, RedemptionStatus, RewardEventType, RewardRedemptionType, RewardStatus};
+use crate::sql_types::{AssetId, IpUsageType, Platform, PlatformStore, RedemptionStatus, RewardEventType, RewardRedemptionType, RewardStatus};
 
 #[derive(Debug, Queryable, Selectable, Clone)]
 #[diesel(table_name = crate::schema::rewards)]
@@ -152,7 +152,7 @@ pub struct RewardRedemptionOptionRow {
     pub id: String,
     pub redemption_type: RewardRedemptionType,
     pub points: i32,
-    pub asset_id: Option<String>,
+    pub asset_id: Option<AssetId>,
     pub value: String,
     pub remaining: Option<i32>,
     pub updated_at: chrono::NaiveDateTime,

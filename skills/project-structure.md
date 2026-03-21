@@ -69,7 +69,7 @@ Individual `gem_*` crates for each blockchain with unified RPC client patterns:
 - `nft_provider/`: NFT data provider integrations (OpenSea, Magic Eden, NFTScan)
 
 ### Integrations & Services
-- `fiat/`: Fiat on-ramp/off-ramp providers (MoonPay, Transak, Mercuryo, Banxa)
+- `fiat/`: Fiat on-ramp/off-ramp providers (MoonPay, Transak, Mercuryo, Paybis, Flashnet)
 - `name_resolver/`: Blockchain naming service integrations (ENS, SNS, etc.)
 - `security_provider/`: Security and fraud detection provider integrations
 - `api_connector/`: Backend API connector utilities

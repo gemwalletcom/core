@@ -1,3 +1,4 @@
+use crate::provider::generate_quote_id;
 use hex;
 use primitives::FiatQuoteType;
 use sha2::{Digest, Sha512};
@@ -29,7 +30,7 @@ impl MercuryoWidget {
         Self {
             widget_id,
             secret_key,
-            merchant_transaction_id: uuid::Uuid::new_v4().to_string(),
+            merchant_transaction_id: generate_quote_id(),
             address,
             ip_address,
             currency: quote.currency,

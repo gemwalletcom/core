@@ -15,6 +15,7 @@ pub struct FiatQuote {
     pub fiat_amount: f64,
     pub fiat_currency: String,
     pub crypto_amount: f64,
+    pub value: String,
     #[typeshare(skip)]
     pub latency: u64,
     pub payment_methods: Vec<PaymentType>,
@@ -29,6 +30,7 @@ impl FiatQuote {
         fiat_amount: f64,
         fiat_currency: String,
         crypto_amount: f64,
+        value: String,
         latency: u64,
         payment_methods: Vec<PaymentType>,
     ) -> Self {
@@ -40,6 +42,7 @@ impl FiatQuote {
             fiat_amount,
             fiat_currency,
             crypto_amount,
+            value,
             latency,
             payment_methods,
         }
@@ -59,6 +62,9 @@ pub struct FiatQuotes {
 #[serde(rename_all = "camelCase")]
 pub struct FiatQuoteUrl {
     pub redirect_url: String,
+    #[serde(skip_serializing)]
+    #[typeshare(skip)]
+    pub provider_transaction_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

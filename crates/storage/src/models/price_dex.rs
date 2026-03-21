@@ -1,6 +1,9 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
+use primitives::AssetId as PrimitiveAssetId;
 use serde::{Deserialize, Serialize};
+
+use crate::sql_types::AssetId;
 
 #[derive(Debug, Queryable, Selectable, Identifiable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::prices_dex_providers)]
@@ -31,7 +34,7 @@ pub struct PriceDexRow {
 #[diesel(table_name = crate::schema::prices_dex_assets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct PriceDexAssetRow {
-    pub asset_id: String,
+    pub asset_id: AssetId,
     pub price_feed_id: String,
 }
 
@@ -47,7 +50,10 @@ impl PriceDexRow {
 }
 
 impl PriceDexAssetRow {
-    pub fn new(asset_id: String, price_feed_id: String) -> Self {
-        Self { asset_id, price_feed_id }
+    pub fn new(asset_id: PrimitiveAssetId, price_feed_id: String) -> Self {
+        Self {
+            asset_id: asset_id.into(),
+            price_feed_id,
+        }
     }
 }

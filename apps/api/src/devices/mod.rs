@@ -27,8 +27,8 @@ use primitives::device::Device;
 use primitives::name::NameRecord;
 use primitives::rewards::{RedemptionRequest, RedemptionResult, RewardRedemptionOption};
 use primitives::{
-    AddressName, AssetId, AuthNonce, ChainAddress, FiatAssets, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuotes, InAppNotification, MigrateDeviceIdRequest, NFTData,
-    PortfolioAssets, PortfolioAssetsRequest, PriceAlerts, ReportNft, RewardEvent, Rewards, ScanTransaction, ScanTransactionPayload, Transaction, TransactionsResponse,
+    AddressName, AssetId, AuthNonce, ChainAddress, FiatAssets, FiatQuote, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuotes, InAppNotification, MigrateDeviceIdRequest,
+    NFTData, PortfolioAssets, PortfolioAssetsRequest, PriceAlerts, ReportNft, RewardEvent, Rewards, ScanTransaction, ScanTransactionPayload, Transaction, TransactionsResponse,
     WalletSubscriptionChains,
 };
 use rocket::{State, delete, get, post, put, serde::json::Json, tokio::sync::Mutex};
@@ -218,15 +218,16 @@ pub async fn send_push_notification_device_v2(device: AuthenticatedDevice, clien
 
 #[post("/devices/nft/report", format = "json", data = "<request>")]
 pub async fn report_device_nft_v2(device: AuthenticatedDevice, request: Json<ReportNft>, client: &State<Mutex<NFTClient>>) -> Result<ApiResponse<bool>, ApiError> {
+    let asset_id = request
+        .asset_id
+        .as_deref()
+        .map(|asset_id| AssetId::new(asset_id).ok_or_else(|| ApiError::BadRequest(format!("Invalid asset_id: {asset_id}"))))
+        .transpose()?;
+
     Ok(client
         .lock()
         .await
-        .report_nft(
-            &device.device_row.device_id,
-            request.collection_id.clone(),
-            request.asset_id.clone(),
-            request.reason.clone(),
-        )?
+        .report_nft(&device.device_row.device_id, request.collection_id.clone(), asset_id, request.reason.clone())?
         .into())
 }
 
@@ -328,16 +329,6 @@ pub async fn delete_device_price_alerts_v2(
     Ok(client.lock().await.delete_price_alerts(&device.device_row.device_id, price_alerts.0).await?.into())
 }
 
-#[get("/devices/fiat/orders/<provider>/<order_id>")]
-pub async fn get_device_fiat_order_v2(
-    _device: AuthenticatedDevice,
-    provider: &str,
-    order_id: &str,
-    client: &State<Mutex<FiatQuotesClient>>,
-) -> Result<ApiResponse<primitives::FiatTransactionInfo>, ApiError> {
-    Ok(fiat::fiat_transaction_info(client.lock().await.get_order_status(provider, order_id).await?).into())
-}
-
 #[get("/devices/fiat/transactions")]
 pub async fn get_device_fiat_transactions_v2(
     device: AuthenticatedDeviceWallet,
@@ -385,12 +376,17 @@ pub async fn get_fiat_quotes_v2(
         quote_type: quote_type.0,
         amount,
         currency: currency.as_string(),
-        provider_id: provider.map(|p| p.0.id()),
+        provider_id: provider.map(|p| p.0.id().to_string()),
         ip_address: ip_address.map(str::to_string).unwrap_or(fallback_ip_address),
     };
     let quotes = client.lock().await.get_quotes(quote_request).await?;
     fiat_metrics.record_quotes(&quotes);
     Ok(quotes.into())
+}
+
+#[get("/devices/fiat/quotes/<quote_id>", rank = 2)]
+pub async fn get_fiat_quote_v2(_device: AuthenticatedDevice, quote_id: &str, client: &State<Mutex<FiatQuotesClient>>) -> Result<ApiResponse<FiatQuote>, ApiError> {
+    Ok(client.lock().await.get_quote(quote_id).await?.into())
 }
 
 #[get("/fiat/quotes/<quote_type>?<asset_id>&<amount>&<currency>&<provider_id>&<ip_address>")]
@@ -411,7 +407,7 @@ pub async fn get_fiat_quotes_v1(
         quote_type: quote_type.0,
         amount,
         currency: currency.as_string(),
-        provider_id: provider_id.map(|p| p.0.id()),
+        provider_id: provider_id.map(|p| p.0.id().to_string()),
         ip_address: ip_address.map(str::to_string).unwrap_or(fallback_ip_address),
     };
     let quotes = client.lock().await.get_quotes(quote_request).await?;

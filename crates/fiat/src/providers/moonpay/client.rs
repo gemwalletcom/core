@@ -19,13 +19,8 @@ pub struct MoonPayClient {
 const MOONPAY_API_BASE_URL: &str = "https://api.moonpay.com";
 const MOONPAY_BUY_REDIRECT_URL: &str = "https://buy.moonpay.com";
 const MOONPAY_SELL_REDIRECT_URL: &str = "https://sell.moonpay.com";
-
 impl MoonPayClient {
     pub const NAME: FiatProviderName = FiatProviderName::MoonPay;
-
-    pub(super) fn generate_quote_id() -> String {
-        uuid::Uuid::new_v4().to_string()
-    }
 
     pub fn new(client: Client, api_key: String, secret_key: String) -> Self {
         Self { client, api_key, secret_key }
@@ -179,13 +174,16 @@ impl MoonPayClient {
         })
     }
 
-    fn generate_quote_url(&self, quote_type: FiatQuoteType, amount: f64, symbol: &str, wallet_address: &str) -> String {
+    fn generate_quote_url(&self, quote_type: FiatQuoteType, amount: f64, symbol: &str, wallet_address: &str, external_transaction_id: &str) -> String {
         let url = match quote_type {
             FiatQuoteType::Buy => MOONPAY_BUY_REDIRECT_URL,
             FiatQuoteType::Sell => MOONPAY_SELL_REDIRECT_URL,
         };
         let mut components = Url::parse(url).unwrap();
-        components.query_pairs_mut().append_pair("apiKey", &self.api_key);
+        components
+            .query_pairs_mut()
+            .append_pair("apiKey", &self.api_key)
+            .append_pair("externalTransactionId", external_transaction_id);
 
         match quote_type {
             FiatQuoteType::Buy => {
@@ -219,7 +217,7 @@ impl MoonPayClient {
         generate_hmac_signature(&self.secret_key, query)
     }
 
-    pub fn quote_redirect_url(&self, quote_type: FiatQuoteType, amount: f64, symbol: &str, wallet_address: &str) -> String {
-        self.generate_quote_url(quote_type, amount, symbol, wallet_address)
+    pub fn quote_redirect_url(&self, quote_type: FiatQuoteType, amount: f64, symbol: &str, wallet_address: &str, external_transaction_id: &str) -> String {
+        self.generate_quote_url(quote_type, amount, symbol, wallet_address, external_transaction_id)
     }
 }

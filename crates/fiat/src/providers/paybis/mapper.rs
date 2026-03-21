@@ -1,35 +1,24 @@
-use primitives::currency::Currency;
-use primitives::{
-    AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus, PaymentType,
-    asset_constants::{
-        ARBITRUM_ARB_ASSET_ID, BASE_USDC_ASSET_ID, ETHEREUM_AAVE_ASSET_ID, ETHEREUM_DAI_ASSET_ID, ETHEREUM_LINK_ASSET_ID, ETHEREUM_UNI_ASSET_ID, ETHEREUM_USDC_ASSET_ID,
-        ETHEREUM_USDT_ASSET_ID, OPTIMISM_OP_ASSET_ID, POLYGON_USDC_ASSET_ID, POLYGON_USDT_ASSET_ID, SOLANA_USDC_ASSET_ID, SOLANA_USDT_ASSET_ID, STELLAR_USDC_ASSET_ID,
-        TRON_USDT_ASSET_ID,
-    },
-};
-use streamer::FiatWebhook;
+use std::collections::HashSet;
 
 use crate::model::FiatProviderAsset;
-use primitives::fiat_assets::FiatAssetLimits;
-
-use super::{
-    client::PaybisClient,
-    models::{Currency as PaybisCurrency, PaybisData, PaybisWebhookData},
+use primitives::asset_constants::{
+    ARBITRUM_ARB_ASSET_ID, BASE_USDC_ASSET_ID, ETHEREUM_AAVE_ASSET_ID, ETHEREUM_DAI_ASSET_ID, ETHEREUM_LINK_ASSET_ID, ETHEREUM_UNI_ASSET_ID, ETHEREUM_USDC_ASSET_ID,
+    ETHEREUM_USDT_ASSET_ID, OPTIMISM_OP_ASSET_ID, POLYGON_USDC_ASSET_ID, POLYGON_USDT_ASSET_ID, SOLANA_USDC_ASSET_ID, SOLANA_USDT_ASSET_ID, STELLAR_USDC_ASSET_ID,
+    TRON_USDT_ASSET_ID,
 };
+use primitives::currency::Currency;
+use primitives::fiat_assets::FiatAssetLimits;
+use primitives::{AssetId, Chain, FiatProviderName, FiatTransactionStatus, FiatTransactionUpdate, PaymentType};
+use streamer::FiatWebhook;
+
+use super::models::{Currency as PaybisCurrency, PaybisWebhook, PaybisWebhookData};
 
 pub fn supported_payment_methods() -> Vec<PaymentType> {
     vec![PaymentType::Card, PaymentType::ApplePay, PaymentType::GooglePay]
 }
 
-pub fn map_asset_id(currency: PaybisCurrency) -> Option<AssetId> {
-    if !currency.is_crypto() {
-        return None;
-    }
-    map_symbol_to_asset_id(&currency.code)
-}
-
-pub fn map_symbol_to_asset_id(symbol: &str) -> Option<AssetId> {
-    match symbol {
+fn map_symbol_to_asset_id(symbol: &str) -> Option<AssetId> {
+    match symbol.to_ascii_uppercase().as_str() {
         "BTC" => Some(AssetId::from_chain(Chain::Bitcoin)),
         "BCH" => Some(AssetId::from_chain(Chain::BitcoinCash)),
         "ETH" => Some(AssetId::from_chain(Chain::Ethereum)),
@@ -43,33 +32,25 @@ pub fn map_symbol_to_asset_id(symbol: &str) -> Option<AssetId> {
         "CELO" => Some(AssetId::from_chain(Chain::Celo)),
         "TON" => Some(AssetId::from_chain(Chain::Ton)),
         "DOGE" => Some(AssetId::from_chain(Chain::Doge)),
-
-        "AVAXC" => Some(AssetId::from_chain(Chain::AvalancheC)),
-
+        "AVAX" | "AVAXC" => Some(AssetId::from_chain(Chain::AvalancheC)),
         "ETH-BASE" => Some(AssetId::from_chain(Chain::Base)),
         "USDC-BASE" => Some(BASE_USDC_ASSET_ID.clone()),
-
         "POL" => Some(AssetId::from_chain(Chain::Polygon)),
         "USDC-POLYGON" => Some(POLYGON_USDC_ASSET_ID.clone()),
         "USDT-POLYGON" => Some(POLYGON_USDT_ASSET_ID.clone()),
-
         "USDC-SOL" => Some(SOLANA_USDC_ASSET_ID.clone()),
         "USDT-SOL" => Some(SOLANA_USDT_ASSET_ID.clone()),
         "BONK-SOL" => Some(AssetId::token(Chain::Solana, "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263")),
-
         "USDT-TRC20" => Some(TRON_USDT_ASSET_ID.clone()),
-
         "BNB" | "BNBSC" => Some(AssetId::from_chain(Chain::SmartChain)),
         "CAKE" => Some(AssetId::token(Chain::SmartChain, "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82")),
         "ONT" => Some(AssetId::token(Chain::SmartChain, "0xFd7B3A77848f1C2D67E05E54d78d174a0C850335")),
         "TWT" => Some(AssetId::token(Chain::SmartChain, "0x4B0F1812e5Df2A09796481Ff14017e6005508003")),
         "XEC" => Some(AssetId::token(Chain::SmartChain, "0x0Ef2e7602adD1733Bfdb17aC3094d0421B502cA3")),
         "ZIL" => Some(AssetId::token(Chain::SmartChain, "0xb86AbCb37C3A4B64f74f59301AFF131a1BEcC787")),
-
         "USDC" => Some(ETHEREUM_USDC_ASSET_ID.clone()),
         "USDT" => Some(ETHEREUM_USDT_ASSET_ID.clone()),
         "DAI" => Some(ETHEREUM_DAI_ASSET_ID.clone()),
-
         "LINK" => Some(ETHEREUM_LINK_ASSET_ID.clone()),
         "AAVE" => Some(ETHEREUM_AAVE_ASSET_ID.clone()),
         "UNI" => Some(ETHEREUM_UNI_ASSET_ID.clone()),
@@ -79,7 +60,6 @@ pub fn map_symbol_to_asset_id(symbol: &str) -> Option<AssetId> {
         "LDO" => Some(AssetId::token(Chain::Ethereum, "0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32")),
         "ENS" => Some(AssetId::token(Chain::Ethereum, "0xC18360217D8F7Ab5e7c516566761Ea12Ce7F9D72")),
         "SUSHI" => Some(AssetId::token(Chain::Ethereum, "0x6B3595068778DD592e39A122f4f5a5cF09C90fE2")),
-
         "SHIB" => Some(AssetId::token(Chain::Ethereum, "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE")),
         "PEPE" => Some(AssetId::token(Chain::Ethereum, "0x6982508145454Ce325dDbE47a25d4ec3d2311933")),
         "APE" => Some(AssetId::token(Chain::Ethereum, "0x4d224452801ACEd8B2F0aebE155379bb5D594381")),
@@ -123,14 +103,18 @@ pub fn map_symbol_to_asset_id(symbol: &str) -> Option<AssetId> {
         "T" => Some(AssetId::token(Chain::Ethereum, "0xCdF7028ceAB81fA0C6971208e83fa7872994bEE5")),
         "WOO" => Some(AssetId::token(Chain::Ethereum, "0x4691937a7508860F876c9c0a2a617E7d9E945D4B")),
         "YFI" => Some(AssetId::token(Chain::Ethereum, "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e")),
-
         "ARB" => Some(ARBITRUM_ARB_ASSET_ID.clone()),
         "OP" => Some(OPTIMISM_OP_ASSET_ID.clone()),
-
         "USDC-STELLAR" => Some(STELLAR_USDC_ASSET_ID.clone()),
-
         _ => None,
     }
+}
+
+pub fn map_asset_id(currency: PaybisCurrency) -> Option<AssetId> {
+    if !currency.is_crypto() {
+        return None;
+    }
+    map_symbol_to_asset_id(&currency.code)
 }
 
 pub fn map_status(status: &str) -> FiatTransactionStatus {
@@ -142,30 +126,24 @@ pub fn map_status(status: &str) -> FiatTransactionStatus {
     }
 }
 
-pub fn map_process_webhook(data: serde_json::Value) -> FiatWebhook {
-    match serde_json::from_value::<PaybisData<PaybisWebhookData>>(data) {
-        Ok(webhook) => map_webhook_data(webhook.data),
-        Err(_) => FiatWebhook::None,
+pub fn map_process_webhook(data: serde_json::Value) -> Result<FiatWebhook, serde_json::Error> {
+    let webhook = serde_json::from_value::<PaybisWebhook<serde_json::Value>>(data)?;
+    if webhook.event != "TRANSACTION_STATUS_CHANGED" {
+        return Ok(FiatWebhook::None);
     }
+
+    let data = serde_json::from_value::<PaybisWebhookData>(webhook.data)?;
+    Ok(map_webhook_data(data))
 }
 
 pub fn map_webhook_data(webhook_data: PaybisWebhookData) -> FiatWebhook {
-    FiatWebhook::Transaction(FiatTransaction {
-        asset_id: map_symbol_to_asset_id(&webhook_data.amount_to.currency),
-        transaction_type: match webhook_data.transaction.flow.as_str() {
-            "buyCrypto" => FiatQuoteType::Buy,
-            "sellCrypto" => FiatQuoteType::Sell,
-            _ => FiatQuoteType::Buy,
-        },
-        symbol: webhook_data.amount_to.currency,
-        provider_id: PaybisClient::NAME,
-        provider_transaction_id: webhook_data.transaction.invoice,
+    FiatWebhook::Transaction(FiatTransactionUpdate {
+        transaction_id: webhook_data.quote.quote_id,
+        provider_transaction_id: Some(webhook_data.transaction.invoice),
         status: map_status(&webhook_data.transaction.status),
-        country: webhook_data.payment.as_ref().and_then(|p| p.card.as_ref()).map(|c| c.billing_address.country.code.clone()),
-        fiat_amount: webhook_data.amount_from.amount.parse().unwrap_or(0.0),
-        fiat_currency: webhook_data.amount_from.currency.to_uppercase(),
         transaction_hash: webhook_data.payout.as_ref().and_then(|p| p.transaction_hash.clone()),
         address: webhook_data.payout.as_ref().and_then(|p| p.destination_wallet_address.clone()),
+        fiat_amount: webhook_data.amount_from.amount.parse().ok(),
     })
 }
 
@@ -180,8 +158,6 @@ fn default_limits() -> Vec<FiatAssetLimits> {
         })
         .collect()
 }
-
-use std::collections::HashSet;
 
 pub fn map_assets(buy_currencies: Vec<PaybisCurrency>, sell_codes: HashSet<String>) -> Vec<FiatProviderAsset> {
     buy_currencies
@@ -216,6 +192,11 @@ pub fn map_assets(buy_currencies: Vec<PaybisCurrency>, sell_codes: HashSet<Strin
 #[cfg(test)]
 mod tests {
     use super::*;
+    use primitives::Chain;
+    use primitives::asset_constants::{
+        ARBITRUM_ARB_ASSET_ID, BASE_USDC_ASSET_ID, ETHEREUM_USDC_ASSET_ID, ETHEREUM_USDT_ASSET_ID, OPTIMISM_OP_ASSET_ID, POLYGON_USDC_ASSET_ID, POLYGON_USDT_ASSET_ID,
+        SOLANA_USDC_ASSET_ID, SOLANA_USDT_ASSET_ID, TRON_USDT_ASSET_ID,
+    };
 
     #[test]
     fn test_map_asset_id() {
@@ -292,6 +273,7 @@ mod tests {
             ("COMP", AssetId::token(Chain::Ethereum, "0xc00e94Cb662C3520282E6f5717214004A7f26888")),
             ("CAKE", AssetId::token(Chain::SmartChain, "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82")),
             ("BONK-SOL", AssetId::token(Chain::Solana, "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263")),
+            ("OP", OPTIMISM_OP_ASSET_ID.clone()),
         ];
 
         for (symbol, expected) in token_tests {
@@ -304,11 +286,10 @@ mod tests {
     fn test_map_process_webhook() {
         let webhook_json: serde_json::Value = serde_json::from_str(include_str!("../../../testdata/paybis/webhook_transaction_started.json")).unwrap();
 
-        let result = map_process_webhook(webhook_json);
+        let result = map_process_webhook(webhook_json).unwrap();
         if let FiatWebhook::Transaction(transaction) = result {
-            assert_eq!(transaction.provider_transaction_id, "PB21095868675TX1");
-            assert_eq!(transaction.symbol, "SOL");
-            assert_eq!(transaction.fiat_currency, "USD");
+            assert_eq!(transaction.transaction_id, "a4a211ad-3bcf-47d9-b4ae-073e841e3e7a");
+            assert_eq!(transaction.provider_transaction_id, Some("PB21095868675TX1".to_string()));
         } else {
             panic!("Expected FiatWebhook::Transaction variant");
         }
@@ -318,15 +299,12 @@ mod tests {
     fn test_map_process_webhook_with_payment() {
         let webhook_json: serde_json::Value = serde_json::from_str(include_str!("../../../testdata/paybis/webhook_transaction_started.json")).unwrap();
 
-        let result = map_process_webhook(webhook_json);
+        let result = map_process_webhook(webhook_json).unwrap();
         if let FiatWebhook::Transaction(transaction) = result {
-            assert_eq!(transaction.provider_transaction_id, "PB21095868675TX1");
-            assert_eq!(transaction.symbol, "SOL");
-            assert_eq!(transaction.fiat_currency, "USD");
-            assert_eq!(transaction.fiat_amount, 50.0);
-            assert!(matches!(transaction.transaction_type, FiatQuoteType::Buy));
-            assert!(matches!(transaction.status, FiatTransactionStatus::Pending));
-            assert_eq!(transaction.country, Some("US".to_string()));
+            assert_eq!(transaction.transaction_id, "a4a211ad-3bcf-47d9-b4ae-073e841e3e7a");
+            assert_eq!(transaction.provider_transaction_id, Some("PB21095868675TX1".to_string()));
+            assert_eq!(transaction.fiat_amount, Some(50.0));
+            assert_eq!(transaction.status, FiatTransactionStatus::Pending);
             assert_eq!(transaction.address, Some("test123".to_string()));
             assert_eq!(transaction.transaction_hash, None);
         } else {
@@ -338,12 +316,10 @@ mod tests {
     fn test_map_process_webhook_no_payment() {
         let webhook_json: serde_json::Value = serde_json::from_str(include_str!("../../../testdata/paybis/webhook_transaction_started_no_payment.json")).unwrap();
 
-        let result = map_process_webhook(webhook_json);
+        let result = map_process_webhook(webhook_json).unwrap();
         if let FiatWebhook::Transaction(transaction) = result {
-            assert_eq!(transaction.provider_transaction_id, "PB25095868675TX8");
-            assert_eq!(transaction.symbol, "SOL");
-            assert_eq!(transaction.fiat_currency, "USD");
-            assert_eq!(transaction.country, None);
+            assert_eq!(transaction.transaction_id, "59b799d4-dc8c-458d-b9c7-292726ab6255");
+            assert_eq!(transaction.provider_transaction_id, Some("PB25095868675TX8".to_string()));
             assert_eq!(transaction.address, None);
         } else {
             panic!("Expected FiatWebhook::Transaction variant");
@@ -354,8 +330,20 @@ mod tests {
     fn test_verification_webhook_maps_to_none() {
         let data: serde_json::Value = serde_json::from_str(include_str!("../../../testdata/paybis/webhook_transaction_no_changes.json")).unwrap();
 
-        let result = map_process_webhook(data);
+        let result = map_process_webhook(data).unwrap();
         assert!(matches!(result, FiatWebhook::None), "Verification webhooks should map to FiatWebhook::None");
+    }
+
+    #[test]
+    fn test_malformed_transaction_webhook_returns_error() {
+        let data = serde_json::json!({
+            "event": "TRANSACTION_STATUS_CHANGED",
+            "data": {
+                "quote": { "quoteId": "quote_123" }
+            }
+        });
+
+        assert!(map_process_webhook(data).is_err());
     }
 
     #[test]

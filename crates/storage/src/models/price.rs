@@ -1,10 +1,11 @@
 use chrono::{DateTime, NaiveDateTime};
 use diesel::prelude::*;
-use primitives::{AssetId, AssetMarket, AssetPriceInfo, ChartValuePercentage, FiatRate, Price, PriceData};
+use primitives::{AssetId as PrimitiveAssetId, AssetMarket, AssetPriceInfo, ChartValuePercentage, FiatRate, Price, PriceData};
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 
 use crate::models::ChartRow;
+use crate::sql_types::AssetId;
 
 use super::AssetRow;
 
@@ -46,13 +47,16 @@ impl NewPriceRow {
 #[diesel(table_name = crate::schema::prices_assets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct PriceAssetRow {
-    pub asset_id: String,
+    pub asset_id: AssetId,
     pub price_id: String,
 }
 
 impl PriceAssetRow {
-    pub fn new(asset_id: String, price_id: String) -> Self {
-        PriceAssetRow { asset_id, price_id }
+    pub fn new(asset_id: PrimitiveAssetId, price_id: String) -> Self {
+        PriceAssetRow {
+            asset_id: asset_id.into(),
+            price_id,
+        }
     }
 }
 
@@ -176,7 +180,7 @@ impl PriceRow {
         }
     }
 
-    pub fn as_price_asset_info(&self, asset_id: AssetId) -> AssetPriceInfo {
+    pub fn as_price_asset_info(&self, asset_id: PrimitiveAssetId) -> AssetPriceInfo {
         AssetPriceInfo {
             asset_id,
             price: self.as_primitive(),

@@ -93,16 +93,7 @@ fn map_spot_fill_group(address: &str, fills: Vec<UserFill>, last_fill: &UserFill
     })
     .ok()?;
 
-    build_fill_transaction(
-        address,
-        last_fill,
-        from_asset,
-        TransactionType::Swap,
-        fee,
-        fee_asset_id,
-        from_value,
-        metadata,
-    )
+    build_fill_transaction(address, last_fill, from_asset, TransactionType::Swap, fee, fee_asset_id, from_value, metadata)
 }
 
 fn map_spot_fee(fills: &[UserFill], base_token: &SpotToken, quote_token: &SpotToken) -> Option<(String, primitives::AssetId)> {

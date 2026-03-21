@@ -1,6 +1,6 @@
 use primitives::{
-    AssetAddress, AssetId, Chain, ChainAddress, ChartData, FailedNotification, FiatProviderName, FiatTransaction, GorushNotification, NotificationType, PriceData, Transaction,
-    TransactionId, WalletId,
+    AssetAddress, AssetId, Chain, ChainAddress, ChartData, FailedNotification, FiatProviderName, FiatTransactionUpdate, GorushNotification, NotificationType, PriceData,
+    Transaction, TransactionId, WalletId,
 };
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -177,7 +177,7 @@ impl From<ChainAddress> for ChainAddressPayload {
 #[allow(clippy::large_enum_variant)]
 pub enum FiatWebhook {
     OrderId(String),
-    Transaction(FiatTransaction),
+    Transaction(FiatTransactionUpdate),
     None,
 }
 

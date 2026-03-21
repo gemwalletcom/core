@@ -35,12 +35,7 @@ impl MessageConsumer<ChainAddressPayload, String> for FetchCoinAddressesConsumer
             return Ok(balance.balance.available.to_string());
         }
 
-        let asset_address = AssetAddressRow::new(
-            payload.value.chain,
-            balance.asset_id.to_string(),
-            payload.value.address,
-            Some(balance.balance.available.to_string()),
-        );
+        let asset_address = AssetAddressRow::new(payload.value.chain, balance.asset_id, payload.value.address, Some(balance.balance.available.to_string()));
 
         let _ = self.database.client()?.assets_addresses().add_assets_addresses(vec![asset_address.as_primitive()])?;
 

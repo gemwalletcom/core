@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use number_formatter::BigNumberFormatter;
 use primitives::currency::Currency;
 use primitives::fiat_assets::FiatAssetLimits;
-use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus, PaymentType};
+use primitives::{Chain, FiatTransactionStatus, FiatTransactionUpdate, PaymentType};
 use streamer::FiatWebhook;
 
 use crate::model::{FiatProviderAsset, filter_token_id};
@@ -74,8 +74,8 @@ pub fn map_crypto_amount(estimated_out: &str, decimals: u32) -> f64 {
     BigNumberFormatter::value_as_f64(estimated_out, decimals).unwrap_or(0.0)
 }
 
-pub fn map_redirect_url(response: FlashnetOnrampResponse) -> String {
-    response.payment_links.cash_app
+pub fn map_redirect_url(response: &FlashnetOnrampResponse) -> String {
+    response.payment_links.cash_app.clone()
 }
 
 pub fn map_webhook(payload: FlashnetWebhookPayload) -> FiatWebhook {
@@ -94,28 +94,20 @@ pub fn map_webhook(payload: FlashnetWebhookPayload) -> FiatWebhook {
     }
 }
 
-pub fn map_order(order: FlashnetOrder) -> FiatTransaction {
-    let chain = order.destination_chain().and_then(map_chain);
-    let asset_id = chain.map(AssetId::from_chain);
-    let symbol = order.destination_asset().map(str::to_ascii_uppercase).unwrap_or_default();
-    let provider_transaction_id = order.id.clone();
+pub fn map_order(order: FlashnetOrder) -> FiatTransactionUpdate {
+    let transaction_id = order.id.clone();
     let fiat_amount = order
         .effective_amount_out()
         .and_then(|value| BigNumberFormatter::value_as_f64(value, USDB_DECIMALS).ok())
         .unwrap_or_default();
 
-    FiatTransaction {
-        asset_id,
-        transaction_type: FiatQuoteType::Buy,
-        provider_id: FlashnetClient::NAME,
-        provider_transaction_id,
+    FiatTransactionUpdate {
+        transaction_id,
+        provider_transaction_id: None,
         status: map_status(&order.status),
-        country: None,
-        symbol,
-        fiat_amount,
-        fiat_currency: Currency::USD.as_ref().to_string(),
         transaction_hash: order.destination_tx_hash().map(str::to_string),
         address: order.recipient_address().map(str::to_string),
+        fiat_amount: Some(fiat_amount),
     }
 }
 
@@ -132,8 +124,7 @@ fn map_status(status: &str) -> FiatTransactionStatus {
 mod tests {
     use super::*;
     use crate::providers::flashnet::model::FlashnetOrder;
-    use primitives::currency::Currency;
-    use primitives::{AssetId, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
+    use primitives::FiatTransactionStatus;
 
     #[test]
     fn map_status_maps_all_documented_flashnet_statuses() {
@@ -180,18 +171,13 @@ mod tests {
 
         assert_eq!(
             map_order(order),
-            FiatTransaction {
-                asset_id: Some(AssetId::from_chain(Chain::Solana)),
-                transaction_type: FiatQuoteType::Buy,
-                provider_id: FlashnetClient::NAME,
-                provider_transaction_id: "ord_123".to_string(),
+            FiatTransactionUpdate {
+                transaction_id: "ord_123".to_string(),
+                provider_transaction_id: None,
                 status: FiatTransactionStatus::Complete,
-                country: None,
-                symbol: "USDC".to_string(),
-                fiat_amount: 1.2345,
-                fiat_currency: Currency::USD.as_ref().to_string(),
                 transaction_hash: Some("solana_sig_123".to_string()),
                 address: Some("8gw9b9rcoW1f7a8r6Rj7H57A9x5o7oJH5Q2M5xVwqpj1".to_string()),
+                fiat_amount: Some(1.2345),
             }
         );
     }
@@ -203,18 +189,13 @@ mod tests {
 
         assert_eq!(
             map_order(order),
-            FiatTransaction {
-                asset_id: Some(AssetId::from_chain(Chain::Solana)),
-                transaction_type: FiatQuoteType::Buy,
-                provider_id: FlashnetClient::NAME,
-                provider_transaction_id: "ord_test_completed".to_string(),
+            FiatTransactionUpdate {
+                transaction_id: "ord_test_completed".to_string(),
+                provider_transaction_id: None,
                 status: FiatTransactionStatus::Complete,
-                country: None,
-                symbol: "USDC".to_string(),
-                fiat_amount: 24.737625,
-                fiat_currency: Currency::USD.as_ref().to_string(),
                 transaction_hash: Some("solana_test_signature_completed".to_string()),
                 address: Some("solana_test_recipient_completed".to_string()),
+                fiat_amount: Some(24.737625),
             }
         );
     }
@@ -226,18 +207,13 @@ mod tests {
 
         assert_eq!(
             map_order(order),
-            FiatTransaction {
-                asset_id: Some(AssetId::from_chain(Chain::Solana)),
-                transaction_type: FiatQuoteType::Buy,
-                provider_id: FlashnetClient::NAME,
-                provider_transaction_id: "ord_test_pending".to_string(),
+            FiatTransactionUpdate {
+                transaction_id: "ord_test_pending".to_string(),
+                provider_transaction_id: None,
                 status: FiatTransactionStatus::Pending,
-                country: None,
-                symbol: "USDC".to_string(),
-                fiat_amount: 49.47525,
-                fiat_currency: Currency::USD.as_ref().to_string(),
                 transaction_hash: None,
                 address: Some("solana_test_recipient_processing".to_string()),
+                fiat_amount: Some(49.47525),
             }
         );
     }

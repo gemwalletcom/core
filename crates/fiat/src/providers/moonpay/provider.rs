@@ -1,14 +1,15 @@
 use crate::{
     FiatProvider,
     model::{FiatMapping, FiatProviderAsset},
-    providers::moonpay::models::{Data, WebhookOrderId},
+    provider::generate_quote_id,
+    providers::moonpay::models::{Data, Transaction},
 };
 use async_trait::async_trait;
 use std::error::Error;
 use streamer::FiatWebhook;
 
 use super::{client::MoonPayClient, mapper::map_order};
-use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatTransaction};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatTransactionUpdate};
 
 #[async_trait]
 impl FiatProvider for MoonPayClient {
@@ -27,21 +28,21 @@ impl FiatProvider for MoonPayClient {
             .await?
             .into_iter()
             .map(|x| FiatProviderCountry {
-                provider: Self::NAME.id(),
+                provider: Self::NAME.id().to_string(),
                 alpha2: x.alpha2,
                 is_allowed: x.is_allowed,
             })
             .collect())
     }
 
-    async fn get_order_status(&self, order_id: &str) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_order_status(&self, order_id: &str) -> Result<FiatTransactionUpdate, Box<dyn std::error::Error + Send + Sync>> {
         let payload = self.get_any_transaction(order_id).await?;
-        map_order(payload)
+        Ok(map_order(payload))
     }
 
     async fn process_webhook(&self, data: serde_json::Value) -> Result<FiatWebhook, Box<dyn std::error::Error + Send + Sync>> {
-        let payload = serde_json::from_value::<Data<WebhookOrderId>>(data)?.data;
-        Ok(FiatWebhook::OrderId(payload.id))
+        let payload = serde_json::from_value::<Data<Transaction>>(data)?.data;
+        Ok(FiatWebhook::Transaction(map_order(payload)))
     }
 
     async fn get_quote_buy(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
@@ -49,7 +50,7 @@ impl FiatProvider for MoonPayClient {
             .get_buy_quote(request_map.asset_symbol.symbol.to_lowercase(), request.currency.to_lowercase(), request.amount)
             .await?;
 
-        Ok(FiatQuoteResponse::new(MoonPayClient::generate_quote_id(), request.amount, quote.quote_currency_amount))
+        Ok(FiatQuoteResponse::new(generate_quote_id(), request.amount, quote.quote_currency_amount))
     }
 
     async fn get_quote_sell(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
@@ -57,11 +58,7 @@ impl FiatProvider for MoonPayClient {
             .get_sell_quote(request_map.asset_symbol.symbol.to_lowercase(), request.currency.to_lowercase(), request.amount)
             .await?;
 
-        Ok(FiatQuoteResponse::new(
-            MoonPayClient::generate_quote_id(),
-            quote.quote_currency_amount,
-            quote.base_currency_amount,
-        ))
+        Ok(FiatQuoteResponse::new(generate_quote_id(), quote.quote_currency_amount, quote.base_currency_amount))
     }
 
     async fn get_quote_url(&self, data: FiatQuoteUrlData) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {
@@ -70,9 +67,12 @@ impl FiatProvider for MoonPayClient {
             FiatQuoteType::Sell => data.quote.crypto_amount,
         };
 
-        let redirect_url = self.quote_redirect_url(data.quote.quote_type, amount, &data.asset_symbol.symbol, &data.wallet_address);
+        let redirect_url = self.quote_redirect_url(data.quote.quote_type, amount, &data.asset_symbol.symbol, &data.wallet_address, &data.quote.id);
 
-        Ok(FiatQuoteUrl { redirect_url })
+        Ok(FiatQuoteUrl {
+            redirect_url,
+            provider_transaction_id: None,
+        })
     }
 }
 

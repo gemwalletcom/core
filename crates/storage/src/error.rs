@@ -67,10 +67,6 @@ impl ResourceName for crate::models::DeviceRow {
     const RESOURCE_NAME: &'static str = "Device";
 }
 
-impl ResourceName for crate::models::FiatQuoteRow {
-    const RESOURCE_NAME: &'static str = "FiatQuote";
-}
-
 impl ResourceName for crate::models::FiatRateRow {
     const RESOURCE_NAME: &'static str = "FiatRate";
 }

@@ -1,12 +1,12 @@
 use std::error::Error;
 
 use async_trait::async_trait;
-use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatTransaction, PaymentType};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatTransactionUpdate, PaymentType};
 use streamer::FiatWebhook;
-use uuid::Uuid;
 
 use crate::FiatProvider;
 use crate::model::{FiatMapping, FiatProviderAsset};
+use crate::provider::generate_quote_id;
 
 use super::{
     client::FlashnetClient,
@@ -31,13 +31,13 @@ impl FiatProvider for FlashnetClient {
 
     async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn Error + Send + Sync>> {
         Ok(vec![FiatProviderCountry {
-            provider: Self::NAME.id(),
+            provider: Self::NAME.id().to_string(),
             alpha2: "US".to_string(),
             is_allowed: true,
         }])
     }
 
-    async fn get_order_status(&self, order_id: &str) -> Result<FiatTransaction, Box<dyn Error + Send + Sync>> {
+    async fn get_order_status(&self, order_id: &str) -> Result<FiatTransactionUpdate, Box<dyn Error + Send + Sync>> {
         let response = self.get_order_status(order_id).await?;
         Ok(map_order(response.order))
     }
@@ -54,7 +54,7 @@ impl FiatProvider for FlashnetClient {
         let estimate = self.get_estimate(&chain, &symbol, &amount).await?;
         let crypto_amount = map_crypto_amount(&estimate.estimated_out, request_map.asset.decimals as u32);
 
-        Ok(FiatQuoteResponse::new(Uuid::new_v4().to_string(), request.amount, crypto_amount))
+        Ok(FiatQuoteResponse::new(generate_quote_id(), request.amount, crypto_amount))
     }
 
     async fn get_quote_sell(&self, _request: FiatQuoteRequest, _request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
@@ -76,7 +76,8 @@ impl FiatProvider for FlashnetClient {
         let response = self.create_onramp(request, &data.quote.id).await?;
 
         Ok(FiatQuoteUrl {
-            redirect_url: map_redirect_url(response),
+            redirect_url: map_redirect_url(&response),
+            provider_transaction_id: Some(response.order_id),
         })
     }
 }
@@ -105,7 +106,7 @@ mod tests {
     #[test]
     fn map_redirect_url_returns_cash_app_link() {
         let response = serde_json::from_str(include_str!("../../../testdata/flashnet/onramp_response.json")).unwrap();
-        let result = map_redirect_url(response);
+        let result = map_redirect_url(&response);
 
         assert_eq!(result, "https://orchestration.flashnet.xyz/pay/zimH6K-d");
     }

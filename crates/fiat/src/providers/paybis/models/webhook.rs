@@ -1,7 +1,14 @@
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct PaybisWebhook<T> {
+    pub event: String,
+    pub data: T,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct PaybisWebhookData {
+    pub quote: PaybisWebhookQuote,
     pub transaction: PaybisTransaction,
     #[serde(rename = "amountFrom")]
     pub amount_from: PaybisAmount,
@@ -44,6 +51,12 @@ pub struct PaybisTransaction {
     pub invoice: String,
     pub status: String,
     pub flow: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PaybisWebhookQuote {
+    pub quote_id: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]

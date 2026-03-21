@@ -2,7 +2,7 @@ use diesel::prelude::*;
 use primitives::Transaction;
 use serde::{Deserialize, Serialize};
 
-use crate::sql_types::ChainRow;
+use crate::sql_types::{AssetId, ChainRow};
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::transactions_addresses)]
@@ -10,7 +10,7 @@ use crate::sql_types::ChainRow;
 pub struct TransactionAddressesRow {
     pub id: i32,
     pub transaction_id: i64,
-    pub asset_id: String,
+    pub asset_id: AssetId,
     pub address: String,
 }
 
@@ -19,7 +19,7 @@ pub struct TransactionAddressesRow {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct NewTransactionAddressesRow {
     pub transaction_id: i64,
-    pub asset_id: String,
+    pub asset_id: AssetId,
     pub address: String,
 }
 
@@ -30,7 +30,7 @@ impl NewTransactionAddressesRow {
             .into_iter()
             .map(|x| Self {
                 transaction_id,
-                asset_id: x.asset_id.to_string(),
+                asset_id: x.asset_id.into(),
                 address: x.address,
             })
             .collect()

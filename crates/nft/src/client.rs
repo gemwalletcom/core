@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::sync::Arc;
 
-use primitives::{Chain, NFTAsset, NFTAssetId, NFTCollection, NFTCollectionId, NFTData};
+use primitives::{AssetId, Chain, NFTAsset, NFTAssetId, NFTCollection, NFTCollectionId, NFTData};
 use storage::database::devices::DevicesStore;
 use storage::{Database, NftRepository, WalletsRepository};
 
@@ -159,13 +159,13 @@ impl NFTClient {
         self.preload(asset_ids).await
     }
 
-    pub fn report_nft(&self, device_id: &str, collection_id: String, asset_id: Option<String>, reason: Option<String>) -> Result<bool, Box<dyn Error + Send + Sync>> {
+    pub fn report_nft(&self, device_id: &str, collection_id: String, asset_id: Option<AssetId>, reason: Option<String>) -> Result<bool, Box<dyn Error + Send + Sync>> {
         let mut client = self.database.client()?;
         let device = DevicesStore::get_device(&mut client, device_id)?;
         let report = storage::models::NewNftReportRow {
             device_id: device.id,
             collection_id,
-            asset_id,
+            asset_id: asset_id.map(Into::into),
             reason,
         };
         client.nft().add_nft_report(report)?;

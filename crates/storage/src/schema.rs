@@ -10,6 +10,14 @@ pub mod sql_types {
     pub struct AssetType;
 
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "fiat_transaction_status"))]
+    pub struct FiatTransactionStatus;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "fiat_transaction_type"))]
+    pub struct FiatTransactionType;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "ip_usage_type"))]
     pub struct IpUsageType;
 
@@ -320,33 +328,6 @@ diesel::table! {
 }
 
 diesel::table! {
-    fiat_quotes (id) {
-        #[max_length = 128]
-        id -> Varchar,
-        #[max_length = 128]
-        provider_id -> Varchar,
-        #[max_length = 128]
-        asset_id -> Varchar,
-        fiat_amount -> Float8,
-        #[max_length = 32]
-        fiat_currency -> Varchar,
-        updated_at -> Timestamp,
-        created_at -> Timestamp,
-    }
-}
-
-diesel::table! {
-    fiat_quotes_requests (id) {
-        id -> Int4,
-        device_id -> Int4,
-        #[max_length = 128]
-        quote_id -> Varchar,
-        updated_at -> Timestamp,
-        created_at -> Timestamp,
-    }
-}
-
-diesel::table! {
     fiat_rates (id) {
         #[max_length = 8]
         id -> Varchar,
@@ -358,43 +339,35 @@ diesel::table! {
 }
 
 diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::FiatTransactionStatus;
+    use super::sql_types::FiatTransactionType;
+
     fiat_transactions (id) {
         id -> Int4,
         #[max_length = 128]
         provider_id -> Varchar,
         #[max_length = 128]
-        asset_id -> Nullable<Varchar>,
-        #[max_length = 32]
-        symbol -> Varchar,
+        asset_id -> Varchar,
+        #[max_length = 128]
+        quote_id -> Varchar,
+        device_id -> Nullable<Int4>,
         fiat_amount -> Float8,
         #[max_length = 32]
         fiat_currency -> Varchar,
-        #[max_length = 32]
-        status -> Varchar,
+        #[max_length = 256]
+        value -> Nullable<Varchar>,
+        status -> FiatTransactionStatus,
         #[max_length = 256]
         country -> Nullable<Varchar>,
         #[max_length = 256]
-        provider_transaction_id -> Varchar,
+        provider_transaction_id -> Nullable<Varchar>,
         #[max_length = 256]
         transaction_hash -> Nullable<Varchar>,
         #[max_length = 256]
         address -> Nullable<Varchar>,
+        transaction_type -> FiatTransactionType,
         updated_at -> Timestamp,
-        created_at -> Timestamp,
-        #[max_length = 32]
-        transaction_type -> Varchar,
-    }
-}
-
-diesel::table! {
-    fiat_webhooks (id) {
-        id -> Int4,
-        #[max_length = 32]
-        provider -> Varchar,
-        #[max_length = 256]
-        transaction_id -> Nullable<Varchar>,
-        payload -> Jsonb,
-        error -> Nullable<Text>,
         created_at -> Timestamp,
     }
 }
@@ -963,13 +936,9 @@ diesel::joinable!(devices_sessions -> devices (device_id));
 diesel::joinable!(fiat_assets -> assets (asset_id));
 diesel::joinable!(fiat_assets -> fiat_providers (provider));
 diesel::joinable!(fiat_providers_countries -> fiat_providers (provider));
-diesel::joinable!(fiat_quotes -> assets (asset_id));
-diesel::joinable!(fiat_quotes -> fiat_providers (provider_id));
-diesel::joinable!(fiat_quotes_requests -> devices (device_id));
-diesel::joinable!(fiat_quotes_requests -> fiat_quotes (quote_id));
 diesel::joinable!(fiat_transactions -> assets (asset_id));
+diesel::joinable!(fiat_transactions -> devices (device_id));
 diesel::joinable!(fiat_transactions -> fiat_providers (provider_id));
-diesel::joinable!(fiat_webhooks -> fiat_providers (provider));
 diesel::joinable!(nft_assets -> chains (chain));
 diesel::joinable!(nft_assets -> nft_collections (collection_id));
 diesel::joinable!(nft_collections -> chains (chain));
@@ -1035,11 +1004,8 @@ diesel::allow_tables_to_appear_in_same_query!(
     fiat_assets,
     fiat_providers,
     fiat_providers_countries,
-    fiat_quotes,
-    fiat_quotes_requests,
     fiat_rates,
     fiat_transactions,
-    fiat_webhooks,
     nft_assets,
     nft_collections,
     nft_collections_links,

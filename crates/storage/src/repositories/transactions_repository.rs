@@ -3,7 +3,7 @@ use crate::models::{AddressChainIdResultRow, TransactionRow};
 use crate::sql_types::TransactionType;
 use crate::{DatabaseClient, DatabaseError, DieselResultExt};
 use chrono::NaiveDateTime;
-use primitives::{Transaction, TransactionId};
+use primitives::{AssetId, Transaction, TransactionId};
 
 pub trait TransactionsRepository {
     fn get_transaction_by_id(&mut self, id: &TransactionId) -> Result<TransactionRow, DatabaseError>;
@@ -19,7 +19,7 @@ pub trait TransactionsRepository {
     fn get_transactions_addresses(&mut self, min_count: i64, limit: i64, since: NaiveDateTime) -> Result<Vec<AddressChainIdResultRow>, DatabaseError>;
     fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<i64>, DatabaseError>;
     fn delete_orphaned_transactions(&mut self, candidate_ids: Vec<i64>) -> Result<usize, DatabaseError>;
-    fn get_asset_usage_counts(&mut self, since: NaiveDateTime) -> Result<Vec<(String, i64)>, DatabaseError>;
+    fn get_asset_usage_counts(&mut self, since: NaiveDateTime) -> Result<Vec<(AssetId, i64)>, DatabaseError>;
     fn get_transactions_by_filter(&mut self, filters: Vec<TransactionFilter>, limit: i64) -> Result<Vec<TransactionRow>, DatabaseError>;
     fn update_transaction(&mut self, chain: &str, hash: &str, updates: Vec<TransactionUpdate>) -> Result<usize, DatabaseError>;
     fn get_addresses_by_chain_and_kind(&mut self, chain: &str, kinds: Vec<TransactionType>, since: NaiveDateTime) -> Result<Vec<String>, DatabaseError>;
@@ -64,8 +64,11 @@ impl TransactionsRepository for DatabaseClient {
         Ok(TransactionsStore::delete_orphaned_transactions(self, candidate_ids)?)
     }
 
-    fn get_asset_usage_counts(&mut self, since: NaiveDateTime) -> Result<Vec<(String, i64)>, DatabaseError> {
-        Ok(TransactionsStore::get_asset_usage_counts(self, since)?)
+    fn get_asset_usage_counts(&mut self, since: NaiveDateTime) -> Result<Vec<(AssetId, i64)>, DatabaseError> {
+        Ok(TransactionsStore::get_asset_usage_counts(self, since)?
+            .into_iter()
+            .map(|(asset_id, count)| (asset_id.into(), count))
+            .collect())
     }
 
     fn get_transactions_by_filter(&mut self, filters: Vec<TransactionFilter>, limit: i64) -> Result<Vec<TransactionRow>, DatabaseError> {

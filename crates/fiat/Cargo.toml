@@ -28,6 +28,7 @@ number_formatter = { path = "../number_formatter" }
 cacher = { path = "../cacher" }
 streamer = { path = "../streamer" }
 gem_client = { path = "../gem_client", features = ["reqwest"] }
+gem_tracing = { path = "../tracing" }
 
 [dev-dependencies]
 

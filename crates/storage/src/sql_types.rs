@@ -2,6 +2,7 @@ use diesel::deserialize::{self, FromSql, FromSqlRow};
 use diesel::expression::AsExpression;
 use diesel::pg::{Pg, PgValue};
 use diesel::serialize::{self, Output, ToSql};
+use primitives::AssetId as PrimitiveAssetId;
 use primitives::nft::NFTType as PrimitiveNFTType;
 use primitives::push_notification::PushNotificationTypes as PrimitivePushNotificationTypes;
 use primitives::rewards::{
@@ -10,21 +11,23 @@ use primitives::rewards::{
 };
 use primitives::scan::AddressType as PrimitiveAddressType;
 use primitives::{
-    AssetType as PrimitiveAssetType, Chain, FiatProviderName as PrimitiveFiatProviderName, IpUsageType as PrimitiveIpUsageType, LinkType as PrimitiveLinkType,
-    NotificationType as PrimitiveNotificationType, Platform as PrimitivePlatform, PlatformStore as PrimitivePlatformStore, TransactionState as PrimitiveTransactionState,
-    TransactionType as PrimitiveTransactionType, UsernameStatus as PrimitiveUsernameStatus, WalletSource as PrimitiveWalletSource, WalletType as PrimitiveWalletType,
+    AssetType as PrimitiveAssetType, Chain, FiatProviderName as PrimitiveFiatProviderName, FiatQuoteType as PrimitiveFiatQuoteType,
+    FiatTransactionStatus as PrimitiveFiatTransactionStatus, IpUsageType as PrimitiveIpUsageType, LinkType as PrimitiveLinkType, NotificationType as PrimitiveNotificationType,
+    Platform as PrimitivePlatform, PlatformStore as PrimitivePlatformStore, TransactionState as PrimitiveTransactionState, TransactionType as PrimitiveTransactionType,
+    UsernameStatus as PrimitiveUsernameStatus, WalletSource as PrimitiveWalletSource, WalletType as PrimitiveWalletType,
 };
 use serde::{Deserialize, Serialize};
+use std::fmt;
 use std::io::Write;
 use std::ops::Deref;
 use std::str::FromStr;
 
 use crate::schema::sql_types::{
-    AddressType as AddressTypeSql, AssetType as AssetTypeSql, IpUsageType as IpUsageTypeSql, LinkType as LinkTypeSql, NftType as NftTypeSql,
-    NotificationType as NotificationTypeSql, Platform as PlatformSql, PlatformStore as PlatformStoreSql, PushNotificationType as PushNotificationTypeSql,
-    RedemptionStatus as RedemptionStatusSql, RewardEventType as RewardEventTypeSql, RewardRedemptionType as RewardRedemptionTypeSql, RewardStatus as RewardStatusSql,
-    TransactionState as TransactionStateSql, TransactionType as TransactionTypeSql, UsernameStatus as UsernameStatusSql, WalletSource as WalletSourceSql,
-    WalletType as WalletTypeSql,
+    AddressType as AddressTypeSql, AssetType as AssetTypeSql, FiatTransactionStatus as FiatTransactionStatusSql, FiatTransactionType as FiatTransactionTypeSql,
+    IpUsageType as IpUsageTypeSql, LinkType as LinkTypeSql, NftType as NftTypeSql, NotificationType as NotificationTypeSql, Platform as PlatformSql,
+    PlatformStore as PlatformStoreSql, PushNotificationType as PushNotificationTypeSql, RedemptionStatus as RedemptionStatusSql, RewardEventType as RewardEventTypeSql,
+    RewardRedemptionType as RewardRedemptionTypeSql, RewardStatus as RewardStatusSql, TransactionState as TransactionStateSql, TransactionType as TransactionTypeSql,
+    UsernameStatus as UsernameStatusSql, WalletSource as WalletSourceSql, WalletType as WalletTypeSql,
 };
 
 macro_rules! diesel_enum {
@@ -121,6 +124,15 @@ diesel_enum!(
 );
 
 diesel_enum!(NftType, PrimitiveNFTType, NftTypeSql, [ERC721, ERC1155, SPL, JETTON]);
+
+diesel_enum!(FiatTransactionType, PrimitiveFiatQuoteType, FiatTransactionTypeSql, [Buy, Sell]);
+
+diesel_enum!(
+    FiatTransactionStatusRow,
+    PrimitiveFiatTransactionStatus,
+    FiatTransactionStatusSql,
+    [Complete, Pending, Failed, Unknown]
+);
 
 diesel_enum!(
     AssetType,
@@ -225,6 +237,57 @@ macro_rules! diesel_varchar {
 
 diesel_varchar!(ChainRow, Chain);
 diesel_varchar!(FiatProviderNameRow, PrimitiveFiatProviderName);
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, AsExpression, FromSqlRow)]
+#[serde(transparent)]
+#[diesel(sql_type = diesel::sql_types::Varchar)]
+pub struct AssetId(pub PrimitiveAssetId);
+
+impl Deref for AssetId {
+    type Target = PrimitiveAssetId;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl From<PrimitiveAssetId> for AssetId {
+    fn from(value: PrimitiveAssetId) -> Self {
+        Self(value)
+    }
+}
+
+impl From<&PrimitiveAssetId> for AssetId {
+    fn from(value: &PrimitiveAssetId) -> Self {
+        Self(value.clone())
+    }
+}
+
+impl From<AssetId> for PrimitiveAssetId {
+    fn from(value: AssetId) -> Self {
+        value.0
+    }
+}
+
+impl fmt::Display for AssetId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.0.fmt(f)
+    }
+}
+
+impl FromSql<diesel::sql_types::Varchar, Pg> for AssetId {
+    fn from_sql(bytes: PgValue<'_>) -> deserialize::Result<Self> {
+        let s = std::str::from_utf8(bytes.as_bytes())?;
+        Ok(Self(PrimitiveAssetId::new(s).ok_or_else(|| format!("Invalid AssetId: {s}"))?))
+    }
+}
+
+impl ToSql<diesel::sql_types::Varchar, Pg> for AssetId {
+    fn to_sql<'b>(&'b self, out: &mut Output<'b, '_, Pg>) -> serialize::Result {
+        out.write_all(self.0.to_string().as_bytes())?;
+        Ok(serialize::IsNull::No)
+    }
+}
 
 macro_rules! diesel_varchar_display {
     ($wrapper:ident, $inner:ty) => {

@@ -1,5 +1,6 @@
 use crate::{DatabaseClient, models::*};
 use diesel::prelude::*;
+use primitives::AssetId;
 
 pub(crate) trait TagStore {
     fn add_tags(&mut self, values: Vec<TagRow>) -> Result<usize, diesel::result::Error>;
@@ -7,7 +8,7 @@ pub(crate) trait TagStore {
     fn get_assets_tags(&mut self) -> Result<Vec<AssetTagRow>, diesel::result::Error>;
     fn get_assets_tags_for_tag(&mut self, _tag_id: &str) -> Result<Vec<AssetTagRow>, diesel::result::Error>;
     fn delete_assets_tags(&mut self, _tag_id: &str) -> Result<usize, diesel::result::Error>;
-    fn set_assets_tags_for_tag(&mut self, _tag_id: &str, asset_ids: Vec<String>) -> Result<usize, diesel::result::Error>;
+    fn set_assets_tags_for_tag(&mut self, _tag_id: &str, asset_ids: Vec<AssetId>) -> Result<usize, diesel::result::Error>;
     fn get_assets_tags_for_asset(&mut self, _asset_id: &str) -> Result<Vec<AssetTagRow>, diesel::result::Error>;
 }
 
@@ -41,13 +42,13 @@ impl TagStore for DatabaseClient {
         diesel::delete(assets_tags.filter(tag_id.eq(_tag_id))).execute(&mut self.connection)
     }
 
-    fn set_assets_tags_for_tag(&mut self, _tag_id: &str, asset_ids: Vec<String>) -> Result<usize, diesel::result::Error> {
+    fn set_assets_tags_for_tag(&mut self, _tag_id: &str, asset_ids: Vec<AssetId>) -> Result<usize, diesel::result::Error> {
         use crate::schema::assets_tags::dsl::*;
         let values = asset_ids
             .into_iter()
             .enumerate()
-            .map(|(index, x)| AssetTagRow {
-                asset_id: x,
+            .map(|(index, current_asset_id)| AssetTagRow {
+                asset_id: current_asset_id.into(),
                 tag_id: _tag_id.to_string(),
                 order: Some(index as i32),
             })

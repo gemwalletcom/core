@@ -1,7 +1,9 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::{AssetId, PriceAlert};
+use primitives::PriceAlert;
 use serde::{Deserialize, Serialize};
+
+use crate::sql_types::AssetId;
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::price_alerts)]
@@ -9,7 +11,7 @@ use serde::{Deserialize, Serialize};
 pub struct PriceAlertRow {
     pub identifier: String,
     pub device_id: i32,
-    pub asset_id: String,
+    pub asset_id: AssetId,
     pub currency: String,
     pub price_direction: Option<String>,
     pub price: Option<f64>,
@@ -23,7 +25,7 @@ pub struct PriceAlertRow {
 pub struct NewPriceAlertRow {
     pub identifier: String,
     pub device_id: i32,
-    pub asset_id: String,
+    pub asset_id: AssetId,
     pub currency: String,
     pub price_direction: Option<String>,
     pub price: Option<f64>,
@@ -33,7 +35,7 @@ pub struct NewPriceAlertRow {
 impl PriceAlertRow {
     pub fn as_primitive(&self) -> PriceAlert {
         PriceAlert {
-            asset_id: AssetId::new(&self.asset_id).unwrap(),
+            asset_id: self.asset_id.0.clone(),
             currency: self.currency.clone(),
             price_direction: self.price_direction.as_deref().and_then(|value| value.parse().ok()),
             price: self.price,
@@ -47,7 +49,7 @@ impl PriceAlertRow {
         NewPriceAlertRow {
             identifier: primitive.id(),
             device_id,
-            asset_id: primitive.asset_id.to_string(),
+            asset_id: primitive.asset_id.into(),
             currency: primitive.currency.clone(),
             price_direction: primitive.price_direction.map(|value| value.as_ref().to_string()),
             price: primitive.price,

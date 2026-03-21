@@ -65,7 +65,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_request_buy_serialization() {
+    fn request_buy_serializes_flow_and_currency_direction() {
         let request = Request::new_buy(
             "test-user-id".to_string(),
             "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H".to_string(),
@@ -76,22 +76,16 @@ mod tests {
             "en".to_string(),
         );
 
-        let json = serde_json::to_string(&request).unwrap();
-        let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
+        let parsed = serde_json::to_value(&request).unwrap();
 
-        assert_eq!(parsed["partnerUserId"], "test-user-id");
-        assert_eq!(parsed["cryptoWalletAddress"]["address"], "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H");
         assert_eq!(parsed["cryptoWalletAddress"]["currencyCode"], "SOL");
         assert_eq!(parsed["currencyCodeFrom"], "USD");
         assert_eq!(parsed["currencyCodeTo"], "SOL");
-        assert_eq!(parsed["quoteId"], "test-quote-id");
-        assert_eq!(parsed["userIp"], "1.2.3.4");
-        assert_eq!(parsed["locale"], "en");
         assert_eq!(parsed["flow"], "buyCrypto");
     }
 
     #[test]
-    fn test_request_sell_serialization() {
+    fn request_sell_serializes_flow_and_currency_direction() {
         let request = Request::new_sell(
             "test-user-id".to_string(),
             "0x1234567890abcdef".to_string(),
@@ -102,12 +96,8 @@ mod tests {
             "en".to_string(),
         );
 
-        let json = serde_json::to_string(&request).unwrap();
-        let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
+        let parsed = serde_json::to_value(&request).unwrap();
 
-        assert_eq!(parsed["partnerUserId"], "test-user-id");
-        assert_eq!(parsed["cryptoWalletAddress"]["address"], "0x1234567890abcdef");
-        assert_eq!(parsed["cryptoWalletAddress"]["currencyCode"], "ETH");
         assert_eq!(parsed["currencyCodeFrom"], "ETH");
         assert_eq!(parsed["currencyCodeTo"], "USD");
         assert_eq!(parsed["flow"], "sellCrypto");

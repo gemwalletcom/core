@@ -41,7 +41,7 @@ impl PerpetualsIndexUpdater {
     fn build_documents<'a>(perpetuals: impl IntoIterator<Item = &'a PerpetualRow>, assets_map: &HashMap<String, AssetRow>) -> Vec<PerpetualDocument> {
         perpetuals
             .into_iter()
-            .filter_map(|p| assets_map.get(&p.asset_id).map(|a| (p.as_primitive(), a.as_primitive()).into()))
+            .filter_map(|p| assets_map.get(&p.asset_id.to_string()).map(|a| (p.as_primitive(), a.as_primitive()).into()))
             .collect()
     }
 }

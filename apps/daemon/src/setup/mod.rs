@@ -7,12 +7,11 @@ use primitives::{
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
 use storage::Database;
-use storage::models::{ChartRow, ConfigRow, FiatAssetRow, FiatProviderCountryRow, FiatRateRow, PriceAssetRow, PriceRow, UpdateDeviceRow};
+use storage::models::{ChartRow, ConfigRow, FiatAssetRow, FiatProviderCountryRow, FiatRateRow, NewFiatTransactionRow, PriceAssetRow, PriceRow, UpdateDeviceRow};
 use storage::sql_types::{Platform, PlatformStore};
 use storage::{
-    AssetsRepository, ChainsRepository, ChartsRepository, ConfigRepository, DevicesRepository, FiatRepository, MigrationsRepository, NewNotificationRow, NewWalletRow,
-    NotificationsRepository, PriceAlertsRepository, PricesDexRepository, PricesRepository, ReleasesRepository, RewardsRepository, TagRepository, WalletSource, WalletType,
-    WalletsRepository,
+    AssetsRepository, ChainsRepository, ChartsRepository, ConfigRepository, DevicesRepository, MigrationsRepository, NewNotificationRow, NewWalletRow, NotificationsRepository,
+    PriceAlertsRepository, PricesDexRepository, PricesRepository, ReleasesRepository, RewardsRepository, TagRepository, WalletSource, WalletType, WalletsRepository,
 };
 use streamer::{ExchangeKind, ExchangeName, QueueName, StreamProducer, StreamProducerConfig};
 
@@ -260,7 +259,7 @@ fn setup_dev_devices(database: &Database) -> Result<(), Box<dyn std::error::Erro
     let result = WalletsRepository::add_subscriptions(&mut database.wallets()?, android_device_row_id, subscriptions)?;
     info_with_fields!("setup_dev", step = "android wallet subscription added", count = result);
 
-    setup_dev_fiat_transactions(database, wallet_address, solana_address)?;
+    setup_dev_fiat_transactions(database, ios_device_row_id, wallet_address, solana_address)?;
 
     info_with_fields!("setup_dev", step = "add rewards");
     let devices = database.wallets()?.get_devices_by_wallet_id(wallet.id)?;
@@ -319,51 +318,61 @@ fn setup_dev_devices(database: &Database) -> Result<(), Box<dyn std::error::Erro
     Ok(())
 }
 
-fn setup_dev_fiat_transactions(database: &Database, evm_address: &str, solana_address: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+fn setup_dev_fiat_transactions(database: &Database, device_id: i32, evm_address: &str, solana_address: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     info_with_fields!("setup_dev", step = "add fiat transactions");
 
     let mock = || FiatTransaction {
-        asset_id: Some(AssetId::from_chain(Chain::Ethereum)),
+        asset_id: AssetId::from_chain(Chain::Ethereum),
         transaction_type: FiatQuoteType::Buy,
         provider_id: FiatProviderName::MoonPay,
-        provider_transaction_id: "setup-dev-mock".to_string(),
+        provider_transaction_id: None,
         status: FiatTransactionStatus::Pending,
         country: Some("US".to_string()),
-        symbol: "ETH".to_string(),
         fiat_amount: 150.0,
         fiat_currency: "USD".to_string(),
+        value: "75000000000000000".to_string(),
         transaction_hash: None,
         address: Some(evm_address.to_string()),
     };
 
-    let transactions = vec![
+    let transactions = [
         FiatTransaction {
-            provider_transaction_id: "setup-dev-moonpay-pending".to_string(),
+            provider_transaction_id: None,
             ..mock()
         },
         FiatTransaction {
             provider_id: FiatProviderName::Mercuryo,
-            provider_transaction_id: "setup-dev-mercuryo-complete".to_string(),
+            provider_transaction_id: Some("setup-dev-mercuryo-complete".to_string()),
             status: FiatTransactionStatus::Complete,
             fiat_amount: 320.5,
+            value: "160000000000000000".to_string(),
             transaction_hash: Some("0xsetupdevcomplete".to_string()),
             ..mock()
         },
         FiatTransaction {
-            asset_id: Some(AssetId::from_chain(Chain::Solana)),
+            asset_id: AssetId::from_chain(Chain::Solana),
             transaction_type: FiatQuoteType::Sell,
             provider_id: FiatProviderName::Transak,
-            provider_transaction_id: "setup-dev-transak-failed".to_string(),
+            provider_transaction_id: Some("setup-dev-transak-failed".to_string()),
             status: FiatTransactionStatus::Failed,
-            symbol: "SOL".to_string(),
             fiat_amount: 95.25,
+            value: "500000000".to_string(),
             address: Some(solana_address.to_string()),
             ..mock()
         },
     ];
 
     let mut fiat = database.fiat()?;
-    let count = FiatRepository::add_fiat_transaction(&mut fiat, transactions)?;
+    let transaction_rows = vec![
+        NewFiatTransactionRow::new(transactions[0].clone(), device_id, "setup-dev-quote-moonpay-pending".to_string()),
+        NewFiatTransactionRow::new(transactions[1].clone(), device_id, "setup-dev-quote-mercuryo-complete".to_string()),
+        NewFiatTransactionRow::new(transactions[2].clone(), device_id, "setup-dev-quote-transak-failed".to_string()),
+    ];
+
+    let mut count = 0;
+    for row in transaction_rows {
+        count += fiat.add_fiat_transaction(row)?;
+    }
 
     info_with_fields!("setup_dev", step = "fiat transactions added", count = count);
     Ok(())
@@ -377,12 +386,12 @@ fn setup_dev_assets(database: &Database) -> Result<(), Box<dyn std::error::Error
 
     info_with_fields!("setup_dev", step = "add fiat assets");
 
-    let ethereum_asset_id = AssetId::from_chain(Chain::Ethereum).to_string();
-    let smartchain_asset_id = AssetId::from_chain(Chain::SmartChain).to_string();
+    let ethereum_asset_id = AssetId::from_chain(Chain::Ethereum);
+    let smartchain_asset_id = AssetId::from_chain(Chain::SmartChain);
 
-    let fiat_asset = |provider: &str, code: &str, symbol: &str, network: &str, asset_id: &str| FiatAssetRow {
+    let fiat_asset = |provider: &str, code: &str, symbol: &str, network: &str, asset_id: &AssetId| FiatAssetRow {
         id: format!("{}_{}", provider, code),
-        asset_id: Some(asset_id.to_string()),
+        asset_id: Some(asset_id.into()),
         provider: provider.to_string(),
         code: code.to_string(),
         symbol: symbol.to_string(),
@@ -427,8 +436,8 @@ fn setup_dev_assets(database: &Database) -> Result<(), Box<dyn std::error::Error
 
     info_with_fields!("setup_dev", step = "add prices and charts");
     let now = chrono::Utc::now().naive_utc();
-    let bitcoin_asset_id = AssetId::from_chain(Chain::Bitcoin).to_string();
-    let coins: Vec<(&str, &str, f64)> = vec![
+    let bitcoin_asset_id = AssetId::from_chain(Chain::Bitcoin);
+    let coins: Vec<(&str, &AssetId, f64)> = vec![
         (Chain::Bitcoin.as_ref(), &bitcoin_asset_id, 60000.0),
         (Chain::Ethereum.as_ref(), &ethereum_asset_id, 2000.0),
     ];
@@ -440,7 +449,7 @@ fn setup_dev_assets(database: &Database) -> Result<(), Box<dyn std::error::Error
 
     let price_assets: Vec<PriceAssetRow> = coins
         .iter()
-        .map(|(coin_id, asset_id, _)| PriceAssetRow::new(asset_id.to_string(), coin_id.to_string()))
+        .map(|(coin_id, asset_id, _)| PriceAssetRow::new((*asset_id).clone(), coin_id.to_string()))
         .collect();
 
     let result = database.prices()?.set_prices(prices)?;

@@ -1,3 +1,4 @@
+use primitives::AssetId;
 use std::collections::HashMap;
 use std::error::Error;
 use storage::{AssetUsageRankRow, AssetsUsageRanksRepository, Database, TransactionsRepository};
@@ -21,15 +22,21 @@ impl UsageRankUpdater {
         let counts_30d = self.database.transactions()?.get_asset_usage_counts(thirty_days_ago)?;
 
         let usage_ranks = calculate_usage_ranks(&counts_1h, &counts_24h, &counts_7d, &counts_30d);
-        let rows: Vec<AssetUsageRankRow> = usage_ranks.into_iter().map(|(asset_id, usage_rank)| AssetUsageRankRow { asset_id, usage_rank }).collect();
+        let rows: Vec<AssetUsageRankRow> = usage_ranks
+            .into_iter()
+            .map(|(asset_id, usage_rank)| AssetUsageRankRow {
+                asset_id: asset_id.into(),
+                usage_rank,
+            })
+            .collect();
 
         self.database.assets_usage_ranks()?.delete_usage_ranks_before(thirty_days_ago)?;
         Ok(self.database.assets_usage_ranks()?.upsert_usage_ranks(rows)?)
     }
 }
 
-fn calculate_usage_ranks(counts_1h: &[(String, i64)], counts_24h: &[(String, i64)], counts_7d: &[(String, i64)], counts_30d: &[(String, i64)]) -> Vec<(String, i32)> {
-    let mut raw_scores: HashMap<String, i64> = HashMap::new();
+fn calculate_usage_ranks(counts_1h: &[(AssetId, i64)], counts_24h: &[(AssetId, i64)], counts_7d: &[(AssetId, i64)], counts_30d: &[(AssetId, i64)]) -> Vec<(AssetId, i32)> {
+    let mut raw_scores: HashMap<AssetId, i64> = HashMap::new();
 
     for (asset_id, count) in counts_1h {
         *raw_scores.entry(asset_id.clone()).or_insert(0) += count * 250;
@@ -48,7 +55,7 @@ fn calculate_usage_ranks(counts_1h: &[(String, i64)], counts_24h: &[(String, i64
         return vec![];
     }
 
-    let mut scores: Vec<(String, i64)> = raw_scores.into_iter().collect();
+    let mut scores: Vec<(AssetId, i64)> = raw_scores.into_iter().collect();
     scores.sort_by(|a, b| a.1.cmp(&b.1));
 
     let total = scores.len() as f64;
@@ -65,6 +72,7 @@ fn calculate_usage_ranks(counts_1h: &[(String, i64)], counts_24h: &[(String, i64
 #[cfg(test)]
 mod tests {
     use super::*;
+    use primitives::Chain;
 
     #[test]
     fn test_calculate_usage_ranks_empty() {
@@ -74,22 +82,22 @@ mod tests {
 
     #[test]
     fn test_calculate_usage_ranks_single() {
-        let counts_1h = vec![("asset1".to_string(), 10)];
+        let counts_1h = vec![(Chain::Bitcoin.as_asset_id(), 10)];
         let result = calculate_usage_ranks(&counts_1h, &[], &[], &[]);
         assert_eq!(result.len(), 1);
-        assert_eq!(result[0].0, "asset1");
+        assert_eq!(result[0].0, Chain::Bitcoin.as_asset_id());
         assert_eq!(result[0].1, 100);
     }
 
     #[test]
     fn test_calculate_usage_ranks_multiple() {
-        let counts_1h = vec![("asset1".to_string(), 100), ("asset2".to_string(), 10), ("asset3".to_string(), 1)];
+        let counts_1h = vec![(Chain::Bitcoin.as_asset_id(), 100), (Chain::Ethereum.as_asset_id(), 10), (Chain::Solana.as_asset_id(), 1)];
         let result = calculate_usage_ranks(&counts_1h, &[], &[], &[]);
         assert_eq!(result.len(), 3);
 
-        let asset1_rank = result.iter().find(|(id, _)| id == "asset1").map(|(_, r)| *r).unwrap();
-        let asset2_rank = result.iter().find(|(id, _)| id == "asset2").map(|(_, r)| *r).unwrap();
-        let asset3_rank = result.iter().find(|(id, _)| id == "asset3").map(|(_, r)| *r).unwrap();
+        let asset1_rank = result.iter().find(|(id, _)| *id == Chain::Bitcoin.as_asset_id()).map(|(_, r)| *r).unwrap();
+        let asset2_rank = result.iter().find(|(id, _)| *id == Chain::Ethereum.as_asset_id()).map(|(_, r)| *r).unwrap();
+        let asset3_rank = result.iter().find(|(id, _)| *id == Chain::Solana.as_asset_id()).map(|(_, r)| *r).unwrap();
 
         assert_eq!(asset3_rank, 33);
         assert_eq!(asset2_rank, 67);
@@ -98,16 +106,16 @@ mod tests {
 
     #[test]
     fn test_calculate_usage_ranks_weighted() {
-        let counts_1h = vec![("asset1".to_string(), 2)];
-        let counts_24h = vec![("asset2".to_string(), 25)];
-        let counts_7d = vec![("asset3".to_string(), 300)];
-        let counts_30d = vec![("asset4".to_string(), 4000)];
+        let counts_1h = vec![(Chain::Bitcoin.as_asset_id(), 2)];
+        let counts_24h = vec![(Chain::Ethereum.as_asset_id(), 25)];
+        let counts_7d = vec![(Chain::Solana.as_asset_id(), 300)];
+        let counts_30d = vec![(Chain::SmartChain.as_asset_id(), 4000)];
         let result = calculate_usage_ranks(&counts_1h, &counts_24h, &counts_7d, &counts_30d);
 
-        let asset1_rank = result.iter().find(|(id, _)| id == "asset1").map(|(_, r)| *r).unwrap();
-        let asset2_rank = result.iter().find(|(id, _)| id == "asset2").map(|(_, r)| *r).unwrap();
-        let asset3_rank = result.iter().find(|(id, _)| id == "asset3").map(|(_, r)| *r).unwrap();
-        let asset4_rank = result.iter().find(|(id, _)| id == "asset4").map(|(_, r)| *r).unwrap();
+        let asset1_rank = result.iter().find(|(id, _)| *id == Chain::Bitcoin.as_asset_id()).map(|(_, r)| *r).unwrap();
+        let asset2_rank = result.iter().find(|(id, _)| *id == Chain::Ethereum.as_asset_id()).map(|(_, r)| *r).unwrap();
+        let asset3_rank = result.iter().find(|(id, _)| *id == Chain::Solana.as_asset_id()).map(|(_, r)| *r).unwrap();
+        let asset4_rank = result.iter().find(|(id, _)| *id == Chain::SmartChain.as_asset_id()).map(|(_, r)| *r).unwrap();
 
         // Scores: asset1=500, asset2=2500, asset3=3000, asset4=4000
         assert_eq!(asset1_rank, 25);

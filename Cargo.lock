@@ -2635,6 +2635,7 @@ dependencies = [
  "chain_primitives",
  "futures",
  "gem_client",
+ "gem_tracing",
  "hex",
  "hmac",
  "number_formatter",

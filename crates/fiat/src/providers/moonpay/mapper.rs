@@ -1,11 +1,8 @@
 use crate::providers::moonpay::models::{Asset, FiatCurrencyType, Transaction};
-use primitives::{AssetId, Chain, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
+use primitives::{Chain, FiatQuoteType, FiatTransactionStatus, FiatTransactionUpdate};
 
 #[cfg(test)]
 use primitives::PaymentType;
-
-use super::client::MoonPayClient;
-
 pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
     match asset.metadata?.network_code.as_str() {
         "ethereum" => Some(Chain::Ethereum),
@@ -45,13 +42,10 @@ pub fn map_asset_chain(asset: Asset) -> Option<Chain> {
     }
 }
 
-pub fn map_order(payload: Transaction) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
-    let asset = payload.clone().currency.unwrap_or(payload.clone().base_currency);
-    let fiat_currency = payload.clone().quote_currency.unwrap_or(payload.clone().base_currency);
-    let asset = MoonPayClient::map_asset(asset).unwrap();
-    let asset_id = AssetId::from(asset.chain.unwrap(), asset.token_id);
-
-    let transaction_type = if payload.clone().base_currency.currency_type == FiatCurrencyType::Fiat {
+pub fn map_order(payload: Transaction) -> FiatTransactionUpdate {
+    let transaction_id = payload.external_transaction_id.clone().unwrap_or_else(|| payload.id.clone());
+    let provider_transaction_id = (transaction_id != payload.id).then_some(payload.id.clone());
+    let transaction_type = if payload.base_currency.currency_type == FiatCurrencyType::Fiat {
         FiatQuoteType::Buy
     } else {
         FiatQuoteType::Sell
@@ -60,13 +54,7 @@ pub fn map_order(payload: Transaction) -> Result<FiatTransaction, Box<dyn std::e
         FiatQuoteType::Buy => payload.base_currency_amount.unwrap_or_default(),
         FiatQuoteType::Sell => payload.quote_currency_amount.unwrap_or_default(),
     };
-
-    let status = match payload.status.as_str() {
-        "pending" | "waitingForDeposit" => FiatTransactionStatus::Pending,
-        "failed" => FiatTransactionStatus::Failed,
-        "completed" => FiatTransactionStatus::Complete,
-        _ => FiatTransactionStatus::Unknown,
-    };
+    let status = map_status(&payload.status);
     let fee_provider = payload.fee_amount.unwrap_or_default();
     let fee_network = payload.network_fee_amount.unwrap_or_default();
     let fee_partner = payload.extra_fee_amount.unwrap_or_default();
@@ -81,42 +69,43 @@ pub fn map_order(payload: Transaction) -> Result<FiatTransaction, Box<dyn std::e
         FiatQuoteType::Sell => payload.refund_wallet_address.or(payload.wallet_address),
     };
 
-    Ok(FiatTransaction {
-        asset_id: Some(asset_id),
-        transaction_type,
-        symbol: asset.symbol,
-        provider_id: MoonPayClient::NAME,
-        provider_transaction_id: payload.id,
+    FiatTransactionUpdate {
+        transaction_id,
+        provider_transaction_id,
         status,
-        country: payload.country,
-        fiat_amount,
-        fiat_currency: fiat_currency.code.to_uppercase(),
         transaction_hash: payload.crypto_transaction_id,
         address,
-    })
+        fiat_amount: Some(fiat_amount),
+    }
+}
+
+fn map_status(status: &str) -> FiatTransactionStatus {
+    match status {
+        "pending" | "waitingForDeposit" => FiatTransactionStatus::Pending,
+        "failed" => FiatTransactionStatus::Failed,
+        "completed" => FiatTransactionStatus::Complete,
+        _ if status.starts_with("waiting") => FiatTransactionStatus::Pending,
+        _ => FiatTransactionStatus::Unknown,
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::providers::moonpay::client::MoonPayClient;
     use crate::providers::moonpay::models::{Data, Transaction};
-    use primitives::FiatProviderName;
 
     #[test]
     fn test_map_order_buy_failed() {
         let webhook_data: Data<Transaction> = serde_json::from_str(include_str!("../../../testdata/moonpay/webhook_buy_complete.json")).expect("Failed to parse test data");
         let payload = webhook_data.data;
 
-        let result = map_order(payload).expect("Failed to map order");
+        let result = map_order(payload);
 
-        assert_eq!(result.provider_id, FiatProviderName::MoonPay);
-        assert_eq!(result.provider_transaction_id, "1b6cdb1e-9299-45b1-9670-54db1ea5a21f");
+        assert_eq!(result.transaction_id, "1b6cdb1e-9299-45b1-9670-54db1ea5a21f");
+        assert_eq!(result.provider_transaction_id, None);
         assert!(matches!(result.status, FiatTransactionStatus::Failed));
-        assert!(matches!(result.transaction_type, FiatQuoteType::Buy));
-        assert_eq!(result.symbol, "trx");
-        assert_eq!(result.fiat_currency, "USD");
-        assert_eq!(result.fiat_amount, 20.0); // 15.39 + 3.99 + 0.47 + 0.15
-        assert_eq!(result.country, Some("USA".to_string()));
+        assert_eq!(result.fiat_amount, Some(20.0)); // 15.39 + 3.99 + 0.47 + 0.15
         assert_eq!(result.address, Some("TYxT3F8pdkTDkhw4JsfodKnEgaYpNaANmW".to_string()));
     }
 
@@ -125,16 +114,12 @@ mod tests {
         let webhook_data: Data<Transaction> = serde_json::from_str(include_str!("../../../testdata/moonpay/webhook_sell_complete_.json")).expect("Failed to parse test data");
         let payload = webhook_data.data;
 
-        let result = map_order(payload).expect("Failed to map order");
+        let result = map_order(payload);
 
-        assert_eq!(result.provider_id, FiatProviderName::MoonPay);
-        assert_eq!(result.provider_transaction_id, "557d8fc1-0657-4505-8702-6bd9e1cd6241");
+        assert_eq!(result.transaction_id, "557d8fc1-0657-4505-8702-6bd9e1cd6241");
+        assert_eq!(result.provider_transaction_id, None);
         assert!(matches!(result.status, FiatTransactionStatus::Pending));
-        assert!(matches!(result.transaction_type, FiatQuoteType::Sell));
-        assert_eq!(result.symbol, "eth");
-        assert_eq!(result.fiat_currency, "USD");
-        assert_eq!(result.fiat_amount, 3123.07); // quoteCurrencyAmount - what user actually receives
-        assert_eq!(result.country, Some("USA".to_string()));
+        assert_eq!(result.fiat_amount, Some(3123.07)); // quoteCurrencyAmount - what user actually receives
         assert_eq!(result.address, Some("0xd41fdb03ba84762dd66a0af1a6c8540ff1ba5dfb".to_string()));
     }
 
@@ -142,16 +127,12 @@ mod tests {
     fn test_map_order_v3_sell_complete() {
         let webhook_data: Transaction = serde_json::from_str(include_str!("../../../testdata/moonpay/sell_transaction_complete.json")).expect("Failed to parse test data");
 
-        let result = map_order(webhook_data).expect("Failed to map order");
+        let result = map_order(webhook_data);
 
-        assert_eq!(result.provider_id, FiatProviderName::MoonPay);
-        assert_eq!(result.provider_transaction_id, "bcd0315e-4264-48bb-8c10-1a5207297341");
+        assert_eq!(result.transaction_id, "bcd0315e-4264-48bb-8c10-1a5207297341");
+        assert_eq!(result.provider_transaction_id, None);
         assert!(matches!(result.status, FiatTransactionStatus::Complete));
-        assert!(matches!(result.transaction_type, FiatQuoteType::Sell));
-        assert_eq!(result.symbol, "eth");
-        assert_eq!(result.fiat_currency, "USD");
-        assert_eq!(result.fiat_amount, 3123.07); // quoteCurrencyAmount - what user actually receives
-        assert_eq!(result.country, Some("USA".to_string()));
+        assert_eq!(result.fiat_amount, Some(3123.07)); // quoteCurrencyAmount - what user actually receives
         assert_eq!(result.address, Some("0xd41fdb03ba84762dd66a0af1a6c8540ff1ba5dfb".to_string()));
         assert_eq!(result.transaction_hash, Some("0xabc123456789".to_string()));
     }
@@ -160,17 +141,56 @@ mod tests {
     fn test_map_order_sell_failed() {
         let webhook_data: Transaction = serde_json::from_str(include_str!("../../../testdata/moonpay/transaction_sell_failed.json")).expect("Failed to parse test data");
 
-        let result = map_order(webhook_data).expect("Failed to map order");
+        let result = map_order(webhook_data);
 
-        assert_eq!(result.provider_id, FiatProviderName::MoonPay);
-        assert_eq!(result.provider_transaction_id, "bcd0315e-4264-48bb-8c10-1a5207297341");
+        assert_eq!(result.transaction_id, "bcd0315e-4264-48bb-8c10-1a5207297341");
+        assert_eq!(result.provider_transaction_id, None);
         assert!(matches!(result.status, FiatTransactionStatus::Failed));
-        assert!(matches!(result.transaction_type, FiatQuoteType::Sell));
-        assert_eq!(result.symbol, "bch");
-        assert_eq!(result.fiat_currency, "USD");
-        assert_eq!(result.fiat_amount, 8419.77); // quoteCurrencyAmount - what user actually receives
-        assert_eq!(result.country, None);
+        assert_eq!(result.fiat_amount, Some(8419.77)); // quoteCurrencyAmount - what user actually receives
         assert_eq!(result.address, Some("qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a".to_string()));
+    }
+
+    #[test]
+    fn test_map_order_buy_waiting_payment() {
+        let payload: Transaction = serde_json::from_value(serde_json::json!({
+            "id": "9a1a7efe-c6f1-4c69-ad9f-6abd2a7c6385",
+            "externalTransactionId": null,
+            "status": "waitingPayment",
+            "baseCurrencyAmount": 66.53,
+            "quoteCurrencyAmount": null,
+            "baseCurrency": {
+                "code": "eur",
+                "metadata": null,
+                "type": "fiat",
+                "isSuspended": false,
+                "isBaseAsset": false,
+                "isSellSupported": true,
+                "notAllowedCountries": [],
+                "minBuyAmount": 20.0,
+                "maxBuyAmount": 30000.0,
+                "minSellAmount": null,
+                "maxSellAmount": null
+            },
+            "currency": null,
+            "quoteCurrency": null,
+            "walletAddress": "bc1qacjrh89lukj82agg2ujze5l2e3nss3pru96733",
+            "refundWalletAddress": null,
+            "cryptoTransactionId": null,
+            "networkFeeAmount": 0.81,
+            "extraFeeAmount": 0.67,
+            "feeAmount": 3.99,
+            "country": "ITA",
+            "failureReason": null
+        }))
+        .expect("Failed to parse test payload");
+
+        let result = map_order(payload);
+
+        assert_eq!(result.transaction_id, "9a1a7efe-c6f1-4c69-ad9f-6abd2a7c6385");
+        assert_eq!(result.provider_transaction_id, None);
+        assert_eq!(result.status, FiatTransactionStatus::Pending);
+        assert_eq!(result.fiat_amount, Some(72.0));
+        assert_eq!(result.address, Some("bc1qacjrh89lukj82agg2ujze5l2e3nss3pru96733".to_string()));
     }
 
     #[test]

@@ -31,11 +31,6 @@ mercuryo:
     public: ""
     secret: ""
     token: ""
-banxa:
-  url: ""
-  key:
-    public: "" 
-    secret: ""
 paybis:
   key:
     public: ""

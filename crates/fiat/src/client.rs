@@ -9,15 +9,14 @@ use crate::{
     model::{FiatMapping, FiatMappingMap},
 };
 use futures::future::join_all;
+use gem_tracing::{error_with_fields, info_with_fields};
+use number_formatter::BigNumberFormatter;
 use primitives::{
     Asset, FiatAssetSymbol, FiatAssets, FiatProvider as PrimitiveFiatProvider, FiatProviderCountry, FiatQuote, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData,
-    FiatQuotes,
+    FiatQuotes, FiatTransaction,
 };
 use reqwest::Client as RequestClient;
-use storage::{
-    AssetFilter, AssetsRepository, Database, WalletsRepository,
-    models::{FiatQuoteRequestRow, FiatQuoteRow, NewFiatWebhookRow},
-};
+use storage::{AssetFilter, AssetsRepository, Database, WalletsRepository};
 use streamer::{FiatWebhook, FiatWebhookPayload, StreamProducer};
 
 pub struct FiatClient {
@@ -80,41 +79,45 @@ impl FiatClient {
     }
 
     pub async fn get_order_status(&self, provider_name: &str, order_id: &str) -> Result<primitives::FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
-        self.provider(provider_name)?.get_order_status(order_id).await
+        let provider = self.provider(provider_name)?;
+        let update = provider.get_order_status(order_id).await?;
+        let transaction = self.database.fiat()?.update_fiat_transaction(provider.name().id(), update)?;
+        Ok(transaction.as_primitive())
     }
 
     pub async fn process_and_publish_webhook(&self, provider_name: &str, webhook_data: serde_json::Value) -> Result<FiatWebhookPayload, Box<dyn std::error::Error + Send + Sync>> {
         let provider = self.provider(provider_name)?;
-        let webhook = provider.process_webhook(webhook_data.clone()).await;
-
-        let (transaction_id, error) = match &webhook {
-            Ok(FiatWebhook::OrderId(order_id)) => (Some(order_id.clone()), None),
-            Ok(FiatWebhook::Transaction(tx)) => (Some(tx.provider_transaction_id.clone()), None),
-            Ok(FiatWebhook::None) => (None, None),
-            Err(e) => (None, Some(e.to_string())),
-        };
-        let webhook_row = NewFiatWebhookRow {
-            provider: provider_name.to_string(),
-            transaction_id,
-            payload: webhook_data.clone(),
-            error,
-        };
-        self.database.fiat()?.add_fiat_webhook(webhook_row)?;
-
-        let webhook = match webhook {
-            Ok(result) => result,
+        let provider_id = provider.name().id().to_string();
+        let webhook = match provider.process_webhook(webhook_data.clone()).await {
+            Ok(webhook) => webhook,
             Err(e) => {
-                println!("Failed to decode webhook payload: {}, JSON payload: {}", e, webhook_data);
+                error_with_fields!("failed to decode fiat webhook", &*e, provider = provider_id);
                 return Err(e);
             }
         };
+
+        let (kind, transaction_id) = match &webhook {
+            FiatWebhook::OrderId(order_id) => ("order_id", Some(order_id.clone())),
+            FiatWebhook::Transaction(tx) => ("transaction", tx.provider_transaction_id.clone().or(Some(tx.transaction_id.clone()))),
+            FiatWebhook::None => ("none", None),
+        };
+
+        info_with_fields!(
+            "received fiat webhook",
+            provider = provider_id,
+            kind = kind,
+            transaction_id = transaction_id.as_deref().unwrap_or("")
+        );
 
         let payload = FiatWebhookPayload::new(provider.name(), webhook_data.clone(), webhook.clone());
         match webhook {
             FiatWebhook::OrderId(_) | FiatWebhook::Transaction(_) => {
                 self.stream_producer.publish(streamer::QueueName::FiatOrderWebhooks, &payload).await?;
+                info_with_fields!("published fiat webhook", provider = provider_id, transaction_id = transaction_id.as_deref().unwrap_or(""));
             }
-            FiatWebhook::None => {}
+            FiatWebhook::None => {
+                info_with_fields!("ignored fiat webhook", provider = provider_id);
+            }
         }
         Ok(payload)
     }
@@ -241,6 +244,7 @@ impl FiatClient {
                     } else {
                         provider.payment_methods().await
                     };
+                    let value = quote_value(&asset, response.crypto_amount).map_err(|e| (provider_id_clone.clone(), e))?;
                     let quote = FiatQuote::new(
                         response.quote_id,
                         asset,
@@ -249,6 +253,7 @@ impl FiatClient {
                         response.fiat_amount,
                         quote_request.currency,
                         response.crypto_amount,
+                        value,
                         latency,
                         payment_methods,
                     );
@@ -257,6 +262,7 @@ impl FiatClient {
                         CachedFiatQuoteData {
                             quote,
                             asset_symbol: mapping.asset_symbol,
+                            country_code: Some(country_code),
                         },
                     ))
                 }
@@ -287,6 +293,10 @@ impl FiatClient {
         Ok(FiatQuotes { quotes, errors })
     }
 
+    pub async fn get_quote(&self, quote_id: &str) -> Result<FiatQuote, Box<dyn Error + Send + Sync>> {
+        Ok(self.fiat_cacher.get_quote(quote_id).await?.quote)
+    }
+
     pub async fn get_quote_url(
         &self,
         quote_id: &str,
@@ -295,32 +305,31 @@ impl FiatClient {
         ip_address: &str,
         locale: &str,
     ) -> Result<(FiatQuoteUrl, FiatQuote), Box<dyn Error + Send + Sync>> {
-        let quote = self.fiat_cacher.get_quote(quote_id).await?;
-        let provider = self.provider(quote.quote.provider.id.as_ref())?;
-
-        let asset = &quote.quote.asset;
-
-        let wallet_address = self.database.client()?.subscriptions_wallet_address_for_chain(device_id, wallet_id, asset.chain)?;
-
+        let crate::CachedFiatQuoteData {
+            quote,
+            asset_symbol,
+            country_code,
+        } = self.fiat_cacher.get_quote(quote_id).await?;
+        let provider = self.provider(quote.provider.id.as_ref())?;
         let data = FiatQuoteUrlData {
-            quote: quote.quote.clone(),
-            asset_symbol: quote.asset_symbol,
-            wallet_address,
+            quote: quote.clone(),
+            asset_symbol,
+            wallet_address: self.database.client()?.subscriptions_wallet_address_for_chain(device_id, wallet_id, quote.asset.chain)?,
             ip_address: ip_address.to_string(),
             locale: locale.to_string(),
         };
 
-        let url = provider.get_quote_url(data).await?;
+        let url = provider.get_quote_url(data.clone()).await?;
+        let country = match country_code {
+            Some(country_code) => Some(country_code),
+            None => Some(self.get_ip_address(ip_address).await?.alpha2),
+        };
+        let pending_transaction = FiatTransaction::new_pending(&data, country, url.provider_transaction_id.clone());
+        let pending_transaction_row = storage::models::NewFiatTransactionRow::new(pending_transaction, device_id, quote.id.clone());
 
-        let db_quote = FiatQuoteRow::from_primitive(&quote.quote);
-        self.database.fiat()?.add_fiat_quotes(vec![db_quote])?;
+        self.database.fiat()?.add_fiat_transaction(pending_transaction_row)?;
 
-        self.database.fiat()?.add_fiat_quote_request(FiatQuoteRequestRow {
-            device_id,
-            quote_id: quote_id.to_string(),
-        })?;
-
-        Ok((url, quote.quote))
+        Ok((url, quote))
     }
 
     pub async fn get_ip_address(&self, ip_address: &str) -> Result<IPAddressInfo, Box<dyn Error + Send + Sync>> {
@@ -340,6 +349,11 @@ fn sort_quotes_by_crypto_amount_asc(a: &FiatQuote, b: &FiatQuote, providers: &[P
     sort_by_priority_then_amount(a.provider.id.as_ref(), b.provider.id.as_ref(), &a.crypto_amount, &b.crypto_amount, providers, true)
 }
 
+fn quote_value(asset: &Asset, crypto_amount: f64) -> Result<String, Box<dyn Error + Send + Sync>> {
+    let amount = format!("{crypto_amount:.precision$}", precision = asset.decimals as usize);
+    Ok(BigNumberFormatter::value_from_amount(&amount, asset.decimals as u32)?)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -348,7 +362,14 @@ mod tests {
     fn mock_quote(provider: FiatProviderName, crypto_amount: f64) -> FiatQuote {
         let mut quote = FiatQuote::mock(provider);
         quote.crypto_amount = crypto_amount;
+        quote.value = quote_value(&quote.asset, crypto_amount).unwrap();
         quote
+    }
+
+    #[test]
+    fn quote_value_uses_asset_precision_for_small_amounts() {
+        let asset = Asset::from_chain(primitives::Chain::Ethereum);
+        assert_eq!(quote_value(&asset, 0.000000000000000001_f64).unwrap(), "1");
     }
 
     #[test]
@@ -362,7 +383,7 @@ mod tests {
         let mut quotes = [
             mock_quote(FiatProviderName::Paybis, 0.50),
             mock_quote(FiatProviderName::MoonPay, 0.45),
-            mock_quote(FiatProviderName::Banxa, 0.40),
+            mock_quote(FiatProviderName::Flashnet, 0.40),
             mock_quote(FiatProviderName::Transak, 0.47),
             mock_quote(FiatProviderName::Mercuryo, 0.48),
         ];
@@ -372,7 +393,7 @@ mod tests {
         assert_eq!(quotes[1].provider.id, FiatProviderName::Mercuryo);
         assert_eq!(quotes[2].provider.id, FiatProviderName::Transak);
         assert_eq!(quotes[3].provider.id, FiatProviderName::Paybis);
-        assert_eq!(quotes[4].provider.id, FiatProviderName::Banxa);
+        assert_eq!(quotes[4].provider.id, FiatProviderName::Flashnet);
     }
 
     #[test]

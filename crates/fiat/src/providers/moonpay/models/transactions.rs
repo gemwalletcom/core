@@ -6,6 +6,7 @@ use super::assets::Asset;
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
     pub id: String,
+    pub external_transaction_id: Option<String>,
     pub status: String,
     pub base_currency_amount: Option<f64>,
     pub quote_currency_amount: Option<f64>,

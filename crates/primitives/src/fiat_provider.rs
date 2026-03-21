@@ -1,6 +1,6 @@
 use crate::{PaymentType, PrioritizedProvider};
 use serde::{Deserialize, Serialize};
-use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
+use strum::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,7 +53,7 @@ impl PrioritizedProvider for FiatProvider {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, EnumIter, AsRefStr, EnumString, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, AsRefStr, EnumString, PartialEq, Eq, Hash)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
@@ -67,8 +67,8 @@ pub enum FiatProviderName {
 }
 
 impl FiatProviderName {
-    pub fn id(&self) -> String {
-        self.as_ref().to_string()
+    pub fn id(&self) -> &str {
+        self.as_ref()
     }
 
     pub fn name(&self) -> &'static str {
@@ -82,21 +82,22 @@ impl FiatProviderName {
         }
     }
     pub fn as_fiat_provider(&self) -> FiatProvider {
+        let enabled = *self != Self::Banxa;
         FiatProvider {
             id: *self,
             name: self.name().to_owned(),
-            image_url: Some("".to_string()),
+            image_url: None,
             priority: None,
             threshold_bps: None,
-            enabled: true,
-            buy_enabled: true,
-            sell_enabled: true,
+            enabled,
+            buy_enabled: enabled,
+            sell_enabled: enabled,
             payment_methods: vec![],
         }
     }
 
     pub fn all() -> Vec<Self> {
-        Self::iter().collect::<Vec<_>>()
+        vec![Self::Mercuryo, Self::Transak, Self::MoonPay, Self::Paybis, Self::Flashnet]
     }
 }
 

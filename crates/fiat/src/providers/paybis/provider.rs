@@ -11,7 +11,7 @@ use super::{
     client::PaybisClient,
     mapper::{map_assets, map_process_webhook, supported_payment_methods},
 };
-use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatTransaction, PaymentType};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatTransactionUpdate, PaymentType};
 use streamer::FiatWebhook;
 
 #[async_trait]
@@ -36,7 +36,7 @@ impl FiatProvider for PaybisClient {
         let countries = country_status()
             .iter()
             .map(|(alpha2, is_allowed)| FiatProviderCountry {
-                provider: Self::NAME.id(),
+                provider: Self::NAME.id().to_string(),
                 alpha2: alpha2.to_string(),
                 is_allowed: *is_allowed,
             })
@@ -45,12 +45,12 @@ impl FiatProvider for PaybisClient {
         Ok(countries)
     }
 
-    async fn get_order_status(&self, _order_id: &str) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_order_status(&self, _order_id: &str) -> Result<FiatTransactionUpdate, Box<dyn std::error::Error + Send + Sync>> {
         Err("not implemented".into())
     }
 
     async fn process_webhook(&self, data: serde_json::Value) -> Result<FiatWebhook, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(map_process_webhook(data))
+        Ok(map_process_webhook(data)?)
     }
 
     async fn get_quote_buy(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
@@ -96,7 +96,10 @@ impl FiatProvider for PaybisClient {
             )
             .await?;
 
-        Ok(FiatQuoteUrl { redirect_url })
+        Ok(FiatQuoteUrl {
+            redirect_url,
+            provider_transaction_id: None,
+        })
     }
 }
 
@@ -233,9 +236,8 @@ mod fiat_integration_tests {
 
         let result = client.process_webhook(transaction_webhook).await?;
         if let FiatWebhook::Transaction(transaction) = result {
-            assert_eq!(transaction.provider_transaction_id, "PB21095868675TX1");
-            assert_eq!(transaction.symbol, "SOL");
-            assert_eq!(transaction.fiat_currency, "USD");
+            assert_eq!(transaction.transaction_id, "a4a211ad-3bcf-47d9-b4ae-073e841e3e7a");
+            assert_eq!(transaction.provider_transaction_id, Some("PB21095868675TX1".to_string()));
         } else {
             panic!("Expected FiatWebhook::Transaction variant");
         }

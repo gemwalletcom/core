@@ -1,12 +1,9 @@
-use super::{
-    client::TransakClient,
-    models::{Asset, FiatCurrency, TransakOrderResponse},
-};
+use super::models::{Asset, FiatCurrency, TransakOrderResponse};
 use crate::model::{FiatProviderAsset, filter_token_id};
 use primitives::PaymentType;
 use primitives::currency::Currency;
 use primitives::fiat_assets::FiatAssetLimits;
-use primitives::{AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus};
+use primitives::{Chain, FiatProviderName, FiatQuoteType, FiatTransactionStatus, FiatTransactionUpdate};
 
 pub fn map_asset_chain(network: &str, coin_id: Option<&str>) -> Option<Chain> {
     match network {
@@ -66,31 +63,18 @@ fn map_status(status: &str) -> FiatTransactionStatus {
     }
 }
 
-fn map_transaction_type(transaction_type: &str) -> FiatQuoteType {
-    match transaction_type {
-        "BUY" => FiatQuoteType::Buy,
-        "SELL" => FiatQuoteType::Sell,
-        _ => FiatQuoteType::Buy,
-    }
-}
+pub fn map_order_from_response(payload: TransakOrderResponse) -> FiatTransactionUpdate {
+    let transaction_id = payload.quote_id.clone().unwrap_or_else(|| payload.id.clone());
+    let provider_transaction_id = (transaction_id != payload.id).then_some(payload.id.clone());
 
-pub fn map_order_from_response(payload: TransakOrderResponse) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
-    let chain = map_asset_chain(&payload.network, None);
-    let asset_id = chain.map(AssetId::from_chain);
-
-    Ok(FiatTransaction {
-        asset_id,
-        transaction_type: map_transaction_type(&payload.is_buy_or_sell),
-        symbol: payload.crypto_currency,
-        provider_id: TransakClient::NAME,
-        provider_transaction_id: payload.id,
+    FiatTransactionUpdate {
+        transaction_id,
+        provider_transaction_id,
         status: map_status(&payload.status),
-        country: payload.country_code,
-        fiat_amount: payload.fiat_amount,
-        fiat_currency: payload.fiat_currency,
         transaction_hash: payload.transaction_hash,
         address: payload.wallet_address,
-    })
+        fiat_amount: Some(payload.fiat_amount),
+    }
 }
 fn map_limits(fiat_currencies: &[FiatCurrency], quote_type: FiatQuoteType) -> Vec<FiatAssetLimits> {
     fiat_currencies
@@ -171,24 +155,19 @@ fn map_payment_type(payment_id: &str) -> Option<PaymentType> {
 mod tests {
     use super::*;
     use crate::providers::transak::models::{Data, FiatCurrency, Response, TransakOrderResponse};
-    use primitives::{FiatProviderName, FiatQuoteType, FiatTransactionStatus, PaymentType};
+    use primitives::{FiatTransactionStatus, PaymentType};
 
     #[test]
     fn test_map_order_buy_failed() {
         let response: Data<TransakOrderResponse> = serde_json::from_str(include_str!("../../../testdata/transak/transaction_buy_error.json")).expect("Failed to parse test data");
 
-        let result = map_order_from_response(response.data).expect("Failed to map order");
+        let result = map_order_from_response(response.data);
 
-        assert_eq!(result.provider_id, FiatProviderName::Transak);
-        assert_eq!(result.provider_transaction_id, "df7997b7-a19f-447e-b9fe-2f0eb7cb7b3a");
-        assert!(matches!(result.status, FiatTransactionStatus::Failed));
-        assert!(matches!(result.transaction_type, FiatQuoteType::Buy));
-        assert_eq!(result.symbol, "SUI");
-        assert_eq!(result.fiat_currency, "USD");
-        assert_eq!(result.fiat_amount, 108.0);
-        assert_eq!(result.country, Some("DK".to_string()));
+        assert_eq!(result.transaction_id, "e75764cd-1275-476e-b6fa-9af787b40974");
+        assert_eq!(result.provider_transaction_id, Some("df7997b7-a19f-447e-b9fe-2f0eb7cb7b3a".to_string()));
+        assert_eq!(result.status, FiatTransactionStatus::Failed);
+        assert_eq!(result.fiat_amount, Some(108.0));
         assert_eq!(result.address, Some("0xf47abc9e2ed94fb555b3e31e08ad8aa8ac64eea0ff15ba0e7b443cef4aaabffe".to_string()));
-        assert!(result.asset_id.is_some());
     }
 
     #[test]

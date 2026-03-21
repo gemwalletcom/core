@@ -1,3 +1,6 @@
+CREATE TYPE fiat_transaction_type AS ENUM ('buy', 'sell');
+CREATE TYPE fiat_transaction_status AS ENUM ('complete', 'pending', 'failed', 'unknown');
+
 CREATE TABLE fiat_providers (
     id VARCHAR(32) PRIMARY KEY NOT NULL,
     name VARCHAR(32) NOT NULL,
@@ -48,57 +51,23 @@ SELECT diesel_manage_updated_at('fiat_assets');
 CREATE TABLE fiat_transactions (
     id SERIAL PRIMARY KEY,
     provider_id VARCHAR(128) NOT NULL REFERENCES fiat_providers (id) ON DELETE CASCADE,
-    asset_id VARCHAR(128) REFERENCES assets (id) ON DELETE CASCADE,
-    symbol VARCHAR(32) NOT NULL,
+    asset_id VARCHAR(128) NOT NULL REFERENCES assets (id) ON DELETE CASCADE,
+    quote_id VARCHAR(128) NOT NULL,
+    device_id INTEGER REFERENCES devices (id) ON DELETE CASCADE,
     fiat_amount float NOT NULL DEFAULT 0,
     fiat_currency VARCHAR(32) NOT NULL,
-    status VARCHAR(32) NOT NULL,
+    value VARCHAR(256),
+    status fiat_transaction_status NOT NULL,
     country VARCHAR(256),
-    provider_transaction_id VARCHAR(256) NOT NULL,
+    provider_transaction_id VARCHAR(256),
     transaction_hash VARCHAR(256),
     address VARCHAR(256),
+    transaction_type fiat_transaction_type NOT NULL,
     updated_at timestamp NOT NULL default current_timestamp,
-    created_at timestamp NOT NULL default current_timestamp,
-    transaction_type VARCHAR(32) NOT NULL default 'buy',
-    UNIQUE NULLS NOT DISTINCT(provider_id, provider_transaction_id)
+    created_at timestamp NOT NULL default current_timestamp
 );
 
 SELECT diesel_manage_updated_at('fiat_transactions');
 
-CREATE TABLE fiat_quotes (
-    id VARCHAR(128) PRIMARY KEY,
-    provider_id VARCHAR(128) NOT NULL REFERENCES fiat_providers (id) ON DELETE CASCADE,
-    asset_id VARCHAR(128) NOT NULL REFERENCES assets (id) ON DELETE CASCADE,
-    fiat_amount FLOAT NOT NULL,
-    fiat_currency VARCHAR(32) NOT NULL,
-    updated_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
-    created_at TIMESTAMP NOT NULL DEFAULT current_timestamp
-);
-
-SELECT diesel_manage_updated_at('fiat_quotes');
-
-CREATE INDEX idx_fiat_quotes_provider_id ON fiat_quotes(provider_id);
-CREATE INDEX idx_fiat_quotes_asset_id ON fiat_quotes(asset_id);
-
-CREATE TABLE fiat_quotes_requests (
-    id SERIAL PRIMARY KEY,
-    device_id INTEGER NOT NULL REFERENCES devices (id) ON DELETE CASCADE,
-    quote_id VARCHAR(128) NOT NULL REFERENCES fiat_quotes (id) ON DELETE CASCADE,
-    updated_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
-    created_at TIMESTAMP NOT NULL DEFAULT current_timestamp,
-    UNIQUE(device_id, quote_id)
-);
-
-SELECT diesel_manage_updated_at('fiat_quotes_requests');
-
-CREATE INDEX idx_fiat_quotes_requests_device_id ON fiat_quotes_requests(device_id);
-CREATE INDEX idx_fiat_quotes_requests_quote_id ON fiat_quotes_requests(quote_id);
-
-CREATE TABLE fiat_webhooks (
-    id SERIAL PRIMARY KEY,
-    provider VARCHAR(32) NOT NULL REFERENCES fiat_providers(id),
-    transaction_id VARCHAR(256),
-    payload JSONB NOT NULL,
-    error TEXT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+CREATE UNIQUE INDEX idx_fiat_transactions_quote_id ON fiat_transactions(quote_id);
+CREATE UNIQUE INDEX idx_fiat_transactions_provider_transaction_id ON fiat_transactions(provider_id, provider_transaction_id) WHERE provider_transaction_id IS NOT NULL;

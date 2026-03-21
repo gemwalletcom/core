@@ -1,12 +1,14 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use primitives::{
-    AssetId,
+    AssetId as PrimitiveAssetId,
     perpetual::{Perpetual as PrimitivePerpetual, PerpetualBasic},
     perpetual_provider::PerpetualProvider,
 };
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
+
+use crate::sql_types::AssetId;
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::perpetuals)]
@@ -15,7 +17,7 @@ pub struct PerpetualRow {
     pub id: String,
     pub name: String,
     pub provider: String,
-    pub asset_id: String,
+    pub asset_id: AssetId,
     pub identifier: String,
     pub price: f64,
     pub price_percent_change_24h: f64,
@@ -33,7 +35,7 @@ pub struct NewPerpetualRow {
     pub id: String,
     pub name: String,
     pub provider: String,
-    pub asset_id: String,
+    pub asset_id: AssetId,
     pub identifier: String,
     pub price: f64,
     pub price_percent_change_24h: f64,
@@ -48,12 +50,15 @@ pub struct NewPerpetualRow {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct NewPerpetualAssetRow {
     pub perpetual_id: String,
-    pub asset_id: String,
+    pub asset_id: AssetId,
 }
 
 impl NewPerpetualAssetRow {
-    pub fn new(perpetual_id: String, asset_id: String) -> Self {
-        Self { perpetual_id, asset_id }
+    pub fn new(perpetual_id: String, asset_id: PrimitiveAssetId) -> Self {
+        Self {
+            perpetual_id,
+            asset_id: asset_id.into(),
+        }
     }
 }
 
@@ -63,7 +68,7 @@ impl NewPerpetualRow {
             id: perpetual.id,
             name: perpetual.name,
             provider: perpetual.provider.as_ref().to_string(),
-            asset_id: perpetual.asset_id.to_string(),
+            asset_id: perpetual.asset_id.into(),
             identifier: perpetual.identifier,
             price: perpetual.price,
             price_percent_change_24h: perpetual.price_percent_change_24h,
@@ -83,7 +88,7 @@ impl PerpetualRow {
             id: self.id.clone(),
             name: self.name.clone(),
             provider,
-            asset_id: AssetId::new(&self.asset_id).unwrap(),
+            asset_id: self.asset_id.0.clone(),
             identifier: self.identifier.clone(),
             price: self.price,
             price_percent_change_24h: self.price_percent_change_24h,
@@ -96,7 +101,7 @@ impl PerpetualRow {
 
     pub fn as_basic(&self) -> PerpetualBasic {
         PerpetualBasic {
-            asset_id: AssetId::new(&self.asset_id).unwrap(),
+            asset_id: self.asset_id.0.clone(),
             perpetual_id: self.id.clone(),
             provider: PerpetualProvider::from_str(&self.provider).ok().unwrap(),
         }

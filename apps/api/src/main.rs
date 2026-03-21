@@ -4,6 +4,7 @@ mod catchers;
 mod chain;
 mod config;
 mod devices;
+mod fiat;
 mod markets;
 mod metrics;
 mod model;
@@ -65,6 +66,7 @@ fn mount_routes(rocket: Rocket<Build>, metrics_path: &str) -> Rocket<Build> {
                 prices::get_charts,
                 prices::get_fiat_rates,
                 devices::get_fiat_quotes_v1,
+                fiat::get_fiat_order_v1,
                 webhooks::create_fiat_webhook,
                 config::get_config,
                 devices::add_device,
@@ -105,10 +107,10 @@ fn mount_routes(rocket: Rocket<Build>, metrics_path: &str) -> Rocket<Build> {
         .mount(
             "/v2",
             routes![
-                devices::get_device_fiat_order_v2,
                 devices::get_device_fiat_transactions_v2,
                 devices::get_device_fiat_assets_v2,
                 devices::get_fiat_quotes_v2,
+                devices::get_fiat_quote_v2,
                 devices::get_fiat_quote_url_v2,
                 devices::add_device_v2,
                 devices::get_device_v2,

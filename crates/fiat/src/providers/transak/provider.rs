@@ -9,7 +9,7 @@ use crate::{
     providers::transak::mapper::map_asset_with_limits,
 };
 use async_trait::async_trait;
-use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatTransaction};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatTransactionUpdate};
 use std::error::Error;
 use streamer::FiatWebhook;
 
@@ -35,16 +35,16 @@ impl FiatProvider for TransakClient {
             .response
             .into_iter()
             .map(|x| FiatProviderCountry {
-                provider: Self::NAME.id(),
+                provider: Self::NAME.id().to_string(),
                 alpha2: x.alpha2,
                 is_allowed: x.is_allowed,
             })
             .collect())
     }
 
-    async fn get_order_status(&self, order_id: &str) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_order_status(&self, order_id: &str) -> Result<FiatTransactionUpdate, Box<dyn std::error::Error + Send + Sync>> {
         let response = self.get_transaction(order_id).await?;
-        map_order_from_response(response)
+        Ok(map_order_from_response(response))
     }
 
     async fn process_webhook(&self, data: serde_json::Value) -> Result<FiatWebhook, Box<dyn std::error::Error + Send + Sync>> {
@@ -100,7 +100,10 @@ impl FiatProvider for TransakClient {
 
         let redirect_url = self.redirect_url(transak_quote, data.wallet_address, data.quote.quote_type, data.quote.fiat_amount).await?;
 
-        Ok(FiatQuoteUrl { redirect_url })
+        Ok(FiatQuoteUrl {
+            redirect_url,
+            provider_transaction_id: None,
+        })
     }
 }
 

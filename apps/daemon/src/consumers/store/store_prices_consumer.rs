@@ -1,6 +1,5 @@
 use async_trait::async_trait;
 use pricer::PriceClient;
-use primitives::AssetId;
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use storage::models::PriceRow;
@@ -25,15 +24,15 @@ impl StorePricesConsumer {
     async fn update_prices_cache(&self, updated_prices: Vec<PriceRow>) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let price_ids: HashSet<_> = updated_prices.iter().map(|p| &p.id).collect();
 
-        let prices_assets_map: HashMap<_, Vec<_>> = self
-            .price_client
-            .get_prices_assets()?
-            .into_iter()
-            .filter(|price_asset| price_ids.contains(&price_asset.price_id))
-            .fold(HashMap::new(), |mut map, price_asset| {
-                map.entry(price_asset.price_id).or_default().push(price_asset.asset_id);
-                map
-            });
+        let prices_assets_map: HashMap<_, Vec<_>> =
+            self.price_client
+                .get_prices_assets()?
+                .into_iter()
+                .filter(|x| price_ids.contains(&x.price_id))
+                .fold(HashMap::new(), |mut map, x| {
+                    map.entry(x.price_id).or_default().push(x.asset_id);
+                    map
+                });
 
         let prices: Vec<_> = updated_prices
             .into_iter()
@@ -42,7 +41,7 @@ impl StorePricesConsumer {
                     .get(&price.id)
                     .into_iter()
                     .flatten()
-                    .filter_map(move |asset_id| AssetId::new(asset_id).map(|id| price.as_price_asset_info(id)))
+                    .map(move |asset_id| price.as_price_asset_info(asset_id.0.clone()))
             })
             .collect();
 

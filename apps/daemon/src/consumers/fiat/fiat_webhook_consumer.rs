@@ -6,7 +6,6 @@ use fiat::FiatProviderFactory;
 use gem_tracing::{error_with_fields, info_with_fields};
 use settings::Settings;
 use storage::Database;
-use storage::models::FiatTransactionRow;
 use streamer::consumer::MessageConsumer;
 use streamer::{FiatWebhook, FiatWebhookPayload};
 
@@ -30,46 +29,51 @@ impl MessageConsumer<FiatWebhookPayload, bool> for FiatWebhookConsumer {
     }
 
     async fn process(&self, payload: FiatWebhookPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        for provider in &self.providers {
-            if provider.name() == payload.provider {
-                let transaction = match &payload.payload {
-                    FiatWebhook::OrderId(order_id) => {
-                        info_with_fields!("fetching order status", provider = provider.name().id(), order_id = order_id);
-                        match provider.get_order_status(order_id).await {
-                            Ok(transaction) => transaction,
-                            Err(e) => {
-                                error_with_fields!("get_order_status", &*e, provider = provider.name().id(), order_id = order_id);
-                                return Err(e);
-                            }
-                        }
-                    }
-                    FiatWebhook::Transaction(transaction) => transaction.clone(),
-                    FiatWebhook::None => {
-                        info_with_fields!("ignoring webhook", provider = provider.name().id());
-                        return Ok(true);
-                    }
-                };
+        let provider = match self.providers.iter().find(|provider| provider.name() == payload.provider) {
+            Some(provider) => provider,
+            None => {
+                info_with_fields!("ignoring webhook for unsupported provider", provider = payload.provider.id());
+                return Ok(false);
+            }
+        };
+        let provider_name = provider.name();
+        let provider_id = provider_name.id();
 
-                info_with_fields!(
-                    "processing webhook",
-                    provider = provider.name().id(),
-                    order_id = transaction.provider_transaction_id.as_str(),
-                    symbol = transaction.symbol.as_str(),
-                    fiat_amount = transaction.fiat_amount.to_string(),
-                    fiat_currency = transaction.fiat_currency.as_str(),
-                    status = format!("{:?}", transaction.status)
-                );
-
-                match self.database.fiat()?.add_fiat_transaction(vec![FiatTransactionRow::from_primitive(transaction)]) {
-                    Ok(_) => return Ok(true),
+        let transaction = match &payload.payload {
+            FiatWebhook::OrderId(order_id) => {
+                info_with_fields!("fetching order status", provider = provider_id, order_id = order_id);
+                match provider.get_order_status(order_id).await {
+                    Ok(transaction) => transaction,
                     Err(e) => {
-                        error_with_fields!("add_fiat_transaction", &e, provider = provider.name().id());
-                        return Err(e.into());
+                        error_with_fields!("get_order_status", &*e, provider = provider_id, order_id = order_id);
+                        return Err(e);
                     }
                 }
             }
-        }
+            FiatWebhook::Transaction(transaction) => transaction.clone(),
+            FiatWebhook::None => {
+                info_with_fields!("ignoring webhook", provider = provider_id);
+                return Ok(true);
+            }
+        };
 
-        Ok(false)
+        match self.database.fiat()?.update_fiat_transaction(provider_id, transaction) {
+            Ok(updated) => {
+                info_with_fields!(
+                    "processed webhook",
+                    provider = provider_id,
+                    order_id = updated.provider_transaction_id.as_deref().unwrap_or(""),
+                    status = format!("{:?}", updated.status.0),
+                    quote_id = updated.quote_id.as_str(),
+                    address = updated.address.as_deref().unwrap_or(""),
+                    transaction_hash = updated.transaction_hash.as_deref().unwrap_or("")
+                );
+                Ok(true)
+            }
+            Err(e) => {
+                error_with_fields!("update_fiat_transaction", &e, provider = provider_id);
+                Err(e.into())
+            }
+        }
     }
 }

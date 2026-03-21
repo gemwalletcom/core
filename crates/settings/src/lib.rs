@@ -23,7 +23,6 @@ pub struct Settings {
     pub moonpay: MoonPay,
     pub transak: Transak,
     pub mercuryo: Mercuryo,
-    pub banxa: Banxa,
     pub paybis: Paybis,
     pub flashnet: Flashnet,
 
@@ -131,7 +130,6 @@ pub struct UrlSecretKeySettings {
     pub key: KeySecret,
 }
 pub type UD = UrlSecretKeySettings;
-pub type Banxa = ScanProvider;
 pub type Flashnet = ScanProvider;
 
 #[derive(Debug, Deserialize, Clone)]

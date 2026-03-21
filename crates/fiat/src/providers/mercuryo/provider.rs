@@ -1,12 +1,13 @@
 use crate::{
     FiatProvider,
     model::{FiatMapping, FiatProviderAsset},
+    provider::generate_quote_id,
     providers::mercuryo::mapper::{map_asset_limits, map_asset_with_limits},
 };
 use async_trait::async_trait;
 use futures::future;
 use primitives::currency::Currency;
-use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatTransaction};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatTransactionUpdate};
 use std::error::Error;
 use streamer::FiatWebhook;
 
@@ -47,14 +48,14 @@ impl FiatProvider for MercuryoClient {
             .data
             .into_iter()
             .map(|x| FiatProviderCountry {
-                provider: Self::NAME.id(),
+                provider: Self::NAME.id().to_string(),
                 alpha2: x.to_uppercase(),
                 is_allowed: true,
             })
             .collect())
     }
 
-    async fn get_order_status(&self, order_id: &str) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+    async fn get_order_status(&self, order_id: &str) -> Result<FiatTransactionUpdate, Box<dyn std::error::Error + Send + Sync>> {
         let response = self.get_transaction(order_id).await?;
         let transaction = response.data.into_iter().next().ok_or("Transaction not found")?;
         map_order_from_response(transaction)
@@ -69,7 +70,7 @@ impl FiatProvider for MercuryoClient {
 
     async fn get_quote_buy(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
         let network = request_map.asset_symbol.network.clone().unwrap_or_default();
-        let merchant_transaction_id = uuid::Uuid::new_v4().to_string();
+        let merchant_transaction_id = generate_quote_id();
         let quote = self
             .get_quote_buy(request.currency.clone(), request_map.asset_symbol.symbol, request.amount, network)
             .await?;
@@ -79,7 +80,7 @@ impl FiatProvider for MercuryoClient {
 
     async fn get_quote_sell(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
         let network = request_map.asset_symbol.network.clone().unwrap_or_default();
-        let merchant_transaction_id = uuid::Uuid::new_v4().to_string();
+        let merchant_transaction_id = generate_quote_id();
         let quote = self
             .get_quote_sell(request.currency.clone(), request_map.asset_symbol.symbol, request.amount, network)
             .await?;
@@ -107,7 +108,10 @@ impl FiatProvider for MercuryoClient {
             network,
         );
 
-        Ok(FiatQuoteUrl { redirect_url: widget.to_url() })
+        Ok(FiatQuoteUrl {
+            redirect_url: widget.to_url(),
+            provider_transaction_id: None,
+        })
     }
 }
 

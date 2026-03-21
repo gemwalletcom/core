@@ -95,6 +95,20 @@ impl From<Box<dyn std::error::Error + Send + Sync>> for ApiError {
     }
 }
 
+pub struct ApiResponse<T>(pub ResponseResult<T>);
+
+impl<T> From<T> for ApiResponse<T> {
+    fn from(data: T) -> Self {
+        ApiResponse(ResponseResult::new(data))
+    }
+}
+
+impl<'r, T: Serialize> Responder<'r, 'static> for ApiResponse<T> {
+    fn respond_to(self, request: &'r Request<'_>) -> rocket::response::Result<'static> {
+        Json(self.0).respond_to(request)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::ApiError;
@@ -126,19 +140,5 @@ mod tests {
             ApiError::NotFound(message) => assert_eq!(message, "Device not found"),
             _ => panic!("expected not found"),
         }
-    }
-}
-
-pub struct ApiResponse<T>(pub ResponseResult<T>);
-
-impl<T> From<T> for ApiResponse<T> {
-    fn from(data: T) -> Self {
-        ApiResponse(ResponseResult::new(data))
-    }
-}
-
-impl<'r, T: Serialize> Responder<'r, 'static> for ApiResponse<T> {
-    fn respond_to(self, request: &'r Request<'_>) -> rocket::response::Result<'static> {
-        Json(self.0).respond_to(request)
     }
 }

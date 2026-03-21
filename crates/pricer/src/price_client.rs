@@ -22,10 +22,10 @@ impl PriceClient {
 
     pub fn get_price_ids_for_asset_ids(&self, asset_ids: &[String]) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
         let prices_assets = self.database.prices()?.get_prices_assets()?;
-        let requested: std::collections::HashSet<&String> = asset_ids.iter().collect();
+        let requested: std::collections::HashSet<_> = asset_ids.iter().cloned().collect();
         let price_ids: Vec<String> = prices_assets
             .into_iter()
-            .filter(|pa| requested.contains(&pa.asset_id))
+            .filter(|x| requested.contains(&x.asset_id.to_string()))
             .map(|pa| pa.price_id)
             .collect::<std::collections::HashSet<_>>()
             .into_iter()
@@ -34,7 +34,7 @@ impl PriceClient {
     }
 
     pub fn set_prices(&self, prices: Vec<PriceRow>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        for chunk in prices.chunks(PRICES_INSERT_BATCH_LIMIT).clone() {
+        for chunk in prices.chunks(PRICES_INSERT_BATCH_LIMIT) {
             self.database.prices()?.set_prices(chunk.to_vec())?;
         }
         Ok(prices.len())

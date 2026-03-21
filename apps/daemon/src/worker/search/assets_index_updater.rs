@@ -32,10 +32,10 @@ impl AssetsIndexUpdater {
         let usage_ranks = self.database.assets_usage_ranks()?.get_all_usage_ranks()?;
 
         let assets_tags_map: HashMap<String, Vec<String>> = assets_tags.into_iter().fold(HashMap::new(), |mut acc, tag| {
-            acc.entry(tag.asset_id).or_default().push(tag.tag_id);
+            acc.entry(tag.asset_id.to_string()).or_default().push(tag.tag_id);
             acc
         });
-        let usage_ranks_map: HashMap<String, i32> = usage_ranks.into_iter().map(|r| (r.asset_id, r.usage_rank)).collect();
+        let usage_ranks_map: HashMap<String, i32> = usage_ranks.into_iter().map(|r| (r.asset_id.to_string(), r.usage_rank)).collect();
 
         let documents = Self::build_documents(prices.iter(), &assets_tags_map, &usage_ranks_map);
 

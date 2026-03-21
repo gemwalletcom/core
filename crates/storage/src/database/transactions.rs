@@ -2,7 +2,7 @@ use crate::{
     DatabaseClient,
     models::*,
     schema::transactions_addresses,
-    sql_types::{TransactionState, TransactionType},
+    sql_types::{AssetId, TransactionState, TransactionType},
 };
 use chrono::NaiveDateTime;
 use diesel::dsl::count;
@@ -35,7 +35,7 @@ pub(crate) trait TransactionsStore {
     fn get_transactions_addresses(&mut self, min_count: i64, limit: i64, since: NaiveDateTime) -> Result<Vec<AddressChainIdResultRow>, diesel::result::Error>;
     fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<i64>, diesel::result::Error>;
     fn delete_orphaned_transactions(&mut self, candidate_ids: Vec<i64>) -> Result<usize, diesel::result::Error>;
-    fn get_asset_usage_counts(&mut self, since: NaiveDateTime) -> Result<Vec<(String, i64)>, diesel::result::Error>;
+    fn get_asset_usage_counts(&mut self, since: NaiveDateTime) -> Result<Vec<(AssetId, i64)>, diesel::result::Error>;
     fn get_transactions_by_filter(&mut self, filters: Vec<TransactionFilter>, limit: i64) -> Result<Vec<TransactionRow>, diesel::result::Error>;
     fn update_transaction(&mut self, chain: &str, hash: &str, updates: Vec<TransactionUpdate>) -> Result<usize, diesel::result::Error>;
     fn get_addresses_by_chain_and_kind(&mut self, chain: &str, kinds: Vec<TransactionType>, since: NaiveDateTime) -> Result<Vec<String>, diesel::result::Error>;
@@ -172,14 +172,14 @@ impl TransactionsStore for DatabaseClient {
         diesel::delete(transactions.filter(id.eq_any(ids))).execute(&mut self.connection)
     }
 
-    fn get_asset_usage_counts(&mut self, since: NaiveDateTime) -> Result<Vec<(String, i64)>, diesel::result::Error> {
+    fn get_asset_usage_counts(&mut self, since: NaiveDateTime) -> Result<Vec<(AssetId, i64)>, diesel::result::Error> {
         use crate::schema::assets_addresses::dsl::*;
 
         assets_addresses
             .filter(updated_at.ge(since))
             .group_by(asset_id)
             .select((asset_id, count(asset_id)))
-            .load(&mut self.connection)
+            .load::<(AssetId, i64)>(&mut self.connection)
     }
 
     fn get_transactions_by_filter(&mut self, filters: Vec<TransactionFilter>, limit: i64) -> Result<Vec<TransactionRow>, diesel::result::Error> {

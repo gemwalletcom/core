@@ -8,6 +8,8 @@ pub struct CachedFiatQuoteData {
     pub quote: FiatQuote,
     #[serde(flatten)]
     pub asset_symbol: FiatAssetSymbol,
+    #[serde(default)]
+    pub country_code: Option<String>,
 }
 
 pub struct FiatCacherClient {

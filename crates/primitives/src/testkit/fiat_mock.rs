@@ -1,7 +1,8 @@
 use crate::currency::Currency;
 use crate::fiat_assets::FiatAssetLimits;
 use crate::{
-    Asset, AssetId, Chain, FiatProvider, FiatProviderName, FiatQuote, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatTransaction, FiatTransactionStatus, PaymentType,
+    Asset, AssetId, Chain, FiatProvider, FiatProviderName, FiatQuote, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatTransaction, FiatTransactionStatus,
+    FiatTransactionUpdate, PaymentType,
 };
 
 impl FiatQuoteRequest {
@@ -33,7 +34,7 @@ impl FiatProvider {
         FiatProvider {
             id,
             name: id.name().to_string(),
-            image_url: Some("".to_string()),
+            image_url: None,
             priority: None,
             threshold_bps: None,
             enabled: true,
@@ -47,7 +48,7 @@ impl FiatProvider {
         FiatProvider {
             id,
             name: id.name().to_string(),
-            image_url: Some("".to_string()),
+            image_url: None,
             priority: Some(priority),
             threshold_bps,
             enabled: true,
@@ -68,6 +69,7 @@ impl FiatQuote {
             fiat_amount: 100.0,
             fiat_currency: "USD".to_string(),
             crypto_amount: 0.001,
+            value: "100000".to_string(),
             latency: 0,
             payment_methods: vec![PaymentType::Card],
         }
@@ -88,17 +90,30 @@ impl FiatQuoteResponse {
 impl FiatTransaction {
     pub fn mock() -> Self {
         FiatTransaction {
-            asset_id: Some(AssetId::from_chain(Chain::Bitcoin)),
+            asset_id: AssetId::from_chain(Chain::Bitcoin),
             transaction_type: FiatQuoteType::Buy,
             provider_id: FiatProviderName::MoonPay,
-            provider_transaction_id: "tx_123".to_string(),
+            provider_transaction_id: Some("tx_123".to_string()),
             status: FiatTransactionStatus::Pending,
             country: Some("US".to_string()),
-            symbol: "BTC".to_string(),
             fiat_amount: 100.0,
             fiat_currency: "USD".to_string(),
+            value: "100000".to_string(),
             transaction_hash: None,
             address: Some("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh".to_string()),
+        }
+    }
+}
+
+impl FiatTransactionUpdate {
+    pub fn mock() -> Self {
+        FiatTransactionUpdate {
+            transaction_id: "quote_123".to_string(),
+            provider_transaction_id: Some("tx_123".to_string()),
+            status: FiatTransactionStatus::Pending,
+            transaction_hash: None,
+            address: Some("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh".to_string()),
+            fiat_amount: Some(100.0),
         }
     }
 }

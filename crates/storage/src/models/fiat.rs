@@ -2,12 +2,9 @@ use std::collections::{BTreeSet, HashMap};
 use std::str::FromStr;
 
 use crate::DatabaseError;
-use crate::sql_types::FiatProviderNameRow;
+use crate::sql_types::{AssetId, FiatProviderNameRow, FiatTransactionStatusRow, FiatTransactionType};
 use diesel::prelude::*;
-use primitives::{
-    FiatAsset, FiatProvider, FiatProviderCountry, FiatProviderName, FiatQuote, FiatQuoteType, FiatRate, FiatTransaction, FiatTransactionStatus, PaymentType,
-    fiat_assets::FiatAssetLimits,
-};
+use primitives::{FiatAsset, FiatProvider, FiatProviderCountry, FiatProviderName, FiatRate, FiatTransaction, FiatTransactionUpdate, PaymentType, fiat_assets::FiatAssetLimits};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
@@ -41,7 +38,7 @@ impl FiatRateRow {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct FiatAssetRow {
     pub id: String,
-    pub asset_id: Option<String>,
+    pub asset_id: Option<AssetId>,
     pub provider: String,
     pub code: String,
     pub symbol: String,
@@ -61,7 +58,7 @@ impl FiatAssetRow {
         let id = format!("{}_{}", asset.provider, asset.id).to_lowercase();
         Self {
             id,
-            asset_id: asset.asset_id.map(|x| x.to_string()),
+            asset_id: asset.asset_id.map(AssetId::from),
             provider: asset.provider,
             code: asset.id,
             symbol: asset.symbol,
@@ -108,7 +105,11 @@ pub trait FiatAssetRowsExt {
 
 impl FiatAssetRowsExt for Vec<FiatAssetRow> {
     fn asset_ids(self) -> Vec<String> {
-        self.into_iter().filter_map(|asset| asset.asset_id).collect::<BTreeSet<_>>().into_iter().collect()
+        self.into_iter()
+            .filter_map(|x| x.asset_id.map(|asset_id| asset_id.0.to_string()))
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect()
     }
 }
 
@@ -129,7 +130,7 @@ pub struct FiatProviderRow {
 impl FiatProviderRow {
     pub fn from_primitive(provider: FiatProviderName) -> Self {
         Self {
-            id: provider.id(),
+            id: provider.id().to_string(),
             name: provider.name().to_string(),
             enabled: true,
             buy_enabled: true,
@@ -147,7 +148,7 @@ impl FiatProviderRow {
         Ok(FiatProvider {
             id: provider,
             name: provider.name().to_string(),
-            image_url: Some("".to_string()),
+            image_url: None,
             priority: self.priority,
             threshold_bps: self.priority_threshold_bps,
             enabled: self.enabled,
@@ -166,57 +167,79 @@ impl FiatProviderRow {
     }
 }
 
-#[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Clone)]
+#[derive(Debug, Queryable, Selectable, Clone)]
 #[diesel(table_name = crate::schema::fiat_transactions)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct FiatTransactionRow {
-    pub asset_id: Option<String>,
-    pub transaction_type: String,
-    pub symbol: String,
+    pub asset_id: AssetId,
+    pub transaction_type: FiatTransactionType,
     pub provider_id: FiatProviderNameRow,
-    pub provider_transaction_id: String,
-    pub status: String,
+    pub provider_transaction_id: Option<String>,
+    pub status: FiatTransactionStatusRow,
     pub country: Option<String>,
     pub fiat_amount: f64,
     pub fiat_currency: String,
+    pub value: Option<String>,
     pub address: Option<String>,
     pub transaction_hash: Option<String>,
+    pub device_id: Option<i32>,
+    pub quote_id: String,
 }
 
 impl FiatTransactionRow {
-    pub fn from_primitive(transaction: FiatTransaction) -> Self {
+    pub fn as_primitive(&self) -> FiatTransaction {
+        FiatTransaction {
+            asset_id: self.asset_id.0.clone(),
+            transaction_type: self.transaction_type.0.clone(),
+            provider_id: self.provider_id.0,
+            provider_transaction_id: self.provider_transaction_id.clone(),
+            status: self.status.0.clone(),
+            country: self.country.clone(),
+            fiat_amount: self.fiat_amount,
+            fiat_currency: self.fiat_currency.clone(),
+            value: self.value.clone().unwrap_or_else(|| "0".to_string()),
+            transaction_hash: self.transaction_hash.clone(),
+            address: self.address.clone(),
+        }
+    }
+}
+
+#[derive(Debug, Insertable, Clone)]
+#[diesel(table_name = crate::schema::fiat_transactions)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct NewFiatTransactionRow {
+    pub asset_id: AssetId,
+    pub transaction_type: FiatTransactionType,
+    pub provider_id: FiatProviderNameRow,
+    pub provider_transaction_id: Option<String>,
+    pub status: FiatTransactionStatusRow,
+    pub country: Option<String>,
+    pub fiat_amount: f64,
+    pub fiat_currency: String,
+    pub value: Option<String>,
+    pub address: Option<String>,
+    pub transaction_hash: Option<String>,
+    pub device_id: i32,
+    pub quote_id: String,
+}
+
+impl NewFiatTransactionRow {
+    pub fn new(transaction: FiatTransaction, device_id: i32, quote_id: String) -> Self {
         Self {
-            asset_id: transaction.asset_id.map(|x| x.to_string()),
-            transaction_type: transaction.transaction_type.as_ref().to_string(),
-            symbol: transaction.symbol,
+            asset_id: transaction.asset_id.into(),
+            transaction_type: transaction.transaction_type.into(),
             provider_id: transaction.provider_id.into(),
             provider_transaction_id: transaction.provider_transaction_id,
-            status: transaction.status.as_ref().to_string(),
+            status: transaction.status.into(),
             country: transaction.country,
             fiat_amount: transaction.fiat_amount,
             fiat_currency: transaction.fiat_currency,
+            value: Some(transaction.value),
             transaction_hash: transaction.transaction_hash,
             address: transaction.address,
+            device_id,
+            quote_id,
         }
-    }
-
-    pub fn as_primitive(&self) -> Result<FiatTransaction, DatabaseError> {
-        let transaction_type = FiatQuoteType::from_str(&self.transaction_type).map_err(|e| DatabaseError::Error(e.to_string()))?;
-        let status = FiatTransactionStatus::from_str(&self.status).map_err(|e| DatabaseError::Error(e.to_string()))?;
-
-        Ok(FiatTransaction {
-            asset_id: self.asset_id.as_deref().and_then(primitives::AssetId::new),
-            transaction_type,
-            provider_id: self.provider_id.0,
-            provider_transaction_id: self.provider_transaction_id.clone(),
-            status,
-            country: self.country.clone(),
-            symbol: self.symbol.clone(),
-            fiat_amount: self.fiat_amount,
-            fiat_currency: self.fiat_currency.clone(),
-            transaction_hash: self.transaction_hash.clone(),
-            address: self.address.clone(),
-        })
     }
 }
 
@@ -251,71 +274,20 @@ impl FiatProviderCountryRow {
 
 #[derive(AsChangeset)]
 #[diesel(table_name = crate::schema::fiat_transactions)]
-pub struct FiatTransactionUpdateRow {
-    pub asset_id: Option<String>,
-    pub transaction_type: String,
-    pub symbol: String,
-    pub status: String,
-    pub country: Option<String>,
-    pub fiat_amount: f64,
-    pub fiat_currency: String,
+pub struct UpdateFiatTransactionRow {
+    pub status: FiatTransactionStatusRow,
+    pub fiat_amount: Option<f64>,
     pub transaction_hash: Option<String>,
     pub address: Option<String>,
 }
 
-impl FiatTransactionUpdateRow {
-    pub fn from_row(transaction: &FiatTransactionRow) -> Self {
+impl UpdateFiatTransactionRow {
+    pub fn from_primitive(transaction: &FiatTransactionUpdate) -> Self {
         Self {
-            asset_id: transaction.asset_id.clone(),
-            transaction_type: transaction.transaction_type.clone(),
-            symbol: transaction.symbol.clone(),
-            status: transaction.status.clone(),
-            country: transaction.country.clone(),
+            status: transaction.status.clone().into(),
             fiat_amount: transaction.fiat_amount,
-            fiat_currency: transaction.fiat_currency.clone(),
             transaction_hash: transaction.transaction_hash.clone(),
             address: transaction.address.clone(),
         }
     }
-}
-
-#[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Clone)]
-#[diesel(table_name = crate::schema::fiat_quotes)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct FiatQuoteRow {
-    pub id: String,
-    pub provider_id: String,
-    pub asset_id: String,
-    pub fiat_amount: f64,
-    pub fiat_currency: String,
-}
-
-impl FiatQuoteRow {
-    pub fn from_primitive(quote: &FiatQuote) -> Self {
-        Self {
-            id: quote.id.clone(),
-            provider_id: quote.provider.id.id(),
-            asset_id: quote.asset.id.to_string(),
-            fiat_amount: quote.fiat_amount,
-            fiat_currency: quote.fiat_currency.clone(),
-        }
-    }
-}
-
-#[derive(Debug, Queryable, Selectable, Insertable, Clone)]
-#[diesel(table_name = crate::schema::fiat_quotes_requests)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct FiatQuoteRequestRow {
-    pub device_id: i32,
-    pub quote_id: String,
-}
-
-#[derive(Debug, Insertable, Clone)]
-#[diesel(table_name = crate::schema::fiat_webhooks)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct NewFiatWebhookRow {
-    pub provider: String,
-    pub transaction_id: Option<String>,
-    pub payload: serde_json::Value,
-    pub error: Option<String>,
 }
