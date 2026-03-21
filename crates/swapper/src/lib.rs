@@ -21,6 +21,7 @@ pub mod near_intents;
 pub mod permit2_data;
 pub mod proxy;
 pub mod relay;
+pub mod squid;
 pub mod swapper;
 pub mod thorchain;
 pub mod uniswap;

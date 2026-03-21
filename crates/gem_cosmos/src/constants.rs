@@ -6,6 +6,8 @@ pub const MESSAGE_REDELEGATE: &str = "/cosmos.staking.v1beta1.MsgBeginRedelegate
 pub const MESSAGE_SEND_BETA: &str = "/cosmos.bank.v1beta1.MsgSend";
 pub const MESSAGE_REWARD_BETA: &str = "/cosmos.distribution.v1beta1.MsgWithdrawDelegatorReward";
 pub const MESSAGE_SEND: &str = "/types.MsgSend"; // thorchain
+pub const MESSAGE_EXECUTE_CONTRACT: &str = "/cosmwasm.wasm.v1.MsgExecuteContract";
+pub const MESSAGE_IBC_TRANSFER: &str = "/ibc.applications.transfer.v1.MsgTransfer";
 
 pub const SUPPORTED_MESSAGES: &[&str] = &[
     MESSAGE_SEND,

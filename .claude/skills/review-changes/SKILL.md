@@ -82,6 +82,8 @@ Analyze the diff above and check for the following issues:
 - [ ] **Simple solutions**: Three similar lines is better than a premature abstraction
 - [ ] **Avoid `mut`**: Prefer immutable bindings; use `mut` only when truly necessary
 - [ ] **Prefer one-liners**: Inline single-use variables; avoid creating variables used only once
+- [ ] **Avoid `#[serde(default)]`**: Only use when the field is genuinely optional in the API response; if the field is always present, omit it
+- [ ] **Use accessor methods for enum variants**: Instead of destructuring enum variants with `match`, use typed accessor methods (e.g., `metadata.get_sequence()?` instead of `match &metadata { Cosmos { sequence, .. } => ... }`)
 
 ### 5. Code Organization
 - [ ] **Modular structure**: Break down files into smaller, focused modules; separate models from clients/logic (e.g., `models.rs` + `client.rs`, not everything in one file)
@@ -113,6 +115,9 @@ Analyze the diff above and check for the following issues:
 - [ ] **Error handling**: Use `Result<(), Box<dyn std::error::Error + Send + Sync>>`
 - [ ] **Test data**: For long JSON (>20 lines), store in `testdata/` and use `include_str!()`
 - [ ] **`.unwrap()` not `.expect()`**: Never use `.expect()` in tests; use `.unwrap()` for brevity
+- [ ] **No `assert!` with `contains`**: Use `assert_eq!` with concrete values; `assert!(x.contains(...))` gives useless failure messages
+- [ ] **No fallback, fail fast**: Don't silently return defaults on errors (e.g., `unwrap_or(0)`). Propagate errors with `?` or return `Result`. Fail rather than mask issues with fallbacks.
+- [ ] **Methods over free functions**: Helper functions should be methods on the relevant struct, not top-level free functions
 - [ ] **Mock methods in testkit**: Use `Type::mock()` constructors in `testkit/` modules instead of inline struct construction in tests
 - [ ] **`PartialEq` + `assert_eq!`**: Derive `PartialEq` on test-relevant enums and use direct `assert_eq!` with constructed expected values instead of destructuring with `let ... else { panic! }` or `match ... { _ => panic! }`
 - [ ] **Test helpers**: Create concise constructor functions (e.g., `fn object(json: &str) -> EnumType`, `fn sign_message(chain, sign_type, data) -> Action`) for frequently constructed enum variants in test modules

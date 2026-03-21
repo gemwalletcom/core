@@ -128,6 +128,7 @@ pub enum SwapperProvider {
     Relay,
     Hyperliquid,
     Orca,
+    Squid,
 }
 
 #[uniffi::remote(Enum)]

@@ -3112,6 +3112,7 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "settings",
+ "signer",
  "tokio",
 ]
 
@@ -7185,6 +7186,7 @@ dependencies = [
  "futures",
  "gem_aptos",
  "gem_client",
+ "gem_cosmos",
  "gem_evm",
  "gem_hash",
  "gem_hypercore",

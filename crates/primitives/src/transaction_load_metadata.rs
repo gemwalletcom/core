@@ -128,6 +128,13 @@ impl TransactionLoadMetadata {
         }
     }
 
+    pub fn get_account_number(&self) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
+        match self {
+            TransactionLoadMetadata::Cosmos { account_number, .. } => Ok(*account_number),
+            _ => Err("Account number not available for this metadata type".into()),
+        }
+    }
+
     pub fn get_chain_id(&self) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         match self {
             TransactionLoadMetadata::Cosmos { chain_id, .. } => Ok(chain_id.clone()),

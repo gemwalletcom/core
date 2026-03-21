@@ -1,0 +1,14 @@
+{
+    "typeUrl": "/cosmwasm.wasm.v1.MsgExecuteContract",
+    "value": {
+        "sender": "osmo1tkvyjqeq204rmrrz3w4hcrs336qahsfwn8m0ye",
+        "contract": "osmo1n6ney9tsf55etz9nrmzyd8wa7e64qd3s06a74fqs30ka8pps6cvqtsycr6",
+        "msg": "{\"multicall\":{\"calls\":[{\"msg\":{\"stargate\":{\"type_url\":\"/osmosis.gamm.v1beta1.MsgSwapExactAmountIn\",\"value\":{\"sender\":\"osmo1n6ney9tsf55etz9nrmzyd8wa7e64qd3s06a74fqs30ka8pps6cvqtsycr6\",\"routes\":[{\"pool_id\":\"1135\",\"token_out_denom\":\"ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2\"}],\"token_in\":{\"denom\":\"uosmo\",\"amount\":\"0\"},\"token_out_min_amount\":\"180865\"}}},\"actions\":[{\"native_balance_fetch\":{\"denom\":\"uosmo\",\"replacer\":\"/stargate/value/token_in/amount\"}},{\"field_to_proto_binary\":{\"replacer\":\"/stargate/value\",\"proto_msg_type\":\"osmosis_swap_exact_amt_in\"}}]}],\"fallback_address\":\"osmo1tkvyjqeq204rmrrz3w4hcrs336qahsfwn8m0ye\"}}",
+        "funds": [
+            {
+                "denom": "uosmo",
+                "amount": "10000000"
+            }
+        ]
+    }
+}

@@ -1,6 +1,12 @@
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "signer")]
+use super::{ExecuteContractValue, IbcTransferValue};
 use crate::constants;
+#[cfg(feature = "signer")]
+use crate::constants::{MESSAGE_EXECUTE_CONTRACT, MESSAGE_IBC_TRANSFER, MESSAGE_SEND_BETA};
+#[cfg(feature = "signer")]
+use primitives::SignerError;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "@type")]
@@ -88,5 +94,137 @@ impl MsgSend {
             .flat_map(|x| num_bigint::BigInt::from_str(&x.amount).ok())
             .sum();
         Some(value)
+    }
+}
+
+#[cfg(feature = "signer")]
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MessageEnvelope {
+    pub type_url: String,
+    pub value: serde_json::Value,
+}
+
+#[cfg(feature = "signer")]
+pub enum CosmosMessage {
+    Send {
+        from_address: String,
+        to_address: String,
+        amount: Vec<Coin>,
+    },
+    ExecuteContract {
+        sender: String,
+        contract: String,
+        msg: Vec<u8>,
+        funds: Vec<Coin>,
+    },
+    IbcTransfer {
+        source_port: String,
+        source_channel: String,
+        token: Coin,
+        sender: String,
+        receiver: String,
+        timeout_timestamp: u64,
+        memo: String,
+    },
+}
+
+pub fn send_msg_json(from: &str, to: &str, denom: &str, amount: &str) -> serde_json::Value {
+    serde_json::json!({
+        "typeUrl": constants::MESSAGE_SEND_BETA,
+        "value": {
+            "from_address": from,
+            "to_address": to,
+            "amount": [{"denom": denom, "amount": amount}]
+        }
+    })
+}
+
+#[cfg(feature = "signer")]
+impl CosmosMessage {
+    pub fn parse_array(data: &str) -> Result<Vec<Self>, SignerError> {
+        let arr: Vec<serde_json::Value> = serde_json::from_str(data)?;
+        arr.iter().map(|v| Self::parse(&v.to_string())).collect()
+    }
+
+    pub fn parse(data: &str) -> Result<Self, SignerError> {
+        let envelope: MessageEnvelope = serde_json::from_str(data)?;
+
+        match envelope.type_url.as_str() {
+            MESSAGE_SEND_BETA => {
+                let v: MsgSend = serde_json::from_value(envelope.value)?;
+                Ok(Self::Send {
+                    from_address: v.from_address,
+                    to_address: v.to_address,
+                    amount: v.amount,
+                })
+            }
+            MESSAGE_EXECUTE_CONTRACT => {
+                let v: ExecuteContractValue = serde_json::from_value(envelope.value)?;
+                Ok(Self::ExecuteContract {
+                    sender: v.sender,
+                    contract: v.contract,
+                    msg: v.msg.into_bytes(),
+                    funds: v.funds,
+                })
+            }
+            MESSAGE_IBC_TRANSFER => {
+                let v: IbcTransferValue = serde_json::from_value(envelope.value)?;
+                Ok(Self::IbcTransfer {
+                    source_port: v.source_port,
+                    source_channel: v.source_channel,
+                    token: v.token,
+                    sender: v.sender,
+                    receiver: v.receiver,
+                    timeout_timestamp: v.timeout_timestamp,
+                    memo: v.memo,
+                })
+            }
+            other => SignerError::invalid_input_err(format!("unsupported cosmos message type: {other}")),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_execute_contract() {
+        let msg = CosmosMessage::parse(include_str!("../../testdata/swap_execute_contract.json")).unwrap();
+        match msg {
+            CosmosMessage::ExecuteContract { sender, contract, funds, .. } => {
+                assert_eq!(sender, "osmo1tkvyjqeq204rmrrz3w4hcrs336qahsfwn8m0ye");
+                assert_eq!(contract, "osmo1n6ney9tsf55etz9nrmzyd8wa7e64qd3s06a74fqs30ka8pps6cvqtsycr6");
+                assert_eq!(funds.len(), 1);
+                assert_eq!(funds[0].denom, "uosmo");
+                assert_eq!(funds[0].amount, "10000000");
+            }
+            _ => panic!("expected ExecuteContract"),
+        }
+    }
+
+    #[test]
+    fn test_parse_ibc_transfer() {
+        let msg = CosmosMessage::parse(include_str!("../../testdata/swap_ibc_transfer.json")).unwrap();
+        match msg {
+            CosmosMessage::IbcTransfer {
+                source_port,
+                source_channel,
+                sender,
+                receiver,
+                timeout_timestamp,
+                memo,
+                ..
+            } => {
+                assert_eq!(source_port, "transfer");
+                assert_eq!(source_channel, "channel-141");
+                assert_eq!(sender, "cosmos1tkvyjqeq204rmrrz3w4hcrs336qahsfwmugljt");
+                assert_eq!(receiver, "osmo1n6ney9tsf55etz9nrmzyd8wa7e64qd3s06a74fqs30ka8pps6cvqtsycr6");
+                assert_eq!(timeout_timestamp, 1773632858715000064);
+                assert!(!memo.is_empty());
+            }
+            _ => panic!("expected IbcTransfer"),
+        }
     }
 }

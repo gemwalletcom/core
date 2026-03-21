@@ -47,6 +47,8 @@ pub mod chainflip;
 pub use chainflip::ChainflipScan;
 pub mod relay;
 pub use relay::RelayScan;
+pub mod skip;
+pub use skip::SkipExplorer;
 pub mod hypercore;
 pub use hypercore::{FlowScan, HyperliquidExplorer, HypurrScan};
 pub mod metadata;

@@ -1,5 +1,6 @@
 use crate::{GemstoneError, models::transaction::GemTransactionLoadInput};
 use gem_aptos::AptosChainSigner;
+use gem_cosmos::signer::CosmosChainSigner;
 use gem_hypercore::signer::HyperCoreSigner;
 use gem_solana::signer::SolanaChainSigner;
 use gem_sui::signer::SuiChainSigner;
@@ -22,6 +23,7 @@ impl GemChainSigner {
             Chain::Sui => Box::new(SuiChainSigner),
             Chain::Solana => Box::new(SolanaChainSigner),
             Chain::Tron => Box::new(TronChainSigner),
+            Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Injective | Chain::Sei | Chain::Noble => Box::new(CosmosChainSigner),
             _ => todo!("Signer not implemented for chain {:?}", chain),
         };
 
