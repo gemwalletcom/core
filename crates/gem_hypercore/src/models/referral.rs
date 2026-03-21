@@ -50,8 +50,7 @@ mod tests {
 
     #[test]
     fn referral_need_to_create_code_payload() {
-        let json = r#"{"referredBy":{"code":"GEMWALLET"},"cumVlm":"46615331.93","unclaimedRewards":"0.0","claimedRewards":"0.0","builderRewards":"0.0","referrerState":{"stage":"needToCreateCode"},"rewardHistory":[],"tokenToState":[]}"#;
-        let referral: Referral = serde_json::from_str(json).unwrap();
+        let referral: Referral = serde_json::from_str(include_str!("../../testdata/referral_need_to_create_code.json")).unwrap();
 
         assert!(referral.referrer_state.unwrap().data.is_none());
     }
