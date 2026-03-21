@@ -67,6 +67,7 @@
 		B6B86A102D702E7C00D31D65 /* SwapNavigationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6B86A0F2D702E7C00D31D65 /* SwapNavigationView.swift */; };
 		B6C8F2AF2EDE2691005915E4 /* UITestKitConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6C8F2AD2EDE2691005915E4 /* UITestKitConstants.swift */; };
 		B6CBBC552ED9A80B0043443B /* CreateWalletUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6CBBC542ED9A80B0043443B /* CreateWalletUITests.swift */; };
+		B6D1A0012EE3000000UPGRADE /* UpgradeVerificationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6D1A0002EE3000000UPGRADE /* UpgradeVerificationTests.swift */; };
 		B6STREAM02F5000000000001 /* StreamService in Frameworks */ = {isa = PBXBuildFile; productRef = B6STREAM02F5000000000002 /* StreamService */; };
 		C30952B4299C39D70004C0F9 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = C30952B3299C39D70004C0F9 /* App.swift */; };
 		C34C7CF829FDE942009EEC21 /* unit_frameworks.xctestplan in Resources */ = {isa = PBXBuildFile; fileRef = C34C7CF729FDE942009EEC21 /* unit_frameworks.xctestplan */; };
@@ -226,6 +227,7 @@
 		B6B86A0F2D702E7C00D31D65 /* SwapNavigationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwapNavigationView.swift; sourceTree = "<group>"; };
 		B6C8F2AD2EDE2691005915E4 /* UITestKitConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITestKitConstants.swift; sourceTree = "<group>"; };
 		B6CBBC542ED9A80B0043443B /* CreateWalletUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateWalletUITests.swift; sourceTree = "<group>"; };
+		B6D1A0002EE3000000UPGRADE /* UpgradeVerificationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpgradeVerificationTests.swift; sourceTree = "<group>"; };
 		B6EA21D42E27E21700F1C849 /* Support */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = Support; sourceTree = "<group>"; };
 		C30952B0299C39D70004C0F9 /* Gem.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Gem.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C30952B3299C39D70004C0F9 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
@@ -567,6 +569,7 @@
 				B68058302ED9C6F7001273D6 /* Extensions */,
 				B69D9C852ED85EA000A04F7F /* ImportWalletReceiveBitcoinUITests.swift */,
 				B6CBBC542ED9A80B0043443B /* CreateWalletUITests.swift */,
+				B6D1A0002EE3000000UPGRADE /* UpgradeVerificationTests.swift */,
 			);
 			path = GemUITestsAppTests;
 			sourceTree = "<group>";
@@ -1169,6 +1172,7 @@
 			files = (
 				B69D9C872ED85EA000A04F7F /* ImportWalletReceiveBitcoinUITests.swift in Sources */,
 				B6CBBC552ED9A80B0043443B /* CreateWalletUITests.swift in Sources */,
+				B6D1A0012EE3000000UPGRADE /* UpgradeVerificationTests.swift in Sources */,
 				B68058312ED9C6F7001273D6 /* XCTestCase+GemUITestsAppTests.swift in Sources */,
 				B6C8F2AF2EDE2691005915E4 /* UITestKitConstants.swift in Sources */,
 				B68058322ED9C6F7001273D6 /* XCUIApplication+GemUITestsAppTests.swift in Sources */,

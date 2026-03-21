@@ -138,6 +138,10 @@ build-for-testing-ui: (_test-ui "build-for-testing")
 
 test-ui-without-building: reset-simulator (_test-ui "test-without-building")
 
+# Run full upgrade test: build old version, create wallet, build current, verify wallet survives
+test-upgrade COMMIT:
+    @bash build-system/scripts/upgrade-test.sh {{COMMIT}}
+
 reset-simulator NAME=SIMULATOR_NAME:
     @echo "==> Resetting {{NAME}} simulator to clean state"
     @xcrun simctl shutdown "{{NAME}}" 2>/dev/null || true
