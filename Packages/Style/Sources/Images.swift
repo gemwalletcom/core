@@ -83,6 +83,7 @@ public enum Images {
         public static let panora = Image(.panora)
         public static let okx = Image(.okx)
         public static let nearIntents = Image(.nearIntents)
+        public static let squid = Image(.squid)
     }
 
     public enum EarnProviders {
