@@ -94,11 +94,12 @@ mod tests {
         let assets = map_assets(response.routes);
 
         assert_eq!(assets.len(), 2);
-        assert_eq!(assets[0].chain, Some(Chain::Solana));
-        assert_eq!(assets[0].symbol, "USDC");
-        assert_eq!(assets[0].token_id, Some(SOLANA_USDC_TOKEN_ID.to_string()));
-        assert_eq!(assets[1].chain, Some(Chain::Base));
-        assert_eq!(assets[1].symbol, "USDC");
+        let solana_asset = assets.iter().find(|asset| asset.chain == Some(Chain::Solana)).unwrap();
+        let base_asset = assets.iter().find(|asset| asset.chain == Some(Chain::Base)).unwrap();
+
+        assert_eq!(solana_asset.symbol, "USDC");
+        assert_eq!(solana_asset.token_id, Some(SOLANA_USDC_TOKEN_ID.to_string()));
+        assert_eq!(base_asset.symbol, "USDC");
         assert!(assets.iter().all(|asset| asset.provider == FiatProviderName::Flashnet));
         assert!(assets.iter().all(|asset| !asset.is_sell_enabled));
     }

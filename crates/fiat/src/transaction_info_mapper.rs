@@ -16,7 +16,7 @@ fn details_url(provider_id: &FiatProviderName, transaction_type: &FiatQuoteType,
         },
         FiatProviderName::Mercuryo => None,
         FiatProviderName::Transak => None,
-        FiatProviderName::Banxa => None,
+        FiatProviderName::Banxa => Some(format!("https://gemwallet.banxa.com/status/{provider_transaction_id}")),
         FiatProviderName::Paybis => None,
         FiatProviderName::Flashnet => Some(format!("https://orchestra.flashnet.xyz/explorer/{provider_transaction_id}")),
     }
@@ -51,7 +51,12 @@ mod tests {
             ),
             (FiatProviderName::Mercuryo, FiatQuoteType::Buy, Some("tx_123"), None),
             (FiatProviderName::Transak, FiatQuoteType::Buy, Some("tx_123"), None),
-            (FiatProviderName::Banxa, FiatQuoteType::Buy, Some("tx_123"), None),
+            (
+                FiatProviderName::Banxa,
+                FiatQuoteType::Buy,
+                Some("tx_123"),
+                Some("https://gemwallet.banxa.com/status/tx_123"),
+            ),
             (FiatProviderName::Paybis, FiatQuoteType::Sell, Some("PB123"), None),
         ];
 

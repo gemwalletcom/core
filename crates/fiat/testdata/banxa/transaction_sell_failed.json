@@ -1,0 +1,29 @@
+{
+    "createdAt": "2025-09-01T19:01:09.000000Z",
+    "updatedAt": "2025-09-01T20:38:13.000000Z",
+    "id": "123",
+    "reference": 18447845,
+    "externalOrderId": null,
+    "externalCustomerId": "11899978",
+    "country": null,
+    "orderStatusUrl": "https://gemwallet.banxa.com/status/123",
+    "orderType": "SELL",
+    "crypto": {
+        "id": "ETH",
+        "blockchain": "ETH",
+        "address": "0x0000000000000000000000000000000000000000",
+        "network": "1"
+    },
+    "fiat": "USD",
+    "fiatAmount": "595.3",
+    "cryptoAmount": "0.142762",
+    "paymentMethodId": "ach-bank-transfer",
+    "paymentMethodName": "Ach bank transfer",
+    "processingFee": "0",
+    "networkFee": "0",
+    "transactionHash": null,
+    "walletAddress": "0x123",
+    "walletAddressTag": "",
+    "status": "expired",
+    "metadata": null
+}

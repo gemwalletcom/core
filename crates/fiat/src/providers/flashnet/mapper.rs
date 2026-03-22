@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use number_formatter::BigNumberFormatter;
 use primitives::currency::Currency;
@@ -28,7 +28,15 @@ fn map_chain(chain: &str) -> Option<Chain> {
 }
 
 pub fn map_assets(routes: Vec<FlashnetRoute>) -> Vec<FiatProviderAsset> {
-    routes.into_iter().filter_map(map_asset).collect()
+    routes
+        .into_iter()
+        .filter_map(map_asset)
+        .fold(BTreeMap::new(), |mut assets, asset| {
+            assets.entry(asset.id.clone()).or_insert(asset);
+            assets
+        })
+        .into_values()
+        .collect()
 }
 
 fn map_asset(route: FlashnetRoute) -> Option<FiatProviderAsset> {
@@ -123,7 +131,7 @@ fn map_status(status: &str) -> FiatTransactionStatus {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::providers::flashnet::model::FlashnetOrder;
+    use crate::providers::flashnet::model::{FlashnetOrder, FlashnetRoute, FlashnetRouteAsset};
     use primitives::FiatTransactionStatus;
 
     #[test]
@@ -152,6 +160,39 @@ mod tests {
     fn map_source_amount_uses_usdb_decimals() {
         assert_eq!(map_source_amount(100.0), "100000000");
         assert_eq!(map_source_amount(1.0), "1000000");
+    }
+
+    #[test]
+    fn map_assets_deduplicates_duplicate_destination_routes() {
+        let routes = vec![
+            FlashnetRoute {
+                destination: FlashnetRouteAsset {
+                    chain: "solana".to_string(),
+                    asset: "USDC".to_string(),
+                    contract_address: Some("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string()),
+                },
+            },
+            FlashnetRoute {
+                destination: FlashnetRouteAsset {
+                    chain: "solana".to_string(),
+                    asset: "USDC".to_string(),
+                    contract_address: Some("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string()),
+                },
+            },
+            FlashnetRoute {
+                destination: FlashnetRouteAsset {
+                    chain: "base".to_string(),
+                    asset: "USDC".to_string(),
+                    contract_address: Some("0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".to_string()),
+                },
+            },
+        ];
+
+        let assets = map_assets(routes);
+
+        assert_eq!(assets.len(), 2);
+        assert_eq!(assets[0].id, "usdc_base");
+        assert_eq!(assets[1].id, "usdc_solana");
     }
 
     #[test]
