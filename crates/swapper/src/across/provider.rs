@@ -874,7 +874,7 @@ mod tests {
             println!("<== quote: {:?}", quote);
             assert!(quote.to_value.parse::<u64>().unwrap() > 0);
 
-            let quote_data = swap_provider.get_quote_data(&quote, FetchQuoteData::EstimateGas).await?;
+            let quote_data = swap_provider.get_quote_data(&quote, FetchQuoteData::None).await?;
             println!("<== quote_data: {:?}", quote_data);
 
             Ok(())
