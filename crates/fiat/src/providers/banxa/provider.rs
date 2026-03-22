@@ -18,7 +18,7 @@ impl FiatProvider for BanxaClient {
     }
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn std::error::Error + Send + Sync>> {
-        let (assets, buy_fiat_currencies) = tokio::try_join!(self.get_assets_buy(), self.get_fiat_currencies("buy"))?;
+        let (assets, buy_fiat_currencies) = tokio::try_join!(self.get_assets_buy(), self.get_fiat_currencies_buy())?;
         Ok(assets.into_iter().flat_map(|asset| map_asset_with_limits(asset, &buy_fiat_currencies, &[])).collect())
     }
 
@@ -60,7 +60,21 @@ impl FiatProvider for BanxaClient {
         match data.quote.quote_type {
             FiatQuoteType::Buy => {
                 let network = FiatMapping::get_network(data.asset_symbol.network)?;
-                self.build_quote_url(data.quote.fiat_amount, &data.quote.fiat_currency, &data.asset_symbol.symbol, &network, &data.wallet_address)
+                let order = self
+                    .create_buy_order(
+                        data.quote.id,
+                        data.quote.fiat_amount,
+                        data.quote.fiat_currency,
+                        data.asset_symbol.symbol,
+                        network,
+                        data.wallet_address,
+                    )
+                    .await?;
+
+                Ok(FiatQuoteUrl {
+                    redirect_url: order.checkout_url,
+                    provider_transaction_id: Some(order.id),
+                })
             }
             FiatQuoteType::Sell => Err("not supported".into()),
         }

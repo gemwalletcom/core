@@ -6,9 +6,7 @@ fn generate_hmac_from_bytes(key_bytes: &[u8], message: &str) -> String {
     type HmacSha256 = Hmac<Sha256>;
     let mut mac = HmacSha256::new_from_slice(key_bytes).expect("HMAC can take key of any size");
     mac.update(message.as_bytes());
-    let result = mac.finalize();
-    let signature = result.into_bytes();
-    general_purpose::STANDARD.encode(signature)
+    general_purpose::STANDARD.encode(mac.finalize().into_bytes())
 }
 
 pub fn generate_hmac_signature(secret_key: &str, message: &str) -> String {

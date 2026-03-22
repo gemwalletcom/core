@@ -1,15 +1,15 @@
 use std::error::Error;
 
-use primitives::{FiatProviderName, FiatQuoteUrl};
+use primitives::FiatProviderName;
 use reqwest::{
     Client,
     header::{HeaderMap, HeaderValue},
 };
-use url::Url;
 
-use super::models::{Asset, Country, FiatCurrency, ORDER_TYPE_BUY, Order, Quote};
+use super::models::{Asset, CheckoutOrder, Country, CreateOrderRequest, FiatCurrency, Order, PAYMENT_METHOD_CARD, Quote};
 
 const API_URL: &str = "https://api.banxa.com";
+const BUY_ORDER_TYPE: &str = "buy";
 
 pub struct BanxaClient {
     pub client: Client,
@@ -37,11 +37,7 @@ impl BanxaClient {
     }
 
     pub async fn get_assets_buy(&self) -> Result<Vec<Asset>, Box<dyn Error + Send + Sync>> {
-        self.get_assets_by_order_type(ORDER_TYPE_BUY).await
-    }
-
-    async fn get_assets_by_order_type(&self, order_type: &str) -> Result<Vec<Asset>, Box<dyn Error + Send + Sync>> {
-        let url = format!("{API_URL}/{}/v2/crypto/{order_type}", self.merchant_key);
+        let url = format!("{API_URL}/{}/v2/crypto/{BUY_ORDER_TYPE}", self.merchant_key);
         Ok(self.client.get(&url).headers(self.headers()?).send().await?.json().await?)
     }
 
@@ -53,7 +49,7 @@ impl BanxaClient {
     pub async fn get_quote_buy(&self, symbol: &str, chain: &str, fiat_currency: &str, fiat_amount: f64) -> Result<Quote, Box<dyn Error + Send + Sync>> {
         let fiat_amount = fiat_amount.to_string();
         let query = vec![
-            ("paymentMethodId", "debit-credit-card"),
+            ("paymentMethodId", PAYMENT_METHOD_CARD),
             ("crypto", symbol),
             ("blockchain", chain),
             ("fiat", fiat_currency),
@@ -68,24 +64,23 @@ impl BanxaClient {
         Ok(self.client.get(&url).headers(self.headers()?).send().await?.json().await?)
     }
 
-    pub async fn get_fiat_currencies(&self, order_type: &str) -> Result<Vec<FiatCurrency>, Box<dyn Error + Send + Sync>> {
-        let url = format!("{API_URL}/{}/v2/fiats/{order_type}", self.merchant_key);
+    pub async fn get_fiat_currencies_buy(&self) -> Result<Vec<FiatCurrency>, Box<dyn Error + Send + Sync>> {
+        let url = format!("{API_URL}/{}/v2/fiats/{BUY_ORDER_TYPE}", self.merchant_key);
         Ok(self.client.get(&url).headers(self.headers()?).send().await?.json().await?)
     }
 
-    pub fn build_quote_url(&self, amount: f64, fiat_currency: &str, symbol: &str, network: &str, wallet_address: &str) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {
-        let mut url = Url::parse(&self.url)?;
-        url.query_pairs_mut()
-            .append_pair("orderType", ORDER_TYPE_BUY)
-            .append_pair("coinType", symbol)
-            .append_pair("blockchain", network)
-            .append_pair("fiatType", fiat_currency)
-            .append_pair("fiatAmount", &amount.to_string())
-            .append_pair("walletAddress", wallet_address);
-
-        Ok(FiatQuoteUrl {
-            redirect_url: url.to_string(),
-            provider_transaction_id: None,
-        })
+    pub async fn create_buy_order(
+        &self,
+        quote_id: String,
+        fiat_amount: f64,
+        fiat_currency: String,
+        symbol: String,
+        network: String,
+        wallet_address: String,
+    ) -> Result<CheckoutOrder, Box<dyn Error + Send + Sync>> {
+        let request = CreateOrderRequest::new(quote_id, symbol, fiat_currency, fiat_amount, network, wallet_address, self.url.clone());
+        let url = format!("{API_URL}/{}/v2/buy", self.merchant_key);
+        let response = self.client.post(&url).headers(self.headers()?).json(&request).send().await?.error_for_status()?;
+        response.json().await.map_err(|e| e.into())
     }
 }

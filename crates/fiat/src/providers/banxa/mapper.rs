@@ -141,7 +141,7 @@ fn map_payment_type(payment_id: &str) -> Option<PaymentType> {
 
 #[cfg(test)]
 mod tests {
-    use crate::providers::banxa::models::{Coin, FiatCurrency, Order};
+    use crate::providers::banxa::models::{FiatCurrency, Order};
     use primitives::currency::Currency;
     use primitives::{FiatTransactionStatus, PaymentType};
 
@@ -166,19 +166,10 @@ mod tests {
             id: "banxa_order_123".to_string(),
             external_order_id: Some("quote_123".to_string()),
             status: "completed".to_string(),
-            crypto: Coin {
-                id: "BTC".to_string(),
-                blockchain: "BTC".to_string(),
-            },
-            fiat: "USD".to_string(),
             fiat_amount: 100.0,
-            crypto_amount: 0.001,
             wallet_address: "bc1qexample".to_string(),
             transaction_hash: Some("tx_hash".to_string()),
-            processing_fee: None,
-            network_fee: None,
             order_type: "BUY".to_string(),
-            country: Some("US".to_string()),
         })
         .unwrap();
 

@@ -2,12 +2,6 @@ use serde::Deserialize;
 use std::collections::HashMap;
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct Coin {
-    pub id: String,
-    pub blockchain: String,
-}
-
-#[derive(Debug, Deserialize, Clone)]
 pub struct Asset {
     pub id: String,
     pub blockchains: Vec<Blockchain>,
