@@ -102,7 +102,7 @@ struct CosmosSigner: Signable {
             messages = getRewardMessage(delegatorAddress: input.senderAddress, validators: validators)
         case .withdraw:
             fatalError()
-        case .freeze:
+        case .freeze, .unfreeze:
             throw AnyError("Cosmos does not support freeze operations")
         }
         

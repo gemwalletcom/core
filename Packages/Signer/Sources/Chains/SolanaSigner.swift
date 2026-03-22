@@ -164,7 +164,8 @@ struct SolanaSigner: Signable {
         case .redelegate,
              .rewards:
             fatalError()
-        case .freeze:
+        case .freeze,
+             .unfreeze:
             throw AnyError("Solana does not support freeze operations")
         }
         return try [
@@ -186,4 +187,3 @@ extension String {
         return padding(toLength: count + 4 - offset, withPad: "=", startingAt: 0)
     }
 }
-

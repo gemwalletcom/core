@@ -1,7 +1,5 @@
 // Copyright (c). Gem Wallet. All rights reserved.
 
-import Foundation
-
 extension StakeType {
     public var validatorId: String {
         return switch self {
@@ -10,7 +8,7 @@ extension StakeType {
         case .redelegate(let data): data.delegation.validator.id
         case .rewards(let validators): validators.first?.id ?? .empty
         case .withdraw(let delegation): delegation.validator.id
-        case .freeze: .empty
+        case .freeze, .unfreeze: .empty
         }
     }
 }

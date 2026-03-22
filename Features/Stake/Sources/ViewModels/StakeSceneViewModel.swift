@@ -181,23 +181,13 @@ public final class StakeSceneViewModel {
 
     var freezeDestination: any Hashable {
         destination(
-            type: .freeze(
-                data: FreezeData(
-                    freezeType: .freeze,
-                    resource: .bandwidth
-                )
-            )
+            type: .freeze(resource: .bandwidth)
         )
     }
 
     var unfreezeDestination: any Hashable {
         destination(
-            type: .freeze(
-                data: FreezeData(
-                    freezeType: .unfreeze,
-                    resource: .bandwidth
-                )
-            )
+            type: .unfreeze(resource: .bandwidth)
         )
     }
 

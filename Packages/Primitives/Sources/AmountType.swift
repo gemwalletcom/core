@@ -14,7 +14,8 @@ public enum AmountType: Equatable, Hashable, Sendable {
     case deposit(recipient: RecipientData)
     case withdraw(recipient: RecipientData)
     case stake(StakeAmountType)
-    case freeze(data: FreezeData)
+    case freeze(resource: Resource)
+    case unfreeze(resource: Resource)
     case perpetual(PerpetualRecipientData)
     case earn(EarnType)
 }

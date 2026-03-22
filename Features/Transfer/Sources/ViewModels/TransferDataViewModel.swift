@@ -1,11 +1,10 @@
 // Copyright (c). Gem Wallet. All rights reserved.
 
 import Foundation
-import Primitives
-import Localization
-import PrimitivesComponents
-import Components
 import BigInt
+import Localization
+import Primitives
+import PrimitivesComponents
 
 struct TransferDataViewModel {
     let data: TransferData
@@ -38,11 +37,8 @@ struct TransferDataViewModel {
             case .redelegate: Localized.Transfer.Redelegate.title
             case .rewards: Localized.Transfer.ClaimRewards.title
             case .withdraw: Localized.Transfer.Withdraw.title
-            case .freeze(let data):
-                switch data.freezeType {
-                case .freeze: Localized.Transfer.Freeze.title
-                case .unfreeze: Localized.Transfer.Unfreeze.title
-                }
+            case .freeze: Localized.Transfer.Freeze.title
+            case .unfreeze: Localized.Transfer.Unfreeze.title
             }
         case .account(_, let type):
             switch type {
@@ -103,6 +99,11 @@ struct TransferDataViewModel {
             case .rewards: data.value
             case .stake: metadata?.available ?? .zero
             case .freeze: metadata?.available ?? .zero
+            case .unfreeze(let resource):
+                switch resource {
+                case .bandwidth: metadata?.assetBalance.frozen ?? .zero
+                case .energy: metadata?.assetBalance.locked ?? .zero
+                }
             }
         case .earn(_, let earnType, _):
             switch earnType {

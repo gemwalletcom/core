@@ -113,7 +113,7 @@ struct ConfirmRecipientViewModelTests {
     @Test
     func stakeFreeze() {
         let model = ConfirmRecipientViewModel(
-            model: .mock(type: .stake(.mock(), .freeze(FreezeData(freezeType: .freeze, resource: .bandwidth)))),
+            model: .mock(type: .stake(.mock(), .freeze(.bandwidth))),
             addressName: nil,
             addressLink: .mock()
         )

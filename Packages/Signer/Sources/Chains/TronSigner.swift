@@ -147,25 +147,22 @@ struct TronSigner: Signable {
                     $0.ownerAddress = input.senderAddress
                 }
             )
-        case .freeze(let data):
-            switch data.freezeType {
-            case .freeze:
-                contract = .freezeBalanceV2(
-                    TronFreezeBalanceV2Contract.with {
-                        $0.ownerAddress = input.senderAddress
-                        $0.frozenBalance = input.value.asInt64
-                        $0.resource = data.resource.key
-                    }
-                )
-            case .unfreeze:
-                contract = .unfreezeBalanceV2(
-                    TronUnfreezeBalanceV2Contract.with {
-                        $0.ownerAddress = input.senderAddress
-                        $0.unfreezeBalance = input.value.asInt64
-                        $0.resource = data.resource.key
-                    }
-                )
-            }
+        case .freeze(let resource):
+            contract = .freezeBalanceV2(
+                TronFreezeBalanceV2Contract.with {
+                    $0.ownerAddress = input.senderAddress
+                    $0.frozenBalance = input.value.asInt64
+                    $0.resource = resource.key
+                }
+            )
+        case .unfreeze(let resource):
+            contract = .unfreezeBalanceV2(
+                TronUnfreezeBalanceV2Contract.with {
+                    $0.ownerAddress = input.senderAddress
+                    $0.unfreezeBalance = input.value.asInt64
+                    $0.resource = resource.key
+                }
+            )
         }
         return try [
             sign(input: input, contract: contract, feeLimit: .none, privateKey: privateKey)

@@ -1,45 +1,7 @@
 // Copyright (c). Gem Wallet. All rights reserved.
 
-import Foundation
 import Gemstone
 import Primitives
-import BigInt
-
-extension GemFreezeData {
-    public func map() -> FreezeData {
-        FreezeData(
-            freezeType: freezeType.map(),
-            resource: resource.map()
-        )
-    }
-}
-
-extension FreezeData {
-    public func map() -> GemFreezeData {
-        return GemFreezeData(
-            freezeType: freezeType.map(),
-            resource: resource.map()
-        )
-    }
-}
-
-extension GemFreezeType {
-    public func map() -> Primitives.FreezeType {
-        switch self {
-        case .freeze: .freeze
-        case .unfreeze: .unfreeze
-        }
-    }
-}
-
-extension Primitives.FreezeType {
-    public func map() -> GemFreezeType {
-        switch self {
-        case .freeze: .freeze
-        case .unfreeze: .unfreeze
-        }
-    }
-}
 
 extension GemResource {
     public func map() -> Primitives.Resource {
@@ -73,8 +35,10 @@ extension GemStakeType {
             return .rewards(mappedValidators)
         case .withdraw(let delegation):
             return .withdraw(try delegation.map())
-        case .freeze(let freezeData):
-            return .freeze(freezeData.map())
+        case .freeze(let resource):
+            return .freeze(resource.map())
+        case .unfreeze(let resource):
+            return .unfreeze(resource.map())
         }
     }
 }
@@ -92,8 +56,10 @@ extension StakeType {
             return .withdrawRewards(validators: validators.map { $0.map() })
         case .withdraw(let delegation):
             return .withdraw(delegation: delegation.map())
-        case .freeze(let data):
-            return .freeze(freezeData: data.map())
+        case .freeze(let resource):
+            return .freeze(resource: resource.map())
+        case .unfreeze(let resource):
+            return .unfreeze(resource: resource.map())
         }
     }
 }

@@ -4,26 +4,6 @@
 
 import Foundation
 
-public enum FreezeType: String, Codable, Equatable, Hashable, Sendable {
-	case freeze
-	case unfreeze
-}
-
-public enum Resource: String, Codable, Equatable, Hashable, Sendable {
-	case bandwidth
-	case energy
-}
-
-public struct FreezeData: Codable, Equatable, Hashable, Sendable {
-	public let freezeType: FreezeType
-	public let resource: Resource
-
-	public init(freezeType: FreezeType, resource: Resource) {
-		self.freezeType = freezeType
-		self.resource = resource
-	}
-}
-
 public struct RedelegateData: Codable, Equatable, Hashable, Sendable {
 	public let delegation: Delegation
 	public let toValidator: DelegationValidator
@@ -32,6 +12,11 @@ public struct RedelegateData: Codable, Equatable, Hashable, Sendable {
 		self.delegation = delegation
 		self.toValidator = toValidator
 	}
+}
+
+public enum Resource: String, Codable, Equatable, Hashable, Sendable {
+	case bandwidth
+	case energy
 }
 
 public struct TronUnfreeze: Codable, Equatable, Hashable, Sendable {
@@ -60,7 +45,8 @@ public enum StakeType: Codable, Equatable, Hashable, Sendable {
 	case redelegate(RedelegateData)
 	case rewards([DelegationValidator])
 	case withdraw(Delegation)
-	case freeze(FreezeData)
+	case freeze(Resource)
+	case unfreeze(Resource)
 
 	enum CodingKeys: String, CodingKey, Codable {
 		case stake = "Stake",
@@ -68,7 +54,8 @@ public enum StakeType: Codable, Equatable, Hashable, Sendable {
 			redelegate = "Redelegate",
 			rewards = "Rewards",
 			withdraw = "Withdraw",
-			freeze = "Freeze"
+			freeze = "Freeze",
+			unfreeze = "Unfreeze"
 	}
 
 	private enum ContainerCodingKeys: String, CodingKey {
@@ -105,8 +92,13 @@ public enum StakeType: Codable, Equatable, Hashable, Sendable {
 					return
 				}
 			case .freeze:
-				if let content = try? container.decode(FreezeData.self, forKey: .content) {
+				if let content = try? container.decode(Resource.self, forKey: .content) {
 					self = .freeze(content)
+					return
+				}
+			case .unfreeze:
+				if let content = try? container.decode(Resource.self, forKey: .content) {
+					self = .unfreeze(content)
 					return
 				}
 			}
@@ -134,6 +126,9 @@ public enum StakeType: Codable, Equatable, Hashable, Sendable {
 			try container.encode(content, forKey: .content)
 		case .freeze(let content):
 			try container.encode(CodingKeys.freeze, forKey: .type)
+			try container.encode(content, forKey: .content)
+		case .unfreeze(let content):
+			try container.encode(CodingKeys.unfreeze, forKey: .type)
 			try container.encode(content, forKey: .content)
 		}
 	}

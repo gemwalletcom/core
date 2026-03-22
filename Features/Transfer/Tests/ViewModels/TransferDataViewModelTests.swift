@@ -1,5 +1,6 @@
 // Copyright (c). Gem Wallet. All rights reserved.
 
+import BigInt
 import Testing
 import Localization
 @testable import Transfer
@@ -23,6 +24,26 @@ struct TransferDataViewModelTests {
     func genericSignTitle() {
         let type = TransferDataType.generic(asset: .mock(), metadata: .mock(), extra: .mock(outputAction: .sign))
         #expect(TransferDataViewModel.mock(type: type).title == Localized.Transfer.reviewRequest)
+    }
+
+    @Test
+    func availableValueForUnfreeze() {
+        let metadata = TransferDataMetadata(
+            assetId: .mock(),
+            feeAssetId: .mock(),
+            assetBalance: Balance(available: 1000, frozen: 500, locked: 300),
+            assetFeeBalance: Balance(available: 1000),
+            assetPrices: [:]
+        )
+
+        #expect(
+            TransferDataViewModel.mock(type: .stake(.mock(), .unfreeze(.bandwidth)))
+                .availableValue(metadata: metadata) == BigInt(500)
+        )
+        #expect(
+            TransferDataViewModel.mock(type: .stake(.mock(), .unfreeze(.energy)))
+                .availableValue(metadata: metadata) == BigInt(300)
+        )
     }
 }
 

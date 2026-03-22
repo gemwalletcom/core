@@ -1,7 +1,6 @@
 // Copyright (c). Gem Wallet. All rights reserved.
 
 import BigInt
-import Foundation
 import Primitives
 
 enum AmountDataProvider: AmountDataProvidable, @unchecked Sendable {
@@ -25,8 +24,10 @@ enum AmountDataProvider: AmountDataProvidable, @unchecked Sendable {
             .transfer(AmountTransferViewModel(asset: input.asset, action: .withdraw(recipient)))
         case .stake(let stakeType):
             .stake(AmountStakeViewModel(asset: input.asset, action: stakeType))
-        case .freeze(let data):
-            .freeze(AmountFreezeViewModel(asset: input.asset, data: data))
+        case .freeze(let resource):
+            .freeze(AmountFreezeViewModel(asset: input.asset, action: .freeze, resource: resource))
+        case .unfreeze(let resource):
+            .freeze(AmountFreezeViewModel(asset: input.asset, action: .unfreeze, resource: resource))
         case .perpetual(let data):
             .perpetual(AmountPerpetualViewModel(asset: input.asset, data: data))
         case .earn(let earnType):

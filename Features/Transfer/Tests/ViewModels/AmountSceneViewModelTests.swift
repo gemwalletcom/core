@@ -86,7 +86,7 @@ struct AmountSceneViewModelTests {
             balance: .mock(frozen: 0, locked: 5_000_000)
         )
         let model = AmountSceneViewModel.mock(
-            type: .freeze(data: .init(freezeType: .unfreeze, resource: .bandwidth)),
+            type: .unfreeze(resource: .bandwidth),
             assetData: assetData
         )
 

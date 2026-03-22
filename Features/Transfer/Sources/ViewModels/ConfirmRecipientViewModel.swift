@@ -56,7 +56,7 @@ extension ConfirmRecipientViewModel {
         case .stake(_, let stakeType):
             switch stakeType {
             case .stake, .unstake, .redelegate, .rewards, .withdraw: Localized.Stake.validator
-            case .freeze: Localized.Stake.resource
+            case .freeze, .unfreeze: Localized.Stake.resource
             }
         case .generic:
             switch model.type.outputAction {
@@ -76,7 +76,7 @@ extension ConfirmRecipientViewModel {
             switch stakeType {
             case .stake, .unstake, .redelegate, .withdraw: true
             case .rewards: false
-            case .freeze: true
+            case .freeze, .unfreeze: true
             }
         case .account,
                 .swap,

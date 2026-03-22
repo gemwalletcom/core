@@ -31,11 +31,8 @@ public enum TransferDataType: Hashable, Equatable, Sendable {
             case .redelegate: .stakeRedelegate
             case .rewards: .stakeRewards
             case .withdraw: .stakeWithdraw
-            case .freeze(let data):
-                switch data.freezeType {
-                case .freeze: .stakeFreeze
-                case .unfreeze: .stakeUnfreeze
-                }
+            case .freeze: .stakeFreeze
+            case .unfreeze: .stakeUnfreeze
             }
         case .account: .assetActivation
         case .earn(_, let type, _):
@@ -87,8 +84,8 @@ public enum TransferDataType: Hashable, Equatable, Sendable {
             )
         case .stake(_, let type):
             switch type {
-            case .freeze(let data):
-                return .encode(TransactionResourceTypeMetadata(resourceType: data.resource))
+            case .freeze(let resource), .unfreeze(let resource):
+                return .encode(TransactionResourceTypeMetadata(resourceType: resource))
             case .stake, .unstake, .redelegate, .rewards, .withdraw:
                 return nil
             }

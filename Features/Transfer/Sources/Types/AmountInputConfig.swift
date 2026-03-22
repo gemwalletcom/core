@@ -1,12 +1,10 @@
 // Copyright (c). Gem Wallet. All rights reserved.
 
-import Foundation
 import Components
-import Primitives
-import SwiftUI
-import Style
-import BigInt
 import Formatters
+import Primitives
+import Style
+import SwiftUI
 
 struct AmountInputConfig: CurrencyInputConfigurable {
     let sceneType: AmountType
@@ -20,7 +18,7 @@ struct AmountInputConfig: CurrencyInputConfigurable {
     var placeholder: String { .zero }
     var keyboardType: UIKeyboardType {
         switch sceneType {
-        case .transfer, .deposit, .withdraw, .perpetual, .freeze, .earn: .decimalPad
+        case .transfer, .deposit, .withdraw, .perpetual, .freeze, .unfreeze, .earn: .decimalPad
         case .stake(let stakeType):
             switch stakeType {
             case .stake, .unstake: asset.chain == .tron ? .numberPad : .decimalPad
@@ -49,7 +47,7 @@ struct AmountInputConfig: CurrencyInputConfigurable {
             position: .secondary,
             image: Images.Actions.swap.renderingMode(.template)
         )
-        case .deposit, .withdraw, .perpetual, .stake, .freeze, .earn: nil
+        case .deposit, .withdraw, .perpetual, .stake, .freeze, .unfreeze, .earn: nil
         }
     }
 
