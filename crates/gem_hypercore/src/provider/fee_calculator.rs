@@ -16,13 +16,7 @@ pub fn calculate_perpetual_fee_amount(fiat_value: f64, fee_rate: i64) -> BigInt 
     BigInt::from(result as i64)
 }
 
-pub fn calculate_spot_fee_amount(
-    swap_data: &SwapData,
-    from_asset: &Asset,
-    to_asset: &Asset,
-    fee_rate: i64,
-    builder_fee_bps: u32,
-) -> Result<BigInt, Box<dyn Error + Send + Sync>> {
+pub fn calculate_spot_fee_amount(swap_data: &SwapData, from_asset: &Asset, to_asset: &Asset, fee_rate: i64, builder_fee_bps: u32) -> Result<BigInt, Box<dyn Error + Send + Sync>> {
     let fiat_value = calculate_spot_usdc_value(swap_data, from_asset, to_asset, builder_fee_bps)?;
     let usdc_decimals = spot_usdc_decimals(from_asset, to_asset)?;
     let trade_fee = calculate_perpetual_fee_amount(fiat_value * decimal_scale(usdc_decimals - HYPERCORE_PERPETUAL_USDC_DECIMALS), fee_rate);
@@ -31,12 +25,7 @@ pub fn calculate_spot_fee_amount(
     Ok(trade_fee + builder_fee)
 }
 
-fn calculate_spot_usdc_value(
-    swap_data: &SwapData,
-    from_asset: &Asset,
-    to_asset: &Asset,
-    builder_fee_bps: u32,
-) -> Result<f64, Box<dyn Error + Send + Sync>> {
+fn calculate_spot_usdc_value(swap_data: &SwapData, from_asset: &Asset, to_asset: &Asset, builder_fee_bps: u32) -> Result<f64, Box<dyn Error + Send + Sync>> {
     let usdc_from = from_asset.id == *HYPERCORE_SPOT_USDC_ASSET_ID;
     let usdc_to = to_asset.id == *HYPERCORE_SPOT_USDC_ASSET_ID;
 

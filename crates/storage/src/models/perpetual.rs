@@ -91,6 +91,7 @@ impl PerpetualRow {
             volume_24h: self.volume_24h,
             funding: self.funding,
             max_leverage: self.leverage.first().and_then(|v| v.and_then(|i| u8::try_from(i).ok())).unwrap_or(1),
+            only_isolated: false,
         }
     }
 

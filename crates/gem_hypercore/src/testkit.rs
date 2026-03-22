@@ -1,3 +1,4 @@
+pub use crate::models::metadata::{AssetMetadata, HypercoreMetadataResponse, HypercoreUniverseResponse, UniverseAsset};
 pub use crate::models::order::OpenOrder;
 pub use crate::models::portfolio::{HypercoreDataPoint, HypercorePortfolioResponse, HypercorePortfolioTimeframeData};
 pub use crate::models::position::{AssetPositions, MarginSummary};
@@ -20,6 +21,34 @@ impl AssetPositions {
             },
             cross_maintenance_margin_used: "1000".to_string(),
             withdrawable: "8000".to_string(),
+        }
+    }
+}
+
+impl UniverseAsset {
+    pub fn mock(name: &str) -> Self {
+        Self {
+            name: name.to_string(),
+            sz_decimals: 4,
+            max_leverage: 50,
+            only_isolated: None,
+        }
+    }
+}
+
+impl AssetMetadata {
+    pub fn mock() -> Self {
+        Self {
+            funding: "0".to_string(),
+            open_interest: "0".to_string(),
+            prev_day_px: "1".to_string(),
+            day_ntl_vlm: "0".to_string(),
+            premium: None,
+            oracle_px: "1".to_string(),
+            mark_px: "1".to_string(),
+            mid_px: Some("1".to_string()),
+            impact_pxs: None,
+            day_base_vlm: "0".to_string(),
         }
     }
 }
