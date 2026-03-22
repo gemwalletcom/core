@@ -123,7 +123,7 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
                 let value = match stake_type {
                     StakeType::Stake(_) => value,
                     StakeType::Unstake(_) | StakeType::Redelegate(_) | StakeType::Withdraw(_) => BigInt::from(0),
-                    _ => BigInt::from(0),
+                    StakeType::Rewards(_) | StakeType::Freeze(_) | StakeType::Unfreeze(_) => BigInt::from(0),
                 };
                 Ok(TransactionParams::new(STAKE_HUB_ADDRESS.to_string(), data, value))
             }
@@ -131,12 +131,14 @@ pub fn get_transaction_params(chain: EVMChain, input: &TransactionLoadInput) -> 
                 let to = match stake_type {
                     StakeType::Stake(_) | StakeType::Unstake(_) => EVERSTAKE_POOL_ADDRESS.to_string(),
                     StakeType::Withdraw(_) => EVERSTAKE_ACCOUNTING_ADDRESS.to_string(),
-                    _ => return Err("Unsupported stake type".into()),
+                    StakeType::Redelegate(_) | StakeType::Rewards(_) | StakeType::Freeze(_) | StakeType::Unfreeze(_) => return Err("Unsupported stake type".into()),
                 };
                 let data = encode_everstake(stake_type, &BigInt::from_str_radix(&input.value, 10)?)?;
                 let value = match stake_type {
                     StakeType::Stake(_) => value,
-                    _ => BigInt::from(0),
+                    StakeType::Unstake(_) | StakeType::Redelegate(_) | StakeType::Rewards(_) | StakeType::Withdraw(_) | StakeType::Freeze(_) | StakeType::Unfreeze(_) => {
+                        BigInt::from(0)
+                    }
                 };
                 Ok(TransactionParams::new(to, data, value))
             }
@@ -264,7 +266,7 @@ fn encode_everstake(stake_type: &StakeType, amount: &BigInt) -> Result<Vec<u8>, 
             .abi_encode())
         }
         StakeType::Withdraw(_) => Ok(IAccounting::claimWithdrawRequestCall {}.abi_encode()),
-        _ => Err("Unsupported stake type for Everstake".into()),
+        StakeType::Redelegate(_) | StakeType::Rewards(_) | StakeType::Freeze(_) | StakeType::Unfreeze(_) => Err("Unsupported stake type for Everstake".into()),
     }
 }
 
@@ -295,7 +297,7 @@ fn encode_stake_hub(stake_type: &StakeType, amount: &BigInt) -> Result<Vec<u8>, 
             // Request number 0 means claim all
             gem_bsc::stake_hub::encode_claim_call(&delegation.validator.id, 0).map_err(|e| e.to_string().into())
         }
-        _ => Err("Unsupported stake type for StakeHub".into()),
+        StakeType::Rewards(_) | StakeType::Freeze(_) | StakeType::Unfreeze(_) => Err("Unsupported stake type for StakeHub".into()),
     }
 }
 

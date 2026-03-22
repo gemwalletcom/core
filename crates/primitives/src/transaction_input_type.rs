@@ -82,6 +82,7 @@ impl TransactionInputType {
                 StakeType::Rewards(_) => TransactionType::StakeRewards,
                 StakeType::Withdraw(_) => TransactionType::StakeWithdraw,
                 StakeType::Freeze(_) => TransactionType::StakeFreeze,
+                StakeType::Unfreeze(_) => TransactionType::StakeUnfreeze,
             },
             TransactionInputType::TokenApprove(_, _) => TransactionType::TokenApproval,
             TransactionInputType::Generic(_, _, _) => TransactionType::SmartContractCall,
@@ -150,7 +151,7 @@ impl TransactionLoadData {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Asset, DelegationValidator, PerpetualConfirmData, PerpetualDirection};
+    use crate::{Asset, DelegationValidator, PerpetualConfirmData, PerpetualDirection, Resource};
 
     #[test]
     fn transaction_types() {
@@ -158,6 +159,14 @@ mod tests {
         assert_eq!(
             TransactionInputType::Stake(Asset::mock(), StakeType::Stake(DelegationValidator::mock())).transaction_type(),
             TransactionType::StakeDelegate
+        );
+        assert_eq!(
+            TransactionInputType::Stake(Asset::mock(), StakeType::Freeze(Resource::Bandwidth)).transaction_type(),
+            TransactionType::StakeFreeze
+        );
+        assert_eq!(
+            TransactionInputType::Stake(Asset::mock(), StakeType::Unfreeze(Resource::Bandwidth)).transaction_type(),
+            TransactionType::StakeUnfreeze
         );
         assert_eq!(
             TransactionInputType::Perpetual(Asset::mock(), PerpetualType::Open(PerpetualConfirmData::mock(PerpetualDirection::Long, 0, None, None))).transaction_type(),

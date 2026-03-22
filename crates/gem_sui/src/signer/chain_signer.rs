@@ -18,7 +18,7 @@ impl SuiChainSigner {
                 StakeType::Redelegate(_) | StakeType::Rewards(_) | StakeType::Withdraw(_) => {
                     Err(SignerError::SigningError("Sui signer does not support this staking operation yet".to_string()))
                 }
-                StakeType::Freeze(_) => Err(SignerError::InvalidInput("Sui does not support freeze operations".to_string())),
+                StakeType::Freeze(_) | StakeType::Unfreeze(_) => Err(SignerError::InvalidInput("Sui does not support freeze operations".to_string())),
             },
             _ => Err(SignerError::InvalidInput("Expected stake transaction".to_string())),
         }

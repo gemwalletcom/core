@@ -169,6 +169,6 @@ pub fn encode_monad_staking(stake_type: &StakeType, amount: &BigInt) -> Result<(
             let validator_id = validator.id.parse::<u64>().map_err(|_| "Invalid validator id for Monad")?;
             Ok((IMonadStaking::claimRewardsCall { validatorId: validator_id }.abi_encode(), BigInt::zero()))
         }
-        _ => Err("Unsupported stake type for Monad".into()),
+        StakeType::Redelegate(_) | StakeType::Freeze(_) | StakeType::Unfreeze(_) => Err("Unsupported stake type for Monad".into()),
     }
 }

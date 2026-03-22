@@ -10,6 +10,24 @@ impl Delegation {
         }
     }
 
+    pub fn mock_tron(validator_id: &str) -> Self {
+        let validator_id = validator_id.to_string();
+        Delegation {
+            base: DelegationBase {
+                asset_id: AssetId::from_chain(Chain::Tron),
+                state: DelegationState::Active,
+                balance: BigUint::from(0u32),
+                shares: BigUint::from(0u32),
+                rewards: BigUint::from(0u32),
+                completion_date: None,
+                delegation_id: validator_id.clone(),
+                validator_id: validator_id.clone(),
+            },
+            validator: DelegationValidator::stake(Chain::Tron, validator_id.clone(), validator_id, true, 0.0, 0.0),
+            price: None,
+        }
+    }
+
     pub fn mock_with_id(delegation_id: String) -> Self {
         Delegation {
             base: DelegationBase::mock_with_id(delegation_id),

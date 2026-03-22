@@ -31,38 +31,6 @@ pub fn map_address_status(account: &TronAccount) -> Vec<AddressStatus> {
 
     vec![]
 }
-
-#[cfg(test)]
-impl TronAccount {
-    pub fn mock(address: &str) -> Self {
-        use crate::models::{TronAccountOwnerPermission, TronAccountPermission, TronAccountPermissionKey};
-
-        TronAccount {
-            balance: None,
-            address: Some(address.to_string()),
-            owner_permission: Some(TronAccountOwnerPermission {
-                permission_name: "owner".to_string(),
-                threshold: Some(1),
-                keys: Some(vec![TronAccountPermissionKey {
-                    address: address.to_string(),
-                    weight: 1,
-                }]),
-            }),
-            active_permission: Some(vec![TronAccountPermission {
-                id: None,
-                threshold: 1,
-                keys: Some(vec![TronAccountPermissionKey {
-                    address: address.to_string(),
-                    weight: 1,
-                }]),
-            }]),
-            votes: None,
-            frozen_v2: None,
-            unfrozen_v2: None,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

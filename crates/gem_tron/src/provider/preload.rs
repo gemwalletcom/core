@@ -8,15 +8,15 @@ use num_bigint::BigInt;
 use gem_client::Client;
 use number_formatter::BigNumberFormatter;
 use primitives::{
-    AssetSubtype, FeePriority, FeeRate, GasPriceType, StakeType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
-    TransactionPreloadInput, TransferDataOutputAction, TronStakeData, TronVote,
+    AssetSubtype, FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
+    TransactionPreloadInput, TransferDataOutputAction, TronStakeData,
 };
 
 use crate::{
     models::{ChainParameter, TriggerSmartContractData, account::TronAccountUsage},
     provider::{
         balances_mapper::format_address_parameter,
-        preload_mapper::{calculate_stake_fee_rate, calculate_transfer_fee_rate, calculate_transfer_token_fee_rate, calculate_unfreeze_amounts},
+        preload_mapper::{calculate_stake_fee_rate, calculate_transfer_fee_rate, calculate_transfer_token_fee_rate, map_stake_data},
     },
     rpc::client::TronClient,
 };
@@ -160,38 +160,9 @@ impl<C: Client> TronClient<C> {
         match &input.input_type {
             TransactionInputType::Stake(asset, stake_type) => {
                 let account = self.get_account(&input.sender_address).await?;
-                let amount = BigNumberFormatter::value_as_u64(&input.value, asset.decimals as u32)?;
-                let mut votes: HashMap<String, u64> = account
-                    .votes
-                    .as_ref()
-                    .map(|v| v.iter().map(|v| (v.vote_address.clone(), v.vote_count)).collect())
-                    .unwrap_or_default();
-
-                match stake_type {
-                    StakeType::Stake(v) => *votes.entry(v.id.clone()).or_default() += amount,
-                    StakeType::Unstake(d) => {
-                        votes.entry(d.base.validator_id.clone()).and_modify(|v| *v = v.saturating_sub(amount));
-                        votes.retain(|_, v| *v > 0);
-                        if votes.is_empty() {
-                            return Ok(TronStakeData::Unfreeze(calculate_unfreeze_amounts(
-                                account.frozen_v2.as_ref(),
-                                BigNumberFormatter::value_as_u64(&input.value, 0)?,
-                            )));
-                        }
-                    }
-                    StakeType::Redelegate(r) => {
-                        votes.entry(r.delegation.base.validator_id.clone()).and_modify(|v| *v = v.saturating_sub(amount));
-                        *votes.entry(r.to_validator.id.clone()).or_default() += amount;
-                    }
-                    StakeType::Rewards(_) | StakeType::Withdraw(_) | StakeType::Freeze(_) => {}
-                }
-
-                let votes = votes
-                    .into_iter()
-                    .filter(|(_, count)| *count > 0)
-                    .map(|(validator, count)| TronVote { validator, count })
-                    .collect();
-                Ok(TronStakeData::Votes(votes))
+                let raw_amount = BigNumberFormatter::value_as_u64(&input.value, 0)?;
+                let vote_amount = BigNumberFormatter::value_as_u64(&input.value, asset.decimals as u32)?;
+                Ok(map_stake_data(&account, stake_type, raw_amount, vote_amount))
             }
             _ => Ok(TronStakeData::Votes(vec![])),
         }

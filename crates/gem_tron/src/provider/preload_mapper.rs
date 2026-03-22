@@ -1,12 +1,13 @@
+use std::collections::HashMap;
 use std::error::Error;
 
 use num_bigint::BigInt;
 
 use crate::models::ChainParameter;
 use crate::models::TronAccountUsage;
-use crate::models::account::TronFrozen;
+use crate::models::account::{TronAccount, TronFrozen};
 use crate::rpc::constants::{DEFAULT_BANDWIDTH_BYTES, GET_CREATE_ACCOUNT_FEE, GET_CREATE_NEW_ACCOUNT_FEE_IN_SYSTEM_CONTRACT, GET_ENERGY_FEE, GET_TRANSACTION_FEE};
-use primitives::{Resource, StakeType, TronUnfreeze};
+use primitives::{Resource, StakeType, TronStakeData, TronUnfreeze, TronVote};
 
 const FEE_LIMIT_BUFFER_PERCENT: u64 = 20;
 
@@ -110,6 +111,48 @@ pub fn calculate_unfreeze_amounts(frozen: Option<&Vec<TronFrozen>>, total: u64) 
         .unwrap_or_default()
 }
 
+pub fn map_stake_data(account: &TronAccount, stake_type: &StakeType, raw_amount: u64, vote_amount: u64) -> TronStakeData {
+    let mut votes: HashMap<String, u64> = account
+        .votes
+        .as_ref()
+        .map(|votes| votes.iter().map(|vote| (vote.vote_address.clone(), vote.vote_count)).collect())
+        .unwrap_or_default();
+
+    match stake_type {
+        StakeType::Stake(validator) => *votes.entry(validator.id.clone()).or_default() += vote_amount,
+        StakeType::Unstake(delegation) => {
+            votes
+                .entry(delegation.base.validator_id.clone())
+                .and_modify(|value| *value = value.saturating_sub(vote_amount));
+            votes.retain(|_, value| *value > 0);
+            if votes.is_empty() {
+                return TronStakeData::Unfreeze(calculate_unfreeze_amounts(account.frozen_v2.as_ref(), raw_amount));
+            }
+        }
+        StakeType::Redelegate(data) => {
+            votes
+                .entry(data.delegation.base.validator_id.clone())
+                .and_modify(|value| *value = value.saturating_sub(vote_amount));
+            *votes.entry(data.to_validator.id.clone()).or_default() += vote_amount;
+        }
+        StakeType::Rewards(_) | StakeType::Withdraw(_) | StakeType::Freeze(_) => {}
+        StakeType::Unfreeze(resource) => {
+            return TronStakeData::Unfreeze(vec![TronUnfreeze {
+                resource: resource.clone(),
+                amount: raw_amount,
+            }]);
+        }
+    }
+
+    TronStakeData::Votes(
+        votes
+            .into_iter()
+            .filter(|(_, count)| *count > 0)
+            .map(|(validator, count)| TronVote { validator, count })
+            .collect(),
+    )
+}
+
 impl TronAccountUsage {
     pub fn available_bandwidth(&self) -> u64 {
         let free = self.free_net_limit.saturating_sub(self.free_net_used);
@@ -133,9 +176,8 @@ impl TronAccountUsage {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::account::TronFrozen;
-    use primitives::Chain;
-    use primitives::delegation::DelegationValidator;
+    use crate::models::account::{TronAccount, TronFrozen, TronVote as AccountVote};
+    use primitives::{Chain, Delegation, DelegationValidator};
 
     fn chain_parameter(key: &str, value: i64) -> ChainParameter {
         ChainParameter {
@@ -340,5 +382,81 @@ mod tests {
         );
         assert!(calculate_unfreeze_amounts(None, 100).is_empty());
         assert!(calculate_unfreeze_amounts(Some(&frozen), 0).is_empty());
+    }
+
+    #[test]
+    fn test_map_stake_data_unfreeze_uses_raw_amount() {
+        let result = map_stake_data(&TronAccount::mock_with_staking(None, None), &StakeType::Unfreeze(Resource::Bandwidth), 1_500_000, 1);
+
+        assert_eq!(
+            result,
+            TronStakeData::Unfreeze(vec![TronUnfreeze {
+                resource: Resource::Bandwidth,
+                amount: 1_500_000,
+            }])
+        );
+    }
+
+    #[test]
+    fn test_map_stake_data_unstake_keeps_vote_updates() {
+        let result = map_stake_data(
+            &TronAccount::mock_with_staking(
+                Some(vec![AccountVote {
+                    vote_address: "validator".to_string(),
+                    vote_count: 5,
+                }]),
+                None,
+            ),
+            &StakeType::Unstake(Delegation::mock_tron("validator")),
+            2_000_000,
+            2,
+        );
+
+        assert_eq!(
+            result,
+            TronStakeData::Votes(vec![TronVote {
+                validator: "validator".to_string(),
+                count: 3,
+            }])
+        );
+    }
+
+    #[test]
+    fn test_map_stake_data_unstake_keeps_existing_unfreeze_split() {
+        let result = map_stake_data(
+            &TronAccount::mock_with_staking(
+                Some(vec![AccountVote {
+                    vote_address: "validator".to_string(),
+                    vote_count: 2,
+                }]),
+                Some(vec![
+                    TronFrozen {
+                        frozen_type: Some("ENERGY".to_string()),
+                        amount: 100,
+                    },
+                    TronFrozen {
+                        frozen_type: Some("BANDWIDTH".to_string()),
+                        amount: 50,
+                    },
+                ]),
+            ),
+            &StakeType::Unstake(Delegation::mock_tron("validator")),
+            120,
+            2,
+        );
+
+        assert_eq!(
+            result,
+            TronStakeData::Unfreeze(vec![
+                TronUnfreeze {
+                    resource: Resource::Energy,
+                    amount: 100,
+                },
+                TronUnfreeze {
+                    resource: Resource::Bandwidth,
+                    amount: 20,
+                },
+            ])
+        );
     }
 }

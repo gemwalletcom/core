@@ -1,8 +1,7 @@
 use crate::models::custom_types::{DateTimeUtc, GemBigUint};
-use primitives::stake_type::{FreezeType, Resource};
+use primitives::stake_type::Resource;
 use primitives::{AssetId, Chain, Delegation, DelegationBase, DelegationState, DelegationValidator, Price, StakeChain, StakeProviderType};
 
-pub type GemFreezeType = FreezeType;
 pub type GemResource = Resource;
 pub type GemDelegation = Delegation;
 pub type GemDelegationBase = DelegationBase;
@@ -11,12 +10,6 @@ pub type GemDelegationState = DelegationState;
 pub type GemStakeProviderType = StakeProviderType;
 pub type GemPrice = Price;
 pub type GemStakeChain = StakeChain;
-
-#[uniffi::remote(Enum)]
-pub enum GemFreezeType {
-    Freeze,
-    Unfreeze,
-}
 
 #[uniffi::remote(Enum)]
 pub enum GemResource {

@@ -86,7 +86,9 @@ impl<C: Client + Clone> SuiClient<C> {
                     let (gas_coins, staked_object) = futures::try_join!(self.get_coins(address, SUI_COIN_TYPE), self.get_object(delegation.base.delegation_id.clone()))?;
                     Ok((gas_coins, Vec::new(), vec![staked_object]))
                 }
-                _ => Err("Unsupported stake type for Sui".into()),
+                StakeType::Redelegate(_) | StakeType::Rewards(_) | StakeType::Withdraw(_) | StakeType::Freeze(_) | StakeType::Unfreeze(_) => {
+                    Err("Unsupported stake type for Sui".into())
+                }
             },
             TransactionInputType::Swap(_, _, _) => Ok((Vec::new(), Vec::new(), Vec::new())),
             TransactionInputType::Generic(_, _, _) => Ok((Vec::new(), Vec::new(), Vec::new())),

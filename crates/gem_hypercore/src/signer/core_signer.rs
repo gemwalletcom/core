@@ -113,7 +113,9 @@ impl HyperCoreSigner {
                 let withdraw_action = self.sign_c_withdraw(withdraw_request, private_key)?;
                 Ok(vec![undelegate_action, withdraw_action])
             }
-            _ => Err(SignerError::SigningError("Stake type not supported".to_string())),
+            StakeType::Redelegate(_) | StakeType::Rewards(_) | StakeType::Withdraw(_) | StakeType::Freeze(_) | StakeType::Unfreeze(_) => {
+                Err(SignerError::SigningError("Stake type not supported".to_string()))
+            }
         }
     }
 

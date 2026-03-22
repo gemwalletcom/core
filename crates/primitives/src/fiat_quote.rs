@@ -15,6 +15,7 @@ pub struct FiatQuote {
     pub fiat_amount: f64,
     pub fiat_currency: String,
     pub crypto_amount: f64,
+    #[typeshare(skip)]
     pub value: String,
     #[typeshare(skip)]
     pub latency: u64,

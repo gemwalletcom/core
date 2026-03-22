@@ -1,7 +1,6 @@
 use crate::models::*;
 use num_bigint::BigInt;
 use primitives::contract_call_data::ContractCallData;
-use primitives::stake_type::FreezeData;
 use primitives::{
     AccountDataType, Asset, EarnType, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, Resource, StakeType,
     TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata, TransactionState,
@@ -178,13 +177,8 @@ pub enum GemStakeType {
     Redelegate { delegation: GemDelegation, to_validator: GemDelegationValidator },
     WithdrawRewards { validators: Vec<GemDelegationValidator> },
     Withdraw { delegation: GemDelegation },
-    Freeze { freeze_data: GemFreezeData },
-}
-
-#[derive(Debug, Clone, uniffi::Record)]
-pub struct GemFreezeData {
-    pub freeze_type: GemFreezeType,
-    pub resource: GemResource,
+    Freeze { resource: GemResource },
+    Unfreeze { resource: GemResource },
 }
 
 pub type GemEarnType = EarnType;
@@ -721,7 +715,8 @@ impl From<GemStakeType> for StakeType {
             GemStakeType::Redelegate { delegation, to_validator } => StakeType::Redelegate(primitives::RedelegateData { delegation, to_validator }),
             GemStakeType::WithdrawRewards { validators } => StakeType::Rewards(validators.into_iter().collect()),
             GemStakeType::Withdraw { delegation } => StakeType::Withdraw(delegation),
-            GemStakeType::Freeze { freeze_data } => StakeType::Freeze(freeze_data.into()),
+            GemStakeType::Freeze { resource } => StakeType::Freeze(resource),
+            GemStakeType::Unfreeze { resource } => StakeType::Unfreeze(resource),
         }
     }
 }
@@ -737,7 +732,8 @@ impl From<StakeType> for GemStakeType {
             },
             StakeType::Rewards(validators) => GemStakeType::WithdrawRewards { validators },
             StakeType::Withdraw(delegation) => GemStakeType::Withdraw { delegation },
-            StakeType::Freeze(freeze_data) => GemStakeType::Freeze { freeze_data: freeze_data.into() },
+            StakeType::Freeze(resource) => GemStakeType::Freeze { resource },
+            StakeType::Unfreeze(resource) => GemStakeType::Unfreeze { resource },
         }
     }
 }
@@ -861,24 +857,6 @@ impl From<GemTransactionInputType> for TransactionInputType {
             GemTransactionInputType::Account { asset, account_type } => TransactionInputType::Account(asset, account_type),
             GemTransactionInputType::Perpetual { asset, perpetual_type } => TransactionInputType::Perpetual(asset, perpetual_type),
             GemTransactionInputType::Earn { asset, earn_type, data } => TransactionInputType::Earn(asset, earn_type, data),
-        }
-    }
-}
-
-impl From<GemFreezeData> for FreezeData {
-    fn from(value: GemFreezeData) -> Self {
-        FreezeData {
-            freeze_type: value.freeze_type,
-            resource: value.resource,
-        }
-    }
-}
-
-impl From<FreezeData> for GemFreezeData {
-    fn from(value: FreezeData) -> Self {
-        GemFreezeData {
-            freeze_type: value.freeze_type,
-            resource: value.resource,
         }
     }
 }
