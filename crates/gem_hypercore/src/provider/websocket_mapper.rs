@@ -49,9 +49,17 @@ pub fn diff_clearinghouse_positions(new_positions: Vec<PerpetualPosition>, exist
         .collect();
 
     let new_ids: HashSet<&str> = positions.iter().map(|p| p.id.as_str()).collect();
-    let delete_position_ids: Vec<String> = existing_positions.iter().filter(|p| !new_ids.contains(p.id.as_str())).map(|p| p.id.clone()).collect();
+    let delete_position_ids: Vec<String> = existing_positions
+        .iter()
+        .filter(|p| !is_builder_dex_position(p) && !new_ids.contains(p.id.as_str()))
+        .map(|p| p.id.clone())
+        .collect();
 
     PositionsDiff { delete_position_ids, positions }
+}
+
+fn is_builder_dex_position(position: &PerpetualPosition) -> bool {
+    position.perpetual_id.contains(':')
 }
 
 pub fn diff_open_orders_positions(orders: &[OpenOrder], existing_positions: Vec<PerpetualPosition>) -> PositionsDiff {

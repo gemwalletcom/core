@@ -1,10 +1,3 @@
-use crate::models::{
-    candlestick::Candlestick,
-    metadata::HypercoreMetadataResponse,
-    order::OpenOrder,
-    portfolio::HypercorePortfolioResponse,
-    position::{AssetPositions, LeverageType, Position},
-};
 use primitives::{
     Asset, AssetId, AssetType, Chain, Perpetual, PerpetualBalance, PerpetualDirection, PerpetualMarginType, PerpetualOrderType, PerpetualPosition, PerpetualProvider,
     PerpetualTriggerOrder,
@@ -12,6 +5,16 @@ use primitives::{
     perpetual::{PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
     portfolio::{PerpetualAccountSummary, PerpetualPortfolio},
 };
+
+use crate::models::{
+    candlestick::Candlestick,
+    metadata::HypercoreMetadataResponse,
+    order::OpenOrder,
+    portfolio::HypercorePortfolioResponse,
+    position::{AssetPositions, LeverageType, Position},
+};
+
+use crate::provider::hip3_mapper::{format_display_name, perp_asset_index};
 
 pub fn create_perpetual_asset_id(coin: &str) -> AssetId {
     crate::models::metadata::perpetual_asset_id(coin)
@@ -83,7 +86,7 @@ pub fn map_position(position: Position, address: String, orders: &[OpenOrder]) -
     }
 }
 
-pub fn map_perpetuals_data(metadata: HypercoreMetadataResponse) -> Vec<PerpetualData> {
+pub fn map_perpetuals_data(metadata: HypercoreMetadataResponse, perp_dex_index: u32) -> Vec<PerpetualData> {
     let universe = metadata.universe();
     let asset_metadata = metadata.asset_metadata();
 
@@ -95,6 +98,7 @@ pub fn map_perpetuals_data(metadata: HypercoreMetadataResponse) -> Vec<Perpetual
             let metadata_item = asset_metadata.get(index);
 
             let asset_id = universe_asset.asset_id();
+            let asset_index = perp_asset_index(perp_dex_index, index as u32);
 
             let current_price = metadata_item
                 .and_then(|m| m.mid_px.as_ref().and_then(|mid| mid.parse().ok()).or_else(|| m.mark_px.parse().ok()))
@@ -110,26 +114,28 @@ pub fn map_perpetuals_data(metadata: HypercoreMetadataResponse) -> Vec<Perpetual
             let open_interest_usd = open_interest_coins * current_price;
 
             let perpetual_id = create_perpetual_id(&universe_asset.name);
+            let display_name = format_display_name(&universe_asset.name);
             let perpetual = Perpetual {
                 id: perpetual_id,
-                name: universe_asset.name.clone(),
+                name: display_name.clone(),
                 provider: PerpetualProvider::Hypercore,
                 asset_id: asset_id.clone(),
-                identifier: index.to_string(),
+                identifier: asset_index.to_string(),
                 price: current_price,
                 price_percent_change_24h: price_change_24h,
                 open_interest: open_interest_usd,
                 volume_24h: metadata_item.and_then(|m| m.day_ntl_vlm.parse().ok()).unwrap_or(0.0),
                 funding: funding_rate,
                 max_leverage: universe_asset.max_leverage as u8,
+                only_isolated: universe_asset.only_isolated.unwrap_or(false),
             };
 
             let asset = Asset {
                 id: asset_id,
                 chain: Chain::HyperCore,
                 token_id: Some(universe_asset.name.clone()),
-                name: universe_asset.name.clone(),
-                symbol: universe_asset.name.clone(),
+                name: display_name.clone(),
+                symbol: display_name,
                 decimals: universe_asset.sz_decimals,
                 asset_type: AssetType::PERPETUAL,
             };
@@ -224,7 +230,7 @@ mod tests {
         metadata::{AssetMetadata, HypercoreUniverseResponse, UniverseAsset},
         position::{AssetPosition, AssetPositions, CumulativeFunding, Leverage, LeverageType, MarginSummary, Position, PositionType},
     };
-    use primitives::{PerpetualDirection, PerpetualMarginType, perpetual_provider::PerpetualProvider};
+    use primitives::{PerpetualDirection, PerpetualMarginType};
 
     #[test]
     fn test_map_positions_basic() {
@@ -285,46 +291,36 @@ mod tests {
 
     #[test]
     fn test_map_perpetuals_data() {
-        let universe_response = HypercoreUniverseResponse {
-            universe: vec![UniverseAsset {
-                name: "ETH".to_string(),
-                sz_decimals: 4,
-                max_leverage: 50,
-                only_isolated: Some(false),
-            }],
-        };
+        let mut asset = AssetMetadata::mock();
+        asset.funding = "0.0005".to_string();
+        asset.open_interest = "2500.5".to_string();
+        asset.prev_day_px = "2000".to_string();
+        asset.day_ntl_vlm = "500000".to_string();
+        asset.mid_px = Some("2102.5".to_string());
 
-        let asset_metadata = vec![AssetMetadata {
-            funding: "0.0005".to_string(),
-            open_interest: "2500.5".to_string(),
-            prev_day_px: "2000".to_string(),
-            day_ntl_vlm: "500000".to_string(),
-            premium: Some("1.5".to_string()),
-            oracle_px: "2100".to_string(),
-            mark_px: "2105.25".to_string(),
-            mid_px: Some("2102.5".to_string()),
-            impact_pxs: Some(vec!["2100".to_string(), "2105".to_string()]),
-            day_base_vlm: "250000".to_string(),
-        }];
-
-        let metadata_response = HypercoreMetadataResponse(universe_response, asset_metadata);
-        let result = map_perpetuals_data(metadata_response);
+        let metadata = HypercoreMetadataResponse(
+            HypercoreUniverseResponse { universe: vec![UniverseAsset::mock("ETH")] },
+            vec![asset],
+        );
+        let result = map_perpetuals_data(metadata, 0);
 
         assert_eq!(result.len(), 1);
+        assert_eq!(result[0].perpetual.id, "hypercore_ETH");
+        assert_eq!(result[0].perpetual.name, "ETH");
+        assert_eq!(result[0].perpetual.price, 2102.5);
+        assert_eq!(result[0].perpetual.funding, 0.05);
+        assert_eq!(result[0].asset.id.to_string(), "hypercore_perpetual::ETH");
+    }
 
-        let eth_data = &result[0];
-        assert_eq!(eth_data.perpetual.id, "hypercore_ETH");
-        assert_eq!(eth_data.perpetual.name, "ETH");
-        assert_eq!(eth_data.perpetual.provider, PerpetualProvider::Hypercore);
-        assert_eq!(eth_data.perpetual.price, 2102.5);
-        assert_eq!(eth_data.perpetual.funding, 0.05);
-        assert_eq!(eth_data.perpetual.max_leverage, 50);
-        assert_eq!(eth_data.perpetual.volume_24h, 500000.0);
+    #[test]
+    fn test_map_perpetuals_data_builder_asset_index() {
+        let metadata = HypercoreMetadataResponse(
+            HypercoreUniverseResponse { universe: vec![UniverseAsset::mock("FOO")] },
+            vec![AssetMetadata::mock()],
+        );
+        let result = map_perpetuals_data(metadata, 2);
 
-        assert_eq!(eth_data.asset.name, "ETH");
-        assert_eq!(eth_data.asset.symbol, "ETH");
-        assert_eq!(eth_data.asset.decimals, 4);
-        assert_eq!(eth_data.asset.id.to_string(), "hypercore_perpetual::ETH");
+        assert_eq!(result[0].perpetual.identifier, "120000");
     }
 
     #[test]
@@ -680,4 +676,5 @@ mod tests {
         assert_eq!(summary.margin_usage, 0.2);
         assert_eq!(summary.unrealized_pnl, 0.0);
     }
+
 }

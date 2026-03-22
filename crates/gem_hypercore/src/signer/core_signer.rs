@@ -2,8 +2,9 @@ use ::signer::Signer;
 use alloy_primitives::hex;
 use number_formatter::BigNumberFormatter;
 use primitives::{
-    ChainSigner, HyperliquidOrder, NumberIncrementer, PerpetualConfirmData, PerpetualDirection, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualType,
-    SignerError, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, asset_constants::HYPERCORE_CORE_HYPE_TOKEN_ID, stake_type::StakeType, swap::SwapData,
+    ChainSigner, HyperliquidOrder, NumberIncrementer, PerpetualConfirmData, PerpetualDirection, PerpetualMarginType, PerpetualModifyConfirmData, PerpetualModifyPositionType,
+    PerpetualType, SignerError, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, asset_constants::HYPERCORE_CORE_HYPE_TOKEN_ID, stake_type::StakeType,
+    swap::SwapData,
 };
 use serde::Serialize;
 use serde_json::{self, Value};
@@ -217,7 +218,8 @@ impl HyperCoreSigner {
         let is_buy = data.direction == PerpetualDirection::Long;
         let asset = data.asset_index as u32;
 
-        let leverage = self.sign_update_leverage(UpdateLeverage::new(asset, true, data.leverage), timestamp_incrementer.next_val(), agent_key)?;
+        let is_cross = data.margin_type == PerpetualMarginType::Cross;
+        let leverage = self.sign_update_leverage(UpdateLeverage::new(asset, is_cross, data.leverage), timestamp_incrementer.next_val(), agent_key)?;
         let market = self.sign_place_order(
             make_market_order(asset, is_buy, &data.price, &data.size, false, builder.cloned()),
             timestamp_incrementer.next_val(),
