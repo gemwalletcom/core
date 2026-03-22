@@ -4,6 +4,7 @@ use crate::{
     Asset, AssetId, Chain, FiatProvider, FiatProviderName, FiatQuote, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatTransaction, FiatTransactionStatus,
     FiatTransactionUpdate, PaymentType,
 };
+use chrono::{DateTime, Utc};
 
 impl FiatQuoteRequest {
     pub fn mock() -> Self {
@@ -101,6 +102,8 @@ impl FiatTransaction {
             value: "100000".to_string(),
             transaction_hash: None,
             address: Some("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh".to_string()),
+            created_at: DateTime::<Utc>::UNIX_EPOCH,
+            updated_at: DateTime::<Utc>::UNIX_EPOCH,
         }
     }
 }

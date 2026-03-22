@@ -1,3 +1,4 @@
+use crate::sql_types::PriceFeedProviderRow;
 use crate::{DatabaseClient, models::*};
 use diesel::prelude::*;
 use diesel::upsert::excluded;
@@ -60,7 +61,7 @@ impl PricesDexStore for DatabaseClient {
     fn get_prices_dex_by_provider(&mut self, price_provider: PriceFeedProvider) -> Result<Vec<PriceDexRow>, diesel::result::Error> {
         use crate::schema::prices_dex::dsl::*;
         prices_dex
-            .filter(provider.eq(price_provider.as_ref()))
+            .filter(provider.eq(PriceFeedProviderRow::from(price_provider)))
             .select(PriceDexRow::as_select())
             .load(&mut self.connection)
     }

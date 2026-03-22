@@ -28,7 +28,7 @@ impl FiatProvider for MoonPayClient {
             .await?
             .into_iter()
             .map(|x| FiatProviderCountry {
-                provider: Self::NAME.id().to_string(),
+                provider: Self::NAME,
                 alpha2: x.alpha2,
                 is_allowed: x.is_allowed,
             })
@@ -80,7 +80,7 @@ impl FiatProvider for MoonPayClient {
 mod fiat_integration_tests {
     use crate::testkit::*;
     use crate::{FiatProvider, model::FiatMapping};
-    use primitives::FiatQuoteRequest;
+    use primitives::{FiatProviderName, FiatQuoteRequest};
 
     #[tokio::test]
     async fn test_moonpay_get_buy_quote() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -126,7 +126,7 @@ mod fiat_integration_tests {
         println!("Found {} MoonPay countries", countries.len());
 
         if let Some(country) = countries.first() {
-            assert_eq!(country.provider, "moonpay");
+            assert_eq!(country.provider, FiatProviderName::MoonPay);
             assert!(!country.alpha2.is_empty());
             println!("Sample MoonPay country: {:?}", country);
         }

@@ -16,7 +16,7 @@ use primitives::{
     FiatQuotes, FiatTransaction,
 };
 use reqwest::Client as RequestClient;
-use storage::{AssetFilter, AssetsRepository, Database, WalletsRepository};
+use storage::{AssetFilter, AssetsRepository, Database, FiatRepository, WalletsRepository};
 use streamer::{FiatWebhook, FiatWebhookPayload, StreamProducer};
 
 pub struct FiatClient {
@@ -75,14 +75,14 @@ impl FiatClient {
     }
 
     pub async fn get_fiat_providers_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.fiat()?.get_fiat_providers_countries()?.into_iter().map(|r| r.as_primitive()).collect())
+        Ok(FiatRepository::get_fiat_providers_countries(&mut self.database.fiat()?)?)
     }
 
-    pub async fn get_order_status(&self, provider_name: &str, order_id: &str) -> Result<primitives::FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
+    pub async fn get_order_status(&self, provider_name: &str, order_id: &str) -> Result<FiatTransaction, Box<dyn std::error::Error + Send + Sync>> {
         let provider = self.provider(provider_name)?;
         let update = provider.get_order_status(order_id).await?;
-        let transaction = self.database.fiat()?.update_fiat_transaction(provider.name().id(), update)?;
-        Ok(transaction.as_primitive())
+        let transaction = self.database.fiat()?.update_fiat_transaction(provider.name(), update)?;
+        Ok(transaction.as_primitive()?)
     }
 
     pub async fn process_and_publish_webhook(&self, provider_name: &str, webhook_data: serde_json::Value) -> Result<FiatWebhookPayload, Box<dyn std::error::Error + Send + Sync>> {
@@ -124,13 +124,7 @@ impl FiatClient {
 
     fn get_fiat_mapping(&self, asset: &Asset, quote_type: &FiatQuoteType) -> Result<(FiatMappingMap, Vec<PrimitiveFiatProvider>), Box<dyn Error + Send + Sync>> {
         let fiat_assets = self.database.fiat()?.get_fiat_assets_for_asset_id(&asset.id.to_string())?;
-        let providers = self
-            .database
-            .fiat()?
-            .get_fiat_providers()?
-            .into_iter()
-            .map(|p| p.as_primitive())
-            .collect::<Result<Vec<_>, _>>()?;
+        let providers = self.database.fiat()?.get_fiat_providers()?.into_iter().map(|p| p.as_primitive()).collect();
 
         let map: FiatMappingMap = fiat_assets
             .into_iter()
@@ -139,17 +133,18 @@ impl FiatClient {
                 FiatQuoteType::Sell => x.is_sell_enabled(),
             })
             .map(|x| {
+                let provider_id = x.provider.0.id().to_string();
                 (
-                    x.clone().provider,
+                    provider_id,
                     FiatMapping {
                         asset: asset.clone(),
                         asset_symbol: FiatAssetSymbol {
-                            symbol: x.clone().symbol,
-                            network: x.clone().network,
+                            symbol: x.symbol.clone(),
+                            network: x.network.clone(),
                         },
-                        unsupported_countries: x.clone().unsupported_countries(),
-                        buy_limits: x.clone().buy_limits(),
-                        sell_limits: x.clone().sell_limits(),
+                        unsupported_countries: x.unsupported_countries(),
+                        buy_limits: x.buy_limits(),
+                        sell_limits: x.sell_limits(),
                     },
                 )
             })
@@ -181,9 +176,10 @@ impl FiatClient {
         let provider_impls = self.get_providers(request.provider_id.clone());
 
         let futures = provider_impls.into_iter().filter_map(|provider| {
-            let provider_id = provider.name().id().to_string();
+            let provider_name = provider.name();
+            let provider_id = provider_name.id().to_string();
 
-            let db_provider = db_providers.iter().find(|p| p.id.as_ref() == provider_id)?;
+            let db_provider = db_providers.iter().find(|p| p.id == provider_name)?;
             let is_enabled = match request.quote_type {
                 FiatQuoteType::Buy => db_provider.is_buy_enabled(),
                 FiatQuoteType::Sell => db_provider.is_sell_enabled(),
@@ -195,7 +191,7 @@ impl FiatClient {
 
             let countries = fiat_providers_countries
                 .iter()
-                .filter(|x| x.provider == provider_id)
+                .filter(|x| x.provider == provider_name)
                 .map(|x| x.alpha2.clone())
                 .collect::<HashSet<_>>();
 

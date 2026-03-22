@@ -13,7 +13,8 @@ use primitives::scan::AddressType as PrimitiveAddressType;
 use primitives::{
     AssetType as PrimitiveAssetType, Chain, FiatProviderName as PrimitiveFiatProviderName, FiatQuoteType as PrimitiveFiatQuoteType,
     FiatTransactionStatus as PrimitiveFiatTransactionStatus, IpUsageType as PrimitiveIpUsageType, LinkType as PrimitiveLinkType, NotificationType as PrimitiveNotificationType,
-    Platform as PrimitivePlatform, PlatformStore as PrimitivePlatformStore, TransactionState as PrimitiveTransactionState, TransactionType as PrimitiveTransactionType,
+    PerpetualProvider as PrimitivePerpetualProvider, Platform as PrimitivePlatform, PlatformStore as PrimitivePlatformStore, PriceAlertDirection as PrimitivePriceAlertDirection,
+    PriceFeedProvider as PrimitivePriceFeedProvider, TransactionState as PrimitiveTransactionState, TransactionType as PrimitiveTransactionType,
     UsernameStatus as PrimitiveUsernameStatus, WalletSource as PrimitiveWalletSource, WalletType as PrimitiveWalletType,
 };
 use serde::{Deserialize, Serialize};
@@ -236,6 +237,9 @@ macro_rules! diesel_varchar {
 }
 
 diesel_varchar!(ChainRow, Chain);
+diesel_varchar!(PriceAlertDirectionRow, PrimitivePriceAlertDirection);
+diesel_varchar!(PerpetualProviderRow, PrimitivePerpetualProvider);
+diesel_varchar!(PriceFeedProviderRow, PrimitivePriceFeedProvider);
 diesel_varchar!(FiatProviderNameRow, PrimitiveFiatProviderName);
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, AsExpression, FromSqlRow)]

@@ -1,12 +1,12 @@
 use crate::schema::fiat_providers;
-use crate::sql_types::AssetId;
+use crate::sql_types::{AssetId, FiatProviderNameRow};
 use crate::{DatabaseClient, models::*};
 use chrono::NaiveDateTime;
 use diesel::associations::HasTable;
 use diesel::dsl::count_star;
 use diesel::prelude::*;
 use diesel::upsert::excluded;
-use primitives::FiatTransactionUpdate;
+use primitives::{FiatProviderName, FiatTransactionUpdate};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FiatAssetFilter {
@@ -25,8 +25,9 @@ pub(crate) trait FiatStore {
     fn add_fiat_providers(&mut self, values: Vec<FiatProviderRow>) -> Result<usize, diesel::result::Error>;
     fn add_fiat_providers_countries(&mut self, values: Vec<FiatProviderCountryRow>) -> Result<usize, diesel::result::Error>;
     fn get_fiat_providers_countries(&mut self) -> Result<Vec<FiatProviderCountryRow>, diesel::result::Error>;
-    fn update_fiat_transaction(&mut self, provider: &str, update: FiatTransactionUpdate) -> Result<FiatTransactionRow, diesel::result::Error>;
+    fn update_fiat_transaction(&mut self, provider: FiatProviderName, update: FiatTransactionUpdate) -> Result<FiatTransactionRow, diesel::result::Error>;
     fn get_fiat_transactions_by_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<FiatTransactionRow>, diesel::result::Error>;
+    fn get_fiat_transactions_with_assets_by_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<(FiatTransactionRow, AssetRow)>, diesel::result::Error>;
     fn get_fiat_assets_by_filter(&mut self, filters: Vec<FiatAssetFilter>) -> Result<Vec<FiatAssetRow>, diesel::result::Error>;
     fn get_fiat_assets_popular(&mut self, from: NaiveDateTime, limit: i64) -> Result<Vec<AssetId>, diesel::result::Error>;
     fn get_fiat_assets_for_asset_id(&mut self, asset_id: &str) -> Result<Vec<FiatAssetRow>, diesel::result::Error>;
@@ -35,7 +36,7 @@ pub(crate) trait FiatStore {
     fn get_fiat_rate(&mut self, currency: &str) -> Result<FiatRateRow, diesel::result::Error>;
     fn get_fiat_providers(&mut self) -> Result<Vec<FiatProviderRow>, diesel::result::Error>;
     fn add_fiat_transaction(&mut self, transaction: NewFiatTransactionRow) -> Result<usize, diesel::result::Error>;
-    fn update_fiat_provider_payment_methods(&mut self, provider_id: &str, values: serde_json::Value) -> Result<usize, diesel::result::Error>;
+    fn update_fiat_provider_payment_methods(&mut self, provider_id: FiatProviderName, values: serde_json::Value) -> Result<usize, diesel::result::Error>;
 }
 
 impl FiatStore for DatabaseClient {
@@ -80,13 +81,14 @@ impl FiatStore for DatabaseClient {
         fiat_providers_countries.select(FiatProviderCountryRow::as_select()).load(&mut self.connection)
     }
 
-    fn update_fiat_transaction(&mut self, provider: &str, update: FiatTransactionUpdate) -> Result<FiatTransactionRow, diesel::result::Error> {
+    fn update_fiat_transaction(&mut self, provider: FiatProviderName, update: FiatTransactionUpdate) -> Result<FiatTransactionRow, diesel::result::Error> {
         use crate::schema::fiat_transactions::dsl::*;
+        let provider = FiatProviderNameRow::from(provider);
 
         let patch = UpdateFiatTransactionRow::from_primitive(&update);
         if let Some(transaction) = diesel::update(
             fiat_transactions
-                .filter(provider_id.eq(provider))
+                .filter(provider_id.eq(&provider))
                 .filter(provider_transaction_id.eq(&update.transaction_id)),
         )
         .set(&patch)
@@ -98,11 +100,11 @@ impl FiatStore for DatabaseClient {
         }
 
         match update.provider_transaction_id.as_deref() {
-            Some(provider_tx_id) => diesel::update(fiat_transactions.filter(provider_id.eq(provider)).filter(quote_id.eq(&update.transaction_id)))
+            Some(provider_tx_id) => diesel::update(fiat_transactions.filter(provider_id.eq(&provider)).filter(quote_id.eq(&update.transaction_id)))
                 .set((provider_transaction_id.eq(provider_tx_id), &patch))
                 .returning(FiatTransactionRow::as_returning())
                 .get_result(&mut self.connection),
-            None => diesel::update(fiat_transactions.filter(provider_id.eq(provider)).filter(quote_id.eq(&update.transaction_id)))
+            None => diesel::update(fiat_transactions.filter(provider_id.eq(&provider)).filter(quote_id.eq(&update.transaction_id)))
                 .set(&patch)
                 .returning(FiatTransactionRow::as_returning())
                 .get_result(&mut self.connection),
@@ -120,6 +122,21 @@ impl FiatStore for DatabaseClient {
             .filter(address.eq_any(addresses_list))
             .order(created_at.desc())
             .select(FiatTransactionRow::as_select())
+            .load(&mut self.connection)
+    }
+
+    fn get_fiat_transactions_with_assets_by_addresses(&mut self, addresses_list: Vec<String>) -> Result<Vec<(FiatTransactionRow, AssetRow)>, diesel::result::Error> {
+        use crate::schema::{assets, fiat_transactions};
+
+        if addresses_list.is_empty() {
+            return Ok(vec![]);
+        }
+
+        fiat_transactions::table
+            .inner_join(assets::table)
+            .filter(fiat_transactions::address.eq_any(addresses_list))
+            .order(fiat_transactions::created_at.desc())
+            .select((FiatTransactionRow::as_select(), AssetRow::as_select()))
             .load(&mut self.connection)
     }
 
@@ -204,9 +221,9 @@ impl FiatStore for DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    fn update_fiat_provider_payment_methods(&mut self, provider_id_value: &str, values: serde_json::Value) -> Result<usize, diesel::result::Error> {
+    fn update_fiat_provider_payment_methods(&mut self, provider_id_value: FiatProviderName, values: serde_json::Value) -> Result<usize, diesel::result::Error> {
         use crate::schema::fiat_providers::dsl::*;
-        diesel::update(fiat_providers.filter(id.eq(provider_id_value)))
+        diesel::update(fiat_providers.filter(id.eq(FiatProviderNameRow::from(provider_id_value))))
             .set(payment_methods.eq(values))
             .execute(&mut self.connection)
     }
@@ -230,7 +247,7 @@ impl DatabaseClient {
         FiatStore::get_fiat_providers_countries(self)
     }
 
-    pub fn update_fiat_transaction(&mut self, provider: &str, update: FiatTransactionUpdate) -> Result<FiatTransactionRow, diesel::result::Error> {
+    pub fn update_fiat_transaction(&mut self, provider: FiatProviderName, update: FiatTransactionUpdate) -> Result<FiatTransactionRow, diesel::result::Error> {
         FiatStore::update_fiat_transaction(self, provider, update)
     }
 
@@ -238,6 +255,9 @@ impl DatabaseClient {
         FiatStore::get_fiat_transactions_by_addresses(self, addresses)
     }
 
+    pub fn get_fiat_transactions_with_assets_by_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<(FiatTransactionRow, AssetRow)>, diesel::result::Error> {
+        FiatStore::get_fiat_transactions_with_assets_by_addresses(self, addresses)
+    }
     pub fn get_fiat_assets_by_filter(&mut self, filters: Vec<FiatAssetFilter>) -> Result<Vec<FiatAssetRow>, diesel::result::Error> {
         FiatStore::get_fiat_assets_by_filter(self, filters)
     }
@@ -270,7 +290,7 @@ impl DatabaseClient {
         FiatStore::add_fiat_transaction(self, transaction)
     }
 
-    pub fn update_fiat_provider_payment_methods(&mut self, provider_id: &str, values: serde_json::Value) -> Result<usize, diesel::result::Error> {
+    pub fn update_fiat_provider_payment_methods(&mut self, provider_id: FiatProviderName, values: serde_json::Value) -> Result<usize, diesel::result::Error> {
         FiatStore::update_fiat_provider_payment_methods(self, provider_id, values)
     }
 }

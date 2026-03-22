@@ -1,31 +1,35 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::AssetId as PrimitiveAssetId;
+use primitives::{AssetId as PrimitiveAssetId, PriceFeedProvider};
 use serde::{Deserialize, Serialize};
 
-use crate::sql_types::AssetId;
+use crate::sql_types::{AssetId, PriceFeedProviderRow};
 
-#[derive(Debug, Queryable, Selectable, Identifiable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
+#[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::prices_dex_providers)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct PriceDexProviderRow {
-    pub id: String,
+    pub id: PriceFeedProviderRow,
     pub enabled: bool,
     pub priority: i32,
 }
 
 impl PriceDexProviderRow {
-    pub fn new(id: String, priority: i32) -> Self {
-        Self { id, enabled: true, priority }
+    pub fn new(id: PriceFeedProvider, priority: i32) -> Self {
+        Self {
+            id: id.into(),
+            enabled: true,
+            priority,
+        }
     }
 }
 
-#[derive(Debug, Queryable, Selectable, Identifiable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
+#[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::prices_dex)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct PriceDexRow {
     pub id: String,
-    pub provider: String,
+    pub provider: PriceFeedProviderRow,
     pub price: f64,
     pub last_updated_at: NaiveDateTime,
 }
@@ -39,10 +43,10 @@ pub struct PriceDexAssetRow {
 }
 
 impl PriceDexRow {
-    pub fn new(id: String, provider: String, price: f64, last_updated_at: NaiveDateTime) -> Self {
+    pub fn new(id: String, provider: PriceFeedProvider, price: f64, last_updated_at: NaiveDateTime) -> Self {
         Self {
             id,
-            provider,
+            provider: provider.into(),
             price,
             last_updated_at,
         }

@@ -3,12 +3,10 @@ use diesel::prelude::*;
 use primitives::{
     AssetId as PrimitiveAssetId,
     perpetual::{Perpetual as PrimitivePerpetual, PerpetualBasic},
-    perpetual_provider::PerpetualProvider,
 };
 use serde::{Deserialize, Serialize};
-use std::str::FromStr;
 
-use crate::sql_types::AssetId;
+use crate::sql_types::{AssetId, PerpetualProviderRow};
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::perpetuals)]
@@ -16,7 +14,7 @@ use crate::sql_types::AssetId;
 pub struct PerpetualRow {
     pub id: String,
     pub name: String,
-    pub provider: String,
+    pub provider: PerpetualProviderRow,
     pub asset_id: AssetId,
     pub identifier: String,
     pub price: f64,
@@ -34,7 +32,7 @@ pub struct PerpetualRow {
 pub struct NewPerpetualRow {
     pub id: String,
     pub name: String,
-    pub provider: String,
+    pub provider: PerpetualProviderRow,
     pub asset_id: AssetId,
     pub identifier: String,
     pub price: f64,
@@ -67,7 +65,7 @@ impl NewPerpetualRow {
         Self {
             id: perpetual.id,
             name: perpetual.name,
-            provider: perpetual.provider.as_ref().to_string(),
+            provider: perpetual.provider.into(),
             asset_id: perpetual.asset_id.into(),
             identifier: perpetual.identifier,
             price: perpetual.price,
@@ -82,12 +80,10 @@ impl NewPerpetualRow {
 
 impl PerpetualRow {
     pub fn as_primitive(&self) -> PrimitivePerpetual {
-        let provider = PerpetualProvider::from_str(&self.provider).ok().unwrap();
-
         PrimitivePerpetual {
             id: self.id.clone(),
             name: self.name.clone(),
-            provider,
+            provider: self.provider.0.clone(),
             asset_id: self.asset_id.0.clone(),
             identifier: self.identifier.clone(),
             price: self.price,
@@ -103,7 +99,7 @@ impl PerpetualRow {
         PerpetualBasic {
             asset_id: self.asset_id.0.clone(),
             perpetual_id: self.id.clone(),
-            provider: PerpetualProvider::from_str(&self.provider).ok().unwrap(),
+            provider: self.provider.0.clone(),
         }
     }
 }

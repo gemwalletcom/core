@@ -31,7 +31,7 @@ impl FiatProvider for FlashnetClient {
 
     async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn Error + Send + Sync>> {
         Ok(vec![FiatProviderCountry {
-            provider: Self::NAME.id().to_string(),
+            provider: Self::NAME,
             alpha2: "US".to_string(),
             is_allowed: true,
         }])

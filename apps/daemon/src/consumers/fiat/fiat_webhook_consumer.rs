@@ -57,7 +57,7 @@ impl MessageConsumer<FiatWebhookPayload, bool> for FiatWebhookConsumer {
             }
         };
 
-        match self.database.fiat()?.update_fiat_transaction(provider_id, transaction) {
+        match self.database.fiat()?.update_fiat_transaction(provider_name, transaction) {
             Ok(updated) => {
                 info_with_fields!(
                     "processed webhook",

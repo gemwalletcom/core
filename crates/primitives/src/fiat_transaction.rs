@@ -1,4 +1,5 @@
-use crate::{AssetId, FiatProviderName, FiatQuoteUrlData};
+use crate::{Asset, AssetId, FiatProviderName, FiatQuoteUrlData};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumString};
 use typeshare::typeshare;
@@ -19,11 +20,15 @@ pub struct FiatTransaction {
     pub value: String,
     pub transaction_hash: Option<String>,
     pub address: Option<String>,
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 impl FiatTransaction {
     pub fn new_pending(data: &FiatQuoteUrlData, country: Option<String>, provider_transaction_id: Option<String>) -> Self {
         let quote = &data.quote;
+        let now = Utc::now();
+
         Self {
             asset_id: quote.asset.id.clone(),
             transaction_type: quote.quote_type.clone(),
@@ -36,6 +41,8 @@ impl FiatTransaction {
             value: quote.value.clone(),
             transaction_hash: None,
             address: Some(data.wallet_address.clone()),
+            created_at: now,
+            updated_at: now,
         }
     }
 }
@@ -56,6 +63,7 @@ pub struct FiatTransactionUpdate {
 #[serde(rename_all = "camelCase")]
 pub struct FiatTransactionInfo {
     pub transaction: FiatTransaction,
+    pub asset: Asset,
     pub details_url: Option<String>,
 }
 

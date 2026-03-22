@@ -1,9 +1,9 @@
-use primitives::{FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionInfo};
+use primitives::{Asset, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionInfo};
 
-pub fn fiat_transaction_info(transaction: FiatTransaction) -> FiatTransactionInfo {
+pub fn fiat_transaction_info(transaction: FiatTransaction, asset: Asset) -> FiatTransactionInfo {
     let details_url = details_url(&transaction.provider_id, &transaction.transaction_type, transaction.provider_transaction_id.as_deref());
 
-    FiatTransactionInfo { transaction, details_url }
+    FiatTransactionInfo { transaction, asset, details_url }
 }
 
 fn details_url(provider_id: &FiatProviderName, transaction_type: &FiatQuoteType, provider_transaction_id: Option<&str>) -> Option<String> {
@@ -25,7 +25,7 @@ fn details_url(provider_id: &FiatProviderName, transaction_type: &FiatQuoteType,
 #[cfg(test)]
 mod tests {
     use super::{details_url, fiat_transaction_info};
-    use primitives::{FiatProviderName, FiatQuoteType};
+    use primitives::{Asset, Chain, FiatProviderName, FiatQuoteType};
 
     #[test]
     fn details_url_returns_expected_values() {
@@ -67,12 +67,14 @@ mod tests {
             transaction_type: FiatQuoteType::Buy,
             ..primitives::FiatTransaction::mock()
         };
+        let asset = Asset::from_chain(Chain::Bitcoin);
 
-        let rendered = fiat_transaction_info(transaction);
+        let rendered = fiat_transaction_info(transaction, asset.clone());
 
         assert_eq!(
             rendered.details_url,
             Some("https://buy.moonpay.com/v2/transaction-tracker?transactionId=tx_123".to_string())
         );
+        assert_eq!(rendered.asset, asset);
     }
 }

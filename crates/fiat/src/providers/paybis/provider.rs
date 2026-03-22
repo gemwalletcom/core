@@ -36,7 +36,7 @@ impl FiatProvider for PaybisClient {
         let countries = country_status()
             .iter()
             .map(|(alpha2, is_allowed)| FiatProviderCountry {
-                provider: Self::NAME.id().to_string(),
+                provider: Self::NAME,
                 alpha2: alpha2.to_string(),
                 is_allowed: *is_allowed,
             })
@@ -112,7 +112,7 @@ mod fiat_integration_tests {
         TRON_USDT_TOKEN_ID,
     };
     use primitives::currency::Currency;
-    use primitives::{Chain, FiatQuoteRequest};
+    use primitives::{Chain, FiatProviderName, FiatQuoteRequest};
     use streamer::FiatWebhook;
 
     #[tokio::test]
@@ -206,11 +206,11 @@ mod fiat_integration_tests {
 
         let us_country = countries.iter().find(|c| c.alpha2 == "US").unwrap();
         assert!(us_country.is_allowed);
-        assert_eq!(us_country.provider, "paybis");
+        assert_eq!(us_country.provider, FiatProviderName::Paybis);
 
         let ly_country = countries.iter().find(|c| c.alpha2 == "LY").unwrap();
         assert!(!ly_country.is_allowed);
-        assert_eq!(ly_country.provider, "paybis");
+        assert_eq!(ly_country.provider, FiatProviderName::Paybis);
 
         Ok(())
     }

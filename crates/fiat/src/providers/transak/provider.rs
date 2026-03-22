@@ -35,7 +35,7 @@ impl FiatProvider for TransakClient {
             .response
             .into_iter()
             .map(|x| FiatProviderCountry {
-                provider: Self::NAME.id().to_string(),
+                provider: Self::NAME,
                 alpha2: x.alpha2,
                 is_allowed: x.is_allowed,
             })
@@ -111,7 +111,7 @@ impl FiatProvider for TransakClient {
 mod fiat_integration_tests {
     use crate::testkit::*;
     use crate::{FiatProvider, model::FiatMapping};
-    use primitives::FiatQuoteRequest;
+    use primitives::{FiatProviderName, FiatQuoteRequest};
 
     #[tokio::test]
     async fn test_transak_get_buy_quote() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -173,7 +173,7 @@ mod fiat_integration_tests {
         println!("Found {} Transak countries", countries.len());
 
         if let Some(country) = countries.first() {
-            assert_eq!(country.provider, "transak");
+            assert_eq!(country.provider, FiatProviderName::Transak);
             assert!(!country.alpha2.is_empty());
             println!("Sample Transak country: {:?}", country);
         }

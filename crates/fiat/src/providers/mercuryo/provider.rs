@@ -48,7 +48,7 @@ impl FiatProvider for MercuryoClient {
             .data
             .into_iter()
             .map(|x| FiatProviderCountry {
-                provider: Self::NAME.id().to_string(),
+                provider: Self::NAME,
                 alpha2: x.to_uppercase(),
                 is_allowed: true,
             })
@@ -119,7 +119,7 @@ impl FiatProvider for MercuryoClient {
 mod fiat_integration_tests {
     use crate::testkit::*;
     use crate::{FiatProvider, model::FiatMapping};
-    use primitives::FiatQuoteRequest;
+    use primitives::{FiatProviderName, FiatQuoteRequest};
 
     #[tokio::test]
     async fn test_mercuryo_get_buy_quote() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -165,7 +165,7 @@ mod fiat_integration_tests {
         println!("Found {} Mercuryo countries", countries.len());
 
         if let Some(country) = countries.first() {
-            assert_eq!(country.provider, "mercuryo");
+            assert_eq!(country.provider, FiatProviderName::Mercuryo);
             assert!(!country.alpha2.is_empty());
             println!("Sample Mercuryo country: {:?}", country);
         }

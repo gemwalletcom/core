@@ -56,7 +56,7 @@ impl PricesDexUpdater {
 
         let feed_records: Vec<PriceDexRow> = valid_feeds
             .iter()
-            .map(|feed| PriceDexRow::new(feed.get_id(), self.provider_type.as_ref().to_string(), 0.0, chrono::Utc::now().naive_utc()))
+            .map(|feed| PriceDexRow::new(feed.get_id(), self.provider_type.clone(), 0.0, chrono::Utc::now().naive_utc()))
             .collect();
 
         self.database.prices_dex()?.add_prices_dex(feed_records)?;
@@ -93,7 +93,7 @@ impl PricesDexUpdater {
 
         let values: Vec<PriceDexRow> = feed_map
             .values()
-            .map(|p| PriceDexRow::new(p.price_feed.get_id(), self.provider_type.as_ref().to_string(), p.price, p.updated_at.naive_utc()))
+            .map(|p| PriceDexRow::new(p.price_feed.get_id(), self.provider_type.clone(), p.price, p.updated_at.naive_utc()))
             .collect();
 
         self.database.prices_dex()?.set_prices_dex(values.clone())?;

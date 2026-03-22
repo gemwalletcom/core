@@ -95,7 +95,7 @@ impl FiatAssetsUpdater {
 
         let payment_methods = provider.payment_methods().await;
         let payment_methods_json = serde_json::to_value(&payment_methods)?;
-        self.database.fiat()?.update_fiat_provider_payment_methods(provider_name.id(), payment_methods_json)?;
+        self.database.fiat()?.update_fiat_provider_payment_methods(provider_name, payment_methods_json)?;
 
         let assets = provider.get_assets().await?;
         let asset_count = assets.len();
@@ -120,10 +120,10 @@ impl FiatAssetsUpdater {
         let insert_assets = assets
             .into_iter()
             .map(storage::models::FiatAssetRow::from_primitive)
-            .collect::<Vec<storage::models::FiatAssetRow>>();
+            .collect::<Result<Vec<storage::models::FiatAssetRow>, _>>()?;
 
-        for asset in insert_assets {
-            self.database.fiat()?.add_fiat_assets(vec![asset])?;
+        if !insert_assets.is_empty() {
+            self.database.fiat()?.add_fiat_assets(insert_assets)?;
         }
 
         info_with_fields!("fiat update assets", provider = provider_name.id(), assets = asset_count);
@@ -135,9 +135,8 @@ impl FiatAssetsUpdater {
         let provider = self.get_provider(provider_name)?;
         let countries = provider.get_countries().await?;
         let country_count = countries.len();
-        self.database
-            .fiat()?
-            .add_fiat_providers_countries(countries.into_iter().map(storage::models::FiatProviderCountryRow::from_primitive).collect())?;
+        let country_rows = countries.into_iter().map(storage::models::FiatProviderCountryRow::from_primitive).collect::<Vec<_>>();
+        self.database.fiat()?.add_fiat_providers_countries(country_rows)?;
         info_with_fields!("fiat update countries", provider = provider_name.id(), countries = country_count);
         Ok(country_count)
     }
@@ -146,7 +145,7 @@ impl FiatAssetsUpdater {
         primitives::FiatAsset {
             id: fiat_asset.id,
             asset_id,
-            provider: fiat_asset.provider.id().to_string(),
+            provider: fiat_asset.provider,
             symbol: fiat_asset.symbol,
             network: fiat_asset.network,
             token_id: fiat_asset.token_id,

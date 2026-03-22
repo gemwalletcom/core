@@ -1,3 +1,4 @@
+use chrono::Utc;
 use gem_tracing::info_with_fields;
 use prices_dex::PriceFeedProvider;
 use primitives::{
@@ -36,10 +37,10 @@ fn setup_database(database: &Database) -> Result<(), Box<dyn std::error::Error +
     info_with_fields!("setup", step = "chains", chains = format!("{:?}", chains));
 
     info_with_fields!("setup", step = "add chains");
-    let _ = database.chains()?.add_chains(chains.clone().into_iter().map(|x| x.to_string()).collect());
+    let _ = database.chains()?.add_chains(chains.clone());
 
     info_with_fields!("setup", step = "parser state");
-    for chain in chains.clone() {
+    for chain in chains.iter().copied() {
         let _ = database.parser_state()?.add_parser_state(chain, chain.block_time() as i32);
     }
 
@@ -74,7 +75,7 @@ fn setup_database(database: &Database) -> Result<(), Box<dyn std::error::Error +
     let providers = PriceFeedProvider::all()
         .into_iter()
         .enumerate()
-        .map(|(index, p)| storage::models::PriceDexProviderRow::new(p.as_ref().to_string(), index as i32))
+        .map(|(index, p)| storage::models::PriceDexProviderRow::new(p, index as i32))
         .collect::<Vec<_>>();
     let _ = database.prices_dex()?.add_prices_dex_providers(providers);
 
@@ -321,18 +322,24 @@ fn setup_dev_devices(database: &Database) -> Result<(), Box<dyn std::error::Erro
 fn setup_dev_fiat_transactions(database: &Database, device_id: i32, evm_address: &str, solana_address: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     info_with_fields!("setup_dev", step = "add fiat transactions");
 
-    let mock = || FiatTransaction {
-        asset_id: AssetId::from_chain(Chain::Ethereum),
-        transaction_type: FiatQuoteType::Buy,
-        provider_id: FiatProviderName::MoonPay,
-        provider_transaction_id: None,
-        status: FiatTransactionStatus::Pending,
-        country: Some("US".to_string()),
-        fiat_amount: 150.0,
-        fiat_currency: "USD".to_string(),
-        value: "75000000000000000".to_string(),
-        transaction_hash: None,
-        address: Some(evm_address.to_string()),
+    let mock = || {
+        let now = Utc::now();
+
+        FiatTransaction {
+            asset_id: AssetId::from_chain(Chain::Ethereum),
+            transaction_type: FiatQuoteType::Buy,
+            provider_id: FiatProviderName::MoonPay,
+            provider_transaction_id: None,
+            status: FiatTransactionStatus::Pending,
+            country: Some("US".to_string()),
+            fiat_amount: 150.0,
+            fiat_currency: "USD".to_string(),
+            value: "75000000000000000".to_string(),
+            transaction_hash: None,
+            address: Some(evm_address.to_string()),
+            created_at: now,
+            updated_at: now,
+        }
     };
 
     let transactions = [
@@ -389,10 +396,10 @@ fn setup_dev_assets(database: &Database) -> Result<(), Box<dyn std::error::Error
     let ethereum_asset_id = AssetId::from_chain(Chain::Ethereum);
     let smartchain_asset_id = AssetId::from_chain(Chain::SmartChain);
 
-    let fiat_asset = |provider: &str, code: &str, symbol: &str, network: &str, asset_id: &AssetId| FiatAssetRow {
-        id: format!("{}_{}", provider, code),
+    let fiat_asset = |provider: FiatProviderName, code: &str, symbol: &str, network: &str, asset_id: &AssetId| FiatAssetRow {
+        id: format!("{}_{}", provider.id(), code).to_lowercase(),
         asset_id: Some(asset_id.into()),
-        provider: provider.to_string(),
+        provider: provider.into(),
         code: code.to_string(),
         symbol: symbol.to_string(),
         network: Some(network.to_string()),
@@ -407,10 +414,10 @@ fn setup_dev_assets(database: &Database) -> Result<(), Box<dyn std::error::Error
     };
 
     let fiat_assets = vec![
-        fiat_asset(FiatProviderName::MoonPay.as_ref(), "eth", "ETH", "ethereum", &ethereum_asset_id),
-        fiat_asset(FiatProviderName::Mercuryo.as_ref(), "ETH", "ETH", "ETHEREUM", &ethereum_asset_id),
-        fiat_asset(FiatProviderName::MoonPay.as_ref(), "bnb_bsc", "BNB", "binance_smart_chain", &smartchain_asset_id),
-        fiat_asset(FiatProviderName::Mercuryo.as_ref(), "BNB", "BNB", "BINANCESMARTCHAIN", &smartchain_asset_id),
+        fiat_asset(FiatProviderName::MoonPay, "eth", "ETH", "ethereum", &ethereum_asset_id),
+        fiat_asset(FiatProviderName::Mercuryo, "ETH", "ETH", "ETHEREUM", &ethereum_asset_id),
+        fiat_asset(FiatProviderName::MoonPay, "bnb_bsc", "BNB", "binance_smart_chain", &smartchain_asset_id),
+        fiat_asset(FiatProviderName::Mercuryo, "BNB", "BNB", "BINANCESMARTCHAIN", &smartchain_asset_id),
     ];
 
     let result = database.fiat()?.add_fiat_assets(fiat_assets)?;
@@ -424,7 +431,7 @@ fn setup_dev_assets(database: &Database) -> Result<(), Box<dyn std::error::Error
             let id = provider.id();
             FiatProviderCountryRow {
                 id: format!("{}_us", id),
-                provider: id.to_string(),
+                provider: provider.into(),
                 alpha2: "US".to_string(),
                 is_allowed: true,
             }

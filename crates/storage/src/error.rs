@@ -71,6 +71,10 @@ impl ResourceName for crate::models::FiatRateRow {
     const RESOURCE_NAME: &'static str = "FiatRate";
 }
 
+impl ResourceName for crate::models::FiatTransactionRow {
+    const RESOURCE_NAME: &'static str = "FiatTransaction";
+}
+
 impl ResourceName for crate::models::NftAssetRow {
     const RESOURCE_NAME: &'static str = "NFTAsset";
 }

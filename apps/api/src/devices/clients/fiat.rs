@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 use std::error::Error;
 
 use fiat::FiatClient;
-use primitives::{FiatQuote, FiatQuoteRequest, FiatQuoteUrl, FiatQuotes};
+use primitives::{FiatQuote, FiatQuoteRequest, FiatQuoteUrl, FiatQuotes, FiatTransaction, FiatTransactionInfo};
 use storage::{Database, FiatRepository, WalletsRepository};
 
 pub struct FiatQuotesClient {
@@ -46,15 +46,19 @@ impl FiatQuotesClient {
         self.fiat_client.process_and_publish_webhook(provider, webhook_data).await
     }
 
-    pub async fn get_order_status(&self, provider: &str, order_id: &str) -> Result<primitives::FiatTransaction, Box<dyn Error + Send + Sync>> {
+    pub async fn get_order_status(&self, provider: &str, order_id: &str) -> Result<FiatTransaction, Box<dyn Error + Send + Sync>> {
         self.fiat_client.get_order_status(provider, order_id).await
     }
 
-    pub fn get_transactions_by_wallet_id(&self, device_row_id: i32, wallet_id: i32) -> Result<Vec<primitives::FiatTransaction>, Box<dyn Error + Send + Sync>> {
+    pub fn get_transactions_by_wallet_id(&self, device_row_id: i32, wallet_id: i32) -> Result<Vec<FiatTransactionInfo>, Box<dyn Error + Send + Sync>> {
         let subscriptions = self.database.wallets()?.get_subscriptions_by_wallet_id(device_row_id, wallet_id)?;
         let addresses = subscriptions.into_iter().map(|(_, address)| address.address).collect::<BTreeSet<_>>().into_iter().collect();
 
-        let mut database = self.database.fiat()?;
-        Ok(FiatRepository::get_fiat_transactions_by_addresses(&mut database, addresses)?)
+        let transactions = FiatRepository::get_fiat_transactions_with_assets_by_addresses(&mut self.database.fiat()?, addresses)?;
+
+        Ok(transactions
+            .into_iter()
+            .map(|(transaction, asset)| fiat::fiat_transaction_info(transaction, asset))
+            .collect())
     }
 }

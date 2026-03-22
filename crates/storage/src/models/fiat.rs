@@ -1,8 +1,8 @@
 use std::collections::{BTreeSet, HashMap};
-use std::str::FromStr;
 
 use crate::DatabaseError;
 use crate::sql_types::{AssetId, FiatProviderNameRow, FiatTransactionStatusRow, FiatTransactionType};
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
 use primitives::{FiatAsset, FiatProvider, FiatProviderCountry, FiatProviderName, FiatRate, FiatTransaction, FiatTransactionUpdate, PaymentType, fiat_assets::FiatAssetLimits};
 use serde::{Deserialize, Serialize};
@@ -39,7 +39,7 @@ impl FiatRateRow {
 pub struct FiatAssetRow {
     pub id: String,
     pub asset_id: Option<AssetId>,
-    pub provider: String,
+    pub provider: FiatProviderNameRow,
     pub code: String,
     pub symbol: String,
     pub network: Option<String>,
@@ -54,12 +54,17 @@ pub struct FiatAssetRow {
 }
 
 impl FiatAssetRow {
-    pub fn from_primitive(asset: FiatAsset) -> Self {
-        let id = format!("{}_{}", asset.provider, asset.id).to_lowercase();
-        Self {
+    pub fn from_primitive(asset: FiatAsset) -> Result<Self, DatabaseError> {
+        let provider = FiatProviderNameRow::from(asset.provider);
+        let id = format!("{}_{}", provider.0.id(), asset.id).to_lowercase();
+        let buy_limits = Some(serde_json::to_value(asset.buy_limits)?);
+        let sell_limits = Some(serde_json::to_value(asset.sell_limits)?);
+        let unsupported_countries = Some(serde_json::to_value(asset.unsupported_countries)?);
+
+        Ok(Self {
             id,
             asset_id: asset.asset_id.map(AssetId::from),
-            provider: asset.provider,
+            provider,
             code: asset.id,
             symbol: asset.symbol,
             network: asset.network,
@@ -68,10 +73,10 @@ impl FiatAssetRow {
             is_enabled_by_provider: asset.enabled,
             is_buy_enabled: asset.is_buy_enabled,
             is_sell_enabled: asset.is_sell_enabled,
-            buy_limits: Some(serde_json::to_value(asset.buy_limits).unwrap()),
-            sell_limits: Some(serde_json::to_value(asset.sell_limits).unwrap()),
-            unsupported_countries: Some(serde_json::to_value(asset.unsupported_countries).unwrap()),
-        }
+            buy_limits,
+            sell_limits,
+            unsupported_countries,
+        })
     }
 
     pub fn is_enabled(&self) -> bool {
@@ -117,7 +122,7 @@ impl FiatAssetRowsExt for Vec<FiatAssetRow> {
 #[diesel(table_name = crate::schema::fiat_providers)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct FiatProviderRow {
-    pub id: String,
+    pub id: FiatProviderNameRow,
     pub name: String,
     pub enabled: bool,
     pub buy_enabled: bool,
@@ -130,7 +135,7 @@ pub struct FiatProviderRow {
 impl FiatProviderRow {
     pub fn from_primitive(provider: FiatProviderName) -> Self {
         Self {
-            id: provider.id().to_string(),
+            id: provider.into(),
             name: provider.name().to_string(),
             enabled: true,
             buy_enabled: true,
@@ -141,11 +146,11 @@ impl FiatProviderRow {
         }
     }
 
-    pub fn as_primitive(&self) -> Result<FiatProvider, DatabaseError> {
-        let provider = FiatProviderName::from_str(&self.id).map_err(|e| DatabaseError::Error(e.to_string()))?;
+    pub fn as_primitive(&self) -> FiatProvider {
+        let provider = self.id.0;
         let payment_methods: Vec<PaymentType> = serde_json::from_value(self.payment_methods.clone()).unwrap_or_default();
 
-        Ok(FiatProvider {
+        FiatProvider {
             id: provider,
             name: provider.name().to_string(),
             image_url: None,
@@ -155,7 +160,7 @@ impl FiatProviderRow {
             buy_enabled: self.buy_enabled,
             sell_enabled: self.sell_enabled,
             payment_methods,
-        })
+        }
     }
 
     pub fn is_buy_enabled(&self) -> bool {
@@ -184,11 +189,18 @@ pub struct FiatTransactionRow {
     pub transaction_hash: Option<String>,
     pub device_id: Option<i32>,
     pub quote_id: String,
+    pub updated_at: NaiveDateTime,
+    pub created_at: NaiveDateTime,
 }
 
 impl FiatTransactionRow {
-    pub fn as_primitive(&self) -> FiatTransaction {
-        FiatTransaction {
+    pub fn as_primitive(&self) -> Result<FiatTransaction, DatabaseError> {
+        let value = self
+            .value
+            .clone()
+            .ok_or_else(|| DatabaseError::Error(format!("Fiat transaction {} is missing value", self.quote_id)))?;
+
+        Ok(FiatTransaction {
             asset_id: self.asset_id.0.clone(),
             transaction_type: self.transaction_type.0.clone(),
             provider_id: self.provider_id.0,
@@ -197,10 +209,12 @@ impl FiatTransactionRow {
             country: self.country.clone(),
             fiat_amount: self.fiat_amount,
             fiat_currency: self.fiat_currency.clone(),
-            value: self.value.clone().unwrap_or_else(|| "0".to_string()),
+            value,
             transaction_hash: self.transaction_hash.clone(),
             address: self.address.clone(),
-        }
+            created_at: self.created_at.and_utc(),
+            updated_at: self.updated_at.and_utc(),
+        })
     }
 }
 
@@ -248,16 +262,18 @@ impl NewFiatTransactionRow {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct FiatProviderCountryRow {
     pub id: String,
-    pub provider: String,
+    pub provider: FiatProviderNameRow,
     pub alpha2: String,
     pub is_allowed: bool,
 }
 
 impl FiatProviderCountryRow {
     pub fn from_primitive(primitive: FiatProviderCountry) -> Self {
+        let provider = FiatProviderNameRow::from(primitive.provider);
+
         Self {
-            id: format!("{}_{}", primitive.provider, primitive.alpha2).to_lowercase(),
-            provider: primitive.provider.to_string(),
+            id: format!("{}_{}", provider.0.id(), primitive.alpha2).to_lowercase(),
+            provider,
             alpha2: primitive.alpha2.to_string(),
             is_allowed: primitive.is_allowed,
         }
@@ -265,7 +281,7 @@ impl FiatProviderCountryRow {
 
     pub fn as_primitive(&self) -> FiatProviderCountry {
         FiatProviderCountry {
-            provider: self.provider.clone(),
+            provider: self.provider.0,
             alpha2: self.alpha2.clone(),
             is_allowed: self.is_allowed,
         }
@@ -289,5 +305,62 @@ impl UpdateFiatTransactionRow {
             transaction_hash: transaction.transaction_hash.clone(),
             address: transaction.address.clone(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::FiatTransactionRow;
+    use chrono::{DateTime, Utc};
+    use primitives::{AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransactionStatus};
+
+    #[test]
+    fn as_primitive_maps_value_and_timestamps() {
+        let row = FiatTransactionRow {
+            asset_id: AssetId::from_chain(Chain::Ethereum).into(),
+            transaction_type: FiatQuoteType::Buy.into(),
+            provider_id: FiatProviderName::MoonPay.into(),
+            provider_transaction_id: Some("tx_123".to_string()),
+            status: FiatTransactionStatus::Pending.into(),
+            country: Some("US".to_string()),
+            fiat_amount: 100.0,
+            fiat_currency: "USD".to_string(),
+            value: Some("123000000000000000".to_string()),
+            address: Some("0x123".to_string()),
+            transaction_hash: Some("0xabc".to_string()),
+            device_id: Some(1),
+            quote_id: "quote_123".to_string(),
+            updated_at: DateTime::<Utc>::from_timestamp(2, 0).unwrap().naive_utc(),
+            created_at: DateTime::<Utc>::from_timestamp(1, 0).unwrap().naive_utc(),
+        };
+
+        let transaction = row.as_primitive().unwrap();
+
+        assert_eq!(transaction.value, "123000000000000000");
+        assert_eq!(transaction.created_at, DateTime::<Utc>::from_timestamp(1, 0).unwrap());
+        assert_eq!(transaction.updated_at, DateTime::<Utc>::from_timestamp(2, 0).unwrap());
+    }
+
+    #[test]
+    fn as_primitive_returns_error_without_value() {
+        let row = FiatTransactionRow {
+            asset_id: AssetId::from_chain(Chain::Ethereum).into(),
+            transaction_type: FiatQuoteType::Buy.into(),
+            provider_id: FiatProviderName::MoonPay.into(),
+            provider_transaction_id: Some("tx_123".to_string()),
+            status: FiatTransactionStatus::Pending.into(),
+            country: Some("US".to_string()),
+            fiat_amount: 100.0,
+            fiat_currency: "USD".to_string(),
+            value: None,
+            address: Some("0x123".to_string()),
+            transaction_hash: Some("0xabc".to_string()),
+            device_id: Some(1),
+            quote_id: "quote_123".to_string(),
+            updated_at: DateTime::<Utc>::from_timestamp(2, 0).unwrap().naive_utc(),
+            created_at: DateTime::<Utc>::from_timestamp(1, 0).unwrap().naive_utc(),
+        };
+
+        assert!(row.as_primitive().is_err());
     }
 }

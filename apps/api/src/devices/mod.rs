@@ -334,14 +334,7 @@ pub async fn get_device_fiat_transactions_v2(
     device: AuthenticatedDeviceWallet,
     client: &State<Mutex<FiatQuotesClient>>,
 ) -> Result<ApiResponse<Vec<primitives::FiatTransactionInfo>>, ApiError> {
-    Ok(client
-        .lock()
-        .await
-        .get_transactions_by_wallet_id(device.device_row.id, device.wallet_id)?
-        .into_iter()
-        .map(fiat::fiat_transaction_info)
-        .collect::<Vec<_>>()
-        .into())
+    Ok(client.lock().await.get_transactions_by_wallet_id(device.device_row.id, device.wallet_id)?.into())
 }
 
 #[get("/devices/fiat/assets/<quote_type>")]
