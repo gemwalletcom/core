@@ -30,6 +30,9 @@ const VAULT_ETH: &str = "0xF5e10380213880111522dd0efD3dbb45b9f62Bcc";
 const VAULT_ARB: &str = "0x79001a5e762f3bEFC8e5871b42F6734e00498920";
 const VAULT_SOL: &str = "J88B7gmadHzTNGiy54c9Ms8BsEXNdB2fntFyhKpk3qoT";
 
+// Solana vault swap creates on-chain accounts that require rent (~0.005 SOL)
+const SOLANA_VAULT_SWAP_RESERVE: u64 = 5_000_000;
+
 #[derive(Debug)]
 pub struct ChainflipProvider<CX, BR>
 where
@@ -62,6 +65,26 @@ where
         ChainflipAsset {
             chain: chain_name,
             asset: asset.symbol.clone(),
+        }
+    }
+
+    fn get_quote_value(request: &QuoteRequest) -> Result<String, SwapperError> {
+        let value = resolve_max_quote_value(request)?;
+        if !request.options.use_max_amount || !request.from_asset.asset_id().is_native() {
+            return Ok(value);
+        }
+        match request.from_asset.chain() {
+            Chain::Solana => {
+                let amount: u64 = value.parse().map_err(|_| SwapperError::ComputeQuoteError(format!("invalid amount: {value}")))?;
+                let reserved = amount.saturating_sub(SOLANA_VAULT_SWAP_RESERVE);
+                if reserved == 0 {
+                    return Err(SwapperError::InputAmountError {
+                        min_amount: Some(SOLANA_VAULT_SWAP_RESERVE.to_string()),
+                    });
+                }
+                Ok(reserved.to_string())
+            }
+            _ => Ok(value),
         }
     }
 }
@@ -151,7 +174,7 @@ where
             return Err(SwapperError::NoQuoteAvailable);
         }
 
-        let from_value = resolve_max_quote_value(request)?;
+        let from_value = Self::get_quote_value(request)?;
         let src_asset = Self::map_asset_id(&request.from_asset);
         let dest_asset = Self::map_asset_id(&request.to_asset);
 
