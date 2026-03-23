@@ -20,7 +20,7 @@ use crate::{
     amount_to_value,
     approval::check_approval_erc20,
     cross_chain::VaultAddresses,
-    fees::{DEFAULT_CHAINFLIP_FEE_BPS, apply_slippage_in_bp},
+    fees::{DEFAULT_CHAINFLIP_FEE_BPS, apply_slippage_in_bp, resolve_max_quote_value},
 };
 use primitives::{ChainType, chain::Chain, swap::QuoteAsset};
 
@@ -151,12 +151,13 @@ where
             return Err(SwapperError::NoQuoteAvailable);
         }
 
+        let from_value = resolve_max_quote_value(request)?;
         let src_asset = Self::map_asset_id(&request.from_asset);
         let dest_asset = Self::map_asset_id(&request.to_asset);
 
         let fee_bps = DEFAULT_CHAINFLIP_FEE_BPS;
         let quote_request = ChainflipQuoteRequest {
-            amount: request.value.clone(),
+            amount: from_value.clone(),
             src_chain: src_asset.chain.clone(),
             src_asset: src_asset.asset.clone(),
             dest_chain: dest_asset.chain,
@@ -177,7 +178,7 @@ where
         let (egress_amount, slippage_bps, eta_in_seconds, route_data) = get_best_quote(quotes, fee_bps);
 
         Ok(Quote {
-            from_value: request.value.clone(),
+            from_value,
             to_value: egress_amount.to_string(),
             data: ProviderData {
                 provider: self.provider.clone(),
@@ -198,7 +199,7 @@ where
         let source_asset = Self::map_asset_id(&quote.request.from_asset);
         let destination_asset = Self::map_asset_id(&quote.request.to_asset);
 
-        let input_amount: BigUint = quote.request.value.parse()?;
+        let input_amount: BigUint = quote.from_value.parse()?;
 
         let route_data: ChainflipRouteData = serde_json::from_str(&quote.data.routes[0].route_data)?;
         let chain = source_asset.chain.clone();
@@ -259,7 +260,7 @@ where
 
         match response {
             VaultSwapResponse::Evm(response) => {
-                let value = if from_asset.is_native() { quote.request.value.clone() } else { "0".to_string() };
+                let value = if from_asset.is_native() { quote.from_value.clone() } else { "0".to_string() };
 
                 let approval = if from_asset.chain.chain_type() == ChainType::Ethereum && !from_asset.is_native() {
                     let approval = check_approval_erc20(
@@ -282,7 +283,7 @@ where
             }
             VaultSwapResponse::Bitcoin(response) => Ok(SwapperQuoteData::new_contract(
                 response.deposit_address,
-                quote.request.value.clone(),
+                quote.from_value.clone(),
                 response.nulldata_payload,
                 None,
                 None,
