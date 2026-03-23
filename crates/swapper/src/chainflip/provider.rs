@@ -178,7 +178,7 @@ where
         let (egress_amount, slippage_bps, eta_in_seconds, route_data) = get_best_quote(quotes, fee_bps);
 
         Ok(Quote {
-            from_value: from_value.clone(),
+            from_value,
             to_value: egress_amount.to_string(),
             data: ProviderData {
                 provider: self.provider.clone(),
@@ -283,7 +283,7 @@ where
             }
             VaultSwapResponse::Bitcoin(response) => Ok(SwapperQuoteData::new_contract(
                 response.deposit_address,
-                quote.request.value.clone(),
+                quote.from_value.clone(),
                 response.nulldata_payload,
                 None,
                 None,
