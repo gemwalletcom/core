@@ -14,10 +14,19 @@ use crate::perpetual_formatter::usdc_value;
 use crate::provider::perpetual_mapper::create_perpetual_asset_id;
 use crate::provider::transaction_state_mapper::prepare_perpetual_fill;
 
-pub fn map_transaction_broadcast(response: serde_json::Value, data: String) -> Result<String, Box<dyn Error + Sync + Send>> {
-    let broadcast_response = serde_json::from_value::<TransactionBroadcastResponse>(response)?;
-    let action_id = ExchangeRequest::get_nonce(&data).map(|nonce| format!("{}{}", ACTION_ID_PREFIX, nonce));
-    match broadcast_response.into_result(action_id) {
+pub fn map_transaction_broadcast(response: serde_json::Value, data: &str) -> Result<String, Box<dyn Error + Sync + Send>> {
+    let response = serde_json::from_value::<TransactionBroadcastResponse>(response)?;
+    let action_id = ExchangeRequest::get_nonce(data).map(|nonce| format!("{ACTION_ID_PREFIX}{nonce}"));
+    map_transaction_broadcast_result(response.into_result(action_id))
+}
+
+pub fn map_transaction_broadcast_from_str(response: &str) -> Result<String, Box<dyn Error + Sync + Send>> {
+    let response = serde_json::from_str::<TransactionBroadcastResponse>(response)?;
+    map_transaction_broadcast_result(response.into_result(None))
+}
+
+fn map_transaction_broadcast_result(result: BroadcastResult) -> Result<String, Box<dyn Error + Sync + Send>> {
+    match result {
         BroadcastResult::Success(result) => Ok(result),
         BroadcastResult::Error(error) => Err(error.into()),
     }
@@ -157,21 +166,21 @@ mod tests {
     fn test_map_transaction_broadcast_success() {
         let response: serde_json::Value = serde_json::from_str(include_str!("../../testdata/order_broadcast_filled.json")).unwrap();
         let data = include_str!("../../testdata/hl_action_open_long_order.json").trim().to_string();
-        assert_eq!(map_transaction_broadcast(response, data).unwrap(), "134896397196");
+        assert_eq!(map_transaction_broadcast(response, &data).unwrap(), "134896397196");
     }
 
     #[test]
     fn test_map_transaction_broadcast_error() {
         let response: serde_json::Value = serde_json::from_str(include_str!("../../testdata/order_broadcast_error.json")).unwrap();
         let data = include_str!("../../testdata/hl_action_open_long_order.json").trim().to_string();
-        assert!(map_transaction_broadcast(response, data).is_err());
+        assert!(map_transaction_broadcast(response, &data).is_err());
     }
 
     #[test]
     fn test_map_transaction_broadcast_extra_agent_error() {
         let response: serde_json::Value = serde_json::from_str(include_str!("../../testdata/transaction_broadcast_error_extra_agent.json")).unwrap();
         let data = include_str!("../../testdata/hl_action_open_long_order.json").trim().to_string();
-        let result = map_transaction_broadcast(response, data);
+        let result = map_transaction_broadcast(response, &data);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err().to_string(), "Extra agent already used.");
     }
@@ -180,7 +189,7 @@ mod tests {
     fn test_map_transaction_broadcast_fallback_converts_json_to_action_nonce() {
         let response: serde_json::Value = serde_json::from_str(r#"{"status":"ok","response":{"type":"order"}}"#).unwrap();
         let data = include_str!("../../testdata/hl_action_update_position_tp_sl.json").trim().to_string();
-        let result = map_transaction_broadcast(response, data).unwrap();
+        let result = map_transaction_broadcast(response, &data).unwrap();
         assert_eq!(result, "action:1755132472149");
     }
 

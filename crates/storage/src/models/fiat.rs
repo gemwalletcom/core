@@ -201,6 +201,7 @@ impl FiatTransactionRow {
             .ok_or_else(|| DatabaseError::Error(format!("Fiat transaction {} is missing value", self.quote_id)))?;
 
         Ok(FiatTransaction {
+            id: self.quote_id.clone(),
             asset_id: self.asset_id.0.clone(),
             transaction_type: self.transaction_type.0.clone(),
             provider_id: self.provider_id.0,
@@ -238,7 +239,7 @@ pub struct NewFiatTransactionRow {
 }
 
 impl NewFiatTransactionRow {
-    pub fn new(transaction: FiatTransaction, device_id: i32, quote_id: String) -> Self {
+    pub fn new(transaction: FiatTransaction, device_id: i32) -> Self {
         Self {
             asset_id: transaction.asset_id.into(),
             transaction_type: transaction.transaction_type.into(),
@@ -252,7 +253,7 @@ impl NewFiatTransactionRow {
             transaction_hash: transaction.transaction_hash,
             address: transaction.address,
             device_id,
-            quote_id,
+            quote_id: transaction.id,
         }
     }
 }
@@ -336,6 +337,7 @@ mod tests {
 
         let transaction = row.as_primitive().unwrap();
 
+        assert_eq!(transaction.id, "quote_123");
         assert_eq!(transaction.value, "123000000000000000");
         assert_eq!(transaction.created_at, DateTime::<Utc>::from_timestamp(1, 0).unwrap());
         assert_eq!(transaction.updated_at, DateTime::<Utc>::from_timestamp(2, 0).unwrap());

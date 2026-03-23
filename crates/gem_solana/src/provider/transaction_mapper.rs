@@ -64,8 +64,8 @@ pub fn map_signatures_transactions(transactions: Vec<BlockTransaction>, signatur
 }
 
 pub fn map_transaction(transaction: &BlockTransaction, block_time: i64) -> Option<primitives::Transaction> {
-    // only accept single signature transactions
-    if transaction.transaction.signatures.len() != 1 {
+    // reject multi-sig transactions (3+), but allow fee-payer pattern (2 signatures)
+    if transaction.transaction.signatures.len() > 2 {
         return None;
     }
 
@@ -367,6 +367,35 @@ mod tests {
             None,
             None,
             DateTime::from_timestamp(1753346616, 0).unwrap(),
+        );
+
+        assert_eq!(transaction, expected);
+    }
+
+    #[test]
+    fn test_transaction_transfer_usdc_fee_payer() {
+        let result: JsonRpcResult<SingleTransaction> = serde_json::from_str(include_str!("../../testdata/usdc_transfer_fee_payer.json")).unwrap();
+
+        let block_transaction = BlockTransaction {
+            meta: result.result.meta,
+            transaction: result.result.transaction,
+        };
+
+        let transaction = map_transaction(&block_transaction, result.result.block_time).unwrap();
+        let expected = Transaction::new(
+            "65MevEhHuXZzwQ8VftyQUmbgbs41bj2KMhf6zDM5hqsXN6jxsHYniHbi7MMWQ4kitcgfRdsuYe1s7zAqtzPYXZVG".to_string(),
+            SOLANA_USDC_ASSET_ID.clone(),
+            "5QtyKPHtWUf45bNb5buQ6UxpL2ekSJxBCK9g8xMCsc9U".to_string(),
+            "B1nzrk99FEDAYB2M82yepdvEv1YBRJKcx5Y5R6MSDW1Q".to_string(),
+            None,
+            TransactionType::Transfer,
+            TransactionState::Confirmed,
+            "10000".to_string(),
+            Chain::Solana.as_asset_id(),
+            "24737625".to_string(),
+            None,
+            None,
+            DateTime::from_timestamp(1774244726, 0).unwrap(),
         );
 
         assert_eq!(transaction, expected);

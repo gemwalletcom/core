@@ -1,4 +1,4 @@
-use primitives::{Chain, ChainType, FeeUnitType};
+use primitives::{Chain, ChainType, FeeUnitType, chain_transaction_timeout_seconds};
 
 #[derive(uniffi::Record, Debug, Clone, PartialEq)]
 pub struct ChainConfig {
@@ -72,14 +72,5 @@ pub fn fee_unit_type(chain: Chain) -> FeeUnitType {
         ChainType::Bitcoin => FeeUnitType::SatVb,
         ChainType::Ethereum => FeeUnitType::Gwei,
         _ => FeeUnitType::Native,
-    }
-}
-
-fn chain_transaction_timeout_seconds(chain: Chain) -> u32 {
-    match chain.chain_type() {
-        ChainType::Bitcoin => 1_209_600, // 2 weeks (mempool timeout)
-        ChainType::Solana => chain.block_time() * 150,
-        ChainType::Ethereum => chain.block_time() * 120,
-        _ => chain.block_time() * 600,
     }
 }

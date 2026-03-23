@@ -34,8 +34,17 @@ impl<'de> Deserialize<'de> for TransactionId {
     where
         D: Deserializer<'de>,
     {
-        let s = String::deserialize(deserializer)?;
-        TransactionId::from_str(&s).map_err(serde::de::Error::custom)
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum TransactionIdInput {
+            String(String),
+            Object { chain: Chain, hash: String },
+        }
+
+        match TransactionIdInput::deserialize(deserializer)? {
+            TransactionIdInput::String(value) => TransactionId::from_str(&value).map_err(serde::de::Error::custom),
+            TransactionIdInput::Object { chain, hash } => Ok(TransactionId::new(chain, hash)),
+        }
     }
 }
 
@@ -94,6 +103,12 @@ mod tests {
         assert_eq!(serialized, "\"solana_solhash456\"");
         let deserialized: TransactionId = serde_json::from_str(&serialized).unwrap();
         assert_eq!(tx_id, deserialized);
+    }
+
+    #[test]
+    fn test_deserialize_object() {
+        let deserialized: TransactionId = serde_json::from_str(r#"{"chain":"solana","hash":"solhash456"}"#).unwrap();
+        assert_eq!(deserialized, TransactionId::new(Chain::Solana, "solhash456".to_string()));
     }
 
     #[test]

@@ -3,21 +3,19 @@ use chain_traits::{ChainTransactions, TransactionsRequest};
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{BroadcastOptions, Transaction};
+use primitives::Transaction;
 
-use crate::provider::transactions_mapper::{map_transaction_broadcast, map_transactions};
-use crate::rpc::client::TonClient;
+use crate::{provider::transactions_mapper::map_transactions, rpc::client::TonClient};
 
 #[async_trait]
 impl<C: Client> ChainTransactions for TonClient<C> {
-    async fn transaction_broadcast(&self, data: String, _options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
-        let result = self.broadcast_transaction(data).await?.result;
-        map_transaction_broadcast(result)
-    }
-
     async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         let transactions = self.get_transactions_by_masterchain_block(block.to_string()).await?;
         Ok(map_transactions(transactions.transactions))
+    }
+
+    async fn get_transaction_by_hash(&self, hash: String) -> Result<Option<Transaction>, Box<dyn Error + Sync + Send>> {
+        Ok(map_transactions(self.get_transaction(hash).await?.transactions).into_iter().next())
     }
 
     async fn get_transactions_by_address(&self, request: TransactionsRequest) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {

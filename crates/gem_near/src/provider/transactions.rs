@@ -3,16 +3,12 @@ use chain_traits::{ChainTransactions, TransactionsRequest};
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{BroadcastOptions, Transaction};
+use primitives::Transaction;
 
 use crate::rpc::client::NearClient;
 
 #[async_trait]
 impl<C: Client + Clone> ChainTransactions for NearClient<C> {
-    async fn transaction_broadcast(&self, data: String, _options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
-        Ok(self.broadcast_transaction(&data).await?.transaction.hash)
-    }
-
     async fn get_transactions_by_block(&self, _block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         Ok(vec![])
     }

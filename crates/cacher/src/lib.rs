@@ -177,6 +177,39 @@ impl CacherClient {
         Ok(count)
     }
 
+    pub async fn remove_from_set_cached(&self, key: CacheKey<'_>, members: &[String]) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        if members.is_empty() {
+            return Ok(0);
+        }
+
+        Ok(self.connection.clone().srem(key.key(), members).await?)
+    }
+
+    pub async fn add_to_sorted_set_cached(&self, key: CacheKey<'_>, members: &[(String, f64)]) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        if members.is_empty() {
+            return Ok(0);
+        }
+
+        let key_str = key.key();
+        let ttl = key.ttl() as i64;
+        let mut pipe = redis::pipe();
+        pipe.atomic();
+        for (member, score) in members {
+            pipe.cmd("ZADD").arg(&key_str).arg(score).arg(member).ignore();
+        }
+        pipe.cmd("EXPIRE").arg(&key_str).arg(ttl).ignore();
+        pipe.cmd("ZCARD").arg(&key_str);
+        Ok(pipe.query_async(&mut self.connection.clone()).await?)
+    }
+
+    pub async fn remove_from_sorted_set_cached(&self, key: CacheKey<'_>, members: &[String]) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        if members.is_empty() {
+            return Ok(0);
+        }
+
+        Ok(redis::cmd("ZREM").arg(key.key()).arg(members).query_async(&mut self.connection.clone()).await?)
+    }
+
     pub async fn get_set_members_cached(&self, keys: Vec<String>) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
         Ok(self.get_set_members_grouped(keys).await?.into_iter().flatten().collect())
     }
@@ -244,8 +277,8 @@ impl CacherClient {
         Ok(redis::cmd("ZCARD").arg(key).query_async(&mut self.connection.clone()).await?)
     }
 
-    pub async fn sorted_set_rev_range_with_scores(&self, key: &str, start: isize, stop: isize) -> Result<Vec<(String, f64)>, Box<dyn Error + Send + Sync>> {
-        Ok(redis::cmd("ZREVRANGE")
+    pub async fn sorted_set_range_with_scores(&self, key: &str, start: isize, stop: isize) -> Result<Vec<(String, f64)>, Box<dyn Error + Send + Sync>> {
+        Ok(redis::cmd("ZRANGE")
             .arg(key)
             .arg(start)
             .arg(stop)

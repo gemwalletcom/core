@@ -6,6 +6,8 @@ pub mod testkit;
 #[cfg(feature = "rpc")]
 pub mod preload_mapper;
 #[cfg(feature = "rpc")]
+pub mod request_classifier;
+#[cfg(feature = "rpc")]
 pub mod staking;
 #[cfg(feature = "rpc")]
 pub mod staking_mapper;
@@ -18,8 +20,14 @@ pub mod token;
 #[cfg(feature = "rpc")]
 pub mod token_mapper;
 #[cfg(feature = "rpc")]
+pub mod transaction_broadcast;
+#[cfg(feature = "rpc")]
+pub mod transaction_broadcast_mapper;
+#[cfg(feature = "rpc")]
 pub mod transaction_mapper;
 #[cfg(feature = "rpc")]
 pub mod transaction_state;
 #[cfg(feature = "rpc")]
 pub mod transactions;
+
+pub struct BroadcastProvider;

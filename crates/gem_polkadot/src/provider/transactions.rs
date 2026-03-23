@@ -3,26 +3,13 @@ use chain_traits::{ChainProvider, ChainTransactions, TransactionsRequest};
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{BroadcastOptions, Transaction};
+use primitives::Transaction;
 
 use super::transactions_mapper;
 use crate::rpc::client::PolkadotClient;
 
 #[async_trait]
 impl<C: Client> ChainTransactions for PolkadotClient<C> {
-    async fn transaction_broadcast(&self, data: String, _options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
-        let response = self.broadcast_transaction(data).await?;
-
-        if let Some(hash) = response.hash {
-            Ok(hash)
-        } else if let Some(error) = response.error {
-            let cause = response.cause.unwrap_or_default();
-            Err(format!("{}: {}", error, cause).into())
-        } else {
-            Err("Invalid broadcast response".into())
-        }
-    }
-
     async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         let block_data = self.get_block(block as i64).await?;
         Ok(transactions_mapper::map_transactions(self.get_chain(), block_data))

@@ -1,15 +1,17 @@
+use std::error::Error;
+
 use crate::constants::TRANSACTION_TYPE_PAY;
 use crate::models::{Transaction as AlgoTransaction, TransactionBroadcast};
 use chrono::DateTime;
 use primitives::{Transaction, TransactionState, TransactionType, chain::Chain};
 
-pub fn map_transaction_broadcast(result: &TransactionBroadcast) -> Result<String, String> {
+pub fn map_transaction_broadcast(result: &TransactionBroadcast) -> Result<String, Box<dyn Error + Sync + Send>> {
     if let Some(message) = &result.message {
-        Err(message.clone())
+        Err(message.clone().into())
     } else if let Some(hash) = &result.tx_id {
         Ok(hash.clone())
     } else {
-        Err("Broadcast failed without specific error".to_string())
+        Err("Broadcast failed without specific error".into())
     }
 }
 
@@ -50,27 +52,21 @@ mod tests {
             tx_id: Some("G4MBO3DS7ACGA3XF5XD5Y52ZVJL6ZYROTCVB2I3BQHBYHTPQ7VOA".to_string()),
             message: None,
         };
-        assert_eq!(
-            map_transaction_broadcast(&broadcast),
-            Ok("G4MBO3DS7ACGA3XF5XD5Y52ZVJL6ZYROTCVB2I3BQHBYHTPQ7VOA".to_string())
-        );
+        assert_eq!(map_transaction_broadcast(&broadcast).unwrap(), "G4MBO3DS7ACGA3XF5XD5Y52ZVJL6ZYROTCVB2I3BQHBYHTPQ7VOA");
     }
 
     #[test]
     fn test_map_transaction_broadcast_success_data() {
         let broadcast: TransactionBroadcast = serde_json::from_str(include_str!("../../testdata/transaction_broadcast_success.json")).unwrap();
-        assert_eq!(
-            map_transaction_broadcast(&broadcast),
-            Ok("LAEWXAG6FYFIEDAY76YQFKO46EIKEOIT4GTONUQFD6TL23XG45KQ".to_string())
-        );
+        assert_eq!(map_transaction_broadcast(&broadcast).unwrap(), "LAEWXAG6FYFIEDAY76YQFKO46EIKEOIT4GTONUQFD6TL23XG45KQ");
     }
 
     #[test]
     fn test_map_transaction_broadcast_error_data() {
         let broadcast: TransactionBroadcast = serde_json::from_str(include_str!("../../testdata/transaction_broadcast_error.json")).unwrap();
         assert_eq!(
-            map_transaction_broadcast(&broadcast),
-            Err("txgroup had 0 in fees, which is less than the minimum 1 * 1000".to_string())
+            map_transaction_broadcast(&broadcast).unwrap_err().to_string(),
+            "txgroup had 0 in fees, which is less than the minimum 1 * 1000"
         );
     }
 }

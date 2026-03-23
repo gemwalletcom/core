@@ -221,6 +221,14 @@ pub struct JwtConfig {
 }
 
 #[derive(Debug, Deserialize, Clone)]
+pub struct WebhookConfig {
+    pub enabled: bool,
+    pub url: String,
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub timeout: Duration,
+}
+
+#[derive(Debug, Deserialize, Clone)]
 pub struct NodeConfig {
     pub port: u16,
     pub address: String,
@@ -232,6 +240,7 @@ pub struct NodeConfig {
     pub request: RequestConfig,
     pub headers: HeadersConfig,
     pub jwt: JwtConfig,
+    pub webhook: WebhookConfig,
 }
 
 impl NodeConfig {

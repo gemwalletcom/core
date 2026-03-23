@@ -5,9 +5,10 @@ use strum::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
-#[typeshare(swift = "Equatable, Sendable")]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "camelCase")]
 pub struct FiatTransaction {
+    pub id: String,
     pub asset_id: AssetId,
     pub transaction_type: FiatQuoteType,
     pub provider_id: FiatProviderName,
@@ -30,6 +31,7 @@ impl FiatTransaction {
         let now = Utc::now();
 
         Self {
+            id: quote.id.clone(),
             asset_id: quote.asset.id.clone(),
             transaction_type: quote.quote_type.clone(),
             provider_id: quote.provider.id,
@@ -59,7 +61,7 @@ pub struct FiatTransactionUpdate {
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
-#[typeshare(swift = "Equatable, Sendable")]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "camelCase")]
 pub struct FiatTransactionInfo {
     pub transaction: FiatTransaction,

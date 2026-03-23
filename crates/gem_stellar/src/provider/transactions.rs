@@ -3,21 +3,12 @@ use chain_traits::{ChainTransactions, TransactionsRequest};
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{BroadcastOptions, Transaction};
+use primitives::Transaction;
 
-use crate::{
-    models::AccountResult,
-    provider::transactions_mapper::{map_transaction_broadcast, map_transactions},
-    rpc::client::StellarClient,
-};
+use crate::{models::AccountResult, provider::transactions_mapper::map_transactions, rpc::client::StellarClient};
 
 #[async_trait]
 impl<C: Client> ChainTransactions for StellarClient<C> {
-    async fn transaction_broadcast(&self, data: String, _options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
-        let result = self.broadcast_transaction(&data).await?;
-        map_transaction_broadcast(&result)
-    }
-
     async fn get_transactions_by_address(&self, request: TransactionsRequest) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         let TransactionsRequest { address, .. } = request;
         let payments = self.get_account_payments(address).await?;

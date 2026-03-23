@@ -326,6 +326,7 @@ fn setup_dev_fiat_transactions(database: &Database, device_id: i32, evm_address:
         let now = Utc::now();
 
         FiatTransaction {
+            id: "setup-dev-quote-moonpay-pending".to_string(),
             asset_id: AssetId::from_chain(Chain::Ethereum),
             transaction_type: FiatQuoteType::Buy,
             provider_id: FiatProviderName::MoonPay,
@@ -348,6 +349,7 @@ fn setup_dev_fiat_transactions(database: &Database, device_id: i32, evm_address:
             ..mock()
         },
         FiatTransaction {
+            id: "setup-dev-quote-mercuryo-complete".to_string(),
             provider_id: FiatProviderName::Mercuryo,
             provider_transaction_id: Some("setup-dev-mercuryo-complete".to_string()),
             status: FiatTransactionStatus::Complete,
@@ -357,6 +359,7 @@ fn setup_dev_fiat_transactions(database: &Database, device_id: i32, evm_address:
             ..mock()
         },
         FiatTransaction {
+            id: "setup-dev-quote-transak-failed".to_string(),
             asset_id: AssetId::from_chain(Chain::Solana),
             transaction_type: FiatQuoteType::Sell,
             provider_id: FiatProviderName::Transak,
@@ -371,9 +374,9 @@ fn setup_dev_fiat_transactions(database: &Database, device_id: i32, evm_address:
 
     let mut fiat = database.fiat()?;
     let transaction_rows = vec![
-        NewFiatTransactionRow::new(transactions[0].clone(), device_id, "setup-dev-quote-moonpay-pending".to_string()),
-        NewFiatTransactionRow::new(transactions[1].clone(), device_id, "setup-dev-quote-mercuryo-complete".to_string()),
-        NewFiatTransactionRow::new(transactions[2].clone(), device_id, "setup-dev-quote-transak-failed".to_string()),
+        NewFiatTransactionRow::new(transactions[0].clone(), device_id),
+        NewFiatTransactionRow::new(transactions[1].clone(), device_id),
+        NewFiatTransactionRow::new(transactions[2].clone(), device_id),
     ];
 
     let mut count = 0;

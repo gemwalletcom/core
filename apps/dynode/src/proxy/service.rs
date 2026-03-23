@@ -8,12 +8,14 @@ use crate::proxy::proxy_request::ProxyRequest;
 use crate::proxy::request_builder::RequestBuilder;
 use crate::proxy::request_url::RequestUrl;
 use crate::proxy::response_builder::{ProxyResponse, ResponseBuilder};
+use crate::webhook::DynodeBroadcastWebhookClient;
 use futures::channel::oneshot;
 use gem_tracing::{DurationMs, info_with_fields};
 use primitives::Chain;
 use reqwest::Method;
 use reqwest::StatusCode;
 use reqwest::header::{CONTENT_TYPE, HeaderMap, HeaderName};
+use settings_chain::BroadcastProviders;
 use std::collections::{HashMap, HashSet};
 use std::str::FromStr;
 use std::sync::Arc;
@@ -32,7 +34,7 @@ struct CacheStoreInfo {
 
 type InflightWaiters = HashMap<String, Vec<oneshot::Sender<Result<CachedResponse, String>>>>;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ProxyRequestService {
     pub metrics: Metrics,
     pub cache: RequestCache,
@@ -40,6 +42,8 @@ pub struct ProxyRequestService {
     pub forward_headers: Arc<HashSet<HeaderName>>,
     pub inflight_requests: Arc<RwLock<InflightWaiters>>,
     pub headers_config: HeadersConfig,
+    pub broadcast_webhook: DynodeBroadcastWebhookClient,
+    pub broadcast_providers: Arc<BroadcastProviders>,
 }
 
 #[derive(Debug, Clone)]
@@ -55,7 +59,14 @@ impl NodeDomain {
 }
 
 impl ProxyRequestService {
-    pub fn new(metrics: Metrics, cache: RequestCache, client: reqwest::Client, headers_config: HeadersConfig) -> Self {
+    pub fn new(
+        metrics: Metrics,
+        cache: RequestCache,
+        client: reqwest::Client,
+        headers_config: HeadersConfig,
+        broadcast_webhook: DynodeBroadcastWebhookClient,
+        broadcast_providers: Arc<BroadcastProviders>,
+    ) -> Self {
         let forward_headers: Arc<HashSet<HeaderName>> = Arc::new(headers_config.forward.iter().filter_map(|s| HeaderName::from_str(s).ok()).collect());
 
         Self {
@@ -65,6 +76,8 @@ impl ProxyRequestService {
             forward_headers,
             inflight_requests: Arc::new(RwLock::new(HashMap::new())),
             headers_config,
+            broadcast_webhook,
+            broadcast_providers,
         }
     }
 
@@ -156,7 +169,18 @@ impl ProxyRequestService {
         }
 
         if let RequestType::JsonRpc(rpc_request) = request_type {
-            return JsonRpcHandler::handle_request(rpc_request, &request, &self.cache, &self.metrics, &url, &self.client, &headers).await;
+            return JsonRpcHandler::handle_request(
+                rpc_request,
+                &request,
+                &self.cache,
+                &self.metrics,
+                &url,
+                &self.client,
+                &headers,
+                &self.broadcast_webhook,
+                &self.broadcast_providers,
+            )
+            .await;
         }
 
         let response = match Self::proxy_pass_get_data(request.method.clone(), request.body.clone(), url.clone(), &self.client, headers).await {
@@ -189,6 +213,8 @@ impl ProxyRequestService {
 
         let remote_host = url.url.host_str().unwrap_or_default();
         Self::add_proxy_response_metrics(&self.metrics, &request, &methods_for_metrics, remote_host, status);
+
+        self.broadcast_webhook.notify_broadcast(&request, status, &body_bytes, &self.broadcast_providers);
 
         if let Some(key) = &inflight_key {
             Self::release_inflight(
@@ -405,15 +431,21 @@ mod tests {
     use crate::config::{CacheConfig, HeadersConfig, MetricsConfig};
     use crate::metrics::Metrics;
     use crate::proxy::constants::JSON_CONTENT_TYPE;
+    use primitives::Chain;
     use reqwest::header;
+    use settings_chain::BroadcastProviders;
     use std::collections::HashMap;
+    use std::sync::Arc;
 
     fn create_service(headers_config: HeadersConfig) -> ProxyRequestService {
+        let metrics = Metrics::new(MetricsConfig::default());
         ProxyRequestService::new(
-            Metrics::new(MetricsConfig::default()),
+            metrics.clone(),
             RequestCache::new(CacheConfig::default()),
             reqwest::Client::new(),
             headers_config,
+            DynodeBroadcastWebhookClient::disabled(),
+            Arc::new(BroadcastProviders::from_chains([Chain::Ethereum])),
         )
     }
 

@@ -1,11 +1,14 @@
 mod in_transit_updater;
+mod pending_transactions_updater;
 mod vault_addresses_updater;
 
 use cacher::CacherClient;
 use in_transit_updater::{InTransitConfig, InTransitUpdater};
 use job_runner::{JobHandle, ShutdownReceiver};
-use primitives::{ConfigKey, ParamConfigKey, SwapProvider};
-use settings_chain::ProviderFactory;
+use pending_transactions_updater::PendingTransactionsUpdater;
+use primitives::{Chain, ConfigKey, ParamConfigKey, SwapProvider};
+use settings::service_user_agent;
+use settings_chain::{ChainProviders, ProviderFactory};
 use std::error::Error;
 use std::sync::Arc;
 use storage::ConfigCacher;
@@ -32,6 +35,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
     };
 
     let endpoints = ProviderFactory::get_chain_endpoints(&settings);
+    let providers = Arc::new(ChainProviders::from_settings(&settings, &service_user_agent("daemon", Some("transactions"))));
     let swapper = Arc::new(GemSwapper::new(Arc::new(NativeProvider::new_with_endpoints(endpoints))));
 
     let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
@@ -48,6 +52,13 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
             move |_| {
                 let updater = InTransitUpdater::new(database.clone(), in_transit_config, swapper.clone(), stream_producer.clone(), vault_client.clone());
                 async move { updater.update().await }
+            }
+        })
+        .jobs(WorkerJob::UpdatePendingTransactions, Chain::all(), |chain, _| {
+            let updater = Arc::new(PendingTransactionsUpdater::new(providers.clone(), cacher.clone(), stream_producer.clone()));
+            move |_| {
+                let updater = updater.clone();
+                async move { updater.update(chain).await }
             }
         })
         .jobs_with_config(

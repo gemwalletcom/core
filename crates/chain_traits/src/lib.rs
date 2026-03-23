@@ -5,8 +5,9 @@ use primitives::chart::ChartCandleStick;
 use primitives::perpetual::{PerpetualData, PerpetualPositionsSummary};
 use primitives::portfolio::PerpetualPortfolio;
 use primitives::{
-    AddressStatus, Asset, AssetBalance, AssetId, BroadcastOptions, Chain, ChartPeriod, DelegationBase, DelegationValidator, FeeRate, NodeSyncStatus, Transaction, TransactionFee,
-    TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput, TransactionStateRequest, TransactionUpdate, UTXO,
+    AddressStatus, Asset, AssetBalance, AssetId, BroadcastOptions, Chain, ChainRequest, ChainRequestType, ChartPeriod, DelegationBase, DelegationValidator, FeeRate,
+    NodeSyncStatus, Transaction, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput,
+    TransactionStateRequest, TransactionUpdate, UTXO,
 };
 
 pub struct TransactionsRequest {
@@ -46,6 +47,7 @@ pub trait ChainTraits:
     ChainProvider
     + ChainBalances
     + ChainStaking
+    + ChainTransactionBroadcast
     + ChainTransactions
     + ChainTransactionState
     + ChainState
@@ -59,6 +61,12 @@ pub trait ChainTraits:
 
 pub trait ChainProvider: Send + Sync {
     fn get_chain(&self) -> Chain;
+}
+
+pub trait ChainRequestClassifier: Send + Sync {
+    fn classify_request(&self, _request: ChainRequest<'_>) -> ChainRequestType {
+        ChainRequestType::Unknown
+    }
 }
 
 #[async_trait]
@@ -93,10 +101,20 @@ pub trait ChainStaking: Send + Sync {
 }
 
 #[async_trait]
-pub trait ChainTransactions: Send + Sync {
+pub trait ChainTransactionBroadcast: Send + Sync {
     async fn transaction_broadcast(&self, _data: String, _options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
         Err("Chain does not support transaction broadcasting".into())
     }
+}
+
+pub trait ChainTransactionDecode: Send + Sync {
+    fn decode_transaction_broadcast(&self, _response: &str) -> Option<String> {
+        None
+    }
+}
+
+#[async_trait]
+pub trait ChainTransactions: Send + Sync {
     async fn get_transactions_by_block(&self, _block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         Ok(vec![])
     }

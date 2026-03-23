@@ -37,6 +37,8 @@ pub enum QueueName {
     FiatOrderWebhooks,
     // Process support webhooks
     SupportWebhooks,
+    // Store pending transaction identifiers
+    StorePendingTransactions,
     // Store prices to database
     StorePrices,
     // Store charts to database
@@ -85,6 +87,7 @@ impl fmt::Display for QueueName {
             QueueName::FetchNftAssociations => write!(f, "fetch_nft_associations"),
             QueueName::FiatOrderWebhooks => write!(f, "fiat_order_webhooks"),
             QueueName::SupportWebhooks => write!(f, "support_webhooks"),
+            QueueName::StorePendingTransactions => write!(f, "store_pending_transactions"),
             QueueName::NotificationsSupport => write!(f, "notifications_support"),
             QueueName::NotificationsRewards => write!(f, "notifications_rewards"),
             QueueName::RewardsEvents => write!(f, "rewards_events"),

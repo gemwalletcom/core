@@ -4,12 +4,9 @@ use std::error::Error;
 use async_trait::async_trait;
 #[cfg(feature = "rpc")]
 use chain_traits::{ChainTransactions, TransactionsRequest};
-use primitives::{BroadcastOptions, NodeType, Transaction};
+use primitives::{NodeType, Transaction};
 
-use crate::{
-    provider::transactions_mapper::map_transaction_broadcast,
-    rpc::{EthereumMapper, client::EthereumClient, mapper::CONTRACT_REGISTRY},
-};
+use crate::rpc::{EthereumMapper, client::EthereumClient, mapper::CONTRACT_REGISTRY};
 use gem_client::Client;
 use gem_jsonrpc::types::JsonRpcError;
 
@@ -46,11 +43,6 @@ async fn load_transactions_by_hashes<C: Client + Clone>(client: &EthereumClient<
 #[cfg(feature = "rpc")]
 #[async_trait]
 impl<C: Client + Clone> ChainTransactions for EthereumClient<C> {
-    async fn transaction_broadcast(&self, data: String, _options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
-        let data = map_transaction_broadcast(&data);
-        Ok(self.send_raw_transaction(&data).await?)
-    }
-
     async fn get_transactions_by_address(&self, request: TransactionsRequest) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         let TransactionsRequest { address, limit, .. } = request;
         let hashes = if let Some(ankr_client) = &self.ankr_client {
@@ -93,12 +85,16 @@ impl<C: Client + Clone> ChainTransactions for EthereumClient<C> {
             })
             .collect())
     }
+
+    async fn get_transaction_by_hash(&self, hash: String) -> Result<Option<Transaction>, Box<dyn Error + Sync + Send>> {
+        Ok(load_transactions_by_hashes(self, self.node_type.clone(), &[hash]).await?.into_iter().next())
+    }
 }
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use crate::provider::testkit::{TEST_ADDRESS, create_ethereum_test_client};
-    use chain_traits::{ChainBalances, ChainTransactions, TransactionsRequest};
+    use chain_traits::{ChainBalances, ChainTransactionBroadcast, ChainTransactions, TransactionsRequest};
     use num_bigint::BigUint;
     use std::error::Error;
 

@@ -3,7 +3,7 @@ use chain_traits::{ChainTransactions, TransactionsRequest};
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{BroadcastOptions, Transaction};
+use primitives::Transaction;
 
 use crate::{
     models::{BlockTransaction, SingleTransaction},
@@ -13,10 +13,6 @@ use crate::{
 
 #[async_trait]
 impl<C: Client + Clone> ChainTransactions for SolanaClient<C> {
-    async fn transaction_broadcast(&self, data: String, options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
-        Ok(self.send_transaction(data, Some(options.skip_preflight)).await?)
-    }
-
     async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         match self.get_block_transactions(block).await {
             Ok(block_transactions) => Ok(map_block_transactions(&block_transactions)),

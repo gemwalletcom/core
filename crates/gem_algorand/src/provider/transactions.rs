@@ -3,20 +3,12 @@ use chain_traits::{ChainTransactions, TransactionsRequest};
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{BroadcastOptions, Transaction};
+use primitives::Transaction;
 
-use crate::{
-    provider::transactions_mapper::{map_transaction_broadcast, map_transactions},
-    rpc::client::AlgorandClient,
-};
+use crate::{provider::transactions_mapper::map_transactions, rpc::client::AlgorandClient};
 
 #[async_trait]
 impl<C: Client> ChainTransactions for AlgorandClient<C> {
-    async fn transaction_broadcast(&self, data: String, _options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
-        let result = self.broadcast_transaction(&data).await?;
-        map_transaction_broadcast(&result).map_err(|e| e.into())
-    }
-
     async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         let block = self.indexer.get_block(block).await?;
         Ok(map_transactions(block.transactions))

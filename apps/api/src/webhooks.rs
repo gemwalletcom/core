@@ -1,7 +1,9 @@
-use crate::devices::FiatQuotesClient;
-use crate::responders::{ApiError, ApiResponse};
+use primitives::TransactionId;
 use rocket::{State, post, serde::json::Json, tokio::sync::Mutex};
 use streamer::{FiatWebhook, QueueName, StreamProducer, SupportWebhookPayload};
+
+use crate::devices::FiatQuotesClient;
+use crate::responders::{ApiError, ApiResponse};
 
 pub struct WebhooksClient {
     stream_producer: StreamProducer,
@@ -13,9 +15,14 @@ impl WebhooksClient {
     }
 
     pub async fn process_support_webhook(&self, webhook_data: serde_json::Value) -> Result<SupportWebhookPayload, Box<dyn std::error::Error + Send + Sync>> {
-        let payload = SupportWebhookPayload::new(webhook_data.clone());
+        let payload = SupportWebhookPayload::new(webhook_data);
         self.stream_producer.publish(QueueName::SupportWebhooks, &payload).await?;
         Ok(payload)
+    }
+
+    pub async fn process_broadcast_webhook(&self, payload: TransactionId) -> Result<Option<String>, Box<dyn std::error::Error + Send + Sync>> {
+        self.stream_producer.publish(QueueName::StorePendingTransactions, &payload).await?;
+        Ok(Some(payload.hash))
     }
 }
 
@@ -30,6 +37,11 @@ pub async fn create_support_bot_webhook(
     webhooks_client: &State<Mutex<WebhooksClient>>,
 ) -> Result<ApiResponse<SupportWebhookPayload>, ApiError> {
     Ok(webhooks_client.lock().await.process_support_webhook(webhook_data.0).await?.into())
+}
+
+#[post("/webhooks/transactions", data = "<payload>")]
+pub async fn create_broadcast_webhook(payload: Json<TransactionId>, webhooks_client: &State<Mutex<WebhooksClient>>) -> Result<ApiResponse<Option<String>>, ApiError> {
+    Ok(webhooks_client.lock().await.process_broadcast_webhook(payload.0).await?.into())
 }
 
 #[post("/fiat/webhooks/<provider>", data = "<webhook_data>")]

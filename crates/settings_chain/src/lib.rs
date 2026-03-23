@@ -1,5 +1,7 @@
+mod broadcast_providers;
 mod chain_providers;
 mod provider_config;
+pub use broadcast_providers::BroadcastProviders;
 pub use chain_providers::ChainProviders;
 pub use chain_traits::TransactionsRequest;
 use gem_algorand::{

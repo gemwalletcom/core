@@ -8,6 +8,11 @@ metrics:
 jwt:
   secret: ""
 
+webhook:
+  enabled: false
+  url: ""
+  timeout: 2s
+
 monitoring:
   enabled: false
   poll_interval: 10m

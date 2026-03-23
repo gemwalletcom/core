@@ -19,13 +19,15 @@ use crate::proxy::proxy_builder::ProxyBuilder;
 use crate::proxy::proxy_request::ProxyRequest;
 use crate::proxy::response_builder::ResponseBuilder;
 use crate::proxy::{NodeDomain, ProxyResponse};
+use crate::webhook::DynodeBroadcastWebhookClient;
 use gem_tracing::{DurationMs, info_with_fields};
 use primitives::{Chain, ResponseError, response::ErrorDetail};
 use serde_json::Value;
+use settings_chain::BroadcastProviders;
 
 const NODE_NOT_FOUND: &str = "Node not found";
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct NodeService {
     pub chains: HashMap<Chain, ChainConfig>,
     pub nodes: Arc<RwLock<HashMap<Chain, NodeDomain>>>,
@@ -45,11 +47,13 @@ impl NodeService {
         monitoring_config: NodeMonitoringConfig,
         retry_config: RetryConfig,
         headers_config: HeadersConfig,
+        broadcast_webhook: DynodeBroadcastWebhookClient,
     ) -> Self {
         let nodes = chains.values().map(|c| (c.chain, NodeDomain::new(c.urls.first().unwrap().clone(), c.clone()))).collect();
 
         let cache = RequestCache::new(cache_config);
-        let proxy_builder = ProxyBuilder::new(metrics.clone(), cache, client, headers_config);
+        let broadcast_providers = Arc::new(BroadcastProviders::from_chains(chains.keys().copied()));
+        let proxy_builder = ProxyBuilder::new(metrics.clone(), cache, client, headers_config, broadcast_webhook, broadcast_providers);
         let request_adaptive_monitor = Arc::new(RequestAdaptiveMonitor::new(monitoring_config.adaptive.clone()));
 
         Self {
@@ -352,9 +356,12 @@ mod tests {
     }
 
     fn create_service_with_retry(chains: HashMap<Chain, ChainConfig>, retry_config: RetryConfig) -> NodeService {
+        let metrics = Metrics::new(MetricsConfig::default());
+        let broadcast_webhook = DynodeBroadcastWebhookClient::disabled();
+
         NodeService::new(
             chains,
-            Metrics::new(MetricsConfig::default()),
+            metrics,
             reqwest::Client::new(),
             CacheConfig::default(),
             testkit::monitoring_config(),
@@ -363,6 +370,7 @@ mod tests {
                 forward: vec![header::CONTENT_TYPE.to_string()],
                 domains: HashMap::new(),
             },
+            broadcast_webhook,
         )
     }
 

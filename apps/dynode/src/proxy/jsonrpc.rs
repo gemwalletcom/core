@@ -7,9 +7,11 @@ use crate::proxy::proxy_request::ProxyRequest;
 use crate::proxy::request_builder::RequestBuilder;
 use crate::proxy::request_url::RequestUrl;
 use crate::proxy::response_builder::ResponseBuilder;
+use crate::webhook::DynodeBroadcastWebhookClient;
 use gem_tracing::{DurationMs, info_with_fields};
 use reqwest::header::HeaderMap;
 use reqwest::{Method, StatusCode};
+use settings_chain::BroadcastProviders;
 
 use crate::proxy::ProxyResponse;
 
@@ -24,9 +26,11 @@ impl JsonRpcHandler {
         url: &RequestUrl,
         client: &reqwest::Client,
         forward_headers: &HeaderMap,
+        broadcast_webhook: &DynodeBroadcastWebhookClient,
+        broadcast_providers: &BroadcastProviders,
     ) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
         match rpc_request {
-            JsonRpcRequest::Single(call) => Self::handle_single_request(call, request, cache, metrics, url, client, forward_headers).await,
+            JsonRpcRequest::Single(call) => Self::handle_single_request(call, request, cache, metrics, url, client, forward_headers, broadcast_webhook, broadcast_providers).await,
             JsonRpcRequest::Batch(calls) => Self::handle_batch_request(rpc_request, calls, request, metrics, url, client, forward_headers).await,
         }
     }
@@ -39,6 +43,8 @@ impl JsonRpcHandler {
         url: &RequestUrl,
         client: &reqwest::Client,
         forward_headers: &HeaderMap,
+        broadcast_webhook: &DynodeBroadcastWebhookClient,
+        broadcast_providers: &BroadcastProviders,
     ) -> Result<ProxyResponse, Box<dyn std::error::Error + Send + Sync>> {
         metrics.add_proxy_request_by_method(request.chain.as_ref(), &call.method);
 
@@ -79,7 +85,7 @@ impl JsonRpcHandler {
             metrics.add_cache_miss(request.chain.as_ref(), &call.method);
         }
 
-        let (response, response_status) = Self::fetch_single_response(call, request, cache, url, client, forward_headers).await?;
+        let (response, response_status, response_body) = Self::fetch_single_response(call, request, cache, url, client, forward_headers).await?;
 
         metrics.add_proxy_response(
             request.chain.as_ref(),
@@ -120,6 +126,8 @@ impl JsonRpcHandler {
                 );
             }
         }
+
+        broadcast_webhook.notify_broadcast(request, response_status, &response_body, broadcast_providers);
 
         let upstream_headers = ResponseBuilder::create_upstream_headers(url.url.host_str(), request.elapsed());
         Self::build_json_response(&response, upstream_headers, response_status)
@@ -187,7 +195,7 @@ impl JsonRpcHandler {
         url: &RequestUrl,
         client: &reqwest::Client,
         forward_headers: &HeaderMap,
-    ) -> Result<(JsonRpcResult, u16), Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<(JsonRpcResult, u16, Vec<u8>), Box<dyn std::error::Error + Send + Sync>> {
         let body = serde_json::to_vec(&call)?;
         let response = Self::send_jsonrpc_request(client, &request.method, url, body, forward_headers).await?;
         let status = response.status().as_u16();
@@ -216,7 +224,7 @@ impl JsonRpcHandler {
             );
         }
 
-        Ok((result, status))
+        Ok((result, status, body_bytes))
     }
 
     async fn fetch_batch_responses(
@@ -273,8 +281,12 @@ mod tests {
         let single_request = JsonRpcRequest::Single(single_call);
         let batch_request = JsonRpcRequest::Batch(batch_calls);
 
-        assert!(matches!(single_request, JsonRpcRequest::Single(_)));
-        assert!(matches!(batch_request, JsonRpcRequest::Batch(_)));
+        let JsonRpcRequest::Single(_) = single_request else {
+            panic!("Expected single request");
+        };
+        let JsonRpcRequest::Batch(_) = batch_request else {
+            panic!("Expected batch request");
+        };
     }
 
     #[test]

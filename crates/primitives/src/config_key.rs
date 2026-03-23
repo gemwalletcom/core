@@ -173,6 +173,7 @@ pub enum ConfigKey {
     // Transaction
     TransactionTimerCleanup,
     TransactionTimerInTransitUpdate,
+    TransactionTimerPendingUpdate,
     TransactionInTransitTimeout,
     TransactionInTransitQueryLimit,
     TransactionSwapOutdatedTimeout,
@@ -356,6 +357,7 @@ impl ConfigKey {
             Self::VersionTimerUpdateStoreVersions => "1h",
             Self::TransactionTimerCleanup => "1d",
             Self::TransactionTimerInTransitUpdate => "60s",
+            Self::TransactionTimerPendingUpdate => "30s",
             Self::TransactionInTransitTimeout => "12h",
             Self::TransactionInTransitQueryLimit => "100",
             Self::TransactionSwapOutdatedTimeout => "2h",

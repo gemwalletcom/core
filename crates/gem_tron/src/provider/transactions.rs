@@ -3,18 +3,13 @@ use chain_traits::{ChainTransactions, TransactionsRequest};
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{BroadcastOptions, Transaction};
+use primitives::Transaction;
 
-use super::transactions_mapper::{map_transaction_broadcast, map_transactions_by_address, map_transactions_by_block};
+use super::transactions_mapper::{map_transaction, map_transactions_by_address, map_transactions_by_block};
 use crate::rpc::client::TronClient;
 
 #[async_trait]
 impl<C: Client + Clone> ChainTransactions for TronClient<C> {
-    async fn transaction_broadcast(&self, data: String, _options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
-        let response = self.broadcast_transaction(data).await?;
-        map_transaction_broadcast(&response)
-    }
-
     async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         let block_data = self.get_block_tranactions(block).await?;
         if block_data.transactions.is_empty() {
@@ -23,6 +18,14 @@ impl<C: Client + Clone> ChainTransactions for TronClient<C> {
 
         let receipts = self.get_block_tranactions_reciepts(block).await?;
         Ok(map_transactions_by_block(self.get_chain(), block_data, receipts))
+    }
+
+    async fn get_transaction_by_hash(&self, hash: String) -> Result<Option<Transaction>, Box<dyn Error + Sync + Send>> {
+        Ok(map_transaction(
+            self.get_chain(),
+            self.get_transaction(hash.clone()).await?,
+            self.get_transaction_reciept(hash).await?,
+        ))
     }
 
     async fn get_transactions_by_address(&self, request: TransactionsRequest) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {

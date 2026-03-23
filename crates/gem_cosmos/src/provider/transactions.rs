@@ -4,17 +4,13 @@ use futures::{StreamExt, TryStreamExt, stream};
 use std::error::Error;
 
 use gem_client::Client;
-use primitives::{BroadcastOptions, Transaction};
+use primitives::Transaction;
 
-use super::transactions_mapper::{map_transaction_broadcast, map_transaction_decode, map_transactions};
+use super::transactions_mapper::{map_transaction_decode, map_transactions};
 use crate::rpc::client::CosmosClient;
 
 #[async_trait]
 impl<C: Client> ChainTransactions for CosmosClient<C> {
-    async fn transaction_broadcast(&self, data: String, _options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
-        Ok(map_transaction_broadcast(&self.broadcast_transaction(&data).await?)?)
-    }
-
     async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         let response = self.get_block(block.to_string().as_str()).await?;
         let transaction_ids = response
@@ -34,6 +30,10 @@ impl<C: Client> ChainTransactions for CosmosClient<C> {
             .await?;
 
         Ok(map_transactions(self.chain, receipts))
+    }
+
+    async fn get_transaction_by_hash(&self, hash: String) -> Result<Option<Transaction>, Box<dyn Error + Sync + Send>> {
+        Ok(map_transactions(self.chain, vec![self.get_transaction(hash).await?]).into_iter().next())
     }
 
     async fn get_transactions_by_address(&self, request: TransactionsRequest) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {

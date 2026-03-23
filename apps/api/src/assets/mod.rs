@@ -2,6 +2,7 @@ pub mod cilent;
 mod filter;
 mod model;
 
+use crate::chain::ChainClient;
 use crate::params::{AssetIdParam, SearchQueryParam};
 use crate::responders::{ApiError, ApiResponse};
 pub use cilent::{AssetsClient, SearchClient};
@@ -29,13 +30,8 @@ pub async fn get_assets(asset_ids: Json<Vec<String>>, client: &State<Mutex<Asset
 }
 
 #[post("/assets/add", format = "json", data = "<asset_id>")]
-pub async fn add_asset(
-    asset_id: Json<Vec<AssetId>>,
-    client: &State<Mutex<AssetsClient>>,
-    chain_client: &State<Mutex<crate::chain::ChainClient>>,
-) -> Result<ApiResponse<Vec<Asset>>, ApiError> {
-    let asset_id = asset_id.0.first().ok_or(ApiError::BadRequest("Missing asset_id".to_string()))?;
-
+pub async fn add_asset(asset_id: Json<AssetId>, client: &State<Mutex<AssetsClient>>, chain_client: &State<Mutex<ChainClient>>) -> Result<ApiResponse<Asset>, ApiError> {
+    let asset_id = asset_id.0;
     let asset = chain_client
         .lock()
         .await
@@ -43,7 +39,7 @@ pub async fn add_asset(
         .await?;
     client.lock().await.add_assets(vec![asset.clone()])?;
 
-    Ok(vec![asset].into())
+    Ok(asset.into())
 }
 
 #[get("/assets/search?<query>&<chains>&<tags>&<limit>&<offset>")]

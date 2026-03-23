@@ -1,5 +1,6 @@
 pub mod device_stream_consumer;
 pub mod store_charts_consumer;
+pub mod store_pending_transactions_consumer;
 pub mod store_prices_consumer;
 pub mod store_transactions_consumer;
 pub mod store_transactions_consumer_config;
@@ -13,7 +14,7 @@ use std::sync::Arc;
 use crate::client::SwapVaultAddressClient;
 use cacher::CacherClient;
 use pricer::PriceClient;
-use primitives::ConfigKey;
+use primitives::{ConfigKey, TransactionId};
 use settings::Settings;
 use storage::{ConfigCacher, Database};
 use streamer::{ChartsPayload, ConsumerStatusReporter, DeviceStreamPayload, PricesPayload, QueueName, ShutdownReceiver, TransactionsPayload, run_consumer};
@@ -24,6 +25,7 @@ use crate::pusher::Pusher;
 
 use device_stream_consumer::DeviceStreamConsumer;
 use store_charts_consumer::StoreChartsConsumer;
+use store_pending_transactions_consumer::StorePendingTransactionsConsumer;
 use store_prices_consumer::StorePricesConsumer;
 
 pub async fn run_consumer_store(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
@@ -34,6 +36,7 @@ pub async fn run_consumer_store(settings: Settings, shutdown_rx: ShutdownReceive
         tokio::spawn(run_store_transactions(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
         tokio::spawn(run_store_prices(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
         tokio::spawn(run_store_charts(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
+        tokio::spawn(run_store_pending_transactions(settings.clone(), shutdown_rx.clone(), reporter.clone())),
         tokio::spawn(run_device_stream(settings.clone(), shutdown_rx.clone(), reporter.clone())),
     ])
     .await?;
@@ -118,4 +121,17 @@ async fn run_device_stream(settings: Arc<Settings>, shutdown_rx: ShutdownReceive
     let cacher_client = CacherClient::new(&settings.redis.url).await;
     let consumer = DeviceStreamConsumer { cacher_client };
     run_consumer::<DeviceStreamPayload, DeviceStreamConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx, reporter).await
+}
+
+async fn run_store_pending_transactions(
+    settings: Arc<Settings>,
+    shutdown_rx: ShutdownReceiver,
+    reporter: Arc<dyn ConsumerStatusReporter>,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let queue = QueueName::StorePendingTransactions;
+    let (name, stream_reader) = reader_for_queue(&settings, &queue, &shutdown_rx).await?;
+    let cacher = CacherClient::new(&settings.redis.url).await;
+    let consumer = StorePendingTransactionsConsumer::new(cacher);
+    run_consumer::<TransactionId, StorePendingTransactionsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx, reporter)
+        .await
 }

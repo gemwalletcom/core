@@ -8,6 +8,7 @@ use dynode::metrics::Metrics;
 use dynode::monitoring::{NodeMonitor, NodeService};
 use dynode::proxy::{ProxyRequestBuilder, ProxyResponse};
 use dynode::response::{ErrorResponse, ProxyRocketResponse};
+use dynode::webhook::DynodeBroadcastWebhookClient;
 use gem_tracing::{error_with_fields, info_with_fields};
 use primitives::Chain;
 use reqwest::Method;
@@ -139,6 +140,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         prefix: config.metrics.prefix.clone(),
     };
     let metrics = Metrics::new(metrics_config);
+    let broadcast_webhook = DynodeBroadcastWebhookClient::new(config.webhook.clone())?;
     let client = gem_client::builder().timeout(config.request.timeout).build()?;
     let node_service = NodeService::new(
         chains,
@@ -148,6 +150,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         config.monitoring.clone(),
         config.retry.clone(),
         config.headers.clone(),
+        broadcast_webhook,
     );
     if node_service.monitoring_config.enabled {
         let monitor = NodeMonitor::new(

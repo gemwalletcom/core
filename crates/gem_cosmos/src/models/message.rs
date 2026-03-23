@@ -185,7 +185,7 @@ impl CosmosMessage {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "signer"))]
 mod tests {
     use super::*;
 

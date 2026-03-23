@@ -1,24 +1,18 @@
 use async_trait::async_trait;
 use chain_traits::{ChainTransactions, TransactionsRequest};
-use primitives::{BroadcastOptions, Transaction};
+use primitives::Transaction;
 use std::error::Error;
 
 use gem_client::Client;
 
-use crate::{models::Address, provider::transactions_mapper::map_transactions, rpc::client::BitcoinClient};
+use crate::{
+    models::Address,
+    provider::transactions_mapper::{map_transaction, map_transactions},
+    rpc::client::BitcoinClient,
+};
 
 #[async_trait]
 impl<C: Client> ChainTransactions for BitcoinClient<C> {
-    async fn transaction_broadcast(&self, data: String, _options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
-        let result = self.broadcast_transaction(data).await?;
-
-        if let Some(error) = result.error {
-            return Err(error.message().into());
-        }
-
-        result.result.ok_or_else(|| "unknown hash".into())
-    }
-
     async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         let mut transactions = Vec::new();
         let mut page = 1;
@@ -36,6 +30,15 @@ impl<C: Client> ChainTransactions for BitcoinClient<C> {
         }
 
         Ok(transactions)
+    }
+
+    async fn get_transaction_by_hash(&self, hash: String) -> Result<Option<Transaction>, Box<dyn Error + Sync + Send>> {
+        let transaction = self.get_transaction(&hash).await?;
+        if transaction.block_height <= 0 || transaction.block_time <= 0 {
+            return Ok(None);
+        }
+
+        Ok(map_transaction(self.get_chain(), &transaction))
     }
 
     async fn get_transactions_by_address(&self, request: TransactionsRequest) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {

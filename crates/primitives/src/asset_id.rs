@@ -26,8 +26,21 @@ impl<'de> Deserialize<'de> for AssetId {
     where
         D: Deserializer<'de>,
     {
-        let s = String::deserialize(deserializer)?;
-        AssetId::new(&s).ok_or_else(|| de::Error::custom("Invalid AssetId"))
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum AssetIdInput {
+            String(String),
+            Object {
+                chain: Chain,
+                #[serde(alias = "tokenId")]
+                token_id: Option<String>,
+            },
+        }
+
+        match AssetIdInput::deserialize(deserializer)? {
+            AssetIdInput::String(value) => AssetId::new(&value).ok_or_else(|| de::Error::custom("Invalid AssetId")),
+            AssetIdInput::Object { chain, token_id } => Ok(AssetId { chain, token_id }),
+        }
     }
 }
 
@@ -184,6 +197,20 @@ mod tests {
         let asset_id = AssetId::new("ton_EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT").unwrap();
         assert_eq!(asset_id.chain, Chain::Ton);
         assert_eq!(asset_id.token_id, Some("EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT".to_owned()));
+    }
+
+    #[test]
+    fn test_deserialize_asset_id_object_camel_case() {
+        let asset_id: AssetId = serde_json::from_str(r#"{"chain":"solana","tokenId":"BPxxfRCXkUVhig4HS1Lh7kZqV6SPJhzfEk4x6fVBjPCy"}"#).unwrap();
+        assert_eq!(asset_id.chain, Chain::Solana);
+        assert_eq!(asset_id.token_id, Some("BPxxfRCXkUVhig4HS1Lh7kZqV6SPJhzfEk4x6fVBjPCy".to_string()));
+    }
+
+    #[test]
+    fn test_deserialize_asset_id_object_native() {
+        let asset_id: AssetId = serde_json::from_str(r#"{"chain":"ethereum"}"#).unwrap();
+        assert_eq!(asset_id.chain, Chain::Ethereum);
+        assert_eq!(asset_id.token_id, None);
     }
 
     #[test]

@@ -1,0 +1,14 @@
+use chain_traits::ChainRequestClassifier;
+use primitives::{ChainRequest, ChainRequestType};
+
+use crate::provider::BroadcastProvider;
+
+impl ChainRequestClassifier for BroadcastProvider {
+    fn classify_request(&self, request: ChainRequest<'_>) -> ChainRequestType {
+        if request.is_json_rpc_method("send_tx") {
+            ChainRequestType::Broadcast
+        } else {
+            ChainRequestType::Unknown
+        }
+    }
+}

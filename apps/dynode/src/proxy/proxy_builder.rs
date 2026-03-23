@@ -4,16 +4,26 @@ use crate::config::HeadersConfig;
 use crate::config::MetricsConfig;
 use crate::metrics::Metrics;
 use crate::proxy::{NodeDomain, ProxyRequestService, proxy_request::ProxyRequest};
+use crate::webhook::DynodeBroadcastWebhookClient;
+use settings_chain::BroadcastProviders;
+use std::sync::Arc;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ProxyBuilder {
     service: ProxyRequestService,
 }
 
 impl ProxyBuilder {
-    pub fn new(metrics: Metrics, cache: RequestCache, client: reqwest::Client, headers_config: HeadersConfig) -> Self {
+    pub fn new(
+        metrics: Metrics,
+        cache: RequestCache,
+        client: reqwest::Client,
+        headers_config: HeadersConfig,
+        broadcast_webhook: DynodeBroadcastWebhookClient,
+        broadcast_providers: Arc<BroadcastProviders>,
+    ) -> Self {
         Self {
-            service: ProxyRequestService::new(metrics, cache, client, headers_config),
+            service: ProxyRequestService::new(metrics, cache, client, headers_config, broadcast_webhook, broadcast_providers),
         }
     }
 
@@ -26,6 +36,7 @@ impl ProxyBuilder {
 mod tests {
     use super::*;
     use crate::config::CacheConfig;
+    use primitives::Chain;
     use reqwest::header;
     use std::collections::HashMap;
 
@@ -42,7 +53,9 @@ mod tests {
         let cache = RequestCache::new(CacheConfig::default());
         let client = reqwest::Client::new();
         let headers_config = create_test_headers_config();
+        let broadcast_webhook = DynodeBroadcastWebhookClient::disabled();
+        let broadcast_providers = Arc::new(BroadcastProviders::from_chains([Chain::Ethereum]));
 
-        let _builder = ProxyBuilder::new(metrics, cache, client, headers_config);
+        let _builder = ProxyBuilder::new(metrics, cache, client, headers_config, broadcast_webhook, broadcast_providers);
     }
 }

@@ -91,6 +91,7 @@ impl FiatQuoteResponse {
 impl FiatTransaction {
     pub fn mock() -> Self {
         FiatTransaction {
+            id: "quote_123".to_string(),
             asset_id: AssetId::from_chain(Chain::Bitcoin),
             transaction_type: FiatQuoteType::Buy,
             provider_id: FiatProviderName::MoonPay,

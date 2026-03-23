@@ -321,7 +321,7 @@ impl FiatClient {
             None => Some(self.get_ip_address(ip_address).await?.alpha2),
         };
         let pending_transaction = FiatTransaction::new_pending(&data, country, url.provider_transaction_id.clone());
-        let pending_transaction_row = storage::models::NewFiatTransactionRow::new(pending_transaction, device_id, quote.id.clone());
+        let pending_transaction_row = storage::models::NewFiatTransactionRow::new(pending_transaction, device_id);
 
         self.database.fiat()?.add_fiat_transaction(pending_transaction_row)?;
 

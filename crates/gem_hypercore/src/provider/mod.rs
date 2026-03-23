@@ -10,16 +10,20 @@ pub mod perpetual_mapper;
 pub mod preload;
 pub mod preload_cache;
 pub mod preload_mapper;
+pub mod request_classifier;
 pub mod staking;
 pub mod staking_mapper;
 pub mod state;
 pub mod testkit;
 pub mod token;
+pub mod transaction_broadcast;
 pub mod transaction_state;
 pub mod transaction_state_mapper;
 pub mod transactions;
 pub mod transactions_mapper;
 pub mod websocket_mapper;
+
+pub struct BroadcastProvider;
 
 use crate::rpc::client::HyperCoreClient;
 

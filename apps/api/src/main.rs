@@ -98,8 +98,10 @@ fn mount_routes(rocket: Rocket<Build>, metrics_path: &str) -> Rocket<Build> {
                 chain::address::get_assets,
                 chain::address::get_transactions,
                 chain::transaction::get_transaction,
+                chain::transaction::add_transaction,
                 webhooks::create_support_webhook,
                 webhooks::create_support_bot_webhook,
+                webhooks::create_broadcast_webhook,
                 referral::get_rewards_leaderboard,
                 swap::near_intents::post_quote,
             ],
@@ -247,7 +249,8 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(notifications_client))
         .manage(Mutex::new(near_intents_client))
         .manage(Mutex::new(portfolio_client))
-        .manage(auth_client);
+        .manage(auth_client)
+        .manage(stream_producer);
 
     mount_routes(rocket, &settings.metrics.path)
 }

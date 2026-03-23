@@ -54,6 +54,9 @@ pub enum CacheKey<'a> {
     PerpetualActiveAddresses(&'a str),
     PerpetualPriorityAddresses(&'a str),
     PerpetualObserverCheckpoint(&'a str, &'a str),
+
+    // Transaction keys
+    PendingTransactions(&'a str),
 }
 
 pub fn cache_keys<'a, T: AsRef<str>>(items: &'a [T], variant: impl Fn(&'a str) -> CacheKey<'a>) -> Vec<String> {
@@ -93,6 +96,7 @@ impl CacheKey<'_> {
             Self::PerpetualActiveAddresses(chain) => format!("perpetual:active_addresses:{}", chain),
             Self::PerpetualPriorityAddresses(chain) => format!("perpetual:priority_addresses:{}", chain),
             Self::PerpetualObserverCheckpoint(chain, address) => format!("perpetual:last_seen:{}:{}", chain, address),
+            Self::PendingTransactions(chain) => format!("transactions:pending:{}", chain),
         }
     }
 
@@ -128,6 +132,7 @@ impl CacheKey<'_> {
             Self::PerpetualActiveAddresses(_) => 30 * SECONDS_PER_MINUTE,
             Self::PerpetualPriorityAddresses(_) => 30 * SECONDS_PER_MINUTE,
             Self::PerpetualObserverCheckpoint(_, _) => 30 * SECONDS_PER_DAY,
+            Self::PendingTransactions(_) => 30 * SECONDS_PER_DAY,
         }
     }
 }

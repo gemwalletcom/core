@@ -1,11 +1,16 @@
 pub mod balances;
 pub mod balances_mapper;
 pub mod preload;
+pub mod request_classifier;
 pub mod state;
 pub mod state_mapper;
 pub mod testkit;
 pub mod token;
+pub mod transaction_broadcast;
+pub mod transaction_broadcast_mapper;
 pub mod transaction_state;
 pub mod transaction_state_mapper;
 pub mod transactions;
 pub mod transactions_mapper;
+
+pub struct BroadcastProvider;

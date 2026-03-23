@@ -1,0 +1,154 @@
+use gem_tracing::{error_with_fields, info_with_fields};
+use primitives::{ChainRequest, ChainRequestProtocol, ChainRequestType, TransactionId};
+use settings_chain::BroadcastProviders;
+
+use crate::config::WebhookConfig;
+use crate::jsonrpc_types::{JsonRpcRequest, RequestType};
+use crate::proxy::proxy_request::ProxyRequest;
+
+#[derive(Debug, Clone)]
+pub struct DynodeBroadcastWebhookClient {
+    enabled: bool,
+    url: String,
+    client: reqwest::Client,
+}
+
+impl DynodeBroadcastWebhookClient {
+    pub fn new(config: WebhookConfig) -> Result<Self, reqwest::Error> {
+        Ok(Self {
+            enabled: config.enabled,
+            url: config.url,
+            client: reqwest::Client::builder().timeout(config.timeout).build()?,
+        })
+    }
+
+    #[cfg(test)]
+    pub fn disabled() -> Self {
+        Self {
+            enabled: false,
+            url: String::new(),
+            client: reqwest::Client::new(),
+        }
+    }
+
+    pub fn notify_broadcast(&self, request: &ProxyRequest, response_status: u16, response_body: &[u8], broadcast_providers: &BroadcastProviders) {
+        if !self.enabled || self.url.is_empty() {
+            return;
+        }
+
+        if !is_broadcast_request(request, broadcast_providers) || !(200..300).contains(&response_status) {
+            return;
+        }
+
+        let response = match std::str::from_utf8(response_body) {
+            Ok(response) => response,
+            Err(err) => {
+                error_with_fields!(
+                    "Dynode broadcast webhook decode failed",
+                    &err,
+                    chain = request.chain.as_ref(),
+                    request_id = request.id.as_str(),
+                );
+                return;
+            }
+        };
+
+        let Some(identifier) = broadcast_providers.decode_transaction_broadcast(request.chain, response) else {
+            return;
+        };
+
+        self.notify(TransactionId::new(request.chain, identifier), request.id.clone());
+    }
+
+    fn notify(&self, payload: TransactionId, request_id: String) {
+        let chain = payload.chain;
+
+        let url = self.url.clone();
+        let client = self.client.clone();
+
+        tokio::spawn(async move {
+            match client.post(&url).json(&payload).send().await {
+                Ok(response) => {
+                    if !response.status().is_success() {
+                        info_with_fields!(
+                            "Dynode broadcast webhook delivery failed",
+                            chain = chain.as_ref(),
+                            request_id = request_id.as_str(),
+                            status = response.status().as_u16(),
+                        );
+                    }
+                }
+                Err(err) => {
+                    error_with_fields!("Dynode broadcast webhook request failed", &err, chain = chain.as_ref(), request_id = request_id.as_str(),);
+                }
+            }
+        });
+    }
+}
+
+fn is_broadcast_request(request: &ProxyRequest, broadcast_providers: &BroadcastProviders) -> bool {
+    let chain_request = match request.request_type() {
+        RequestType::JsonRpc(JsonRpcRequest::Single(call)) => ChainRequest::new(ChainRequestProtocol::JsonRpc, call.method.as_str(), request.path.as_str(), &request.body),
+        RequestType::Regular { .. } => ChainRequest::new(ChainRequestProtocol::Http, request.method.as_str(), request.path.as_str(), &request.body),
+        RequestType::JsonRpc(JsonRpcRequest::Batch(_)) => return false,
+    };
+
+    broadcast_providers.classify_request(request.chain, chain_request) == ChainRequestType::Broadcast
+}
+#[cfg(test)]
+mod tests {
+    use reqwest::header::HeaderMap;
+
+    use super::*;
+    use crate::proxy::proxy_request::ProxyRequest;
+    use primitives::Chain;
+    use settings_chain::BroadcastProviders;
+
+    fn make_request(chain: Chain, method: reqwest::Method, path: &str, body: &[u8]) -> ProxyRequest {
+        ProxyRequest::new(
+            method,
+            HeaderMap::new(),
+            body.to_vec(),
+            path.to_string(),
+            path.to_string(),
+            "example.com".to_string(),
+            "test-agent".to_string(),
+            chain,
+        )
+    }
+
+    fn broadcast_providers() -> BroadcastProviders {
+        BroadcastProviders::from_chains([Chain::Ethereum, Chain::Tron])
+    }
+
+    #[test]
+    fn test_detect_broadcast_jsonrpc_single() {
+        let request = make_request(
+            Chain::Ethereum,
+            reqwest::Method::POST,
+            "/rpc",
+            br#"{"jsonrpc":"2.0","method":"eth_sendRawTransaction","params":["0xdeadbeef"],"id":1}"#,
+        );
+
+        assert!(is_broadcast_request(&request, &broadcast_providers()));
+    }
+
+    #[test]
+    fn test_detect_broadcast_batch_jsonrpc_skipped() {
+        let request = make_request(
+            Chain::Ethereum,
+            reqwest::Method::POST,
+            "/rpc",
+            br#"[{"jsonrpc":"2.0","method":"eth_sendRawTransaction","params":["0x1"],"id":1},{"jsonrpc":"2.0","method":"eth_sendRawTransaction","params":["0x2"],"id":2}]"#,
+        );
+
+        assert!(!is_broadcast_request(&request, &broadcast_providers()));
+    }
+
+    #[test]
+    fn test_detect_broadcast_http_path() {
+        let request = make_request(Chain::Tron, reqwest::Method::POST, "/wallet/broadcasttransaction", br#"{"txID":"abc"}"#);
+
+        assert!(is_broadcast_request(&request, &broadcast_providers()));
+    }
+}
