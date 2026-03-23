@@ -45,7 +45,13 @@ For the given provider, verify each item by reading the provider code and relate
 - [ ] `supported_assets()` returns correct `SwapperChainAsset` list
 - [ ] Uses asset constants from `primitives::asset_constants` (not inline `AssetId::from_token`)
 
-### 10. Tests
+### 10. Swap Transaction Indexing
+- [ ] `get_vault_addresses()` returns `deposit` addresses (user sends to vault) and `send` addresses (vault sends to user)
+- [ ] Deposit addresses enable `is_cross_chain_swap()` detection in `cross_chain.rs`
+- [ ] Send addresses enable `is_from_vault_address()` detection for incoming swap completions
+- [ ] If the provider requires memo/payload validation (like Thorchain), `is_valid_swap_transaction()` handles it
+
+### 11. Tests
 - [ ] Unit tests cover quote parsing, error mapping, and asset mapping
 - [ ] Integration tests gated behind `#[cfg(feature = "swap_integration_tests")]`
 - [ ] Test fixtures in `<provider>/test/` directory
