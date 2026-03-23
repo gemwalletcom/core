@@ -1,0 +1,32 @@
+use serde::Deserialize;
+use std::collections::HashMap;
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Asset {
+    pub id: String,
+    pub blockchains: Vec<Blockchain>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct Blockchain {
+    pub id: String,
+    pub address: Option<String>,
+    pub unsupported_countries: UnsupportedCountries,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum UnsupportedCountries {
+    Map(HashMap<String, Vec<String>>),
+    Empty(Vec<()>),
+}
+
+impl UnsupportedCountries {
+    pub fn list_map(self) -> HashMap<String, Vec<String>> {
+        match self {
+            UnsupportedCountries::Map(map) => map,
+            UnsupportedCountries::Empty(_) => HashMap::new(),
+        }
+    }
+}

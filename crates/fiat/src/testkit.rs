@@ -3,7 +3,9 @@ use crate::client::FiatClient;
 #[cfg(all(test, feature = "fiat_integration_tests"))]
 use crate::model::FiatMapping;
 #[cfg(all(test, feature = "fiat_integration_tests"))]
-use crate::providers::{mercuryo::client::MercuryoClient, moonpay::client::MoonPayClient, paybis::client::PaybisClient, transak::client::TransakClient};
+use crate::providers::{
+    banxa::client::BanxaClient, mercuryo::client::MercuryoClient, moonpay::client::MoonPayClient, paybis::client::PaybisClient, transak::client::TransakClient,
+};
 #[cfg(all(test, feature = "fiat_integration_tests"))]
 use settings::Settings;
 
@@ -32,6 +34,13 @@ pub fn create_paybis_test_client() -> PaybisClient {
     let settings = get_test_settings();
     let client = FiatClient::request_client(settings.fiat.timeout);
     PaybisClient::new(client, settings.paybis.key.public, settings.paybis.key.secret)
+}
+
+#[cfg(all(test, feature = "fiat_integration_tests"))]
+pub fn create_banxa_test_client() -> BanxaClient {
+    let settings = get_test_settings();
+    let client = FiatClient::request_client(settings.fiat.timeout);
+    BanxaClient::new(client, settings.banxa.url, settings.banxa.key.public, settings.banxa.key.secret)
 }
 
 #[cfg(all(test, feature = "fiat_integration_tests"))]

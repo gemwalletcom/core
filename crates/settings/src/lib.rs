@@ -23,8 +23,9 @@ pub struct Settings {
     pub moonpay: MoonPay,
     pub transak: Transak,
     pub mercuryo: Mercuryo,
+    pub banxa: UrlKeySettings,
     pub paybis: Paybis,
-    pub flashnet: Flashnet,
+    pub flashnet: UrlKeySettings,
 
     pub prices: Prices,
     pub coingecko: CoinGecko,
@@ -130,7 +131,12 @@ pub struct UrlSecretKeySettings {
     pub key: KeySecret,
 }
 pub type UD = UrlSecretKeySettings;
-pub type Flashnet = ScanProvider;
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct UrlKeySettings {
+    pub url: String,
+    pub key: Key,
+}
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Prices {
@@ -319,14 +325,8 @@ pub struct PusherIOS {
 pub struct Scan {
     #[serde(deserialize_with = "duration::deserialize")]
     pub timeout: Duration,
-    pub hashdit: ScanProvider,
-    pub goplus: ScanProvider,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct ScanProvider {
-    pub url: String,
-    pub key: Key,
+    pub hashdit: UrlKeySettings,
+    pub goplus: UrlKeySettings,
 }
 
 impl Settings {

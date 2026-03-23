@@ -82,22 +82,21 @@ impl FiatProviderName {
         }
     }
     pub fn as_fiat_provider(&self) -> FiatProvider {
-        let enabled = *self != Self::Banxa;
         FiatProvider {
             id: *self,
             name: self.name().to_owned(),
             image_url: None,
             priority: None,
             threshold_bps: None,
-            enabled,
-            buy_enabled: enabled,
-            sell_enabled: enabled,
+            enabled: true,
+            buy_enabled: true,
+            sell_enabled: true,
             payment_methods: vec![],
         }
     }
 
     pub fn all() -> Vec<Self> {
-        vec![Self::Mercuryo, Self::Transak, Self::MoonPay, Self::Paybis, Self::Flashnet]
+        vec![Self::Mercuryo, Self::Transak, Self::MoonPay, Self::Banxa, Self::Paybis, Self::Flashnet]
     }
 }
 
