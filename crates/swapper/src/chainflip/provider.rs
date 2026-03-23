@@ -30,8 +30,8 @@ const VAULT_ETH: &str = "0xF5e10380213880111522dd0efD3dbb45b9f62Bcc";
 const VAULT_ARB: &str = "0x79001a5e762f3bEFC8e5871b42F6734e00498920";
 const VAULT_SOL: &str = "J88B7gmadHzTNGiy54c9Ms8BsEXNdB2fntFyhKpk3qoT";
 
-// Solana vault swap: tx fee (5K) + createAccount rent (2.31M) + event transfer (223K) ≈ 2.54M lamports
-const SOLANA_VAULT_SWAP_RESERVE: u64 = 3_000_000;
+// Solana vault swap: tx fee (5K) + createAccount rent (2.31M) + event transfer (223K) + wallet rent exemption (891K) ≈ 3.43M lamports
+const SOLANA_VAULT_SWAP_RESERVE: u64 = 4_000_000;
 
 #[derive(Debug)]
 pub struct ChainflipProvider<CX, BR>
