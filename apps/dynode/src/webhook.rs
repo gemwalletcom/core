@@ -32,57 +32,73 @@ impl DynodeBroadcastWebhookClient {
     }
 
     pub fn notify_broadcast(&self, request: &ProxyRequest, response_status: u16, response_body: &[u8], broadcast_providers: &BroadcastProviders) {
-        if !self.enabled || self.url.is_empty() {
+        if !self.should_notify(request, response_status, broadcast_providers) {
             return;
         }
 
-        if !is_broadcast_request(request, broadcast_providers) || !(200..300).contains(&response_status) {
-            return;
-        }
-
-        let response = match std::str::from_utf8(response_body) {
-            Ok(response) => response,
-            Err(err) => {
-                error_with_fields!(
-                    "Dynode broadcast webhook decode failed",
-                    &err,
-                    chain = request.chain.as_ref(),
-                    request_id = request.id.as_str(),
-                );
-                return;
-            }
-        };
-
-        let Some(identifier) = broadcast_providers.decode_transaction_broadcast(request.chain, response) else {
+        let Some(payload) = self.extract_payload(request, response_body, broadcast_providers) else {
             return;
         };
 
-        self.notify(TransactionId::new(request.chain, identifier), request.id.clone());
+        self.spawn_notify(payload, request.id.clone());
     }
 
-    fn notify(&self, payload: TransactionId, request_id: String) {
-        let chain = payload.chain;
+    fn should_notify(&self, request: &ProxyRequest, response_status: u16, broadcast_providers: &BroadcastProviders) -> bool {
+        self.enabled && !self.url.is_empty() && is_broadcast_request(request, broadcast_providers) && is_success_status(response_status)
+    }
 
+    fn extract_payload(&self, request: &ProxyRequest, response_body: &[u8], broadcast_providers: &BroadcastProviders) -> Option<TransactionId> {
+        let response = parse_response_body(request, response_body)?;
+        let identifier = broadcast_providers.decode_transaction_broadcast(request.chain, response)?;
+        Some(TransactionId::new(request.chain, identifier))
+    }
+
+    fn spawn_notify(&self, payload: TransactionId, request_id: String) {
         let url = self.url.clone();
         let client = self.client.clone();
 
-        tokio::spawn(async move {
-            match client.post(&url).json(&payload).send().await {
-                Ok(response) => {
-                    if !response.status().is_success() {
-                        info_with_fields!(
-                            "Dynode broadcast webhook delivery failed",
-                            chain = chain.as_ref(),
-                            request_id = request_id.as_str(),
-                            status = response.status().as_u16(),
-                        );
-                    }
-                }
-                Err(err) => {
-                    error_with_fields!("Dynode broadcast webhook request failed", &err, chain = chain.as_ref(), request_id = request_id.as_str(),);
+        tokio::spawn(Self::deliver(client, url, payload, request_id));
+    }
+
+    async fn deliver(client: reqwest::Client, url: String, payload: TransactionId, request_id: String) {
+        let transaction_id = payload.to_string();
+
+        match client.post(&url).json(&payload).send().await {
+            Ok(response) => {
+                if response.status().is_success() {
+                    info_with_fields!("broadcast webhook delivered", transaction_id = transaction_id.as_str(), request_id = request_id.as_str(),);
+                } else {
+                    info_with_fields!(
+                        "broadcast webhook delivery failed",
+                        transaction_id = transaction_id.as_str(),
+                        request_id = request_id.as_str(),
+                        status = response.status().as_u16(),
+                    );
                 }
             }
-        });
+            Err(err) => {
+                error_with_fields!(
+                    "broadcast webhook request failed",
+                    &err,
+                    transaction_id = transaction_id.as_str(),
+                    request_id = request_id.as_str(),
+                );
+            }
+        }
+    }
+}
+
+fn is_success_status(status: u16) -> bool {
+    (200..300).contains(&status)
+}
+
+fn parse_response_body<'a>(request: &ProxyRequest, response_body: &'a [u8]) -> Option<&'a str> {
+    match std::str::from_utf8(response_body) {
+        Ok(response) => Some(response),
+        Err(err) => {
+            error_with_fields!("broadcast webhook decode failed", &err, chain = request.chain.as_ref(), request_id = request.id.as_str(),);
+            None
+        }
     }
 }
 
@@ -95,6 +111,7 @@ fn is_broadcast_request(request: &ProxyRequest, broadcast_providers: &BroadcastP
 
     broadcast_providers.classify_request(request.chain, chain_request) == ChainRequestType::Broadcast
 }
+
 #[cfg(test)]
 mod tests {
     use reqwest::header::HeaderMap;

@@ -18,12 +18,6 @@ pub struct AdminConfig {
     pub token: String,
 }
 
-impl AdminConfig {
-    pub fn new(token: String) -> Self {
-        Self { token }
-    }
-}
-
 pub struct AdminAuthorized;
 
 #[rocket::async_trait]
@@ -78,7 +72,7 @@ mod tests {
 
     #[rocket::async_test]
     async fn test_invalid_token_returns_unauthorized() {
-        let client = Client::tracked(rocket(AdminConfig::new("secret".to_string()))).await.unwrap();
+        let client = Client::tracked(rocket(AdminConfig { token: "secret".to_string() })).await.unwrap();
 
         let response = client.get("/protected").header(bearer_header("wrong")).dispatch().await;
 
@@ -87,7 +81,7 @@ mod tests {
 
     #[rocket::async_test]
     async fn test_correct_token_returns_ok() {
-        let client = Client::tracked(rocket(AdminConfig::new("secret".to_string()))).await.unwrap();
+        let client = Client::tracked(rocket(AdminConfig { token: "secret".to_string() })).await.unwrap();
 
         let response = client.get("/protected").header(bearer_header("secret")).dispatch().await;
 
@@ -96,7 +90,7 @@ mod tests {
 
     #[rocket::async_test]
     async fn test_enabled_with_empty_token_returns_internal_server_error() {
-        let client = Client::tracked(rocket(AdminConfig::new(String::new()))).await.unwrap();
+        let client = Client::tracked(rocket(AdminConfig { token: String::new() })).await.unwrap();
 
         let response = client.get("/protected").dispatch().await;
 

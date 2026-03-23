@@ -199,7 +199,8 @@ impl CacherClient {
         }
         pipe.cmd("EXPIRE").arg(&key_str).arg(ttl).ignore();
         pipe.cmd("ZCARD").arg(&key_str);
-        Ok(pipe.query_async(&mut self.connection.clone()).await?)
+        let (count,): (usize,) = pipe.query_async(&mut self.connection.clone()).await?;
+        Ok(count)
     }
 
     pub async fn remove_from_sorted_set_cached(&self, key: CacheKey<'_>, members: &[String]) -> Result<usize, Box<dyn Error + Send + Sync>> {

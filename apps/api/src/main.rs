@@ -258,7 +258,9 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(stream_producer);
 
     if settings.api.admin.enabled {
-        rocket = rocket.manage(AdminConfig::new(settings.api.admin.token.clone()));
+        rocket = rocket.manage(AdminConfig {
+            token: settings.api.admin.token.clone(),
+        });
     }
 
     mount_routes(rocket, &settings.metrics.path, settings.api.admin.enabled)
