@@ -1,3 +1,4 @@
+use gem_tracing::info_with_fields;
 use primitives::TransactionId;
 use rocket::{State, post, serde::json::Json, tokio::sync::Mutex};
 use streamer::{FiatWebhook, QueueName, StreamProducer, SupportWebhookPayload};
@@ -21,7 +22,10 @@ impl WebhooksClient {
     }
 
     pub async fn process_broadcast_webhook(&self, payload: TransactionId) -> Result<Option<String>, Box<dyn std::error::Error + Send + Sync>> {
+        let transaction_id = payload.to_string();
+        info_with_fields!("received broadcast webhook", transaction_id = transaction_id.as_str());
         self.stream_producer.publish(QueueName::StorePendingTransactions, &payload).await?;
+        info_with_fields!("published broadcast webhook", transaction_id = transaction_id.as_str());
         Ok(Some(payload.hash))
     }
 }
