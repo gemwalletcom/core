@@ -79,7 +79,7 @@ extension ChartSceneViewModel {
             }
             let price = try priceService.getPrice(for: assetModel.asset.id)
             let rate = try priceService.getRate(currency: preferences.currency)
-            
+
             var charts = values.prices.map {
                 ChartDateValue(date: Date(timeIntervalSince1970: TimeInterval($0.timestamp)), value: Double($0.value) * rate)
             }
@@ -98,7 +98,7 @@ extension ChartSceneViewModel {
             )
             chartState = .data(model)
         } catch {
-            chartState = .error(error)
+            chartState.setError(error)
         }
     }
 

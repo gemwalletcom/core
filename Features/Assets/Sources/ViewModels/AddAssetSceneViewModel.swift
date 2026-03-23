@@ -5,6 +5,7 @@ import Primitives
 import SwiftUI
 import Blockchain
 import Components
+import PrimitivesComponents
 import Style
 import Localization
 import ChainService
@@ -80,7 +81,7 @@ extension AddAssetSceneViewModel {
             let asset = try await service.getTokenData(chain: chain, tokenId: address)
             state = .data(AddAssetViewModel(asset: asset))
         } catch {
-            state = .error(error)
+            state.setError(error)
         }
     }
 }

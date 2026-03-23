@@ -302,10 +302,8 @@ extension WalletSearchSceneViewModel {
             try await searchService.search(wallet: wallet, query: query, tag: tag)
             state = .data(true)
         } catch {
-            if !error.isCancelled {
-                state = .error(error)
-                debugLog("Search error: \(error)")
-            }
+            state.setError(error)
+            debugLog("Search error: \(error)")
         }
     }
 }

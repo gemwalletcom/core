@@ -329,11 +329,8 @@ extension SwapSceneViewModel {
                 onSwap?(transferData)
                 swapState.swapTransferData = .noData
             } catch {
-                if !error.isCancelled {
-                    swapState.swapTransferData = .error(error)
-
-                    debugLog("SwapScene get swap data error: \(error)")
-                }
+                swapState.swapTransferData.setError(error)
+                debugLog("SwapScene get swap data error: \(error)")
             }
         }
     }

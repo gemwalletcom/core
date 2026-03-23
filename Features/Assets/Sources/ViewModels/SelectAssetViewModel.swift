@@ -375,10 +375,8 @@ extension SelectAssetViewModel {
     }
 
     private func handle(error: any Error) {
-        if !error.isCancelled {
-            state = .error(error)
-            debugLog("SelectAssetScene scene error: \(error)")
-        }
+        state.setError(error)
+        debugLog("SelectAssetScene scene error: \(error)")
     }
 }
 
