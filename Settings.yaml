@@ -254,6 +254,9 @@ consumer:
 
 api:
   service: ""
+  admin:
+    enabled: false
+    token: ""
   auth:
     enabled: true
     tolerance: 5m

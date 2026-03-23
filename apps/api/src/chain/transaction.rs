@@ -2,6 +2,7 @@ use rocket::serde::json::Json;
 use rocket::{State, get, post, tokio::sync::Mutex};
 use streamer::{StreamProducer, StreamProducerQueue, TransactionsPayload};
 
+use crate::admin::AdminAuthorized;
 use crate::params::ChainParam;
 use crate::responders::{ApiError, ApiResponse};
 use primitives::{Transaction, TransactionId};
@@ -15,6 +16,7 @@ pub async fn get_transaction(chain: ChainParam, hash: &str, client: &State<Mutex
 
 #[post("/transactions/add", format = "json", data = "<transaction_id>")]
 pub async fn add_transaction(
+    _admin: AdminAuthorized,
     transaction_id: Json<TransactionId>,
     chain_client: &State<Mutex<ChainClient>>,
     stream_producer: &State<StreamProducer>,

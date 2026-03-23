@@ -1,3 +1,4 @@
+mod admin;
 mod assets;
 mod auth;
 mod catchers;
@@ -27,6 +28,7 @@ use strum::IntoEnumIterator;
 use ::fiat::FiatClient;
 use ::fiat::FiatProviderFactory;
 use ::nft::{NFTClient, NFTProviderConfig};
+use admin::AdminConfig;
 use api_connector::PusherClient;
 use assets::{AssetsClient, SearchClient};
 use cacher::CacherClient;
@@ -55,8 +57,8 @@ use swapper::swapper::GemSwapper;
 use webhooks::WebhooksClient;
 use websocket_prices::PriceObserverConfig;
 
-fn mount_routes(rocket: Rocket<Build>, metrics_path: &str) -> Rocket<Build> {
-    rocket
+fn mount_routes(rocket: Rocket<Build>, metrics_path: &str, admin_enabled: bool) -> Rocket<Build> {
+    let rocket = rocket
         .mount("/", routes![status::get_status, status::get_health])
         .mount(
             "/v1",
@@ -75,7 +77,6 @@ fn mount_routes(rocket: Rocket<Build>, metrics_path: &str) -> Rocket<Build> {
                 devices::delete_device,
                 assets::get_asset,
                 assets::get_assets,
-                assets::add_asset,
                 assets::get_assets_search,
                 assets::get_search,
                 chain::block::get_latest_block_number,
@@ -98,7 +99,6 @@ fn mount_routes(rocket: Rocket<Build>, metrics_path: &str) -> Rocket<Build> {
                 chain::address::get_assets,
                 chain::address::get_transactions,
                 chain::transaction::get_transaction,
-                chain::transaction::add_transaction,
                 webhooks::create_support_webhook,
                 webhooks::create_support_bot_webhook,
                 webhooks::create_broadcast_webhook,
@@ -149,7 +149,13 @@ fn mount_routes(rocket: Rocket<Build>, metrics_path: &str) -> Rocket<Build> {
             ],
         )
         .mount(metrics_path, routes![metrics::get_metrics])
-        .register("/", catchers![catchers::default_catcher])
+        .register("/", catchers![catchers::default_catcher]);
+
+    if admin_enabled {
+        rocket.mount("/v1/admin", routes![assets::add_asset, chain::transaction::add_transaction])
+    } else {
+        rocket
+    }
 }
 
 async fn rocket_api(settings: Settings) -> Rocket<Build> {
@@ -220,8 +226,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         expiry: settings.api.auth.jwt.expiry,
     };
     let auth_config = devices::auth_config::AuthConfig::new(settings.api.auth.enabled, settings.api.auth.tolerance, jwt_config);
-
-    let rocket = rocket::build()
+    let mut rocket = rocket::build()
         .manage(auth_config)
         .manage(database)
         .manage(Mutex::new(fiat_quotes_client))
@@ -252,7 +257,11 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(auth_client)
         .manage(stream_producer);
 
-    mount_routes(rocket, &settings.metrics.path)
+    if settings.api.admin.enabled {
+        rocket = rocket.manage(AdminConfig::new(settings.api.admin.token.clone()));
+    }
+
+    mount_routes(rocket, &settings.metrics.path, settings.api.admin.enabled)
 }
 
 async fn rocket_ws_prices(settings: Settings) -> Rocket<Build> {
@@ -322,7 +331,7 @@ mod tests {
 
     #[rocket::async_test]
     async fn test_no_route_collisions() {
-        let rocket = mount_routes(rocket::build(), "/metrics");
+        let rocket = mount_routes(rocket::build(), "/metrics", true);
         if let Err(e) = rocket.ignite().await {
             let error = format!("{:?}", e);
             assert!(!error.contains("Collisions"), "Route collisions detected: {error}");

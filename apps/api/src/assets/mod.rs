@@ -2,6 +2,7 @@ pub mod cilent;
 mod filter;
 mod model;
 
+use crate::admin::AdminAuthorized;
 use crate::chain::ChainClient;
 use crate::params::{AssetIdParam, SearchQueryParam};
 use crate::responders::{ApiError, ApiResponse};
@@ -30,7 +31,12 @@ pub async fn get_assets(asset_ids: Json<Vec<String>>, client: &State<Mutex<Asset
 }
 
 #[post("/assets/add", format = "json", data = "<asset_id>")]
-pub async fn add_asset(asset_id: Json<AssetId>, client: &State<Mutex<AssetsClient>>, chain_client: &State<Mutex<ChainClient>>) -> Result<ApiResponse<Asset>, ApiError> {
+pub async fn add_asset(
+    _admin: AdminAuthorized,
+    asset_id: Json<AssetId>,
+    client: &State<Mutex<AssetsClient>>,
+    chain_client: &State<Mutex<ChainClient>>,
+) -> Result<ApiResponse<Asset>, ApiError> {
     let asset_id = asset_id.0;
     let asset = chain_client
         .lock()

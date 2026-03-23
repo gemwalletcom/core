@@ -293,6 +293,7 @@ pub struct ConsumerError {
 pub struct API {
     pub service: String,
     pub auth: Auth,
+    pub admin: Admin,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -308,6 +309,12 @@ pub struct Jwt {
     pub secret: String,
     #[serde(deserialize_with = "duration::deserialize")]
     pub expiry: Duration,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Admin {
+    pub enabled: bool,
+    pub token: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]
