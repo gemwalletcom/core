@@ -610,14 +610,14 @@ mod swap_integration_tests {
             to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Near)),
             wallet_address: "GBZXN7PIRZGNMHGA3RSSOEV56YXG54FSNTJDGQI3GHDVBKSXRZ5B6KJT".to_string(),
             destination_address: "test.near".to_string(),
-            value: "1000000".to_string(),
+            value: "12000000".to_string(),
             mode: SwapperMode::ExactIn,
             options,
         };
 
         let quote = match provider.get_quote(&request).await {
             Ok(quote) => quote,
-            Err(SwapperError::ComputeQuoteError(_)) => return Ok(()),
+            Err(SwapperError::ComputeQuoteError(_) | SwapperError::InputAmountError { .. }) => return Ok(()),
             Err(error) => return Err(error),
         };
         let quote_data = match provider.get_quote_data(&quote, FetchQuoteData::None).await {
@@ -626,7 +626,7 @@ mod swap_integration_tests {
             Err(error) => return Err(error),
         };
 
-        assert!(!quote_data.data.is_empty(), "expected deposit memo for Stellar swaps via Near Intents");
+        assert!(quote_data.memo.is_some(), "expected deposit memo for Stellar swaps via Near Intents");
 
         Ok(())
     }

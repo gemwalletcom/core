@@ -1,4 +1,4 @@
-use super::model::{EvmStepData, RelayCurrency, RelayCurrencyDetail, RelayRequest, RelayRequestData, RelayRequestMetadata, RelayStatus, Step, StepData, StepItem};
+use super::model::{BitcoinStepData, EvmStepData, RelayCurrency, RelayCurrencyDetail, RelayRequest, RelayRequestData, RelayRequestMetadata, RelayStatus, Step, StepData, StepItem};
 
 impl RelayRequest {
     pub fn mock(status: RelayStatus, metadata: Option<RelayRequestMetadata>) -> Self {
@@ -32,6 +32,16 @@ impl Step {
                     data: Some(data.to_string()),
                     value: value.to_string(),
                 })),
+            }]),
+        }
+    }
+
+    pub fn mock_bitcoin(psbt: &str) -> Self {
+        Self {
+            id: "deposit".to_string(),
+            kind: "transaction".to_string(),
+            items: Some(vec![StepItem {
+                data: Some(StepData::Bitcoin(BitcoinStepData { psbt: psbt.to_string() })),
             }]),
         }
     }
