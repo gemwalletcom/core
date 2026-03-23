@@ -20,7 +20,7 @@ use crate::{
     amount_to_value,
     approval::check_approval_erc20,
     cross_chain::VaultAddresses,
-    fees::{DEFAULT_CHAINFLIP_FEE_BPS, apply_slippage_in_bp},
+    fees::{DEFAULT_CHAINFLIP_FEE_BPS, apply_slippage_in_bp, resolve_max_quote_value},
 };
 use primitives::{ChainType, chain::Chain, swap::QuoteAsset};
 
@@ -29,6 +29,9 @@ const DEFAULT_SWAP_ERC20_GAS_LIMIT: u64 = 100_000;
 const VAULT_ETH: &str = "0xF5e10380213880111522dd0efD3dbb45b9f62Bcc";
 const VAULT_ARB: &str = "0x79001a5e762f3bEFC8e5871b42F6734e00498920";
 const VAULT_SOL: &str = "J88B7gmadHzTNGiy54c9Ms8BsEXNdB2fntFyhKpk3qoT";
+
+// Solana vault swap: tx fee (5K) + createAccount rent (2.31M) + event transfer (223K) + wallet rent exemption (891K) ≈ 3.43M lamports
+const SOLANA_VAULT_SWAP_RESERVE: u64 = 4_000_000;
 
 #[derive(Debug)]
 pub struct ChainflipProvider<CX, BR>
@@ -62,6 +65,26 @@ where
         ChainflipAsset {
             chain: chain_name,
             asset: asset.symbol.clone(),
+        }
+    }
+
+    fn get_quote_value(request: &QuoteRequest) -> Result<String, SwapperError> {
+        let value = resolve_max_quote_value(request)?;
+        if !request.options.use_max_amount || !request.from_asset.asset_id().is_native() {
+            return Ok(value);
+        }
+        match request.from_asset.chain() {
+            Chain::Solana => {
+                let amount: u64 = value.parse().map_err(|_| SwapperError::ComputeQuoteError(format!("invalid amount: {value}")))?;
+                let reserved = amount.saturating_sub(SOLANA_VAULT_SWAP_RESERVE);
+                if reserved == 0 {
+                    return Err(SwapperError::InputAmountError {
+                        min_amount: Some(SOLANA_VAULT_SWAP_RESERVE.to_string()),
+                    });
+                }
+                Ok(reserved.to_string())
+            }
+            _ => Ok(value),
         }
     }
 }
@@ -151,12 +174,13 @@ where
             return Err(SwapperError::NoQuoteAvailable);
         }
 
+        let from_value = Self::get_quote_value(request)?;
         let src_asset = Self::map_asset_id(&request.from_asset);
         let dest_asset = Self::map_asset_id(&request.to_asset);
 
         let fee_bps = DEFAULT_CHAINFLIP_FEE_BPS;
         let quote_request = ChainflipQuoteRequest {
-            amount: request.value.clone(),
+            amount: from_value.clone(),
             src_chain: src_asset.chain.clone(),
             src_asset: src_asset.asset.clone(),
             dest_chain: dest_asset.chain,
@@ -177,7 +201,7 @@ where
         let (egress_amount, slippage_bps, eta_in_seconds, route_data) = get_best_quote(quotes, fee_bps);
 
         Ok(Quote {
-            from_value: request.value.clone(),
+            from_value,
             to_value: egress_amount.to_string(),
             data: ProviderData {
                 provider: self.provider.clone(),
@@ -198,7 +222,7 @@ where
         let source_asset = Self::map_asset_id(&quote.request.from_asset);
         let destination_asset = Self::map_asset_id(&quote.request.to_asset);
 
-        let input_amount: BigUint = quote.request.value.parse()?;
+        let input_amount: BigUint = quote.from_value.parse()?;
 
         let route_data: ChainflipRouteData = serde_json::from_str(&quote.data.routes[0].route_data)?;
         let chain = source_asset.chain.clone();
@@ -259,7 +283,7 @@ where
 
         match response {
             VaultSwapResponse::Evm(response) => {
-                let value = if from_asset.is_native() { quote.request.value.clone() } else { "0".to_string() };
+                let value = if from_asset.is_native() { quote.from_value.clone() } else { "0".to_string() };
 
                 let approval = if from_asset.chain.chain_type() == ChainType::Ethereum && !from_asset.is_native() {
                     let approval = check_approval_erc20(
@@ -282,7 +306,7 @@ where
             }
             VaultSwapResponse::Bitcoin(response) => Ok(SwapperQuoteData::new_contract(
                 response.deposit_address,
-                quote.request.value.clone(),
+                quote.from_value.clone(),
                 response.nulldata_payload,
                 None,
                 None,

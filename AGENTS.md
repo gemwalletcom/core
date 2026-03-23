@@ -14,6 +14,7 @@ Guidance for AI assistants (Claude Code, Gemini, Codex, etc.) collaborating on t
 - [Tests](skills/tests.md) — Test conventions, mocks, integration tests
 - [Defensive Programming](skills/defensive-programming.md) — Safety rules and exhaustive patterns
 - [Common Issues](skills/common-issues.md) — Known anti-patterns and their fixes
+- [Swapper Checklist](skills/swapper-checklist.md) — Integration checklist for swapper providers
 
 ## Task Completion
 

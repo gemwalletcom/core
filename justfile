@@ -45,7 +45,7 @@ test-all:
     cargo test --lib --bins --all
 
 test CRATE:
-    cargo test --all-features --package {{CRATE}}
+    cargo test --all-features --package {{CRATE}} -- --skip integration_tests
 
 test-integration:
     @echo "Running integration tests only..."

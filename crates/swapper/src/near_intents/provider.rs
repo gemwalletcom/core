@@ -610,7 +610,7 @@ mod swap_integration_tests {
             to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Near)),
             wallet_address: "GBZXN7PIRZGNMHGA3RSSOEV56YXG54FSNTJDGQI3GHDVBKSXRZ5B6KJT".to_string(),
             destination_address: "test.near".to_string(),
-            value: "1000000".to_string(),
+            value: "20000000".to_string(),
             mode: SwapperMode::ExactIn,
             options,
         };
