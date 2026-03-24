@@ -116,6 +116,7 @@ pub fn map_order(order: FlashnetOrder) -> FiatTransactionUpdate {
         transaction_hash: order.destination_tx_hash().map(str::to_string),
         address: order.recipient_address().map(str::to_string),
         fiat_amount: Some(fiat_amount),
+        fiat_currency: Some(Currency::USD.to_string()),
     }
 }
 
@@ -219,6 +220,7 @@ mod tests {
                 transaction_hash: Some("solana_sig_123".to_string()),
                 address: Some("8gw9b9rcoW1f7a8r6Rj7H57A9x5o7oJH5Q2M5xVwqpj1".to_string()),
                 fiat_amount: Some(1.2345),
+                fiat_currency: Some("USD".to_string()),
             }
         );
     }
@@ -237,6 +239,7 @@ mod tests {
                 transaction_hash: Some("solana_test_signature_completed".to_string()),
                 address: Some("solana_test_recipient_completed".to_string()),
                 fiat_amount: Some(24.737625),
+                fiat_currency: Some("USD".to_string()),
             }
         );
     }
@@ -255,6 +258,7 @@ mod tests {
                 transaction_hash: None,
                 address: Some("solana_test_recipient_processing".to_string()),
                 fiat_amount: Some(49.47525),
+                fiat_currency: Some("USD".to_string()),
             }
         );
     }

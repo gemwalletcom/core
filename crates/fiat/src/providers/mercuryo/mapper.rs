@@ -133,7 +133,13 @@ fn map_status(status: &str, withdraw_status: Option<&str>) -> FiatTransactionSta
     }
 }
 
-fn map_buy_like_transaction(status: &str, merchant_transaction_id: String, fiat_amount: f64, withdraw: &Option<WithdrawTransaction>) -> FiatTransactionUpdate {
+fn map_buy_like_transaction(
+    status: &str,
+    merchant_transaction_id: String,
+    fiat_amount: f64,
+    fiat_currency: String,
+    withdraw: &Option<WithdrawTransaction>,
+) -> FiatTransactionUpdate {
     let withdraw_status = withdraw.as_ref().map(|w| w.status.as_str());
     let status = map_status(status, withdraw_status);
 
@@ -144,19 +150,32 @@ fn map_buy_like_transaction(status: &str, merchant_transaction_id: String, fiat_
         transaction_hash: withdraw.as_ref().and_then(|w| w.hash.clone()),
         address: withdraw.as_ref().and_then(|w| w.address.clone()),
         fiat_amount: Some(fiat_amount),
+        fiat_currency: Some(fiat_currency.to_ascii_uppercase()),
     }
 }
 
 fn map_buy_transaction(buy: BuyTransaction, withdraw: Option<WithdrawTransaction>) -> FiatTransactionUpdate {
-    map_buy_like_transaction(&buy.status, buy.merchant_transaction_id, buy.fiat_amount, &withdraw)
+    map_buy_like_transaction(&buy.status, buy.merchant_transaction_id, buy.fiat_amount, buy.fiat_currency, &withdraw)
 }
 
 fn map_buy_acquirer_transaction(buy_acquirer: BuyAcquirerTransaction, withdraw: Option<WithdrawTransaction>) -> FiatTransactionUpdate {
-    map_buy_like_transaction(&buy_acquirer.status, buy_acquirer.merchant_transaction_id, buy_acquirer.fiat_amount, &withdraw)
+    map_buy_like_transaction(
+        &buy_acquirer.status,
+        buy_acquirer.merchant_transaction_id,
+        buy_acquirer.fiat_amount,
+        buy_acquirer.fiat_currency,
+        &withdraw,
+    )
 }
 
 fn map_mobile_pay_transaction(mobile_pay: MobilePayTransaction, withdraw: Option<WithdrawTransaction>) -> FiatTransactionUpdate {
-    map_buy_like_transaction(&mobile_pay.status, mobile_pay.merchant_transaction_id, mobile_pay.fiat_amount, &withdraw)
+    map_buy_like_transaction(
+        &mobile_pay.status,
+        mobile_pay.merchant_transaction_id,
+        mobile_pay.fiat_amount,
+        mobile_pay.fiat_currency,
+        &withdraw,
+    )
 }
 
 fn map_sell_transaction(withdraw: WithdrawTransaction) -> FiatTransactionUpdate {
@@ -169,6 +188,7 @@ fn map_sell_transaction(withdraw: WithdrawTransaction) -> FiatTransactionUpdate 
         transaction_hash: withdraw.hash,
         address: withdraw.address,
         fiat_amount: Some(withdraw.amount),
+        fiat_currency: None,
     }
 }
 
@@ -182,6 +202,7 @@ fn map_sell_transaction_new(sell: SellTransaction, deposit: Option<DepositTransa
         transaction_hash: deposit.as_ref().and_then(|d| d.hash.clone()),
         address: deposit.as_ref().and_then(|d| d.address.clone()),
         fiat_amount: Some(sell.fiat_amount),
+        fiat_currency: Some(sell.fiat_currency.to_ascii_uppercase()),
     }
 }
 
@@ -242,6 +263,7 @@ mod tests {
         assert_eq!(result.transaction_id, "f2e68ddb-ee2b-42ba");
         assert_eq!(result.provider_transaction_id, None);
         assert_eq!(result.fiat_amount, Some(99.0));
+        assert_eq!(result.fiat_currency, Some("USD".to_string()));
         assert!(matches!(result.status, FiatTransactionStatus::Complete));
 
         Ok(())
@@ -257,6 +279,7 @@ mod tests {
         assert_eq!(result.transaction_id, "036fecc9-0b73-4875-bd6f-2b868e30cf55");
         assert_eq!(result.provider_transaction_id, None);
         assert_eq!(result.fiat_amount, Some(20.0));
+        assert_eq!(result.fiat_currency, Some("USD".to_string()));
         assert!(matches!(result.status, FiatTransactionStatus::Complete));
         assert_eq!(result.transaction_hash, Some("0x".to_string()));
         assert_eq!(result.address, Some("UQByrYTVrJMttx88DbubyjV4nKy3waokfenb4QGJOP55Nn99".to_string()));
@@ -274,6 +297,7 @@ mod tests {
         assert_eq!(result.transaction_id, "d9c80819-e0b2-4f6e-8a59-3eb6321daa4e");
         assert_eq!(result.provider_transaction_id, None);
         assert_eq!(result.fiat_amount, Some(29.32));
+        assert_eq!(result.fiat_currency, Some("USD".to_string()));
         assert!(matches!(result.status, FiatTransactionStatus::Complete));
         assert_eq!(
             result.transaction_hash,
@@ -294,6 +318,7 @@ mod tests {
         assert_eq!(result.transaction_id, "00000000-0000-0000-0000-000000000001");
         assert_eq!(result.provider_transaction_id, None);
         assert_eq!(result.fiat_amount, Some(123.0));
+        assert_eq!(result.fiat_currency, Some("EUR".to_string()));
         assert!(matches!(result.status, FiatTransactionStatus::Complete));
         assert_eq!(
             result.transaction_hash,
