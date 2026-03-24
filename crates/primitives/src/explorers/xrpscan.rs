@@ -11,6 +11,7 @@ impl XrpScan {
             tx_path: TX_PATH,
             address_path: ACCOUNT_PATH,
             token_path: Some(ACCOUNT_PATH),
+            nft_path: None,
             validator_path: None,
         };
         Explorer::boxed(config)

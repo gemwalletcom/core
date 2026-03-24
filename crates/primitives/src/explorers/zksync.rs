@@ -11,6 +11,7 @@ impl ZkSync {
             tx_path: TX_PATH,
             address_path: ADDRESS_PATH,
             token_path: Some(ADDRESS_PATH), // ZkSync uses address path for tokens
+            nft_path: None,
             validator_path: None,
         };
         Explorer::boxed(config)

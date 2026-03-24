@@ -8,6 +8,7 @@ pub fn new_aptos_scan() -> Box<dyn BlockExplorer> {
         tx_path: TRANSACTION_PATH,
         address_path: ACCOUNT_PATH,
         token_path: Some(COIN_PATH),
+        nft_path: None,
         validator_path: None,
     })
 }
@@ -19,6 +20,7 @@ pub fn new_aptos_explorer() -> Box<dyn BlockExplorer> {
         tx_path: TXN_PATH,
         address_path: ACCOUNT_PATH,
         token_path: Some(COIN_PATH),
+        nft_path: None,
         validator_path: None,
     })
 }

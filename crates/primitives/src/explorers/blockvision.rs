@@ -15,6 +15,7 @@ impl BlockVision {
             tx_path: "/txblock",
             address_path: ACCOUNT_PATH,
             token_path: Some(COIN_PATH),
+            nft_path: None,
             validator_path: Some(VALIDATORS_PATH),
         })
     }

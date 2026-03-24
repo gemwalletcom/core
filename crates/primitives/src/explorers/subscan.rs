@@ -11,6 +11,7 @@ impl SubScan {
             tx_path: "/extrinsic",
             address_path: ACCOUNT_PATH,
             token_path: None,
+            nft_path: None,
             validator_path: None,
         })
     }

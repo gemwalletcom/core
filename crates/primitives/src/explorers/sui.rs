@@ -8,6 +8,7 @@ pub fn new_sui_scan() -> Box<dyn BlockExplorer> {
         tx_path: TX_PATH,
         address_path: ACCOUNT_PATH,
         token_path: Some(COIN_PATH),
+        nft_path: None,
         validator_path: Some(VALIDATOR_PATH),
     })
 }
