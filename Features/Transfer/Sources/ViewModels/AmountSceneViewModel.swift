@@ -210,7 +210,7 @@ private extension AmountSceneViewModel {
     func onSelectBuy() {
         let senderAddress = (try? wallet.account(for: asset.chain).address) ?? ""
         let assetAddress = AssetAddress(asset: asset, address: senderAddress)
-        isPresentingSheet = .fiatConnect(assetAddress: assetAddress, walletId: wallet.walletId)
+        isPresentingSheet = .fiatConnect(assetAddress: assetAddress, wallet: wallet)
     }
 
     var inputValidators: [any TextValidator] {

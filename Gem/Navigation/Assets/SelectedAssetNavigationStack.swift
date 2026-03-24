@@ -59,7 +59,7 @@ struct SelectedAssetNavigationStack: View  {
                     FiatConnectNavigationView(
                         model: viewModelFactory.fiatScene(
                             assetAddress: input.assetAddress,
-                            walletId: wallet.walletId,
+                            wallet: wallet,
                             type: .buy,
                             amount: amount
                         )
@@ -68,7 +68,7 @@ struct SelectedAssetNavigationStack: View  {
                     FiatConnectNavigationView(
                         model: viewModelFactory.fiatScene(
                             assetAddress: input.assetAddress,
-                            walletId: wallet.walletId,
+                            wallet: wallet,
                             type: .sell,
                             amount: amount
                         )

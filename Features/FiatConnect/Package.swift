@@ -23,6 +23,7 @@ let package = Package(
         .package(name: "Localization", path: "../../Packages/Localization"),
         .package(name: "Store", path: "../../Packages/Store"),
         .package(name: "PrimitivesComponents", path: "../../Packages/PrimitivesComponents"),
+        .package(name: "FeatureServices", path: "../../Packages/FeatureServices"),
     ],
     targets: [
         .target(
@@ -36,6 +37,7 @@ let package = Package(
                 "Localization",
                 "Store",
                 "PrimitivesComponents",
+                .product(name: "BalanceService", package: "FeatureServices"),
             ],
             path: "Sources"
         ),
@@ -44,6 +46,7 @@ let package = Package(
             dependencies: [
                 "FiatConnect",
                 .product(name: "PrimitivesTestKit", package: "Primitives"),
+                .product(name: "BalanceServiceTestKit", package: "FeatureServices"),
             ],
             path: "Tests"
         ),

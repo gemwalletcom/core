@@ -12,6 +12,7 @@ import PrimitivesComponents
 import Formatters
 import Validators
 import BigInt
+import BalanceService
 
 @MainActor
 @Observable
@@ -26,7 +27,9 @@ public final class FiatSceneViewModel {
     private let assetAddress: AssetAddress
     private let currencyFormatter: CurrencyFormatter
     private let valueFormatter = ValueFormatter(locale: .US, style: .medium)
-    private let walletId: WalletId
+    private let wallet: Wallet
+    private let assetsEnabler: any AssetsEnabler
+    private var walletId: WalletId { wallet.walletId }
 
     public let assetQuery: ObservableQuery<AssetRequest>
     var assetData: AssetData { assetQuery.value }
@@ -43,14 +46,16 @@ public final class FiatSceneViewModel {
         fiatService: any GemAPIFiatService,
         currencyFormatter: CurrencyFormatter = CurrencyFormatter(currencyCode: Currency.usd.rawValue),
         assetAddress: AssetAddress,
-        walletId: WalletId,
+        wallet: Wallet,
+        assetsEnabler: any AssetsEnabler,
         type: FiatQuoteType = .buy,
         amount: Int? = nil
     ) {
         self.fiatService = fiatService
         self.currencyFormatter = currencyFormatter
         self.assetAddress = assetAddress
-        self.walletId = walletId
+        self.wallet = wallet
+        self.assetsEnabler = assetsEnabler
         self.type = type
         self.assetQuery = ObservableQuery(AssetRequest(walletId: walletId, assetId: assetAddress.asset.id), initialValue: .with(asset: assetAddress.asset))
 
@@ -191,6 +196,7 @@ extension FiatSceneViewModel {
                 }
 
                 urlState = .data(())
+                Task { await enableAsset() }
                 await UIApplication.shared.open(url, options: [:])
             } catch {
                 urlState = .error(error)
@@ -241,6 +247,15 @@ extension FiatSceneViewModel {
 extension FiatSceneViewModel {
     private var balanceModel: BalanceViewModel {
         BalanceViewModel(asset: asset, balance: assetData.balance, formatter: valueFormatter)
+    }
+
+    private func enableAsset() async {
+        guard type == .buy else { return }
+        do {
+            try await assetsEnabler.enableAssets(wallet: wallet, assetIds: [asset.id], enabled: true)
+        } catch {
+            debugLog("FiatSceneViewModel enableAsset error: \(error)")
+        }
     }
 
     private func selectAmount(_ amount: Int) {

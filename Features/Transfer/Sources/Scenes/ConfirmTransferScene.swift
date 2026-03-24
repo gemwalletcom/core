@@ -13,6 +13,7 @@ import Primitives
 
 public struct ConfirmTransferScene: View {
     @Environment(\.fiatService) private var fiatService
+    @Environment(\.assetsEnabler) private var assetsEnabler
     @State private var model: ConfirmTransferSceneViewModel
 
     public init(model: ConfirmTransferSceneViewModel) {
@@ -59,13 +60,14 @@ public struct ConfirmTransferScene: View {
                     .presentationDetents([.large])
                     .presentationBackground(Colors.grayBackground)
                 }
-            case .fiatConnect(let assetAddress, let walletId):
+            case .fiatConnect(let assetAddress, let wallet):
                 NavigationStack {
                     FiatConnectNavigationView(
                         model: FiatSceneViewModel(
                             fiatService: fiatService,
                             assetAddress: assetAddress,
-                            walletId: walletId
+                            wallet: wallet,
+                            assetsEnabler: assetsEnabler
                         )
                     )
                     .navigationBarTitleDisplayMode(.inline)

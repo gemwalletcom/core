@@ -166,14 +166,15 @@ public struct ViewModelFactory: Sendable {
     @MainActor
     public func fiatScene(
         assetAddress: AssetAddress,
-        walletId: WalletId,
+        wallet: Wallet,
         type: FiatQuoteType = .buy,
         amount: Int? = nil
     ) -> FiatSceneViewModel {
         FiatSceneViewModel(
             fiatService: fiatService,
             assetAddress: assetAddress,
-            walletId: walletId,
+            wallet: wallet,
+            assetsEnabler: assetsEnabler,
             type: type,
             amount: amount
         )

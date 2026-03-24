@@ -381,7 +381,7 @@ extension ConfirmTransferSceneViewModel {
     private func onSelectBuy() {
         isPresentingSheet = .fiatConnect(
             assetAddress: feeAssetAddress,
-            walletId: wallet.walletId
+            wallet: wallet
         )
     }
     private func onSelectConfirmTransfer() {

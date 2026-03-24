@@ -14,6 +14,7 @@ import Preferences
 
 public struct AmountNavigationView: View {
     @Environment(\.fiatService) private var fiatService
+    @Environment(\.assetsEnabler) private var assetsEnabler
     @State private var model: AmountSceneViewModel
 
     public init(model: AmountSceneViewModel) {
@@ -27,10 +28,10 @@ public struct AmountNavigationView: View {
                 switch $0 {
                 case let .infoAction(type):
                     InfoSheetScene(type: type)
-                case let .fiatConnect(assetAddress, walletId):
+                case let .fiatConnect(assetAddress, wallet):
                     NavigationStack {
                         FiatConnectNavigationView(
-                            model: FiatSceneViewModel(fiatService: fiatService, assetAddress: assetAddress, walletId: walletId)
+                            model: FiatSceneViewModel(fiatService: fiatService, assetAddress: assetAddress, wallet: wallet, assetsEnabler: assetsEnabler)
                         )
                         .navigationBarTitleDisplayMode(.inline)
                         .toolbar { ToolbarDismissItem(type: .close, placement: .topBarLeading) }

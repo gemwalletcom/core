@@ -9,7 +9,7 @@ import PrimitivesComponents
 
 enum AmountSheetType: Identifiable {
     case infoAction(InfoSheetType)
-    case fiatConnect(assetAddress: AssetAddress, walletId: WalletId)
+    case fiatConnect(assetAddress: AssetAddress, wallet: Wallet)
     case leverageSelector(selection: SelectionState<LeverageOption>)
     case autoclose(AutocloseOpenData)
 
