@@ -74,7 +74,7 @@ impl Metadata {
             tx_path: TX_PATH,
             address_path: ADDRESS_PATH,
             token_path: Some(TOKEN_PATH),
-            nft_path: None,
+            nft_path: Some(NFT_PATH),
             validator_path: Some(VALIDATOR_PATH),
         }
     }
@@ -234,7 +234,7 @@ mod tests {
 
         let full = Metadata::full("Full", "https://full.com");
         assert_eq!(full.token_path, Some(TOKEN_PATH));
-        assert_eq!(full.nft_path, None);
+        assert_eq!(full.nft_path, Some(NFT_PATH));
         assert_eq!(full.validator_path, Some(VALIDATOR_PATH));
 
         let transaction_style = Metadata::blockchair("Transaction", "https://transaction.com");
