@@ -17,7 +17,7 @@ pub const TEST_ADDRESS_EMPTY: &str = "0x180c5478e639770c4424bfbcd4208d8d61f4e525
 #[cfg(all(test, feature = "chain_integration_tests"))]
 pub const TEST_TOKEN_ADDRESS: &str = SUI_USDC_TOKEN_ID;
 
-#[cfg(all(test, feature = "chain_integration_tests"))]
+#[cfg(test)]
 pub const TEST_TRANSACTION_ID: &str = "CJ16PEqq49KFp758iEVwxEkd3CwP7zDfqGYLuLuu9Z63";
 
 #[cfg(all(test, feature = "chain_integration_tests"))]

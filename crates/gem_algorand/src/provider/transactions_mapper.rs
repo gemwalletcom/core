@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use crate::constants::TRANSACTION_TYPE_PAY;
-use crate::models::{Transaction as AlgoTransaction, TransactionBroadcast};
+use crate::models::{Transaction as AlgoTransaction, TransactionBroadcast, TransactionLookup};
 use chrono::DateTime;
 use primitives::{Transaction, TransactionState, TransactionType, chain::Chain};
 
@@ -17,6 +17,10 @@ pub fn map_transaction_broadcast(result: &TransactionBroadcast) -> Result<String
 
 pub fn map_transactions(transactions: Vec<AlgoTransaction>) -> Vec<Transaction> {
     transactions.into_iter().flat_map(map_transaction).collect::<Vec<Transaction>>()
+}
+
+pub fn map_transaction_by_hash(transaction: TransactionLookup) -> Option<Transaction> {
+    map_transaction(transaction.transaction)
 }
 
 pub fn map_transaction(transaction: AlgoTransaction) -> Option<Transaction> {
@@ -44,7 +48,7 @@ pub fn map_transaction(transaction: AlgoTransaction) -> Option<Transaction> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::TransactionBroadcast;
+    use crate::{models::TransactionBroadcast, provider::testkit::TEST_TRANSACTION_ID};
 
     #[test]
     fn test_map_transaction_broadcast_success() {
@@ -68,5 +72,16 @@ mod tests {
             map_transaction_broadcast(&broadcast).unwrap_err().to_string(),
             "txgroup had 0 in fees, which is less than the minimum 1 * 1000"
         );
+    }
+
+    #[test]
+    fn test_map_transaction_by_hash() {
+        let lookup: TransactionLookup = serde_json::from_str(include_str!("../../testdata/transaction_by_hash.json")).unwrap();
+        let transaction = map_transaction_by_hash(lookup).unwrap();
+
+        assert_eq!(transaction.hash, TEST_TRANSACTION_ID);
+        assert_eq!(transaction.from, "RXIOUIR5IGFZMIZ7CR7FJXDYY4JI7NZG5UCWCZZNWXUPFJRLG6K6X5ITXM");
+        assert_eq!(transaction.to, "NXSHXB3CLKPZ4JJ3LIXOKOEAB575EDDHCUTDYAKYRXZWVJ6CCQUP55ZEPE");
+        assert_eq!(transaction.value, "100000");
     }
 }

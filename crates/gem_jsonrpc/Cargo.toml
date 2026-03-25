@@ -7,7 +7,7 @@ edition = { workspace = true }
 default = ["types"]
 types = []
 client = ["dep:gem_client", "dep:async-trait", "dep:primitives", "dep:hex"]
-reqwest = ["client", "gem_client/reqwest", "dep:reqwest"]
+reqwest = ["client", "gem_client/reqwest"]
 testkit = ["client", "gem_client/testkit"]
 
 [dependencies]
@@ -15,7 +15,6 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 
 gem_client = { path = "../gem_client", optional = true }
-reqwest = { workspace = true, optional = true }
 async-trait = { workspace = true, optional = true }
 primitives = { path = "../primitives", optional = true }
 hex = { workspace = true, optional = true }

@@ -91,4 +91,12 @@ mod chain_integration_tests {
 
         assert!(!transactions.is_empty());
     }
+
+    #[tokio::test]
+    async fn test_bitcoin_get_transaction_by_hash() {
+        let bitcoin_client = create_bitcoin_test_client();
+        let transaction = bitcoin_client.get_transaction_by_hash(TEST_TRANSACTION_ID.to_string()).await.unwrap().unwrap();
+
+        assert_eq!(transaction.hash, TEST_TRANSACTION_ID);
+    }
 }

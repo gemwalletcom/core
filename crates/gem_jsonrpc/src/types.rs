@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::Value;
 use std::fmt::{Debug, Display};
 
@@ -77,7 +77,7 @@ pub enum JsonRpcResult<T> {
 impl<'de, T: Deserialize<'de>> Deserialize<'de> for JsonRpcResult<T> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: serde::Deserializer<'de>,
+        D: Deserializer<'de>,
     {
         let raw = Value::deserialize(deserializer)?;
         let id = raw.get("id").and_then(|v| v.as_u64());

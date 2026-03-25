@@ -93,7 +93,7 @@ impl<C: Client + Clone> ChainTransactions for EthereumClient<C> {
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
-    use crate::provider::testkit::{TEST_ADDRESS, create_ethereum_test_client};
+    use crate::provider::testkit::{TEST_ADDRESS, TEST_TRANSACTION_ID, create_ethereum_test_client};
     use chain_traits::{ChainBalances, ChainTransactionBroadcast, ChainTransactions, TransactionsRequest};
     use num_bigint::BigUint;
     use std::error::Error;
@@ -153,6 +153,15 @@ mod chain_integration_tests {
 
         assert!(result.is_err());
 
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_ethereum_get_transaction_by_hash() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_ethereum_test_client();
+        let transaction = ChainTransactions::get_transaction_by_hash(&client, TEST_TRANSACTION_ID.to_string()).await?.unwrap();
+
+        assert_eq!(transaction.hash, TEST_TRANSACTION_ID);
         Ok(())
     }
 }

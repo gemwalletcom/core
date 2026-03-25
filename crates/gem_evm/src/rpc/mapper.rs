@@ -295,6 +295,7 @@ impl EthereumMapper {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::provider::testkit::TEST_TRANSACTION_ID;
     use crate::rpc::model::{Log, Transaction, TransactionReciept};
     use num_bigint::BigUint;
     use primitives::{
@@ -336,7 +337,7 @@ mod tests {
     }
 
     #[test]
-    fn test_nft_eip721_transfer() {
+    fn test_map_transaction_by_hash() {
         let transaction = serde_json::from_value::<JsonRpcResult<Transaction>>(serde_json::from_str(include_str!("../../testdata/transfer_nft_eip721.json")).unwrap())
             .unwrap()
             .result;
@@ -346,6 +347,7 @@ mod tests {
                 .result;
 
         let transaction = EthereumMapper::map_transaction(Chain::Ethereum, &transaction, &transaction_reciept, None, &BigUint::from(1735671600u64), None).unwrap();
+        assert_eq!(transaction.hash, TEST_TRANSACTION_ID);
         assert_eq!(transaction.transaction_type, TransactionType::TransferNFT);
 
         assert_eq!(transaction.asset_id, AssetId::from_chain(Chain::Ethereum));

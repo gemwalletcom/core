@@ -7,6 +7,8 @@ use settings::testkit::get_test_settings;
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 pub const TEST_ADDRESS: &str = "UQAzoUpalAaXnVm5MoiYWRZguLFzY0KxFjLv3MkRq5BXz3VV";
+#[cfg(test)]
+pub const TEST_TRANSACTION_ID: &str = "gyjq/7IJ5KpSvZlnwixaS3RjI2xk1+5pup0k++S/yXY=";
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 pub fn create_ton_test_client() -> TonClient<ReqwestClient> {

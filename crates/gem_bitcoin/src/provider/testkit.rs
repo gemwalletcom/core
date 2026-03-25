@@ -9,7 +9,7 @@ use settings::testkit::get_test_settings;
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 pub const TEST_ADDRESS: &str = "bc1qk9cu0nj5czvalnvmlsyc8tmqh8d6f0v9plrrdr";
-#[cfg(all(test, feature = "chain_integration_tests"))]
+#[cfg(test)]
 pub const TEST_TRANSACTION_ID: &str = "654c6a28f7ff1915d2b9abc2e18e32a37e0196203d64aced6221651f003f5e94";
 
 #[cfg(all(test, feature = "chain_integration_tests"))]

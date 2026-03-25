@@ -12,6 +12,8 @@ pub const TEST_ADDRESS: &str = "rnZmVGX6f4pUYyS4oXYJzoLdRojQV8y297";
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 pub const TEST_ADDRESS_EMPTY: &str = "rPGZTtsiBXS8izwJcktUmxtzZSic1jbpLi";
+#[cfg(test)]
+pub const TEST_TRANSACTION_ID: &str = "474F58E6C78F1DE8542036AB3C16E2B5A4089241DEE3E58142154DC3CA0E8271";
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 pub fn create_xrp_test_client() -> XRPClient<ReqwestClient> {

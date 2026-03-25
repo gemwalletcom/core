@@ -57,6 +57,23 @@ where
     deserializer.deserialize_any(StringOrNumberVisitor::<u64>::new())
 }
 
+pub fn deserialize_option_u64_from_str_or_int<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = Option::<serde_json::Value>::deserialize(deserializer)?;
+    match value {
+        Some(serde_json::Value::String(value)) => parse_u64_string(&value).map(Some).map_err(de::Error::custom),
+        Some(serde_json::Value::Number(value)) => value
+            .as_u64()
+            .or_else(|| value.as_i64().filter(|value| *value >= 0).map(|value| value as u64))
+            .map(Some)
+            .ok_or_else(|| de::Error::custom(invalid_number(value))),
+        Some(serde_json::Value::Null) | None => Ok(None),
+        Some(value) => Err(de::Error::custom(format!("Expected string or integer representing u64, got: {value:?}"))),
+    }
+}
+
 pub fn deserialize_option_u64_from_str<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
 where
     D: Deserializer<'de>,
@@ -91,6 +108,12 @@ mod tests {
         pub value: u64,
     }
 
+    #[derive(Debug, Serialize, Deserialize, PartialEq)]
+    struct TestOptionStrOrIntStruct {
+        #[serde(default, deserialize_with = "deserialize_option_u64_from_str_or_int")]
+        pub value: Option<u64>,
+    }
+
     #[test]
     fn test_u64_deserialization() {
         let option_cases = [
@@ -121,7 +144,21 @@ mod tests {
             assert_eq!(result.value, expected);
         }
 
+        let option_mixed_cases = [
+            (r#"{"value": 42}"#, Some(42u64)),
+            (r#"{"value": "0x2a"}"#, Some(42)),
+            (r#"{"value": "42"}"#, Some(42)),
+            (r#"{"value": null}"#, None),
+            (r#"{}"#, None),
+        ];
+        for (json, expected) in option_mixed_cases {
+            let result: TestOptionStrOrIntStruct = serde_json::from_str(json).unwrap();
+            assert_eq!(result.value, expected);
+        }
+
         assert!(serde_json::from_str::<TestStrOrIntStruct>(r#"{"value": 1.5}"#).is_err());
         assert!(serde_json::from_str::<TestStrOrIntStruct>(r#"{"value": -1}"#).is_err());
+        assert!(serde_json::from_str::<TestOptionStrOrIntStruct>(r#"{"value": 1.5}"#).is_err());
+        assert!(serde_json::from_str::<TestOptionStrOrIntStruct>(r#"{"value": -1}"#).is_err());
     }
 }

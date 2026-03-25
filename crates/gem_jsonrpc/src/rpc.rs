@@ -2,7 +2,6 @@ use async_trait::async_trait;
 use gem_client::{Client, ClientError, ContentType, Response, decode_json_byte_array, deserialize_response};
 use primitives::Chain;
 use serde::{Serialize, de::DeserializeOwned};
-use serde_json;
 use std::{
     collections::HashMap,
     error::Error,
@@ -39,7 +38,7 @@ impl Target {
         }
     }
 
-    pub fn post_json<T: serde::Serialize>(url: &str, body: &T) -> Self {
+    pub fn post_json<T: Serialize>(url: &str, body: &T) -> Self {
         Self {
             url: url.into(),
             method: HttpMethod::Post,

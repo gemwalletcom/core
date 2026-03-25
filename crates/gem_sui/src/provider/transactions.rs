@@ -66,4 +66,13 @@ mod chain_integration_tests {
         assert!(!transactions.is_empty());
         Ok(())
     }
+
+    #[tokio::test]
+    async fn test_get_transaction_by_hash() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_sui_test_client();
+        let transaction = ChainTransactions::get_transaction_by_hash(&client, TEST_TRANSACTION_ID.to_string()).await?.unwrap();
+
+        assert_eq!(transaction.hash, TEST_TRANSACTION_ID);
+        Ok(())
+    }
 }

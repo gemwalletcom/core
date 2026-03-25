@@ -151,7 +151,6 @@ impl Client for ReqwestClient {
         };
 
         let request = self.build_request(self.client.post(&url).body(request_body), headers);
-
         let response = request.send().await.map_err(Self::map_reqwest_error)?;
 
         self.send_request(response).await

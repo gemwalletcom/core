@@ -27,6 +27,13 @@ pub fn map_transactions(chain: Chain, transactions: Vec<Payment>) -> Vec<Transac
     transactions.into_iter().flat_map(|x| map_transaction(chain, x)).collect()
 }
 
+pub fn map_transaction_by_hash(chain: Chain, transactions: Vec<Payment>, hash: &str) -> Option<Transaction> {
+    transactions
+        .into_iter()
+        .filter_map(|transaction| map_transaction(chain, transaction))
+        .find(|transaction| transaction.hash == hash)
+}
+
 pub fn map_transaction(chain: Chain, transaction: Payment) -> Option<Transaction> {
     match transaction.payment_type.as_str() {
         TRANSACTION_TYPE_PAYMENT | TRANSACTION_TYPE_CREATE_ACCOUNT => {
@@ -63,7 +70,14 @@ pub fn is_token_address(token_id: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::transaction::{StellarTransactionBroadcast, StellarTransactionStatus};
+    use crate::{
+        models::{
+            Embedded,
+            transaction::{Payment, StellarTransactionBroadcast, StellarTransactionStatus},
+        },
+        provider::testkit::TEST_TRANSACTION_ID,
+    };
+    use primitives::Chain;
 
     #[test]
     fn test_encode_transaction_data_variants() {
@@ -99,5 +113,15 @@ mod tests {
 
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), "dbc69dff72e4ca7ddf47311e12da09ac5952c777d19855f95f13b0ec624f8baf");
+    }
+
+    #[test]
+    fn test_map_transaction_by_hash() {
+        let payments: Embedded<Payment> = serde_json::from_str(include_str!("../../testdata/transaction_by_hash.json")).unwrap();
+        let transaction = map_transaction_by_hash(Chain::Stellar, payments._embedded.records, TEST_TRANSACTION_ID).unwrap();
+
+        assert_eq!(transaction.hash, TEST_TRANSACTION_ID);
+        assert_eq!(transaction.from, "GFROM");
+        assert_eq!(transaction.to, "GTO");
     }
 }

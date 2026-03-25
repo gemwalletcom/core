@@ -1,14 +1,17 @@
-#[cfg(all(test, feature = "chain_integration_tests"))]
+#[cfg(feature = "chain_integration_tests")]
 use crate::rpc::client::AlgorandClient;
-#[cfg(all(test, feature = "chain_integration_tests"))]
+#[cfg(feature = "chain_integration_tests")]
 use gem_client::ReqwestClient;
-#[cfg(all(test, feature = "chain_integration_tests"))]
+#[cfg(feature = "chain_integration_tests")]
 use settings::testkit::get_test_settings;
 
-#[cfg(all(test, feature = "chain_integration_tests"))]
+#[cfg(test)]
+pub const TEST_TRANSACTION_ID: &str = "LAEWXAG6FYFIEDAY76YQFKO46EIKEOIT4GTONUQFD6TL23XG45KQ";
+
+#[cfg(feature = "chain_integration_tests")]
 pub const TEST_ADDRESS: &str = "RXIOUIR5IGFZMIZ7CR7FJXDYY4JI7NZG5UCWCZZNWXUPFJRLG6K6X5ITXM";
 
-#[cfg(all(test, feature = "chain_integration_tests"))]
+#[cfg(feature = "chain_integration_tests")]
 pub fn create_algorand_test_client() -> AlgorandClient<ReqwestClient> {
     use crate::rpc::{AlgorandClientIndexer, client_indexer::ALGORAND_INDEXER_URL};
 

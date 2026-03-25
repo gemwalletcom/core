@@ -1,0 +1,25 @@
+{
+  "domain": {
+    "name": "Ethereum Name Service",
+    "version": "1"
+  },
+  "message": {
+    "upload": "avatar",
+    "expiry": "1775049942284",
+    "name": "gemdev-test.eth",
+    "hash": "0x389f958e9b58a3d316d075f6734e1135c0c5ecbca43e35194c65dc18326a856e"
+  },
+  "primaryType": "Upload",
+  "types": {
+    "EIP712Domain": [
+      { "name": "name", "type": "string" },
+      { "name": "version", "type": "string" }
+    ],
+    "Upload": [
+      { "name": "upload", "type": "string" },
+      { "name": "expiry", "type": "string" },
+      { "name": "name", "type": "string" },
+      { "name": "hash", "type": "string" }
+    ]
+  }
+}

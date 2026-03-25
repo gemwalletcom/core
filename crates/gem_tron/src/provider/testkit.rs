@@ -11,6 +11,8 @@ use settings::testkit::get_test_settings;
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 pub const TEST_ADDRESS: &str = "TFdTEn9dJuqh351y8fyJ3eMmghFsZNwakb";
+#[cfg(test)]
+pub const TEST_TRANSACTION_ID: &str = "5a9935a1b7be0150a511111582bbfed62ddb873333b3986bd712e6105fe90ad5";
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 pub const TEST_USDT_TOKEN_ID: &str = TRON_USDT_TOKEN_ID;

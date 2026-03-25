@@ -28,7 +28,7 @@ impl<C: Client> ChainTransactions for AptosClient<C> {
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
-    use crate::provider::testkit::{TEST_ADDRESS, create_aptos_test_client};
+    use crate::provider::testkit::{TEST_ADDRESS, TEST_TRANSACTION_ID, create_aptos_test_client};
     use chain_traits::{ChainState, ChainTransactions};
 
     #[tokio::test]
@@ -45,6 +45,15 @@ mod chain_integration_tests {
         let client = create_aptos_test_client();
         let transactions = client.get_transactions_by_address(TEST_ADDRESS.to_string()).await?;
         println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_aptos_get_transaction_by_hash() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_aptos_test_client();
+        let transaction = ChainTransactions::get_transaction_by_hash(&client, TEST_TRANSACTION_ID.to_string()).await?.unwrap();
+
+        assert_eq!(transaction.hash, TEST_TRANSACTION_ID);
         Ok(())
     }
 }

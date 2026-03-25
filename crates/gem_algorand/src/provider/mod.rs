@@ -15,5 +15,5 @@ pub mod transactions_mapper;
 
 pub struct BroadcastProvider;
 
-#[cfg(all(test, feature = "chain_integration_tests"))]
+#[cfg(test)]
 mod testkit;

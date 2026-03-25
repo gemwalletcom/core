@@ -43,3 +43,18 @@ impl<C: Client> ChainTransactions for CosmosClient<C> {
         Ok(map_transactions(self.chain, transactions))
     }
 }
+
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
+    use crate::provider::testkit::{TEST_TRANSACTION_ID, create_cosmos_test_client};
+    use chain_traits::ChainTransactions;
+
+    #[tokio::test]
+    async fn test_cosmos_get_transaction_by_hash() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_cosmos_test_client();
+        let transaction = client.get_transaction_by_hash(TEST_TRANSACTION_ID.to_string()).await?.unwrap();
+
+        assert_eq!(transaction.hash, TEST_TRANSACTION_ID);
+        Ok(())
+    }
+}

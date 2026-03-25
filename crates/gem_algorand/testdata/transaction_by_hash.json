@@ -1,0 +1,14 @@
+{
+  "transaction": {
+    "id": "LAEWXAG6FYFIEDAY76YQFKO46EIKEOIT4GTONUQFD6TL23XG45KQ",
+    "round-time": 1755820269,
+    "fee": 1000,
+    "sender": "RXIOUIR5IGFZMIZ7CR7FJXDYY4JI7NZG5UCWCZZNWXUPFJRLG6K6X5ITXM",
+    "note": null,
+    "payment-transaction": {
+      "amount": 100000,
+      "receiver": "NXSHXB3CLKPZ4JJ3LIXOKOEAB575EDDHCUTDYAKYRXZWVJ6CCQUP55ZEPE"
+    },
+    "tx-type": "pay"
+  }
+}

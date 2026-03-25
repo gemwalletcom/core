@@ -32,7 +32,12 @@ impl ApprovalMethod {
             return Some(method);
         }
 
-        message.domain.name.eq_ignore_ascii_case(PERMIT2_DOMAIN_NAME).then_some(Self::PermitSingle)
+        message
+            .domain
+            .name
+            .as_deref()
+            .is_some_and(|name| name.eq_ignore_ascii_case(PERMIT2_DOMAIN_NAME))
+            .then_some(Self::PermitSingle)
     }
 
     fn is_eip712_approval_method(&self) -> bool {

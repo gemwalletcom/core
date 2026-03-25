@@ -149,6 +149,7 @@ mod tests {
 
     use super::*;
     use crate::models::transaction::{BroadcastResponse, TransactionResult};
+    use crate::provider::testkit::TEST_TRANSACTION_ID;
 
     #[test]
     fn test_map_transaction_broadcast_success() {
@@ -184,14 +185,14 @@ mod tests {
     }
 
     #[test]
-    fn test_transfer() {
+    fn test_map_transaction_by_hash() {
         let result: TransactionResponse = serde_json::from_str(include_str!("../../testdata/transfer.json")).unwrap();
         let transaction = map_transactions(CosmosChain::Cosmos, vec![result]).first().unwrap().clone();
 
         assert_eq!(
             transaction,
             Transaction::new(
-                "BC5E330F0AFA34489B9796E8101A2B027CC8AE8E820AFC7901C3C1E75C2895DD".to_string(),
+                TEST_TRANSACTION_ID.to_string(),
                 Chain::Cosmos.as_asset_id(),
                 "cosmos1wev8ptzj27aueu04wgvvl4gvurax6rj5f0v7rw".to_string(),
                 "cosmos1hgp84me0lze8t4jfrwsr05aep2kr57zrk4gecx".to_string(),

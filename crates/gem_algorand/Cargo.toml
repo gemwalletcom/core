@@ -26,4 +26,3 @@ gem_client = { path = "../gem_client", optional = true }
 tokio = { workspace = true, features = ["macros", "rt"] }
 reqwest = { workspace = true }
 settings = { path = "../settings", features = ["testkit"] }
-

@@ -159,6 +159,7 @@ fn extract_memo<T: HasMemo>(message: &T) -> Option<String> {
 mod tests {
     use super::*;
     use crate::models::MessageTransactions;
+    use crate::provider::testkit::TEST_TRANSACTION_ID;
 
     #[test]
     fn test_transaction_transfer_state_success() {
@@ -176,10 +177,20 @@ mod tests {
 
         assert_eq!(transactions.transactions.len(), 1);
         let transaction = &transactions.transactions[0];
-        assert_eq!(transaction.hash, "gyjq/7IJ5KpSvZlnwixaS3RjI2xk1+5pup0k++S/yXY=");
+        assert_eq!(transaction.hash, TEST_TRANSACTION_ID);
 
         let state = map_transaction_state(transaction);
         assert_eq!(state, TransactionState::Confirmed);
+    }
+
+    #[test]
+    fn test_map_transaction_by_hash() {
+        let transactions: MessageTransactions = serde_json::from_str(include_str!("../../testdata/transaction_status_response.json")).unwrap();
+        let transaction = map_transactions(transactions.transactions).into_iter().next().unwrap();
+
+        assert_eq!(transaction.hash, TEST_TRANSACTION_ID);
+        assert_eq!(transaction.transaction_type, TransactionType::Transfer);
+        assert_eq!(transaction.state, TransactionState::Confirmed);
     }
 
     #[test]

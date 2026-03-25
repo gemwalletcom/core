@@ -1,6 +1,12 @@
 pub use crate::models::order::OpenOrder;
 pub use crate::models::portfolio::{HypercoreDataPoint, HypercorePortfolioResponse, HypercorePortfolioTimeframeData};
 pub use crate::models::position::{AssetPositions, MarginSummary};
+#[cfg(test)]
+use crate::rpc::client::{HyperCoreClient, InMemoryPreferences};
+#[cfg(test)]
+use gem_client::testkit::MockClient;
+#[cfg(test)]
+use std::sync::Arc;
 
 impl AssetPositions {
     pub fn mock() -> Self {
@@ -50,5 +56,14 @@ impl HypercorePortfolioTimeframeData {
             }],
             vlm: vlm.to_string(),
         }
+    }
+}
+
+#[cfg(test)]
+impl HyperCoreClient<MockClient> {
+    pub fn mock() -> Self {
+        let preferences = Arc::new(InMemoryPreferences::new());
+        let secure_preferences = Arc::new(InMemoryPreferences::new());
+        Self::new_with_preferences(MockClient::new(), preferences, secure_preferences)
     }
 }

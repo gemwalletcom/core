@@ -1,10 +1,10 @@
 use std::error::Error;
 use std::sync::Arc;
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use cacher::{CacheKey, CacherClient};
 use gem_tracing::{DurationMs, error_with_fields, info_with_fields};
-use primitives::Chain;
+use primitives::{Chain, chain_transaction_timeout_seconds};
 use settings_chain::ChainProviders;
 use streamer::{StreamProducer, StreamProducerQueue, TransactionsPayload};
 
@@ -56,8 +56,10 @@ impl PendingTransactionsUpdater {
     }
 
     async fn process_identifier(&self, chain: Chain, identifier: &str, expires_at: f64, now: f64) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        let elapsed = DurationMs(pending_transaction_elapsed(chain, expires_at, now));
+
         if expires_at <= now {
-            info_with_fields!("pending transaction expired", chain = chain.as_ref(), identifier = identifier);
+            info_with_fields!("pending transaction expired", chain = chain.as_ref(), identifier = identifier, elapsed = elapsed);
             return Ok(true);
         }
 
@@ -68,7 +70,8 @@ impl PendingTransactionsUpdater {
                     "pending transaction fetch success",
                     chain = chain.as_ref(),
                     identifier = identifier,
-                    elapsed = DurationMs(start.elapsed())
+                    elapsed = elapsed,
+                    latency = DurationMs(start.elapsed())
                 );
                 self.stream_producer
                     .publish_transactions(TransactionsPayload::new(chain, vec![], vec![transaction]))
@@ -80,7 +83,8 @@ impl PendingTransactionsUpdater {
                     "pending transaction not fetched",
                     chain = chain.as_ref(),
                     identifier = identifier,
-                    elapsed = DurationMs(start.elapsed())
+                    elapsed = elapsed,
+                    latency = DurationMs(start.elapsed())
                 );
                 Ok(false)
             }
@@ -90,7 +94,8 @@ impl PendingTransactionsUpdater {
                     &*err,
                     chain = chain.as_ref(),
                     identifier = identifier,
-                    elapsed = DurationMs(start.elapsed())
+                    elapsed = elapsed,
+                    latency = DurationMs(start.elapsed())
                 );
                 Ok(false)
             }
@@ -107,5 +112,37 @@ impl PendingTransactionsUpdater {
         let pending_key = CacheKey::PendingTransactions(chain.as_ref());
         let pending_count = self.cacher.sorted_set_card(&pending_key.key()).await?;
         Ok(pending_count > 0)
+    }
+}
+
+fn pending_transaction_elapsed(chain: Chain, expires_at: f64, now: f64) -> Duration {
+    let timeout = f64::from(chain_transaction_timeout_seconds(chain));
+    let added_at = expires_at - timeout;
+    Duration::from_secs_f64((now - added_at).max(0.0))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::pending_transaction_elapsed;
+    use std::time::Duration;
+
+    use primitives::{Chain, chain_transaction_timeout_seconds};
+
+    #[test]
+    fn test_pending_transaction_elapsed_uses_added_at() {
+        let chain = Chain::Ethereum;
+        let expires_at = 10_000.0;
+        let now = expires_at - f64::from(chain_transaction_timeout_seconds(chain)) + 42.0;
+
+        assert_eq!(pending_transaction_elapsed(chain, expires_at, now), Duration::from_secs(42));
+    }
+
+    #[test]
+    fn test_pending_transaction_elapsed_is_zero_before_added_at() {
+        let chain = Chain::Xrp;
+        let expires_at = 10_000.0;
+        let now = expires_at - f64::from(chain_transaction_timeout_seconds(chain)) - 1.0;
+
+        assert_eq!(pending_transaction_elapsed(chain, expires_at, now), Duration::ZERO);
     }
 }

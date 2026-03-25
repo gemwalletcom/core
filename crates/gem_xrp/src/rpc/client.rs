@@ -1,3 +1,4 @@
+use serde::de::DeserializeOwned;
 use serde_json::json;
 use std::error::Error;
 
@@ -70,12 +71,18 @@ impl<C: Client + Clone> XRPClient<C> {
     }
 
     pub async fn get_transaction_status(&self, transaction_id: &str) -> Result<TransactionStatus, Box<dyn Error + Send + Sync>> {
+        self.get_transaction(transaction_id).await
+    }
+
+    pub(crate) async fn get_transaction<T>(&self, transaction_id: &str) -> Result<T, Box<dyn Error + Send + Sync>>
+    where
+        T: DeserializeOwned + Send,
+    {
         let params = json!([
             {
                 "transaction": transaction_id
             }
         ]);
-
         Ok(self.client.call("tx", params).await?)
     }
 

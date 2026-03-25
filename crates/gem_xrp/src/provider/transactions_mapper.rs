@@ -128,6 +128,22 @@ pub fn map_block_transaction(chain: Chain, transaction: XrpTransaction, close_ti
     )
 }
 
+pub fn map_direct_transaction(chain: Chain, transaction: XrpTransaction) -> Option<Transaction> {
+    map_transaction_common(
+        chain,
+        transaction.hash,
+        transaction.account,
+        transaction.destination,
+        transaction.amount,
+        transaction.destination_tag,
+        transaction.memos,
+        transaction.fee,
+        transaction.transaction_type,
+        transaction.meta.result,
+        XRP_EPOCH_OFFSET_SECONDS + transaction.date?,
+    )
+}
+
 pub fn map_token_data(chain: Chain, account_objects: Vec<AccountObject>) -> Result<Asset, Box<dyn Error + Send + Sync>> {
     let account = account_objects.first().ok_or("No account objects found for token_id")?;
     let symbol = account.low_limit.symbol().ok_or("Invalid currency")?;
@@ -146,6 +162,7 @@ pub fn map_token_data(chain: Chain, account_objects: Vec<AccountObject>) -> Resu
 mod tests {
     use super::*;
     use crate::models::rpc::{LedgerData, TransactionBroadcast};
+    use crate::provider::testkit::TEST_TRANSACTION_ID;
     use gem_jsonrpc::types::JsonRpcResult;
 
     #[test]
@@ -226,5 +243,18 @@ mod tests {
             assert_eq!(tx.asset_id.chain, Chain::Xrp);
             assert_eq!(tx.transaction_type, TransactionType::Transfer);
         }
+    }
+
+    #[test]
+    fn test_map_transaction_by_hash() {
+        let transaction = serde_json::from_str::<JsonRpcResult<XrpTransaction>>(include_str!("../testdata/transaction_by_hash.json"))
+            .unwrap()
+            .take()
+            .unwrap();
+
+        let mapped = map_direct_transaction(Chain::Xrp, transaction).unwrap();
+
+        assert_eq!(mapped.hash, TEST_TRANSACTION_ID);
+        assert_eq!(mapped.from, "rnXZ876yGEhoATQSYegtD8bg8wpA8TTX5a");
     }
 }

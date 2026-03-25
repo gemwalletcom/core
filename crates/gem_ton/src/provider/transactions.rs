@@ -29,7 +29,7 @@ impl<C: Client> ChainTransactions for TonClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use super::*;
-    use crate::provider::testkit::{TEST_ADDRESS, create_ton_test_client};
+    use crate::provider::testkit::{TEST_ADDRESS, TEST_TRANSACTION_ID, create_ton_test_client};
     use chain_traits::ChainState;
 
     #[tokio::test]
@@ -50,6 +50,15 @@ mod chain_integration_tests {
 
         assert!(!transactions.is_empty());
 
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_transaction_by_hash() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_ton_test_client();
+        let transaction = ChainTransactions::get_transaction_by_hash(&client, TEST_TRANSACTION_ID.to_string()).await?.unwrap();
+
+        assert_eq!(transaction.hash, TEST_TRANSACTION_ID);
         Ok(())
     }
 }

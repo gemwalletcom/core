@@ -1,0 +1,21 @@
+{
+  "_embedded": {
+    "records": [
+      {
+        "id": "1",
+        "transaction_successful": true,
+        "transaction_hash": "356f0ece1eb64da9569b9a2b7a2fe0c3c5a00346a6ea33915c61f19e9ccdf418",
+        "type": "payment",
+        "asset_type": "native",
+        "from": "GFROM",
+        "to": "GTO",
+        "amount": "0.0001",
+        "created_at": "2026-01-11T05:10:52Z",
+        "source_account": null,
+        "funder": null,
+        "account": null,
+        "starting_balance": null
+      }
+    ]
+  }
+}

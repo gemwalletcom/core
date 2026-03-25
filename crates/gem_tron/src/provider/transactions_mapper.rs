@@ -155,6 +155,7 @@ pub fn map_transaction(chain: Chain, transaction: TronTransaction, receipt: Tran
 mod tests {
     use super::*;
     use crate::models::{TransactionReceipt, TransactionReceiptData, TronTransactionBroadcast};
+    use crate::provider::testkit::TEST_TRANSACTION_ID;
 
     #[test]
     fn test_map_transaction_broadcast_error() {
@@ -280,22 +281,14 @@ mod tests {
     }
 
     #[test]
-    fn test_map_transaction_coin_transfer() {
+    fn test_map_transaction_by_hash() {
         let transaction: TronTransaction = serde_json::from_str(include_str!("../../testdata/transaction_coin_transfer.json")).unwrap();
-        let receipt = TransactionReceiptData {
-            id: "test_id".to_string(),
-            fee: Some(1000),
-            block_number: 12345,
-            block_time_stamp: 1757976717000,
-            receipt: TransactionReceipt {
-                result: Some("SUCCESS".to_string()),
-            },
-            log: None,
-        };
+        let receipt: TransactionReceiptData = serde_json::from_str(include_str!("../../testdata/transaction_coin_transfer_receipt.json")).unwrap();
 
         let result = map_transaction(Chain::Tron, transaction, receipt);
         assert!(result.is_some());
         let tx = result.unwrap();
+        assert_eq!(tx.hash, TEST_TRANSACTION_ID);
         assert_eq!(tx.transaction_type, TransactionType::Transfer);
         assert_eq!(tx.value, "25000000");
         assert_ne!(tx.from, tx.to);

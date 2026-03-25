@@ -1,7 +1,9 @@
+use serde::{Deserialize, Serialize};
+
 // IMPORTANT: Field order matters for msgpack serialization and hash calculation
 // Do not change field order unless you know the exact order in Python SDK.
 
-#[derive(Clone, serde::Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Cancel {
     pub r#type: String,
     pub cancels: Vec<CancelOrder>,
@@ -16,7 +18,7 @@ impl Cancel {
     }
 }
 
-#[derive(Clone, serde::Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct CancelOrder {
     #[serde(rename = "a")]
     pub asset: u32,

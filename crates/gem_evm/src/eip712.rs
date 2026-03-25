@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use serde_serializers::deserialize_u64_from_str_or_int;
+use serde_serializers::deserialize_option_u64_from_str_or_int;
 use signer::hash_eip712;
 use std::collections::HashMap;
 
@@ -8,19 +8,18 @@ use crate::address::ethereum_address_checksum;
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct EIP712Domain {
-    pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
     #[serde(rename = "chainId")]
-    #[serde(deserialize_with = "deserialize_u64_from_str_or_int")]
-    pub chain_id: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, deserialize_with = "deserialize_option_u64_from_str_or_int")]
+    pub chain_id: Option<u64>,
     #[serde(rename = "verifyingContract")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
     pub verifying_contract: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[serde(default)]
     pub salts: Option<Vec<u8>>,
 }
 
@@ -85,8 +84,10 @@ pub fn validate_eip712_chain_id(data: &str, expected_chain_id: u64) -> Result<()
     let value: serde_json::Value = serde_json::from_str(data).map_err(|e| format!("Invalid EIP712 JSON: {}", e))?;
     let message = parse_eip712_json(&value)?;
 
-    if message.domain.chain_id != expected_chain_id {
-        return Err(format!("Chain ID mismatch: expected {}, got {}", expected_chain_id, message.domain.chain_id));
+    if let Some(chain_id) = message.domain.chain_id
+        && chain_id != expected_chain_id
+    {
+        return Err(format!("Chain ID mismatch: expected {}, got {}", expected_chain_id, chain_id));
     }
 
     Ok(())
@@ -237,7 +238,7 @@ mod tests {
 
         let message = result.unwrap();
 
-        assert!(message.domain.chain_id == 1);
+        assert_eq!(message.domain.chain_id, Some(1));
         assert_eq!(message.message.len(), 3);
 
         match &message.message[0].value {
@@ -299,7 +300,7 @@ mod tests {
 
         let message = result.unwrap();
 
-        assert!(message.domain.chain_id == 1);
+        assert_eq!(message.domain.chain_id, Some(1));
         assert!(message.message.len() == 5);
     }
 
@@ -323,6 +324,20 @@ mod tests {
         use crate::testkit::eip712_mock::mock_eip712_json;
         let result = validate_eip712_chain_id(&mock_eip712_json(137), 137);
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_parse_eip712_json_without_domain_chain_id() {
+        let json = include_str!("../testdata/ens_upload_avatar.json");
+        let value: serde_json::Value = serde_json::from_str(json).unwrap();
+        let result = parse_eip712_json(&value).unwrap();
+
+        assert_eq!(result.domain.name.as_deref(), Some("Ethereum Name Service"));
+        assert_eq!(result.domain.version.as_deref(), Some("1"));
+        assert_eq!(result.domain.chain_id, None);
+        assert_eq!(result.primary_type, "Upload");
+        assert_eq!(result.message.len(), 4);
+        assert!(validate_eip712_chain_id(json, 1).is_ok());
     }
 
     #[test]

@@ -100,11 +100,12 @@ pub struct Transaction {
     pub destination: Option<String>,
     #[serde(rename = "TransactionType")]
     pub transaction_type: String,
+    pub date: Option<i64>,
     #[serde(rename = "DestinationTag")]
     pub destination_tag: Option<i64>,
     #[serde(rename = "Memos")]
     pub memos: Option<Vec<TransactionMemo>>,
-    #[serde(rename = "metaData")]
+    #[serde(rename = "metaData", alias = "meta")]
     pub meta: TransactionMeta,
 }
 

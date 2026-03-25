@@ -10,6 +10,8 @@ use settings::testkit::get_test_settings;
 pub const TEST_ADDRESS: &str = "cosmos1cvh8mpz04az0x7vht6h6ekksg8wd650r39ltwj";
 #[cfg(all(test, feature = "chain_integration_tests"))]
 pub const TEST_EMPTY_ADDRESS: &str = "cosmos19xv76hwfjzf286we9q8ssce4v67h378vfnxvga";
+#[cfg(test)]
+pub const TEST_TRANSACTION_ID: &str = "BC5E330F0AFA34489B9796E8101A2B027CC8AE8E820AFC7901C3C1E75C2895DD";
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 pub fn create_osmosis_test_client() -> CosmosClient<ReqwestClient> {

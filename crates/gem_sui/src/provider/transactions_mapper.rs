@@ -192,6 +192,7 @@ pub fn map_transaction_blocks(transaction_blocks: TransactionBlocks) -> Vec<Tran
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::provider::testkit::TEST_TRANSACTION_ID;
 
     #[test]
     fn test_map_transaction_blocks() {
@@ -207,10 +208,19 @@ mod tests {
         let transaction = map_transaction(digest).unwrap();
 
         assert_eq!(transaction.transaction_type, TransactionType::SmartContractCall);
-        assert_eq!(transaction.hash, "7HzEQGTN95E8CKSrwLghNCsx1ikgQMRLWCQpZeeTuYen");
         assert_eq!(transaction.value, "0");
 
         let metadata: TransactionSmartContractMetadata = serde_json::from_value(transaction.metadata.unwrap()).unwrap();
         assert_eq!(metadata.method_name, "timevy_tipping");
+    }
+
+    #[test]
+    fn test_map_transaction_by_hash() {
+        let response: serde_json::Value = serde_json::from_str(include_str!("../../testdata/transfer_sui.json")).unwrap();
+        let digest: Digest = serde_json::from_value(response["result"].clone()).unwrap();
+        let transaction = map_transaction(digest).unwrap();
+
+        assert_eq!(transaction.hash, TEST_TRANSACTION_ID);
+        assert_eq!(transaction.transaction_type, TransactionType::Transfer);
     }
 }

@@ -1,6 +1,8 @@
+use serde::{Deserialize, Serialize};
+
 // IMPORTANT: Field order matters for msgpack serialization and hash calculation
 // Do not change field order unless you know the exact order in Python SDK.
-#[derive(Clone, serde::Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct UpdateLeverage {
     pub r#type: String,
     pub asset: u32,

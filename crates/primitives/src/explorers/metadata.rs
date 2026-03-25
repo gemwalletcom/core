@@ -190,7 +190,10 @@ mod tests {
         assert_eq!(explorer.get_tx_url("abc123"), "https://test.com/tx/abc123");
         assert_eq!(explorer.get_address_url("addr123"), "https://test.com/address/addr123");
         assert_eq!(explorer.get_token_url("token123"), Some("https://test.com/token/token123".to_string()));
-        assert_eq!(explorer.get_nft_url("contract123", "token123"), Some("https://test.com/nft/contract123/token123".to_string()));
+        assert_eq!(
+            explorer.get_nft_url("contract123", "token123"),
+            Some("https://test.com/nft/contract123/token123".to_string())
+        );
         assert_eq!(explorer.get_validator_url("val123"), Some("https://test.com/validator/val123".to_string()));
     }
 

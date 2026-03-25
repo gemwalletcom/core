@@ -47,7 +47,7 @@ impl<C: Client + Clone> ChainTransactions for TronClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use super::*;
-    use crate::provider::testkit::{TEST_ADDRESS, create_test_client};
+    use crate::provider::testkit::{TEST_ADDRESS, TEST_TRANSACTION_ID, create_test_client};
     use chain_traits::ChainState;
 
     #[tokio::test]
@@ -78,5 +78,13 @@ mod chain_integration_tests {
 
         println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
         assert!(!transactions.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_get_transaction_by_hash() {
+        let tron_client = create_test_client();
+        let transaction = tron_client.get_transaction_by_hash(TEST_TRANSACTION_ID.to_string()).await.unwrap().unwrap();
+
+        assert_eq!(transaction.hash, TEST_TRANSACTION_ID);
     }
 }

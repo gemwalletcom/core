@@ -7,6 +7,8 @@ use settings::testkit::get_test_settings;
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 pub const TEST_ADDRESS: &str = "0x6467997d9c3a5bc9f714e17a168984595ce9bec7350645713a1fe7983a7f5fcc";
+#[cfg(test)]
+pub const TEST_TRANSACTION_ID: &str = "0x6a43e0034486583a30cff449c03c4d882c641b351e392096272496168240de8e";
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 pub const TEST_ADDRESS_STAKING: &str = "0xc95615aa095c100b18eb6eaa0f0a0f30b9cd96685118a7cbc1a2328a91ca2eda";

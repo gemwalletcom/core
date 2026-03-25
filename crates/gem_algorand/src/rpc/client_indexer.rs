@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use crate::models::{Block, Transactions};
+use crate::models::{Block, TransactionLookup, Transactions};
 
 #[cfg(feature = "rpc")]
 use gem_client::{Client, ClientExt};
@@ -23,5 +23,9 @@ impl<C: Client> AlgorandClientIndexer<C> {
 
     pub async fn get_block(&self, block_number: u64) -> Result<Block, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get(&format!("/v2/blocks/{}", block_number)).await?)
+    }
+
+    pub async fn get_transaction(&self, txid: &str) -> Result<TransactionLookup, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.get(&format!("/v2/transactions/{}", txid)).await?)
     }
 }

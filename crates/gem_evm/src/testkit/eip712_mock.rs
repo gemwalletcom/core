@@ -3,9 +3,9 @@ use crate::eip712::{EIP712Domain, EIP712Field, EIP712Message, EIP712TypedValue, 
 impl EIP712Domain {
     pub fn mock(chain_id: u64) -> Self {
         Self {
-            name: "Test".to_string(),
+            name: Some("Test".to_string()),
             version: Some("1".to_string()),
-            chain_id,
+            chain_id: Some(chain_id),
             verifying_contract: None,
             salts: None,
         }
@@ -53,15 +53,15 @@ mod tests {
     #[test]
     fn test_eip712_domain_mock() {
         let domain = EIP712Domain::mock(1);
-        assert_eq!(domain.chain_id, 1);
-        assert_eq!(domain.name, "Test");
+        assert_eq!(domain.chain_id, Some(1));
+        assert_eq!(domain.name.as_deref(), Some("Test"));
         assert_eq!(domain.version, Some("1".to_string()));
     }
 
     #[test]
     fn test_eip712_message_mock() {
         let message = EIP712Message::mock(1);
-        assert_eq!(message.domain.chain_id, 1);
+        assert_eq!(message.domain.chain_id, Some(1));
         assert_eq!(message.primary_type, "Message");
         assert_eq!(message.message.len(), 1);
     }

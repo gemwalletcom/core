@@ -52,7 +52,7 @@ impl<C: Client + Clone> ChainTransactions for SolanaClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use super::*;
-    use crate::provider::testkit::{TEST_ADDRESS, create_solana_test_client};
+    use crate::provider::testkit::{TEST_ADDRESS, TEST_TRANSACTION_ID, create_solana_test_client};
     use chain_traits::ChainState;
 
     #[tokio::test]
@@ -73,5 +73,13 @@ mod chain_integration_tests {
         let transactions = client.get_transactions_by_address(TransactionsRequest::new(TEST_ADDRESS.to_string())).await.unwrap();
 
         println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
+    }
+
+    #[tokio::test]
+    async fn test_solana_get_transaction_by_hash() {
+        let client = create_solana_test_client();
+        let transaction = client.get_transaction_by_hash(TEST_TRANSACTION_ID.to_string()).await.unwrap().unwrap();
+
+        assert_eq!(transaction.hash, TEST_TRANSACTION_ID);
     }
 }

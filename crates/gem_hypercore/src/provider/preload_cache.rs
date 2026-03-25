@@ -1,6 +1,7 @@
 use crate::config::HypercoreConfig;
 use crate::models::referral::Referral;
 use crate::models::user::{AgentSession, UserFee};
+use crate::rpc::client::agent_owner_cache_key;
 use primitives::{Preferences, PreferencesExt};
 use std::error::Error;
 use std::future::Future;
@@ -99,6 +100,7 @@ impl HyperCoreCache {
     {
         let agent = crate::agent::Agent::new(secure_preferences);
         let (agent_address, agent_private_key) = agent.get_or_create_credentials(sender_address)?;
+        self.preferences.set(agent_owner_cache_key(&agent_address), sender_address.to_lowercase())?;
         let cache_key = self.cache_key(&agent_address, Self::AGENT_VALID_UNTIL_KEY);
         let current_time = Self::current_time()?;
 
@@ -116,6 +118,7 @@ impl HyperCoreCache {
 
             if current_time >= valid_until {
                 let (new_address, new_key) = agent.regenerate_credentials(sender_address)?;
+                self.preferences.set(agent_owner_cache_key(&new_address), sender_address.to_lowercase())?;
                 Ok((true, new_address, new_key))
             } else {
                 Ok((false, agent_address, agent_private_key))

@@ -75,7 +75,9 @@ pub fn map_transaction(chain: Chain, transaction: &Transaction) -> Option<primit
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::Transaction as BitcoinTransaction;
     use crate::models::transaction::{Input, Output};
+    use crate::provider::testkit::TEST_TRANSACTION_ID;
 
     #[test]
     fn test_map_transaction() {
@@ -167,5 +169,15 @@ mod tests {
             ..Transaction::mock()
         };
         assert!(op_return_memo(&transaction).is_none());
+    }
+
+    #[test]
+    fn test_map_transaction_by_hash() {
+        let transaction: BitcoinTransaction = serde_json::from_str(include_str!("../../testdata/transaction_by_hash.json")).unwrap();
+        let mapped = map_transaction(Chain::Bitcoin, &transaction).unwrap();
+
+        assert_eq!(mapped.hash, TEST_TRANSACTION_ID);
+        assert_eq!(mapped.fee, "1694");
+        assert_eq!(mapped.value, "546");
     }
 }

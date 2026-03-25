@@ -240,6 +240,7 @@ pub fn map_transaction(transaction: Transaction) -> Option<PrimitivesTransaction
 mod tests {
     use super::*;
     use crate::models::TransactionResponse;
+    use crate::provider::testkit::TEST_TRANSACTION_ID;
     use primitives::asset_constants::APTOS_USDT_TOKEN_ID;
 
     #[test]
@@ -285,14 +286,15 @@ mod tests {
     }
 
     #[test]
-    fn test_map_transaction_near_intent_transfer() {
+    fn test_map_transaction_by_hash() {
         let transaction: Transaction = serde_json::from_str(include_str!("../../testdata/transaction_near_intent_transfer.json")).unwrap();
 
         let result = map_transaction(transaction);
 
         assert!(result.is_some());
         let tx = result.unwrap();
-        assert_eq!(tx.id.to_string(), "aptos_0x6a43e0034486583a30cff449c03c4d882c641b351e392096272496168240de8e");
+        assert_eq!(tx.hash, TEST_TRANSACTION_ID);
+        assert_eq!(tx.id.to_string(), format!("aptos_{TEST_TRANSACTION_ID}"));
         assert_eq!(tx.from, "0xd1a1c1804e91ba85a569c7f018bb7502d2f13d4742d2611953c9c14681af6446");
         assert_eq!(tx.to, "0x6467997d9c3a5bc9f714e17a168984595ce9bec7350645713a1fe7983a7f5fcc");
         assert_eq!(tx.value, "2431838058");

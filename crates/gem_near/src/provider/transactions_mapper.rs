@@ -18,7 +18,7 @@ pub fn map_transaction(chain: Chain, header: rpc::BlockHeader, transaction: rpc:
         match &transaction.actions.last()? {
             rpc::Action::Transfer { deposit } => {
                 let asset_id = chain.as_asset_id();
-                let transaction = Transaction::new(
+                return Some(Transaction::new(
                     transaction.hash,
                     asset_id.clone(),
                     transaction.signer_id,
@@ -26,14 +26,13 @@ pub fn map_transaction(chain: Chain, header: rpc::BlockHeader, transaction: rpc:
                     None,
                     TransactionType::Transfer,
                     TransactionState::Confirmed,
-                    "830000000000000000000".to_string(), // Standard Near transaction fee
+                    "830000000000000000000".to_string(),
                     asset_id,
                     deposit.clone(),
                     None,
                     None,
                     created_at,
-                );
-                return Some(transaction);
+                ));
             }
             rpc::Action::CreateAccount | rpc::Action::Other(_) => return None,
         }

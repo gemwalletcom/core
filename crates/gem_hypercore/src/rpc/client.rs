@@ -6,11 +6,13 @@ use crate::models::{
     portfolio::HypercorePortfolioResponse,
     position::AssetPositions,
     referral::Referral,
+    response::ExplorerTransactionResponse,
     spot::{OrderbookResponse, SpotMeta},
     user::{AgentSession, LedgerUpdate, UserFee, UserRole},
 };
 use chain_traits::ChainTraits;
 use gem_client::{CONTENT_TYPE, Client, ClientExt, ContentType};
+use serde::de::DeserializeOwned;
 use std::{
     collections::HashMap,
     error::Error,
@@ -23,6 +25,17 @@ use primitives::{Chain, Preferences};
 use serde_json::json;
 
 const SPOT_META_CACHE_TTL_SECS: u64 = 3600;
+const EXPLORER_PATH: &str = "/explorer";
+const TRANSACTION_SENDER_CACHE_PREFIX: &str = "hypercore_transaction_sender_";
+pub(crate) const AGENT_OWNER_CACHE_PREFIX: &str = "hypercore_agent_owner_";
+
+fn transaction_sender_cache_key(id: &str) -> String {
+    format!("{TRANSACTION_SENDER_CACHE_PREFIX}{id}")
+}
+
+pub(crate) fn agent_owner_cache_key(agent_address: &str) -> String {
+    format!("{AGENT_OWNER_CACHE_PREFIX}{}", agent_address.to_lowercase())
+}
 
 #[derive(Debug)]
 pub struct InMemoryPreferences {
@@ -101,13 +114,17 @@ impl<C: Client> HyperCoreClient<C> {
 
     async fn info<T>(&self, payload: serde_json::Value) -> Result<T, Box<dyn Error + Send + Sync>>
     where
-        T: serde::de::DeserializeOwned + Send,
+        T: DeserializeOwned + Send,
     {
         Ok(self.client.post("/info", &payload).await?)
     }
 
     pub async fn exchange(&self, payload: serde_json::Value) -> Result<serde_json::Value, Box<dyn Error + Send + Sync>> {
         Ok(self.client.post("/exchange", &payload).await?)
+    }
+
+    pub async fn get_transaction_details(&self, hash: &str) -> Result<ExplorerTransactionResponse, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.post(EXPLORER_PATH, &json!({ "type": "txDetails", "hash": hash })).await?)
     }
 
     pub async fn get_validators(&self) -> Result<Vec<Validator>, Box<dyn Error + Send + Sync>> {
@@ -256,6 +273,22 @@ impl<C: Client> HyperCoreClient<C> {
             "user": user
         }))
         .await
+    }
+
+    pub fn cache_transaction_sender(&self, id: &str, sender: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.preferences.set(transaction_sender_cache_key(id), sender.to_lowercase())
+    }
+
+    pub fn get_cached_transaction_sender(&self, id: &str) -> Result<Option<String>, Box<dyn Error + Send + Sync>> {
+        self.preferences.get(transaction_sender_cache_key(id))
+    }
+
+    pub fn cache_agent_owner(&self, agent_address: &str, sender_address: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.preferences.set(agent_owner_cache_key(agent_address), sender_address.to_lowercase())
+    }
+
+    pub fn get_cached_agent_owner(&self, agent_address: &str) -> Result<Option<String>, Box<dyn Error + Send + Sync>> {
+        self.preferences.get(agent_owner_cache_key(agent_address))
     }
 }
 

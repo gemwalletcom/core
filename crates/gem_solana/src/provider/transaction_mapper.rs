@@ -220,6 +220,7 @@ pub fn map_transaction(transaction: &BlockTransaction, block_time: i64) -> Optio
 mod tests {
 
     use super::*;
+    use crate::provider::testkit::TEST_TRANSACTION_ID;
     use crate::{
         PYUSD_TOKEN_MINT, USDT_TOKEN_MINT,
         models::{SingleTransaction, SolanaTransaction},
@@ -344,7 +345,7 @@ mod tests {
     }
 
     #[test]
-    fn test_transaction_transfer_usdc() {
+    fn test_map_transaction_by_hash() {
         let result: JsonRpcResult<SingleTransaction> = serde_json::from_str(include_str!("../../testdata/usdc_transfer.json")).unwrap();
 
         let block_transaction = BlockTransaction {
@@ -354,7 +355,7 @@ mod tests {
 
         let transaction = map_transaction(&block_transaction, result.result.block_time).unwrap();
         let expected = Transaction::new(
-            "4dHnggcXjvmMJY2J6iGqse12PeCYQzuTySgwJa36K8MuntmwNrCNztvYRX5ZGpQXzKjaf7g5vaZM7LTuXLNbi2Zx".to_string(),
+            TEST_TRANSACTION_ID.to_string(),
             SOLANA_USDC_ASSET_ID.clone(),
             "37BenMAXFJMo3GaXKb2XLsNQXmd6VbbdShZWnwDj9D6k".to_string(),
             "3UJQqKq8Xyx4aVRmHgEwpQZiW7toYRQCTy6Bgp1RdKnK".to_string(),

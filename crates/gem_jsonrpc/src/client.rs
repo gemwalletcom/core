@@ -1,6 +1,6 @@
 use crate::types::{ERROR_CLIENT_ERROR, ERROR_INTERNAL_ERROR, JsonRpcError, JsonRpcRequest, JsonRpcRequestConvert, JsonRpcResult, JsonRpcResults};
 use gem_client::{Client, ClientError, ClientExt};
-use serde::de::DeserializeOwned;
+use serde::{Serialize, de::DeserializeOwned};
 use serde_json::Value;
 use std::collections::HashMap;
 #[cfg(feature = "reqwest")]
@@ -56,7 +56,7 @@ impl<C: Client + Clone> JsonRpcClient<C> {
 
     pub async fn call_method_with_param<T, U>(&self, method: &str, params: T, ttl: Option<u64>) -> Result<JsonRpcResult<U>, JsonRpcError>
     where
-        T: serde::Serialize,
+        T: Serialize,
         U: DeserializeOwned + Send,
     {
         let params_value = serde_json::to_value(params).map_err(|e| JsonRpcError {

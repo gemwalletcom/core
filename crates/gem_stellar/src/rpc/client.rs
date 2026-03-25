@@ -69,11 +69,16 @@ impl<C: Client> StellarClient<C> {
     }
 
     pub async fn get_account_payments(&self, account_id: String) -> Result<AccountResult<Embedded<Payment>>, Box<dyn Error + Send + Sync>> {
-        match self
-            .client
-            .get::<Embedded<Payment>>(&format!("/accounts/{}/payments?order=desc&limit=200&include_failed=true", account_id))
+        self.get_payments(&format!("/accounts/{account_id}/payments?order=desc&limit=200&include_failed=true"))
             .await
-        {
+    }
+
+    pub async fn get_transaction_payments(&self, transaction_id: &str) -> Result<AccountResult<Embedded<Payment>>, Box<dyn Error + Send + Sync>> {
+        self.get_payments(&format!("/transactions/{transaction_id}/payments?include_failed=true")).await
+    }
+
+    async fn get_payments(&self, path: &str) -> Result<AccountResult<Embedded<Payment>>, Box<dyn Error + Send + Sync>> {
+        match self.client.get::<Embedded<Payment>>(path).await {
             Ok(result) => Ok(AccountResult::Found(result)),
             Err(ClientError::Http { status: 404, .. }) => Ok(AccountResult::NotFound),
             Err(e) => Err(Box::new(e)),

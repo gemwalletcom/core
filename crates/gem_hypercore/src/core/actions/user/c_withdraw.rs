@@ -1,6 +1,7 @@
 use crate::core::actions::{MAINNET, SIGNATURE_CHAIN_ID};
+use serde::{Deserialize, Serialize};
 
-#[derive(Clone, serde::Serialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct CWithdraw {
     #[serde(rename = "hyperliquidChain")]
     pub hyperliquid_chain: String,

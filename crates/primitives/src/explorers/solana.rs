@@ -9,12 +9,7 @@ struct SolanaExplorer {
 }
 
 impl SolanaExplorer {
-    fn boxed(
-        name: &'static str,
-        base_url: &'static str,
-        address_path: &'static str,
-        token_path: &'static str,
-    ) -> Box<dyn BlockExplorer> {
+    fn boxed(name: &'static str, base_url: &'static str, address_path: &'static str, token_path: &'static str) -> Box<dyn BlockExplorer> {
         Box::new(Self {
             name,
             base_url,

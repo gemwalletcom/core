@@ -51,6 +51,11 @@ pub struct Transactions {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TransactionLookup {
+    pub transaction: Transaction,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionBroadcast {
     #[serde(rename = "txId")]
     pub tx_id: Option<String>,

@@ -86,9 +86,9 @@ pub fn permit2_data_to_eip712_json(chain: Chain, data: PermitSingle, contract: &
     let chain_id = chain.network_id();
     let message = Permit2Message {
         domain: EIP712Domain {
-            name: "Permit2".to_string(),
+            name: Some("Permit2".to_string()),
             version: None,
-            chain_id: chain_id.parse::<u64>().unwrap(),
+            chain_id: Some(chain_id.parse::<u64>().unwrap()),
             verifying_contract: Some(contract.to_string()),
             salts: None,
         },

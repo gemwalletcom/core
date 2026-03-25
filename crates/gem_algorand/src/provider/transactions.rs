@@ -5,7 +5,10 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::Transaction;
 
-use crate::{provider::transactions_mapper::map_transactions, rpc::client::AlgorandClient};
+use crate::{
+    provider::transactions_mapper::{map_transaction_by_hash, map_transactions},
+    rpc::client::AlgorandClient,
+};
 
 #[async_trait]
 impl<C: Client> ChainTransactions for AlgorandClient<C> {
@@ -18,6 +21,11 @@ impl<C: Client> ChainTransactions for AlgorandClient<C> {
         let TransactionsRequest { address, .. } = request;
         let transactions = self.indexer.get_account_transactions(&address).await?;
         Ok(map_transactions(transactions.transactions))
+    }
+
+    async fn get_transaction_by_hash(&self, hash: String) -> Result<Option<Transaction>, Box<dyn Error + Sync + Send>> {
+        let transaction = self.indexer.get_transaction(&hash).await?;
+        Ok(map_transaction_by_hash(transaction))
     }
 }
 
@@ -43,6 +51,15 @@ mod chain_integration_tests {
         println!("Address: {}, transactions count: {}", TEST_ADDRESS, transactions.len());
 
         assert!(!transactions.is_empty());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_algorand_get_transaction_by_hash() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_algorand_test_client();
+        let transaction = client.get_transaction_by_hash(TEST_TRANSACTION_ID.to_string()).await?.unwrap();
+
+        assert_eq!(transaction.hash, TEST_TRANSACTION_ID);
         Ok(())
     }
 }
