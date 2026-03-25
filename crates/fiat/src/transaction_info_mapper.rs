@@ -1,15 +1,15 @@
 use primitives::{Asset, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionInfo};
 
 pub fn fiat_transaction_info(transaction: FiatTransaction, asset: Asset) -> FiatTransactionInfo {
-    let details_url = details_url(&transaction.provider_id, &transaction.transaction_type, transaction.provider_transaction_id.as_deref());
+    let details_url = details_url(&transaction.provider, &transaction.transaction_type, transaction.provider_transaction_id.as_deref());
 
     FiatTransactionInfo { transaction, asset, details_url }
 }
 
-fn details_url(provider_id: &FiatProviderName, transaction_type: &FiatQuoteType, provider_transaction_id: Option<&str>) -> Option<String> {
+fn details_url(provider: &FiatProviderName, transaction_type: &FiatQuoteType, provider_transaction_id: Option<&str>) -> Option<String> {
     let provider_transaction_id = provider_transaction_id?;
 
-    match provider_id {
+    match provider {
         FiatProviderName::MoonPay => match transaction_type {
             FiatQuoteType::Buy => Some(format!("https://buy.moonpay.com/v2/transaction-tracker?transactionId={provider_transaction_id}")),
             FiatQuoteType::Sell => Some(format!("https://sell.moonpay.com/v2/transaction-tracker?transactionId={provider_transaction_id}")),

@@ -204,7 +204,7 @@ impl FiatTransactionRow {
             id: self.quote_id.clone(),
             asset_id: self.asset_id.0.clone(),
             transaction_type: self.transaction_type.0.clone(),
-            provider_id: self.provider_id.0,
+            provider: self.provider_id.0,
             provider_transaction_id: self.provider_transaction_id.clone(),
             status: self.status.0.clone(),
             country: self.country.clone(),
@@ -243,7 +243,7 @@ impl NewFiatTransactionRow {
         Self {
             asset_id: transaction.asset_id.into(),
             transaction_type: transaction.transaction_type.into(),
-            provider_id: transaction.provider_id.into(),
+            provider_id: transaction.provider.into(),
             provider_transaction_id: transaction.provider_transaction_id,
             status: transaction.status.into(),
             country: transaction.country,
@@ -294,6 +294,7 @@ impl FiatProviderCountryRow {
 pub struct UpdateFiatTransactionRow {
     pub status: FiatTransactionStatusRow,
     pub fiat_amount: Option<f64>,
+    pub fiat_currency: Option<String>,
     pub transaction_hash: Option<String>,
     pub address: Option<String>,
 }
@@ -303,6 +304,7 @@ impl UpdateFiatTransactionRow {
         Self {
             status: transaction.status.clone().into(),
             fiat_amount: transaction.fiat_amount,
+            fiat_currency: transaction.fiat_currency.clone(),
             transaction_hash: transaction.transaction_hash.clone(),
             address: transaction.address.clone(),
         }
@@ -311,9 +313,9 @@ impl UpdateFiatTransactionRow {
 
 #[cfg(test)]
 mod tests {
-    use super::FiatTransactionRow;
+    use super::{FiatTransactionRow, UpdateFiatTransactionRow};
     use chrono::{DateTime, Utc};
-    use primitives::{AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransactionStatus};
+    use primitives::{AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransactionStatus, FiatTransactionUpdate};
 
     #[test]
     fn as_primitive_maps_value_and_timestamps() {
@@ -364,5 +366,23 @@ mod tests {
         };
 
         assert!(row.as_primitive().is_err());
+    }
+
+    #[test]
+    fn update_row_maps_fiat_currency() {
+        let update = FiatTransactionUpdate {
+            transaction_id: "quote_123".to_string(),
+            provider_transaction_id: Some("tx_123".to_string()),
+            status: FiatTransactionStatus::Pending,
+            transaction_hash: Some("0xabc".to_string()),
+            address: Some("0x123".to_string()),
+            fiat_amount: Some(100.0),
+            fiat_currency: Some("EUR".to_string()),
+        };
+
+        let row = UpdateFiatTransactionRow::from_primitive(&update);
+
+        assert_eq!(row.fiat_currency, Some("EUR".to_string()));
+        assert_eq!(row.fiat_amount, Some(100.0));
     }
 }

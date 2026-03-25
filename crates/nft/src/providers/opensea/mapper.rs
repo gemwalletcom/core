@@ -18,6 +18,9 @@ pub fn map_asset(response: NftResponse, asset_id: NFTAssetId) -> Option<NFTAsset
 impl Nft {
     pub fn as_primitive(&self, asset: NFTAssetId) -> Option<NFTAsset> {
         let traits = self.traits.clone().unwrap_or_default();
+        let resource_url = self.resource_url();
+        let preview_url = self.preview_url();
+
         Some(NFTAsset {
             id: asset.to_string(),
             collection_id: asset.get_collection_id().id(),
@@ -27,12 +30,28 @@ impl Nft {
             name: self.name.clone(),
             description: Some(self.description.clone()),
             chain: asset.chain,
-            resource: NFTResource::from_url(&self.image_url),
+            resource: NFTResource::from_url(resource_url),
             images: NFTImages {
-                preview: NFTResource::from_url(&self.display_image_url),
+                preview: NFTResource::from_url(preview_url),
             },
             attributes: traits.iter().flat_map(|x| x.as_attribute()).collect(),
         })
+    }
+
+    fn resource_url(&self) -> &str {
+        self.image_url
+            .as_deref()
+            .or(self.original_image_url.as_deref())
+            .or(self.display_image_url.as_deref())
+            .unwrap_or_default()
+    }
+
+    fn preview_url(&self) -> &str {
+        self.display_image_url
+            .as_deref()
+            .or(self.image_url.as_deref())
+            .or(self.original_image_url.as_deref())
+            .unwrap_or_default()
     }
 
     fn as_type(&self) -> Option<NFTType> {
@@ -180,7 +199,7 @@ mod tests {
 
         let asset_id = NFTAssetId::new(Chain::Ethereum, "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D", "1");
 
-        let nft_asset = response.nft.as_primitive(asset_id).expect("Failed to map asset");
+        let nft_asset = response.nft.as_primitive(asset_id).unwrap();
 
         assert_eq!(nft_asset.chain, Chain::Ethereum);
         assert_eq!(nft_asset.token_id, "1");
@@ -210,5 +229,26 @@ mod tests {
         assert!(nft_collection.links.iter().any(|link| link.url.contains("opensea.io")));
         assert!(nft_collection.links.iter().any(|link| link.url.contains("boredapeyachtclub.com")));
         assert!(nft_collection.links.iter().any(|link| link.url.contains("discord.gg")));
+    }
+
+    #[test]
+    fn test_map_asset_with_null_image_urls() {
+        let response: NftResponse = serde_json::from_str(include_str!("../../../testdata/opensea/asset_null_images.json")).unwrap();
+        let asset_id = NFTAssetId::new(
+            Chain::Ethereum,
+            "0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401",
+            "66972740172774133895361774757009899712806299063970949277266423600598010529206",
+        );
+
+        let nft_asset = map_asset(response, asset_id).unwrap();
+
+        assert_eq!(nft_asset.chain, Chain::Ethereum);
+        assert_eq!(nft_asset.token_id, "66972740172774133895361774757009899712806299063970949277266423600598010529206");
+        assert_eq!(nft_asset.name, "gemdev.eth");
+        assert_eq!(
+            nft_asset.resource.url,
+            "https://metadata.ens.domains/mainnet/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/0x94113a45c5bedf735911bf707d70a6c05d9d99e76ece7e904c0eeda6591785b6/image"
+        );
+        assert_eq!(nft_asset.images.preview.url, nft_asset.resource.url);
     }
 }

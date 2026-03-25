@@ -94,7 +94,7 @@ impl FiatTransaction {
             id: "quote_123".to_string(),
             asset_id: AssetId::from_chain(Chain::Bitcoin),
             transaction_type: FiatQuoteType::Buy,
-            provider_id: FiatProviderName::MoonPay,
+            provider: FiatProviderName::MoonPay,
             provider_transaction_id: Some("tx_123".to_string()),
             status: FiatTransactionStatus::Pending,
             country: Some("US".to_string()),
@@ -118,6 +118,7 @@ impl FiatTransactionUpdate {
             transaction_hash: None,
             address: Some("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh".to_string()),
             fiat_amount: Some(100.0),
+            fiat_currency: Some("USD".to_string()),
         }
     }
 }

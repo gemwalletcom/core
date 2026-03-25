@@ -61,6 +61,7 @@ pub fn map_order(order: Order) -> Result<FiatTransactionUpdate, Box<dyn std::err
         transaction_hash: order.transaction_hash,
         address: (!order.wallet_address.is_empty()).then_some(order.wallet_address),
         fiat_amount: Some(order.fiat_amount),
+        fiat_currency: Some(order.fiat.to_ascii_uppercase()),
     })
 }
 
@@ -156,6 +157,7 @@ mod tests {
         assert_eq!(result.provider_transaction_id, None);
         assert_eq!(result.status, FiatTransactionStatus::Failed);
         assert_eq!(result.fiat_amount, Some(595.3));
+        assert_eq!(result.fiat_currency, Some("USD".to_string()));
         assert_eq!(result.address, Some("0x123".to_string()));
         assert_eq!(result.transaction_hash, None);
     }
@@ -166,6 +168,7 @@ mod tests {
             id: "banxa_order_123".to_string(),
             external_order_id: Some("quote_123".to_string()),
             status: "completed".to_string(),
+            fiat: "usd".to_string(),
             fiat_amount: 100.0,
             wallet_address: "bc1qexample".to_string(),
             transaction_hash: Some("tx_hash".to_string()),
@@ -177,6 +180,7 @@ mod tests {
         assert_eq!(result.provider_transaction_id, Some("banxa_order_123".to_string()));
         assert_eq!(result.status, FiatTransactionStatus::Complete);
         assert_eq!(result.fiat_amount, Some(100.0));
+        assert_eq!(result.fiat_currency, Some("USD".to_string()));
         assert_eq!(result.address, Some("bc1qexample".to_string()));
         assert_eq!(result.transaction_hash, Some("tx_hash".to_string()));
     }

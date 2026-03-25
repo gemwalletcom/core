@@ -11,7 +11,8 @@ pub struct FiatTransaction {
     pub id: String,
     pub asset_id: AssetId,
     pub transaction_type: FiatQuoteType,
-    pub provider_id: FiatProviderName,
+    pub provider: FiatProviderName,
+    #[typeshare(skip)]
     pub provider_transaction_id: Option<String>,
     pub status: FiatTransactionStatus,
     #[typeshare(skip)]
@@ -19,9 +20,12 @@ pub struct FiatTransaction {
     pub fiat_amount: f64,
     pub fiat_currency: String,
     pub value: String,
+    #[typeshare(skip)]
     pub transaction_hash: Option<String>,
+    #[typeshare(skip)]
     pub address: Option<String>,
     pub created_at: DateTime<Utc>,
+    #[typeshare(skip)]
     pub updated_at: DateTime<Utc>,
 }
 
@@ -34,7 +38,7 @@ impl FiatTransaction {
             id: quote.id.clone(),
             asset_id: quote.asset.id.clone(),
             transaction_type: quote.quote_type.clone(),
-            provider_id: quote.provider.id,
+            provider: quote.provider.id,
             provider_transaction_id,
             status: FiatTransactionStatus::Pending,
             country,
@@ -58,6 +62,7 @@ pub struct FiatTransactionUpdate {
     pub transaction_hash: Option<String>,
     pub address: Option<String>,
     pub fiat_amount: Option<f64>,
+    pub fiat_currency: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]

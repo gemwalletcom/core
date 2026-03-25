@@ -1,0 +1,56 @@
+{
+    "nft": {
+        "identifier": "66972740172774133895361774757009899712806299063970949277266423600598010529206",
+        "collection": "ens",
+        "contract": "0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401",
+        "token_standard": "erc1155",
+        "name": "gemdev.eth",
+        "description": "gemdev.eth, an ENS name.",
+        "image_url": null,
+        "display_image_url": null,
+        "display_animation_url": null,
+        "metadata_url": "https://metadata.ens.domains/mainnet/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/66972740172774133895361774757009899712806299063970949277266423600598010529206",
+        "opensea_url": "https://opensea.io/assets/ethereum/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/66972740172774133895361774757009899712806299063970949277266423600598010529206",
+        "updated_at": "2026-03-24T13:17:04.153143",
+        "is_disabled": false,
+        "is_nsfw": false,
+        "original_image_url": "https://metadata.ens.domains/mainnet/0xd4416b13d2b3a9abae7acd5d6c2bbdbe25686401/0x94113a45c5bedf735911bf707d70a6c05d9d99e76ece7e904c0eeda6591785b6/image",
+        "original_animation_url": null,
+        "traits": [
+            {
+                "trait_type": "Length",
+                "display_type": "NUMBER",
+                "max_value": null,
+                "value": "6"
+            },
+            {
+                "trait_type": "Created Date",
+                "display_type": null,
+                "max_value": null,
+                "value": "1774356395"
+            },
+            {
+                "trait_type": "Character Set",
+                "display_type": "STRING",
+                "max_value": null,
+                "value": "letter"
+            },
+            {
+                "trait_type": "Segment Length",
+                "display_type": "NUMBER",
+                "max_value": null,
+                "value": "6"
+            }
+        ],
+        "animation_url": null,
+        "is_suspicious": false,
+        "creator": "",
+        "owners": [
+            {
+                "address": "0x8d7460e51bcf4ed26877cb77e56f3ce7e9f5eb8f",
+                "quantity": 1
+            }
+        ],
+        "rarity": null
+    }
+}

@@ -6,7 +6,7 @@ use cacher::CacherClient;
 use in_transit_updater::{InTransitConfig, InTransitUpdater};
 use job_runner::{JobHandle, ShutdownReceiver};
 use pending_transactions_updater::PendingTransactionsUpdater;
-use primitives::{Chain, ConfigKey, ParamConfigKey, SwapProvider};
+use primitives::{ConfigKey, ParamConfigKey, SwapProvider};
 use settings::service_user_agent;
 use settings_chain::{ChainProviders, ProviderFactory};
 use std::error::Error;
@@ -42,6 +42,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
     let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
     let stream_producer = StreamProducer::new(&rabbitmq_config, "transactions_worker", shutdown_rx.clone()).await?;
     let cacher = CacherClient::new(&settings.redis.url).await;
+    let pending_updater = Arc::new(PendingTransactionsUpdater::new(providers.clone(), cacher.clone(), stream_producer.clone()));
 
     JobPlanBuilder::with_config(WorkerService::Transactions, runtime.plan(shutdown_rx), &config)
         .job(WorkerJob::UpdateInTransitTransactions, {
@@ -54,11 +55,11 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                 async move { updater.update().await }
             }
         })
-        .jobs(WorkerJob::UpdatePendingTransactions, Chain::all(), |chain, _| {
-            let updater = Arc::new(PendingTransactionsUpdater::new(providers.clone(), cacher.clone(), stream_producer.clone()));
+        .job(WorkerJob::UpdatePendingTransactions, {
+            let updater = pending_updater.clone();
             move |_| {
                 let updater = updater.clone();
-                async move { updater.update(chain).await }
+                async move { updater.update().await }
             }
         })
         .jobs_with_config(

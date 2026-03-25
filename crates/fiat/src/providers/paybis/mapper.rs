@@ -11,7 +11,7 @@ use primitives::fiat_assets::FiatAssetLimits;
 use primitives::{AssetId, Chain, FiatProviderName, FiatTransactionStatus, FiatTransactionUpdate, PaymentType};
 use streamer::FiatWebhook;
 
-use super::models::{Currency as PaybisCurrency, PaybisWebhook, PaybisWebhookData};
+use super::models::{Currency as PaybisCurrency, PaybisAmount, PaybisWebhook, PaybisWebhookData};
 
 pub fn supported_payment_methods() -> Vec<PaymentType> {
     vec![PaymentType::Card, PaymentType::ApplePay, PaymentType::GooglePay]
@@ -137,14 +137,27 @@ pub fn map_process_webhook(data: serde_json::Value) -> Result<FiatWebhook, serde
 }
 
 pub fn map_webhook_data(webhook_data: PaybisWebhookData) -> FiatWebhook {
+    let (fiat_amount, fiat_currency) = fiat_side(&webhook_data)
+        .map(|amount| (amount.amount.parse().ok(), Some(amount.currency.to_ascii_uppercase())))
+        .unwrap_or((None, None));
+
     FiatWebhook::Transaction(FiatTransactionUpdate {
         transaction_id: webhook_data.quote.quote_id,
         provider_transaction_id: Some(webhook_data.transaction.invoice),
         status: map_status(&webhook_data.transaction.status),
         transaction_hash: webhook_data.payout.as_ref().and_then(|p| p.transaction_hash.clone()),
         address: webhook_data.payout.as_ref().and_then(|p| p.destination_wallet_address.clone()),
-        fiat_amount: webhook_data.amount_from.amount.parse().ok(),
+        fiat_amount,
+        fiat_currency,
     })
+}
+
+fn fiat_side(webhook_data: &PaybisWebhookData) -> Option<&PaybisAmount> {
+    match webhook_data.transaction.flow.as_str() {
+        "buyCrypto" => Some(&webhook_data.amount_from),
+        "sellCrypto" => Some(&webhook_data.amount_to),
+        _ => None,
+    }
 }
 
 fn default_limits() -> Vec<FiatAssetLimits> {
@@ -192,6 +205,7 @@ pub fn map_assets(buy_currencies: Vec<PaybisCurrency>, sell_codes: HashSet<Strin
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::providers::paybis::models::{PaybisAmount, PaybisTransaction, PaybisWebhookData, PaybisWebhookQuote};
     use primitives::Chain;
     use primitives::asset_constants::{
         ARBITRUM_ARB_ASSET_ID, BASE_USDC_ASSET_ID, ETHEREUM_USDC_ASSET_ID, ETHEREUM_USDT_ASSET_ID, OPTIMISM_OP_ASSET_ID, POLYGON_USDC_ASSET_ID, POLYGON_USDT_ASSET_ID,
@@ -304,6 +318,7 @@ mod tests {
             assert_eq!(transaction.transaction_id, "a4a211ad-3bcf-47d9-b4ae-073e841e3e7a");
             assert_eq!(transaction.provider_transaction_id, Some("PB21095868675TX1".to_string()));
             assert_eq!(transaction.fiat_amount, Some(50.0));
+            assert_eq!(transaction.fiat_currency, Some("USD".to_string()));
             assert_eq!(transaction.status, FiatTransactionStatus::Pending);
             assert_eq!(transaction.address, Some("test123".to_string()));
             assert_eq!(transaction.transaction_hash, None);
@@ -320,10 +335,42 @@ mod tests {
         if let FiatWebhook::Transaction(transaction) = result {
             assert_eq!(transaction.transaction_id, "59b799d4-dc8c-458d-b9c7-292726ab6255");
             assert_eq!(transaction.provider_transaction_id, Some("PB25095868675TX8".to_string()));
+            assert_eq!(transaction.fiat_currency, Some("USD".to_string()));
             assert_eq!(transaction.address, None);
         } else {
             panic!("Expected FiatWebhook::Transaction variant");
         }
+    }
+
+    #[test]
+    fn test_map_webhook_data_sell_uses_amount_to_currency() {
+        let result = map_webhook_data(PaybisWebhookData {
+            quote: PaybisWebhookQuote {
+                quote_id: "quote_123".to_string(),
+            },
+            transaction: PaybisTransaction {
+                invoice: "invoice_123".to_string(),
+                status: "completed".to_string(),
+                flow: "sellCrypto".to_string(),
+            },
+            amount_from: PaybisAmount {
+                amount: "0.5".to_string(),
+                currency: "BTC".to_string(),
+            },
+            amount_to: PaybisAmount {
+                amount: "1234.56".to_string(),
+                currency: "EUR".to_string(),
+            },
+            payment: None,
+            payout: None,
+        });
+
+        let FiatWebhook::Transaction(transaction) = result else {
+            panic!("Expected FiatWebhook::Transaction variant");
+        };
+
+        assert_eq!(transaction.fiat_amount, Some(1234.56));
+        assert_eq!(transaction.fiat_currency, Some("EUR".to_string()));
     }
 
     #[test]
