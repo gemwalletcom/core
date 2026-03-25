@@ -75,6 +75,10 @@ mod tests {
         serde_json::json!(["0x123", eip712_value])
     }
 
+    fn eip712_params_without_domain_chain_id() -> Value {
+        serde_json::json!(["0x123", include_str!("../../../gem_evm/testdata/ens_upload_avatar.json")])
+    }
+
     #[test]
     fn test_parse_personal_sign() {
         let params = serde_json::from_str(r#"["0x48656c6c6f"]"#).unwrap();
@@ -134,6 +138,12 @@ mod tests {
         let result = EthereumRequestHandler::parse_sign_typed_data(Chain::Ethereum, eip712_params_object(137));
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("Chain ID mismatch"));
+    }
+
+    #[test]
+    fn test_parse_sign_typed_data_without_domain_chain_id() {
+        let result = EthereumRequestHandler::parse_sign_typed_data(Chain::Ethereum, eip712_params_without_domain_chain_id());
+        assert!(result.is_ok());
     }
 
     #[test]

@@ -20,7 +20,7 @@ mod tests {
 
     #[test]
     fn hash_hyperliquid_with_colon_type() {
-        let json = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../gem_hypercore/testdata/hl_eip712_approve_agent.json"));
+        let json = include_str!("../../../gem_hypercore/testdata/hl_eip712_approve_agent.json");
         let digest = hash_typed_data(json).expect("hash succeeds");
         let expected = <[u8; 32]>::from_hex("480af9fd3cdc70c2f8a521388be13620d16a0f643d9cffdfbb65cd019cc27537").unwrap();
         assert_eq!(digest, expected);

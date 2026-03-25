@@ -473,7 +473,7 @@ Issued At: 2026-03-09T15:48:34.458Z"#;
 
     #[test]
     fn test_eip712_hyperliquid_approve_agent_hash() {
-        let json_str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../crates/gem_hypercore/testdata/hl_eip712_approve_agent.json"));
+        let json_str = include_str!("../../../crates/gem_hypercore/testdata/hl_eip712_approve_agent.json");
         let decoder = MessageSigner::new(SignMessage {
             chain: Chain::Ethereum,
             sign_type: SignDigestType::Eip712,

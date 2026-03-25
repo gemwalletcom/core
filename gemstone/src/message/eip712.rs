@@ -141,4 +141,15 @@ mod tests {
     fn from_json_returns_error_for_malformed_json() {
         assert!(GemEIP712Message::from_json("{").is_err());
     }
+
+    #[test]
+    fn from_json_supports_missing_domain_chain_id() {
+        let message = GemEIP712Message::from_json(include_str!("../../../crates/gem_evm/testdata/ens_upload_avatar.json")).unwrap();
+
+        assert_eq!(message.domain.name, "Ethereum Name Service");
+        assert_eq!(message.domain.chain_id, 0);
+        assert_eq!(message.message.len(), 1);
+        assert_eq!(message.message[0].name, "Upload");
+        assert_eq!(message.message[0].values.len(), 4);
+    }
 }
