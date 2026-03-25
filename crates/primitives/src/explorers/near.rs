@@ -13,6 +13,7 @@ impl NearBlocks {
             tx_path: TXNS_PATH,
             address_path: ADDRESS_PATH,
             token_path: None,
+            nft_path: None,
             validator_path: None,
         })
     }

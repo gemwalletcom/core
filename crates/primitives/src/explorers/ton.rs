@@ -8,6 +8,7 @@ pub fn new_ton_viewer() -> Box<dyn BlockExplorer> {
         tx_path: TRANSACTION_PATH,
         address_path: "",
         token_path: Some(""),
+        nft_path: None,
         validator_path: Some(""),
     })
 }
@@ -22,6 +23,7 @@ impl TonScan {
             tx_path: TX_PATH,
             address_path: ADDRESS_PATH,
             token_path: Some("/jetton"),
+            nft_path: None,
             validator_path: Some(ADDRESS_PATH),
         })
     }

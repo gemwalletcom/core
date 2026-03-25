@@ -8,6 +8,7 @@ pub fn new() -> Box<dyn BlockExplorer> {
         tx_path: TX_PATH,
         address_path: ACCOUNT_PATH,
         token_path: Some(ASSET_PATH),
+        nft_path: None,
         validator_path: None,
     })
 }

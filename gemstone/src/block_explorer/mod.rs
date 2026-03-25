@@ -75,6 +75,10 @@ impl Explorer {
         get_block_explorer(self.chain, explorer_name).get_token_url(address)
     }
 
+    pub fn get_nft_url(&self, explorer_name: &str, contract_address: &str, token_id: &str) -> Option<String> {
+        get_block_explorer(self.chain, explorer_name).get_nft_url(contract_address, token_id)
+    }
+
     pub fn get_validator_url(&self, explorer_name: &str, address: &str) -> Option<String> {
         get_block_explorer(self.chain, explorer_name).get_validator_url(address)
     }
@@ -121,10 +125,12 @@ mod tests {
         let account_url = explorer.get_address_url(&explorers[0].name(), "0x1f9090aae28b8a3dceadf281b0f12828e676c326");
         let tx_url = explorer.get_transaction_url(&explorers[0].name(), "0xfd96a9ee20a7440bf65a5b8ecf7f884289ed78e28f82d45343a70f459e7a42a0");
         let token_url = explorer.get_token_url(&explorers[0].name(), "0xdac17f958d2ee523a2206206994597c13d831ec7");
+        let nft_url = explorer.get_nft_url(&explorers[0].name(), "0x47A00fC8590C11bE4c419D9Ae50DEc267B6E24ee", "11871");
 
         assert_eq!(account_url, "https://etherscan.io/address/0x1f9090aae28b8a3dceadf281b0f12828e676c326");
         assert_eq!(tx_url, "https://etherscan.io/tx/0xfd96a9ee20a7440bf65a5b8ecf7f884289ed78e28f82d45343a70f459e7a42a0");
         assert_eq!(token_url, Some("https://etherscan.io/token/0xdac17f958d2ee523a2206206994597c13d831ec7".to_string()));
+        assert_eq!(nft_url, Some("https://etherscan.io/nft/0x47A00fC8590C11bE4c419D9Ae50DEc267B6E24ee/11871".to_string()));
     }
 
     #[test]

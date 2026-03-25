@@ -11,6 +11,7 @@ impl ChainflipScan {
             tx_path: TX_PATH,
             address_path: "",
             token_path: None,
+            nft_path: None,
             validator_path: None,
         })
     }
