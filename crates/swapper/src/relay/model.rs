@@ -244,16 +244,15 @@ pub struct RelayProtocol {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RelayProtocolV2 {
-    pub depository: String,
+    pub depository: Option<String>,
 }
 
 impl RelayChainsResponse {
     pub fn deposit_addresses(&self) -> Vec<String> {
         self.chains
             .iter()
-            .filter_map(|chain| chain.protocol.as_ref()?.v2.as_ref())
-            .map(|protocol| protocol.depository.clone())
-            .map(|address| ethereum_address_checksum(&address).unwrap_or(address))
+            .filter_map(|chain| chain.protocol.as_ref()?.v2.as_ref()?.depository.as_ref())
+            .map(|address| ethereum_address_checksum(address).unwrap_or_else(|_| address.clone()))
             .collect::<BTreeSet<_>>()
             .into_iter()
             .collect()
@@ -283,7 +282,7 @@ mod tests {
                     solver_addresses: vec![],
                     protocol: Some(RelayProtocol {
                         v2: Some(RelayProtocolV2 {
-                            depository: depository.to_string(),
+                            depository: Some(depository.to_string()),
                         }),
                     }),
                 },
@@ -291,7 +290,7 @@ mod tests {
                     solver_addresses: vec![],
                     protocol: Some(RelayProtocol {
                         v2: Some(RelayProtocolV2 {
-                            depository: "0x59916da825d2d2ec1bf878d71c88826f6633ecca".to_string(),
+                            depository: Some("0x59916da825d2d2ec1bf878d71c88826f6633ecca".to_string()),
                         }),
                     }),
                 },
@@ -318,5 +317,30 @@ mod tests {
         };
 
         assert_eq!(response.send_addresses(), vec![ethereum_address_checksum(solver).unwrap()]);
+    }
+
+    #[test]
+    fn test_deposit_addresses_skips_missing_depository() {
+        let depository = "0x4cd00e387622c35bddb9b4c962c136462338bc31";
+        let response = RelayChainsResponse {
+            chains: vec![
+                RelayChainInfo {
+                    solver_addresses: vec![],
+                    protocol: Some(RelayProtocol {
+                        v2: Some(RelayProtocolV2 {
+                            depository: Some(depository.to_string()),
+                        }),
+                    }),
+                },
+                RelayChainInfo {
+                    solver_addresses: vec![],
+                    protocol: Some(RelayProtocol {
+                        v2: Some(RelayProtocolV2 { depository: None }),
+                    }),
+                },
+            ],
+        };
+
+        assert_eq!(response.deposit_addresses(), vec![ethereum_address_checksum(depository).unwrap()]);
     }
 }
