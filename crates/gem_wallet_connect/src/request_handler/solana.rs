@@ -41,14 +41,25 @@ impl SolanaRequestHandler {
     }
 
     pub fn parse_sign_all_transactions(params: Value) -> Result<WalletConnectAction, String> {
-        let transaction = params.get_value("transactions")?.at(0)?.string()?.to_string();
+        let array = params.get_value("transactions")?.as_array().ok_or("Expected transactions array")?;
+        let transactions: Vec<String> = array
+            .iter()
+            .map(|v| {
+                let transaction = v.string()?.to_string();
+                Ok(serde_json::json!({"transaction": transaction}).to_string())
+            })
+            .collect::<Result<Vec<String>, String>>()?;
 
-        Ok(WalletConnectAction::SignTransaction {
+        if transactions.is_empty() {
+            return Err("Empty transactions array".to_string());
+        }
+
+        Ok(WalletConnectAction::SignAllTransactions {
             chain: Chain::Solana,
             transaction_type: WalletConnectTransactionType::Solana {
                 output_type: TransferDataOutputType::EncodedTransaction,
             },
-            data: transaction,
+            transactions,
         })
     }
 }
@@ -66,6 +77,25 @@ mod tests {
                 chain: Chain::Solana,
                 sign_type: SignDigestType::Base58,
                 data: "Hello".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn test_sign_all_transactions() {
+        let params: Value = serde_json::from_str(r#"{"transactions":["AQAAA","BBBBB"]}"#).unwrap();
+        let result = SolanaRequestHandler::parse_sign_all_transactions(params).unwrap();
+        assert_eq!(
+            result,
+            WalletConnectAction::SignAllTransactions {
+                chain: Chain::Solana,
+                transaction_type: WalletConnectTransactionType::Solana {
+                    output_type: TransferDataOutputType::EncodedTransaction,
+                },
+                transactions: vec![
+                    r#"{"transaction":"AQAAA"}"#.to_string(),
+                    r#"{"transaction":"BBBBB"}"#.to_string(),
+                ],
             }
         );
     }
