@@ -7102,9 +7102,9 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "sui-rpc"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0bb04b65ca3db83c28aebc5066cdfe8e898b49b9cd56aafc523b80e210824a7"
+checksum = "6c1de70a3262b561b3ff0848e43b4feff41c3083e2744e0442c79cb2204e5fd2"
 dependencies = [
  "base64",
  "bcs",
@@ -7124,9 +7124,9 @@ dependencies = [
 
 [[package]]
 name = "sui-sdk-types"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "381a36877c9d3beabceb289002784750f7cd1bff93be2d943d3394d343c889bd"
+checksum = "fff64505eccf5b20b3f7f25b609ee176aeac93705187c31a9b8ba08ec93ada76"
 dependencies = [
  "base64ct",
  "bcs",
@@ -7146,12 +7146,13 @@ dependencies = [
 
 [[package]]
 name = "sui-transaction-builder"
-version = "0.2.2"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c53d6cc3c48c1602c3ead73efefaf01df78fb3082bafacde0bd82128871aa02f"
+checksum = "5061ad0ad2585dc29558e6f65d9206a3342b8f1d2693b934530e22c958671c2d"
 dependencies = [
  "async-trait",
  "bcs",
+ "futures",
  "serde",
  "sui-rpc",
  "sui-sdk-types",

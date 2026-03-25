@@ -112,7 +112,7 @@ ed25519-dalek = { version = "2", features = ["std"] }
 borsh = { version = "1.6.0", features = ["derive"] }
 bcs = { version = "0.1.6" }
 pem-rfc7468 = { version = "1.0.0", features = ["std"] }
-sui-types = { package = "sui-sdk-types", version = "0.2.2", features = [
+sui-types = { package = "sui-sdk-types", version = "0.3.0", features = [
     "serde",
 ] }
 k256 = { version = "0.13.4", features = ["ecdsa", "sha256"] }
