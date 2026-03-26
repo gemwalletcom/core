@@ -89,7 +89,9 @@ val buildCargoNdk = tasks.register<Exec>("buildCargoNdk") {
     )
 }
 
-tasks.matching { it.name.matches(Regex("(compile(Debug|Release)Kotlin|extract(Debug|Release)Annotations)")) }.configureEach {
+tasks.matching {
+    it.name.matches(Regex("(compile|extract|source).*(Debug|Release).*(Kotlin|Annotations|Jar)"))
+}.configureEach {
     dependsOn(bindgenKotlin)
 }
 tasks.matching { it.name.matches(Regex("merge(Debug|Release)JniLibFolders")) }.configureEach {
