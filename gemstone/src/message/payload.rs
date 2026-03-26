@@ -139,15 +139,14 @@ fn preview_primary_keys(payload: &[SimulationPayloadField]) -> HashSet<PayloadMe
 }
 
 fn eip712_preview_fields(message: &GemEIP712Message) -> Vec<MessagePayloadField> {
-    let mut fields = vec![
-        MessagePayloadField::custom(
-            "domain",
-            message.domain.name.clone(),
-            SimulationPayloadFieldType::Text,
-            SimulationPayloadFieldDisplay::Secondary,
-        ),
-        primary_type_payload_field(message),
-    ];
+    let mut fields = vec![primary_type_payload_field(message)];
+
+    if let Some(domain_name) = message.domain.name.as_ref() {
+        fields.insert(
+            0,
+            MessagePayloadField::custom("domain", domain_name.clone(), SimulationPayloadFieldType::Text, SimulationPayloadFieldDisplay::Secondary),
+        );
+    }
 
     if let Some(verifying_contract) = message.domain.verifying_contract.as_ref() {
         fields.push(MessagePayloadField::standard(
@@ -371,9 +370,9 @@ mod tests {
         let preview = eip712_payload_preview(
             &GemEIP712Message {
                 domain: EIP712Domain {
-                    name: "Permit2".into(),
+                    name: Some("Permit2".into()),
                     version: None,
-                    chain_id: 1,
+                    chain_id: Some(1),
                     verifying_contract: Some("0xContract".into()),
                     salts: None,
                 },
@@ -426,9 +425,9 @@ mod tests {
         let preview = eip712_payload_preview(
             &GemEIP712Message {
                 domain: EIP712Domain {
-                    name: String::new(),
+                    name: None,
                     version: None,
-                    chain_id: 1,
+                    chain_id: Some(1),
                     verifying_contract: None,
                     salts: None,
                 },
