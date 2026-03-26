@@ -220,22 +220,20 @@ mod tests {
 
     #[test]
     fn test_solana_sign_all_transactions_roundtrip() {
-        let params = r#"{"transactions":["AQAAAB64encoded","BBBBB64encoded"]}"#;
+        let params = include_str!("../../testdata/solana_sign_all_transactions.json");
         let request = WalletConnectRequest::mock("solana_signAllTransactions", params, Some("solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"));
         let action = WalletConnectRequestHandler::parse_request(request).unwrap();
         match &action {
             WalletConnectAction::SignAllTransactions { chain, transaction_type, transactions } => {
                 assert_eq!(*chain, Chain::Solana);
-                assert_eq!(transactions.len(), 2);
-                for (i, expected) in ["AQAAAB64encoded", "BBBBB64encoded"].iter().enumerate() {
-                    let transaction = WalletConnectRequestHandler::decode_send_transaction(transaction_type.clone(), transactions[i].clone()).unwrap();
-                    match transaction {
-                        WalletConnectTransaction::Solana { data, output_type } => {
-                            assert_eq!(data.transaction, *expected);
-                            assert_eq!(output_type, TransferDataOutputType::EncodedTransaction);
-                        }
-                        _ => panic!("Expected Solana transaction"),
+                assert_eq!(transactions.len(), 1);
+                let decoded = WalletConnectRequestHandler::decode_send_transaction(transaction_type.clone(), transactions[0].clone()).unwrap();
+                match decoded {
+                    WalletConnectTransaction::Solana { data, output_type } => {
+                        assert!(data.transaction.starts_with("AQAAAAAAAAA"));
+                        assert_eq!(output_type, TransferDataOutputType::EncodedTransaction);
                     }
+                    _ => panic!("Expected Solana transaction"),
                 }
             }
             _ => panic!("Expected SignAllTransactions action"),

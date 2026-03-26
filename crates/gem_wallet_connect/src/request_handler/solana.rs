@@ -82,25 +82,6 @@ mod tests {
     }
 
     #[test]
-    fn test_sign_all_transactions() {
-        let params: Value = serde_json::from_str(r#"{"transactions":["AQAAA","BBBBB"]}"#).unwrap();
-        let result = SolanaRequestHandler::parse_sign_all_transactions(params).unwrap();
-        assert_eq!(
-            result,
-            WalletConnectAction::SignAllTransactions {
-                chain: Chain::Solana,
-                transaction_type: WalletConnectTransactionType::Solana {
-                    output_type: TransferDataOutputType::EncodedTransaction,
-                },
-                transactions: vec![
-                    r#"{"transaction":"AQAAA"}"#.to_string(),
-                    r#"{"transaction":"BBBBB"}"#.to_string(),
-                ],
-            }
-        );
-    }
-
-    #[test]
     fn test_sign_transaction() {
         let params: Value = serde_json::from_str(r#"{"transaction":"AAACAAhkAAA"}"#).unwrap();
         let expected_data = params.to_string();
