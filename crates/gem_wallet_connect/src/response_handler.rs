@@ -44,6 +44,12 @@ impl WalletConnectResponseHandler {
         }
     }
 
+    pub fn encode_sign_all_transactions(signed_transactions: Vec<String>) -> WalletConnectResponseType {
+        WalletConnectResponseType::Object {
+            json: serde_json::json!({ "transactions": signed_transactions }).to_string(),
+        }
+    }
+
     pub fn encode_send_transaction(chain_type: ChainType, transaction_id: String) -> WalletConnectResponseType {
         match chain_type {
             ChainType::Sui => WalletConnectResponseType::Object {
@@ -111,6 +117,14 @@ mod tests {
         assert_eq!(
             WalletConnectResponseHandler::encode_send_transaction(ChainType::Tron, "txid123".to_string()),
             object(r#"{"result":true,"txid":"txid123"}"#)
+        );
+    }
+
+    #[test]
+    fn test_encode_sign_all_transactions() {
+        assert_eq!(
+            WalletConnectResponseHandler::encode_sign_all_transactions(vec!["signed_tx_1".to_string(), "signed_tx_2".to_string()]),
+            object(r#"{"transactions":["signed_tx_1","signed_tx_2"]}"#)
         );
     }
 }

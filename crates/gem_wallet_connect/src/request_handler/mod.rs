@@ -135,6 +135,7 @@ mod tests {
     use super::*;
     use crate::sign_type::SignDigestType;
     use gem_evm::testkit::eip712_mock::mock_eip712_json;
+    use primitives::TransferDataOutputType;
 
     #[test]
     fn test_unsupported_method() {
@@ -215,6 +216,28 @@ mod tests {
 
         let request = WalletConnectRequest::mock("eth_signTypedData_v4", &params, Some("eip155:137"));
         assert!(WalletConnectRequestHandler::parse_request(request).is_ok());
+    }
+
+    #[test]
+    fn test_solana_sign_all_transactions_roundtrip() {
+        let params = include_str!("../../testdata/solana_sign_all_transactions.json");
+        let request = WalletConnectRequest::mock("solana_signAllTransactions", params, Some("solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"));
+        let action = WalletConnectRequestHandler::parse_request(request).unwrap();
+        match &action {
+            WalletConnectAction::SignAllTransactions { chain, transaction_type, transactions } => {
+                assert_eq!(*chain, Chain::Solana);
+                assert_eq!(transactions.len(), 1);
+                let decoded = WalletConnectRequestHandler::decode_send_transaction(transaction_type.clone(), transactions[0].clone()).unwrap();
+                match decoded {
+                    WalletConnectTransaction::Solana { data, output_type } => {
+                        assert!(data.transaction.starts_with("AQAAAAAAAAA"));
+                        assert_eq!(output_type, TransferDataOutputType::EncodedTransaction);
+                    }
+                    _ => panic!("Expected Solana transaction"),
+                }
+            }
+            _ => panic!("Expected SignAllTransactions action"),
+        }
     }
 
     #[test]

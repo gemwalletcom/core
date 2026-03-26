@@ -13,6 +13,11 @@ pub enum WalletConnectAction {
         transaction_type: WalletConnectTransactionType,
         data: String,
     },
+    SignAllTransactions {
+        chain: Chain,
+        transaction_type: WalletConnectTransactionType,
+        transactions: Vec<String>,
+    },
     SendTransaction {
         chain: Chain,
         transaction_type: WalletConnectTransactionType,

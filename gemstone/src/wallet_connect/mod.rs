@@ -67,6 +67,11 @@ pub enum WalletConnectAction {
         transaction_type: WalletConnectTransactionType,
         data: String,
     },
+    SignAllTransactions {
+        chain: Chain,
+        transaction_type: WalletConnectTransactionType,
+        transactions: Vec<String>,
+    },
     SendTransaction {
         chain: Chain,
         transaction_type: WalletConnectTransactionType,
@@ -232,6 +237,11 @@ impl From<WcWalletConnectAction> for WalletConnectAction {
                 transaction_type: transaction_type.into(),
                 data,
             },
+            WcWalletConnectAction::SignAllTransactions { chain, transaction_type, transactions } => Self::SignAllTransactions {
+                chain,
+                transaction_type: transaction_type.into(),
+                transactions,
+            },
             WcWalletConnectAction::SendTransaction { chain, transaction_type, data } => Self::SendTransaction {
                 chain,
                 transaction_type: transaction_type.into(),
@@ -346,6 +356,10 @@ impl WalletConnect {
 
     pub fn encode_sign_transaction(&self, chain: Chain, transaction_id: String) -> WalletConnectResponseType {
         WalletConnectResponseHandler::encode_sign_transaction(chain.chain_type(), transaction_id).into()
+    }
+
+    pub fn encode_sign_all_transactions(&self, signed_transactions: Vec<String>) -> WalletConnectResponseType {
+        WalletConnectResponseHandler::encode_sign_all_transactions(signed_transactions).into()
     }
 
     pub fn encode_send_transaction(&self, chain: Chain, transaction_id: String) -> WalletConnectResponseType {
