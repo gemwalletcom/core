@@ -46,7 +46,7 @@ jobs:
           distribution: "zulu"
 
       - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
+        uses: android-actions/setup-android@v4
         with:
           packages: 'build-tools;36.0.0 platforms;android-36 ndk;28.1.13356709 system-images;android-29;default;x86_64 emulator'
 
