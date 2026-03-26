@@ -142,7 +142,7 @@ diesel_enum!(
     [NATIVE, ERC20, BEP20, SPL, SPL2022, TRC20, TOKEN, IBC, JETTON, SYNTH, ASA, PERPETUAL, SPOT]
 );
 
-diesel_enum!(AddressType, PrimitiveAddressType, AddressTypeSql, [Address, Contract, Validator]);
+diesel_enum!(AddressType, PrimitiveAddressType, AddressTypeSql, [Address, Contract, Validator, InternalWallet]);
 
 diesel_enum!(
     RewardEventType,

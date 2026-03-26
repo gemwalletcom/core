@@ -33,13 +33,14 @@ pub struct ScanAddressTarget {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, EnumIter, AsRefStr, EnumString)]
 #[typeshare(swift = "Equatable, Sendable")]
-#[serde(rename_all = "lowercase")]
-#[strum(serialize_all = "lowercase")]
+#[serde(rename_all = "camelCase")]
+#[strum(serialize_all = "camelCase")]
 pub enum AddressType {
     Address,
     Contract,
     Validator,
     Contact,
+    InternalWallet,
 }
 
 impl AddressType {
