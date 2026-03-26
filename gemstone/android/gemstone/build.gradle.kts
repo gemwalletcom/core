@@ -54,6 +54,13 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    sourceSets {
+        getByName("main") {
+            java.srcDirs(generatedKotlinDir)
+            jniLibs.srcDirs(jniLibsDir)
+        }
+    }
 }
 
 kotlin {
@@ -89,13 +96,13 @@ val buildCargoNdk = tasks.register<Exec>("buildCargoNdk") {
     )
 }
 
-tasks.matching {
-    it.name.matches(Regex("(compile|extract|source).*(Debug|Release).*(Kotlin|Annotations|Jar)"))
-}.configureEach {
-    dependsOn(bindgenKotlin)
-}
-tasks.matching { it.name.matches(Regex("merge(Debug|Release)JniLibFolders")) }.configureEach {
-    dependsOn(buildCargoNdk)
+tasks.configureEach {
+    if (name.matches(Regex("(compile|extract|source|javaDoc).*(Debug|Release).*"))) {
+        dependsOn(bindgenKotlin)
+    }
+    if (name.matches(Regex("merge.*(Debug|Release).*JniLib.*"))) {
+        dependsOn(buildCargoNdk)
+    }
 }
 
 dependencies {
