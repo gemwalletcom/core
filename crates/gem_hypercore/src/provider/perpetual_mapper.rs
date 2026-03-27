@@ -246,15 +246,8 @@ fn merge_portfolio_timeframes(values: Vec<PerpetualPortfolioTimeframeData>) -> O
         return None;
     }
 
-    let mut account_value_histories = Vec::new();
-    let mut pnl_histories = Vec::new();
-    let mut volume = 0.0;
-
-    for value in values {
-        account_value_histories.push(value.account_value_history);
-        pnl_histories.push(value.pnl_history);
-        volume += value.volume;
-    }
+    let volume: f64 = values.iter().map(|v| v.volume).sum();
+    let (account_value_histories, pnl_histories): (Vec<_>, Vec<_>) = values.into_iter().map(|v| (v.account_value_history, v.pnl_history)).unzip();
 
     Some(PerpetualPortfolioTimeframeData {
         account_value_history: merge_chart_histories(account_value_histories),
@@ -377,7 +370,10 @@ mod tests {
     #[test]
     fn test_map_perpetuals_data() {
         let universe_response = HypercoreUniverseResponse {
-            universe: vec![UniverseAsset { only_isolated: Some(false), ..UniverseAsset::mock() }],
+            universe: vec![UniverseAsset {
+                only_isolated: Some(false),
+                ..UniverseAsset::mock()
+            }],
         };
 
         let asset_metadata = vec![AssetMetadata {
@@ -411,7 +407,10 @@ mod tests {
     #[test]
     fn test_map_perpetuals_data_builder_asset_index() {
         let universe_response = HypercoreUniverseResponse {
-            universe: vec![UniverseAsset { name: "FOO".to_string(), ..UniverseAsset::mock() }],
+            universe: vec![UniverseAsset {
+                name: "FOO".to_string(),
+                ..UniverseAsset::mock()
+            }],
         };
 
         let asset_metadata = vec![AssetMetadata::mock()];
@@ -426,8 +425,16 @@ mod tests {
     fn test_map_perpetuals_data_only_isolated() {
         let universe_response = HypercoreUniverseResponse {
             universe: vec![
-                UniverseAsset { name: "ISOLATED_TOKEN".to_string(), only_isolated: Some(true), ..UniverseAsset::mock() },
-                UniverseAsset { name: "DEFAULT_TOKEN".to_string(), only_isolated: None, ..UniverseAsset::mock() },
+                UniverseAsset {
+                    name: "ISOLATED_TOKEN".to_string(),
+                    only_isolated: Some(true),
+                    ..UniverseAsset::mock()
+                },
+                UniverseAsset {
+                    name: "DEFAULT_TOKEN".to_string(),
+                    only_isolated: None,
+                    ..UniverseAsset::mock()
+                },
             ],
         };
 
@@ -862,5 +869,4 @@ mod tests {
         let summary = merged.account_summary.unwrap();
         assert_eq!(summary.account_value, 1000.0);
     }
-
 }

@@ -68,7 +68,14 @@ impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
         let summaries = try_join_all(requests).await?;
 
         let (positions, balance) = summaries.into_iter().fold(
-            (Vec::new(), PerpetualBalance { available: 0.0, reserved: 0.0, withdrawable: 0.0 }),
+            (
+                Vec::new(),
+                PerpetualBalance {
+                    available: 0.0,
+                    reserved: 0.0,
+                    withdrawable: 0.0,
+                },
+            ),
             |(mut acc_pos, mut acc_bal), summary| {
                 acc_pos.extend(summary.positions);
                 acc_bal.available += summary.balance.available;
@@ -82,12 +89,15 @@ impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
 
     async fn get_perpetuals_data(&self) -> Result<Vec<PerpetualData>, Box<dyn Error + Sync + Send>> {
         let dex_entries = self.get_active_dex_entries().await;
-        let requests: Vec<_> = dex_entries.iter().map(|(_, dex)| async move {
-            match dex.as_deref() {
-                Some(dex) => self.get_metadata_with_dex(dex).await,
-                None => self.get_metadata().await,
-            }
-        }).collect();
+        let requests: Vec<_> = dex_entries
+            .iter()
+            .map(|(_, dex)| async move {
+                match dex.as_deref() {
+                    Some(dex) => self.get_metadata_with_dex(dex).await,
+                    None => self.get_metadata().await,
+                }
+            })
+            .collect();
         let metadata = try_join_all(requests).await?;
 
         Ok(dex_entries.iter().zip(metadata).flat_map(|((index, _), meta)| map_perpetuals_data(meta, *index)).collect())
@@ -145,9 +155,18 @@ mod tests {
     fn test_filter_active_dex_filters_inactive() {
         let dexs = vec![
             None,
-            Some(PerpDex { name: "dex1".to_string(), is_active: Some(true) }),
-            Some(PerpDex { name: "dex2".to_string(), is_active: Some(false) }),
-            Some(PerpDex { name: "dex3".to_string(), is_active: None }),
+            Some(PerpDex {
+                name: "dex1".to_string(),
+                is_active: Some(true),
+            }),
+            Some(PerpDex {
+                name: "dex2".to_string(),
+                is_active: Some(false),
+            }),
+            Some(PerpDex {
+                name: "dex3".to_string(),
+                is_active: None,
+            }),
         ];
 
         let entries = filter_active_dex(&dexs);
@@ -161,7 +180,10 @@ mod tests {
     fn test_filter_active_dex_skips_empty_names() {
         let dexs = vec![
             None,
-            Some(PerpDex { name: "".to_string(), is_active: Some(true) }),
+            Some(PerpDex {
+                name: "".to_string(),
+                is_active: Some(true),
+            }),
         ];
 
         let entries = filter_active_dex(&dexs);
