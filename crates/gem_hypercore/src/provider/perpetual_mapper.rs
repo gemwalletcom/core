@@ -127,7 +127,7 @@ pub fn map_perpetuals_data(metadata: HypercoreMetadataResponse, perp_dex_index: 
                 volume_24h: metadata_item.and_then(|m| m.day_ntl_vlm.parse().ok()).unwrap_or(0.0),
                 funding: funding_rate,
                 max_leverage: universe_asset.max_leverage as u8,
-                only_isolated: universe_asset.only_isolated.unwrap_or(false),
+                is_isolated_only: universe_asset.only_isolated.unwrap_or(false),
             };
 
             let asset = Asset {
@@ -396,7 +396,7 @@ mod tests {
         assert_eq!(eth_data.perpetual.max_leverage, 50);
         assert_eq!(eth_data.perpetual.volume_24h, 500000.0);
 
-        assert_eq!(eth_data.perpetual.only_isolated, false);
+        assert_eq!(eth_data.perpetual.is_isolated_only, false);
 
         assert_eq!(eth_data.asset.name, "ETH");
         assert_eq!(eth_data.asset.symbol, "ETH");
@@ -444,8 +444,8 @@ mod tests {
         let result = map_perpetuals_data(metadata_response, 0);
 
         assert_eq!(result.len(), 2);
-        assert_eq!(result[0].perpetual.only_isolated, true);
-        assert_eq!(result[1].perpetual.only_isolated, false);
+        assert_eq!(result[0].perpetual.is_isolated_only, true);
+        assert_eq!(result[1].perpetual.is_isolated_only, false);
     }
 
     #[test]

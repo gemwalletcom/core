@@ -18,7 +18,7 @@ pub struct Perpetual {
     pub volume_24h: f64,
     pub funding: f64,
     pub max_leverage: u8,
-    pub only_isolated: bool,
+    pub is_isolated_only: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
