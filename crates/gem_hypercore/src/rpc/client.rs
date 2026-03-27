@@ -3,7 +3,6 @@ use crate::models::{
     candlestick::Candlestick,
     metadata::HypercoreMetadataResponse,
     order::{OpenOrder, UserFill},
-    perp_dex::PerpDex,
     portfolio::HypercorePortfolioResponse,
     position::AssetPositions,
     referral::Referral,
@@ -167,34 +166,15 @@ impl<C: Client> HyperCoreClient<C> {
     }
 
     pub async fn get_clearinghouse_state(&self, user: &str) -> Result<AssetPositions, Box<dyn Error + Send + Sync>> {
-        self.get_clearinghouse_state_with_dex(user, None).await
-    }
-
-    pub async fn get_clearinghouse_state_with_dex(&self, user: &str, dex: Option<String>) -> Result<AssetPositions, Box<dyn Error + Send + Sync>> {
-        let mut payload = json!({
+        self.info(json!({
             "type": "clearinghouseState",
             "user": user
-        });
-        if let Some(dex) = dex && !dex.is_empty() {
-            payload["dex"] = json!(dex);
-        }
-        self.info(payload).await
+        }))
+        .await
     }
 
     pub async fn get_metadata(&self) -> Result<HypercoreMetadataResponse, Box<dyn Error + Send + Sync>> {
-        self.get_metadata_with_dex(None).await
-    }
-
-    pub async fn get_metadata_with_dex(&self, dex: Option<String>) -> Result<HypercoreMetadataResponse, Box<dyn Error + Send + Sync>> {
-        let mut payload = json!({"type": "metaAndAssetCtxs"});
-        if let Some(dex) = dex && !dex.is_empty() {
-            payload["dex"] = json!(dex);
-        }
-        self.info(payload).await
-    }
-
-    pub async fn get_perp_dexs(&self) -> Result<Vec<Option<PerpDex>>, Box<dyn Error + Send + Sync>> {
-        self.info(json!({"type": "perpDexs"})).await
+        self.info(json!({"type": "metaAndAssetCtxs"})).await
     }
 
     pub async fn get_spot_meta(&self) -> Result<SpotMeta, Box<dyn Error + Send + Sync>> {
@@ -280,33 +260,19 @@ impl<C: Client> HyperCoreClient<C> {
     }
 
     pub async fn get_open_orders(&self, user: &str) -> Result<Vec<OpenOrder>, Box<dyn Error + Send + Sync>> {
-        self.get_open_orders_with_dex(user, None).await
-    }
-
-    pub async fn get_open_orders_with_dex(&self, user: &str, dex: Option<String>) -> Result<Vec<OpenOrder>, Box<dyn Error + Send + Sync>> {
-        let mut payload = json!({
+        self.info(json!({
             "type": "frontendOpenOrders",
             "user": user
-        });
-        if let Some(dex) = dex && !dex.is_empty() {
-            payload["dex"] = json!(dex);
-        }
-        self.info(payload).await
+        }))
+        .await
     }
 
     pub async fn get_perpetual_portfolio(&self, user: &str) -> Result<HypercorePortfolioResponse, Box<dyn Error + Send + Sync>> {
-        self.get_perpetual_portfolio_with_dex(user, None).await
-    }
-
-    pub async fn get_perpetual_portfolio_with_dex(&self, user: &str, dex: Option<String>) -> Result<HypercorePortfolioResponse, Box<dyn Error + Send + Sync>> {
-        let mut payload = json!({
+        self.info(json!({
             "type": "portfolio",
             "user": user
-        });
-        if let Some(dex) = dex && !dex.is_empty() {
-            payload["dex"] = json!(dex);
-        }
-        self.info(payload).await
+        }))
+        .await
     }
 
     pub fn cache_transaction_sender(&self, id: &str, sender: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
