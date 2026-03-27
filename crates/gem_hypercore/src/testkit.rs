@@ -1,3 +1,4 @@
+pub use crate::models::metadata::{AssetMetadata, UniverseAsset};
 pub use crate::models::order::OpenOrder;
 pub use crate::models::portfolio::{HypercoreDataPoint, HypercorePortfolioResponse, HypercorePortfolioTimeframeData};
 pub use crate::models::position::{AssetPositions, MarginSummary};
@@ -55,6 +56,34 @@ impl HypercorePortfolioTimeframeData {
                 value: 50.0,
             }],
             vlm: vlm.to_string(),
+        }
+    }
+}
+
+impl UniverseAsset {
+    pub fn mock() -> Self {
+        Self {
+            name: "ETH".to_string(),
+            sz_decimals: 4,
+            max_leverage: 50,
+            only_isolated: None,
+        }
+    }
+}
+
+impl AssetMetadata {
+    pub fn mock() -> Self {
+        Self {
+            funding: "0.0005".to_string(),
+            open_interest: "2500.5".to_string(),
+            prev_day_px: "2000".to_string(),
+            day_ntl_vlm: "500000".to_string(),
+            premium: None,
+            oracle_px: "2100".to_string(),
+            mark_px: "2105.25".to_string(),
+            mid_px: Some("2102.5".to_string()),
+            impact_pxs: None,
+            day_base_vlm: "250000".to_string(),
         }
     }
 }

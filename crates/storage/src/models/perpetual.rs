@@ -23,6 +23,7 @@ pub struct PerpetualRow {
     pub volume_24h: f64,
     pub funding: f64,
     pub leverage: Vec<Option<i32>>,
+    pub only_isolated: bool,
     pub updated_at: NaiveDateTime,
 }
 
@@ -41,6 +42,7 @@ pub struct NewPerpetualRow {
     pub volume_24h: f64,
     pub funding: f64,
     pub leverage: Vec<Option<i32>>,
+    pub only_isolated: bool,
 }
 
 #[derive(Debug, Insertable, Clone)]
@@ -74,6 +76,7 @@ impl NewPerpetualRow {
             volume_24h: perpetual.volume_24h,
             funding: perpetual.funding,
             leverage: vec![Some(i32::from(perpetual.max_leverage))],
+            only_isolated: perpetual.only_isolated,
         }
     }
 }
@@ -92,6 +95,7 @@ impl PerpetualRow {
             volume_24h: self.volume_24h,
             funding: self.funding,
             max_leverage: self.leverage.first().and_then(|v| v.and_then(|i| u8::try_from(i).ok())).unwrap_or(1),
+            only_isolated: self.only_isolated,
         }
     }
 

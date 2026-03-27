@@ -1,4 +1,4 @@
-use crate::{Asset, AssetId, PerpetualPosition, PerpetualProvider, UInt64};
+use crate::{Asset, AssetId, PerpetualMarginType, PerpetualPosition, PerpetualProvider, UInt64};
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumString};
 use typeshare::typeshare;
@@ -18,6 +18,7 @@ pub struct Perpetual {
     pub volume_24h: f64,
     pub funding: f64,
     pub max_leverage: u8,
+    pub only_isolated: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -98,6 +99,7 @@ pub struct PerpetualMetadata {
 #[serde(rename_all = "camelCase")]
 pub struct PerpetualConfirmData {
     pub direction: PerpetualDirection,
+    pub margin_type: PerpetualMarginType,
     pub base_asset: Asset,
     pub asset_index: i32,
     pub price: String,

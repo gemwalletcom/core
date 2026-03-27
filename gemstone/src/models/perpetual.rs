@@ -96,6 +96,7 @@ pub struct GemPerpetual {
     pub volume_24h: f64,
     pub funding: f64,
     pub max_leverage: u8,
+    pub only_isolated: bool,
 }
 
 #[uniffi::remote(Record)]

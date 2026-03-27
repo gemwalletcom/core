@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use primitives::PerpetualMarginType;
 
 // IMPORTANT: Field order matters for msgpack serialization and hash calculation
 // Do not change field order unless you know the exact order in Python SDK.
@@ -19,5 +20,26 @@ impl UpdateLeverage {
             is_cross,
             leverage,
         }
+    }
+
+    pub fn from_margin_type(asset: u32, margin_type: &PerpetualMarginType, leverage: u8) -> Self {
+        Self::new(asset, *margin_type == PerpetualMarginType::Cross, leverage)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_from_margin_type_cross() {
+        let leverage = UpdateLeverage::from_margin_type(1, &PerpetualMarginType::Cross, 10);
+        assert!(leverage.is_cross);
+    }
+
+    #[test]
+    fn test_from_margin_type_isolated() {
+        let leverage = UpdateLeverage::from_margin_type(1, &PerpetualMarginType::Isolated, 10);
+        assert!(!leverage.is_cross);
     }
 }

@@ -2,7 +2,7 @@ use crate::models::*;
 use num_bigint::BigInt;
 use primitives::contract_call_data::ContractCallData;
 use primitives::{
-    AccountDataType, Asset, EarnType, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualProvider, PerpetualType, Resource, StakeType,
+    AccountDataType, Asset, EarnType, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualMarginType, PerpetualProvider, PerpetualType, Resource, StakeType,
     TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata, TransactionState,
     TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, TronStakeData, TronUnfreeze, TronVote,
     UInt64, WalletConnectionSessionAppMetadata,
@@ -212,6 +212,7 @@ pub struct GemTransferDataExtra {
 #[uniffi::remote(Record)]
 pub struct PerpetualConfirmData {
     pub direction: PerpetualDirection,
+    pub margin_type: PerpetualMarginType,
     pub base_asset: Asset,
     pub asset_index: i32,
     pub price: String,
