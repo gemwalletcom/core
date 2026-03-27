@@ -86,6 +86,29 @@ Individual `gem_*` crates for each blockchain with unified RPC client patterns:
 - `settings/`: Configuration management
 - `settings_chain/`: Chain-specific configuration settings
 
+## Key Dependency Relationships
+
+```
+gemstone/          ← compiles to iOS .xcframework + Android .aar via UniFFI
+  ├── swapper/     ← DEX/CEX swap integrations (uses gem_* chain crates)
+  ├── signer/      ← transaction signing (uses chain_primitives, gem_hash)
+  └── primitives/  ← central types shared by almost everything
+
+gem_* chain crates (gem_evm, gem_solana, ...)
+  ├── gem_client/        ← HTTP/RPC abstraction
+  ├── gem_jsonrpc/       ← JSON-RPC protocol layer
+  ├── chain_primitives/  ← blockchain primitive types
+  └── primitives/        ← shared models
+
+apps/ (api, daemon, dynode)
+  ├── storage/     ← Diesel ORM + PostgreSQL
+  ├── pricer/      ← pricing aggregation
+  ├── gem_client/  ← ReqwestClient for backend HTTP
+  └── primitives/  ← shared models
+```
+
+`primitives/` is the root dependency — nearly every crate imports it. Changes there ripple everywhere. `gem_client/` has two implementations: `ReqwestClient` (backend) and `AlienProvider` (mobile via gemstone).
+
 ## Technology Stack
 
 - **Framework**: Rust workspace with Rocket web framework
