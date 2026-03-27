@@ -8,11 +8,15 @@ fun isSigningEnabled(): Boolean {
 
 plugins {
     id("com.android.library")
-    id("org.jetbrains.kotlin.android")
     id("maven-publish")
-    id("com.gemwallet.cargo-ndk")
     id("signing")
 }
+
+val gemstoneRoot = project.projectDir.resolve("../..")
+val rustSrcDir = gemstoneRoot.resolve("src")
+val cratesDir = gemstoneRoot.resolve("../crates")
+val jniLibsDir = project.projectDir.resolve("src/main/jniLibs")
+val generatedKotlinDir = project.projectDir.resolve("src/main/java")
 
 android {
     namespace = "com.gemwallet.gemstone"
@@ -47,23 +51,58 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    sourceSets {
+        getByName("main") {
+            java.srcDirs(generatedKotlinDir)
+            jniLibs.srcDirs(jniLibsDir)
+        }
     }
 }
 
 kotlin {
     compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_1_8)
+        jvmTarget.set(JvmTarget.JVM_17)
     }
 }
 
-cargoNdk {
-    targets = arrayListOf("x86_64", "armeabi-v7a", "arm64-v8a")
-    module = "../"
-    targetDirectory = "../target"
-    librariesNames = arrayListOf("libgemstone.so")
-    extraCargoBuildArguments = arrayListOf("--lib")
+val bindgenKotlin = tasks.register<Exec>("bindgenKotlin") {
+    description = "Generate Kotlin bindings from gemstone via uniffi"
+    workingDir = gemstoneRoot
+    inputs.dir(rustSrcDir)
+    inputs.dir(cratesDir)
+    inputs.file(gemstoneRoot.resolve("Cargo.toml"))
+    outputs.dir(generatedKotlinDir.resolve("uniffi"))
+    commandLine("just", "bindgen-kotlin")
+}
+
+val buildCargoNdk = tasks.register<Exec>("buildCargoNdk") {
+    description = "Build gemstone native libraries using cargo-ndk"
+    workingDir = gemstoneRoot
+    inputs.dir(rustSrcDir)
+    inputs.dir(cratesDir)
+    inputs.file(gemstoneRoot.resolve("Cargo.toml"))
+    outputs.dir(jniLibsDir)
+    commandLine(
+        "cargo", "ndk",
+        "-t", "arm64-v8a",
+        "-t", "armeabi-v7a",
+        "-t", "x86_64",
+        "-o", jniLibsDir.absolutePath,
+        "build", "--lib"
+    )
+}
+
+tasks.configureEach {
+    if (name.matches(Regex("(compile|extract|source|javaDoc).*(Debug|Release).*"))) {
+        dependsOn(bindgenKotlin)
+    }
+    if (name.matches(Regex("merge.*(Debug|Release).*JniLib.*"))) {
+        dependsOn(buildCargoNdk)
+    }
 }
 
 dependencies {
