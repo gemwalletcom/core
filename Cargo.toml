@@ -125,7 +125,7 @@ alloy-sol-types = { version = "1.5.6", features = ["eip712-serde"] }
 alloy-dyn-abi = { version = "1.5.6", features = ["eip712"] }
 alloy-json-abi = { version = "1.5.6" }
 alloy-signer = { version = "1.8.1" }
-alloy-signer-local = { version = "1.7.3" }
+alloy-signer-local = { version = "1.8.1" }
 alloy-network = { version = "1.7.3" }
 alloy-consensus = { version = "1.8.2" }
 alloy-rlp = { version = "0.3.13" }
