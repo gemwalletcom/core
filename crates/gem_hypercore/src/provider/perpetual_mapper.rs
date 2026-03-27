@@ -1,10 +1,6 @@
-use crate::models::{
-    candlestick::Candlestick,
-    metadata::HypercoreMetadataResponse,
-    order::OpenOrder,
-    portfolio::HypercorePortfolioResponse,
-    position::{AssetPositions, LeverageType, Position},
-};
+use std::collections::BTreeMap;
+
+use gem_evm::ethereum_address_checksum;
 use primitives::{
     Asset, AssetId, AssetType, Chain, Perpetual, PerpetualBalance, PerpetualDirection, PerpetualMarginType, PerpetualOrderType, PerpetualPosition, PerpetualProvider,
     PerpetualTriggerOrder,
@@ -12,7 +8,14 @@ use primitives::{
     perpetual::{PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
     portfolio::{PerpetualAccountSummary, PerpetualPortfolio, PerpetualPortfolioTimeframeData},
 };
-use std::collections::BTreeMap;
+
+use crate::models::{
+    candlestick::Candlestick,
+    metadata::HypercoreMetadataResponse,
+    order::OpenOrder,
+    portfolio::HypercorePortfolioResponse,
+    position::{AssetPositions, LeverageType, Position},
+};
 
 const HIP3_PERP_ASSET_OFFSET: u32 = 100_000;
 const HIP3_PERP_ASSET_STRIDE: u32 = 10_000;
@@ -78,11 +81,12 @@ pub fn map_position(position: Position, address: &str, orders: &[OpenOrder], per
     };
     let perpetual_id = create_perpetual_id_by_dex(&position.coin, perp_dex_index);
     let asset_id = create_perpetual_asset_id_by_dex(&position.coin, perp_dex_index);
+    let address = ethereum_address_checksum(address).unwrap_or(address.to_string());
 
     let (take_profit, stop_loss) = map_tp_sl_from_orders(orders, &position.coin);
     let id = match perp_dex_index {
-        0 => format!("{}_{}", address.to_lowercase(), position.coin),
-        _ => format!("{}_{}_{}", address.to_lowercase(), perp_dex_index, position.coin),
+        0 => format!("{}_{}", address, position.coin),
+        _ => format!("{}_{}_{}", address, perp_dex_index, position.coin),
     };
 
     PerpetualPosition {
@@ -735,6 +739,15 @@ mod tests {
         assert_eq!(perpetual_position.id, "address123_2_BTC");
         assert_eq!(perpetual_position.perpetual_id, "hypercore_2_BTC");
         assert_eq!(perpetual_position.asset_id.to_string(), "hypercore_perpetual::2::BTC");
+    }
+
+    #[test]
+    fn test_map_position_uses_checksum_address_in_id() {
+        let position = Position::mock();
+
+        let perpetual_position = map_position(position, "0x5615e8ab93b9d695b6d4d6545f7792aa59e1069a", &[], 0);
+
+        assert_eq!(perpetual_position.id, "0x5615E8AB93b9d695b6d4d6545f7792aA59e1069a_BTC");
     }
 
     #[test]

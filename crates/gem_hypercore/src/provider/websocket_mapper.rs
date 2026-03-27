@@ -146,7 +146,7 @@ mod tests {
 
         assert_eq!(positions.len(), 1);
         let pos = &positions[0];
-        assert_eq!(pos.id, "0xc64cc00b46150e2681a6c0e57b4b12fd2b68fbc4_ETH");
+        assert_eq!(pos.id, "0xc64CC00B46150e2681a6C0e57b4b12Fd2B68Fbc4_ETH");
         assert_eq!(pos.asset_id.chain, Chain::HyperCore);
         assert_eq!(pos.size, 2.5);
         assert_eq!(pos.size_value, 8305.0);
