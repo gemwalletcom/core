@@ -518,7 +518,7 @@ diesel::table! {
         leverage -> Array<Nullable<Int4>>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
-        only_isolated -> Bool,
+        is_isolated_only -> Bool,
     }
 }
 

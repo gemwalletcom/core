@@ -22,17 +22,31 @@ pub struct UniverseAsset {
     pub name: String,
     pub sz_decimals: i32,
     pub max_leverage: i32,
-    pub only_isolated: Option<bool>,
+    #[serde(rename = "onlyIsolated")]
+    pub is_isolated_only: Option<bool>,
 }
 
 impl UniverseAsset {
     pub fn asset_id(&self) -> AssetId {
         perpetual_asset_id(&self.name)
     }
+
+    pub fn asset_id_by_dex(&self, perp_dex_index: u32) -> AssetId {
+        perpetual_asset_id_by_dex(&self.name, perp_dex_index)
+    }
 }
 
 pub fn perpetual_asset_id(coin: &str) -> AssetId {
     let token_id = AssetId::sub_token_id(&["perpetual".to_string(), coin.to_string()]);
+    AssetId::from(Chain::HyperCore, Some(token_id))
+}
+
+pub fn perpetual_asset_id_by_dex(coin: &str, perp_dex_index: u32) -> AssetId {
+    if perp_dex_index == 0 {
+        return perpetual_asset_id(coin);
+    }
+
+    let token_id = AssetId::sub_token_id(&["perpetual".to_string(), perp_dex_index.to_string(), coin.to_string()]);
     AssetId::from(Chain::HyperCore, Some(token_id))
 }
 
@@ -64,11 +78,25 @@ mod tests {
             name: "BTC".to_string(),
             sz_decimals: 5,
             max_leverage: 50,
-            only_isolated: None,
+            is_isolated_only: None,
         };
         let asset_id = asset.asset_id();
 
         assert_eq!(asset_id.chain, Chain::HyperCore);
         assert_eq!(asset_id.token_id, Some("perpetual::BTC".to_string()));
+    }
+
+    #[test]
+    fn test_asset_id_by_dex() {
+        let asset = UniverseAsset {
+            name: "BTC".to_string(),
+            sz_decimals: 5,
+            max_leverage: 50,
+            is_isolated_only: None,
+        };
+        let asset_id = asset.asset_id_by_dex(2);
+
+        assert_eq!(asset_id.chain, Chain::HyperCore);
+        assert_eq!(asset_id.token_id, Some("perpetual::2::BTC".to_string()));
     }
 }

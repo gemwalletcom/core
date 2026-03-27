@@ -21,13 +21,29 @@ pub fn create_perpetual_asset_id(coin: &str) -> AssetId {
     crate::models::metadata::perpetual_asset_id(coin)
 }
 
+pub fn create_perpetual_asset_id_by_dex(coin: &str, perp_dex_index: u32) -> AssetId {
+    crate::models::metadata::perpetual_asset_id_by_dex(coin, perp_dex_index)
+}
+
 pub fn create_perpetual_id(coin: &str) -> String {
     format!("{}_{}", PerpetualProvider::Hypercore.as_ref(), coin)
 }
 
-pub fn map_positions(positions: AssetPositions, address: String, orders: &[OpenOrder]) -> PerpetualPositionsSummary {
+pub fn create_perpetual_id_by_dex(coin: &str, perp_dex_index: u32) -> String {
+    if perp_dex_index == 0 {
+        return create_perpetual_id(coin);
+    }
+
+    format!("{}_{}_{}", PerpetualProvider::Hypercore.as_ref(), perp_dex_index, coin)
+}
+
+pub fn map_positions(positions: AssetPositions, address: &str, orders: &[OpenOrder], perp_dex_index: u32) -> PerpetualPositionsSummary {
     let balance = map_perpetual_balance(&positions);
-    let positions: Vec<PerpetualPosition> = positions.asset_positions.into_iter().map(|x| map_position(x.position, address.clone(), orders)).collect();
+    let positions: Vec<PerpetualPosition> = positions
+        .asset_positions
+        .into_iter()
+        .map(|x| map_position(x.position, address, orders, perp_dex_index))
+        .collect();
     PerpetualPositionsSummary { positions, balance }
 }
 
@@ -45,7 +61,7 @@ pub fn map_perpetual_balance(positions: &AssetPositions) -> PerpetualBalance {
     }
 }
 
-pub fn map_position(position: Position, address: String, orders: &[OpenOrder]) -> PerpetualPosition {
+pub fn map_position(position: Position, address: &str, orders: &[OpenOrder], perp_dex_index: u32) -> PerpetualPosition {
     let size: f64 = position.szi.parse().unwrap_or(0.0);
     let direction = if size >= 0.0 { PerpetualDirection::Long } else { PerpetualDirection::Short };
 
@@ -60,13 +76,17 @@ pub fn map_position(position: Position, address: String, orders: &[OpenOrder]) -
             }
         }
     };
-    let perpetual_id = create_perpetual_id(&position.coin);
-    let asset_id = create_perpetual_asset_id(&position.coin);
+    let perpetual_id = create_perpetual_id_by_dex(&position.coin, perp_dex_index);
+    let asset_id = create_perpetual_asset_id_by_dex(&position.coin, perp_dex_index);
 
     let (take_profit, stop_loss) = map_tp_sl_from_orders(orders, &position.coin);
+    let id = match perp_dex_index {
+        0 => format!("{}_{}", address.to_lowercase(), position.coin),
+        _ => format!("{}_{}_{}", address.to_lowercase(), perp_dex_index, position.coin),
+    };
 
     PerpetualPosition {
-        id: format!("{}_{}", address.to_lowercase(), position.coin.clone()),
+        id,
         perpetual_id,
         asset_id,
         size: size.abs(),
@@ -98,8 +118,8 @@ pub fn map_perpetuals_data(metadata: HypercoreMetadataResponse, perp_dex_index: 
         .map(|(index, universe_asset)| {
             let metadata_item = asset_metadata.get(index);
 
-            let asset_id = universe_asset.asset_id();
             let asset_index = perp_asset_index(perp_dex_index, index as u32);
+            let asset_id = universe_asset.asset_id_by_dex(perp_dex_index);
 
             let current_price = metadata_item
                 .and_then(|m| m.mid_px.as_ref().and_then(|mid| mid.parse().ok()).or_else(|| m.mark_px.parse().ok()))
@@ -114,7 +134,7 @@ pub fn map_perpetuals_data(metadata: HypercoreMetadataResponse, perp_dex_index: 
             let open_interest_coins = metadata_item.and_then(|m| m.open_interest.parse::<f64>().ok()).unwrap_or(0.0);
             let open_interest_usd = open_interest_coins * current_price;
 
-            let perpetual_id = create_perpetual_id(&universe_asset.name);
+            let perpetual_id = create_perpetual_id_by_dex(&universe_asset.name, perp_dex_index);
             let perpetual = Perpetual {
                 id: perpetual_id,
                 name: universe_asset.name.clone(),
@@ -127,7 +147,7 @@ pub fn map_perpetuals_data(metadata: HypercoreMetadataResponse, perp_dex_index: 
                 volume_24h: metadata_item.and_then(|m| m.day_ntl_vlm.parse().ok()).unwrap_or(0.0),
                 funding: funding_rate,
                 max_leverage: universe_asset.max_leverage as u8,
-                only_isolated: universe_asset.only_isolated.unwrap_or(false),
+                is_isolated_only: universe_asset.is_isolated_only.unwrap_or(false),
             };
 
             let asset = Asset {
@@ -219,6 +239,26 @@ pub fn map_account_summary_aggregate(positions: &[AssetPositions]) -> PerpetualA
     }
 }
 
+pub fn merge_positions_summaries(summaries: Vec<PerpetualPositionsSummary>) -> PerpetualPositionsSummary {
+    summaries.into_iter().fold(
+        PerpetualPositionsSummary {
+            positions: Vec::new(),
+            balance: PerpetualBalance {
+                available: 0.0,
+                reserved: 0.0,
+                withdrawable: 0.0,
+            },
+        },
+        |mut aggregate, summary| {
+            aggregate.positions.extend(summary.positions);
+            aggregate.balance.available += summary.balance.available;
+            aggregate.balance.reserved += summary.balance.reserved;
+            aggregate.balance.withdrawable += summary.balance.withdrawable;
+            aggregate
+        },
+    )
+}
+
 pub fn merge_perpetual_portfolios(portfolios: Vec<PerpetualPortfolio>, account_summary: Option<PerpetualAccountSummary>) -> PerpetualPortfolio {
     let mut day = Vec::new();
     let mut week = Vec::new();
@@ -308,7 +348,7 @@ mod tests {
         metadata::{AssetMetadata, HypercoreUniverseResponse, UniverseAsset},
         position::{AssetPosition, AssetPositions, CumulativeFunding, Leverage, LeverageType, MarginSummary, Position, PositionType},
     };
-    use primitives::{PerpetualDirection, PerpetualMarginType, perpetual_provider::PerpetualProvider};
+    use primitives::{PerpetualBalance, PerpetualDirection, PerpetualMarginType, PerpetualPosition, perpetual_provider::PerpetualProvider};
 
     #[test]
     fn test_map_positions_basic() {
@@ -351,7 +391,7 @@ mod tests {
             withdrawable: "92000".to_string(),
         };
 
-        let result = map_positions(positions, "test_address".to_string(), &[]);
+        let result = map_positions(positions, "test_address", &[], 0);
 
         assert_eq!(result.positions.len(), 1);
         assert_eq!(result.positions[0].id, "test_address_BTC");
@@ -371,7 +411,7 @@ mod tests {
     fn test_map_perpetuals_data() {
         let universe_response = HypercoreUniverseResponse {
             universe: vec![UniverseAsset {
-                only_isolated: Some(false),
+                is_isolated_only: Some(false),
                 ..UniverseAsset::mock()
             }],
         };
@@ -396,7 +436,7 @@ mod tests {
         assert_eq!(eth_data.perpetual.max_leverage, 50);
         assert_eq!(eth_data.perpetual.volume_24h, 500000.0);
 
-        assert_eq!(eth_data.perpetual.only_isolated, false);
+        assert_eq!(eth_data.perpetual.is_isolated_only, false);
 
         assert_eq!(eth_data.asset.name, "ETH");
         assert_eq!(eth_data.asset.symbol, "ETH");
@@ -419,20 +459,22 @@ mod tests {
         let result = map_perpetuals_data(metadata_response, 2);
 
         assert_eq!(result[0].perpetual.identifier, "120000");
+        assert_eq!(result[0].perpetual.id, "hypercore_2_FOO");
+        assert_eq!(result[0].asset.id.to_string(), "hypercore_perpetual::2::FOO");
     }
 
     #[test]
-    fn test_map_perpetuals_data_only_isolated() {
+    fn test_map_perpetuals_data_is_isolated_only() {
         let universe_response = HypercoreUniverseResponse {
             universe: vec![
                 UniverseAsset {
                     name: "ISOLATED_TOKEN".to_string(),
-                    only_isolated: Some(true),
+                    is_isolated_only: Some(true),
                     ..UniverseAsset::mock()
                 },
                 UniverseAsset {
                     name: "DEFAULT_TOKEN".to_string(),
-                    only_isolated: None,
+                    is_isolated_only: None,
                     ..UniverseAsset::mock()
                 },
             ],
@@ -444,8 +486,8 @@ mod tests {
         let result = map_perpetuals_data(metadata_response, 0);
 
         assert_eq!(result.len(), 2);
-        assert_eq!(result[0].perpetual.only_isolated, true);
-        assert_eq!(result[1].perpetual.only_isolated, false);
+        assert_eq!(result[0].perpetual.is_isolated_only, true);
+        assert_eq!(result[1].perpetual.is_isolated_only, false);
     }
 
     #[test]
@@ -559,7 +601,7 @@ mod tests {
             withdrawable: "500".to_string(),
         };
 
-        let summary = map_positions(positions, "test_user".to_string(), &[]);
+        let summary = map_positions(positions, "test_user", &[], 0);
 
         assert_eq!(summary.positions.len(), 2);
 
@@ -587,49 +629,34 @@ mod tests {
     #[test]
     fn test_map_position_funding_sign_reversal() {
         let position = Position {
-            coin: "BTC".to_string(),
-            szi: "3.0".to_string(), // Long position
-            leverage: Leverage {
-                leverage_type: LeverageType::Cross,
-                value: 10,
-            },
+            szi: "3.0".to_string(),
             entry_px: "100".to_string(),
             position_value: "300".to_string(),
-            unrealized_pnl: "0".to_string(),
-            return_on_equity: "0".to_string(),
-            liquidation_px: None,
             margin_used: "30".to_string(),
-            max_leverage: 10,
             cum_funding: CumulativeFunding {
                 all_time: "1.5".to_string(),
                 since_open: "1.5".to_string(),
             },
+            ..Position::mock()
         };
 
-        let perpetual_position = map_position(position, "user123".to_string(), &[]);
+        let perpetual_position = map_position(position, "user123", &[], 0);
         assert_eq!(perpetual_position.funding, Some(-1.5)); // Long position reverses sign
 
         let short_position = Position {
             coin: "ETH".to_string(),
-            szi: "-5.0".to_string(), // Short position
-            leverage: Leverage {
-                leverage_type: LeverageType::Cross,
-                value: 10,
-            },
+            szi: "-5.0".to_string(),
             entry_px: "100".to_string(),
             position_value: "500".to_string(),
-            unrealized_pnl: "0".to_string(),
-            return_on_equity: "0".to_string(),
-            liquidation_px: None,
             margin_used: "50".to_string(),
-            max_leverage: 10,
             cum_funding: CumulativeFunding {
                 all_time: "-1.5".to_string(),
                 since_open: "-1.5".to_string(),
             },
+            ..Position::mock()
         };
 
-        let short_perpetual = map_position(short_position, "user123".to_string(), &[]);
+        let short_perpetual = map_position(short_position, "user123", &[], 0);
         assert_eq!(short_perpetual.size, 5.0); // Size is always positive (absolute value)
         assert_eq!(short_perpetual.funding, Some(1.5)); // Short position with negative funding
     }
@@ -654,7 +681,7 @@ mod tests {
             withdrawable: "2500.75".to_string(),
         };
 
-        let summary = map_positions(positions, "balance_test".to_string(), &[]);
+        let summary = map_positions(positions, "balance_test", &[], 0);
 
         assert_eq!(summary.balance.reserved, 1500.25);
         assert_eq!(summary.balance.available, 3500.25);
@@ -681,7 +708,7 @@ mod tests {
             withdrawable: "305.674569".to_string(),
         };
 
-        let summary = map_positions(positions, "real_data_test".to_string(), &[]);
+        let summary = map_positions(positions, "real_data_test", &[], 0);
 
         assert_eq!(summary.balance.reserved, 706.364534);
         assert_eq!(summary.balance.available, 0.0);
@@ -690,27 +717,9 @@ mod tests {
 
     #[test]
     fn test_map_position_asset_id_uses_subtoken_pattern() {
-        let position = Position {
-            coin: "BTC".to_string(),
-            szi: "1.0".to_string(),
-            leverage: Leverage {
-                leverage_type: LeverageType::Cross,
-                value: 10,
-            },
-            entry_px: "50000".to_string(),
-            position_value: "50000".to_string(),
-            unrealized_pnl: "0".to_string(),
-            return_on_equity: "0".to_string(),
-            liquidation_px: None,
-            margin_used: "5000".to_string(),
-            max_leverage: 10,
-            cum_funding: CumulativeFunding {
-                all_time: "0".to_string(),
-                since_open: "0".to_string(),
-            },
-        };
+        let position = Position::mock();
 
-        let perpetual_position = map_position(position, "address123".to_string(), &[]);
+        let perpetual_position = map_position(position, "address123", &[], 0);
 
         assert_eq!(perpetual_position.asset_id.chain, primitives::Chain::HyperCore);
         assert_eq!(perpetual_position.asset_id.token_id, Some("perpetual::BTC".to_string()));
@@ -718,12 +727,23 @@ mod tests {
     }
 
     #[test]
+    fn test_map_position_builder_dex_ids() {
+        let position = Position::mock();
+
+        let perpetual_position = map_position(position, "address123", &[], 2);
+
+        assert_eq!(perpetual_position.id, "address123_2_BTC");
+        assert_eq!(perpetual_position.perpetual_id, "hypercore_2_BTC");
+        assert_eq!(perpetual_position.asset_id.to_string(), "hypercore_perpetual::2::BTC");
+    }
+
+    #[test]
     fn test_map_tp_sl_from_orders_limit() {
         use crate::testkit::*;
 
         let orders = vec![
-            OpenOrder::mock("HYPE", 191395165138, "Stop Limit", 35.0, Some(33.5)),
-            OpenOrder::mock("HYPE", 191394991415, "Take Profit Limit", 55.0, Some(56.0)),
+            OpenOrder::mock_with_trigger("HYPE", 191395165138, "Stop Limit", 35.0, Some(33.5)),
+            OpenOrder::mock_with_trigger("HYPE", 191394991415, "Take Profit Limit", 55.0, Some(56.0)),
         ];
 
         let (take_profit, stop_loss) = map_tp_sl_from_orders(&orders, "HYPE");
@@ -744,8 +764,8 @@ mod tests {
         use crate::testkit::*;
 
         let orders = vec![
-            OpenOrder::mock("BTC", 123456789, "Stop Market", 40000.0, None),
-            OpenOrder::mock("BTC", 987654321, "Take Profit Market", 60000.0, None),
+            OpenOrder::mock_with_trigger("BTC", 123456789, "Stop Market", 40000.0, None),
+            OpenOrder::mock_with_trigger("BTC", 987654321, "Take Profit Market", 60000.0, None),
         ];
 
         let (take_profit, stop_loss) = map_tp_sl_from_orders(&orders, "BTC");
@@ -767,10 +787,10 @@ mod tests {
 
         let response = HypercorePortfolioResponse {
             timeframes: vec![
-                ("perpDay".to_string(), HypercorePortfolioTimeframeData::mock("100")),
-                ("perpWeek".to_string(), HypercorePortfolioTimeframeData::mock("500")),
-                ("perpMonth".to_string(), HypercorePortfolioTimeframeData::mock("2000")),
-                ("perpAllTime".to_string(), HypercorePortfolioTimeframeData::mock("50000")),
+                ("perpDay".to_string(), HypercorePortfolioTimeframeData::mock()),
+                ("perpWeek".to_string(), HypercorePortfolioTimeframeData::mock_with_volume("500")),
+                ("perpMonth".to_string(), HypercorePortfolioTimeframeData::mock_with_volume("2000")),
+                ("perpAllTime".to_string(), HypercorePortfolioTimeframeData::mock_with_volume("50000")),
             ],
         };
         let positions = AssetPositions::mock();
@@ -868,5 +888,33 @@ mod tests {
 
         let summary = merged.account_summary.unwrap();
         assert_eq!(summary.account_value, 1000.0);
+    }
+
+    #[test]
+    fn test_merge_positions_summaries() {
+        let second_position = PerpetualPosition::mock_with_values(
+            "two",
+            "hypercore_2_ETH",
+            create_perpetual_asset_id_by_dex("ETH", 2),
+            PerpetualDirection::Short,
+            PerpetualMarginType::Isolated,
+            2.0,
+            200.0,
+            4,
+            200.0,
+            30.0,
+            5.0,
+        );
+        let summaries = vec![
+            PerpetualPositionsSummary::mock(),
+            PerpetualPositionsSummary::mock_with(vec![second_position], PerpetualBalance::mock_with_values(7.0, 3.0, 6.0)),
+        ];
+
+        let merged = merge_positions_summaries(summaries);
+
+        assert_eq!(merged.positions.len(), 2);
+        assert_eq!(merged.balance.available, 17.0);
+        assert_eq!(merged.balance.reserved, 8.0);
+        assert_eq!(merged.balance.withdrawable, 14.0);
     }
 }

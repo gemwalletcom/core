@@ -1,9 +1,8 @@
 use ::signer::Signer;
-use alloy_primitives::hex;
 use number_formatter::BigNumberFormatter;
 use primitives::{
     ChainSigner, HyperliquidOrder, NumberIncrementer, PerpetualConfirmData, PerpetualDirection, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualType,
-    SignerError, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, asset_constants::HYPERCORE_CORE_HYPE_TOKEN_ID, stake_type::StakeType, swap::SwapData,
+    SignerError, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, asset_constants::HYPERCORE_CORE_HYPE_TOKEN_ID, hex, stake_type::StakeType, swap::SwapData,
 };
 use serde::Serialize;
 use serde_json::{self, Value};
@@ -70,7 +69,7 @@ impl HyperCoreSigner {
             && is_spot_swap(from_asset.chain(), to_asset.chain())
         {
             let hl_order = extract_hyperliquid_order(&input.metadata)?;
-            let agent_key = hex::decode(&hl_order.agent_private_key).map_err(|_| SignerError::InvalidInput("Invalid agent private key".to_string()))?;
+            let agent_key = hex::decode_hex(&hl_order.agent_private_key).map_err(|_| SignerError::InvalidInput("Invalid agent private key".to_string()))?;
             let builder = get_builder(BUILDER_ADDRESS, hl_order.builder_fee_bps as i32).ok();
 
             let mut order: PlaceOrder = serde_json::from_str(&swap_data.data.data)?;
@@ -123,7 +122,7 @@ impl HyperCoreSigner {
         let perpetual_type = extract_perpetual_type(&input.input_type)?;
         let order = extract_hyperliquid_order(&input.metadata)?;
 
-        let agent_key = hex::decode(&order.agent_private_key).map_err(|_| SignerError::InvalidInput("Invalid agent private key".to_string()))?;
+        let agent_key = hex::decode_hex(&order.agent_private_key).map_err(|_| SignerError::InvalidInput("Invalid agent private key".to_string()))?;
         let builder = get_builder(BUILDER_ADDRESS, order.builder_fee_bps as i32).ok();
         let mut timestamp_incrementer = NumberIncrementer::new(Self::timestamp_ms());
 
@@ -303,14 +302,14 @@ impl HyperCoreSigner {
     }
 
     fn build_signed_request(&self, signature: String, action: &str, timestamp: u64) -> SignerResult<String> {
-        let sig_bytes = hex::decode(&signature).map_err(|err| SignerError::InvalidInput(format!("Invalid signature hex: {err}")))?;
+        let sig_bytes = hex::decode_hex(&signature).map_err(|err| SignerError::InvalidInput(format!("Invalid signature hex: {err}")))?;
 
         if sig_bytes.len() < 65 {
             return Err(SignerError::InvalidInput("Signature must be 65 bytes".to_string()));
         }
 
-        let r = hex::encode_prefixed(&sig_bytes[0..32]);
-        let s = hex::encode_prefixed(&sig_bytes[32..64]);
+        let r = hex::encode_with_0x(&sig_bytes[0..32]);
+        let s = hex::encode_with_0x(&sig_bytes[32..64]);
         let v = sig_bytes[64] as u64;
 
         let action_json: Value = serde_json::from_str(action).map_err(|err| SignerError::InvalidInput(format!("Invalid action JSON: {err}")))?;
@@ -520,7 +519,7 @@ mod tests {
 
     #[test]
     fn market_order_open_long() {
-        let data = PerpetualConfirmData::mock(PerpetualDirection::Long, 11, None, None);
+        let data = PerpetualConfirmData::mock_with_values(PerpetualDirection::Long, 11, None, None);
         let builder = Builder {
             builder_address: "0xdeadbeef".to_string(),
             fee: 25,
@@ -542,7 +541,7 @@ mod tests {
 
     #[test]
     fn market_order_close_short() {
-        let data = PerpetualConfirmData::mock(PerpetualDirection::Short, 5, None, None);
+        let data = PerpetualConfirmData::mock_with_values(PerpetualDirection::Short, 5, None, None);
         let order = HyperCoreSigner::market_order_from_confirm_data(&data, false, None);
         let market_order = &order.orders[0];
 
@@ -552,7 +551,7 @@ mod tests {
 
     #[test]
     fn market_order_open_short() {
-        let data = PerpetualConfirmData::mock(PerpetualDirection::Short, 9, None, None);
+        let data = PerpetualConfirmData::mock_with_values(PerpetualDirection::Short, 9, None, None);
         let order = HyperCoreSigner::market_order_from_confirm_data(&data, true, None);
         let market_order = &order.orders[0];
 

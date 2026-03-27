@@ -30,12 +30,14 @@ impl PerpetualsStore for DatabaseClient {
                 perpetuals::name.eq(excluded(perpetuals::name)),
                 perpetuals::provider.eq(excluded(perpetuals::provider)),
                 perpetuals::asset_id.eq(excluded(perpetuals::asset_id)),
+                perpetuals::identifier.eq(excluded(perpetuals::identifier)),
                 perpetuals::price.eq(excluded(perpetuals::price)),
                 perpetuals::price_percent_change_24h.eq(excluded(perpetuals::price_percent_change_24h)),
                 perpetuals::open_interest.eq(excluded(perpetuals::open_interest)),
                 perpetuals::volume_24h.eq(excluded(perpetuals::volume_24h)),
                 perpetuals::funding.eq(excluded(perpetuals::funding)),
                 perpetuals::leverage.eq(excluded(perpetuals::leverage)),
+                perpetuals::is_isolated_only.eq(excluded(perpetuals::is_isolated_only)),
             ))
             .execute(&mut self.connection)
     }

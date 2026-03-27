@@ -14,7 +14,7 @@ pub fn parse_websocket_data(data: &[u8]) -> Result<HyperliquidSocketMessage, ser
 
     match raw {
         RawSocketMessage::ClearinghouseState(data) => {
-            let summary = map_positions(data.clearinghouse_state, data.user, &[]);
+            let summary = map_positions(data.clearinghouse_state, &data.user, &[], 0);
             Ok(HyperliquidSocketMessage::ClearinghouseState {
                 balance: summary.balance,
                 positions: summary.positions,
@@ -58,7 +58,7 @@ pub fn diff_open_orders_positions(orders: &[OpenOrder], existing_positions: Vec<
     let positions: Vec<PerpetualPosition> = existing_positions
         .into_iter()
         .filter_map(|pos| {
-            let coin = pos.asset_id.token_id.as_ref().and_then(|t| AssetId::decode_token_id(t).into_iter().nth(1))?;
+            let coin = pos.asset_id.token_id.as_ref().and_then(|token_id| AssetId::decode_token_id(token_id).into_iter().last())?;
             let (take_profit, stop_loss) = map_tp_sl_from_orders(orders, &coin);
 
             if pos.take_profit != take_profit || pos.stop_loss != stop_loss {

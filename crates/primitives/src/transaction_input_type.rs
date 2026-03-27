@@ -151,7 +151,7 @@ impl TransactionLoadData {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Asset, DelegationValidator, PerpetualConfirmData, PerpetualDirection, Resource};
+    use crate::{Asset, DelegationValidator, PerpetualConfirmData, Resource};
 
     #[test]
     fn transaction_types() {
@@ -169,7 +169,7 @@ mod tests {
             TransactionType::StakeUnfreeze
         );
         assert_eq!(
-            TransactionInputType::Perpetual(Asset::mock(), PerpetualType::Open(PerpetualConfirmData::mock(PerpetualDirection::Long, 0, None, None))).transaction_type(),
+            TransactionInputType::Perpetual(Asset::mock(), PerpetualType::Open(PerpetualConfirmData::mock())).transaction_type(),
             TransactionType::PerpetualOpenPosition
         );
     }

@@ -120,6 +120,28 @@ impl<C: Client> HyperCoreClient<C> {
         Ok(self.client.post("/info", &payload).await?)
     }
 
+    async fn get_info_by_dex<T>(&self, request_type: &str, dex: Option<&str>) -> Result<T, Box<dyn Error + Send + Sync>>
+    where
+        T: DeserializeOwned + Send,
+    {
+        let payload = match dex {
+            Some(dex) => json!({"type": request_type, "dex": dex}),
+            None => json!({"type": request_type}),
+        };
+        self.info(payload).await
+    }
+
+    async fn get_user_info_by_dex<T>(&self, request_type: &str, user: &str, dex: Option<&str>) -> Result<T, Box<dyn Error + Send + Sync>>
+    where
+        T: DeserializeOwned + Send,
+    {
+        let payload = match dex {
+            Some(dex) => json!({"type": request_type, "user": user, "dex": dex}),
+            None => json!({"type": request_type, "user": user}),
+        };
+        self.info(payload).await
+    }
+
     pub async fn exchange(&self, payload: serde_json::Value) -> Result<serde_json::Value, Box<dyn Error + Send + Sync>> {
         Ok(self.client.post("/exchange", &payload).await?)
     }
@@ -167,19 +189,19 @@ impl<C: Client> HyperCoreClient<C> {
     }
 
     pub async fn get_clearinghouse_state(&self, user: &str) -> Result<AssetPositions, Box<dyn Error + Send + Sync>> {
-        self.info(json!({"type": "clearinghouseState", "user": user})).await
+        self.get_clearinghouse_state_by_dex(user, None).await
     }
 
-    pub async fn get_clearinghouse_state_with_dex(&self, user: &str, dex: &str) -> Result<AssetPositions, Box<dyn Error + Send + Sync>> {
-        self.info(json!({"type": "clearinghouseState", "user": user, "dex": dex})).await
+    pub async fn get_clearinghouse_state_by_dex(&self, user: &str, dex: Option<&str>) -> Result<AssetPositions, Box<dyn Error + Send + Sync>> {
+        self.get_user_info_by_dex("clearinghouseState", user, dex).await
     }
 
     pub async fn get_metadata(&self) -> Result<HypercoreMetadataResponse, Box<dyn Error + Send + Sync>> {
-        self.info(json!({"type": "metaAndAssetCtxs"})).await
+        self.get_metadata_by_dex(None).await
     }
 
-    pub async fn get_metadata_with_dex(&self, dex: &str) -> Result<HypercoreMetadataResponse, Box<dyn Error + Send + Sync>> {
-        self.info(json!({"type": "metaAndAssetCtxs", "dex": dex})).await
+    pub async fn get_metadata_by_dex(&self, dex: Option<&str>) -> Result<HypercoreMetadataResponse, Box<dyn Error + Send + Sync>> {
+        self.get_info_by_dex("metaAndAssetCtxs", dex).await
     }
 
     pub async fn get_perp_dexs(&self) -> Result<Vec<Option<PerpDex>>, Box<dyn Error + Send + Sync>> {
@@ -269,19 +291,19 @@ impl<C: Client> HyperCoreClient<C> {
     }
 
     pub async fn get_open_orders(&self, user: &str) -> Result<Vec<OpenOrder>, Box<dyn Error + Send + Sync>> {
-        self.info(json!({"type": "frontendOpenOrders", "user": user})).await
+        self.get_open_orders_by_dex(user, None).await
     }
 
-    pub async fn get_open_orders_with_dex(&self, user: &str, dex: &str) -> Result<Vec<OpenOrder>, Box<dyn Error + Send + Sync>> {
-        self.info(json!({"type": "frontendOpenOrders", "user": user, "dex": dex})).await
+    pub async fn get_open_orders_by_dex(&self, user: &str, dex: Option<&str>) -> Result<Vec<OpenOrder>, Box<dyn Error + Send + Sync>> {
+        self.get_user_info_by_dex("frontendOpenOrders", user, dex).await
     }
 
     pub async fn get_perpetual_portfolio(&self, user: &str) -> Result<HypercorePortfolioResponse, Box<dyn Error + Send + Sync>> {
-        self.info(json!({"type": "portfolio", "user": user})).await
+        self.get_perpetual_portfolio_by_dex(user, None).await
     }
 
-    pub async fn get_perpetual_portfolio_with_dex(&self, user: &str, dex: &str) -> Result<HypercorePortfolioResponse, Box<dyn Error + Send + Sync>> {
-        self.info(json!({"type": "portfolio", "user": user, "dex": dex})).await
+    pub async fn get_perpetual_portfolio_by_dex(&self, user: &str, dex: Option<&str>) -> Result<HypercorePortfolioResponse, Box<dyn Error + Send + Sync>> {
+        self.get_user_info_by_dex("portfolio", user, dex).await
     }
 
     pub fn cache_transaction_sender(&self, id: &str, sender: &str) -> Result<(), Box<dyn Error + Send + Sync>> {
