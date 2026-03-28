@@ -1,11 +1,10 @@
+use crate::ENTRY_FUNCTION_PAYLOAD_TYPE;
 use crate::models::TransactionPayload;
 use primitives::SignerError;
 use serde::Deserialize;
 use serde_json::Value;
 
 use crate::r#move::{EntryFunction, encode_argument, infer_type_tags, parse_function_id, parse_type_tag};
-
-const ENTRY_FUNCTION_PAYLOAD_TYPE: &str = "entry_function_payload";
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct EntryFunctionPayload {

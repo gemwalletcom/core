@@ -448,6 +448,7 @@ pub enum GemTransactionLoadMetadata {
     },
     Aptos {
         sequence: u64,
+        gas_limit: Option<u64>,
         data: Option<String>,
     },
     Polkadot {
@@ -523,7 +524,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
             },
             TransactionLoadMetadata::Xrp { sequence, block_number } => GemTransactionLoadMetadata::Xrp { sequence, block_number },
             TransactionLoadMetadata::Algorand { sequence, block_hash, chain_id } => GemTransactionLoadMetadata::Algorand { sequence, block_hash, chain_id },
-            TransactionLoadMetadata::Aptos { sequence, data } => GemTransactionLoadMetadata::Aptos { sequence, data },
+            TransactionLoadMetadata::Aptos { sequence, gas_limit, data } => GemTransactionLoadMetadata::Aptos { sequence, gas_limit, data },
             TransactionLoadMetadata::Polkadot {
                 sequence,
                 genesis_hash,
@@ -611,7 +612,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
             },
             GemTransactionLoadMetadata::Xrp { sequence, block_number } => TransactionLoadMetadata::Xrp { sequence, block_number },
             GemTransactionLoadMetadata::Algorand { sequence, block_hash, chain_id } => TransactionLoadMetadata::Algorand { sequence, block_hash, chain_id },
-            GemTransactionLoadMetadata::Aptos { sequence, data } => TransactionLoadMetadata::Aptos { sequence, data },
+            GemTransactionLoadMetadata::Aptos { sequence, gas_limit, data } => TransactionLoadMetadata::Aptos { sequence, gas_limit, data },
             GemTransactionLoadMetadata::Polkadot {
                 sequence,
                 genesis_hash,
