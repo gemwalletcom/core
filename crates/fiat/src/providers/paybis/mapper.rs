@@ -142,7 +142,7 @@ pub fn map_webhook_data(webhook_data: PaybisWebhookData) -> FiatWebhook {
         .unwrap_or((None, None));
 
     FiatWebhook::Transaction(FiatTransactionUpdate {
-        transaction_id: webhook_data.quote.quote_id,
+        transaction_id: webhook_data.request_id,
         provider_transaction_id: Some(webhook_data.transaction.invoice),
         status: map_status(&webhook_data.transaction.status),
         transaction_hash: webhook_data.payout.as_ref().and_then(|p| p.transaction_hash.clone()),
@@ -302,7 +302,7 @@ mod tests {
 
         let result = map_process_webhook(webhook_json).unwrap();
         if let FiatWebhook::Transaction(transaction) = result {
-            assert_eq!(transaction.transaction_id, "a4a211ad-3bcf-47d9-b4ae-073e841e3e7a");
+            assert_eq!(transaction.transaction_id, "3b388a91-d1fa-456e-b94a");
             assert_eq!(transaction.provider_transaction_id, Some("PB21095868675TX1".to_string()));
         } else {
             panic!("Expected FiatWebhook::Transaction variant");
@@ -315,7 +315,7 @@ mod tests {
 
         let result = map_process_webhook(webhook_json).unwrap();
         if let FiatWebhook::Transaction(transaction) = result {
-            assert_eq!(transaction.transaction_id, "a4a211ad-3bcf-47d9-b4ae-073e841e3e7a");
+            assert_eq!(transaction.transaction_id, "3b388a91-d1fa-456e-b94a");
             assert_eq!(transaction.provider_transaction_id, Some("PB21095868675TX1".to_string()));
             assert_eq!(transaction.fiat_amount, Some(50.0));
             assert_eq!(transaction.fiat_currency, Some("USD".to_string()));
@@ -333,7 +333,7 @@ mod tests {
 
         let result = map_process_webhook(webhook_json).unwrap();
         if let FiatWebhook::Transaction(transaction) = result {
-            assert_eq!(transaction.transaction_id, "59b799d4-dc8c-458d-b9c7-292726ab6255");
+            assert_eq!(transaction.transaction_id, "63f0c91b-5382-45d6-8fb9");
             assert_eq!(transaction.provider_transaction_id, Some("PB25095868675TX8".to_string()));
             assert_eq!(transaction.fiat_currency, Some("USD".to_string()));
             assert_eq!(transaction.address, None);
@@ -345,6 +345,7 @@ mod tests {
     #[test]
     fn test_map_webhook_data_sell_uses_amount_to_currency() {
         let result = map_webhook_data(PaybisWebhookData {
+            request_id: "request_123".to_string(),
             quote: PaybisWebhookQuote {
                 quote_id: "quote_123".to_string(),
             },
@@ -369,6 +370,7 @@ mod tests {
             panic!("Expected FiatWebhook::Transaction variant");
         };
 
+        assert_eq!(transaction.transaction_id, "request_123");
         assert_eq!(transaction.fiat_amount, Some(1234.56));
         assert_eq!(transaction.fiat_currency, Some("EUR".to_string()));
     }

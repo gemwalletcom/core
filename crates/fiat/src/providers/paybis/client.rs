@@ -110,7 +110,7 @@ impl PaybisClient {
         is_buy: bool,
         user_ip: &str,
         locale: &str,
-    ) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+    ) -> Result<(String, String), Box<dyn std::error::Error + Send + Sync>> {
         let request_body = if is_buy {
             Request::new_buy(
                 wallet_address.to_owned(),
@@ -138,6 +138,6 @@ impl PaybisClient {
         let mut url = Url::parse(PAYBIS_WIDGET_URL)?;
         url.query_pairs_mut().append_pair("requestId", &response.request_id);
 
-        Ok(url.to_string())
+        Ok((url.to_string(), response.request_id))
     }
 }
