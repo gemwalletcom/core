@@ -9,9 +9,10 @@ use super::{
     AccountAddress, EntryFunction, EntryFunctionPayload, build_raw_transaction, build_submit_transaction_bcs, expiration_timestamp_secs, sign_message as sign_aptos_message,
     sign_raw_transaction,
 };
+use crate::token_id::is_fungible_asset_token_id;
 use crate::{
-    APTOS_TRANSFER_COINS_FUNCTION, APTOS_TRANSFER_FUNCTION, DEFAULT_MAX_GAS_AMOUNT, DELEGATION_POOL_ADD_STAKE_FUNCTION, DELEGATION_POOL_UNLOCK_FUNCTION,
-    DELEGATION_POOL_WITHDRAW_FUNCTION, ENTRY_FUNCTION_PAYLOAD_TYPE,
+    APTOS_TRANSFER_FUNCTION, DEFAULT_MAX_GAS_AMOUNT, DELEGATION_POOL_ADD_STAKE_FUNCTION, DELEGATION_POOL_UNLOCK_FUNCTION, DELEGATION_POOL_WITHDRAW_FUNCTION,
+    ENTRY_FUNCTION_PAYLOAD_TYPE,
 };
 
 const APTOS_CHAIN_ID: u8 = 1;
@@ -19,6 +20,7 @@ const FUNGIBLE_TRANSFER_FUNCTION: &str = "0x1::primary_fungible_store::transfer"
 const OBJECT_CORE_TYPE: &str = "0x1::object::ObjectCore";
 
 const STAKE_ENTRY_PARAMS: [&str; 2] = ["address", "u64"];
+const FUNGIBLE_TRANSFER_ENTRY_PARAMS: [&str; 3] = ["address", "address", "u64"];
 
 #[derive(Default)]
 pub struct AptosChainSigner;
@@ -37,32 +39,9 @@ impl ChainSigner for AptosChainSigner {
     }
 
     fn sign_token_transfer(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
-        let asset = input.input_type.get_asset();
-        let token_id = asset.token_id.as_ref().ok_or_else(|| SignerError::InvalidInput("Missing Aptos token id".to_string()))?;
         let gas_limit = input.metadata.get_gas_limit().unwrap_or(DEFAULT_MAX_GAS_AMOUNT);
-
-        if token_id.contains("::") {
-            let payload = EntryFunctionPayload {
-                payload_type: ENTRY_FUNCTION_PAYLOAD_TYPE.to_string(),
-                function: APTOS_TRANSFER_COINS_FUNCTION.to_string(),
-                type_arguments: vec![token_id.to_string()],
-                arguments: vec![Value::String(input.destination_address.clone()), Value::String(input.value.clone())],
-            };
-            return self.sign_payload(payload, Some(&STAKE_ENTRY_PARAMS), input, private_key, gas_limit);
-        }
-
-        let payload = EntryFunctionPayload {
-            payload_type: ENTRY_FUNCTION_PAYLOAD_TYPE.to_string(),
-            function: FUNGIBLE_TRANSFER_FUNCTION.to_string(),
-            type_arguments: vec![OBJECT_CORE_TYPE.to_string()],
-            arguments: vec![
-                Value::String(token_id.to_string()),
-                Value::String(input.destination_address.clone()),
-                Value::String(input.value.clone()),
-            ],
-        };
-
-        self.sign_payload(payload, Some(&["address", "address", "u64"]), input, private_key, gas_limit)
+        let (payload, abi) = token_transfer_payload(input)?;
+        self.sign_payload(payload, Some(abi), input, private_key, gas_limit)
     }
 
     fn sign_swap(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
@@ -205,4 +184,53 @@ fn gas_unit_price(input: &TransactionLoadInput) -> Result<u64, SignerError> {
         .to_string()
         .parse::<u64>()
         .map_err(|_| SignerError::InvalidInput("Invalid Aptos gas price".to_string()))
+}
+
+fn token_transfer_payload(input: &TransactionLoadInput) -> Result<(EntryFunctionPayload, &'static [&'static str]), SignerError> {
+    let asset = input.input_type.get_asset();
+    let token_id = asset.token_id.as_ref().ok_or_else(|| SignerError::invalid_input("Missing Aptos token id"))?;
+    if !is_fungible_asset_token_id(token_id) {
+        return Err(SignerError::invalid_input("Invalid Aptos token ID format"));
+    }
+
+    Ok((
+        EntryFunctionPayload {
+            payload_type: ENTRY_FUNCTION_PAYLOAD_TYPE.to_string(),
+            function: FUNGIBLE_TRANSFER_FUNCTION.to_string(),
+            type_arguments: vec![OBJECT_CORE_TYPE.to_string()],
+            arguments: vec![
+                Value::String(token_id.to_string()),
+                Value::String(input.destination_address.clone()),
+                Value::String(input.value.clone()),
+            ],
+        },
+        &FUNGIBLE_TRANSFER_ENTRY_PARAMS,
+    ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use primitives::TransactionLoadInput;
+
+    #[test]
+    fn token_transfer_payload_uses_fungible_asset_transfer() {
+        let input = TransactionLoadInput::mock_aptos_token_transfer("0x357b0b74bc833e95a115ad22604854d6b0fca151cecd94111770e5d6ffc9dc2b");
+        let (payload, abi) = token_transfer_payload(&input).unwrap();
+
+        assert_eq!(payload.function, FUNGIBLE_TRANSFER_FUNCTION);
+        assert_eq!(payload.type_arguments, vec![OBJECT_CORE_TYPE.to_string()]);
+        assert_eq!(abi, &FUNGIBLE_TRANSFER_ENTRY_PARAMS);
+    }
+
+    #[test]
+    fn token_transfer_payload_rejects_invalid_token_id() {
+        let input = TransactionLoadInput::mock_aptos_token_transfer("invalid");
+        let err = token_transfer_payload(&input).unwrap_err();
+
+        match err {
+            SignerError::InvalidInput(message) => assert_eq!(message, "Invalid Aptos token ID format"),
+            SignerError::SigningError(message) => panic!("unexpected signing error: {message}"),
+        }
+    }
 }

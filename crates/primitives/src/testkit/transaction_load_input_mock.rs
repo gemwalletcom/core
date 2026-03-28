@@ -18,6 +18,30 @@ impl TransactionLoadInput {
         }
     }
 
+    pub fn mock_aptos_token_transfer(token_id: &str) -> Self {
+        TransactionLoadInput {
+            input_type: TransactionInputType::Transfer(Asset::mock_with_params(
+                Chain::Aptos,
+                Some(token_id.to_string()),
+                "USD Coin".to_string(),
+                "USDC".to_string(),
+                6,
+                crate::AssetType::TOKEN,
+            )),
+            sender_address: "0x1".to_string(),
+            destination_address: "0x2".to_string(),
+            value: "1".to_string(),
+            gas_price: GasPriceType::regular(BigInt::from(1u64)),
+            memo: None,
+            is_max_value: false,
+            metadata: TransactionLoadMetadata::Aptos {
+                sequence: 0,
+                gas_limit: None,
+                data: None,
+            },
+        }
+    }
+
     pub fn mock_with_input_type(input_type: TransactionInputType) -> Self {
         TransactionLoadInput {
             input_type,

@@ -1,6 +1,5 @@
 pub const APTOS_NATIVE_COIN: &str = "0x1::aptos_coin::AptosCoin";
 pub const APTOS_TRANSFER_FUNCTION: &str = "0x1::aptos_account::transfer";
-pub const APTOS_TRANSFER_COINS_FUNCTION: &str = "0x1::aptos_account::transfer_coins";
 pub const ENTRY_FUNCTION_PAYLOAD_TYPE: &str = "entry_function_payload";
 pub const NO_ACCOUNT_SIGNATURE_TYPE: &str = "no_account_signature";
 pub const DEFAULT_MAX_GAS_AMOUNT: u64 = 1500;

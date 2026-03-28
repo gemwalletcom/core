@@ -15,8 +15,8 @@ use crate::models::{
     TransactionResponse, TransactionSignature, TransactionSimulation, ValidatorSet,
 };
 use crate::provider::payload_builder::{
-    build_fungible_transfer_transaction_payload, build_stake_transaction_payload, build_transfer_coins_transaction_payload, build_transfer_transaction_payload,
-    build_unstake_transaction_payload, build_withdraw_transaction_payload,
+    build_stake_transaction_payload, build_token_transfer_transaction_payload, build_transfer_transaction_payload, build_unstake_transaction_payload,
+    build_withdraw_transaction_payload,
 };
 use crate::{DEFAULT_MAX_GAS_AMOUNT, DEFAULT_SWAP_MAX_GAS_AMOUNT};
 
@@ -97,8 +97,7 @@ impl<C: Client> AptosClient<C> {
             | TransactionInputType::Account(asset, _) => {
                 let payload = match &asset.id.token_id {
                     None => build_transfer_transaction_payload(&input.destination_address, &input.value),
-                    Some(token_id) if token_id.contains("::") => build_transfer_coins_transaction_payload(token_id, &input.destination_address, &input.value),
-                    Some(token_id) => build_fungible_transfer_transaction_payload(token_id, &input.destination_address, &input.value),
+                    Some(token_id) => build_token_transfer_transaction_payload(token_id, &input.destination_address, &input.value)?,
                 };
 
                 self.simulate_transaction(&input.sender_address, sequence, payload, &input.gas_price.gas_price().to_string())

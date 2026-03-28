@@ -1,10 +1,8 @@
 use serde_json::json;
 
 use crate::models::TransactionPayload;
-use crate::{
-    APTOS_TRANSFER_COINS_FUNCTION, APTOS_TRANSFER_FUNCTION, DELEGATION_POOL_ADD_STAKE_FUNCTION, DELEGATION_POOL_UNLOCK_FUNCTION, DELEGATION_POOL_WITHDRAW_FUNCTION,
-    ENTRY_FUNCTION_PAYLOAD_TYPE,
-};
+use crate::token_id::is_fungible_asset_token_id;
+use crate::{APTOS_TRANSFER_FUNCTION, DELEGATION_POOL_ADD_STAKE_FUNCTION, DELEGATION_POOL_UNLOCK_FUNCTION, DELEGATION_POOL_WITHDRAW_FUNCTION, ENTRY_FUNCTION_PAYLOAD_TYPE};
 
 fn build_payload(function: &str, first_argument: &str, amount: &str) -> TransactionPayload {
     TransactionPayload {
@@ -31,15 +29,6 @@ pub fn build_transfer_transaction_payload(recipient: &str, amount: &str) -> Tran
     build_payload(APTOS_TRANSFER_FUNCTION, recipient, amount)
 }
 
-pub fn build_transfer_coins_transaction_payload(token_id: &str, recipient: &str, amount: &str) -> TransactionPayload {
-    TransactionPayload {
-        function: Some(APTOS_TRANSFER_COINS_FUNCTION.to_string()),
-        type_arguments: vec![token_id.to_string()],
-        arguments: vec![json!(recipient), json!(amount)],
-        payload_type: ENTRY_FUNCTION_PAYLOAD_TYPE.to_string(),
-    }
-}
-
 pub fn build_fungible_transfer_transaction_payload(token_id: &str, recipient: &str, amount: &str) -> TransactionPayload {
     TransactionPayload {
         function: Some("0x1::primary_fungible_store::transfer".to_string()),
@@ -47,6 +36,14 @@ pub fn build_fungible_transfer_transaction_payload(token_id: &str, recipient: &s
         arguments: vec![json!(token_id), json!(recipient), json!(amount)],
         payload_type: ENTRY_FUNCTION_PAYLOAD_TYPE.to_string(),
     }
+}
+
+pub fn build_token_transfer_transaction_payload(token_id: &str, recipient: &str, amount: &str) -> Result<TransactionPayload, &'static str> {
+    if !is_fungible_asset_token_id(token_id) {
+        return Err("Invalid Aptos token ID format");
+    }
+
+    Ok(build_fungible_transfer_transaction_payload(token_id, recipient, amount))
 }
 
 pub fn build_stake_payload_data(pool_address: &str, amount: &str) -> String {
@@ -108,5 +105,25 @@ mod tests {
         });
 
         assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_build_token_transfer_transaction_payload_fungible_asset() {
+        let payload = build_token_transfer_transaction_payload("0x357b0b74bc833e95a115ad22604854d6b0fca151cecd94111770e5d6ffc9dc2b", TEST_POOL_ADDRESS, "1").unwrap();
+        let result: Value = serde_json::to_value(&payload).unwrap();
+        let expected = serde_json::json!({
+            "function": "0x1::primary_fungible_store::transfer",
+            "type_arguments": ["0x1::object::ObjectCore"],
+            "arguments": ["0x357b0b74bc833e95a115ad22604854d6b0fca151cecd94111770e5d6ffc9dc2b", TEST_POOL_ADDRESS, "1"],
+            "type": "entry_function_payload"
+        });
+
+        assert_eq!(result, expected);
+    }
+
+    #[test]
+    fn test_build_token_transfer_transaction_payload_invalid() {
+        let err = build_token_transfer_transaction_payload("invalid", TEST_POOL_ADDRESS, "1").unwrap_err();
+        assert_eq!(err, "Invalid Aptos token ID format");
     }
 }
