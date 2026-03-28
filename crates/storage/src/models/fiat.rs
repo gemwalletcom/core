@@ -176,6 +176,7 @@ impl FiatProviderRow {
 #[diesel(table_name = crate::schema::fiat_transactions)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct FiatTransactionRow {
+    pub id: i32,
     pub asset_id: AssetId,
     pub transaction_type: FiatTransactionType,
     pub provider_id: FiatProviderNameRow,
@@ -256,6 +257,24 @@ impl NewFiatTransactionRow {
             quote_id: transaction.id,
         }
     }
+
+    pub fn from_existing(existing: &FiatTransactionRow, update: &FiatTransactionUpdate, provider_transaction_id: String) -> Option<Self> {
+        Some(Self {
+            asset_id: existing.asset_id.clone(),
+            transaction_type: existing.transaction_type.clone(),
+            provider_id: existing.provider_id.clone(),
+            provider_transaction_id: Some(provider_transaction_id),
+            status: update.status.clone().into(),
+            country: existing.country.clone(),
+            fiat_amount: update.fiat_amount.unwrap_or(existing.fiat_amount),
+            fiat_currency: update.fiat_currency.clone().unwrap_or_else(|| existing.fiat_currency.clone()),
+            value: existing.value.clone(),
+            address: update.address.clone().or_else(|| existing.address.clone()),
+            transaction_hash: update.transaction_hash.clone(),
+            device_id: existing.device_id?,
+            quote_id: existing.quote_id.clone(),
+        })
+    }
 }
 
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Clone)]
@@ -315,27 +334,11 @@ impl UpdateFiatTransactionRow {
 mod tests {
     use super::{FiatTransactionRow, UpdateFiatTransactionRow};
     use chrono::{DateTime, Utc};
-    use primitives::{AssetId, Chain, FiatProviderName, FiatQuoteType, FiatTransactionStatus, FiatTransactionUpdate};
+    use primitives::{FiatTransactionStatus, FiatTransactionUpdate};
 
     #[test]
     fn as_primitive_maps_value_and_timestamps() {
-        let row = FiatTransactionRow {
-            asset_id: AssetId::from_chain(Chain::Ethereum).into(),
-            transaction_type: FiatQuoteType::Buy.into(),
-            provider_id: FiatProviderName::MoonPay.into(),
-            provider_transaction_id: Some("tx_123".to_string()),
-            status: FiatTransactionStatus::Pending.into(),
-            country: Some("US".to_string()),
-            fiat_amount: 100.0,
-            fiat_currency: "USD".to_string(),
-            value: Some("123000000000000000".to_string()),
-            address: Some("0x123".to_string()),
-            transaction_hash: Some("0xabc".to_string()),
-            device_id: Some(1),
-            quote_id: "quote_123".to_string(),
-            updated_at: DateTime::<Utc>::from_timestamp(2, 0).unwrap().naive_utc(),
-            created_at: DateTime::<Utc>::from_timestamp(1, 0).unwrap().naive_utc(),
-        };
+        let row = FiatTransactionRow::mock_with_timestamps(DateTime::<Utc>::from_timestamp(1, 0).unwrap(), DateTime::<Utc>::from_timestamp(2, 0).unwrap());
 
         let transaction = row.as_primitive().unwrap();
 
@@ -347,23 +350,7 @@ mod tests {
 
     #[test]
     fn as_primitive_returns_error_without_value() {
-        let row = FiatTransactionRow {
-            asset_id: AssetId::from_chain(Chain::Ethereum).into(),
-            transaction_type: FiatQuoteType::Buy.into(),
-            provider_id: FiatProviderName::MoonPay.into(),
-            provider_transaction_id: Some("tx_123".to_string()),
-            status: FiatTransactionStatus::Pending.into(),
-            country: Some("US".to_string()),
-            fiat_amount: 100.0,
-            fiat_currency: "USD".to_string(),
-            value: None,
-            address: Some("0x123".to_string()),
-            transaction_hash: Some("0xabc".to_string()),
-            device_id: Some(1),
-            quote_id: "quote_123".to_string(),
-            updated_at: DateTime::<Utc>::from_timestamp(2, 0).unwrap().naive_utc(),
-            created_at: DateTime::<Utc>::from_timestamp(1, 0).unwrap().naive_utc(),
-        };
+        let row = FiatTransactionRow::mock_without_value();
 
         assert!(row.as_primitive().is_err());
     }

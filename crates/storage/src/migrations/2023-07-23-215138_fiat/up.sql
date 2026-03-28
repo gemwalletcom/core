@@ -69,5 +69,6 @@ CREATE TABLE fiat_transactions (
 
 SELECT diesel_manage_updated_at('fiat_transactions');
 
-CREATE UNIQUE INDEX idx_fiat_transactions_quote_id ON fiat_transactions(quote_id);
+CREATE INDEX idx_fiat_transactions_provider_quote_id ON fiat_transactions(provider_id, quote_id);
+CREATE UNIQUE INDEX idx_fiat_transactions_provider_quote_placeholder ON fiat_transactions(provider_id, quote_id) WHERE provider_transaction_id IS NULL;
 CREATE UNIQUE INDEX idx_fiat_transactions_provider_transaction_id ON fiat_transactions(provider_id, provider_transaction_id) WHERE provider_transaction_id IS NOT NULL;
