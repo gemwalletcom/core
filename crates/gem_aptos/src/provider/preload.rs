@@ -34,11 +34,7 @@ impl<C: Client> ChainTransactionLoad for AptosClient<C> {
         };
 
         let sequence = input.metadata.get_sequence()?;
-        let metadata = TransactionLoadMetadata::Aptos {
-            sequence,
-            gas_limit: Some(gas_limit),
-            data,
-        };
+        let metadata = TransactionLoadMetadata::Aptos { sequence, data };
 
         Ok(TransactionLoadData { fee, metadata })
     }
@@ -93,18 +89,13 @@ mod chain_integration_tests {
             })
             .await?;
 
-        let TransactionLoadMetadata::Aptos {
-            gas_limit: Some(gas_limit),
-            data: Some(data),
-            ..
-        } = load.metadata
-        else {
-            panic!("Expected Aptos transaction load metadata with gas limit and payload");
+        let TransactionLoadMetadata::Aptos { data: Some(data), .. } = load.metadata else {
+            panic!("Expected Aptos transaction load metadata with payload");
         };
 
         let payload: Value = serde_json::from_str(&data).unwrap();
         assert_eq!(payload["function"], "0x1::delegation_pool::add_stake");
-        assert_eq!(load.fee.gas_limit, BigInt::from(gas_limit));
+        assert!(load.fee.gas_limit > BigInt::from(0u32));
 
         Ok(())
     }

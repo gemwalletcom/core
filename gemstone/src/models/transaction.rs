@@ -3,9 +3,9 @@ use num_bigint::BigInt;
 use primitives::contract_call_data::ContractCallData;
 use primitives::{
     AccountDataType, Asset, EarnType, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualMarginType, PerpetualProvider, PerpetualType,
-    Resource, StakeType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata, TransactionPerpetualMetadata,
-    TransactionState, TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType, TronStakeData,
-    TronUnfreeze, TronVote, UInt64, WalletConnectionSessionAppMetadata,
+    Resource, SignerInput, StakeType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata,
+    TransactionPerpetualMetadata, TransactionState, TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction,
+    TransferDataOutputType, TronStakeData, TronUnfreeze, TronVote, UInt64, WalletConnectionSessionAppMetadata,
     perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualReduceData, TPSLOrderData},
 };
 use std::collections::HashMap;
@@ -376,6 +376,12 @@ pub struct GemTransactionLoadInput {
     pub metadata: GemTransactionLoadMetadata,
 }
 
+#[derive(Debug, Clone, uniffi::Record)]
+pub struct GemSignerInput {
+    pub input: GemTransactionLoadInput,
+    pub fee: GemTransactionLoadFee,
+}
+
 #[derive(Debug, Default, Clone, uniffi::Record)]
 pub struct GemFeeOptions {
     pub options: HashMap<GemFeeOption, String>,
@@ -448,7 +454,6 @@ pub enum GemTransactionLoadMetadata {
     },
     Aptos {
         sequence: u64,
-        gas_limit: Option<u64>,
         data: Option<String>,
     },
     Polkadot {
@@ -524,7 +529,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
             },
             TransactionLoadMetadata::Xrp { sequence, block_number } => GemTransactionLoadMetadata::Xrp { sequence, block_number },
             TransactionLoadMetadata::Algorand { sequence, block_hash, chain_id } => GemTransactionLoadMetadata::Algorand { sequence, block_hash, chain_id },
-            TransactionLoadMetadata::Aptos { sequence, gas_limit, data } => GemTransactionLoadMetadata::Aptos { sequence, gas_limit, data },
+            TransactionLoadMetadata::Aptos { sequence, data } => GemTransactionLoadMetadata::Aptos { sequence, data },
             TransactionLoadMetadata::Polkadot {
                 sequence,
                 genesis_hash,
@@ -612,7 +617,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
             },
             GemTransactionLoadMetadata::Xrp { sequence, block_number } => TransactionLoadMetadata::Xrp { sequence, block_number },
             GemTransactionLoadMetadata::Algorand { sequence, block_hash, chain_id } => TransactionLoadMetadata::Algorand { sequence, block_hash, chain_id },
-            GemTransactionLoadMetadata::Aptos { sequence, gas_limit, data } => TransactionLoadMetadata::Aptos { sequence, gas_limit, data },
+            GemTransactionLoadMetadata::Aptos { sequence, data } => TransactionLoadMetadata::Aptos { sequence, data },
             GemTransactionLoadMetadata::Polkadot {
                 sequence,
                 genesis_hash,
@@ -682,6 +687,12 @@ impl From<GemTransactionLoadInput> for TransactionLoadInput {
             is_max_value: value.is_max_value,
             metadata: value.metadata.into(),
         }
+    }
+}
+
+impl From<GemSignerInput> for SignerInput {
+    fn from(value: GemSignerInput) -> Self {
+        SignerInput::new(value.input.into(), value.fee.into())
     }
 }
 

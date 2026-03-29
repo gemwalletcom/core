@@ -3,7 +3,7 @@ use alloy_primitives::hex;
 use number_formatter::BigNumberFormatter;
 use primitives::{
     ChainSigner, HyperliquidOrder, NumberIncrementer, PerpetualConfirmData, PerpetualDirection, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualType,
-    SignerError, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, asset_constants::HYPERCORE_CORE_HYPE_TOKEN_ID, stake_type::StakeType, swap::SwapData,
+    SignerError, SignerInput, TransactionInputType, asset_constants::HYPERCORE_CORE_HYPE_TOKEN_ID, stake_type::StakeType,
 };
 use serde::Serialize;
 use serde_json::{self, Value};
@@ -34,7 +34,7 @@ type SignerResult<T> = Result<T, SignerError>;
 pub struct HyperCoreSigner;
 
 impl HyperCoreSigner {
-    fn sign_transfer_action(&self, input: &TransactionLoadInput, private_key: &[u8]) -> SignerResult<String> {
+    fn sign_transfer_action(&self, input: &SignerInput, private_key: &[u8]) -> SignerResult<String> {
         let asset = input.input_type.get_asset();
         let amount = BigNumberFormatter::value(&input.value, asset.decimals).map_err(|err| SignerError::InvalidInput(err.to_string()))?;
         self.sign_spot_send(&amount, &input.destination_address, HYPERCORE_CORE_HYPE_TOKEN_ID, private_key)
@@ -56,20 +56,20 @@ impl HyperCoreSigner {
         Ok(transactions)
     }
 
-    fn sign_token_transfer_action(&self, input: &TransactionLoadInput, private_key: &[u8]) -> SignerResult<String> {
+    fn sign_token_transfer_action(&self, input: &SignerInput, private_key: &[u8]) -> SignerResult<String> {
         let asset = input.input_type.get_asset();
         let amount = BigNumberFormatter::value(&input.value, asset.decimals).map_err(|err| SignerError::InvalidInput(err.to_string()))?;
         let token_id = asset.id.get_token_id()?;
         self.sign_spot_send(&amount, &input.destination_address, token_id, private_key)
     }
 
-    fn sign_swap_action(&self, input: &TransactionLoadInput, private_key: &[u8]) -> SignerResult<Vec<String>> {
-        let swap_data = extract_swap_data(&input.input_type)?;
+    fn sign_swap_action(&self, input: &SignerInput, private_key: &[u8]) -> SignerResult<Vec<String>> {
+        let swap_data = input.input_type.get_swap_data().map_err(SignerError::invalid_input)?;
 
         if let TransactionInputType::Swap(from_asset, to_asset, _) = &input.input_type
             && is_spot_swap(from_asset.chain(), to_asset.chain())
         {
-            let hl_order = extract_hyperliquid_order(&input.metadata)?;
+            let hl_order = input.metadata.get_hyperliquid_order().map_err(SignerError::from_display)?;
             let agent_key = hex::decode(&hl_order.agent_private_key).map_err(|_| SignerError::InvalidInput("Invalid agent private key".to_string()))?;
             let builder = get_builder(BUILDER_ADDRESS, hl_order.builder_fee_bps as i32).ok();
 
@@ -87,8 +87,8 @@ impl HyperCoreSigner {
         Ok(vec![signature])
     }
 
-    fn sign_stake_action(&self, input: &TransactionLoadInput, private_key: &[u8]) -> SignerResult<Vec<String>> {
-        let stake_type = extract_stake_type(&input.input_type)?;
+    fn sign_stake_action(&self, input: &SignerInput, private_key: &[u8]) -> SignerResult<Vec<String>> {
+        let stake_type = input.input_type.get_stake_type().map_err(SignerError::invalid_input)?;
         let mut nonce_incrementer = NumberIncrementer::new(Self::timestamp_ms());
 
         match stake_type {
@@ -119,9 +119,9 @@ impl HyperCoreSigner {
         }
     }
 
-    fn sign_perpetual_action(&self, input: &TransactionLoadInput, private_key: &[u8]) -> SignerResult<Vec<String>> {
-        let perpetual_type = extract_perpetual_type(&input.input_type)?;
-        let order = extract_hyperliquid_order(&input.metadata)?;
+    fn sign_perpetual_action(&self, input: &SignerInput, private_key: &[u8]) -> SignerResult<Vec<String>> {
+        let perpetual_type = input.input_type.get_perpetual_type().map_err(SignerError::invalid_input)?;
+        let order = input.metadata.get_hyperliquid_order().map_err(SignerError::from_display)?;
 
         let agent_key = hex::decode(&order.agent_private_key).map_err(|_| SignerError::InvalidInput("Invalid agent private key".to_string()))?;
         let builder = get_builder(BUILDER_ADDRESS, order.builder_fee_bps as i32).ok();
@@ -335,39 +335,39 @@ impl HyperCoreSigner {
 }
 
 impl ChainSigner for HyperCoreSigner {
-    fn sign_transfer(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
+    fn sign_transfer(&self, input: &SignerInput, private_key: &[u8]) -> Result<String, SignerError> {
         self.sign_transfer_action(input, private_key)
     }
 
-    fn sign_token_transfer(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
+    fn sign_token_transfer(&self, input: &SignerInput, private_key: &[u8]) -> Result<String, SignerError> {
         self.sign_token_transfer_action(input, private_key)
     }
 
-    fn sign_nft_transfer(&self, _input: &TransactionLoadInput, _private_key: &[u8]) -> Result<String, SignerError> {
+    fn sign_nft_transfer(&self, _input: &SignerInput, _private_key: &[u8]) -> Result<String, SignerError> {
         Err(SignerError::SigningError("NFT transfer not supported".to_string()))
     }
 
-    fn sign_swap(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
+    fn sign_swap(&self, input: &SignerInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
         self.sign_swap_action(input, private_key)
     }
 
-    fn sign_token_approval(&self, _input: &TransactionLoadInput, _private_key: &[u8]) -> Result<String, SignerError> {
+    fn sign_token_approval(&self, _input: &SignerInput, _private_key: &[u8]) -> Result<String, SignerError> {
         Err(SignerError::SigningError("Token approval not supported".to_string()))
     }
 
-    fn sign_stake(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
+    fn sign_stake(&self, input: &SignerInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
         self.sign_stake_action(input, private_key)
     }
 
-    fn sign_account_action(&self, _input: &TransactionLoadInput, _private_key: &[u8]) -> Result<String, SignerError> {
+    fn sign_account_action(&self, _input: &SignerInput, _private_key: &[u8]) -> Result<String, SignerError> {
         Err(SignerError::SigningError("Account action not supported".to_string()))
     }
 
-    fn sign_perpetual(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
+    fn sign_perpetual(&self, input: &SignerInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
         self.sign_perpetual_action(input, private_key)
     }
 
-    fn sign_withdrawal(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
+    fn sign_withdrawal(&self, input: &SignerInput, private_key: &[u8]) -> Result<String, SignerError> {
         let asset = input.input_type.get_asset();
         let amount = BigNumberFormatter::value(&input.value, asset.decimals).map_err(|err| SignerError::InvalidInput(err.to_string()))?;
         let timestamp = Self::timestamp_ms();
@@ -376,40 +376,8 @@ impl ChainSigner for HyperCoreSigner {
         self.sign_serialized_action(withdrawal_request, timestamp, private_key, withdrawal_request_typed_data, "withdrawal")
     }
 
-    fn sign_data(&self, _input: &TransactionLoadInput, _private_key: &[u8]) -> Result<String, SignerError> {
+    fn sign_data(&self, _input: &SignerInput, _private_key: &[u8]) -> Result<String, SignerError> {
         Err(SignerError::SigningError("Data signing not supported".to_string()))
-    }
-}
-
-fn extract_swap_data(input_type: &TransactionInputType) -> Result<&SwapData, SignerError> {
-    if let TransactionInputType::Swap(_, _, swap_data) = input_type {
-        Ok(swap_data)
-    } else {
-        Err(SignerError::InvalidInput("Expected Swap input".to_string()))
-    }
-}
-
-fn extract_stake_type(input_type: &TransactionInputType) -> Result<&StakeType, SignerError> {
-    if let TransactionInputType::Stake(_, stake_type) = input_type {
-        Ok(stake_type)
-    } else {
-        Err(SignerError::InvalidInput("Expected Stake input".to_string()))
-    }
-}
-
-fn extract_perpetual_type(input_type: &TransactionInputType) -> Result<&PerpetualType, SignerError> {
-    if let TransactionInputType::Perpetual(_, perpetual_type) = input_type {
-        Ok(perpetual_type)
-    } else {
-        Err(SignerError::InvalidInput("Expected Perpetual input".to_string()))
-    }
-}
-
-fn extract_hyperliquid_order(metadata: &TransactionLoadMetadata) -> Result<&HyperliquidOrder, SignerError> {
-    if let TransactionLoadMetadata::Hyperliquid { order: Some(order) } = metadata {
-        Ok(order)
-    } else {
-        Err(SignerError::InvalidInput("Hyperliquid order metadata required".to_string()))
     }
 }
 
@@ -431,10 +399,9 @@ fn fee_rate(tenths_bps: u32) -> String {
 mod tests {
     use super::*;
     use crate::core::actions::Grouping;
-    use num_bigint::{BigInt, BigUint};
+    use num_bigint::BigUint;
     use primitives::{
-        Asset, Chain, Delegation, DelegationBase, DelegationState, DelegationValidator, GasPriceType, StakeType, TransactionInputType, TransactionLoadInput,
-        TransactionLoadMetadata,
+        Asset, Chain, Delegation, DelegationBase, DelegationState, DelegationValidator, SignerInput, StakeType, TransactionFee, TransactionInputType, TransactionLoadInput,
     };
 
     #[test]
@@ -443,15 +410,12 @@ mod tests {
         let asset = Asset::from_chain(Chain::HyperCore);
         let validator = DelegationValidator::stake(Chain::HyperCore, "0x5ac99df645f3414876c816caa18b2d234024b487".into(), "Validator".into(), true, 0.0, 0.0);
         let input = TransactionLoadInput {
-            input_type: TransactionInputType::Stake(asset.clone(), StakeType::Stake(validator)),
+            value: "150000000".into(),
             sender_address: "0xsender".into(),
             destination_address: "".into(),
-            value: "150000000".into(),
-            gas_price: GasPriceType::regular(BigInt::from(0)),
-            memo: None,
-            is_max_value: false,
-            metadata: TransactionLoadMetadata::None,
+            ..TransactionLoadInput::mock_with_input_type(TransactionInputType::Stake(asset.clone(), StakeType::Stake(validator)))
         };
+        let input = SignerInput::new(input, TransactionFee::default());
         let private_key = [2u8; 32];
 
         let responses = signer.sign_stake_action(&input, &private_key).expect("should sign");
@@ -492,15 +456,12 @@ mod tests {
             price: None,
         };
         let input = TransactionLoadInput {
-            input_type: TransactionInputType::Stake(asset, StakeType::Unstake(delegation)),
+            value: "0".into(),
             sender_address: "0xsender".into(),
             destination_address: "".into(),
-            value: "0".into(),
-            gas_price: GasPriceType::regular(BigInt::from(0)),
-            memo: None,
-            is_max_value: false,
-            metadata: TransactionLoadMetadata::None,
+            ..TransactionLoadInput::mock_with_input_type(TransactionInputType::Stake(asset, StakeType::Unstake(delegation)))
         };
+        let input = SignerInput::new(input, TransactionFee::default());
         let private_key = [1u8; 32];
 
         let responses = signer.sign_stake_action(&input, &private_key).expect("should sign");

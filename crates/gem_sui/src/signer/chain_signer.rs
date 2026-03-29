@@ -1,5 +1,5 @@
 use hex::decode;
-use primitives::{ChainSigner, SignerError, TransactionInputType, TransactionLoadInput, stake_type::StakeType};
+use primitives::{ChainSigner, SignerError, SignerInput, TransactionInputType, stake_type::StakeType};
 
 use super::signature::{sign_digest, sign_personal_message};
 
@@ -7,11 +7,11 @@ use super::signature::{sign_digest, sign_personal_message};
 pub struct SuiChainSigner;
 
 impl SuiChainSigner {
-    fn sign_from_metadata(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
+    fn sign_from_metadata(&self, input: &SignerInput, private_key: &[u8]) -> Result<String, SignerError> {
         sign_from_metadata(input, private_key)
     }
 
-    fn ensure_supported_stake(&self, input: &TransactionLoadInput) -> Result<(), SignerError> {
+    fn ensure_supported_stake(&self, input: &SignerInput) -> Result<(), SignerError> {
         match &input.input_type {
             TransactionInputType::Stake(_, stake_type) => match stake_type {
                 StakeType::Stake(_) | StakeType::Unstake(_) => Ok(()),
@@ -26,24 +26,24 @@ impl SuiChainSigner {
 }
 
 impl ChainSigner for SuiChainSigner {
-    fn sign_transfer(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
+    fn sign_transfer(&self, input: &SignerInput, private_key: &[u8]) -> Result<String, SignerError> {
         self.sign_from_metadata(input, private_key)
     }
 
-    fn sign_token_transfer(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
+    fn sign_token_transfer(&self, input: &SignerInput, private_key: &[u8]) -> Result<String, SignerError> {
         self.sign_from_metadata(input, private_key)
     }
 
-    fn sign_swap(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
+    fn sign_swap(&self, input: &SignerInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
         self.sign_from_metadata(input, private_key).map(|signature| vec![signature])
     }
 
-    fn sign_stake(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
+    fn sign_stake(&self, input: &SignerInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
         self.ensure_supported_stake(input)?;
         self.sign_from_metadata(input, private_key).map(|signature| vec![signature])
     }
 
-    fn sign_data(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
+    fn sign_data(&self, input: &SignerInput, private_key: &[u8]) -> Result<String, SignerError> {
         self.sign_from_metadata(input, private_key)
     }
 
@@ -52,7 +52,7 @@ impl ChainSigner for SuiChainSigner {
     }
 }
 
-pub fn sign_from_metadata(input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
+pub fn sign_from_metadata(input: &SignerInput, private_key: &[u8]) -> Result<String, SignerError> {
     let message_bytes = input.metadata.get_message_bytes().map_err(|err| SignerError::InvalidInput(err.to_string()))?;
     sign_message_bytes(&message_bytes, private_key)
 }

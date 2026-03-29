@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use base64::{Engine, engine::general_purpose::STANDARD};
 use gem_hash::{keccak::keccak256, sha2::sha256};
-use primitives::{ChainSigner, SignerError, TransactionLoadInput, chain_cosmos::CosmosChain};
+use primitives::{ChainSigner, SignerError, SignerInput, chain_cosmos::CosmosChain};
 use signer::{SignatureScheme, Signer};
 
 use super::transaction::{COSMOS_SECP256K1_PUBKEY_TYPE, CosmosTxParams, INJECTIVE_ETHSECP256K1_PUBKEY_TYPE};
@@ -16,7 +16,7 @@ const GAS_BUFFER_DENOMINATOR: u64 = 10;
 pub struct CosmosChainSigner;
 
 impl ChainSigner for CosmosChainSigner {
-    fn sign_swap(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
+    fn sign_swap(&self, input: &SignerInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
         let swap_data = input.input_type.get_swap_data().map_err(SignerError::invalid_input)?;
         let account_number = input.metadata.get_account_number().map_err(SignerError::from_display)?;
         let sequence = input.metadata.get_sequence().map_err(SignerError::from_display)?;
@@ -36,12 +36,7 @@ impl ChainSigner for CosmosChainSigner {
             .ok_or_else(|| SignerError::invalid_input("missing or invalid gas_limit"))?;
         let gas_limit = gas_limit * GAS_BUFFER_NUMERATOR / GAS_BUFFER_DENOMINATOR;
 
-        let base_fee: u64 = input
-            .gas_price
-            .gas_price()
-            .to_string()
-            .parse()
-            .map_err(|_| SignerError::invalid_input("invalid gas price"))?;
+        let base_fee = input.fee.gas_price_u64()?;
         let fee_amount = ((gas_limit as u128 * base_fee as u128 / BASE_FEE_GAS_UNITS as u128) as u64).to_string();
 
         let params = CosmosTxParams {

@@ -1,6 +1,6 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use primitives::{ChainSigner, SignerError, TransactionLoadInput};
+use primitives::{ChainSigner, SignerError, SignerInput};
 
 use super::signature::sign_personal;
 
@@ -17,17 +17,17 @@ impl ChainSigner for TonChainSigner {
         Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, result.signature))
     }
 
-    fn sign_transfer(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
+    fn sign_transfer(&self, input: &SignerInput, private_key: &[u8]) -> Result<String, SignerError> {
         self.sign_from_metadata(input, private_key)
     }
 
-    fn sign_token_transfer(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
+    fn sign_token_transfer(&self, input: &SignerInput, private_key: &[u8]) -> Result<String, SignerError> {
         self.sign_from_metadata(input, private_key)
     }
 }
 
 impl TonChainSigner {
-    fn sign_from_metadata(&self, _input: &TransactionLoadInput, _private_key: &[u8]) -> Result<String, SignerError> {
-        todo!("TON transaction signing not yet implemented in chain signer")
+    fn sign_from_metadata(&self, _input: &SignerInput, _private_key: &[u8]) -> Result<String, SignerError> {
+        Err(SignerError::signing_error("TON transaction signing not yet implemented in chain signer"))
     }
 }

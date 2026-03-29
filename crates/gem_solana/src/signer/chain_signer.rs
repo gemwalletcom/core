@@ -1,17 +1,16 @@
 use base64::{Engine, engine::general_purpose::STANDARD};
-use num_traits::ToPrimitive;
-use primitives::{ChainSigner, SignerError, TransactionLoadInput, TransferDataOutputType};
+use primitives::{ChainSigner, SignerError, SignerInput, TransferDataOutputType};
 use solana_primitives::{VersionedTransaction, sign_message};
 
 #[derive(Default)]
 pub struct SolanaChainSigner;
 
 impl ChainSigner for SolanaChainSigner {
-    fn sign_swap(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
+    fn sign_swap(&self, input: &SignerInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
         let swap_data = input.input_type.get_swap_data().map_err(SignerError::invalid_input)?;
         let tx_base64 = &swap_data.data.data;
 
-        let unit_price: u64 = input.gas_price.unit_price().to_u64().unwrap_or(0);
+        let unit_price = input.fee.unit_price_u64()?;
         let gas_limit = swap_data.data.gas_limit_as_u32().map_err(SignerError::invalid_input)?;
 
         let signed = Self::sign_transaction(tx_base64, private_key, unit_price, gas_limit)?;
@@ -19,7 +18,7 @@ impl ChainSigner for SolanaChainSigner {
         Ok(vec![signed])
     }
 
-    fn sign_data(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
+    fn sign_data(&self, input: &SignerInput, private_key: &[u8]) -> Result<String, SignerError> {
         let extra = input.input_type.get_generic_data().map_err(SignerError::invalid_input)?;
         let tx_bytes = STANDARD
             .decode(extra.data_as_str().map_err(SignerError::invalid_input)?)
@@ -85,7 +84,7 @@ impl SolanaChainSigner {
 mod tests {
     use super::*;
     use crate::signer::testkit::*;
-    use primitives::{Chain, TransactionLoadInput, TransferDataOutputType};
+    use primitives::{Chain, SignerInput, TransactionLoadInput, TransferDataOutputType};
 
     #[test]
     fn test_deserialize_single_signature_transaction() {
@@ -111,6 +110,8 @@ mod tests {
     fn test_sign_data_encoded_transaction() {
         let signer = SolanaChainSigner;
         let input = TransactionLoadInput::mock_sign_data(Chain::Solana, SINGLE_SIG_TX, TransferDataOutputType::EncodedTransaction);
+        let fee = input.default_fee();
+        let input = SignerInput::new(input, fee);
 
         let result = signer.sign_data(&input, &TEST_PRIVATE_KEY).unwrap();
 
@@ -124,6 +125,8 @@ mod tests {
     fn test_sign_data_signature_output() {
         let signer = SolanaChainSigner;
         let input = TransactionLoadInput::mock_sign_data(Chain::Solana, SINGLE_SIG_TX, TransferDataOutputType::Signature);
+        let fee = input.default_fee();
+        let input = SignerInput::new(input, fee);
 
         let result = signer.sign_data(&input, &TEST_PRIVATE_KEY).unwrap();
 

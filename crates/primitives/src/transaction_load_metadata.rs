@@ -65,7 +65,6 @@ pub enum TransactionLoadMetadata {
     },
     Aptos {
         sequence: u64,
-        gas_limit: Option<u64>,
         data: Option<String>,
     },
     Polkadot {
@@ -177,17 +176,45 @@ impl TransactionLoadMetadata {
         }
     }
 
-    pub fn get_gas_limit(&self) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
-        match self {
-            TransactionLoadMetadata::Aptos { gas_limit: Some(gas_limit), .. } => Ok(*gas_limit),
-            _ => Err("Gas limit not available for this metadata type".into()),
-        }
-    }
-
     pub fn get_message_bytes(&self) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         match self {
             TransactionLoadMetadata::Sui { message_bytes, .. } => Ok(message_bytes.clone()),
             _ => Err("Message bytes not available for this metadata type".into()),
         }
+    }
+
+    pub fn get_hyperliquid_order(&self) -> Result<&HyperliquidOrder, Box<dyn std::error::Error + Send + Sync>> {
+        match self {
+            TransactionLoadMetadata::Hyperliquid { order: Some(order) } => Ok(order),
+            _ => Err("Hyperliquid order not available for this metadata type".into()),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn transaction_load_metadata_accessors() {
+        let metadata = TransactionLoadMetadata::Hyperliquid {
+            order: Some(HyperliquidOrder {
+                approve_agent_required: true,
+                approve_referral_required: false,
+                approve_builder_required: true,
+                builder_fee_bps: 10,
+                agent_address: "0xagent".into(),
+                agent_private_key: "0xkey".into(),
+            }),
+        };
+
+        let order = metadata.get_hyperliquid_order().unwrap();
+        assert_eq!(order.builder_fee_bps, 10);
+        assert_eq!(order.agent_address, "0xagent");
+
+        assert_eq!(
+            TransactionLoadMetadata::None.get_hyperliquid_order().unwrap_err().to_string(),
+            "Hyperliquid order not available for this metadata type"
+        );
     }
 }

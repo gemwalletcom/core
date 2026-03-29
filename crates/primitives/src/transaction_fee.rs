@@ -1,4 +1,4 @@
-use crate::GasPriceType;
+use crate::{GasPriceType, SignerError};
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -77,6 +77,32 @@ impl TransactionFee {
             options: HashMap::new(),
         }
     }
+
+    pub fn gas_limit(&self) -> Result<u64, SignerError> {
+        let gas_limit = self.gas_limit.to_string().parse::<u64>().map_err(|_| SignerError::invalid_input("invalid gas limit"))?;
+
+        if gas_limit == 0 {
+            return SignerError::invalid_input_err("missing gas limit");
+        }
+
+        Ok(gas_limit)
+    }
+
+    pub fn gas_price_u64(&self) -> Result<u64, SignerError> {
+        self.gas_price_type
+            .gas_price()
+            .to_string()
+            .parse::<u64>()
+            .map_err(|_| SignerError::invalid_input("invalid gas price"))
+    }
+
+    pub fn unit_price_u64(&self) -> Result<u64, SignerError> {
+        self.gas_price_type
+            .unit_price()
+            .to_string()
+            .parse::<u64>()
+            .map_err(|_| SignerError::invalid_input("invalid unit price"))
+    }
 }
 
 #[cfg(test)]
@@ -132,5 +158,25 @@ mod tests {
         assert_eq!(fee.gas_price_type.gas_price(), base_fee);
         assert_eq!(fee.gas_limit, BigInt::from(0));
         assert_eq!(fee.options.get(&FeeOption::TokenAccountCreation), Some(&option_value));
+    }
+
+    #[test]
+    fn test_fee_accessors() {
+        let fee = TransactionFee::new_gas_price_type(GasPriceType::regular(BigInt::from(7u64)), BigInt::from(70u64), BigInt::from(10u64), HashMap::new());
+        assert_eq!(fee.gas_limit().unwrap(), 10);
+        assert_eq!(fee.gas_price_u64().unwrap(), 7);
+
+        let fee = TransactionFee::new_gas_price_type(
+            GasPriceType::solana(BigInt::from(7u64), BigInt::from(3u64), BigInt::from(2u64)),
+            BigInt::from(10u64),
+            BigInt::from(1u64),
+            HashMap::new(),
+        );
+        assert_eq!(fee.unit_price_u64().unwrap(), 2);
+
+        assert_eq!(
+            TransactionFee::default().gas_limit().unwrap_err().to_string(),
+            "Invalid input: missing gas limit"
+        );
     }
 }

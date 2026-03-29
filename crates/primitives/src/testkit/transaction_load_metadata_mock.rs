@@ -2,11 +2,7 @@ use crate::{TransactionLoadMetadata, stake_type::TronStakeData};
 
 impl TransactionLoadMetadata {
     pub fn mock_aptos() -> Self {
-        TransactionLoadMetadata::Aptos {
-            sequence: 0,
-            gas_limit: None,
-            data: None,
-        }
+        TransactionLoadMetadata::Aptos { sequence: 0, data: None }
     }
 
     pub fn mock_tron() -> Self {

@@ -255,7 +255,7 @@ pub use self::transaction_fee::{FeeOption, TransactionFee};
 pub mod transaction_load_metadata;
 pub use self::transaction_load_metadata::{HyperliquidOrder, TransactionLoadMetadata};
 pub mod transaction_input_type;
-pub use self::transaction_input_type::{TransactionInputType, TransactionLoadData, TransactionLoadInput};
+pub use self::transaction_input_type::{SignerInput, TransactionInputType, TransactionLoadData, TransactionLoadInput};
 pub mod transfer_data_extra;
 pub use self::transfer_data_extra::TransferDataExtra;
 pub mod transaction_data_output;

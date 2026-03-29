@@ -8,6 +8,8 @@ use crate::{
     Asset, GasPriceType, PerpetualType, TransactionPreloadInput, TransactionType, TransferDataExtra, WalletConnectionSessionAppMetadata, nft::NFTAsset, perpetual::AccountDataType,
 };
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::ops::Deref;
 use typeshare::typeshare;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,6 +55,20 @@ impl TransactionInputType {
         match self {
             TransactionInputType::Generic(_, _, extra) => Ok(extra),
             _ => Err("expected generic transaction"),
+        }
+    }
+
+    pub fn get_stake_type(&self) -> Result<&StakeType, &'static str> {
+        match self {
+            TransactionInputType::Stake(_, stake_type) => Ok(stake_type),
+            _ => Err("expected stake transaction"),
+        }
+    }
+
+    pub fn get_perpetual_type(&self) -> Result<&PerpetualType, &'static str> {
+        match self {
+            TransactionInputType::Perpetual(_, perpetual_type) => Ok(perpetual_type),
+            _ => Err("expected perpetual transaction"),
         }
     }
 
@@ -115,7 +131,12 @@ pub struct TransactionLoadInput {
 
 impl TransactionLoadInput {
     pub fn default_fee(&self) -> TransactionFee {
-        TransactionFee::new_from_fee(self.gas_price.total_fee())
+        TransactionFee {
+            fee: self.gas_price.total_fee(),
+            gas_price_type: self.gas_price.clone(),
+            gas_limit: 0.into(),
+            options: HashMap::new(),
+        }
     }
 }
 
@@ -130,6 +151,26 @@ impl TransactionLoadInput {
             sender_address: self.sender_address.clone(),
             destination_address: self.destination_address.clone(),
         }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SignerInput {
+    pub input: TransactionLoadInput,
+    pub fee: TransactionFee,
+}
+
+impl SignerInput {
+    pub fn new(input: TransactionLoadInput, fee: TransactionFee) -> Self {
+        Self { input, fee }
+    }
+}
+
+impl Deref for SignerInput {
+    type Target = TransactionLoadInput;
+
+    fn deref(&self) -> &Self::Target {
+        &self.input
     }
 }
 
@@ -171,6 +212,31 @@ mod tests {
         assert_eq!(
             TransactionInputType::Perpetual(Asset::mock(), PerpetualType::Open(PerpetualConfirmData::mock(PerpetualDirection::Long, 0, None, None))).transaction_type(),
             TransactionType::PerpetualOpenPosition
+        );
+    }
+
+    #[test]
+    fn transaction_input_accessors() {
+        let stake_type = StakeType::Freeze(Resource::Bandwidth);
+        let stake_input = TransactionInputType::Stake(Asset::mock(), stake_type);
+        match stake_input.get_stake_type().unwrap() {
+            StakeType::Freeze(resource) => assert_eq!(resource, &Resource::Bandwidth),
+            StakeType::Stake(_) | StakeType::Unstake(_) | StakeType::Redelegate(_) | StakeType::Rewards(_) | StakeType::Withdraw(_) | StakeType::Unfreeze(_) => {
+                panic!("expected freeze stake type")
+            }
+        }
+
+        let perpetual_type = PerpetualType::Open(PerpetualConfirmData::mock(PerpetualDirection::Long, 11, None, None));
+        let perpetual_input = TransactionInputType::Perpetual(Asset::mock(), perpetual_type);
+        match perpetual_input.get_perpetual_type().unwrap() {
+            PerpetualType::Open(data) => assert_eq!(data.asset_index, 11),
+            PerpetualType::Close(_) | PerpetualType::Modify(_) | PerpetualType::Increase(_) | PerpetualType::Reduce(_) => panic!("expected open perpetual type"),
+        }
+
+        assert_eq!(TransactionInputType::Transfer(Asset::mock()).get_stake_type().unwrap_err(), "expected stake transaction");
+        assert_eq!(
+            TransactionInputType::Transfer(Asset::mock()).get_perpetual_type().unwrap_err(),
+            "expected perpetual transaction"
         );
     }
 }

@@ -34,11 +34,7 @@ impl TransactionLoadInput {
             gas_price: GasPriceType::regular(BigInt::from(1u64)),
             memo: None,
             is_max_value: false,
-            metadata: TransactionLoadMetadata::Aptos {
-                sequence: 0,
-                gas_limit: None,
-                data: None,
-            },
+            metadata: TransactionLoadMetadata::Aptos { sequence: 0, data: None },
         }
     }
 

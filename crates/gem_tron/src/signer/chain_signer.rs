@@ -1,5 +1,5 @@
 use gem_hash::sha2::sha256;
-use primitives::{ChainSigner, SignerError, TransactionLoadInput, TransferDataOutputType, hex::decode_hex};
+use primitives::{ChainSigner, SignerError, SignerInput, TransferDataOutputType, hex::decode_hex};
 use serde_json::Value;
 use signer::{SignatureScheme, Signer};
 
@@ -15,7 +15,7 @@ struct TronPayload {
 }
 
 impl TronPayload {
-    fn parse(input: &TransactionLoadInput) -> Result<Self, SignerError> {
+    fn parse(input: &SignerInput) -> Result<Self, SignerError> {
         let extra = input.get_data_extra().map_err(SignerError::invalid_input)?;
         let data = extra.data.as_ref().ok_or_else(|| SignerError::invalid_input("Missing transaction data"))?;
         let payload: Value = serde_json::from_slice(data)?;
@@ -66,7 +66,7 @@ impl TronPayload {
 pub struct TronChainSigner;
 
 impl ChainSigner for TronChainSigner {
-    fn sign_data(&self, input: &TransactionLoadInput, private_key: &[u8]) -> Result<String, SignerError> {
+    fn sign_data(&self, input: &SignerInput, private_key: &[u8]) -> Result<String, SignerError> {
         let payload = TronPayload::parse(input)?;
         let raw_bytes = decode_hex(payload.raw_data_hex()?)?;
         let digest = sha256(&raw_bytes);
