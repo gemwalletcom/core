@@ -137,12 +137,13 @@ pub fn map_process_webhook(data: serde_json::Value) -> Result<FiatWebhook, serde
 }
 
 pub fn map_webhook_data(webhook_data: PaybisWebhookData) -> FiatWebhook {
+    let transaction_id = webhook_data.partner_transaction_id.clone().unwrap_or_else(|| webhook_data.quote.quote_id.clone());
     let (fiat_amount, fiat_currency) = fiat_side(&webhook_data)
         .map(|amount| (amount.amount.parse().ok(), Some(amount.currency.to_ascii_uppercase())))
         .unwrap_or((None, None));
 
     FiatWebhook::Transaction(FiatTransactionUpdate {
-        transaction_id: webhook_data.quote.quote_id,
+        transaction_id,
         provider_transaction_id: None,
         status: map_status(&webhook_data.transaction.status),
         transaction_hash: webhook_data.payout.as_ref().and_then(|p| p.transaction_hash.clone()),
@@ -346,8 +347,9 @@ mod tests {
     fn test_map_webhook_data_sell_uses_amount_to_currency() {
         let result = map_webhook_data(PaybisWebhookData {
             request_id: "request_123".to_string(),
+            partner_transaction_id: Some("partner_tx_123".to_string()),
             quote: PaybisWebhookQuote {
-                quote_id: "quote_123".to_string(),
+                quote_id: "quote_456".to_string(),
             },
             transaction: PaybisTransaction {
                 invoice: "invoice_123".to_string(),
@@ -370,7 +372,7 @@ mod tests {
             panic!("Expected FiatWebhook::Transaction variant");
         };
 
-        assert_eq!(transaction.transaction_id, "quote_123");
+        assert_eq!(transaction.transaction_id, "partner_tx_123");
         assert_eq!(transaction.provider_transaction_id, None);
         assert_eq!(transaction.fiat_amount, Some(1234.56));
         assert_eq!(transaction.fiat_currency, Some("EUR".to_string()));

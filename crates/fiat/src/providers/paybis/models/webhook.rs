@@ -10,6 +10,7 @@ pub struct PaybisWebhook<T> {
 #[serde(rename_all = "camelCase")]
 pub struct PaybisWebhookData {
     pub request_id: String,
+    pub partner_transaction_id: Option<String>,
     pub quote: PaybisWebhookQuote,
     pub transaction: PaybisTransaction,
     pub amount_from: PaybisAmount,
