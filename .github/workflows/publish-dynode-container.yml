@@ -1,8 +1,11 @@
-name: Publish Containers
+name: Publish Dynode Container
 
 on:
   push:
     branches: ["main"]
+    paths:
+      - "apps/dynode/**"
+      - "Cargo.lock"
   workflow_dispatch:
 
 permissions:
@@ -13,7 +16,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
 
 env:
-  CORE_IMAGE: ghcr.io/gemwalletcom/core
+  DYNODE_IMAGE: ghcr.io/gemwalletcom/dynode
 
 jobs:
   build:
@@ -36,18 +39,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.PACKAGES_GITHUB_TOKEN }}
 
-      - name: Build and push core
+      - name: Build and push dynode
         uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
-          target: core
+          target: dynode
           push: true
           platforms: linux/amd64
           cache-from: type=gha
-          cache-to: type=gha,mode=max
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: |
-            ${{ env.CORE_IMAGE }}:latest
-            ${{ env.CORE_IMAGE }}:${{ github.sha }}
+            ${{ env.DYNODE_IMAGE }}:latest
+            ${{ env.DYNODE_IMAGE }}:${{ github.sha }}

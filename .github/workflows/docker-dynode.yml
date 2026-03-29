@@ -1,10 +1,17 @@
-name: CI - Docker Build
+name: CI - Dynode Docker Build
 
 on:
   push:
     branches: ["main"]
+    paths:
+      - "apps/dynode/**"
+      - "Cargo.lock"
   pull_request:
     branches: ["main"]
+    paths:
+      - "apps/dynode/**"
+      - "Cargo.lock"
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
@@ -19,13 +26,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      - name: Build core
+      - name: Build dynode
         uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
-          target: core
+          target: dynode
           push: false
           cache-from: type=gha,scope=core
           cache-to: type=gha,mode=max,scope=core
-          tags: core:latest
+          tags: dynode:latest
