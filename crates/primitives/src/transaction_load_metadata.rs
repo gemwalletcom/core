@@ -183,6 +183,17 @@ impl TransactionLoadMetadata {
         }
     }
 
+    pub fn get_chain_id_u64(&self) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
+        self.get_chain_id()?.parse::<u64>().map_err(|e| e.to_string().into())
+    }
+
+    pub fn get_contract_call(&self) -> Result<&ContractCallData, Box<dyn std::error::Error + Send + Sync>> {
+        match self {
+            TransactionLoadMetadata::Evm { contract_call: Some(cc), .. } => Ok(cc),
+            _ => Err("Contract call not available for this metadata type".into()),
+        }
+    }
+
     pub fn get_hyperliquid_order(&self) -> Result<&HyperliquidOrder, Box<dyn std::error::Error + Send + Sync>> {
         match self {
             TransactionLoadMetadata::Hyperliquid { order: Some(order) } => Ok(order),

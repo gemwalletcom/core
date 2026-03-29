@@ -1,12 +1,16 @@
 pub mod address_name_mock;
 pub mod asset_mock;
+pub mod contract_call_data_mock;
 pub mod delegation_mock;
 pub mod device_mock;
 pub mod fiat_mock;
 pub mod gorush_mock;
 pub mod json_rpc;
+pub mod nft_mock;
 pub mod perpetual_mock;
+pub mod signer_mock;
 pub mod swap_mock;
+pub mod transaction_fee_mock;
 pub mod transaction_load_input_mock;
 pub mod transaction_load_metadata_mock;
 pub mod transaction_mock;

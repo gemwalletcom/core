@@ -78,6 +78,12 @@ pub struct NFTAsset {
     pub attributes: Vec<NFTAttribute>,
 }
 
+impl NFTAsset {
+    pub fn get_contract_address(&self) -> Result<&str, &'static str> {
+        self.contract_address.as_deref().ok_or("missing NFT contract address")
+    }
+}
+
 impl From<NFTAsset> for NFTAssetId {
     fn from(asset: NFTAsset) -> Self {
         NFTAssetId::new(asset.chain, asset.contract_address.as_deref().unwrap_or_default(), &asset.token_id)

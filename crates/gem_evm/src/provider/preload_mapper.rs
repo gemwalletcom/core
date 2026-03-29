@@ -1,7 +1,7 @@
 use std::error::Error;
 use std::str::FromStr;
 
-use alloy_primitives::{Address, U256, hex};
+use alloy_primitives::{U256, hex};
 use alloy_sol_types::SolCall;
 use gem_bsc::stake_hub::STAKE_HUB_ADDRESS;
 use num_bigint::BigInt;
@@ -12,7 +12,7 @@ use primitives::{
     fee::GasPriceType,
 };
 
-use crate::contracts::{IERC20, IERC721, IERC1155};
+use crate::encode::{encode_erc20_approve, encode_erc20_transfer, encode_erc721_transfer, encode_erc1155_transfer};
 use crate::everstake::{DEFAULT_ALLOWED_INTERCHANGE_NUM, EVERSTAKE_ACCOUNTING_ADDRESS, EVERSTAKE_POOL_ADDRESS, EVERSTAKE_SOURCE, IAccounting, IPool};
 use crate::fee_calculator::FeeCalculator;
 use crate::models::fee::EthereumFeeHistory;
@@ -207,42 +207,6 @@ pub fn get_extra_fee_gas_limit(input: &TransactionLoadInput) -> Result<BigInt, B
         }
         _ => Ok(BigInt::from(0)),
     }
-}
-
-fn encode_erc20_transfer(to: &str, amount: &BigInt) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
-    Ok(IERC20::transferCall {
-        to: Address::from_str(to)?,
-        value: U256::from_str(&amount.to_string())?,
-    }
-    .abi_encode())
-}
-
-fn encode_erc20_approve(spender: &str) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
-    Ok(IERC20::approveCall {
-        spender: Address::from_str(spender)?,
-        value: U256::MAX,
-    }
-    .abi_encode())
-}
-
-fn encode_erc721_transfer(from: &str, to: &str, token_id: &str) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
-    Ok(IERC721::safeTransferFromCall {
-        from: Address::from_str(from)?,
-        to: Address::from_str(to)?,
-        tokenId: U256::from_str(token_id)?,
-    }
-    .abi_encode())
-}
-
-fn encode_erc1155_transfer(from: &str, to: &str, token_id: &str) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
-    Ok(IERC1155::safeTransferFromCall {
-        from: Address::from_str(from)?,
-        to: Address::from_str(to)?,
-        id: U256::from_str(token_id)?,
-        amount: U256::from(1),
-        data: vec![].into(),
-    }
-    .abi_encode())
 }
 
 fn big_int_to_u256(value: &BigInt) -> Result<U256, Box<dyn Error + Send + Sync>> {

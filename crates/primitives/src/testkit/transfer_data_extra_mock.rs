@@ -1,9 +1,10 @@
+use super::signer_mock::TEST_EVM_RECIPIENT;
 use crate::{TransferDataExtra, TransferDataOutputAction, TransferDataOutputType};
 
 impl TransferDataExtra {
     pub fn mock() -> Self {
         TransferDataExtra {
-            to: "".to_string(),
+            to: TEST_EVM_RECIPIENT.to_string(),
             gas_limit: None,
             gas_price: None,
             data: None,
@@ -13,13 +14,6 @@ impl TransferDataExtra {
     }
 
     pub fn mock_encoded_transaction(data: Vec<u8>) -> Self {
-        TransferDataExtra {
-            to: "".to_string(),
-            gas_limit: None,
-            gas_price: None,
-            data: Some(data),
-            output_type: TransferDataOutputType::EncodedTransaction,
-            output_action: TransferDataOutputAction::Sign,
-        }
+        TransferDataExtra { data: Some(data), ..Self::mock() }
     }
 }

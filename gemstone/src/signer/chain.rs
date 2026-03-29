@@ -1,11 +1,12 @@
 use crate::{GemstoneError, models::transaction::GemSignerInput};
 use gem_aptos::AptosChainSigner;
 use gem_cosmos::signer::CosmosChainSigner;
+use gem_evm::signer::EvmChainSigner;
 use gem_hypercore::signer::HyperCoreSigner;
 use gem_solana::signer::SolanaChainSigner;
 use gem_sui::signer::SuiChainSigner;
 use gem_tron::TronChainSigner;
-use primitives::{Chain, ChainSigner, SignerError, SignerInput};
+use primitives::{Chain, ChainSigner, ChainType, EVMChain, SignerError, SignerInput};
 
 #[derive(uniffi::Object)]
 pub struct GemChainSigner {
@@ -17,13 +18,14 @@ pub struct GemChainSigner {
 impl GemChainSigner {
     #[uniffi::constructor]
     pub fn new(chain: Chain) -> Self {
-        let signer: Box<dyn ChainSigner> = match chain {
-            Chain::Aptos => Box::new(AptosChainSigner),
-            Chain::HyperCore => Box::new(HyperCoreSigner),
-            Chain::Sui => Box::new(SuiChainSigner),
-            Chain::Solana => Box::new(SolanaChainSigner),
-            Chain::Tron => Box::new(TronChainSigner),
-            Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Injective | Chain::Sei | Chain::Noble => Box::new(CosmosChainSigner),
+        let signer: Box<dyn ChainSigner> = match chain.chain_type() {
+            ChainType::Ethereum => Box::new(EvmChainSigner::new(EVMChain::from_chain(chain).unwrap())),
+            ChainType::Aptos => Box::new(AptosChainSigner),
+            ChainType::HyperCore => Box::new(HyperCoreSigner),
+            ChainType::Sui => Box::new(SuiChainSigner),
+            ChainType::Solana => Box::new(SolanaChainSigner),
+            ChainType::Tron => Box::new(TronChainSigner),
+            ChainType::Cosmos => Box::new(CosmosChainSigner),
             _ => todo!("Signer not implemented for chain {:?}", chain),
         };
 
@@ -68,6 +70,10 @@ impl GemChainSigner {
 
     pub fn sign_data(&self, input: GemSignerInput, private_key: Vec<u8>) -> Result<String, GemstoneError> {
         self.dispatch(input, private_key, "data", |signer, tx, key| signer.sign_data(tx, key))
+    }
+
+    pub fn sign_earn(&self, input: GemSignerInput, private_key: Vec<u8>) -> Result<Vec<String>, GemstoneError> {
+        self.dispatch(input, private_key, "earn", |signer, tx, key| signer.sign_earn(tx, key))
     }
 
     pub fn sign_message(&self, message: Vec<u8>, private_key: Vec<u8>) -> Result<String, GemstoneError> {

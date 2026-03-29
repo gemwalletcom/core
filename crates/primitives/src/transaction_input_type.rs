@@ -58,6 +58,27 @@ impl TransactionInputType {
         }
     }
 
+    pub fn get_approval_data(&self) -> Result<&ApprovalData, &'static str> {
+        match self {
+            TransactionInputType::TokenApprove(_, approval) => Ok(approval),
+            _ => Err("expected token approval transaction"),
+        }
+    }
+
+    pub fn get_nft_asset(&self) -> Result<&NFTAsset, &'static str> {
+        match self {
+            TransactionInputType::TransferNft(_, nft) => Ok(nft),
+            _ => Err("expected NFT transfer transaction"),
+        }
+    }
+
+    pub fn get_earn_data(&self) -> Result<&ContractCallData, &'static str> {
+        match self {
+            TransactionInputType::Earn(_, _, data) => Ok(data),
+            _ => Err("expected earn transaction"),
+        }
+    }
+
     pub fn get_stake_type(&self) -> Result<&StakeType, &'static str> {
         match self {
             TransactionInputType::Stake(_, stake_type) => Ok(stake_type),

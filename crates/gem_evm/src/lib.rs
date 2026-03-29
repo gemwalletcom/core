@@ -10,6 +10,7 @@ pub mod constants;
 pub mod contracts;
 pub mod domain;
 pub mod eip712;
+pub mod encode;
 pub mod ether_conv;
 pub mod everstake;
 pub mod fee_calculator;

@@ -96,6 +96,14 @@ impl TransactionFee {
             .map_err(|_| SignerError::invalid_input("invalid gas price"))
     }
 
+    pub fn priority_fee_u64(&self) -> Result<u64, SignerError> {
+        self.gas_price_type
+            .priority_fee()
+            .to_string()
+            .parse::<u64>()
+            .map_err(|_| SignerError::invalid_input("invalid priority fee"))
+    }
+
     pub fn unit_price_u64(&self) -> Result<u64, SignerError> {
         self.gas_price_type
             .unit_price()
@@ -174,9 +182,6 @@ mod tests {
         );
         assert_eq!(fee.unit_price_u64().unwrap(), 2);
 
-        assert_eq!(
-            TransactionFee::default().gas_limit().unwrap_err().to_string(),
-            "Invalid input: missing gas limit"
-        );
+        assert_eq!(TransactionFee::default().gas_limit().unwrap_err().to_string(), "Invalid input: missing gas limit");
     }
 }

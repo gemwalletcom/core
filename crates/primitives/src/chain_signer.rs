@@ -44,4 +44,8 @@ pub trait ChainSigner: Send + Sync {
     fn sign_data(&self, _input: &SignerInput, _private_key: &[u8]) -> Result<String, SignerError> {
         Err(SignerError::SigningError("sign_data not implemented".to_string()))
     }
+
+    fn sign_earn(&self, _input: &SignerInput, _private_key: &[u8]) -> Result<Vec<String>, SignerError> {
+        Err(SignerError::SigningError("sign_earn not implemented".to_string()))
+    }
 }

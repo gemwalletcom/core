@@ -5,6 +5,14 @@ impl TransactionLoadMetadata {
         TransactionLoadMetadata::Aptos { sequence: 0, data: None }
     }
 
+    pub fn mock_evm(nonce: u64, chain_id: u64) -> Self {
+        TransactionLoadMetadata::Evm {
+            nonce,
+            chain_id,
+            contract_call: None,
+        }
+    }
+
     pub fn mock_tron() -> Self {
         TransactionLoadMetadata::Tron {
             block_number: 0,

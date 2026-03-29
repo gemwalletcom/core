@@ -1,6 +1,6 @@
 use crate::{
-    Asset, Chain, GasPriceType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType,
-    WalletConnectionSessionAppMetadata,
+    Asset, Chain, GasPriceType, SignerInput, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransferDataExtra, TransferDataOutputAction,
+    TransferDataOutputType, WalletConnectionSessionAppMetadata,
 };
 use num_bigint::BigInt;
 
@@ -51,6 +51,39 @@ impl TransactionLoadInput {
         }
     }
 
+    pub fn mock_evm(input_type: TransactionInputType, value: &str) -> Self {
+        Self::mock_evm_with_metadata(input_type, value, TransactionLoadMetadata::mock_evm(0, 1))
+    }
+
+    pub fn mock_evm_with_metadata(input_type: TransactionInputType, value: &str, metadata: TransactionLoadMetadata) -> Self {
+        use super::signer_mock::{TEST_EVM_RECIPIENT, TEST_EVM_SENDER};
+        TransactionLoadInput {
+            input_type,
+            sender_address: TEST_EVM_SENDER.to_string(),
+            destination_address: TEST_EVM_RECIPIENT.to_string(),
+            value: value.to_string(),
+            gas_price: GasPriceType::eip1559(20_000_000_000u64, 1_000_000_000u64),
+            memo: None,
+            is_max_value: false,
+            metadata,
+        }
+    }
+}
+
+impl SignerInput {
+    pub fn mock_evm(input_type: TransactionInputType, value: &str, gas_limit: u64) -> Self {
+        SignerInput::new(TransactionLoadInput::mock_evm(input_type, value), TransactionFee::mock_eip1559(gas_limit))
+    }
+
+    pub fn mock_evm_with_metadata(input_type: TransactionInputType, value: &str, gas_limit: u64, metadata: TransactionLoadMetadata) -> Self {
+        SignerInput::new(
+            TransactionLoadInput::mock_evm_with_metadata(input_type, value, metadata),
+            TransactionFee::mock_eip1559(gas_limit),
+        )
+    }
+}
+
+impl TransactionLoadInput {
     pub fn mock_sign_data(chain: Chain, data: &str, output_type: TransferDataOutputType) -> Self {
         TransactionLoadInput {
             input_type: TransactionInputType::Generic(

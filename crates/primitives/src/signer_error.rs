@@ -46,3 +46,21 @@ impl From<HexError> for SignerError {
         SignerError::InvalidInput(error.to_string())
     }
 }
+
+impl From<&str> for SignerError {
+    fn from(error: &str) -> Self {
+        SignerError::InvalidInput(error.to_string())
+    }
+}
+
+impl From<Box<dyn std::error::Error + Send + Sync>> for SignerError {
+    fn from(error: Box<dyn std::error::Error + Send + Sync>) -> Self {
+        SignerError::InvalidInput(error.to_string())
+    }
+}
+
+impl From<num_bigint::ParseBigIntError> for SignerError {
+    fn from(error: num_bigint::ParseBigIntError) -> Self {
+        SignerError::InvalidInput(error.to_string())
+    }
+}
