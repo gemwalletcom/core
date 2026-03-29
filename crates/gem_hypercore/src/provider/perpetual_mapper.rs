@@ -396,7 +396,7 @@ mod tests {
         assert_eq!(eth_data.perpetual.max_leverage, 50);
         assert_eq!(eth_data.perpetual.volume_24h, 500000.0);
 
-        assert_eq!(eth_data.perpetual.is_isolated_only, false);
+        assert!(!eth_data.perpetual.is_isolated_only);
 
         assert_eq!(eth_data.asset.name, "ETH");
         assert_eq!(eth_data.asset.symbol, "ETH");
@@ -444,8 +444,8 @@ mod tests {
         let result = map_perpetuals_data(metadata_response, 0);
 
         assert_eq!(result.len(), 2);
-        assert_eq!(result[0].perpetual.is_isolated_only, true);
-        assert_eq!(result[1].perpetual.is_isolated_only, false);
+        assert!(result[0].perpetual.is_isolated_only);
+        assert!(!result[1].perpetual.is_isolated_only);
     }
 
     #[test]
