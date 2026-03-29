@@ -29,6 +29,8 @@ impl MessageConsumer<FiatWebhookPayload, bool> for FiatWebhookConsumer {
     }
 
     async fn process(&self, payload: FiatWebhookPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        info_with_fields!("received webhook", provider = payload.provider.id(), payload = payload.data.to_string());
+
         let provider = match self.providers.iter().find(|provider| provider.name() == payload.provider) {
             Some(provider) => provider,
             None => {
