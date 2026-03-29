@@ -237,7 +237,11 @@ impl From<WcWalletConnectAction> for WalletConnectAction {
                 transaction_type: transaction_type.into(),
                 data,
             },
-            WcWalletConnectAction::SignAllTransactions { chain, transaction_type, transactions } => Self::SignAllTransactions {
+            WcWalletConnectAction::SignAllTransactions {
+                chain,
+                transaction_type,
+                transactions,
+            } => Self::SignAllTransactions {
                 chain,
                 transaction_type: transaction_type.into(),
                 transactions,

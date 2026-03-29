@@ -1,4 +1,4 @@
-use crate::{FUNGIBLE_ASSET_DEPOSIT_EVENT, FUNGIBLE_ASSET_WITHDRAW_EVENT, STAKE_DEPOSIT_EVENT, STAKE_WITHDRAW_EVENT};
+use crate::{FUNGIBLE_ASSET_DEPOSIT_EVENT, FUNGIBLE_ASSET_WITHDRAW_EVENT, NO_ACCOUNT_SIGNATURE_TYPE, STAKE_DEPOSIT_EVENT, STAKE_WITHDRAW_EVENT};
 use serde::{Deserialize, Serialize};
 use serde_serializers::{deserialize_option_u64_from_str, deserialize_u64_from_str};
 
@@ -77,6 +77,23 @@ pub struct TransactionSignature {
     pub signature_type: String,
     pub public_key: Option<String>,
     pub signature: Option<String>,
+}
+
+impl TransactionSignature {
+    pub fn no_account() -> Self {
+        TransactionSignature {
+            signature_type: NO_ACCOUNT_SIGNATURE_TYPE.to_string(),
+            public_key: None,
+            signature: None,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SimulateTransactionQuery {
+    pub estimate_max_gas_amount: bool,
+    pub estimate_gas_unit_price: bool,
+    pub estimate_prioritized_gas_unit_price: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

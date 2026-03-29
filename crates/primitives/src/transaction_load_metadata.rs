@@ -65,6 +65,7 @@ pub enum TransactionLoadMetadata {
     },
     Aptos {
         sequence: u64,
+        gas_limit: Option<u64>,
         data: Option<String>,
     },
     Polkadot {
@@ -173,6 +174,13 @@ impl TransactionLoadMetadata {
             TransactionLoadMetadata::Solana { sender_token_address, .. } => Ok(sender_token_address.clone()),
             TransactionLoadMetadata::Ton { sender_token_address, .. } => Ok(sender_token_address.clone()),
             _ => Err("Sender token address not available for this metadata type".into()),
+        }
+    }
+
+    pub fn get_gas_limit(&self) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
+        match self {
+            TransactionLoadMetadata::Aptos { gas_limit: Some(gas_limit), .. } => Ok(*gas_limit),
+            _ => Err("Gas limit not available for this metadata type".into()),
         }
     }
 

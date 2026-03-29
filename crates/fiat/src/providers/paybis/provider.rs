@@ -84,7 +84,7 @@ impl FiatProvider for PaybisClient {
             primitives::FiatQuoteType::Buy => true,
             primitives::FiatQuoteType::Sell => false,
         };
-        let redirect_url = self
+        let (redirect_url, request_id) = self
             .get_redirect_url(
                 &data.wallet_address,
                 &data.quote.fiat_currency,
@@ -98,7 +98,7 @@ impl FiatProvider for PaybisClient {
 
         Ok(FiatQuoteUrl {
             redirect_url,
-            provider_transaction_id: None,
+            provider_transaction_id: Some(request_id),
         })
     }
 }
@@ -236,7 +236,7 @@ mod fiat_integration_tests {
 
         let result = client.process_webhook(transaction_webhook).await?;
         if let FiatWebhook::Transaction(transaction) = result {
-            assert_eq!(transaction.transaction_id, "a4a211ad-3bcf-47d9-b4ae-073e841e3e7a");
+            assert_eq!(transaction.transaction_id, "3b388a91-d1fa-456e-b94a");
             assert_eq!(transaction.provider_transaction_id, Some("PB21095868675TX1".to_string()));
         } else {
             panic!("Expected FiatWebhook::Transaction variant");

@@ -7,12 +7,12 @@ pub struct PaybisWebhook<T> {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PaybisWebhookData {
+    pub request_id: String,
     pub quote: PaybisWebhookQuote,
     pub transaction: PaybisTransaction,
-    #[serde(rename = "amountFrom")]
     pub amount_from: PaybisAmount,
-    #[serde(rename = "amountTo")]
     pub amount_to: PaybisAmount,
     pub payment: Option<PaybisPayment>,
     pub payout: Option<PaybisPayout>,
@@ -24,8 +24,8 @@ pub struct PaybisPayment {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PaybisCard {
-    #[serde(rename = "billingAddress")]
     pub billing_address: PaybisBillingAddress,
 }
 
@@ -40,9 +40,9 @@ pub struct PaybisCountry {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PaybisPayout {
     pub transaction_hash: Option<String>,
-    #[serde(rename = "destinationWalletAddress")]
     pub destination_wallet_address: Option<String>,
 }
 

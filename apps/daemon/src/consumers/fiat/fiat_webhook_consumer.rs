@@ -29,6 +29,8 @@ impl MessageConsumer<FiatWebhookPayload, bool> for FiatWebhookConsumer {
     }
 
     async fn process(&self, payload: FiatWebhookPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        info_with_fields!("received webhook", provider = payload.provider.id(), payload = payload.data.to_string());
+
         let provider = match self.providers.iter().find(|provider| provider.name() == payload.provider) {
             Some(provider) => provider,
             None => {
@@ -41,11 +43,11 @@ impl MessageConsumer<FiatWebhookPayload, bool> for FiatWebhookConsumer {
 
         let transaction = match &payload.payload {
             FiatWebhook::OrderId(order_id) => {
-                info_with_fields!("fetching order status", provider = provider_id, order_id = order_id);
+                info_with_fields!("fetching order status", provider = provider_id, provider_transaction_id = order_id);
                 match provider.get_order_status(order_id).await {
                     Ok(transaction) => transaction,
                     Err(e) => {
-                        error_with_fields!("get_order_status", &*e, provider = provider_id, order_id = order_id);
+                        error_with_fields!("get_order_status", &*e, provider = provider_id, provider_transaction_id = order_id);
                         return Err(e);
                     }
                 }
@@ -62,7 +64,7 @@ impl MessageConsumer<FiatWebhookPayload, bool> for FiatWebhookConsumer {
                 info_with_fields!(
                     "processed webhook",
                     provider = provider_id,
-                    order_id = updated.provider_transaction_id.as_deref().unwrap_or(""),
+                    provider_transaction_id = updated.provider_transaction_id.as_deref().unwrap_or(""),
                     status = format!("{:?}", updated.status.0),
                     quote_id = updated.quote_id.as_str(),
                     address = updated.address.as_deref().unwrap_or(""),

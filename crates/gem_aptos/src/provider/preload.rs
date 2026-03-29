@@ -9,7 +9,7 @@ use primitives::{
 };
 
 use super::preload_mapper::map_transaction_preload;
-use crate::provider::payload_builder::{build_stake_payload, build_unstake_payload, build_withdraw_payload};
+use crate::provider::payload_builder::{build_stake_payload_data, build_unstake_payload_data, build_withdraw_payload_data};
 use crate::rpc::client::AptosClient;
 
 #[async_trait]
@@ -25,16 +25,20 @@ impl<C: Client> ChainTransactionLoad for AptosClient<C> {
 
         let data = match &input.input_type {
             TransactionInputType::Stake(_, stake_type) => match stake_type {
-                StakeType::Stake(validator) => Some(build_stake_payload(&input.sender_address, &validator.id, &input.value)),
-                StakeType::Unstake(delegation) => Some(build_unstake_payload(&input.sender_address, &delegation.validator.id, &input.value)),
-                StakeType::Withdraw(delegation) => Some(build_withdraw_payload(&input.sender_address, &delegation.validator.id, &input.value)),
+                StakeType::Stake(validator) => Some(build_stake_payload_data(&validator.id, &input.value)),
+                StakeType::Unstake(delegation) => Some(build_unstake_payload_data(&delegation.validator.id, &input.value)),
+                StakeType::Withdraw(delegation) => Some(build_withdraw_payload_data(&delegation.validator.id, &input.value)),
                 StakeType::Redelegate(_) | StakeType::Rewards(_) | StakeType::Freeze(_) | StakeType::Unfreeze(_) => None,
             },
             _ => None,
         };
 
         let sequence = input.metadata.get_sequence()?;
-        let metadata = TransactionLoadMetadata::Aptos { sequence, data };
+        let metadata = TransactionLoadMetadata::Aptos {
+            sequence,
+            gas_limit: Some(gas_limit),
+            data,
+        };
 
         Ok(TransactionLoadData { fee, metadata })
     }
@@ -47,5 +51,61 @@ impl<C: Client> ChainTransactionLoad for AptosClient<C> {
             FeeRate::new(FeePriority::Normal, GasPriceType::regular(gas_fee.gas_estimate)),
             FeeRate::new(FeePriority::Fast, GasPriceType::regular(gas_fee.prioritized_gas_estimate)),
         ])
+    }
+}
+
+#[cfg(all(test, feature = "chain_integration_tests"))]
+mod chain_integration_tests {
+    use super::*;
+    use crate::KNOWN_VALIDATOR_POOL;
+    use crate::provider::testkit::{TEST_ADDRESS_STAKING, create_aptos_test_client};
+    use num_bigint::BigInt;
+    use primitives::{Asset, Chain, DelegationValidator};
+    use serde_json::Value;
+
+    #[tokio::test]
+    async fn test_aptos_get_transaction_load_stake() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_aptos_test_client();
+        let metadata = client
+            .get_transaction_preload(TransactionPreloadInput {
+                input_type: TransactionInputType::Stake(
+                    Asset::from_chain(Chain::Aptos),
+                    StakeType::Stake(DelegationValidator::stake(Chain::Aptos, KNOWN_VALIDATOR_POOL.to_string(), String::new(), true, 0.0, 0.0)),
+                ),
+                sender_address: TEST_ADDRESS_STAKING.to_string(),
+                destination_address: KNOWN_VALIDATOR_POOL.to_string(),
+            })
+            .await?;
+
+        let load = client
+            .get_transaction_load(TransactionLoadInput {
+                input_type: TransactionInputType::Stake(
+                    Asset::from_chain(Chain::Aptos),
+                    StakeType::Stake(DelegationValidator::stake(Chain::Aptos, KNOWN_VALIDATOR_POOL.to_string(), String::new(), true, 0.0, 0.0)),
+                ),
+                sender_address: TEST_ADDRESS_STAKING.to_string(),
+                destination_address: KNOWN_VALIDATOR_POOL.to_string(),
+                value: "1100000000".to_string(),
+                gas_price: GasPriceType::regular(BigInt::from(100u64)),
+                memo: None,
+                is_max_value: false,
+                metadata,
+            })
+            .await?;
+
+        let TransactionLoadMetadata::Aptos {
+            gas_limit: Some(gas_limit),
+            data: Some(data),
+            ..
+        } = load.metadata
+        else {
+            panic!("Expected Aptos transaction load metadata with gas limit and payload");
+        };
+
+        let payload: Value = serde_json::from_str(&data).unwrap();
+        assert_eq!(payload["function"], "0x1::delegation_pool::add_stake");
+        assert_eq!(load.fee.gas_limit, BigInt::from(gas_limit));
+
+        Ok(())
     }
 }

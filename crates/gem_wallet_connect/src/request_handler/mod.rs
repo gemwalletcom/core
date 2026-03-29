@@ -224,7 +224,11 @@ mod tests {
         let request = WalletConnectRequest::mock("solana_signAllTransactions", params, Some("solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"));
         let action = WalletConnectRequestHandler::parse_request(request).unwrap();
         match &action {
-            WalletConnectAction::SignAllTransactions { chain, transaction_type, transactions } => {
+            WalletConnectAction::SignAllTransactions {
+                chain,
+                transaction_type,
+                transactions,
+            } => {
                 assert_eq!(*chain, Chain::Solana);
                 assert_eq!(transactions.len(), 1);
                 let decoded = WalletConnectRequestHandler::decode_send_transaction(transaction_type.clone(), transactions[0].clone()).unwrap();

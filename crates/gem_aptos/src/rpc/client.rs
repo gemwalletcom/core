@@ -1,17 +1,24 @@
 use std::collections::HashMap;
 use std::error::Error;
 use std::str::FromStr;
+use std::time::{SystemTime, UNIX_EPOCH};
 
-use gem_client::{CONTENT_TYPE, Client, ClientExt, ContentType};
+use gem_client::{CONTENT_TYPE, Client, ClientExt, ContentType, build_path_with_query};
 use num_bigint::BigUint;
 use primitives::chain::Chain;
-use primitives::{AssetSubtype, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata};
-use serde::{Serialize, de::DeserializeOwned};
+use primitives::{StakeType, TransactionInputType, TransactionLoadInput};
+use serde::Serialize;
+use serde::de::DeserializeOwned;
 
 use crate::models::{
-    Account, Block, DelegationPoolStake, GasFee, Ledger, ReconfigurationState, Resource, ResourceData, StakingConfig, Transaction, TransactionPayload, TransactionResponse,
-    TransactionSignature, TransactionSimulation, ValidatorSet,
+    Account, Block, DelegationPoolStake, GasFee, Ledger, ReconfigurationState, Resource, ResourceData, SimulateTransactionQuery, StakingConfig, Transaction, TransactionPayload,
+    TransactionResponse, TransactionSignature, TransactionSimulation, ValidatorSet,
 };
+use crate::provider::payload_builder::{
+    build_stake_transaction_payload, build_token_transfer_transaction_payload, build_transfer_transaction_payload, build_unstake_transaction_payload,
+    build_withdraw_transaction_payload,
+};
+use crate::{DEFAULT_MAX_GAS_AMOUNT, DEFAULT_SWAP_MAX_GAS_AMOUNT};
 
 #[derive(Debug)]
 pub struct AptosClient<C: Client> {
@@ -81,74 +88,74 @@ impl<C: Client> AptosClient<C> {
     }
 
     pub async fn calculate_gas_limit(&self, input: &TransactionLoadInput) -> Result<u64, Box<dyn Error + Send + Sync>> {
-        let sequence = match &input.metadata {
-            TransactionLoadMetadata::Aptos { sequence, .. } => *sequence,
-            _ => return Err("Invalid metadata type for Aptos".into()),
-        };
+        let sequence = input.metadata.get_sequence()?;
 
         match &input.input_type {
             TransactionInputType::Transfer(asset)
             | TransactionInputType::Deposit(asset)
             | TransactionInputType::TransferNft(asset, _)
             | TransactionInputType::Account(asset, _) => {
-                let asset_type = if asset.id.token_id.is_none() { AssetSubtype::NATIVE } else { AssetSubtype::TOKEN };
+                let payload = match &asset.id.token_id {
+                    None => build_transfer_transaction_payload(&input.destination_address, &input.value),
+                    Some(token_id) => build_token_transfer_transaction_payload(token_id, &input.destination_address, &input.value)?,
+                };
 
-                match asset_type {
-                    AssetSubtype::NATIVE => {
-                        let simulated = self
-                            .simulate_transaction(
-                                &input.sender_address,
-                                &input.destination_address,
-                                &sequence.to_string(),
-                                &input.value,
-                                &input.gas_price.gas_price().to_string(),
-                                1500,
-                            )
-                            .await?;
-                        Ok(simulated.gas_used.unwrap_or(1500))
-                    }
-                    AssetSubtype::TOKEN => Ok(1500),
-                }
+                self.simulate_transaction(&input.sender_address, sequence, payload, &input.gas_price.gas_price().to_string())
+                    .await
             }
-            TransactionInputType::Swap(_, _, _) | TransactionInputType::Stake(_, _) | TransactionInputType::TokenApprove(_, _) | TransactionInputType::Generic(_, _, _) => Ok(1500),
-            TransactionInputType::Perpetual(_, _) | TransactionInputType::Earn(_, _, _) => unimplemented!(),
+            TransactionInputType::Swap(_, _, swap_data) => match &swap_data.data.gas_limit {
+                Some(gas_limit) => gas_limit.parse::<u64>().map_err(|_| "Invalid Aptos gas limit".into()),
+                None => {
+                    let payload: TransactionPayload = serde_json::from_str(&swap_data.data.data)?;
+                    Ok(self
+                        .simulate_transaction(&input.sender_address, sequence, payload, &input.gas_price.gas_price().to_string())
+                        .await
+                        .unwrap_or(DEFAULT_SWAP_MAX_GAS_AMOUNT))
+                }
+            },
+            TransactionInputType::Stake(_, stake_type) => {
+                let payload = match stake_type {
+                    StakeType::Stake(validator) => Some(build_stake_transaction_payload(&validator.id, &input.value)),
+                    StakeType::Unstake(delegation) => Some(build_unstake_transaction_payload(&delegation.validator.id, &input.value)),
+                    StakeType::Withdraw(delegation) => Some(build_withdraw_transaction_payload(&delegation.validator.id, &input.value)),
+                    StakeType::Redelegate(_) | StakeType::Rewards(_) | StakeType::Freeze(_) | StakeType::Unfreeze(_) => None,
+                };
+
+                let payload = payload.ok_or("Unsupported Aptos stake type")?;
+                self.simulate_transaction(&input.sender_address, sequence, payload, &input.gas_price.gas_price().to_string())
+                    .await
+            }
+            TransactionInputType::Generic(_, _, _) => Ok(DEFAULT_MAX_GAS_AMOUNT),
+            TransactionInputType::TokenApprove(_, _) | TransactionInputType::Perpetual(_, _) | TransactionInputType::Earn(_, _, _) => {
+                Err("Unsupported Aptos transaction type".into())
+            }
         }
     }
 
-    pub async fn simulate_transaction(
-        &self,
-        sender: &str,
-        recipient: &str,
-        sequence: &str,
-        value: &str,
-        gas_price: &str,
-        max_gas_amount: u64,
-    ) -> Result<Transaction, Box<dyn Error + Send + Sync>> {
-        use std::time::{SystemTime, UNIX_EPOCH};
-
+    pub async fn simulate_transaction(&self, sender: &str, sequence: u64, payload: TransactionPayload, gas_price: &str) -> Result<u64, Box<dyn Error + Send + Sync>> {
         let expiration = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + 1_000_000;
+
+        let query = SimulateTransactionQuery {
+            estimate_max_gas_amount: true,
+            estimate_gas_unit_price: false,
+            estimate_prioritized_gas_unit_price: false,
+        };
+        let path = build_path_with_query("/v1/transactions/simulate", &query)?;
 
         let simulation = TransactionSimulation {
             expiration_timestamp_secs: expiration.to_string(),
             gas_unit_price: gas_price.to_string(),
-            max_gas_amount: max_gas_amount.to_string(),
-            payload: TransactionPayload {
-                function: Some("0x1::aptos_account::transfer".to_string()),
-                type_arguments: vec![],
-                arguments: vec![serde_json::Value::String(recipient.to_string()), serde_json::Value::String(value.to_string())],
-                payload_type: "entry_function_payload".to_string(),
-            },
+            max_gas_amount: DEFAULT_MAX_GAS_AMOUNT.to_string(),
+            payload,
             sender: sender.to_string(),
             sequence_number: sequence.to_string(),
-            signature: TransactionSignature {
-                signature_type: "no_account_signature".to_string(),
-                public_key: None,
-                signature: None,
-            },
+            signature: TransactionSignature::no_account(),
         };
 
-        let response: Vec<Transaction> = self.client.post("/v1/transactions/simulate", &simulation).await?;
-        response.into_iter().next().ok_or_else(|| "No simulation result".into())
+        let response: Vec<Transaction> = self.client.post(&path, &simulation).await?;
+        let transaction = response.into_iter().next().ok_or("No simulation result")?;
+
+        transaction.gas_used.ok_or_else(|| "No gas used in simulation".into())
     }
 
     pub async fn get_validator_set(&self) -> Result<ValidatorSet, Box<dyn Error + Send + Sync>> {

@@ -5,6 +5,7 @@ use std::error::Error;
 pub fn map_transaction_preload(account: &Account) -> Result<TransactionLoadMetadata, Box<dyn Error + Sync + Send>> {
     Ok(TransactionLoadMetadata::Aptos {
         sequence: account.sequence_number,
+        gas_limit: None,
         data: None,
     })
 }

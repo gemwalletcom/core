@@ -31,6 +31,10 @@ impl ChainProviders {
         self.get_provider(chain)?.get_token_data(token_id).await
     }
 
+    pub fn get_is_token_address(&self, chain: Chain, token_id: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        Ok(self.get_provider(chain)?.get_is_token_address(token_id))
+    }
+
     pub async fn get_balance_coin(&self, chain: Chain, address: String) -> Result<AssetBalance, Box<dyn Error + Send + Sync>> {
         self.get_provider(chain)?.get_balance_coin(address).await
     }

@@ -83,31 +83,37 @@ impl FiatStore for DatabaseClient {
 
     fn update_fiat_transaction(&mut self, provider: FiatProviderName, update: FiatTransactionUpdate) -> Result<FiatTransactionRow, diesel::result::Error> {
         use crate::schema::fiat_transactions::dsl::*;
-        let provider = FiatProviderNameRow::from(provider);
 
-        let patch = UpdateFiatTransactionRow::from_primitive(&update);
-        if let Some(transaction) = diesel::update(
-            fiat_transactions
-                .filter(provider_id.eq(&provider))
-                .filter(provider_transaction_id.eq(&update.transaction_id)),
-        )
-        .set(&patch)
-        .returning(FiatTransactionRow::as_returning())
-        .get_result(&mut self.connection)
-        .optional()?
-        {
-            return Ok(transaction);
+        let provider = FiatProviderNameRow::from(provider);
+        let changeset = UpdateFiatTransactionRow::from_primitive(&update);
+
+        if let Some(row) = self.update_by_provider_transaction_id(&provider, &update.transaction_id, &changeset)? {
+            return Ok(row);
         }
 
         match update.provider_transaction_id.as_deref() {
-            Some(provider_tx_id) => diesel::update(fiat_transactions.filter(provider_id.eq(&provider)).filter(quote_id.eq(&update.transaction_id)))
-                .set((provider_transaction_id.eq(provider_tx_id), &patch))
-                .returning(FiatTransactionRow::as_returning())
-                .get_result(&mut self.connection),
-            None => diesel::update(fiat_transactions.filter(provider_id.eq(&provider)).filter(quote_id.eq(&update.transaction_id)))
-                .set(&patch)
-                .returning(FiatTransactionRow::as_returning())
-                .get_result(&mut self.connection),
+            Some(provider_transaction_id_value) => {
+                if let Some(row) = self.update_by_provider_transaction_id(&provider, provider_transaction_id_value, &changeset)? {
+                    return Ok(row);
+                }
+                if let Some(row) = self.update_by_quote_id(&provider, &update.transaction_id, provider_transaction_id_value, &changeset)? {
+                    return Ok(row);
+                }
+                let existing = self
+                    .get_fiat_transaction_for_quote(&provider, &update.transaction_id)?
+                    .ok_or(diesel::result::Error::NotFound)?;
+                let new_row = NewFiatTransactionRow::from_existing(&existing, &update, provider_transaction_id_value.to_string()).ok_or(diesel::result::Error::NotFound)?;
+                diesel::insert_into(fiat_transactions)
+                    .values(&new_row)
+                    .returning(FiatTransactionRow::as_returning())
+                    .get_result(&mut self.connection)
+            }
+            None => {
+                let existing = self
+                    .get_fiat_transaction_for_quote(&provider, &update.transaction_id)?
+                    .ok_or(diesel::result::Error::NotFound)?;
+                self.update_fiat_transaction_by_id(existing.id, changeset)
+            }
         }
     }
 
@@ -214,10 +220,10 @@ impl FiatStore for DatabaseClient {
 
     fn add_fiat_transaction(&mut self, transaction: NewFiatTransactionRow) -> Result<usize, diesel::result::Error> {
         use crate::schema::fiat_transactions::dsl::*;
+
         diesel::insert_into(fiat_transactions)
             .values(&transaction)
-            .on_conflict(quote_id)
-            .do_nothing()
+            .on_conflict_do_nothing()
             .execute(&mut self.connection)
     }
 
@@ -229,8 +235,68 @@ impl FiatStore for DatabaseClient {
     }
 }
 
-// Public methods for backward compatibility
 impl DatabaseClient {
+    fn update_by_provider_transaction_id(
+        &mut self,
+        provider: &FiatProviderNameRow,
+        provider_transaction_id_value: &str,
+        changeset: &UpdateFiatTransactionRow,
+    ) -> Result<Option<FiatTransactionRow>, diesel::result::Error> {
+        use crate::schema::fiat_transactions::dsl::*;
+
+        diesel::update(
+            fiat_transactions
+                .filter(provider_id.eq(provider))
+                .filter(provider_transaction_id.eq(provider_transaction_id_value)),
+        )
+        .set(changeset)
+        .returning(FiatTransactionRow::as_returning())
+        .get_result(&mut self.connection)
+        .optional()
+    }
+
+    fn update_by_quote_id(
+        &mut self,
+        provider: &FiatProviderNameRow,
+        target_quote_id: &str,
+        provider_transaction_id_value: &str,
+        changeset: &UpdateFiatTransactionRow,
+    ) -> Result<Option<FiatTransactionRow>, diesel::result::Error> {
+        use crate::schema::fiat_transactions::dsl::*;
+
+        diesel::update(
+            fiat_transactions
+                .filter(provider_id.eq(provider))
+                .filter(quote_id.eq(target_quote_id))
+                .filter(provider_transaction_id.is_null()),
+        )
+        .set((provider_transaction_id.eq(provider_transaction_id_value), changeset))
+        .returning(FiatTransactionRow::as_returning())
+        .get_result(&mut self.connection)
+        .optional()
+    }
+
+    fn get_fiat_transaction_for_quote(&mut self, provider: &FiatProviderNameRow, target_quote_id: &str) -> Result<Option<FiatTransactionRow>, diesel::result::Error> {
+        use crate::schema::fiat_transactions::dsl::*;
+
+        fiat_transactions
+            .filter(provider_id.eq(provider))
+            .filter(quote_id.eq(target_quote_id))
+            .order((created_at.desc(), id.desc()))
+            .select(FiatTransactionRow::as_select())
+            .first(&mut self.connection)
+            .optional()
+    }
+
+    fn update_fiat_transaction_by_id(&mut self, transaction_id: i32, changeset: UpdateFiatTransactionRow) -> Result<FiatTransactionRow, diesel::result::Error> {
+        use crate::schema::fiat_transactions::dsl::*;
+
+        diesel::update(fiat_transactions.find(transaction_id))
+            .set(changeset)
+            .returning(FiatTransactionRow::as_returning())
+            .get_result(&mut self.connection)
+    }
+
     pub fn add_fiat_assets(&mut self, values: Vec<FiatAssetRow>) -> Result<usize, diesel::result::Error> {
         FiatStore::add_fiat_assets(self, values)
     }
