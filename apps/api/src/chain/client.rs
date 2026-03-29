@@ -16,6 +16,10 @@ impl ChainClient {
         self.providers.get_token_data(chain, token_id).await
     }
 
+    pub fn get_is_token_address(&self, chain: Chain, token_id: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        self.providers.get_is_token_address(chain, token_id)
+    }
+
     pub async fn get_balances_coin(&self, request: ChainAddress) -> Result<AssetBalance, Box<dyn Error + Send + Sync>> {
         self.providers.get_balance_coin(request.chain, request.address).await
     }

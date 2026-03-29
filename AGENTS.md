@@ -29,6 +29,7 @@ Before finishing a task:
 
 - Do not write tolerance-based assertions against live network values or values recomputed from separate RPC/API calls in integration tests. These tests are flaky and low-signal.
 - For integration tests, assert stable invariants only. For exact numeric behavior, cover the pure calculation in unit tests with deterministic inputs.
+- Write one test function with many assertions instead of many separate single-assertion test functions. Group related cases into a single `test_<function_name>` test.
 
 ## Testkit Mocks
 
