@@ -11,6 +11,7 @@ pub struct CryptoWalletAddress {
 #[serde(rename_all = "camelCase")]
 pub struct Request {
     pub partner_user_id: String,
+    pub partner_transaction_id: Option<String>,
     pub crypto_wallet_address: CryptoWalletAddress,
     pub currency_code_from: String,
     pub currency_code_to: String,
@@ -27,36 +28,59 @@ pub struct RequestResponse {
 }
 
 impl Request {
-    pub fn new_buy(partner_user_id: String, wallet_address: String, crypto_currency: String, fiat_currency: String, quote_id: String, user_ip: String, locale: String) -> Self {
+    fn new(
+        partner_user_id: String,
+        wallet_address: String,
+        wallet_currency_code: String,
+        currency_code_from: String,
+        currency_code_to: String,
+        quote_id: String,
+        user_ip: String,
+        locale: String,
+        flow: String,
+    ) -> Self {
         Self {
             partner_user_id,
+            partner_transaction_id: Some(quote_id.clone()),
             crypto_wallet_address: CryptoWalletAddress {
                 address: wallet_address,
-                currency_code: crypto_currency.clone(),
+                currency_code: wallet_currency_code,
             },
-            currency_code_from: fiat_currency,
-            currency_code_to: crypto_currency,
+            currency_code_from,
+            currency_code_to,
             quote_id,
             user_ip,
             locale,
-            flow: "buyCrypto".to_string(),
+            flow,
         }
     }
 
     pub fn new_sell(partner_user_id: String, wallet_address: String, crypto_currency: String, fiat_currency: String, quote_id: String, user_ip: String, locale: String) -> Self {
-        Self {
+        Self::new(
             partner_user_id,
-            crypto_wallet_address: CryptoWalletAddress {
-                address: wallet_address,
-                currency_code: crypto_currency.clone(),
-            },
-            currency_code_from: crypto_currency,
-            currency_code_to: fiat_currency,
+            wallet_address,
+            crypto_currency.clone(),
+            crypto_currency,
+            fiat_currency,
             quote_id,
             user_ip,
             locale,
-            flow: "sellCrypto".to_string(),
-        }
+            "sellCrypto".to_string(),
+        )
+    }
+
+    pub fn new_buy(partner_user_id: String, wallet_address: String, crypto_currency: String, fiat_currency: String, quote_id: String, user_ip: String, locale: String) -> Self {
+        Self::new(
+            partner_user_id,
+            wallet_address,
+            crypto_currency.clone(),
+            fiat_currency,
+            crypto_currency,
+            quote_id,
+            user_ip,
+            locale,
+            "buyCrypto".to_string(),
+        )
     }
 }
 
@@ -81,6 +105,8 @@ mod tests {
         assert_eq!(parsed["cryptoWalletAddress"]["currencyCode"], "SOL");
         assert_eq!(parsed["currencyCodeFrom"], "USD");
         assert_eq!(parsed["currencyCodeTo"], "SOL");
+        assert_eq!(parsed["partnerTransactionId"], "test-quote-id");
+        assert_eq!(parsed["quoteId"], "test-quote-id");
         assert_eq!(parsed["flow"], "buyCrypto");
     }
 
@@ -98,8 +124,11 @@ mod tests {
 
         let parsed = serde_json::to_value(&request).unwrap();
 
+        assert_eq!(parsed["cryptoWalletAddress"]["currencyCode"], "ETH");
         assert_eq!(parsed["currencyCodeFrom"], "ETH");
         assert_eq!(parsed["currencyCodeTo"], "USD");
+        assert_eq!(parsed["partnerTransactionId"], "test-quote-id");
+        assert_eq!(parsed["quoteId"], "test-quote-id");
         assert_eq!(parsed["flow"], "sellCrypto");
     }
 }

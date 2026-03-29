@@ -396,6 +396,7 @@ fn setup_dev_assets(database: &Database) -> Result<(), Box<dyn std::error::Error
 
     info_with_fields!("setup_dev", step = "add fiat assets");
 
+    let bitcoin_asset_id = AssetId::from_chain(Chain::Bitcoin);
     let ethereum_asset_id = AssetId::from_chain(Chain::Ethereum);
     let smartchain_asset_id = AssetId::from_chain(Chain::SmartChain);
 
@@ -421,6 +422,7 @@ fn setup_dev_assets(database: &Database) -> Result<(), Box<dyn std::error::Error
         fiat_asset(FiatProviderName::Mercuryo, "ETH", "ETH", "ETHEREUM", &ethereum_asset_id),
         fiat_asset(FiatProviderName::MoonPay, "bnb_bsc", "BNB", "binance_smart_chain", &smartchain_asset_id),
         fiat_asset(FiatProviderName::Mercuryo, "BNB", "BNB", "BINANCESMARTCHAIN", &smartchain_asset_id),
+        fiat_asset(FiatProviderName::Paybis, "ETH", "ETH", "ethereum", &ethereum_asset_id),
     ];
 
     let result = database.fiat()?.add_fiat_assets(fiat_assets)?;
@@ -446,7 +448,6 @@ fn setup_dev_assets(database: &Database) -> Result<(), Box<dyn std::error::Error
 
     info_with_fields!("setup_dev", step = "add prices and charts");
     let now = chrono::Utc::now().naive_utc();
-    let bitcoin_asset_id = AssetId::from_chain(Chain::Bitcoin);
     let coins: Vec<(&str, &AssetId, f64)> = vec![
         (Chain::Bitcoin.as_ref(), &bitcoin_asset_id, 60000.0),
         (Chain::Ethereum.as_ref(), &ethereum_asset_id, 2000.0),

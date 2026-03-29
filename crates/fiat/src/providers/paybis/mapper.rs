@@ -143,7 +143,7 @@ pub fn map_webhook_data(webhook_data: PaybisWebhookData) -> FiatWebhook {
 
     FiatWebhook::Transaction(FiatTransactionUpdate {
         transaction_id: webhook_data.quote.quote_id,
-        provider_transaction_id: Some(webhook_data.request_id),
+        provider_transaction_id: None,
         status: map_status(&webhook_data.transaction.status),
         transaction_hash: webhook_data.payout.as_ref().and_then(|p| p.transaction_hash.clone()),
         address: webhook_data.payout.as_ref().and_then(|p| p.destination_wallet_address.clone()),
@@ -303,7 +303,7 @@ mod tests {
         let result = map_process_webhook(webhook_json).unwrap();
         if let FiatWebhook::Transaction(transaction) = result {
             assert_eq!(transaction.transaction_id, "a4a211ad-3bcf-47d9-b4ae-073e841e3e7a");
-            assert_eq!(transaction.provider_transaction_id, Some("3b388a91-d1fa-456e-b94a".to_string()));
+            assert_eq!(transaction.provider_transaction_id, None);
         } else {
             panic!("Expected FiatWebhook::Transaction variant");
         }
@@ -316,7 +316,7 @@ mod tests {
         let result = map_process_webhook(webhook_json).unwrap();
         if let FiatWebhook::Transaction(transaction) = result {
             assert_eq!(transaction.transaction_id, "a4a211ad-3bcf-47d9-b4ae-073e841e3e7a");
-            assert_eq!(transaction.provider_transaction_id, Some("3b388a91-d1fa-456e-b94a".to_string()));
+            assert_eq!(transaction.provider_transaction_id, None);
             assert_eq!(transaction.fiat_amount, Some(50.0));
             assert_eq!(transaction.fiat_currency, Some("USD".to_string()));
             assert_eq!(transaction.status, FiatTransactionStatus::Pending);
@@ -334,7 +334,7 @@ mod tests {
         let result = map_process_webhook(webhook_json).unwrap();
         if let FiatWebhook::Transaction(transaction) = result {
             assert_eq!(transaction.transaction_id, "59b799d4-dc8c-458d-b9c7-292726ab6255");
-            assert_eq!(transaction.provider_transaction_id, Some("63f0c91b-5382-45d6-8fb9".to_string()));
+            assert_eq!(transaction.provider_transaction_id, None);
             assert_eq!(transaction.fiat_currency, Some("USD".to_string()));
             assert_eq!(transaction.address, None);
         } else {
@@ -371,7 +371,7 @@ mod tests {
         };
 
         assert_eq!(transaction.transaction_id, "quote_123");
-        assert_eq!(transaction.provider_transaction_id, Some("request_123".to_string()));
+        assert_eq!(transaction.provider_transaction_id, None);
         assert_eq!(transaction.fiat_amount, Some(1234.56));
         assert_eq!(transaction.fiat_currency, Some("EUR".to_string()));
     }
