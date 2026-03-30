@@ -93,6 +93,13 @@ impl TransactionInputType {
         }
     }
 
+    pub fn swap_to_address(&self) -> Option<&str> {
+        match self {
+            TransactionInputType::Swap(_, _, swap_data) => Some(&swap_data.data.to),
+            _ => None,
+        }
+    }
+
     pub fn get_recipient_asset(&self) -> &Asset {
         match self {
             TransactionInputType::Transfer(asset) => asset,

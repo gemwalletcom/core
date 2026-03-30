@@ -10,7 +10,6 @@ pub struct ApprovalData {
     pub token: String,
     pub spender: String,
     pub value: String,
-    #[serde(default)]
     pub is_unlimited: bool,
 }
 

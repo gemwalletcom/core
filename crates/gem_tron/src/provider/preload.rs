@@ -32,7 +32,7 @@ impl<C: Client> ChainTransactionLoad for TronClient<C> {
             self.get_tron_block(),
             self.get_chain_parameters(),
             self.get_account_usage(&input.sender_address),
-            self.get_is_new_account_for_input_type(&input.destination_address, input.input_type.clone()),
+            self.get_is_new_account_for_input_type(&input),
             self.get_stake_data(&input)
         )?;
 
@@ -143,13 +143,13 @@ impl<C: Client> TronClient<C> {
         )))
     }
 
-    async fn get_is_new_account_for_input_type(&self, address: &str, input_type: TransactionInputType) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        match input_type {
+    async fn get_is_new_account_for_input_type(&self, input: &TransactionLoadInput) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        match &input.input_type {
             TransactionInputType::Transfer(asset)
             | TransactionInputType::TransferNft(asset, _)
             | TransactionInputType::Account(asset, _)
             | TransactionInputType::Swap(asset, _, _) => match asset.id.token_subtype() {
-                AssetSubtype::NATIVE => Ok(self.is_new_account(address).await?),
+                AssetSubtype::NATIVE => self.is_new_account(input.input_type.swap_to_address().unwrap_or(&input.destination_address)).await,
                 AssetSubtype::TOKEN => Ok(false),
             },
             _ => Ok(false),
