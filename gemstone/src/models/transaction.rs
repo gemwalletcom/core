@@ -863,6 +863,7 @@ impl From<GemTransactionInputType> for TransactionInputType {
                     token: approval_data.token,
                     spender: approval_data.spender,
                     value: approval_data.value,
+                    is_unlimited: approval_data.is_unlimited,
                 },
             ),
             GemTransactionInputType::Generic { asset, metadata, extra } => TransactionInputType::Generic(asset, metadata, extra.into()),

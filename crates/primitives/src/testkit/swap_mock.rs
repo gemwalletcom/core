@@ -11,6 +11,7 @@ impl ApprovalData {
             token: ETHEREUM_USDT_TOKEN_ID.to_string(),
             spender: TEST_EVM_RECIPIENT.to_string(),
             value: "0".to_string(),
+            is_unlimited: false,
         }
     }
 }

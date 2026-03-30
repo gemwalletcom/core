@@ -68,7 +68,51 @@ core_data='{
 
 json_obj_key() {
     key="${1}"
-    python3 -c "import json,sys;obj=json.load(sys.stdin); print(obj[\"${key}\"]);"
+    python3 -c '
+import json
+import sys
+
+key = sys.argv[1]
+raw = sys.stdin.read()
+
+try:
+    obj = json.loads(raw)
+except json.JSONDecodeError as exc:
+    print(f"Lokalise returned invalid JSON: {exc}: {raw}", file=sys.stderr)
+    raise SystemExit(1)
+
+if key not in obj:
+    print(f"Lokalise response missing {key!r}: {json.dumps(obj)}", file=sys.stderr)
+    raise SystemExit(1)
+
+print(obj[key])
+' "$key"
+}
+
+json_path() {
+    path="${1}"
+    python3 -c '
+import json
+import sys
+
+path = sys.argv[1].split(".")
+raw = sys.stdin.read()
+
+try:
+    obj = json.loads(raw)
+except json.JSONDecodeError as exc:
+    print(f"Lokalise returned invalid JSON: {exc}: {raw}", file=sys.stderr)
+    raise SystemExit(1)
+
+current = obj
+for part in path:
+    if not isinstance(current, dict) or part not in current:
+        print("Lokalise response missing path {!r}: {}".format(".".join(path), json.dumps(obj)), file=sys.stderr)
+        raise SystemExit(1)
+    current = current[part]
+
+print(current)
+' "$path"
 }
 
 json_add_filter_langs() {
@@ -87,15 +131,42 @@ download_bundle() {
 
     echo "Downloading bundle ${1} config... to ${3}"
 
-    bundle_url=$(curl --silent --request POST \
-    --url "https://api.lokalise.com/api2/projects/$4/files/download" \
+    process_id=$(curl --silent --show-error --request POST \
+    --url "https://api.lokalise.com/api2/projects/$4/files/async-download" \
     --header "content-type: application/json" \
     --header "x-api-token: $token" \
-    --data "$data" | json_obj_key "bundle_url"
+    --data "$data" | json_obj_key "process_id"
     )
 
+    process_url="https://api.lokalise.com/api2/projects/$4/processes/$process_id"
+    bundle_url=""
+    for _ in $(seq 1 120); do
+        process_response=$(curl --silent --show-error \
+            --url "$process_url" \
+            --header "x-api-token: $token"
+        )
+        process_status=$(printf '%s' "$process_response" | json_path "process.status")
+
+        if [[ "$process_status" == "finished" ]]; then
+            bundle_url=$(printf '%s' "$process_response" | json_path "process.details.download_url")
+            break
+        fi
+
+        if [[ "$process_status" == "failed" || "$process_status" == "cancelled" ]]; then
+            echo "Lokalise async export failed: $process_response" >&2
+            exit 1
+        fi
+
+        sleep 1
+    done
+
+    if [[ -z "$bundle_url" ]]; then
+        echo "Timed out waiting for Lokalise async export: $process_id" >&2
+        exit 1
+    fi
+
     echo "Downloading ${1} bundle file..."
-    curl --silent "$bundle_url" -o "$temp_file"
+    curl --silent --show-error --location "$bundle_url" -o "$temp_file"
 
     echo "Unzipping ${1} bundle..."
 

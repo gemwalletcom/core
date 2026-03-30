@@ -90,6 +90,7 @@ impl YoGatewayClient {
                 token: token.to_string(),
                 spender: spender.to_string(),
                 value: amount.to_string(),
+                is_unlimited: false,
             }))
         } else {
             Ok(None)

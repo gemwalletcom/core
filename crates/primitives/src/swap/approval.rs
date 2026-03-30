@@ -10,6 +10,7 @@ pub struct ApprovalData {
     pub token: String,
     pub spender: String,
     pub value: String,
+    pub is_unlimited: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

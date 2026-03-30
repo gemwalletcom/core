@@ -124,6 +124,7 @@ pub struct SimulationPayloadField {
 pub struct SimulationHeader {
     pub asset_id: AssetId,
     pub value: String,
+    pub is_unlimited: bool,
 }
 
 impl SimulationPayloadField {
@@ -224,12 +225,11 @@ pub fn promote_single_secondary_payload_field(payload: Vec<SimulationPayloadFiel
 
 #[cfg(test)]
 mod tests {
-    use num_bigint::BigInt;
-
     use super::{
         SimulationPayloadField, SimulationPayloadFieldDisplay, SimulationPayloadFieldKind, SimulationPayloadFieldType, SimulationResult, SimulationSeverity, SimulationWarning,
         SimulationWarningType, promote_single_secondary_payload_field,
     };
+    use num_bigint::BigInt;
 
     #[test]
     fn simulation_result_keeps_only_blocking_warning() {

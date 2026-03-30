@@ -124,6 +124,7 @@ mod tests {
             token: usdc_eth.clone(),
             spender: "0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146".to_string(),
             value: "2000".to_string(),
+            is_unlimited: false,
         });
 
         let result = map_quote_data(

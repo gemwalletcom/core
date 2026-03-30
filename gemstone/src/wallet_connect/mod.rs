@@ -394,12 +394,34 @@ impl WalletConnect {
     }
 }
 
+#[uniffi::export]
+pub fn wallet_connect_app_short_name(metadata: primitives::WalletConnectionSessionAppMetadata) -> String {
+    metadata.short_name()
+}
+
 #[cfg(test)]
 mod tests {
     use crate::message::sign_type::SignDigestType;
     use primitives::{Chain, SimulationWarning, SimulationWarningType};
 
     use super::WalletConnect;
+
+    #[test]
+    fn short_name_strips_separators() {
+        use primitives::WalletConnectionSessionAppMetadata;
+        let meta = |name: &str| WalletConnectionSessionAppMetadata {
+            name: name.to_string(),
+            description: String::new(),
+            url: String::new(),
+            icon: String::new(),
+        };
+        assert_eq!(meta("Polymarket - Buy & Sell").short_name(), "Polymarket");
+        assert_eq!(meta("Uniswap: Trade Crypto").short_name(), "Uniswap");
+        assert_eq!(meta("OpenSea | NFT Marketplace").short_name(), "OpenSea");
+        assert_eq!(meta("  Compound  ").short_name(), "Compound");
+        assert_eq!(meta("Sushiswap").short_name(), "Sushiswap");
+        assert_eq!(meta(&"A".repeat(100)).short_name(), "A".repeat(80));
+    }
 
     #[test]
     fn permit2_sign_message_simulation_matches_permit_warning_behavior() {

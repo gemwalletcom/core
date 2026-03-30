@@ -1,5 +1,6 @@
 use num_bigint::BigUint;
 use num_traits::One;
+use primitives::SimulationHeader;
 
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum ApprovalValue {
@@ -31,6 +32,21 @@ impl ApprovalValue {
         match self {
             Self::Exact(value) => value.to_string(),
             Self::Unlimited => "Unlimited".to_string(),
+        }
+    }
+
+    pub(crate) fn to_simulation_header(&self, asset_id: primitives::AssetId) -> SimulationHeader {
+        match self {
+            Self::Exact(value) => SimulationHeader {
+                asset_id,
+                value: value.to_string(),
+                is_unlimited: false,
+            },
+            Self::Unlimited => SimulationHeader {
+                asset_id,
+                value: String::new(),
+                is_unlimited: true,
+            },
         }
     }
 }

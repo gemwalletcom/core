@@ -83,6 +83,7 @@ mod tests {
             token: "0xtoken".to_string(),
             spender: "0xrouter".to_string(),
             value: "1000".to_string(),
+            is_unlimited: false,
         };
 
         let result = map_quote_data(&quote_response, Some(approval.clone())).unwrap();

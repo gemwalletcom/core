@@ -71,6 +71,7 @@ pub struct SimulationPayloadField {
 pub struct SimulationHeader {
     pub asset_id: AssetId,
     pub value: String,
+    pub is_unlimited: bool,
 }
 
 #[uniffi::remote(Record)]

@@ -49,6 +49,7 @@ where
             token: token.to_string(),
             spender: spender.to_string(),
             value: amount.to_string(),
+            is_unlimited: false,
         }));
     }
     Ok(ApprovalType::None)
@@ -157,7 +158,8 @@ mod tests {
                 ApprovalType::Approve(ApprovalData {
                     token: token.clone(),
                     spender: permit2_contract.clone(),
-                    value: amount.to_string()
+                    value: amount.to_string(),
+                    is_unlimited: false,
                 }),
                 ApprovalType::Permit2(Permit2ApprovalData {
                     token: token.clone(),

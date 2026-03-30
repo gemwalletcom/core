@@ -317,7 +317,7 @@ mod tests {
         assert_eq!(result.payload[4].kind, SimulationPayloadFieldKind::Custom);
         assert_eq!(result.payload[4].label.as_deref(), Some("expiration"));
         assert_eq!(result.header.as_ref().map(|header| header.asset_id.clone()), Some(ETHEREUM_USDC_ASSET_ID.clone()));
-        assert_eq!(result.header.as_ref().map(|header| header.value.as_str()), Some("Unlimited"));
+        assert_eq!(result.header.as_ref().map(|header| header.is_unlimited), Some(true));
     }
 
     #[test]

@@ -1,7 +1,7 @@
 use num_bigint::BigInt;
 use primitives::{
-    AssetId, Chain, SimulationHeader, SimulationPayloadField, SimulationPayloadFieldDisplay, SimulationPayloadFieldKind, SimulationPayloadFieldType, SimulationResult,
-    SimulationSeverity, SimulationWarning, SimulationWarningType,
+    AssetId, Chain, SimulationPayloadField, SimulationPayloadFieldDisplay, SimulationPayloadFieldKind, SimulationPayloadFieldType, SimulationResult, SimulationSeverity,
+    SimulationWarning, SimulationWarningType,
 };
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -136,10 +136,7 @@ impl ApprovalRequest {
         if self.method.supports_value_display()
             && let Some(approval_value) = self.approval_value
         {
-            result.header = Some(SimulationHeader {
-                asset_id: self.asset_id,
-                value: approval_value.display_value(),
-            });
+            result.header = Some(approval_value.to_simulation_header(self.asset_id));
         }
 
         result
