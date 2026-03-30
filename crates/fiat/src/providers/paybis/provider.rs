@@ -237,7 +237,7 @@ mod fiat_integration_tests {
         let result = client.process_webhook(transaction_webhook).await?;
         if let FiatWebhook::Transaction(transaction) = result {
             assert_eq!(transaction.transaction_id, "3b388a91-d1fa-456e-b94a");
-            assert_eq!(transaction.provider_transaction_id, None);
+            assert_eq!(transaction.provider_transaction_id, Some("PB21095868675TX1".to_string()));
         } else {
             panic!("Expected FiatWebhook::Transaction variant");
         }
