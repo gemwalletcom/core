@@ -1,0 +1,18 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "output": "0x",
+    "stateDiff": {
+      "0xba4d1d35bce0e8f28e5a3403e7a0b996c5d50ac4": {
+        "balance": {
+          "*": {
+            "from": "0x0",
+            "to": "0x80d27453078cc"
+          }
+        },
+        "storage": {}
+      }
+    }
+  }
+}

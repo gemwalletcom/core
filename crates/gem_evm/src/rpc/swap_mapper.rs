@@ -20,12 +20,13 @@ use crate::{
     },
 };
 use chain_primitives::SwapMapper as BalanceSwapMapper;
-use primitives::{AssetId, Chain, TransactionState, TransactionSwapMetadata, TransactionType};
+use primitives::{AssetId, Chain, SwapProvider, TransactionState, TransactionSwapMetadata, TransactionType};
 
 // Transfer (index_topic_1 address from, index_topic_2 address to, uint256 value)
 const TRANSFER_TOPIC: &str = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 // Withdrawal (index_topic_1 address src, uint256 wad)
 const WITHDRAWAL_TOPIC: &str = "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65";
+const FUNCTION_OKX_DAG_SWAP_BY_ORDER_ID: &str = "0xf2c42696";
 
 pub struct SwapMapper;
 
@@ -38,6 +39,12 @@ impl SwapMapper {
         created_at: DateTime<Utc>,
         contract_registry: Option<&ContractRegistry>,
     ) -> Option<primitives::Transaction> {
+        if transaction.input.starts_with(FUNCTION_OKX_DAG_SWAP_BY_ORDER_ID)
+            && let Some(swap_metadata) = Self::try_map_balance_diff_swap(chain, &transaction.from, trace, transaction_reciept, Some(SwapProvider::Okx.name().to_string()))
+        {
+            return Self::make_swap_transaction(chain, transaction, transaction_reciept, &swap_metadata, created_at);
+        }
+
         // Check if it is a uniswap transaction
         if let Some(to_address) = &transaction.to
             && let Some(provider) = get_provider_by_chain_contract(chain, to_address)
@@ -50,20 +57,11 @@ impl SwapMapper {
 
         // Calculate balance diffs for swap detection
         if let Some(trace) = trace {
-            let to = Address::from_str(&transaction.to.clone().unwrap_or_default()).ok()?;
             let contract_registry = contract_registry?;
+            let to = Address::from_str(&transaction.to.clone().unwrap_or_default()).ok()?;
             let registry_entry = contract_registry.get_by_address(&to, *chain)?;
-
-            let from = ethereum_address_checksum(&transaction.from).ok()?;
-            let differ = BalanceDiffer::new(*chain);
-            let diff_map = differ.calculate(trace, transaction_reciept);
-
-            if let Some(diff) = diff_map.get(&from) {
-                let native_asset_id = chain.as_asset_id();
-                let fee = transaction_reciept.get_fee();
-                if let Some(swap_metadata) = BalanceSwapMapper::map_swap(diff, &fee, &native_asset_id, Some(registry_entry.provider.to_string())) {
-                    return Self::make_swap_transaction(chain, transaction, transaction_reciept, &swap_metadata, created_at);
-                }
+            if let Some(swap_metadata) = Self::try_map_balance_diff_swap(chain, &transaction.from, Some(trace), transaction_reciept, Some(registry_entry.provider.to_string())) {
+                return Self::make_swap_transaction(chain, transaction, transaction_reciept, &swap_metadata, created_at);
             }
         }
 
@@ -134,6 +132,23 @@ impl SwapMapper {
             }
         }
         None
+    }
+
+    fn try_map_balance_diff_swap(
+        chain: &Chain,
+        from: &str,
+        trace: Option<&TransactionReplayTrace>,
+        transaction_reciept: &TransactionReciept,
+        provider: Option<String>,
+    ) -> Option<TransactionSwapMetadata> {
+        let trace = trace?;
+        let from = ethereum_address_checksum(from).ok()?;
+        let differ = BalanceDiffer::new(*chain);
+        let diff_map = differ.calculate(trace, transaction_reciept);
+        let diff = diff_map.get(&from)?;
+        let native_asset_id = chain.as_asset_id();
+        let fee = transaction_reciept.get_fee();
+        BalanceSwapMapper::map_swap(diff, &fee, &native_asset_id, provider)
     }
 
     pub fn try_map_uniswap_transaction(chain: &Chain, provider: &str, from: &str, input_bytes: &[u8], transaction_reciept: &TransactionReciept) -> Option<TransactionSwapMetadata> {
@@ -253,8 +268,9 @@ mod tests {
     use crate::rpc::swap_mapper::SwapMapper;
     use primitives::{
         Chain, JsonRpcResult,
-        asset_constants::{POLYGON_USDT_TOKEN_ID, UNICHAIN_DAI_TOKEN_ID, UNICHAIN_USDC_TOKEN_ID},
+        asset_constants::{POLYGON_USDT_TOKEN_ID, SMARTCHAIN_CAKE_ASSET_ID, UNICHAIN_DAI_TOKEN_ID, UNICHAIN_USDC_TOKEN_ID},
         contract_constants::{ETHEREUM_UNISWAP_V3_UNIVERSAL_ROUTER_CONTRACT, UNICHAIN_UNISWAP_V4_UNIVERSAL_ROUTER_CONTRACT},
+        testkit::json_rpc::load_json_rpc_result,
     };
 
     #[test]
@@ -581,5 +597,36 @@ mod tests {
         if let V4Action::SWAP_EXACT_IN(params) = &actions[0] {
             assert!(params.path.is_empty());
         }
+    }
+
+    #[test]
+    fn test_map_okx_swap_from_balance_diff() {
+        let transaction = load_json_rpc_result::<Transaction>(include_str!("../../testdata/okx_bsc_swap_tx.json"));
+        let receipt = load_json_rpc_result::<TransactionReciept>(include_str!("../../testdata/okx_bsc_swap_tx_receipt.json"));
+        let trace = load_json_rpc_result::<TransactionReplayTrace>(include_str!("../../testdata/okx_bsc_swap_tx_trace.json"));
+
+        let swap_tx = SwapMapper::map_transaction(
+            &Chain::SmartChain,
+            &transaction,
+            &receipt,
+            Some(&trace),
+            DateTime::from_timestamp(1743373403, 0).unwrap(),
+            None,
+        )
+        .unwrap();
+        let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
+
+        assert_eq!(swap_tx.transaction_type, TransactionType::Swap);
+        assert_eq!(metadata.provider, Some(SwapProvider::Okx.name().to_string()));
+        assert_eq!(metadata.from_asset, SMARTCHAIN_CAKE_ASSET_ID.clone());
+        assert_eq!(
+            metadata.to_asset,
+            AssetId {
+                chain: Chain::SmartChain,
+                token_id: None,
+            }
+        );
+        assert_eq!(metadata.from_value, "1000000000000000000");
+        assert_eq!(metadata.to_value, "2255593079375436");
     }
 }

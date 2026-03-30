@@ -20,6 +20,9 @@ pub static ARBITRUM_ARB_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::
 pub const ETHEREUM_ARB_TOKEN_ID: &str = "0x44108f0223A3C3028F5Fe7AEC7f9bb2E66beF82F";
 pub static ETHEREUM_ARB_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::Ethereum, ETHEREUM_ARB_TOKEN_ID));
 
+pub const SMARTCHAIN_CAKE_TOKEN_ID: &str = "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82";
+pub static SMARTCHAIN_CAKE_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::SmartChain, SMARTCHAIN_CAKE_TOKEN_ID));
+
 pub const ARBITRUM_DAI_TOKEN_ID: &str = "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1";
 pub static ARBITRUM_DAI_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::Arbitrum, ARBITRUM_DAI_TOKEN_ID));
 
