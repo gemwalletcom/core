@@ -14,14 +14,23 @@ pub enum SimulationSeverity {
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
+pub struct SimulationWarningApproval {
+    pub asset_id: AssetId,
+    pub value: Option<BigInt>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(tag = "type", content = "content", rename_all = "camelCase")]
 pub enum SimulationWarningType {
-    TokenApproval { asset_id: AssetId, value: Option<BigInt> },
+    TokenApproval(SimulationWarningApproval),
     SuspiciousSpender,
     ExternallyOwnedSpender,
-    NftCollectionApproval { asset_id: AssetId },
-    PermitApproval { asset_id: AssetId, value: Option<BigInt> },
-    PermitBatchApproval { value: Option<BigInt> },
+    NftCollectionApproval(AssetId),
+    PermitApproval(SimulationWarningApproval),
+    PermitBatchApproval(Option<BigInt>),
     ValidationError,
 }
 
@@ -29,14 +38,15 @@ impl SimulationWarningType {
     fn requires_spender_verification(&self) -> bool {
         match self {
             Self::SuspiciousSpender | Self::ExternallyOwnedSpender | Self::ValidationError => false,
-            Self::TokenApproval { .. } | Self::NftCollectionApproval { .. } | Self::PermitApproval { .. } | Self::PermitBatchApproval { .. } => true,
+            Self::TokenApproval(_) | Self::NftCollectionApproval(_) | Self::PermitApproval(_) | Self::PermitBatchApproval(_) => true,
         }
     }
 
     fn approval_value(&self) -> Option<&Option<BigInt>> {
         match self {
-            Self::TokenApproval { value, .. } | Self::PermitApproval { value, .. } | Self::PermitBatchApproval { value } => Some(value),
-            Self::SuspiciousSpender | Self::ExternallyOwnedSpender | Self::NftCollectionApproval { .. } | Self::ValidationError => None,
+            Self::TokenApproval(a) | Self::PermitApproval(a) => Some(&a.value),
+            Self::PermitBatchApproval(value) => Some(value),
+            Self::SuspiciousSpender | Self::ExternallyOwnedSpender | Self::NftCollectionApproval(_) | Self::ValidationError => None,
         }
     }
 
@@ -227,7 +237,7 @@ pub fn promote_single_secondary_payload_field(payload: Vec<SimulationPayloadFiel
 mod tests {
     use super::{
         SimulationPayloadField, SimulationPayloadFieldDisplay, SimulationPayloadFieldKind, SimulationPayloadFieldType, SimulationResult, SimulationSeverity, SimulationWarning,
-        SimulationWarningType, promote_single_secondary_payload_field,
+        SimulationWarningApproval, SimulationWarningType, promote_single_secondary_payload_field,
     };
     use num_bigint::BigInt;
 
@@ -237,10 +247,10 @@ mod tests {
             vec![
                 SimulationWarning::new(
                     SimulationSeverity::Warning,
-                    SimulationWarningType::PermitApproval {
+                    SimulationWarningType::PermitApproval(SimulationWarningApproval {
                         asset_id: "ethereum_0x123".into(),
                         value: Some(BigInt::from(100)),
-                    },
+                    }),
                     None,
                 ),
                 SimulationWarning::new(SimulationSeverity::Critical, SimulationWarningType::ExternallyOwnedSpender, None),
@@ -259,10 +269,10 @@ mod tests {
         let result = SimulationResult::new(
             vec![SimulationWarning::new(
                 SimulationSeverity::Warning,
-                SimulationWarningType::PermitApproval {
+                SimulationWarningType::PermitApproval(SimulationWarningApproval {
                     asset_id: "ethereum_0x123".into(),
                     value: Some(BigInt::from(100)),
-                },
+                }),
                 None,
             )],
             vec![],
@@ -277,10 +287,10 @@ mod tests {
             vec![
                 SimulationWarning::new(
                     SimulationSeverity::Warning,
-                    SimulationWarningType::PermitApproval {
+                    SimulationWarningType::PermitApproval(SimulationWarningApproval {
                         asset_id: "ethereum_0x123".into(),
                         value: Some(BigInt::from(100)),
-                    },
+                    }),
                     None,
                 ),
                 SimulationWarning::new(
@@ -307,10 +317,10 @@ mod tests {
         let result = SimulationResult::new(
             vec![SimulationWarning::new(
                 SimulationSeverity::Warning,
-                SimulationWarningType::PermitApproval {
+                SimulationWarningType::PermitApproval(SimulationWarningApproval {
                     asset_id: "ethereum_0x123".into(),
                     value: None,
-                },
+                }),
                 None,
             )],
             Vec::<SimulationPayloadField>::new(),
@@ -320,10 +330,10 @@ mod tests {
             result.warnings,
             vec![SimulationWarning::new(
                 SimulationSeverity::Warning,
-                SimulationWarningType::PermitApproval {
+                SimulationWarningType::PermitApproval(SimulationWarningApproval {
                     asset_id: "ethereum_0x123".into(),
                     value: None,
-                },
+                }),
                 None,
             )]
         );
@@ -335,18 +345,18 @@ mod tests {
             vec![
                 SimulationWarning::new(
                     SimulationSeverity::Warning,
-                    SimulationWarningType::TokenApproval {
+                    SimulationWarningType::TokenApproval(SimulationWarningApproval {
                         asset_id: "ethereum_0x123".into(),
                         value: Some(BigInt::from(1000)),
-                    },
+                    }),
                     None,
                 ),
                 SimulationWarning::new(
                     SimulationSeverity::Warning,
-                    SimulationWarningType::TokenApproval {
+                    SimulationWarningType::TokenApproval(SimulationWarningApproval {
                         asset_id: "ethereum_0x123".into(),
                         value: None,
-                    },
+                    }),
                     None,
                 ),
             ],
@@ -357,10 +367,10 @@ mod tests {
             result.warnings,
             vec![SimulationWarning::new(
                 SimulationSeverity::Warning,
-                SimulationWarningType::TokenApproval {
+                SimulationWarningType::TokenApproval(SimulationWarningApproval {
                     asset_id: "ethereum_0x123".into(),
                     value: None,
-                },
+                }),
                 None,
             )]
         );

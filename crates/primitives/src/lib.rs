@@ -286,7 +286,7 @@ pub use self::notification::InAppNotification;
 pub mod simulation;
 pub use self::simulation::{
     SimulationBalanceChange, SimulationHeader, SimulationPayloadField, SimulationPayloadFieldDisplay, SimulationPayloadFieldKind, SimulationPayloadFieldType, SimulationResult,
-    SimulationSeverity, SimulationWarning, SimulationWarningType, promote_single_secondary_payload_field,
+    SimulationSeverity, SimulationWarning, SimulationWarningApproval, SimulationWarningType, promote_single_secondary_payload_field,
 };
 pub mod ip_usage_type;
 pub use self::ip_usage_type::IpUsageType;

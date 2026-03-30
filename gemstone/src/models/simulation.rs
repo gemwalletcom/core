@@ -1,7 +1,7 @@
 use crate::models::custom_types::GemBigInt;
 use primitives::{
     AssetId, SimulationBalanceChange, SimulationHeader, SimulationPayloadField, SimulationPayloadFieldDisplay, SimulationPayloadFieldKind, SimulationPayloadFieldType,
-    SimulationResult, SimulationSeverity, SimulationWarning, SimulationWarningType,
+    SimulationResult, SimulationSeverity, SimulationWarning, SimulationWarningApproval, SimulationWarningType,
 };
 
 #[uniffi::remote(Enum)]
@@ -11,14 +11,20 @@ pub enum SimulationSeverity {
     Critical,
 }
 
+#[uniffi::remote(Record)]
+pub struct SimulationWarningApproval {
+    pub asset_id: AssetId,
+    pub value: Option<GemBigInt>,
+}
+
 #[uniffi::remote(Enum)]
 pub enum SimulationWarningType {
-    TokenApproval { asset_id: AssetId, value: Option<GemBigInt> },
+    TokenApproval(SimulationWarningApproval),
     SuspiciousSpender,
     ExternallyOwnedSpender,
-    NftCollectionApproval { asset_id: AssetId },
-    PermitApproval { asset_id: AssetId, value: Option<GemBigInt> },
-    PermitBatchApproval { value: Option<GemBigInt> },
+    NftCollectionApproval(AssetId),
+    PermitApproval(SimulationWarningApproval),
+    PermitBatchApproval(Option<GemBigInt>),
     ValidationError,
 }
 

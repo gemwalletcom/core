@@ -3,7 +3,7 @@ use gem_wallet_connect::{
     WalletConnectTransaction as WcWalletConnectTransaction, WalletConnectTransactionType as WcWalletConnectTransactionType, decode_sign_message, validate_send_transaction,
     validate_sign_message,
 };
-use primitives::{Chain, SimulationResult, SimulationSeverity, SimulationWarning, SimulationWarningType, hex};
+use primitives::{Chain, SimulationSeverity, SimulationWarning, SimulationWarningType, hex};
 
 use crate::message::sign_type::{SignDigestType, SignMessage};
 
@@ -56,52 +56,6 @@ pub(super) fn decode_ethereum_calldata(data: &str) -> Option<(WcEthereumTransact
     Some((transaction, bytes))
 }
 
-pub(super) fn spender_verification_warning(simulation: SimulationResult) -> SimulationResult {
-    if simulation.requires_spender_verification() {
-        return simulation.prepend_warnings(vec![validation_warning("Unable to verify spender is a contract")]);
-    }
-
-    simulation
-}
-
 pub(super) fn validation_warning(error: &str) -> SimulationWarning {
     SimulationWarning::new(SimulationSeverity::Critical, SimulationWarningType::ValidationError, Some(error.to_string()))
-}
-
-#[cfg(test)]
-mod tests {
-    use num_bigint::BigInt;
-    use primitives::{SimulationWarning, SimulationWarningType};
-
-    use super::{SimulationResult, SimulationSeverity, spender_verification_warning};
-
-    #[test]
-    fn spender_verification_failure_blocks_approval_simulation() {
-        let simulation = SimulationResult::new(
-            vec![SimulationWarning::new(
-                SimulationSeverity::Warning,
-                SimulationWarningType::PermitApproval {
-                    asset_id: "ethereum_0x123".into(),
-                    value: Some(BigInt::from(100)),
-                },
-                None,
-            )],
-            vec![],
-        );
-
-        let result = spender_verification_warning(simulation);
-
-        assert_eq!(result.warnings.len(), 1);
-        assert_eq!(result.warnings[0].warning, SimulationWarningType::ValidationError);
-        assert_eq!(result.warnings[0].message.as_deref(), Some("Unable to verify spender is a contract"));
-    }
-
-    #[test]
-    fn spender_verification_failure_does_not_block_non_approval_simulation() {
-        let simulation = SimulationResult::default();
-
-        let result = spender_verification_warning(simulation);
-
-        assert!(result.warnings.is_empty());
-    }
 }

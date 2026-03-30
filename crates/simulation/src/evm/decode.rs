@@ -268,49 +268,30 @@ mod tests {
 
     fn is_permit_warning(warning: &SimulationWarningType) -> bool {
         match warning {
-            SimulationWarningType::PermitApproval { .. } | SimulationWarningType::PermitBatchApproval { .. } => true,
-            SimulationWarningType::TokenApproval { .. }
-            | SimulationWarningType::SuspiciousSpender
-            | SimulationWarningType::ExternallyOwnedSpender
-            | SimulationWarningType::NftCollectionApproval { .. }
-            | SimulationWarningType::ValidationError => false,
+            SimulationWarningType::PermitApproval(_) | SimulationWarningType::PermitBatchApproval(_) => true,
+            _ => false,
         }
     }
 
     fn is_unlimited_permit_warning(warning: &SimulationWarningType) -> bool {
         match warning {
-            SimulationWarningType::PermitApproval { value: None, .. } | SimulationWarningType::PermitBatchApproval { value: None } => true,
-            SimulationWarningType::PermitApproval { value: Some(_), .. }
-            | SimulationWarningType::PermitBatchApproval { value: Some(_) }
-            | SimulationWarningType::TokenApproval { .. }
-            | SimulationWarningType::SuspiciousSpender
-            | SimulationWarningType::ExternallyOwnedSpender
-            | SimulationWarningType::NftCollectionApproval { .. }
-            | SimulationWarningType::ValidationError => false,
+            SimulationWarningType::PermitApproval(a) => a.value.is_none(),
+            SimulationWarningType::PermitBatchApproval(v) => v.is_none(),
+            _ => false,
         }
     }
 
     fn is_token_warning(warning: &SimulationWarningType) -> bool {
         match warning {
-            SimulationWarningType::TokenApproval { .. } => true,
-            SimulationWarningType::PermitApproval { .. }
-            | SimulationWarningType::PermitBatchApproval { .. }
-            | SimulationWarningType::SuspiciousSpender
-            | SimulationWarningType::ExternallyOwnedSpender
-            | SimulationWarningType::NftCollectionApproval { .. }
-            | SimulationWarningType::ValidationError => false,
+            SimulationWarningType::TokenApproval(_) => true,
+            _ => false,
         }
     }
 
     fn is_nft_warning(warning: &SimulationWarningType) -> bool {
         match warning {
-            SimulationWarningType::NftCollectionApproval { .. } => true,
-            SimulationWarningType::TokenApproval { .. }
-            | SimulationWarningType::PermitApproval { .. }
-            | SimulationWarningType::PermitBatchApproval { .. }
-            | SimulationWarningType::SuspiciousSpender
-            | SimulationWarningType::ExternallyOwnedSpender
-            | SimulationWarningType::ValidationError => false,
+            SimulationWarningType::NftCollectionApproval(_) => true,
+            _ => false,
         }
     }
 
@@ -383,12 +364,7 @@ mod tests {
         let message = parse_eip712_json(&json).unwrap();
         let result = simulate_eip712_message(Chain::Ethereum, &message);
 
-        assert_eq!(
-            warning(&result),
-            &SimulationWarningType::PermitBatchApproval {
-                value: Some(3000000000000000000_u128.into()),
-            }
-        );
+        assert_eq!(warning(&result), &SimulationWarningType::PermitBatchApproval(Some(3000000000000000000_u128.into())));
     }
 
     #[test]

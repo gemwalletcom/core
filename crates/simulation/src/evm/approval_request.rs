@@ -1,7 +1,7 @@
 use num_bigint::BigInt;
 use primitives::{
     AssetId, Chain, SimulationPayloadField, SimulationPayloadFieldDisplay, SimulationPayloadFieldKind, SimulationPayloadFieldType, SimulationResult, SimulationSeverity,
-    SimulationWarning, SimulationWarningType,
+    SimulationWarning, SimulationWarningApproval, SimulationWarningType,
 };
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
@@ -144,18 +144,16 @@ impl ApprovalRequest {
 
     pub(crate) fn primary_warning(&self) -> SimulationWarning {
         let warning = match self.method {
-            ApprovalMethod::Approve => SimulationWarningType::TokenApproval {
+            ApprovalMethod::Approve => SimulationWarningType::TokenApproval(SimulationWarningApproval {
                 asset_id: self.asset_id.clone(),
                 value: self.warning_approval_value(),
-            },
-            ApprovalMethod::SetApprovalForAll => SimulationWarningType::NftCollectionApproval { asset_id: self.asset_id.clone() },
-            ApprovalMethod::Permit | ApprovalMethod::PermitSingle => SimulationWarningType::PermitApproval {
+            }),
+            ApprovalMethod::SetApprovalForAll => SimulationWarningType::NftCollectionApproval(self.asset_id.clone()),
+            ApprovalMethod::Permit | ApprovalMethod::PermitSingle => SimulationWarningType::PermitApproval(SimulationWarningApproval {
                 asset_id: self.asset_id.clone(),
                 value: self.warning_approval_value(),
-            },
-            ApprovalMethod::PermitBatch => SimulationWarningType::PermitBatchApproval {
-                value: self.warning_approval_value(),
-            },
+            }),
+            ApprovalMethod::PermitBatch => SimulationWarningType::PermitBatchApproval(self.warning_approval_value()),
         };
 
         SimulationWarning::new(

@@ -422,9 +422,9 @@ mod tests {
         assert!(matches!(
             result.warnings.first(),
             Some(SimulationWarning {
-                warning: SimulationWarningType::PermitApproval { value, .. },
+                warning: SimulationWarningType::PermitApproval(a),
                 ..
-            }) if value.is_none()
+            }) if a.value.is_none()
         ));
     }
 }
