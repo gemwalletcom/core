@@ -1,6 +1,6 @@
 use alloy_sol_types::SolCall;
 use num_bigint::BigUint;
-use primitives::{Chain, SimulationResult};
+use primitives::{Chain, SimulationPayloadField, SimulationPayloadFieldDisplay, SimulationPayloadFieldKind, SimulationPayloadFieldType, SimulationResult};
 
 use super::{approval_method::ApprovalMethod, approval_request::ApprovalRequest, approval_value::ApprovalValue};
 use gem_evm::{
@@ -19,7 +19,18 @@ pub fn simulate_eip712_message(chain: Chain, message: &EIP712Message) -> Simulat
 pub fn simulate_evm_calldata(chain: Chain, calldata: &[u8], contract_address: &str) -> SimulationResult {
     match decode_evm_approval(chain, calldata, contract_address) {
         Some(approval) => approval.simulate(),
-        None => SimulationResult::default(),
+        None => {
+            let address = ethereum_address_checksum(contract_address).unwrap_or_else(|_| contract_address.to_string());
+            SimulationResult::new(
+                vec![],
+                vec![SimulationPayloadField::standard(
+                    SimulationPayloadFieldKind::Contract,
+                    address,
+                    SimulationPayloadFieldType::Address,
+                    SimulationPayloadFieldDisplay::Primary,
+                )],
+            )
+        }
     }
 }
 
@@ -435,7 +446,9 @@ mod tests {
 
         let result = simulate_evm_calldata(Chain::Ethereum, &calldata, ETHEREUM_USDC_TOKEN_ID);
 
-        assert_eq!(result, SimulationResult::default());
+        assert_eq!(result.warnings.len(), 0);
+        assert_eq!(result.payload.len(), 1);
+        assert_eq!(result.payload[0].kind, SimulationPayloadFieldKind::Contract);
     }
 
     #[test]
@@ -458,7 +471,9 @@ mod tests {
 
         let result = simulate_evm_calldata(Chain::Ethereum, &calldata, "0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85");
 
-        assert_eq!(result, SimulationResult::default());
+        assert_eq!(result.warnings.len(), 0);
+        assert_eq!(result.payload.len(), 1);
+        assert_eq!(result.payload[0].kind, SimulationPayloadFieldKind::Contract);
     }
 
     #[test]

@@ -5,7 +5,7 @@ use gem_wallet_connect::{
     WalletConnectResponseType as WcWalletConnectResponseType, WalletConnectTransaction as WcWalletConnectTransaction,
     WalletConnectTransactionType as WcWalletConnectTransactionType, WalletConnectVerifier, config_session_properties,
 };
-use primitives::{Chain, SimulationResult, TransferDataOutputType, WCEthereumTransaction, WalletConnectRequest, WalletConnectionVerificationStatus};
+use primitives::{Chain, TransferDataOutputType, WCEthereumTransaction, WalletConnectRequest, WalletConnectionVerificationStatus};
 use std::collections::HashMap;
 use std::str::FromStr;
 
@@ -384,14 +384,6 @@ impl WalletConnect {
         let wc_result = WalletConnectRequestHandler::decode_send_transaction(wc_type, data).map_err(|e| GemstoneError::AnyError { msg: e })?;
         Ok(wc_result.into())
     }
-
-    pub fn simulate_sign_message(&self, chain: Chain, sign_type: SignDigestType, data: String, session_domain: String) -> SimulationResult {
-        simulation::simulate_sign_message(chain, sign_type, data, session_domain)
-    }
-
-    pub fn simulate_send_transaction(&self, chain: Chain, transaction_type: WalletConnectTransactionType, data: String) -> SimulationResult {
-        simulation::simulate_send_transaction(chain, transaction_type, data)
-    }
 }
 
 #[uniffi::export]
@@ -401,10 +393,7 @@ pub fn wallet_connect_app_short_name(metadata: primitives::WalletConnectionSessi
 
 #[cfg(test)]
 mod tests {
-    use crate::message::sign_type::SignDigestType;
     use primitives::{Chain, SimulationWarning, SimulationWarningType};
-
-    use super::WalletConnect;
 
     #[test]
     fn short_name_strips_separators() {
@@ -426,7 +415,8 @@ mod tests {
     #[test]
     fn permit2_sign_message_simulation_matches_permit_warning_behavior() {
         let data = include_str!("../../../crates/gem_evm/testdata/uniswap_permit2.json").to_string();
-        let result = WalletConnect::new().simulate_sign_message(Chain::Ethereum, SignDigestType::Eip712, data, "thepoc.xyz".to_string());
+        let message = super::simulation::parse_eip712_message(&data).unwrap();
+        let result = simulation::evm::simulate_eip712_message(Chain::Ethereum, &message);
 
         assert_eq!(result.warnings.len(), 1);
         assert!(matches!(

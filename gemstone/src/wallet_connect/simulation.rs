@@ -7,8 +7,6 @@ use primitives::{Chain, SimulationResult, SimulationSeverity, SimulationWarning,
 
 use crate::message::sign_type::{SignDigestType, SignMessage};
 
-use super::WalletConnectTransactionType;
-
 pub fn decode_message(chain: Chain, sign_type: SignDigestType, data: String) -> SignMessage {
     let sign_type: WcSignDigestType = sign_type.into();
     let result = decode_sign_message(chain, sign_type, data);
@@ -18,32 +16,6 @@ pub fn decode_message(chain: Chain, sign_type: SignDigestType, data: String) -> 
         sign_type: result.sign_type.into(),
         data: result.data,
     }
-}
-
-pub fn simulate_sign_message(chain: Chain, sign_type: SignDigestType, data: String, session_domain: String) -> SimulationResult {
-    let sign_type: WcSignDigestType = sign_type.into();
-    let validation_warnings = sign_message_validation_warnings(chain, &sign_type, &data, &session_domain);
-
-    let simulation = match sign_type {
-        WcSignDigestType::Eip712 => parse_eip712_message(&data)
-            .map(|message| ::simulation::evm::simulate_eip712_message(chain, &message))
-            .unwrap_or_default(),
-        _ => SimulationResult::default(),
-    };
-
-    simulation.prepend_warnings(validation_warnings)
-}
-
-pub fn simulate_send_transaction(chain: Chain, transaction_type: WalletConnectTransactionType, data: String) -> SimulationResult {
-    let transaction_type: WcWalletConnectTransactionType = transaction_type.into();
-    let validation_warnings = send_transaction_validation_warnings(&transaction_type, &data);
-
-    let simulation = match transaction_type {
-        WcWalletConnectTransactionType::Ethereum => simulate_ethereum_transaction(chain, &data).unwrap_or_default(),
-        _ => SimulationResult::default(),
-    };
-
-    simulation.prepend_warnings(validation_warnings)
 }
 
 pub(super) fn parse_eip712_message(data: &str) -> Option<gem_evm::eip712::EIP712Message> {
@@ -67,12 +39,6 @@ pub(super) fn send_transaction_validation_warnings(transaction_type: &WcWalletCo
         .into_iter()
         .map(|error| validation_warning(&error))
         .collect()
-}
-
-pub(super) fn simulate_ethereum_transaction(chain: Chain, data: &str) -> Option<SimulationResult> {
-    let (transaction, bytes) = decode_ethereum_calldata(data)?;
-
-    Some(::simulation::evm::simulate_evm_calldata(chain, &bytes, &transaction.to))
 }
 
 fn decode_ethereum_transaction_data(data: &str) -> Result<WcEthereumTransactionData, String> {

@@ -29,7 +29,7 @@ impl<'a, C: Client + Clone> SimulationClient<'a, C> {
     pub async fn simulate_evm_calldata(&self, chain: Chain, calldata: &[u8], contract_address: &str) -> Result<SimulationResult, Box<dyn Error + Send + Sync>> {
         match decode_evm_approval(chain, calldata, contract_address) {
             Some(approval) => self.simulate_approval(approval).await,
-            None => Ok(SimulationResult::default()),
+            None => Ok(super::decode::simulate_evm_calldata(chain, calldata, contract_address)),
         }
     }
 

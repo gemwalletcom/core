@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use ::simulation::evm::{self as evm_simulation, SimulationClient};
 use gem_evm::rpc::EthereumClient;
 use gem_wallet_connect::{SignDigestType as WcSignDigestType, WalletConnectTransactionType as WcWalletConnectTransactionType};
 use primitives::{Chain, EVMChain, SimulationResult};
@@ -30,7 +31,7 @@ impl WalletConnectSimulationClient {
 
         let simulation = match sign_type {
             WcSignDigestType::Eip712 => match simulation::parse_eip712_message(&data) {
-                Some(message) => self.simulate_eip712_message(chain, message).await,
+                Some(message) => self.simulate_eip712_message(chain, &message).await,
                 None => SimulationResult::default(),
             },
             _ => SimulationResult::default(),
@@ -53,15 +54,14 @@ impl WalletConnectSimulationClient {
 }
 
 impl WalletConnectSimulationClient {
-    async fn simulate_eip712_message(&self, chain: Chain, message: gem_evm::eip712::EIP712Message) -> SimulationResult {
-        let fallback = || ::simulation::evm::simulate_eip712_message(chain, &message);
-
-        match self.ethereum_client(chain) {
-            Some(client) => match ::simulation::evm::SimulationClient::new(&client).simulate_eip712_message(chain, &message).await {
-                Ok(simulation) => simulation,
-                Err(_) => simulation::spender_verification_warning(fallback()),
-            },
-            None => simulation::spender_verification_warning(fallback()),
+    async fn simulate_eip712_message(&self, chain: Chain, message: &gem_evm::eip712::EIP712Message) -> SimulationResult {
+        let local = evm_simulation::simulate_eip712_message(chain, message);
+        let Some(client) = self.ethereum_client(chain) else {
+            return simulation::spender_verification_warning(local);
+        };
+        match SimulationClient::new(&client).simulate_eip712_message(chain, message).await {
+            Ok(result) => result,
+            Err(_) => simulation::spender_verification_warning(local),
         }
     }
 
@@ -69,18 +69,13 @@ impl WalletConnectSimulationClient {
         let Some((transaction, bytes)) = simulation::decode_ethereum_calldata(data) else {
             return SimulationResult::default();
         };
-
-        let fallback = || ::simulation::evm::simulate_evm_calldata(chain, &bytes, &transaction.to);
-
-        match self.ethereum_client(chain) {
-            Some(client) => match ::simulation::evm::SimulationClient::new(&client)
-                .simulate_evm_calldata(chain, &bytes, &transaction.to)
-                .await
-            {
-                Ok(simulation) => simulation,
-                Err(_) => simulation::spender_verification_warning(fallback()),
-            },
-            None => simulation::spender_verification_warning(fallback()),
+        let local = evm_simulation::simulate_evm_calldata(chain, &bytes, &transaction.to);
+        let Some(client) = self.ethereum_client(chain) else {
+            return simulation::spender_verification_warning(local);
+        };
+        match SimulationClient::new(&client).simulate_evm_calldata(chain, &bytes, &transaction.to).await {
+            Ok(result) => result,
+            Err(_) => simulation::spender_verification_warning(local),
         }
     }
 
