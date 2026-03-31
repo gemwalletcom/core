@@ -1,7 +1,6 @@
 use alloy_primitives::Address;
 use alloy_sol_types::SolCall;
 use chrono::{DateTime, Utc};
-use num_bigint::BigUint;
 use std::str::FromStr;
 
 use super::{
@@ -9,9 +8,13 @@ use super::{
     swap_parsers::{SwapParseContext, SwapParser, okx::OkxSwapParser, try_map_balance_diff_swap},
 };
 use crate::{
+    address::ethereum_address_from_topic,
     ethereum_address_checksum,
     registry::ContractRegistry,
-    rpc::model::{Transaction, TransactionReciept, TransactionReplayTrace},
+    rpc::{
+        model::{Transaction, TransactionReciept, TransactionReplayTrace},
+        staking_mapper::ethereum_value_from_log_data,
+    },
     uniswap::{
         actions::{V4Action, decode_action_data},
         command::{SWEEP_COMMAND, Sweep, UNWRAP_WETH_COMMAND, UnwrapWeth, V3_SWAP_EXACT_IN_COMMAND, V3SwapExactIn, V4_SWAP_COMMAND, WRAP_ETH_COMMAND},
@@ -103,44 +106,29 @@ impl SwapMapper {
     }
 
     fn withdraw_value_from_receipt(token: &str, reciept: &TransactionReciept) -> Option<String> {
-        for log in reciept.logs.iter() {
-            if log.address.to_lowercase() == token.to_lowercase() {
-                if log.topics.len() != 2 {
-                    continue;
-                }
-                if log.topics[0].to_lowercase() != WITHDRAWAL_TOPIC {
-                    continue;
-                }
-                return Some(Self::decode_u256(log.data.trim_start_matches("0x"))?.to_string());
-            }
-        }
-        None
+        let token = ethereum_address_checksum(token).ok()?;
+
+        reciept.logs.iter().find_map(|log| {
+            (ethereum_address_checksum(&log.address).ok()? == token && log.topics.len() == 2 && log.topics.first().is_some_and(|topic| topic == WITHDRAWAL_TOPIC))
+                .then(|| ethereum_value_from_log_data(&log.data, 0, 64))
+                .flatten()
+                .map(|value| value.to_string())
+        })
     }
 
     fn transfer_value_from_receipt(to: &str, token: &str, reciept: &TransactionReciept) -> Option<String> {
-        for log in reciept.logs.iter() {
-            if log.address.to_lowercase() == token.to_lowercase() {
-                if log.topics.len() != 3 {
-                    continue;
-                }
-                if log.topics[0].to_lowercase() != TRANSFER_TOPIC {
-                    continue;
-                }
-                let address_bytes = decode_hex(&log.topics[2]).ok()?;
-                let topic_2 = Address::from_slice(&address_bytes[address_bytes.len() - 20..]);
-                if topic_2.to_checksum(None).to_lowercase() != to.to_lowercase() {
-                    continue;
-                }
+        let to = ethereum_address_checksum(to).ok()?;
+        let token = ethereum_address_checksum(token).ok()?;
 
-                return Some(Self::decode_u256(log.data.trim_start_matches("0x"))?.to_string());
-            }
-        }
-        None
-    }
-
-    fn decode_u256(word: &str) -> Option<BigUint> {
-        let bytes = decode_hex(word).ok()?;
-        Some(BigUint::from_bytes_be(&bytes))
+        reciept.logs.iter().find_map(|log| {
+            (ethereum_address_checksum(&log.address).ok()? == token
+                && log.topics.len() == 3
+                && log.topics.first().is_some_and(|topic| topic == TRANSFER_TOPIC)
+                && ethereum_address_from_topic(log.topics.get(2)?)? == to)
+                .then(|| ethereum_value_from_log_data(&log.data, 0, 64))
+                .flatten()
+                .map(|value| value.to_string())
+        })
     }
 
     pub fn try_map_uniswap_transaction(chain: &Chain, provider: &str, from: &str, input_bytes: &[u8], transaction_reciept: &TransactionReciept) -> Option<TransactionSwapMetadata> {
@@ -260,6 +248,7 @@ mod tests {
     use crate::rpc::model::Log;
     use crate::rpc::swap_mapper::SwapMapper;
     use crate::rpc::swap_parsers::okx::FUNCTION_OKX_DAG_SWAP_BY_ORDER_ID;
+    use num_bigint::BigUint;
     use primitives::{
         Chain, JsonRpcResult, SwapProvider, TransactionState,
         asset_constants::{BASE_USDC_TOKEN_ID, POLYGON_USDT_TOKEN_ID, SMARTCHAIN_CAKE_ASSET_ID, UNICHAIN_DAI_TOKEN_ID, UNICHAIN_USDC_TOKEN_ID},

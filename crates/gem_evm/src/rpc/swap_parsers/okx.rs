@@ -38,19 +38,15 @@ impl SwapParser for OkxSwapParser {
     }
 
     fn parse(&self, context: &SwapParseContext<'_>) -> Option<TransactionSwapMetadata> {
-        Self::try_map_receipt_swap(context).or_else(|| {
-            try_map_balance_diff_swap(
-                context.chain,
-                &context.transaction.from,
-                context.trace,
-                context.receipt,
-                Some(SwapProvider::Okx.id().to_string()),
-            )
-        })
+        Self::try_map_receipt_swap(context).or_else(|| try_map_balance_diff_swap(context.chain, &context.transaction.from, context.trace, context.receipt, Some(Self::provider())))
     }
 }
 
 impl OkxSwapParser {
+    fn provider() -> String {
+        SwapProvider::Okx.id().to_string()
+    }
+
     fn try_map_receipt_swap(context: &SwapParseContext<'_>) -> Option<TransactionSwapMetadata> {
         Self::try_map_receipt_event(context).or_else(|| Self::try_map_transfer_swap(context))
     }
@@ -78,7 +74,7 @@ impl OkxSwapParser {
             from_value: event.from_amount.to_string(),
             to_asset,
             to_value: event.to_amount.to_string(),
-            provider: Some(SwapProvider::Okx.id().to_string()),
+            provider: Some(Self::provider()),
         })
     }
 
@@ -94,14 +90,14 @@ impl OkxSwapParser {
                 from_value: sent.value.clone(),
                 to_asset: AssetId::from_token(*context.chain, &received.token),
                 to_value: received.value.clone(),
-                provider: Some(SwapProvider::Okx.id().to_string()),
+                provider: Some(Self::provider()),
             }),
             (true, [], [received]) => Some(TransactionSwapMetadata {
                 from_asset: AssetId::from_chain(*context.chain),
                 from_value: context.transaction.value.to_string(),
                 to_asset: AssetId::from_token(*context.chain, &received.token),
                 to_value: received.value.clone(),
-                provider: Some(SwapProvider::Okx.id().to_string()),
+                provider: Some(Self::provider()),
             }),
             _ => None,
         }
