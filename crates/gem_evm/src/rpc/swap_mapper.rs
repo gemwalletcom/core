@@ -1,16 +1,17 @@
-use alloy_primitives::{Address, hex};
+use alloy_primitives::Address;
 use alloy_sol_types::SolCall;
 use chrono::{DateTime, Utc};
 use num_bigint::BigUint;
 use std::str::FromStr;
 
+use super::{
+    mapper::TRANSFER_TOPIC,
+    swap_parsers::{SwapParseContext, SwapParser, okx::OkxSwapParser, try_map_balance_diff_swap},
+};
 use crate::{
     ethereum_address_checksum,
     registry::ContractRegistry,
-    rpc::{
-        balance_differ::BalanceDiffer,
-        model::{Transaction, TransactionReciept, TransactionReplayTrace},
-    },
+    rpc::model::{Transaction, TransactionReciept, TransactionReplayTrace},
     uniswap::{
         actions::{V4Action, decode_action_data},
         command::{SWEEP_COMMAND, Sweep, UNWRAP_WETH_COMMAND, UnwrapWeth, V3_SWAP_EXACT_IN_COMMAND, V3SwapExactIn, V4_SWAP_COMMAND, WRAP_ETH_COMMAND},
@@ -19,18 +20,18 @@ use crate::{
         path::decode_path,
     },
 };
-use chain_primitives::SwapMapper as BalanceSwapMapper;
-use primitives::{AssetId, Chain, SwapProvider, TransactionState, TransactionSwapMetadata, TransactionType};
+use primitives::{AssetId, Chain, TransactionSwapMetadata, TransactionType, decode_hex};
 
-// Transfer (index_topic_1 address from, index_topic_2 address to, uint256 value)
-const TRANSFER_TOPIC: &str = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 // Withdrawal (index_topic_1 address src, uint256 wad)
 const WITHDRAWAL_TOPIC: &str = "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65";
-const FUNCTION_OKX_DAG_SWAP_BY_ORDER_ID: &str = "0xf2c42696";
 
 pub struct SwapMapper;
 
 impl SwapMapper {
+    fn parsers() -> [&'static dyn SwapParser; 1] {
+        [&OkxSwapParser]
+    }
+
     pub fn map_transaction(
         chain: &Chain,
         transaction: &Transaction,
@@ -39,17 +40,24 @@ impl SwapMapper {
         created_at: DateTime<Utc>,
         contract_registry: Option<&ContractRegistry>,
     ) -> Option<primitives::Transaction> {
-        if transaction.input.starts_with(FUNCTION_OKX_DAG_SWAP_BY_ORDER_ID)
-            && let Some(swap_metadata) = Self::try_map_balance_diff_swap(chain, &transaction.from, trace, transaction_reciept, Some(SwapProvider::Okx.name().to_string()))
+        let context = SwapParseContext {
+            chain,
+            transaction,
+            receipt: transaction_reciept,
+            trace,
+        };
+        if let Some(swap_metadata) = Self::parsers()
+            .into_iter()
+            .filter(|parser| parser.matches(&context))
+            .find_map(|parser| parser.parse(&context))
         {
             return Self::make_swap_transaction(chain, transaction, transaction_reciept, &swap_metadata, created_at);
         }
 
-        // Check if it is a uniswap transaction
         if let Some(to_address) = &transaction.to
             && let Some(provider) = get_provider_by_chain_contract(chain, to_address)
         {
-            let input_bytes = hex::decode(transaction.input.clone()).ok()?;
+            let input_bytes = decode_hex(&transaction.input).ok()?;
             if let Some(swap_metadata) = Self::try_map_uniswap_transaction(chain, &provider, &transaction.from, &input_bytes, transaction_reciept) {
                 return Self::make_swap_transaction(chain, transaction, transaction_reciept, &swap_metadata, created_at);
             }
@@ -60,7 +68,7 @@ impl SwapMapper {
             let contract_registry = contract_registry?;
             let to = Address::from_str(&transaction.to.clone().unwrap_or_default()).ok()?;
             let registry_entry = contract_registry.get_by_address(&to, *chain)?;
-            if let Some(swap_metadata) = Self::try_map_balance_diff_swap(chain, &transaction.from, Some(trace), transaction_reciept, Some(registry_entry.provider.to_string())) {
+            if let Some(swap_metadata) = try_map_balance_diff_swap(chain, &transaction.from, Some(trace), transaction_reciept, Some(registry_entry.provider.to_string())) {
                 return Self::make_swap_transaction(chain, transaction, transaction_reciept, &swap_metadata, created_at);
             }
         }
@@ -84,7 +92,7 @@ impl SwapMapper {
             from_checksum.clone(),
             contract_checksum,
             TransactionType::Swap,
-            TransactionState::Confirmed,
+            transaction_reciept.get_state(),
             transaction_reciept.get_fee().to_string(),
             AssetId::from_chain(*chain),
             transaction.value.to_string(),
@@ -103,9 +111,7 @@ impl SwapMapper {
                 if log.topics[0].to_lowercase() != WITHDRAWAL_TOPIC {
                     continue;
                 }
-                let value_bytes = hex::decode(&log.data).ok()?;
-                let value = BigUint::from_bytes_be(&value_bytes);
-                return Some(value.to_string());
+                return Some(Self::decode_u256(log.data.trim_start_matches("0x"))?.to_string());
             }
         }
         None
@@ -120,35 +126,21 @@ impl SwapMapper {
                 if log.topics[0].to_lowercase() != TRANSFER_TOPIC {
                     continue;
                 }
-                let address_bytes = hex::decode(&log.topics[2]).ok()?;
+                let address_bytes = decode_hex(&log.topics[2]).ok()?;
                 let topic_2 = Address::from_slice(&address_bytes[address_bytes.len() - 20..]);
                 if topic_2.to_checksum(None).to_lowercase() != to.to_lowercase() {
                     continue;
                 }
 
-                let value_bytes = hex::decode(&log.data).ok()?;
-                let value = BigUint::from_bytes_be(&value_bytes);
-                return Some(value.to_string());
+                return Some(Self::decode_u256(log.data.trim_start_matches("0x"))?.to_string());
             }
         }
         None
     }
 
-    fn try_map_balance_diff_swap(
-        chain: &Chain,
-        from: &str,
-        trace: Option<&TransactionReplayTrace>,
-        transaction_reciept: &TransactionReciept,
-        provider: Option<String>,
-    ) -> Option<TransactionSwapMetadata> {
-        let trace = trace?;
-        let from = ethereum_address_checksum(from).ok()?;
-        let differ = BalanceDiffer::new(*chain);
-        let diff_map = differ.calculate(trace, transaction_reciept);
-        let diff = diff_map.get(&from)?;
-        let native_asset_id = chain.as_asset_id();
-        let fee = transaction_reciept.get_fee();
-        BalanceSwapMapper::map_swap(diff, &fee, &native_asset_id, provider)
+    fn decode_u256(word: &str) -> Option<BigUint> {
+        let bytes = decode_hex(word).ok()?;
+        Some(BigUint::from_bytes_be(&bytes))
     }
 
     pub fn try_map_uniswap_transaction(chain: &Chain, provider: &str, from: &str, input_bytes: &[u8], transaction_reciept: &TransactionReciept) -> Option<TransactionSwapMetadata> {
@@ -265,13 +257,30 @@ impl SwapMapper {
 mod tests {
     use super::*;
     use crate::provider::testkit::TOKEN_USDC_ADDRESS;
+    use crate::rpc::model::Log;
     use crate::rpc::swap_mapper::SwapMapper;
+    use crate::rpc::swap_parsers::okx::FUNCTION_OKX_DAG_SWAP_BY_ORDER_ID;
     use primitives::{
-        Chain, JsonRpcResult,
-        asset_constants::{POLYGON_USDT_TOKEN_ID, SMARTCHAIN_CAKE_ASSET_ID, UNICHAIN_DAI_TOKEN_ID, UNICHAIN_USDC_TOKEN_ID},
+        Chain, JsonRpcResult, SwapProvider, TransactionState,
+        asset_constants::{BASE_USDC_TOKEN_ID, POLYGON_USDT_TOKEN_ID, SMARTCHAIN_CAKE_ASSET_ID, UNICHAIN_DAI_TOKEN_ID, UNICHAIN_USDC_TOKEN_ID},
         contract_constants::{ETHEREUM_UNISWAP_V3_UNIVERSAL_ROUTER_CONTRACT, UNICHAIN_UNISWAP_V4_UNIVERSAL_ROUTER_CONTRACT},
         testkit::json_rpc::load_json_rpc_result,
     };
+
+    fn erc20_transfer_log(token: &str, from: &str, to: &str, value: &str) -> Log {
+        let value = BigUint::parse_bytes(value.as_bytes(), 10).unwrap();
+
+        Log {
+            address: token.to_string(),
+            topics: vec![
+                TRANSFER_TOPIC.to_string(),
+                format!("0x{:0>64}", from.trim_start_matches("0x")),
+                format!("0x{:0>64}", to.trim_start_matches("0x")),
+            ],
+            data: format!("0x{:0>64}", value.to_str_radix(16)),
+            transaction_hash: None,
+        }
+    }
 
     #[test]
     fn test_map_v4_swap_eth_dai() {
@@ -617,7 +626,7 @@ mod tests {
         let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
 
         assert_eq!(swap_tx.transaction_type, TransactionType::Swap);
-        assert_eq!(metadata.provider, Some(SwapProvider::Okx.name().to_string()));
+        assert_eq!(metadata.provider, Some(SwapProvider::Okx.id().to_string()));
         assert_eq!(metadata.from_asset, SMARTCHAIN_CAKE_ASSET_ID.clone());
         assert_eq!(
             metadata.to_asset,
@@ -628,5 +637,102 @@ mod tests {
         );
         assert_eq!(metadata.from_value, "1000000000000000000");
         assert_eq!(metadata.to_value, "2255593079375436");
+    }
+
+    #[test]
+    fn test_map_okx_swap_from_receipt_without_trace() {
+        let transaction = load_json_rpc_result::<Transaction>(include_str!("../../testdata/okx_base_swap_tx.json"));
+        let receipt = load_json_rpc_result::<TransactionReciept>(include_str!("../../testdata/okx_base_swap_tx_receipt.json"));
+
+        let swap_tx = SwapMapper::map_transaction(&Chain::Base, &transaction, &receipt, None, DateTime::from_timestamp(1743373403, 0).unwrap(), None).unwrap();
+        let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
+
+        assert_eq!(swap_tx.transaction_type, TransactionType::Swap);
+        assert_eq!(swap_tx.state, TransactionState::Confirmed);
+        assert_eq!(metadata.provider, Some(SwapProvider::Okx.id().to_string()));
+        assert_eq!(
+            metadata.from_asset,
+            AssetId {
+                chain: Chain::Base,
+                token_id: Some(BASE_USDC_TOKEN_ID.to_string()),
+            }
+        );
+        assert_eq!(
+            metadata.to_asset,
+            AssetId {
+                chain: Chain::Base,
+                token_id: Some("0x0000000f2eB9f69274678c76222B35eEc7588a65".to_string()),
+            }
+        );
+        assert_eq!(metadata.from_value, "995000");
+        assert_eq!(metadata.to_value, "928345");
+    }
+
+    #[test]
+    fn test_map_okx_swap_from_user_transfers_without_trace() {
+        let transaction = Transaction {
+            from: "0x8d7460E51bCf4eD26877cb77E56f3ce7E9f5EB8F".to_string(),
+            gas: 750000,
+            hash: "0x77144af6766c014ad05b0ae90979dc5df9978ecb5829c89925659445b8630dd2".to_string(),
+            input: FUNCTION_OKX_DAG_SWAP_BY_ORDER_ID.to_string(),
+            to: Some("0x4409921ae43a39a11d90f7b7f96cfd0b8093d9fc".to_string()),
+            block_number: BigUint::from(1u32),
+            value: BigUint::from(0u8),
+        };
+        let receipt = TransactionReciept {
+            gas_used: BigUint::from(318420u32),
+            effective_gas_price: BigUint::from(10_000_000u64),
+            l1_fee: None,
+            logs: vec![
+                erc20_transfer_log(
+                    BASE_USDC_TOKEN_ID,
+                    "0x8d7460E51bCf4eD26877cb77E56f3ce7E9f5EB8F",
+                    "0x4409921ae43a39a11d90f7b7f96cfd0b8093d9fc",
+                    "995000",
+                ),
+                erc20_transfer_log(
+                    "0x0000000f2eB9f69274678c76222B35eEc7588a65",
+                    "0x4409921ae43a39a11d90f7b7f96cfd0b8093d9fc",
+                    "0x8d7460E51bCf4eD26877cb77E56f3ce7E9f5EB8F",
+                    "928345",
+                ),
+            ],
+            status: "0x1".to_string(),
+            block_number: BigUint::from(1u32),
+        };
+
+        let swap_tx = SwapMapper::map_transaction(&Chain::Base, &transaction, &receipt, None, DateTime::from_timestamp(1743373403, 0).unwrap(), None).unwrap();
+        let metadata: TransactionSwapMetadata = serde_json::from_value(swap_tx.metadata.unwrap()).unwrap();
+
+        assert_eq!(swap_tx.transaction_type, TransactionType::Swap);
+        assert_eq!(metadata.provider, Some(SwapProvider::Okx.id().to_string()));
+        assert_eq!(
+            metadata.from_asset,
+            AssetId {
+                chain: Chain::Base,
+                token_id: Some(BASE_USDC_TOKEN_ID.to_string()),
+            }
+        );
+        assert_eq!(
+            metadata.to_asset,
+            AssetId {
+                chain: Chain::Base,
+                token_id: Some("0x0000000f2eB9f69274678c76222B35eEc7588a65".to_string()),
+            }
+        );
+        assert_eq!(metadata.from_value, "995000");
+        assert_eq!(metadata.to_value, "928345");
+    }
+
+    #[test]
+    fn test_map_okx_swap_uses_receipt_state() {
+        let transaction = load_json_rpc_result::<Transaction>(include_str!("../../testdata/okx_base_swap_tx.json"));
+        let mut receipt = load_json_rpc_result::<TransactionReciept>(include_str!("../../testdata/okx_base_swap_tx_receipt.json"));
+        receipt.status = "0x0".to_string();
+
+        let swap_tx = SwapMapper::map_transaction(&Chain::Base, &transaction, &receipt, None, DateTime::from_timestamp(1743373403, 0).unwrap(), None).unwrap();
+
+        assert_eq!(swap_tx.transaction_type, TransactionType::Swap);
+        assert_eq!(swap_tx.state, TransactionState::Reverted);
     }
 }
