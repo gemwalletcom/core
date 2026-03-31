@@ -8,6 +8,7 @@ use std::{
 };
 
 const ANDROID_PACKAGE_PREFIX: &str = "com.wallet.core";
+const IOS_GENERATED_DIR: &str = "Generated";
 const LANGUAGE_SWIFT: &str = "swift";
 const LANGUAGE_KOTLIN: &str = "kotlin";
 const LANG_KOTLIN_ETX: &str = "kt";
@@ -96,7 +97,6 @@ fn process_paths(paths: Vec<String>, _folder: &str, generator_type: &GeneratorTy
         if ignored_files.contains(file_name_original) && !allow_mod_for_swap {
             continue;
         }
-
         let input_path = format!("./{}/src/{}", vec[0], directory_paths.join("/"));
 
         match generator_type {
@@ -133,7 +133,7 @@ fn process_paths(paths: Vec<String>, _folder: &str, generator_type: &GeneratorTy
 
 fn output_path(platform: Platform, directory: &str, module_name: &str, path: String) -> String {
     match platform {
-        Platform::IOS => format!("{directory}/{module_name}/Sources/{path}"),
+        Platform::IOS => format!("{directory}/{module_name}/Sources/{IOS_GENERATED_DIR}/{path}"),
         Platform::Android => format!("{directory}/{module_name}/{path}"),
     }
 }
