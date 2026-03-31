@@ -115,7 +115,7 @@ impl OkxSwapParser {
 
 impl ReceiptTransfer {
     fn from_log(log: &Log) -> Option<Self> {
-        if log.topics.len() != 3 || !log.topics.first().is_some_and(|topic| topic == TRANSFER_TOPIC) {
+        if log.topics.len() != 3 || log.topics.first().is_none_or(|topic| topic != TRANSFER_TOPIC) {
             return None;
         }
 
