@@ -343,7 +343,6 @@ mod tests {
     #[test]
     fn test_map_webhook_data_sell_uses_amount_to_currency() {
         let result = map_webhook_data(PaybisWebhookData {
-            request_id: "request_123".to_string(),
             partner_transaction_id: Some("partner_tx_123".to_string()),
             quote: PaybisWebhookQuote {
                 quote_id: "quote_456".to_string(),
@@ -361,7 +360,6 @@ mod tests {
                 amount: "1234.56".to_string(),
                 currency: "EUR".to_string(),
             },
-            payment: None,
             payout: None,
         });
 

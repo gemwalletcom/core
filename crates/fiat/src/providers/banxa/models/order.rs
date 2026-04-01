@@ -10,7 +10,6 @@ pub struct Order {
     pub fiat: String,
     #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub fiat_amount: f64,
-    pub wallet_address: String,
     pub transaction_hash: Option<String>,
     pub order_type: String,
 }

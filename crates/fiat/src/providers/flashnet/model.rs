@@ -86,7 +86,6 @@ pub struct FlashnetOrder {
     pub status: String,
     pub destination_chain: Option<String>,
     pub destination_asset: Option<String>,
-    pub recipient_address: Option<String>,
     pub amount_out: Option<String>,
     pub destination: Option<FlashnetDestination>,
     pub payment_intent: Option<FlashnetPaymentIntent>,
@@ -105,12 +104,6 @@ impl FlashnetOrder {
             .or(self.destination.as_ref().and_then(|destination| destination.asset.as_deref()))
     }
 
-    pub fn recipient_address(&self) -> Option<&str> {
-        self.recipient_address
-            .as_deref()
-            .or(self.destination.as_ref().and_then(|destination| destination.address.as_deref()))
-    }
-
     pub fn destination_tx_hash(&self) -> Option<&str> {
         self.destination.as_ref().and_then(|destination| destination.tx_hash.as_deref())
     }
@@ -125,7 +118,6 @@ impl FlashnetOrder {
 pub struct FlashnetDestination {
     pub chain: Option<String>,
     pub asset: Option<String>,
-    pub address: Option<String>,
     pub tx_hash: Option<String>,
 }
 

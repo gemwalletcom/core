@@ -168,7 +168,6 @@ mod tests {
             status: "completed".to_string(),
             fiat: "usd".to_string(),
             fiat_amount: 100.0,
-            wallet_address: "bc1qexample".to_string(),
             transaction_hash: Some("tx_hash".to_string()),
             order_type: "BUY".to_string(),
         })

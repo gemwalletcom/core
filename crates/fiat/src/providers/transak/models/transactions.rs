@@ -7,12 +7,6 @@ pub struct TransakOrderResponse {
     pub quote_id: Option<String>,
     pub status: String,
     pub fiat_currency: String,
-    pub is_buy_or_sell: String,
     pub fiat_amount: f64,
-    pub crypto_currency: String,
-    pub network: String,
-    pub token_contract_address: Option<String>,
     pub transaction_hash: Option<String>,
-    pub wallet_address: Option<String>,
-    pub country_code: Option<String>,
 }

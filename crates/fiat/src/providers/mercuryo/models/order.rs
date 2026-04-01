@@ -24,7 +24,6 @@ pub struct BuyTransaction {
     pub fiat_amount: f64,
     pub currency: String,
     pub status: String,
-    pub card_country: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -41,7 +40,6 @@ pub struct BuyAcquirerTransaction {
 pub struct WithdrawTransaction {
     pub merchant_transaction_id: String,
     pub hash: Option<String>,
-    pub address: Option<String>,
     pub currency: String,
     #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub amount: f64,
@@ -56,8 +54,6 @@ pub struct MobilePayTransaction {
     pub fiat_amount: f64,
     pub currency: String,
     pub status: String,
-    pub payment_method: Option<String>,
-    pub card_country: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -76,7 +72,6 @@ pub struct SellTransaction {
 pub struct DepositTransaction {
     pub merchant_transaction_id: String,
     pub hash: Option<String>,
-    pub address: Option<String>,
     pub currency: String,
     #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub amount: f64,
