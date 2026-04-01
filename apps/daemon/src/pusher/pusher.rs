@@ -3,8 +3,8 @@ use std::error::Error;
 use localizer::LanguageLocalizer;
 use number_formatter::{ValueFormatter, ValueStyle};
 use primitives::{
-    AddressFormatter, Asset, AssetVecExt, Chain, DeviceSubscription, GorushNotification, NFTAssetId, PushNotification, PushNotificationTransaction, PushNotificationTypes,
-    Transaction, TransactionNFTTransferMetadata, TransactionPerpetualMetadata, TransactionSwapMetadata, TransactionType,
+    AddressFormatStyle, AddressFormatter, Asset, AssetVecExt, Chain, DeviceSubscription, GorushNotification, NFTAssetId, PushNotification, PushNotificationTransaction,
+    PushNotificationTypes, Transaction, TransactionNFTTransferMetadata, TransactionPerpetualMetadata, TransactionSwapMetadata, TransactionType,
 };
 use storage::{Database, ScanAddressesRepository};
 
@@ -27,7 +27,7 @@ impl Pusher {
         let result = self.database.scan_addresses()?.get_scan_address(chain, address);
         match result {
             Ok(address) => Ok(address.name.unwrap_or_default()),
-            Err(_) => Ok(AddressFormatter::short(address, Some(chain))),
+            Err(_) => Ok(AddressFormatter::format(address, Some(chain), AddressFormatStyle::Short)),
         }
     }
 

@@ -22,30 +22,19 @@ impl AddressFormatter {
         }
     }
 
-    pub fn short(address: &str, chain: Option<Chain>) -> String {
-        Self::format(address, chain, AddressFormatStyle::Short)
-    }
-
-    pub fn full(address: &str) -> String {
-        Self::format(address, None, AddressFormatStyle::Full)
-    }
-
-    pub fn extra(address: &str, chain: Option<Chain>, extra: usize) -> String {
-        Self::format(address, chain, AddressFormatStyle::Extra { extra: extra as u32 })
-    }
-
     fn truncate(address: &str, chain: Option<Chain>, extra: usize) -> String {
         let leading = Self::leading_chars(chain) + extra;
         let trailing = Self::EDGE_CHARS + extra;
-        let char_count = address.chars().count();
+        let chars = address.chars().collect::<Vec<_>>();
+        let char_count = chars.len();
 
         if char_count <= leading + trailing {
             return address.to_string();
         }
 
-        let middle = address.chars().skip(leading).take(char_count - leading - trailing).collect::<String>();
-
-        address.replace(&middle, Self::CONNECTOR)
+        let start = chars.iter().take(leading).copied().collect::<String>();
+        let end = chars.iter().skip(char_count - trailing).copied().collect::<String>();
+        format!("{start}{}{end}", Self::CONNECTOR)
     }
 
     fn leading_chars(chain: Option<Chain>) -> usize {
@@ -85,7 +74,7 @@ mod tests {
         );
         assert_eq!(
             AddressFormatter::format("0x1231232221321312", Some(Chain::Ethereum), AddressFormatStyle::Extra { extra: 2 }),
-            "0x123123...21321312"
+            "0x1231232...1321312"
         );
         assert_eq!(
             AddressFormatter::format("0x12313332321321312", Some(Chain::Aptos), AddressFormatStyle::Extra { extra: 2 }),
@@ -96,5 +85,9 @@ mod tests {
             "0x1231232221321312"
         );
         assert_eq!(AddressFormatter::format("bc1short", Some(Chain::Bitcoin), AddressFormatStyle::Short), "bc1short");
+        assert_eq!(
+            AddressFormatter::format("abcXXmiddleXXcba", Some(Chain::Solana), AddressFormatStyle::Short),
+            "abcXX...XXcba"
+        );
     }
 }
