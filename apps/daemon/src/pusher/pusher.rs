@@ -27,7 +27,7 @@ impl Pusher {
         let result = self.database.scan_addresses()?.get_scan_address(chain, address);
         match result {
             Ok(address) => Ok(address.name.unwrap_or_default()),
-            Err(_) => Ok(AddressFormatter::short(chain, address)),
+            Err(_) => Ok(AddressFormatter::short(address, Some(chain))),
         }
     }
 

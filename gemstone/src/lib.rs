@@ -1,3 +1,4 @@
+pub mod address_formatter;
 pub mod alien;
 pub mod api_client;
 pub mod auth;
