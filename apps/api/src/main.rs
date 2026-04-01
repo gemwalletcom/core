@@ -103,7 +103,7 @@ fn mount_routes(rocket: Rocket<Build>, metrics_path: &str, admin_enabled: bool) 
                 webhooks::create_support_bot_webhook,
                 webhooks::create_broadcast_webhook,
                 referral::get_rewards_leaderboard,
-                swap::near_intents::post_quote,
+                swap::post_near_intents_quote,
             ],
         )
         .mount(

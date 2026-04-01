@@ -1,9 +1,5 @@
-use crate::responders::ApiError;
 use cacher::{CacheKey, CacherClient};
 use primitives::SwapProvider;
-use rocket::serde::json::Json;
-use rocket::tokio::sync::Mutex;
-use rocket::{State, post};
 use swapper::near_intents::base_url;
 
 pub struct NearIntentsProxyClient {
@@ -34,10 +30,4 @@ impl NearIntentsProxyClient {
 
         Ok(response)
     }
-}
-
-#[post("/swaps/near_intents/quote", data = "<body>")]
-pub async fn post_quote(body: Json<serde_json::Value>, client: &State<Mutex<NearIntentsProxyClient>>) -> Result<Json<serde_json::Value>, ApiError> {
-    let response = client.lock().await.quote(body.0).await?;
-    Ok(Json(response))
 }
