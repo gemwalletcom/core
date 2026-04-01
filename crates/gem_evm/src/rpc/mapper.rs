@@ -3,18 +3,14 @@ use num_bigint::BigUint;
 use num_traits::Num;
 use std::sync::LazyLock;
 
-use super::{
-    staking_mapper::{StakingMapper, ethereum_value_from_log_data},
-    swap_mapper::SwapMapper,
-};
+use super::{parsers::ProtocolParsers, staking_mapper::StakingMapper, swap_mapper::SwapMapper};
 use crate::{
     address::{ethereum_address_checksum, ethereum_address_from_topic},
     registry::ContractRegistry,
     rpc::model::{Block, Transaction, TransactionReciept, TransactionReplayTrace},
 };
 use primitives::{
-    AssetId, NFTAssetId, Transaction as PrimitivesTransaction, TransactionType, chain::Chain, contract_constants::ETHEREUM_YO_PROTOCOL_CONTRACT, hex::decode_hex_utf8,
-    transaction_metadata_types::TransactionNFTTransferMetadata,
+    AssetId, NFTAssetId, Transaction as PrimitivesTransaction, TransactionType, chain::Chain, hex::decode_hex_utf8, transaction_metadata_types::TransactionNFTTransferMetadata,
 };
 
 pub const INPUT_0X: &str = "0x";
@@ -26,9 +22,6 @@ pub const TRANSFER_TOPIC: &str = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4
 pub const APPROVAL_TOPIC: &str = "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925";
 pub const TRANSFER_SINGLE: &str = "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62";
 pub const TRANSFER_GAS_LIMIT: u64 = 21000;
-
-const FUNCTION_YO_DEPOSIT: &str = "0x82b78ba7";
-const FUNCTION_YO_WITHDRAW: &str = "0x99519ab8";
 
 pub static CONTRACT_REGISTRY: LazyLock<ContractRegistry> = LazyLock::new(ContractRegistry::default);
 pub struct EthereumMapper;
@@ -76,6 +69,13 @@ impl EthereumMapper {
         let is_native_transfer_with_data = transaction.input.len() > 2
             && transaction.gas > TRANSFER_GAS_LIMIT
             && Self::get_data_cost(&transaction.input).is_some_and(|data_cost| transaction_reciept.gas_used <= BigUint::from(TRANSFER_GAS_LIMIT + data_cost));
+
+        if transaction.to.is_some()
+            && transaction.input.len() >= 8
+            && let Some(tx) = ProtocolParsers::map_transaction(&chain, transaction, transaction_reciept, trace, created_at)
+        {
+            return Some(tx);
+        }
 
         // Try to decode Uniswap V3 or V4 transaction
         if transaction.to.is_some()
@@ -203,42 +203,6 @@ impl EthereumMapper {
                     TransactionType::Transfer,
                     state,
                     fee.to_string(),
-                    fee_asset_id,
-                    value.to_string(),
-                    None,
-                    None,
-                    created_at,
-                ));
-            }
-        }
-
-        // Yo protocol earn transactions (deposit: user sends tokens, withdraw: user receives tokens)
-        if transaction.to.as_ref().is_some_and(|to| to.eq_ignore_ascii_case(ETHEREUM_YO_PROTOCOL_CONTRACT)) {
-            let (transaction_type, topic_index) = if transaction.input.starts_with(FUNCTION_YO_DEPOSIT) {
-                (TransactionType::EarnDeposit, 1)
-            } else if transaction.input.starts_with(FUNCTION_YO_WITHDRAW) {
-                (TransactionType::EarnWithdraw, 2)
-            } else {
-                (TransactionType::SmartContractCall, 0)
-            };
-
-            if let Some(log) = transaction_reciept.logs.iter().find(|log| {
-                log.topics.len() == 3
-                    && log.topics.first().is_some_and(|t| t == TRANSFER_TOPIC)
-                    && log.topics.get(topic_index).is_some_and(|t| ethereum_address_from_topic(t).is_some_and(|a| a == from))
-            }) {
-                let token_id = ethereum_address_checksum(&log.address).ok()?;
-                let value = ethereum_value_from_log_data(&log.data, 0, 64)?;
-
-                return Some(PrimitivesTransaction::new(
-                    hash,
-                    AssetId::from_token(chain, &token_id),
-                    from,
-                    to,
-                    None,
-                    transaction_type,
-                    state,
-                    fee,
                     fee_asset_id,
                     value.to_string(),
                     None,
