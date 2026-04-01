@@ -11,6 +11,8 @@ use primitives::{AssetId, SwapProvider, Transaction as PrimitivesTransaction, Tr
 use super::{ParseContext, ProtocolParser, make_swap_transaction, try_map_balance_diff_swap};
 
 pub(crate) const FUNCTION_OKX_DAG_SWAP_BY_ORDER_ID: &str = "0xf2c42696";
+pub(crate) const FUNCTION_OKX_UNISWAP_V3_SWAP_TO: &str = "0x0d5f0e3b";
+pub(crate) const FUNCTION_OKX_UNXSWAP_BY_ORDER_ID: &str = "0x9871efa4";
 const OKX_SWAP_EVENT_TOPIC: &str = "0x1bb43f2da90e35f7b0cf38521ca95a49e68eb42fac49924930a5bd73cdf7576c";
 const NATIVE_TOKEN_ADDRESS: &str = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 const EVENT_WORD_SIZE: usize = 64;
@@ -34,7 +36,7 @@ struct OkxSwapEvent {
 
 impl ProtocolParser for OkxParser {
     fn matches(&self, context: &ParseContext<'_>) -> bool {
-        context.transaction.input.starts_with(FUNCTION_OKX_DAG_SWAP_BY_ORDER_ID)
+        Self::matches_selector(&context.transaction.input)
     }
 
     fn parse(&self, context: &ParseContext<'_>) -> Option<PrimitivesTransaction> {
@@ -46,6 +48,10 @@ impl ProtocolParser for OkxParser {
 }
 
 impl OkxParser {
+    fn matches_selector(input: &str) -> bool {
+        input.starts_with(FUNCTION_OKX_DAG_SWAP_BY_ORDER_ID) || input.starts_with(FUNCTION_OKX_UNISWAP_V3_SWAP_TO) || input.starts_with(FUNCTION_OKX_UNXSWAP_BY_ORDER_ID)
+    }
+
     fn provider() -> String {
         SwapProvider::Okx.id().to_string()
     }
@@ -161,6 +167,7 @@ impl OkxSwapEvent {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ethereum_address_checksum;
     use crate::rpc::model::{Log, Transaction, TransactionReciept, TransactionReplayTrace};
     use crate::rpc::parsers::ProtocolParsers;
     use chrono::DateTime;
@@ -284,6 +291,86 @@ mod tests {
         );
         assert_eq!(transfer_metadata.from_value, "995000");
         assert_eq!(transfer_metadata.to_value, "928345");
+
+        let uniswap_v3_swap_to_tx = Transaction {
+            from: "0xAdaf6f9B702718E3CEC12F944be7dF8b34E59E2f".to_string(),
+            gas: 920000,
+            hash: "0x336524846fec8f7a4a37ebac417f3ddd2d25b6fdf9b9cf0b88e1f69bb5601393".to_string(),
+            input: "0x0d5f0e3b00000000000000003bbc864aadaf6f9b702718e3cec12f944be7df8b34e59e2f00000000000000000000000000000000000000000000043c33c19375648000000000000000000000000000000000000000000000000000000036e5945adfeb74000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000000000000000012000000000000000000000009bdc7dfd19b75b023e28bbb8e197295c51ce55e4777777771111800000000000000000000000000000000000003798ea0b0a14fd777777771111000000000064fa00a9ed787f3793db668bff3e6e6e7db0f92a1b800000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee3ca20afc2bbb0000004c4b400d9dab1a248f63b0a48965ba8435e4de7497a3dc".to_string(),
+            to: Some("0x5e1f62dac767b0491e3ce72469c217365d5b48cc".to_string()),
+            block_number: BigUint::from(24717134u32),
+            value: BigUint::from(0u8),
+        };
+        let uniswap_v3_swap_to_receipt = TransactionReciept {
+            gas_used: BigUint::from(203405u32),
+            effective_gas_price: BigUint::from(230068341u32),
+            l1_fee: None,
+            logs: vec![Log {
+                address: "0x5e1f62dac767b0491e3ce72469c217365d5b48cc".to_string(),
+                topics: vec![OKX_SWAP_EVENT_TOPIC.to_string()],
+                data: "0x00000000000000000000000052498f8d9791736f1d6398fe95ba3bd868114d10000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee000000000000000000000000adaf6f9b702718e3cec12f944be7df8b34e59e2f00000000000000000000000000000000000000000000043c33c1937564800000000000000000000000000000000000000000000000000000003798ea0b0a14fd".to_string(),
+                transaction_hash: None,
+            }],
+            status: "0x1".to_string(),
+            block_number: BigUint::from(24717134u32),
+        };
+        let uniswap_v3_swap_to = map_transaction(&Chain::Ethereum, &uniswap_v3_swap_to_tx, &uniswap_v3_swap_to_receipt, None);
+        let uniswap_v3_swap_to_metadata: TransactionSwapMetadata = serde_json::from_value(uniswap_v3_swap_to.metadata.clone().unwrap()).unwrap();
+        assert_eq!(uniswap_v3_swap_to.transaction_type, primitives::TransactionType::Swap);
+        assert_eq!(uniswap_v3_swap_to_metadata.provider, Some(SwapProvider::Okx.id().to_string()));
+        assert_eq!(
+            uniswap_v3_swap_to_metadata.from_asset,
+            AssetId::from_token(Chain::Ethereum, &ethereum_address_checksum("0x52498f8d9791736f1d6398fe95ba3bd868114d10").unwrap())
+        );
+        assert_eq!(
+            uniswap_v3_swap_to_metadata.to_asset,
+            AssetId {
+                chain: Chain::Ethereum,
+                token_id: None,
+            }
+        );
+        assert_eq!(uniswap_v3_swap_to_metadata.from_value, "20000000000000000000000");
+        assert_eq!(uniswap_v3_swap_to_metadata.to_value, "15649254694065405");
+
+        let unxswap_by_order_id_tx = Transaction {
+            from: "0xAdaf6f9B702718E3CEC12F944be7dF8b34E59E2f".to_string(),
+            gas: 920000,
+            hash: "0xf3714f46b23016a349e549e6212c6e39fd3f2ef3926039775377ba70d962bfa5".to_string(),
+            input: "0x9871efa400000000000000003bbc864a249e38ea4102d0cf8264d3701f1a0e39c4f2dc3b000000000000000000000000000000000000000001c47e5d3263f59c9d062a020000000000000000000000000000000000000000000000000020068f78c840c70000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000170000000000000003b6d034097e1fcb93ae7267dbafad23f7b9afaa08264cfd87777777711118000000000000000000000000000000000000020595fca29f3dc777777771111000000000064fa00a9ed787f3793db668bff3e6e6e7db0f92a1b800000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee3ca20afc2bbb0000004c4b400d9dab1a248f63b0a48965ba8435e4de7497a3dc".to_string(),
+            to: Some("0x5e1f62dac767b0491e3ce72469c217365d5b48cc".to_string()),
+            block_number: BigUint::from(24717121u32),
+            value: BigUint::from(0u8),
+        };
+        let unxswap_by_order_id_receipt = TransactionReciept {
+            gas_used: BigUint::from(176410u32),
+            effective_gas_price: BigUint::from(221977999u32),
+            l1_fee: None,
+            logs: vec![Log {
+                address: "0x5e1f62dac767b0491e3ce72469c217365d5b48cc".to_string(),
+                topics: vec![OKX_SWAP_EVENT_TOPIC.to_string()],
+                data: "0x000000000000000000000000249e38ea4102d0cf8264d3701f1a0e39c4f2dc3b000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee000000000000000000000000adaf6f9b702718e3cec12f944be7df8b34e59e2f000000000000000000000000000000000000000001c47e5d3263f59c9d062a020000000000000000000000000000000000000000000000000020595fca29f3dc".to_string(),
+                transaction_hash: None,
+            }],
+            status: "0x1".to_string(),
+            block_number: BigUint::from(24717121u32),
+        };
+        let unxswap_by_order_id = map_transaction(&Chain::Ethereum, &unxswap_by_order_id_tx, &unxswap_by_order_id_receipt, None);
+        let unxswap_by_order_id_metadata: TransactionSwapMetadata = serde_json::from_value(unxswap_by_order_id.metadata.clone().unwrap()).unwrap();
+        assert_eq!(unxswap_by_order_id.transaction_type, primitives::TransactionType::Swap);
+        assert_eq!(unxswap_by_order_id_metadata.provider, Some(SwapProvider::Okx.id().to_string()));
+        assert_eq!(
+            unxswap_by_order_id_metadata.from_asset,
+            AssetId::from_token(Chain::Ethereum, &ethereum_address_checksum("0x249e38ea4102d0cf8264d3701f1a0e39c4f2dc3b").unwrap())
+        );
+        assert_eq!(
+            unxswap_by_order_id_metadata.to_asset,
+            AssetId {
+                chain: Chain::Ethereum,
+                token_id: None,
+            }
+        );
+        assert_eq!(unxswap_by_order_id_metadata.from_value, "547031207820868594841299458");
+        assert_eq!(unxswap_by_order_id_metadata.to_value, "9105467203253212");
 
         let mut reverted_receipt = load_json_rpc_result::<TransactionReciept>(include_str!("../../../testdata/okx_base_swap_tx_receipt.json"));
         reverted_receipt.status = "0x0".to_string();
