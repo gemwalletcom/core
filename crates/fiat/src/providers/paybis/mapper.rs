@@ -147,7 +147,6 @@ pub fn map_webhook_data(webhook_data: PaybisWebhookData) -> FiatWebhook {
         provider_transaction_id: Some(webhook_data.transaction.invoice.clone()),
         status: map_status(&webhook_data.transaction.status),
         transaction_hash: webhook_data.payout.as_ref().and_then(|p| p.transaction_hash.clone()),
-        address: webhook_data.payout.as_ref().and_then(|p| p.destination_wallet_address.clone()),
         fiat_amount,
         fiat_currency,
     })
@@ -321,7 +320,6 @@ mod tests {
             assert_eq!(transaction.fiat_amount, Some(50.0));
             assert_eq!(transaction.fiat_currency, Some("USD".to_string()));
             assert_eq!(transaction.status, FiatTransactionStatus::Pending);
-            assert_eq!(transaction.address, Some("test123".to_string()));
             assert_eq!(transaction.transaction_hash, None);
         } else {
             panic!("Expected FiatWebhook::Transaction variant");
@@ -337,7 +335,6 @@ mod tests {
             assert_eq!(transaction.transaction_id, "59b799d4-dc8c-458d-b9c7-292726ab6255");
             assert_eq!(transaction.provider_transaction_id, Some("PB25095868675TX8".to_string()));
             assert_eq!(transaction.fiat_currency, Some("USD".to_string()));
-            assert_eq!(transaction.address, None);
         } else {
             panic!("Expected FiatWebhook::Transaction variant");
         }

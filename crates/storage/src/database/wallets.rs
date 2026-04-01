@@ -18,7 +18,7 @@ pub trait WalletsStore {
 
     fn get_subscriptions_by_device_id(&mut self, device_id: i32) -> Result<Vec<(WalletRow, WalletSubscriptionRow, WalletAddressRow)>, diesel::result::Error>;
     fn get_subscriptions_by_device_and_wallet(&mut self, device_id: i32, wallet_id: i32) -> Result<Vec<(WalletSubscriptionRow, WalletAddressRow)>, diesel::result::Error>;
-    fn subscriptions_wallet_address_for_chain(&mut self, device_id: i32, wallet_id: i32, chain: ChainRow) -> Result<String, diesel::result::Error>;
+    fn subscriptions_wallet_address_for_chain(&mut self, device_id: i32, wallet_id: i32, chain: ChainRow) -> Result<WalletAddressRow, diesel::result::Error>;
     fn get_devices_by_wallet_id(&mut self, wallet_id: i32) -> Result<Vec<DeviceRow>, diesel::result::Error>;
     fn add_subscriptions(&mut self, subscriptions: Vec<NewWalletSubscriptionRow>) -> Result<usize, diesel::result::Error>;
     fn delete_subscriptions(&mut self, device_id: i32, wallet_id: i32, chain: ChainRow, address_ids: Vec<i32>) -> Result<usize, diesel::result::Error>;
@@ -105,13 +105,13 @@ impl WalletsStore for DatabaseClient {
             .load(&mut self.connection)
     }
 
-    fn subscriptions_wallet_address_for_chain(&mut self, device_id: i32, wallet_id: i32, chain: ChainRow) -> Result<String, diesel::result::Error> {
+    fn subscriptions_wallet_address_for_chain(&mut self, device_id: i32, wallet_id: i32, chain: ChainRow) -> Result<WalletAddressRow, diesel::result::Error> {
         wallets_subscriptions::table
             .inner_join(wallets_addresses::table)
             .filter(wallets_subscriptions::device_id.eq(device_id))
             .filter(wallets_subscriptions::wallet_id.eq(wallet_id))
             .filter(wallets_subscriptions::chain.eq(chain))
-            .select(wallets_addresses::address)
+            .select(WalletAddressRow::as_select())
             .first(&mut self.connection)
     }
 

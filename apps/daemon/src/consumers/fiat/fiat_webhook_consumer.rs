@@ -72,7 +72,6 @@ impl MessageConsumer<FiatWebhookPayload, bool> for FiatWebhookConsumer {
                     provider_transaction_id = updated.provider_transaction_id.as_deref().unwrap_or(""),
                     status = format!("{:?}", updated.status.0),
                     quote_id = updated.quote_id.as_str(),
-                    address = updated.address.as_deref().unwrap_or(""),
                     transaction_hash = updated.transaction_hash.as_deref().unwrap_or("")
                 );
 

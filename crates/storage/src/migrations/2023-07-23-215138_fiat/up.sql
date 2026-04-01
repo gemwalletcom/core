@@ -62,7 +62,7 @@ CREATE TABLE fiat_transactions (
     country VARCHAR(256),
     provider_transaction_id VARCHAR(256),
     transaction_hash VARCHAR(256),
-    address VARCHAR(256),
+    address_id INTEGER NOT NULL REFERENCES wallets_addresses (id) ON DELETE CASCADE,
     transaction_type fiat_transaction_type NOT NULL,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp

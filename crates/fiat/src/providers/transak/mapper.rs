@@ -72,7 +72,6 @@ pub fn map_order_from_response(payload: TransakOrderResponse) -> FiatTransaction
         provider_transaction_id,
         status: map_status(&payload.status),
         transaction_hash: payload.transaction_hash,
-        address: payload.wallet_address,
         fiat_amount: Some(payload.fiat_amount),
         fiat_currency: Some(payload.fiat_currency.to_ascii_uppercase()),
     }
@@ -169,7 +168,6 @@ mod tests {
         assert_eq!(result.status, FiatTransactionStatus::Failed);
         assert_eq!(result.fiat_amount, Some(108.0));
         assert_eq!(result.fiat_currency, Some("USD".to_string()));
-        assert_eq!(result.address, Some("0xf47abc9e2ed94fb555b3e31e08ad8aa8ac64eea0ff15ba0e7b443cef4aaabffe".to_string()));
     }
 
     #[test]

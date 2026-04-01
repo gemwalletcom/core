@@ -307,10 +307,11 @@ impl FiatClient {
             country_code,
         } = self.fiat_cacher.get_quote(quote_id).await?;
         let provider = self.provider(quote.provider.id.as_ref())?;
+        let wallet_address_row = self.database.client()?.subscriptions_wallet_address_for_chain(device_id, wallet_id, quote.asset.chain)?;
         let data = FiatQuoteUrlData {
             quote: quote.clone(),
             asset_symbol,
-            wallet_address: self.database.client()?.subscriptions_wallet_address_for_chain(device_id, wallet_id, quote.asset.chain)?,
+            wallet_address: wallet_address_row.address,
             ip_address: ip_address.to_string(),
             locale: locale.to_string(),
         };
@@ -321,7 +322,7 @@ impl FiatClient {
             None => Some(self.get_ip_address(ip_address).await?.alpha2),
         };
         let pending_transaction = FiatTransaction::new_pending(&data, country, url.provider_transaction_id.clone());
-        let pending_transaction_row = storage::models::NewFiatTransactionRow::new(pending_transaction, device_id, wallet_id);
+        let pending_transaction_row = storage::models::NewFiatTransactionRow::new(pending_transaction, device_id, wallet_id, wallet_address_row.id);
 
         self.database.fiat()?.add_fiat_transaction(pending_transaction_row)?;
 

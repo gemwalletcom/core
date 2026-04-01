@@ -365,8 +365,7 @@ diesel::table! {
         provider_transaction_id -> Nullable<Varchar>,
         #[max_length = 256]
         transaction_hash -> Nullable<Varchar>,
-        #[max_length = 256]
-        address -> Nullable<Varchar>,
+        address_id -> Int4,
         transaction_type -> FiatTransactionType,
         updated_at -> Timestamp,
         created_at -> Timestamp,
@@ -942,6 +941,7 @@ diesel::joinable!(fiat_transactions -> assets (asset_id));
 diesel::joinable!(fiat_transactions -> devices (device_id));
 diesel::joinable!(fiat_transactions -> fiat_providers (provider_id));
 diesel::joinable!(fiat_transactions -> wallets (wallet_id));
+diesel::joinable!(fiat_transactions -> wallets_addresses (address_id));
 diesel::joinable!(nft_assets -> chains (chain));
 diesel::joinable!(nft_assets -> nft_collections (collection_id));
 diesel::joinable!(nft_collections -> chains (chain));

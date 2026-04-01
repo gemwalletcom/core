@@ -186,7 +186,7 @@ pub struct FiatTransactionRow {
     pub fiat_amount: f64,
     pub fiat_currency: String,
     pub value: Option<String>,
-    pub address: Option<String>,
+    pub address_id: i32,
     pub transaction_hash: Option<String>,
     pub device_id: i32,
     pub wallet_id: i32,
@@ -214,7 +214,6 @@ impl FiatTransactionRow {
             fiat_currency: self.fiat_currency.clone(),
             value,
             transaction_hash: self.transaction_hash.clone(),
-            address: self.address.clone(),
             created_at: self.created_at.and_utc(),
             updated_at: self.updated_at.and_utc(),
         })
@@ -234,7 +233,7 @@ pub struct NewFiatTransactionRow {
     pub fiat_amount: f64,
     pub fiat_currency: String,
     pub value: Option<String>,
-    pub address: Option<String>,
+    pub address_id: i32,
     pub transaction_hash: Option<String>,
     pub device_id: i32,
     pub wallet_id: i32,
@@ -242,7 +241,7 @@ pub struct NewFiatTransactionRow {
 }
 
 impl NewFiatTransactionRow {
-    pub fn new(transaction: FiatTransaction, device_id: i32, wallet_id: i32) -> Self {
+    pub fn new(transaction: FiatTransaction, device_id: i32, wallet_id: i32, address_id: i32) -> Self {
         Self {
             asset_id: transaction.asset_id.into(),
             transaction_type: transaction.transaction_type.into(),
@@ -253,8 +252,8 @@ impl NewFiatTransactionRow {
             fiat_amount: transaction.fiat_amount,
             fiat_currency: transaction.fiat_currency,
             value: Some(transaction.value),
+            address_id,
             transaction_hash: transaction.transaction_hash,
-            address: transaction.address,
             device_id,
             wallet_id,
             quote_id: transaction.id,
@@ -272,7 +271,7 @@ impl NewFiatTransactionRow {
             fiat_amount: update.fiat_amount.unwrap_or(existing.fiat_amount),
             fiat_currency: update.fiat_currency.clone().unwrap_or_else(|| existing.fiat_currency.clone()),
             value: existing.value.clone(),
-            address: update.address.clone().or_else(|| existing.address.clone()),
+            address_id: existing.address_id,
             transaction_hash: update.transaction_hash.clone(),
             device_id: existing.device_id,
             wallet_id: existing.wallet_id,
@@ -319,7 +318,6 @@ pub struct UpdateFiatTransactionRow {
     pub fiat_amount: Option<f64>,
     pub fiat_currency: Option<String>,
     pub transaction_hash: Option<String>,
-    pub address: Option<String>,
 }
 
 impl UpdateFiatTransactionRow {
@@ -329,7 +327,6 @@ impl UpdateFiatTransactionRow {
             fiat_amount: transaction.fiat_amount,
             fiat_currency: transaction.fiat_currency.clone(),
             transaction_hash: transaction.transaction_hash.clone(),
-            address: transaction.address.clone(),
         }
     }
 }
@@ -366,7 +363,6 @@ mod tests {
             provider_transaction_id: Some("tx_123".to_string()),
             status: FiatTransactionStatus::Pending,
             transaction_hash: Some("0xabc".to_string()),
-            address: Some("0x123".to_string()),
             fiat_amount: Some(100.0),
             fiat_currency: Some("EUR".to_string()),
         };

@@ -148,7 +148,6 @@ fn map_buy_like_transaction(
         provider_transaction_id: None,
         status,
         transaction_hash: withdraw.as_ref().and_then(|w| w.hash.clone()),
-        address: withdraw.as_ref().and_then(|w| w.address.clone()),
         fiat_amount: Some(fiat_amount),
         fiat_currency: Some(fiat_currency.to_ascii_uppercase()),
     }
@@ -186,7 +185,6 @@ fn map_sell_transaction(withdraw: WithdrawTransaction) -> FiatTransactionUpdate 
         provider_transaction_id: None,
         status,
         transaction_hash: withdraw.hash,
-        address: withdraw.address,
         fiat_amount: Some(withdraw.amount),
         fiat_currency: None,
     }
@@ -200,7 +198,6 @@ fn map_sell_transaction_new(sell: SellTransaction, deposit: Option<DepositTransa
         provider_transaction_id: None,
         status,
         transaction_hash: deposit.as_ref().and_then(|d| d.hash.clone()),
-        address: deposit.as_ref().and_then(|d| d.address.clone()),
         fiat_amount: Some(sell.fiat_amount),
         fiat_currency: Some(sell.fiat_currency.to_ascii_uppercase()),
     }
@@ -282,7 +279,6 @@ mod tests {
         assert_eq!(result.fiat_currency, Some("USD".to_string()));
         assert!(matches!(result.status, FiatTransactionStatus::Complete));
         assert_eq!(result.transaction_hash, Some("0x".to_string()));
-        assert_eq!(result.address, Some("UQByrYTVrJMttx88DbubyjV4nKy3waokfenb4QGJOP55Nn99".to_string()));
 
         Ok(())
     }
@@ -303,7 +299,6 @@ mod tests {
             result.transaction_hash,
             Some("0xf07ff7195ac58ac23999aac7089210718f3f528167f05ba7880c5850648f66d4".to_string())
         );
-        assert_eq!(result.address, Some("0x9837C4e9A7afac29eBd170b1b68AE16F3dE38298".to_string()));
 
         Ok(())
     }
@@ -324,7 +319,6 @@ mod tests {
             result.transaction_hash,
             Some("0x0000000000000000000000000000000000000000000000000000000000000001".to_string())
         );
-        assert_eq!(result.address, Some("0x0000000000000000000000000000000000000001".to_string()));
 
         Ok(())
     }

@@ -15,7 +15,7 @@ impl FiatTransactionRow {
             fiat_amount: 100.0,
             fiat_currency: "USD".to_string(),
             value: Some("123000000000000000".to_string()),
-            address: Some("0x123".to_string()),
+            address_id: 1,
             transaction_hash: Some("0xabc".to_string()),
             device_id: 1,
             wallet_id: 1,

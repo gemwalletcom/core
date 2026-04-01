@@ -69,17 +69,11 @@ pub fn map_order(payload: Transaction) -> FiatTransactionUpdate {
     }
     .map(str::to_ascii_uppercase);
 
-    let address = match transaction_type {
-        FiatQuoteType::Buy => payload.wallet_address,
-        FiatQuoteType::Sell => payload.refund_wallet_address.or(payload.wallet_address),
-    };
-
     FiatTransactionUpdate {
         transaction_id,
         provider_transaction_id,
         status,
         transaction_hash: payload.crypto_transaction_id,
-        address,
         fiat_amount: Some(fiat_amount),
         fiat_currency,
     }
@@ -113,7 +107,6 @@ mod tests {
         assert!(matches!(result.status, FiatTransactionStatus::Failed));
         assert_eq!(result.fiat_amount, Some(20.0)); // 15.39 + 3.99 + 0.47 + 0.15
         assert_eq!(result.fiat_currency, Some("USD".to_string()));
-        assert_eq!(result.address, Some("TYxT3F8pdkTDkhw4JsfodKnEgaYpNaANmW".to_string()));
     }
 
     #[test]
@@ -128,7 +121,6 @@ mod tests {
         assert!(matches!(result.status, FiatTransactionStatus::Pending));
         assert_eq!(result.fiat_amount, Some(3123.07)); // quoteCurrencyAmount - what user actually receives
         assert_eq!(result.fiat_currency, Some("USD".to_string()));
-        assert_eq!(result.address, Some("0xd41fdb03ba84762dd66a0af1a6c8540ff1ba5dfb".to_string()));
     }
 
     #[test]
@@ -142,7 +134,6 @@ mod tests {
         assert!(matches!(result.status, FiatTransactionStatus::Complete));
         assert_eq!(result.fiat_amount, Some(3123.07)); // quoteCurrencyAmount - what user actually receives
         assert_eq!(result.fiat_currency, Some("USD".to_string()));
-        assert_eq!(result.address, Some("0xd41fdb03ba84762dd66a0af1a6c8540ff1ba5dfb".to_string()));
         assert_eq!(result.transaction_hash, Some("0xabc123456789".to_string()));
     }
 
@@ -157,7 +148,6 @@ mod tests {
         assert!(matches!(result.status, FiatTransactionStatus::Failed));
         assert_eq!(result.fiat_amount, Some(8419.77)); // quoteCurrencyAmount - what user actually receives
         assert_eq!(result.fiat_currency, Some("USD".to_string()));
-        assert_eq!(result.address, Some("qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a".to_string()));
     }
 
     #[test]
@@ -201,7 +191,6 @@ mod tests {
         assert_eq!(result.status, FiatTransactionStatus::Pending);
         assert_eq!(result.fiat_amount, Some(72.0));
         assert_eq!(result.fiat_currency, Some("EUR".to_string()));
-        assert_eq!(result.address, Some("bc1qacjrh89lukj82agg2ujze5l2e3nss3pru96733".to_string()));
     }
 
     #[test]

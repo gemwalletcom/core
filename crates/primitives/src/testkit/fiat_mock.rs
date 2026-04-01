@@ -102,7 +102,6 @@ impl FiatTransaction {
             fiat_currency: "USD".to_string(),
             value: "100000".to_string(),
             transaction_hash: None,
-            address: Some("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh".to_string()),
             created_at: DateTime::<Utc>::UNIX_EPOCH,
             updated_at: DateTime::<Utc>::UNIX_EPOCH,
         }
@@ -116,7 +115,6 @@ impl FiatTransactionUpdate {
             provider_transaction_id: Some("tx_123".to_string()),
             status: FiatTransactionStatus::Pending,
             transaction_hash: None,
-            address: Some("bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh".to_string()),
             fiat_amount: Some(100.0),
             fiat_currency: Some("USD".to_string()),
         }

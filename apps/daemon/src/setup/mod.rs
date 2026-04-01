@@ -260,7 +260,7 @@ fn setup_dev_devices(database: &Database) -> Result<(), Box<dyn std::error::Erro
     let result = WalletsRepository::add_subscriptions(&mut database.wallets()?, android_device_row_id, subscriptions)?;
     info_with_fields!("setup_dev", step = "android wallet subscription added", count = result);
 
-    setup_dev_fiat_transactions(database, ios_device_row_id, wallet.id, wallet_address, solana_address)?;
+    setup_dev_fiat_transactions(database, ios_device_row_id, wallet.id)?;
 
     info_with_fields!("setup_dev", step = "add rewards");
     let devices = database.wallets()?.get_devices_by_wallet_id(wallet.id)?;
@@ -319,7 +319,7 @@ fn setup_dev_devices(database: &Database) -> Result<(), Box<dyn std::error::Erro
     Ok(())
 }
 
-fn setup_dev_fiat_transactions(database: &Database, device_id: i32, wallet_id: i32, evm_address: &str, solana_address: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+fn setup_dev_fiat_transactions(database: &Database, device_id: i32, wallet_id: i32) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     info_with_fields!("setup_dev", step = "add fiat transactions");
 
     let mock = || {
@@ -337,7 +337,6 @@ fn setup_dev_fiat_transactions(database: &Database, device_id: i32, wallet_id: i
             fiat_currency: "USD".to_string(),
             value: "75000000000000000".to_string(),
             transaction_hash: None,
-            address: Some(evm_address.to_string()),
             created_at: now,
             updated_at: now,
         }
@@ -367,16 +366,18 @@ fn setup_dev_fiat_transactions(database: &Database, device_id: i32, wallet_id: i
             status: FiatTransactionStatus::Failed,
             fiat_amount: 95.25,
             value: "500000000".to_string(),
-            address: Some(solana_address.to_string()),
             ..mock()
         },
     ];
 
+    let evm_address_id = database.wallets()?.subscriptions_wallet_address_for_chain(device_id, wallet_id, Chain::Ethereum)?.id;
+    let solana_address_id = database.wallets()?.subscriptions_wallet_address_for_chain(device_id, wallet_id, Chain::Solana)?.id;
+
     let mut fiat = database.fiat()?;
     let transaction_rows = vec![
-        NewFiatTransactionRow::new(transactions[0].clone(), device_id, wallet_id),
-        NewFiatTransactionRow::new(transactions[1].clone(), device_id, wallet_id),
-        NewFiatTransactionRow::new(transactions[2].clone(), device_id, wallet_id),
+        NewFiatTransactionRow::new(transactions[0].clone(), device_id, wallet_id, evm_address_id),
+        NewFiatTransactionRow::new(transactions[1].clone(), device_id, wallet_id, evm_address_id),
+        NewFiatTransactionRow::new(transactions[2].clone(), device_id, wallet_id, solana_address_id),
     ];
 
     let mut count = 0;

@@ -22,8 +22,6 @@ pub struct FiatTransaction {
     pub value: String,
     #[typeshare(skip)]
     pub transaction_hash: Option<String>,
-    #[typeshare(skip)]
-    pub address: Option<String>,
     pub created_at: DateTime<Utc>,
     #[typeshare(skip)]
     pub updated_at: DateTime<Utc>,
@@ -46,7 +44,6 @@ impl FiatTransaction {
             fiat_currency: quote.fiat_currency.clone(),
             value: quote.value.clone(),
             transaction_hash: None,
-            address: Some(data.wallet_address.clone()),
             created_at: now,
             updated_at: now,
         }
@@ -60,7 +57,6 @@ pub struct FiatTransactionUpdate {
     pub provider_transaction_id: Option<String>,
     pub status: FiatTransactionStatus,
     pub transaction_hash: Option<String>,
-    pub address: Option<String>,
     pub fiat_amount: Option<f64>,
     pub fiat_currency: Option<String>,
 }
