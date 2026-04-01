@@ -18,9 +18,10 @@ pub enum StreamEvent {
     Balances(Vec<StreamBalanceUpdate>),
     Transactions(StreamTransactionsUpdate),
     PriceAlerts(StreamPriceAlertUpdate),
-    Nft(StreamNftUpdate),
-    Perpetual(StreamPerpetualUpdate),
+    Nft(StreamWalletUpdate),
+    Perpetual(StreamWalletUpdate),
     InAppNotification(StreamNotificationlUpdate),
+    FiatTransaction(StreamWalletUpdate),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -67,14 +68,7 @@ pub struct StreamPriceAlertUpdate {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[typeshare(swift = "Sendable")]
-pub struct StreamNftUpdate {
-    pub wallet_id: WalletId,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[typeshare(swift = "Sendable")]
-pub struct StreamPerpetualUpdate {
+pub struct StreamWalletUpdate {
     pub wallet_id: WalletId,
 }
 

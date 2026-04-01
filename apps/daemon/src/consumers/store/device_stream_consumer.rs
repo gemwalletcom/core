@@ -2,7 +2,7 @@ use std::error::Error;
 
 use async_trait::async_trait;
 use cacher::CacherClient;
-use primitives::{StreamBalanceUpdate, StreamEvent, StreamNftUpdate, StreamTransactionsUpdate, device_stream_channel};
+use primitives::{StreamBalanceUpdate, StreamEvent, StreamTransactionsUpdate, StreamWalletUpdate, device_stream_channel};
 use streamer::{DeviceStreamEvent, DeviceStreamPayload, consumer::MessageConsumer};
 
 pub struct DeviceStreamConsumer {
@@ -50,7 +50,7 @@ impl MessageConsumer<DeviceStreamPayload, usize> for DeviceStreamConsumer {
                 Ok(count)
             }
             DeviceStreamEvent::Nft { wallet_id } => {
-                self.cacher_client.publish(&channel, &StreamEvent::Nft(StreamNftUpdate { wallet_id })).await?;
+                self.cacher_client.publish(&channel, &StreamEvent::Nft(StreamWalletUpdate { wallet_id })).await?;
                 Ok(1)
             }
         }
