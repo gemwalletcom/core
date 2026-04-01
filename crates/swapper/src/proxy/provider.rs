@@ -12,7 +12,7 @@ use crate::{
     approval::evm::check_approval_erc20,
     config::get_swap_api_url,
     cross_chain::VaultAddresses,
-    fees::DEFAULT_SWAP_FEE_BPS,
+    fees::{DEFAULT_AGGREGATOR_FEE_BPS, DEFAULT_SWAP_FEE_BPS},
     models::{ApprovalType, SwapperChainAsset},
 };
 use gem_client::Client;
@@ -91,6 +91,13 @@ where
             None
         };
         Ok((approval.approval_data(), gas_limit))
+    }
+
+    fn referral_bps(&self) -> u32 {
+        match self.provider.id {
+            SwapperProvider::Okx => DEFAULT_AGGREGATOR_FEE_BPS,
+            _ => DEFAULT_SWAP_FEE_BPS,
+        }
     }
 }
 
@@ -213,7 +220,7 @@ where
             from_asset: request.from_asset.clone(),
             to_asset: request.to_asset.clone(),
             from_value: request.value.clone(),
-            referral_bps: DEFAULT_SWAP_FEE_BPS,
+            referral_bps: self.referral_bps(),
             slippage_bps: request.options.slippage.bps,
             use_max_amount: request.options.use_max_amount,
         };
@@ -292,13 +299,23 @@ where
 mod tests {
     use super::super::client::ProxyClient;
     use super::*;
-    use crate::alien::mock::ProviderMock;
+    use crate::{
+        alien::mock::ProviderMock,
+        fees::{DEFAULT_AGGREGATOR_FEE_BPS, DEFAULT_SWAP_FEE_BPS},
+    };
     use gem_client::testkit::MockClient;
     use primitives::swap::SwapQuoteData;
 
     fn mock_provider(provider: SwapperProvider) -> ProxyProvider<MockClient> {
         let rpc_provider = Arc::new(ProviderMock::new("{}".to_string()));
         ProxyProvider::new_with_client(provider, ProxyClient::new(MockClient::new()), vec![], rpc_provider)
+    }
+
+    #[test]
+    fn test_referral_bps() {
+        assert_eq!(mock_provider(SwapperProvider::Okx).referral_bps(), DEFAULT_AGGREGATOR_FEE_BPS);
+        assert_eq!(mock_provider(SwapperProvider::Mayan).referral_bps(), DEFAULT_SWAP_FEE_BPS);
+        assert_eq!(mock_provider(SwapperProvider::Orca).referral_bps(), DEFAULT_SWAP_FEE_BPS);
     }
 
     #[tokio::test]
