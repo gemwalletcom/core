@@ -102,7 +102,7 @@ impl FiatStore for DatabaseClient {
                 let existing = self
                     .get_fiat_transaction_for_quote(&provider, &update.transaction_id)?
                     .ok_or(diesel::result::Error::NotFound)?;
-                let new_row = NewFiatTransactionRow::from_existing(&existing, &update, provider_transaction_id_value.to_string()).ok_or(diesel::result::Error::NotFound)?;
+                let new_row = NewFiatTransactionRow::from_existing(&existing, &update, provider_transaction_id_value.to_string());
                 diesel::insert_into(fiat_transactions)
                     .values(&new_row)
                     .returning(FiatTransactionRow::as_returning())

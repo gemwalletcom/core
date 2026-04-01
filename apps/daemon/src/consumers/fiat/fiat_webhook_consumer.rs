@@ -7,18 +7,23 @@ use gem_tracing::{error_with_fields, info_with_fields};
 use settings::Settings;
 use storage::Database;
 use streamer::consumer::MessageConsumer;
-use streamer::{FiatWebhook, FiatWebhookPayload};
+use streamer::{FiatWebhook, FiatWebhookPayload, StreamProducer, StreamProducerQueue, WalletStreamEvent, WalletStreamPayload};
 
 pub struct FiatWebhookConsumer {
     pub database: Database,
     pub providers: Vec<Box<dyn FiatProvider + Send + Sync>>,
+    pub stream_producer: StreamProducer,
 }
 
 impl FiatWebhookConsumer {
-    pub fn new(database: Database, settings: Settings) -> Self {
+    pub fn new(database: Database, settings: Settings, stream_producer: StreamProducer) -> Self {
         let providers = FiatProviderFactory::new_providers(settings);
 
-        Self { database, providers }
+        Self {
+            database,
+            providers,
+            stream_producer,
+        }
     }
 }
 
@@ -70,6 +75,13 @@ impl MessageConsumer<FiatWebhookPayload, bool> for FiatWebhookConsumer {
                     address = updated.address.as_deref().unwrap_or(""),
                     transaction_hash = updated.transaction_hash.as_deref().unwrap_or("")
                 );
+
+                let payload = WalletStreamPayload {
+                    wallet_id: updated.wallet_id,
+                    event: WalletStreamEvent::FiatTransaction,
+                };
+                let _ = self.stream_producer.publish_wallet_stream_events(vec![payload]).await;
+
                 Ok(true)
             }
             Err(e) => {

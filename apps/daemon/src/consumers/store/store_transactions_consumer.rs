@@ -2,9 +2,9 @@ use std::collections::HashSet;
 use std::{collections::HashMap, error::Error};
 
 use async_trait::async_trait;
-use primitives::{AssetAddress, AssetIdVecExt, Transaction, TransactionId, TransactionState, TransactionType, WalletId};
+use primitives::{AssetAddress, AssetIdVecExt, Transaction, TransactionId, TransactionState, TransactionType};
 use storage::{AssetsAddressesRepository, AssetsRepository, Database, TransactionsRepository, WalletsRepository};
-use streamer::{AssetId, DeviceStreamEvent, DeviceStreamPayload, NotificationsPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, consumer::MessageConsumer};
+use streamer::{AssetId, NotificationsPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, WalletStreamEvent, WalletStreamPayload, consumer::MessageConsumer};
 use swapper::cross_chain::{self, DepositAddressMap};
 
 use crate::client::SwapVaultAddressClient;
@@ -42,7 +42,7 @@ struct ProcessingResult {
     transactions: Vec<Transaction>,
     notifications: Vec<NotificationsPayload>,
     assets_addresses: Vec<AssetAddress>,
-    device_events: Vec<DeviceStreamPayload>,
+    wallet_events: Vec<WalletStreamPayload>,
 }
 
 #[async_trait]
@@ -81,7 +81,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
         let mut transactions_map: HashMap<TransactionId, Transaction> = HashMap::new();
         let mut notifications: Vec<NotificationsPayload> = Vec::new();
         let mut assets_addresses: HashSet<AssetAddress> = HashSet::new();
-        let mut device_events_map: HashMap<(String, WalletId), (HashSet<TransactionId>, HashSet<AssetId>)> = HashMap::new();
+        let mut wallet_events_map: HashMap<i32, (HashSet<TransactionId>, HashSet<AssetId>)> = HashMap::new();
 
         for subscription in &subscriptions {
             for transaction in &transactions {
@@ -115,8 +115,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
 
                 transactions_map.entry(transaction.id.clone()).or_insert_with(|| transaction.clone());
 
-                let key = (subscription.device.id.clone(), subscription.wallet_id.clone());
-                let (txn_ids, asset_ids) = device_events_map.entry(key).or_default();
+                let (txn_ids, asset_ids) = wallet_events_map.entry(subscription.wallet_row_id).or_default();
                 txn_ids.insert(transaction.id.clone());
                 asset_ids.extend(transaction_asset_ids.iter().cloned());
 
@@ -136,12 +135,11 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
             }
         }
 
-        let device_events = device_events_map
+        let wallet_events = wallet_events_map
             .into_iter()
-            .map(|((device_id, wallet_id), (transaction_ids, asset_ids))| DeviceStreamPayload {
-                device_id,
-                event: DeviceStreamEvent::Transactions {
-                    wallet_id,
+            .map(|(wallet_id, (transaction_ids, asset_ids))| WalletStreamPayload {
+                wallet_id,
+                event: WalletStreamEvent::Transactions {
                     transaction_ids: transaction_ids.into_iter().collect(),
                     asset_ids: asset_ids.into_iter().collect(),
                 },
@@ -152,7 +150,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
             transactions: transactions_map.into_values().collect(),
             notifications,
             assets_addresses: assets_addresses.into_iter().collect(),
-            device_events,
+            wallet_events,
         };
         self.publish_results(result).await
     }
@@ -167,7 +165,7 @@ impl StoreTransactionsConsumer {
             let _ = self.database.assets_addresses()?.add_assets_addresses(result.assets_addresses);
         }
 
-        let _ = self.stream_producer.publish_device_stream_events(result.device_events).await;
+        let _ = self.stream_producer.publish_wallet_stream_events(result.wallet_events).await;
 
         Ok(transactions_count)
     }

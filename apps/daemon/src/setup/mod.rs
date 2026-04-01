@@ -260,7 +260,7 @@ fn setup_dev_devices(database: &Database) -> Result<(), Box<dyn std::error::Erro
     let result = WalletsRepository::add_subscriptions(&mut database.wallets()?, android_device_row_id, subscriptions)?;
     info_with_fields!("setup_dev", step = "android wallet subscription added", count = result);
 
-    setup_dev_fiat_transactions(database, ios_device_row_id, wallet_address, solana_address)?;
+    setup_dev_fiat_transactions(database, ios_device_row_id, wallet.id, wallet_address, solana_address)?;
 
     info_with_fields!("setup_dev", step = "add rewards");
     let devices = database.wallets()?.get_devices_by_wallet_id(wallet.id)?;
@@ -319,7 +319,7 @@ fn setup_dev_devices(database: &Database) -> Result<(), Box<dyn std::error::Erro
     Ok(())
 }
 
-fn setup_dev_fiat_transactions(database: &Database, device_id: i32, evm_address: &str, solana_address: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+fn setup_dev_fiat_transactions(database: &Database, device_id: i32, wallet_id: i32, evm_address: &str, solana_address: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     info_with_fields!("setup_dev", step = "add fiat transactions");
 
     let mock = || {
@@ -374,9 +374,9 @@ fn setup_dev_fiat_transactions(database: &Database, device_id: i32, evm_address:
 
     let mut fiat = database.fiat()?;
     let transaction_rows = vec![
-        NewFiatTransactionRow::new(transactions[0].clone(), device_id),
-        NewFiatTransactionRow::new(transactions[1].clone(), device_id),
-        NewFiatTransactionRow::new(transactions[2].clone(), device_id),
+        NewFiatTransactionRow::new(transactions[0].clone(), device_id, wallet_id),
+        NewFiatTransactionRow::new(transactions[1].clone(), device_id, wallet_id),
+        NewFiatTransactionRow::new(transactions[2].clone(), device_id, wallet_id),
     ];
 
     let mut count = 0;

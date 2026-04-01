@@ -82,6 +82,7 @@ pub struct WalletSubscriptionChains {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DeviceSubscription {
+    pub wallet_row_id: i32,
     pub device: Device,
     pub wallet_id: WalletId,
     pub chain: Chain,

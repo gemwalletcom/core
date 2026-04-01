@@ -153,6 +153,7 @@ impl WalletsRepository for DatabaseClient {
         Ok(WalletsStore::get_subscriptions_by_chain_addresses(self, chain, addresses)?
             .into_iter()
             .map(|(wallet, sub, addr, device)| DeviceSubscription {
+                wallet_row_id: wallet.id,
                 device: device.as_primitive(),
                 wallet_id: wallet.wallet_id.0.clone(),
                 chain: sub.chain.0,

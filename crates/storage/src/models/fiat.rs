@@ -188,7 +188,8 @@ pub struct FiatTransactionRow {
     pub value: Option<String>,
     pub address: Option<String>,
     pub transaction_hash: Option<String>,
-    pub device_id: Option<i32>,
+    pub device_id: i32,
+    pub wallet_id: i32,
     pub quote_id: String,
     pub updated_at: NaiveDateTime,
     pub created_at: NaiveDateTime,
@@ -236,11 +237,12 @@ pub struct NewFiatTransactionRow {
     pub address: Option<String>,
     pub transaction_hash: Option<String>,
     pub device_id: i32,
+    pub wallet_id: i32,
     pub quote_id: String,
 }
 
 impl NewFiatTransactionRow {
-    pub fn new(transaction: FiatTransaction, device_id: i32) -> Self {
+    pub fn new(transaction: FiatTransaction, device_id: i32, wallet_id: i32) -> Self {
         Self {
             asset_id: transaction.asset_id.into(),
             transaction_type: transaction.transaction_type.into(),
@@ -254,12 +256,13 @@ impl NewFiatTransactionRow {
             transaction_hash: transaction.transaction_hash,
             address: transaction.address,
             device_id,
+            wallet_id,
             quote_id: transaction.id,
         }
     }
 
-    pub fn from_existing(existing: &FiatTransactionRow, update: &FiatTransactionUpdate, provider_transaction_id: String) -> Option<Self> {
-        Some(Self {
+    pub fn from_existing(existing: &FiatTransactionRow, update: &FiatTransactionUpdate, provider_transaction_id: String) -> Self {
+        Self {
             asset_id: existing.asset_id.clone(),
             transaction_type: existing.transaction_type.clone(),
             provider_id: existing.provider_id.clone(),
@@ -271,9 +274,10 @@ impl NewFiatTransactionRow {
             value: existing.value.clone(),
             address: update.address.clone().or_else(|| existing.address.clone()),
             transaction_hash: update.transaction_hash.clone(),
-            device_id: existing.device_id?,
+            device_id: existing.device_id,
+            wallet_id: existing.wallet_id,
             quote_id: existing.quote_id.clone(),
-        })
+        }
     }
 }
 

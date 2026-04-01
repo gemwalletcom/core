@@ -1,6 +1,6 @@
 use primitives::{
     AssetAddress, AssetId, Chain, ChainAddress, ChartData, FailedNotification, FiatProviderName, FiatTransactionUpdate, GorushNotification, NotificationType, PriceData,
-    Transaction, TransactionId, WalletId,
+    Transaction, TransactionId,
 };
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -363,36 +363,37 @@ impl fmt::Display for FetchPricesPayload {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct DeviceStreamPayload {
-    pub device_id: String,
-    pub event: DeviceStreamEvent,
+pub struct WalletStreamPayload {
+    pub wallet_id: i32,
+    pub event: WalletStreamEvent,
 }
 
-impl fmt::Display for DeviceStreamPayload {
+impl fmt::Display for WalletStreamPayload {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "device_id: {}, {}", self.device_id, self.event)
+        write!(f, "wallet_id: {}, {}", self.wallet_id, self.event)
     }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum DeviceStreamEvent {
+pub enum WalletStreamEvent {
     Transactions {
-        wallet_id: WalletId,
         transaction_ids: Vec<TransactionId>,
         asset_ids: Vec<AssetId>,
     },
-    Nft {
-        wallet_id: WalletId,
-    },
+    FiatTransaction,
+    Nft,
+    Perpetual,
 }
 
-impl fmt::Display for DeviceStreamEvent {
+impl fmt::Display for WalletStreamEvent {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DeviceStreamEvent::Transactions { transaction_ids, asset_ids, .. } => {
+            WalletStreamEvent::Transactions { transaction_ids, asset_ids } => {
                 write!(f, "transactions: {}, assets: {}", transaction_ids.len(), asset_ids.len())
             }
-            DeviceStreamEvent::Nft { wallet_id } => write!(f, "nft: {}", wallet_id),
+            WalletStreamEvent::FiatTransaction => write!(f, "fiat_transaction"),
+            WalletStreamEvent::Nft => write!(f, "nft"),
+            WalletStreamEvent::Perpetual => write!(f, "perpetual"),
         }
     }
 }

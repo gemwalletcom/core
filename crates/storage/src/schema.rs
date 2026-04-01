@@ -351,7 +351,8 @@ diesel::table! {
         asset_id -> Varchar,
         #[max_length = 128]
         quote_id -> Varchar,
-        device_id -> Nullable<Int4>,
+        device_id -> Int4,
+        wallet_id -> Int4,
         fiat_amount -> Float8,
         #[max_length = 32]
         fiat_currency -> Varchar,
@@ -940,6 +941,7 @@ diesel::joinable!(fiat_providers_countries -> fiat_providers (provider));
 diesel::joinable!(fiat_transactions -> assets (asset_id));
 diesel::joinable!(fiat_transactions -> devices (device_id));
 diesel::joinable!(fiat_transactions -> fiat_providers (provider_id));
+diesel::joinable!(fiat_transactions -> wallets (wallet_id));
 diesel::joinable!(nft_assets -> chains (chain));
 diesel::joinable!(nft_assets -> nft_collections (collection_id));
 diesel::joinable!(nft_collections -> chains (chain));
