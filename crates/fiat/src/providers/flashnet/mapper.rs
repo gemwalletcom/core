@@ -15,6 +15,7 @@ use super::{
 
 fn map_chain(chain: &str) -> Option<Chain> {
     match chain {
+        "bitcoin" => Some(Chain::Bitcoin),
         "solana" => Some(Chain::Solana),
         "base" => Some(Chain::Base),
         "ethereum" => Some(Chain::Ethereum),
@@ -166,6 +167,8 @@ mod tests {
     fn map_assets_deduplicates_duplicate_destination_routes() {
         let routes = vec![
             FlashnetRoute {
+                source_chain: "lightning".to_string(),
+                source_asset: "BTC".to_string(),
                 destination: FlashnetRouteAsset {
                     chain: "solana".to_string(),
                     asset: "USDC".to_string(),
@@ -173,6 +176,8 @@ mod tests {
                 },
             },
             FlashnetRoute {
+                source_chain: "lightning".to_string(),
+                source_asset: "BTC".to_string(),
                 destination: FlashnetRouteAsset {
                     chain: "solana".to_string(),
                     asset: "USDC".to_string(),
@@ -180,6 +185,8 @@ mod tests {
                 },
             },
             FlashnetRoute {
+                source_chain: "lightning".to_string(),
+                source_asset: "BTC".to_string(),
                 destination: FlashnetRouteAsset {
                     chain: "base".to_string(),
                     asset: "USDC".to_string(),
@@ -193,6 +200,35 @@ mod tests {
         assert_eq!(assets.len(), 2);
         assert_eq!(assets[0].id, "usdc_base");
         assert_eq!(assets[1].id, "usdc_solana");
+    }
+
+    #[test]
+    fn map_assets_ignores_unsupported_usdc_chains() {
+        let routes = vec![
+            FlashnetRoute {
+                source_chain: "lightning".to_string(),
+                source_asset: "BTC".to_string(),
+                destination: FlashnetRouteAsset {
+                    chain: "base".to_string(),
+                    asset: "USDC".to_string(),
+                    contract_address: Some("0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913".to_string()),
+                },
+            },
+            FlashnetRoute {
+                source_chain: "lightning".to_string(),
+                source_asset: "BTC".to_string(),
+                destination: FlashnetRouteAsset {
+                    chain: "tempo".to_string(),
+                    asset: "USDC".to_string(),
+                    contract_address: Some("0x20c000000000000000000000b9537d11c60e8b50".to_string()),
+                },
+            },
+        ];
+
+        let assets = map_assets(routes);
+
+        assert_eq!(assets.len(), 1);
+        assert_eq!(assets[0].id, "usdc_base");
     }
 
     #[test]

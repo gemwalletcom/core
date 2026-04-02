@@ -376,10 +376,7 @@ impl fmt::Display for WalletStreamPayload {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum WalletStreamEvent {
-    Transactions {
-        transaction_ids: Vec<TransactionId>,
-        asset_ids: Vec<AssetId>,
-    },
+    Transactions { transaction_ids: Vec<TransactionId>, asset_ids: Vec<AssetId> },
     FiatTransaction,
     Nft,
     Perpetual,

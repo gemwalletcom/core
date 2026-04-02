@@ -55,6 +55,8 @@ pub struct FlashnetEstimateAppFee {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FlashnetRoute {
+    pub source_chain: String,
+    pub source_asset: String,
     pub destination: FlashnetRouteAsset,
 }
 

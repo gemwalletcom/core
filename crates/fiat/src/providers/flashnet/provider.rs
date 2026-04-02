@@ -26,7 +26,13 @@ impl FiatProvider for FlashnetClient {
 
     async fn get_assets(&self) -> Result<Vec<FiatProviderAsset>, Box<dyn Error + Send + Sync>> {
         let routes = self.get_routes().await?;
-        Ok(map_assets(routes.routes))
+        Ok(map_assets(
+            routes
+                .routes
+                .into_iter()
+                .filter(|route| route.source_chain == "lightning" && route.source_asset == "BTC")
+                .collect(),
+        ))
     }
 
     async fn get_countries(&self) -> Result<Vec<FiatProviderCountry>, Box<dyn Error + Send + Sync>> {
@@ -67,7 +73,7 @@ impl FiatProvider for FlashnetClient {
 
         let request = FlashnetOnrampRequest {
             destination_chain: network,
-            destination_asset: data.asset_symbol.symbol.to_ascii_uppercase(),
+            destination_asset: data.asset_symbol.symbol.clone(),
             recipient_address: data.wallet_address.clone(),
             amount,
             amount_mode: "exact_out".to_string(),
@@ -86,23 +92,6 @@ impl FiatProvider for FlashnetClient {
 mod tests {
     use super::*;
     use crate::providers::flashnet::model::{FlashnetEstimateResponse, FlashnetRoutesResponse};
-    use primitives::{Chain, asset_constants::SOLANA_USDC_TOKEN_ID};
-
-    #[test]
-    fn map_assets_maps_supported_routes() {
-        let response: FlashnetRoutesResponse = serde_json::from_str(include_str!("../../../testdata/flashnet/routes.json")).unwrap();
-        let assets = map_assets(response.routes);
-
-        assert_eq!(assets.len(), 2);
-        let solana_asset = assets.iter().find(|asset| asset.chain == Some(Chain::Solana)).unwrap();
-        let base_asset = assets.iter().find(|asset| asset.chain == Some(Chain::Base)).unwrap();
-
-        assert_eq!(solana_asset.symbol, "USDC");
-        assert_eq!(solana_asset.token_id, Some(SOLANA_USDC_TOKEN_ID.to_string()));
-        assert_eq!(base_asset.symbol, "USDC");
-        assert!(assets.iter().all(|asset| asset.provider == FiatProviderName::Flashnet));
-        assert!(assets.iter().all(|asset| !asset.is_sell_enabled));
-    }
 
     #[test]
     fn map_redirect_url_returns_cash_app_link() {
@@ -120,5 +109,22 @@ mod tests {
         assert_eq!(response.app_fees.len(), 1);
         assert_eq!(response.app_fees[0].affiliate_id, "gemwallet");
         assert_eq!(response.app_fees[0].fee_bps, 100);
+    }
+
+    #[test]
+    fn map_assets_maps_supported_routes() {
+        let response: FlashnetRoutesResponse = serde_json::from_str(include_str!("../../../testdata/flashnet/routes.json")).unwrap();
+        let assets = map_assets(
+            response
+                .routes
+                .into_iter()
+                .filter(|route| route.source_chain == "lightning" && route.source_asset == "BTC")
+                .collect(),
+        );
+
+        assert_eq!(assets.len(), 3);
+        assert!(assets.iter().any(|asset| asset.id == "btc_bitcoin"));
+        assert!(assets.iter().any(|asset| asset.id == "eth_base"));
+        assert!(assets.iter().any(|asset| asset.id == "usdc_solana"));
     }
 }

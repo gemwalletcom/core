@@ -24,10 +24,19 @@ impl MessageConsumer<WalletStreamPayload, usize> for WalletStreamConsumer {
 
         let events: Vec<StreamEvent> = match payload.event {
             WalletStreamEvent::Transactions { transaction_ids, asset_ids } => {
-                let balances = asset_ids.into_iter().map(|asset_id| StreamBalanceUpdate { wallet_id: wallet_id.clone(), asset_id }).collect();
+                let balances = asset_ids
+                    .into_iter()
+                    .map(|asset_id| StreamBalanceUpdate {
+                        wallet_id: wallet_id.clone(),
+                        asset_id,
+                    })
+                    .collect();
                 vec![
                     StreamEvent::Balances(balances),
-                    StreamEvent::Transactions(StreamTransactionsUpdate { wallet_id, transactions: transaction_ids }),
+                    StreamEvent::Transactions(StreamTransactionsUpdate {
+                        wallet_id,
+                        transactions: transaction_ids,
+                    }),
                 ]
             }
             WalletStreamEvent::FiatTransaction => vec![StreamEvent::FiatTransaction(StreamWalletUpdate { wallet_id })],
