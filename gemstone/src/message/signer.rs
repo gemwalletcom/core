@@ -8,7 +8,7 @@ use gem_sui::signer as sui_signer;
 use gem_ton::address::base64_to_hex_address;
 use gem_ton::signer::{TonSignDataResponse, TonSignMessageData, TonSignResult, sign_personal as ton_sign_personal};
 use primitives::hex::encode_with_0x;
-use signer::{SignatureScheme, Signer, apply_ethereum_recovery_id, hash_eip712};
+use signer::{SignatureScheme, Signer, hash_eip712};
 use std::time::{SystemTime, UNIX_EPOCH};
 use sui_types::PersonalMessage;
 
@@ -163,7 +163,8 @@ impl MessageSigner {
                     return encode_with_0x(data);
                 }
                 let mut signature = data.to_vec();
-                apply_ethereum_recovery_id(&mut signature);
+                // Ethereum/Tron recovery id: shift raw 0/1 to 27/28
+                signature[SIGNATURE_LENGTH - 1] += 27;
                 encode_with_0x(&signature)
             }
             SignDigestType::SuiPersonal | SignDigestType::TonPersonal => BASE64.encode(data),
@@ -330,13 +331,6 @@ Issued At: 2026-03-09T15:48:34.458Z"#;
 
         // Raw recovery ID 1 -> 28 (0x1c)
         sig[64] = 1;
-        assert!(decoder.get_result(&sig).ends_with("1c"));
-
-        // Already converted IDs stay unchanged
-        sig[64] = 27;
-        assert!(decoder.get_result(&sig).ends_with("1b"));
-
-        sig[64] = 28;
         assert!(decoder.get_result(&sig).ends_with("1c"));
     }
 

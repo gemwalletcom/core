@@ -23,16 +23,6 @@ pub enum SignatureScheme {
     Secp256k1,
 }
 
-const ETHEREUM_RECOVERY_ID_OFFSET: u8 = 27;
-
-pub fn apply_ethereum_recovery_id(signature: &mut [u8]) {
-    assert_eq!(signature.len(), 65, "expected 65-byte secp256k1 signature");
-    let v = &mut signature[64];
-    if *v < ETHEREUM_RECOVERY_ID_OFFSET {
-        *v += ETHEREUM_RECOVERY_ID_OFFSET;
-    }
-}
-
 impl Signer {
     pub fn sign_digest(scheme: SignatureScheme, digest: Vec<u8>, private_key: Vec<u8>) -> Result<Vec<u8>, SignerError> {
         let private_key = Zeroizing::new(private_key);
@@ -57,7 +47,8 @@ impl Signer {
         let digest = eip712::hash_typed_data(typed_data_json)?;
         let private_key_vec = Zeroizing::new(private_key.to_vec());
         let mut signature = Self::sign_digest(SignatureScheme::Secp256k1, digest.to_vec(), private_key_vec.to_vec())?;
-        apply_ethereum_recovery_id(&mut signature);
+        // Ethereum recovery id: shift raw 0/1 to 27/28
+        signature[64] += 27;
         Ok(hex::encode(signature))
     }
 }
