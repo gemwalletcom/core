@@ -1,5 +1,5 @@
 use base64::{Engine as _, engine::general_purpose};
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use sha2::Sha256;
 
 fn generate_hmac_from_bytes(key_bytes: &[u8], message: &str) -> String {
