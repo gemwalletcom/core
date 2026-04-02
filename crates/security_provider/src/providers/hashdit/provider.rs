@@ -2,7 +2,7 @@ use crate::providers::hashdit::models::DetectResponse;
 use crate::{AddressTarget, ScanProvider, ScanResult, TokenTarget, mapper};
 use async_trait::async_trait;
 use gem_client::{ClientError, ClientExt, ReqwestClient};
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use serde_json::{Value, json};
 use sha2::Sha256;
 use std::collections::HashMap;
