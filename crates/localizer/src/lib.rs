@@ -125,8 +125,16 @@ impl LanguageLocalizer {
         }
     }
 
-    pub fn notification_token_approval_title(&self, token: &str, address: &str) -> String {
-        fl!(self.loader.as_ref(), "notification_token_approval_title", token = token, address = address)
+    pub fn notification_sent_description(&self, address: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_sent_description", address = address)
+    }
+
+    pub fn notification_received_description(&self, address: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_received_description", address = address)
+    }
+
+    pub fn notification_token_approval_title(&self, token: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_token_approval_title", token = token)
     }
 
     pub fn notification_freeze_title(&self, value: &str) -> String {
@@ -151,14 +159,6 @@ impl LanguageLocalizer {
 
     pub fn notification_withdraw_title(&self, value: &str) -> String {
         fl!(self.loader.as_ref(), "notification_withdraw_title", value = value)
-    }
-
-    pub fn notification_stake_to_description(&self, validator: &str) -> String {
-        fl!(self.loader.as_ref(), "notification_stake_to_description", validator = validator)
-    }
-
-    pub fn notification_stake_from_description(&self, validator: &str) -> String {
-        fl!(self.loader.as_ref(), "notification_stake_from_description", validator = validator)
     }
 
     pub fn notification_claim_rewards_title(&self, value: &str) -> String {
