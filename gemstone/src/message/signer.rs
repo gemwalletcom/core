@@ -331,6 +331,13 @@ Issued At: 2026-03-09T15:48:34.458Z"#;
         // Raw recovery ID 1 -> 28 (0x1c)
         sig[64] = 1;
         assert!(decoder.get_result(&sig).ends_with("1c"));
+
+        // Already converted IDs stay unchanged
+        sig[64] = 27;
+        assert!(decoder.get_result(&sig).ends_with("1b"));
+
+        sig[64] = 28;
+        assert!(decoder.get_result(&sig).ends_with("1c"));
     }
 
     #[test]
