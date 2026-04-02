@@ -26,8 +26,9 @@ pub enum SignatureScheme {
 const ETHEREUM_RECOVERY_ID_OFFSET: u8 = 27;
 
 pub fn apply_ethereum_recovery_id(signature: &mut [u8]) {
-    debug_assert_eq!(signature.len(), 65, "expected 65-byte secp256k1 signature");
-    if let Some(v) = signature.last_mut() {
+    assert_eq!(signature.len(), 65, "expected 65-byte secp256k1 signature");
+    let v = &mut signature[64];
+    if *v < ETHEREUM_RECOVERY_ID_OFFSET {
         *v += ETHEREUM_RECOVERY_ID_OFFSET;
     }
 }
