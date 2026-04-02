@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::{collections::HashMap, error::Error};
 
 use async_trait::async_trait;
-use primitives::{AssetAddress, AssetIdVecExt, Transaction, TransactionId, TransactionState, TransactionType};
+use primitives::{AssetAddress, AssetIdVecExt, DeviceSubscription, Transaction, TransactionId, TransactionState, TransactionType};
 use storage::{AssetsAddressesRepository, AssetsRepository, Database, TransactionsRepository, WalletsRepository};
 use streamer::{AssetId, NotificationsPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, WalletStreamEvent, WalletStreamPayload, consumer::MessageConsumer};
 use swapper::cross_chain::{self, DepositAddressMap};
@@ -14,6 +14,24 @@ use crate::pusher::Pusher;
 const TRANSACTION_BATCH_SIZE: usize = 100;
 
 const IN_TRANSIT_TYPES: [TransactionType; 2] = [TransactionType::Transfer, TransactionType::SmartContractCall];
+
+fn unique_subscriptions_per_device(subscriptions: Vec<DeviceSubscription>) -> Vec<DeviceSubscription> {
+    subscriptions
+        .into_iter()
+        .fold(HashMap::<(String, String), DeviceSubscription>::new(), |mut best, sub| {
+            let key = (sub.device.id.clone(), sub.address.clone());
+            best.entry(key)
+                .and_modify(|existing| {
+                    if sub.wallet_id.wallet_type().notification_priority() < existing.wallet_id.wallet_type().notification_priority() {
+                        *existing = sub.clone();
+                    }
+                })
+                .or_insert(sub);
+            best
+        })
+        .into_values()
+        .collect()
+}
 
 fn set_cross_chain_in_transit(transactions: Vec<Transaction>, deposit_addresses: &DepositAddressMap) -> Vec<Transaction> {
     transactions
@@ -62,6 +80,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
 
         let addresses: Vec<_> = transactions.iter().flat_map(|tx| tx.addresses()).collect::<HashSet<_>>().into_iter().collect();
         let subscriptions = self.database.wallets()?.get_subscriptions_by_chain_addresses(chain, addresses)?;
+        let notification_subscriptions = unique_subscriptions_per_device(subscriptions.clone());
 
         let subscription_addresses: HashSet<_> = subscriptions.iter().map(|s| &s.address).collect();
 
@@ -118,19 +137,28 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
                 let (txn_ids, asset_ids) = wallet_events_map.entry(subscription.wallet_row_id).or_default();
                 txn_ids.insert(transaction.id.clone());
                 asset_ids.extend(transaction_asset_ids.iter().cloned());
+            }
+        }
 
-                let should_notify = self.config.should_notify_transaction(transaction, is_notify_devices, &send_addresses);
+        for subscription in &notification_subscriptions {
+            for transaction in transactions_map.values() {
+                if !transaction.addresses().contains(&subscription.address) {
+                    continue;
+                }
 
-                if should_notify {
-                    let assets: Vec<primitives::Asset> = transaction_asset_ids
-                        .iter()
-                        .filter_map(|id| existing_assets_map.get(id))
-                        .map(|asset_price| asset_price.asset.asset.clone())
-                        .collect();
+                if !self.config.should_notify_transaction(transaction, is_notify_devices, &send_addresses) {
+                    continue;
+                }
 
-                    if let Ok(push_notifications) = self.pusher.get_messages(subscription, transaction.clone(), assets).await {
-                        notifications.push(NotificationsPayload::new(push_notifications));
-                    }
+                let transaction_asset_ids = transaction.asset_ids();
+                let assets: Vec<primitives::Asset> = transaction_asset_ids
+                    .iter()
+                    .filter_map(|id| existing_assets_map.get(id))
+                    .map(|asset_price| asset_price.asset.asset.clone())
+                    .collect();
+
+                if let Ok(push_notifications) = self.pusher.get_messages(subscription, transaction.clone(), assets).await {
+                    notifications.push(NotificationsPayload::new(push_notifications));
                 }
             }
         }
@@ -197,80 +225,85 @@ impl StoreTransactionsConsumer {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::SwapProvider;
+    use primitives::{Chain, Device, SwapProvider, WalletId};
 
     #[test]
-    fn test_set_cross_chain_in_transit_cross_chain() {
-        let vault = "0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146".to_string();
-        let vault_addresses = DepositAddressMap::from([(vault.clone(), SwapProvider::Thorchain)]);
-        let tx = Transaction {
-            to: vault,
+    fn test_set_cross_chain_in_transit() {
+        let thorchain_vault = "0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146".to_string();
+        let near_vault = "TMoD2uJiUAvB2RhLGm1BmzCVVzi5VLFDVt".to_string();
+        let vault_addresses = DepositAddressMap::from([
+            (thorchain_vault.clone(), SwapProvider::Thorchain),
+            (near_vault.clone(), SwapProvider::NearIntents),
+        ]);
+
+        let cross_chain = Transaction {
+            to: thorchain_vault.clone(),
             memo: Some("=:BTC:bc1qaddress:0/1/0".to_string()),
             ..Transaction::mock()
         };
-        let result = set_cross_chain_in_transit(vec![tx], &vault_addresses);
-        assert_eq!(result[0].state, TransactionState::InTransit);
-    }
+        assert_eq!(set_cross_chain_in_transit(vec![cross_chain], &vault_addresses)[0].state, TransactionState::InTransit);
 
-    #[test]
-    fn test_set_cross_chain_in_transit_thorchain_no_memo() {
-        let vault = "bc1qvault".to_string();
-        let vault_addresses = DepositAddressMap::from([(vault.clone(), SwapProvider::Thorchain)]);
-        let tx = Transaction { to: vault, ..Transaction::mock() };
-        let result = set_cross_chain_in_transit(vec![tx], &vault_addresses);
-        assert_eq!(result[0].state, TransactionState::Confirmed);
-    }
+        let vault_no_memo = Transaction { to: "bc1qvault".to_string(), ..Transaction::mock() };
+        let vault_addresses_bc = DepositAddressMap::from([("bc1qvault".to_string(), SwapProvider::Thorchain)]);
+        assert_eq!(set_cross_chain_in_transit(vec![vault_no_memo], &vault_addresses_bc)[0].state, TransactionState::Confirmed);
 
-    #[test]
-    fn test_set_cross_chain_in_transit_regular_transfer() {
-        let result = set_cross_chain_in_transit(vec![Transaction::mock()], &DepositAddressMap::new());
-        assert_eq!(result[0].state, TransactionState::Confirmed);
-    }
+        assert_eq!(set_cross_chain_in_transit(vec![Transaction::mock()], &DepositAddressMap::new())[0].state, TransactionState::Confirmed);
 
-    #[test]
-    fn test_set_cross_chain_in_transit_skip_swap_type() {
-        let memo = "=:ETH.USDT:0x858734a6353C9921a78fB3c937c8E20Ba6f36902:1635978e6/1/0";
-        let tx = Transaction {
+        let swap_type = Transaction {
             transaction_type: TransactionType::Swap,
-            memo: Some(memo.to_string()),
+            memo: Some("=:ETH.USDT:0x858734a6353C9921a78fB3c937c8E20Ba6f36902:1635978e6/1/0".to_string()),
             ..Transaction::mock()
         };
-        let result = set_cross_chain_in_transit(vec![tx], &DepositAddressMap::new());
-        assert_eq!(result[0].state, TransactionState::Confirmed);
-    }
+        assert_eq!(set_cross_chain_in_transit(vec![swap_type], &DepositAddressMap::new())[0].state, TransactionState::Confirmed);
 
-    #[test]
-    fn test_set_cross_chain_in_transit_skip_token_approval() {
-        let tx = Transaction {
+        let token_approval = Transaction {
             transaction_type: TransactionType::TokenApproval,
             to: "0x337685fdaB40D39bd02028545a4FfA7D287cC3E2".to_string(),
             ..Transaction::mock()
         };
-        let result = set_cross_chain_in_transit(vec![tx], &DepositAddressMap::new());
-        assert_eq!(result[0].state, TransactionState::Confirmed);
-    }
+        assert_eq!(set_cross_chain_in_transit(vec![token_approval], &DepositAddressMap::new())[0].state, TransactionState::Confirmed);
 
-    #[test]
-    fn test_set_cross_chain_in_transit_skip_pending() {
-        let memo = "=:ETH.USDT:0x858734a6353C9921a78fB3c937c8E20Ba6f36902:1635978e6/1/0";
-        let tx = Transaction {
+        let pending = Transaction {
             state: TransactionState::Pending,
-            memo: Some(memo.to_string()),
+            memo: Some("=:ETH.USDT:0x858734a6353C9921a78fB3c937c8E20Ba6f36902:1635978e6/1/0".to_string()),
             ..Transaction::mock()
         };
-        let result = set_cross_chain_in_transit(vec![tx], &DepositAddressMap::new());
-        assert_eq!(result[0].state, TransactionState::Pending);
+        assert_eq!(set_cross_chain_in_transit(vec![pending], &DepositAddressMap::new())[0].state, TransactionState::Pending);
+
+        let near_intents = Transaction { to: near_vault.clone(), ..Transaction::mock() };
+        assert_eq!(set_cross_chain_in_transit(vec![near_intents], &vault_addresses)[0].state, TransactionState::InTransit);
     }
 
     #[test]
-    fn test_set_cross_chain_in_transit_vault_address() {
-        let vault = "TMoD2uJiUAvB2RhLGm1BmzCVVzi5VLFDVt".to_string();
-        let tx = Transaction {
-            to: vault.clone(),
-            ..Transaction::mock()
+    fn test_unique_subscriptions_per_device() {
+        let multicoin = DeviceSubscription::mock();
+        let single = DeviceSubscription {
+            wallet_id: WalletId::Single(Chain::Ethereum, "0xABC".to_string()),
+            ..DeviceSubscription::mock()
         };
-        let vault_addresses = DepositAddressMap::from([(vault, SwapProvider::NearIntents)]);
-        let result = set_cross_chain_in_transit(vec![tx], &vault_addresses);
-        assert_eq!(result[0].state, TransactionState::InTransit);
+        let view = DeviceSubscription {
+            wallet_id: WalletId::View(Chain::Ethereum, "0xABC".to_string()),
+            ..DeviceSubscription::mock()
+        };
+
+        let result = unique_subscriptions_per_device(vec![view.clone(), single.clone(), multicoin.clone()]);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].wallet_id, multicoin.wallet_id);
+
+        let result = unique_subscriptions_per_device(vec![view.clone(), single.clone()]);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].wallet_id, single.wallet_id);
+
+        let result = unique_subscriptions_per_device(vec![view.clone()]);
+        assert_eq!(result.len(), 1);
+        assert_eq!(result[0].wallet_id, view.wallet_id);
+
+        let other_device = DeviceSubscription {
+            device: Device { id: "device-2".to_string(), ..Device::mock() },
+            wallet_id: WalletId::View(Chain::Ethereum, "0xABC".to_string()),
+            ..DeviceSubscription::mock()
+        };
+        let result = unique_subscriptions_per_device(vec![multicoin.clone(), other_device.clone()]);
+        assert_eq!(result.len(), 2);
     }
 }

@@ -12,3 +12,14 @@ pub enum WalletType {
     PrivateKey,
     View,
 }
+
+impl WalletType {
+    pub fn notification_priority(&self) -> u8 {
+        match self {
+            WalletType::Multicoin => 0,
+            WalletType::Single => 1,
+            WalletType::PrivateKey => 2,
+            WalletType::View => 3,
+        }
+    }
+}
