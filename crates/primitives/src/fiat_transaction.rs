@@ -1,4 +1,4 @@
-use crate::{AssetId, FiatProviderName, FiatQuoteUrlData};
+use crate::{Asset, AssetId, FiatProviderName, FiatQuoteUrlData};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumString};
@@ -70,6 +70,15 @@ pub struct FiatTransactionUpdate {
 #[serde(rename_all = "camelCase")]
 pub struct FiatTransactionData {
     pub transaction: FiatTransaction,
+    pub details_url: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize, Serialize)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(rename_all = "camelCase")]
+pub struct FiatTransactionAssetData {
+    pub transaction: FiatTransaction,
+    pub asset: Asset,
     pub details_url: Option<String>,
 }
 

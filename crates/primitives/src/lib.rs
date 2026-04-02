@@ -79,7 +79,7 @@ pub use self::fiat_quote::{FiatAssetSymbol, FiatQuote, FiatQuoteError, FiatQuote
 pub mod fiat_transaction;
 pub use self::fiat_assets::FiatAsset;
 pub use self::fiat_assets::FiatAssets;
-pub use self::fiat_transaction::{FiatQuoteType, FiatTransaction, FiatTransactionData, FiatTransactionStatus, FiatTransactionUpdate};
+pub use self::fiat_transaction::{FiatQuoteType, FiatTransaction, FiatTransactionAssetData, FiatTransactionData, FiatTransactionStatus, FiatTransactionUpdate};
 pub mod fiat_provider;
 pub use self::fiat_provider::{FiatProvider, FiatProviderCountry, FiatProviderName};
 pub mod fiat_quote_request;
