@@ -15,7 +15,7 @@ pub fn device_stream_channel(device_id: &str) -> String {
 #[allow(clippy::large_enum_variant)]
 pub enum StreamEvent {
     Prices(WebSocketPricePayload),
-    Balances(Vec<StreamBalanceUpdate>),
+    Balances(StreamBalanceUpdate),
     Transactions(StreamTransactionsUpdate),
     PriceAlerts(StreamPriceAlertUpdate),
     Nft(StreamWalletUpdate),
