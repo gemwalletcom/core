@@ -162,9 +162,8 @@ impl MessageSigner {
                 if data.len() < SIGNATURE_LENGTH {
                     return encode_with_0x(data);
                 }
-                let mut signature = data.to_vec();
-                // Ethereum/Tron recovery id: shift raw 0/1 to 27/28
-                signature[SIGNATURE_LENGTH - 1] += 27;
+                // Apply Ethereum/Tron recovery id: raw 0/1 → 27/28
+                let signature = [&data[..SIGNATURE_LENGTH - 1], &[data[SIGNATURE_LENGTH - 1] + 27]].concat();
                 encode_with_0x(&signature)
             }
             SignDigestType::SuiPersonal | SignDigestType::TonPersonal => BASE64.encode(data),
@@ -184,8 +183,8 @@ impl MessageSigner {
                 self.get_ton_result(&result)
             }
             SignDigestType::Eip191 | SignDigestType::Eip712 | SignDigestType::Siwe | SignDigestType::TronPersonal => {
-                let signed = Signer::sign_digest(SignatureScheme::Secp256k1, hash, private_key.to_vec())?;
-                Ok(self.get_result(&signed))
+                let signature = Signer::sign_secp256k1_ethereum(&hash, &private_key)?;
+                Ok(encode_with_0x(&signature))
             }
             SignDigestType::Base58 => {
                 let signed = Signer::sign_digest(SignatureScheme::Ed25519, hash, private_key.to_vec())?;

@@ -1,7 +1,7 @@
 use gem_hash::sha2::sha256;
 use primitives::{ChainSigner, SignerError, SignerInput, TransferDataOutputType, hex::decode_hex};
 use serde_json::Value;
-use signer::{SignatureScheme, Signer};
+use signer::Signer;
 
 enum PayloadFormat {
     V1,
@@ -70,9 +70,7 @@ impl ChainSigner for TronChainSigner {
         let payload = TronPayload::parse(input)?;
         let raw_bytes = decode_hex(payload.raw_data_hex()?)?;
         let digest = sha256(&raw_bytes);
-        let mut signature = Signer::sign_digest(SignatureScheme::Secp256k1, digest.to_vec(), private_key.to_vec()).map_err(|e| SignerError::signing_error(e.to_string()))?;
-        // Tron uses Ethereum-style recovery id: shift raw 0/1 to 27/28
-        signature[64] += 27;
+        let signature = Signer::sign_secp256k1_ethereum(&digest, private_key).map_err(|e| SignerError::signing_error(e.to_string()))?;
         let signature_hex = hex::encode(signature);
 
         match payload.output_type {
