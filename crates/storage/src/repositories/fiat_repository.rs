@@ -1,6 +1,6 @@
 use crate::{DatabaseError, DieselResultExt};
 use chrono::NaiveDateTime;
-use primitives::{Asset, AssetId, FiatProviderCountry, FiatProviderName, FiatRate, FiatTransaction};
+use primitives::{AssetId, FiatProviderCountry, FiatProviderName, FiatRate, FiatTransaction};
 
 use crate::DatabaseClient;
 use crate::database::fiat::{FiatAssetFilter, FiatStore};
@@ -11,7 +11,6 @@ pub trait FiatRepository {
     fn add_fiat_providers_countries(&mut self, values: Vec<crate::models::FiatProviderCountryRow>) -> Result<usize, DatabaseError>;
     fn get_fiat_providers_countries(&mut self) -> Result<Vec<FiatProviderCountry>, DatabaseError>;
     fn get_fiat_transactions_by_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<FiatTransaction>, DatabaseError>;
-    fn get_fiat_transactions_with_assets_by_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<(FiatTransaction, Asset)>, DatabaseError>;
     fn get_fiat_assets_by_filter(&mut self, filters: Vec<FiatAssetFilter>) -> Result<Vec<crate::models::FiatAssetRow>, DatabaseError>;
     fn get_fiat_assets_popular(&mut self, from: NaiveDateTime, limit: i64) -> Result<Vec<AssetId>, DatabaseError>;
     fn get_fiat_assets_for_asset_id(&mut self, asset_id: &str) -> Result<Vec<crate::models::FiatAssetRow>, DatabaseError>;
@@ -43,14 +42,6 @@ impl FiatRepository for DatabaseClient {
     fn get_fiat_transactions_by_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<FiatTransaction>, DatabaseError> {
         let result = FiatStore::get_fiat_transactions_by_addresses(self, addresses)?;
         result.into_iter().map(|row| row.as_primitive()).collect()
-    }
-
-    fn get_fiat_transactions_with_assets_by_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<(FiatTransaction, Asset)>, DatabaseError> {
-        let result = FiatStore::get_fiat_transactions_with_assets_by_addresses(self, addresses)?;
-        result
-            .into_iter()
-            .map(|(transaction, asset)| Ok((transaction.as_primitive()?, asset.as_primitive())))
-            .collect()
     }
 
     fn get_fiat_assets_by_filter(&mut self, filters: Vec<FiatAssetFilter>) -> Result<Vec<crate::models::FiatAssetRow>, DatabaseError> {

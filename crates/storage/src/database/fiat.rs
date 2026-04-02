@@ -27,7 +27,6 @@ pub(crate) trait FiatStore {
     fn get_fiat_providers_countries(&mut self) -> Result<Vec<FiatProviderCountryRow>, diesel::result::Error>;
     fn update_fiat_transaction(&mut self, provider: FiatProviderName, update: FiatTransactionUpdate) -> Result<FiatTransactionRow, diesel::result::Error>;
     fn get_fiat_transactions_by_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<FiatTransactionRow>, diesel::result::Error>;
-    fn get_fiat_transactions_with_assets_by_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<(FiatTransactionRow, AssetRow)>, diesel::result::Error>;
     fn get_fiat_assets_by_filter(&mut self, filters: Vec<FiatAssetFilter>) -> Result<Vec<FiatAssetRow>, diesel::result::Error>;
     fn get_fiat_assets_popular(&mut self, from: NaiveDateTime, limit: i64) -> Result<Vec<AssetId>, diesel::result::Error>;
     fn get_fiat_assets_for_asset_id(&mut self, asset_id: &str) -> Result<Vec<FiatAssetRow>, diesel::result::Error>;
@@ -129,22 +128,6 @@ impl FiatStore for DatabaseClient {
             .filter(wallets_addresses::address.eq_any(addresses_list))
             .order(fiat_transactions::created_at.desc())
             .select(FiatTransactionRow::as_select())
-            .load(&mut self.connection)
-    }
-
-    fn get_fiat_transactions_with_assets_by_addresses(&mut self, addresses_list: Vec<String>) -> Result<Vec<(FiatTransactionRow, AssetRow)>, diesel::result::Error> {
-        use crate::schema::{assets, fiat_transactions, wallets_addresses};
-
-        if addresses_list.is_empty() {
-            return Ok(vec![]);
-        }
-
-        fiat_transactions::table
-            .inner_join(assets::table)
-            .inner_join(wallets_addresses::table)
-            .filter(wallets_addresses::address.eq_any(addresses_list))
-            .order(fiat_transactions::created_at.desc())
-            .select((FiatTransactionRow::as_select(), AssetRow::as_select()))
             .load(&mut self.connection)
     }
 
@@ -321,10 +304,6 @@ impl DatabaseClient {
 
     pub fn get_fiat_transactions_by_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<FiatTransactionRow>, diesel::result::Error> {
         FiatStore::get_fiat_transactions_by_addresses(self, addresses)
-    }
-
-    pub fn get_fiat_transactions_with_assets_by_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<(FiatTransactionRow, AssetRow)>, diesel::result::Error> {
-        FiatStore::get_fiat_transactions_with_assets_by_addresses(self, addresses)
     }
 
     pub fn get_fiat_assets_by_filter(&mut self, filters: Vec<FiatAssetFilter>) -> Result<Vec<FiatAssetRow>, diesel::result::Error> {

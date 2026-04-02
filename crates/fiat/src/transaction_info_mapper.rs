@@ -1,7 +1,7 @@
 use primitives::date_ext::NaiveDateTimeExt;
-use primitives::{Asset, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionInfo, FiatTransactionStatus};
+use primitives::{FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionData, FiatTransactionStatus};
 
-pub fn fiat_transaction_info(mut transaction: FiatTransaction, asset: Asset) -> FiatTransactionInfo {
+pub fn fiat_transaction_info(mut transaction: FiatTransaction) -> FiatTransactionData {
     if transaction.status == FiatTransactionStatus::Pending && transaction.created_at.naive_utc().is_older_than_days(1) {
         transaction.status = FiatTransactionStatus::Unknown;
     }
@@ -11,7 +11,7 @@ pub fn fiat_transaction_info(mut transaction: FiatTransaction, asset: Asset) -> 
         _ => details_url(&transaction.provider, &transaction.transaction_type, transaction.provider_transaction_id.as_deref()),
     };
 
-    FiatTransactionInfo { transaction, asset, details_url }
+    FiatTransactionData { transaction, details_url }
 }
 
 fn details_url(provider: &FiatProviderName, transaction_type: &FiatQuoteType, provider_transaction_id: Option<&str>) -> Option<String> {
@@ -34,7 +34,7 @@ fn details_url(provider: &FiatProviderName, transaction_type: &FiatQuoteType, pr
 mod tests {
     use super::{details_url, fiat_transaction_info};
     use primitives::chrono::{Duration, Utc};
-    use primitives::{Asset, Chain, FiatProviderName, FiatQuoteType, FiatTransactionStatus};
+    use primitives::{FiatProviderName, FiatQuoteType, FiatTransactionStatus};
 
     #[test]
     fn details_url_returns_expected_values() {
@@ -82,15 +82,13 @@ mod tests {
             status: FiatTransactionStatus::Complete,
             ..primitives::FiatTransaction::mock()
         };
-        let asset = Asset::from_chain(Chain::Bitcoin);
 
-        let rendered = fiat_transaction_info(transaction, asset.clone());
+        let rendered = fiat_transaction_info(transaction);
 
         assert_eq!(
             rendered.details_url,
             Some("https://buy.moonpay.com/v2/transaction-tracker?transactionId=tx_123".to_string())
         );
-        assert_eq!(rendered.asset, asset);
     }
 
     #[test]
@@ -100,9 +98,8 @@ mod tests {
             created_at: Utc::now() - Duration::days(2),
             ..primitives::FiatTransaction::mock()
         };
-        let asset = Asset::from_chain(Chain::Bitcoin);
 
-        let result = fiat_transaction_info(transaction, asset);
+        let result = fiat_transaction_info(transaction);
         assert_eq!(result.transaction.status, FiatTransactionStatus::Unknown);
         assert_eq!(result.details_url, None);
     }
@@ -114,9 +111,8 @@ mod tests {
             created_at: Utc::now(),
             ..primitives::FiatTransaction::mock()
         };
-        let asset = Asset::from_chain(Chain::Bitcoin);
 
-        let result = fiat_transaction_info(transaction, asset);
+        let result = fiat_transaction_info(transaction);
         assert_eq!(result.transaction.status, FiatTransactionStatus::Pending);
     }
 }
