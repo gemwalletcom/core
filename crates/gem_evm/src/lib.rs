@@ -42,9 +42,6 @@ pub mod provider;
 pub mod testkit;
 
 pub const ETHEREUM_MESSAGE_PREFIX: &str = "\x19Ethereum Signed Message:\n";
-pub const SIGNATURE_LENGTH: usize = 65;
-pub const RECOVERY_ID_INDEX: usize = SIGNATURE_LENGTH - 1;
-pub const ETHEREUM_RECOVERY_ID_OFFSET: u8 = 27;
 
 pub use address::ethereum_address_checksum;
 pub use eip712::{EIP712Domain, EIP712Field, EIP712Type, EIP712TypedValue, eip712_domain_types};
