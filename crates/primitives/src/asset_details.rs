@@ -62,6 +62,15 @@ pub struct AssetPriceMetadata {
     pub price: Option<Price>,
 }
 
+impl AssetPriceMetadata {
+    pub fn asset_basic_with_rate(self, rate: f64) -> AssetBasic {
+        AssetBasic {
+            price: self.price.map(|price| price.with_rate(rate)),
+            ..self.asset
+        }
+    }
+}
+
 #[typeshare(swift = "Sendable")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -118,5 +127,42 @@ impl AssetLink {
             name: link_type.name(),
             url: url.to_string(),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use chrono::Utc;
+
+    use super::*;
+    use crate::{Asset, Chain};
+
+    #[test]
+    fn test_asset_basic_with_rate() {
+        let asset = Asset::from_chain(Chain::Bitcoin);
+        let price = Price::new(100.0, 5.0, Utc::now());
+
+        let base = AssetPriceMetadata {
+            asset: AssetBasic::new(asset.clone(), AssetProperties::default(asset.id.clone()), AssetScore::default()),
+            price: Some(price.clone()),
+        }
+        .asset_basic_with_rate(1.0);
+        let converted = AssetPriceMetadata {
+            asset: AssetBasic::new(asset.clone(), AssetProperties::default(asset.id.clone()), AssetScore::default()),
+            price: Some(price.clone()),
+        }
+        .asset_basic_with_rate(2.0);
+        let missing = AssetPriceMetadata {
+            asset: AssetBasic::new(asset.clone(), AssetProperties::default(asset.id.clone()), AssetScore::default()),
+            price: None,
+        }
+        .asset_basic_with_rate(2.0);
+
+        assert_eq!(base.asset, asset);
+        assert_eq!(base.price.as_ref().unwrap().price, price.price);
+        assert_eq!(base.price.as_ref().unwrap().price_change_percentage_24h, price.price_change_percentage_24h);
+        assert_eq!(converted.price.as_ref().unwrap().price, price.price * 2.0);
+        assert_eq!(converted.price.as_ref().unwrap().price_change_percentage_24h, price.price_change_percentage_24h);
+        assert!(missing.price.is_none());
     }
 }

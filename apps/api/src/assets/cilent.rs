@@ -29,8 +29,14 @@ impl AssetsClient {
         Ok(self.database.assets()?.get_asset(asset_id)?)
     }
 
-    pub fn get_assets(&self, asset_ids: Vec<String>) -> Result<Vec<AssetBasic>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.assets()?.get_assets_basic(asset_ids)?)
+    pub fn get_assets(&self, asset_ids: Vec<String>, rate: f64) -> Result<Vec<AssetBasic>, Box<dyn Error + Send + Sync>> {
+        Ok(self
+            .database
+            .assets()?
+            .get_assets_with_prices(asset_ids)?
+            .into_iter()
+            .map(|asset| asset.asset_basic_with_rate(rate))
+            .collect())
     }
 
     pub fn get_asset_full(&self, asset_id: &str) -> Result<AssetFull, Box<dyn Error + Send + Sync>> {

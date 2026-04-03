@@ -25,9 +25,17 @@ pub async fn get_asset(
     Ok(asset.with_rate(rate).into())
 }
 
-#[post("/assets", format = "json", data = "<asset_ids>")]
-pub async fn get_assets(asset_ids: Json<Vec<String>>, client: &State<Mutex<AssetsClient>>) -> Result<ApiResponse<Vec<AssetBasic>>, ApiError> {
-    Ok(client.lock().await.get_assets(asset_ids.0)?.into())
+#[post("/assets?<currency>", format = "json", data = "<asset_ids>")]
+pub async fn get_assets(
+    asset_ids: Json<Vec<String>>,
+    currency: Option<&str>,
+    client: &State<Mutex<AssetsClient>>,
+    price_client: &State<Mutex<PriceClient>>,
+) -> Result<ApiResponse<Vec<AssetBasic>>, ApiError> {
+    let currency = currency.unwrap_or(DEFAULT_FIAT_CURRENCY);
+    let rate = price_client.lock().await.get_fiat_rate(currency)?.rate;
+
+    Ok(client.lock().await.get_assets(asset_ids.0, rate)?.into())
 }
 
 #[post("/assets/add", format = "json", data = "<asset_id>")]
