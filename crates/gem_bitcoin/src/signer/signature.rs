@@ -1,10 +1,8 @@
 use primitives::SignerError;
-use signer::{SignatureScheme, Signer};
+use signer::{RECOVERY_ID_INDEX, SIGNATURE_LENGTH, SignatureScheme, Signer};
 
 use super::types::{BitcoinSignDataResponse, BitcoinSignMessageData};
 
-const SIGNATURE_LENGTH: usize = 65;
-const RECOVERY_ID_INDEX: usize = SIGNATURE_LENGTH - 1;
 const BIP137_P2WPKH_BASE: u8 = 39;
 
 pub fn sign_personal(data: &[u8], private_key: &[u8]) -> Result<BitcoinSignDataResponse, SignerError> {
@@ -32,9 +30,17 @@ mod tests {
     fn test_sign_bitcoin_personal() {
         let data = BitcoinSignMessageData::new("Hello Bitcoin".to_string(), "bc1qtest".to_string()).to_bytes();
         let private_key = hex::decode("1e9d38b5274152a78dff1a86fa464ceadc1f4238ca2c17060c3c507349424a34").unwrap();
-        let parsed: serde_json::Value = serde_json::from_str(&sign_personal(&data, &private_key).unwrap().to_json().unwrap()).unwrap();
+        let result = sign_personal(&data, &private_key).unwrap();
+
+        let parsed: serde_json::Value = serde_json::from_str(&result.to_json().unwrap()).unwrap();
         assert_eq!(parsed["address"], "bc1qtest");
-        assert!(!parsed["signature"].as_str().unwrap().is_empty());
+
+        let sig_hex = parsed["signature"].as_str().unwrap();
+        let sig_bytes = hex::decode(sig_hex).unwrap();
+        assert_eq!(sig_bytes.len(), SIGNATURE_LENGTH);
+
+        let header = sig_bytes[0];
+        assert!(header == BIP137_P2WPKH_BASE || header == BIP137_P2WPKH_BASE + 1, "unexpected BIP-137 header: {header}");
     }
 
     #[test]
