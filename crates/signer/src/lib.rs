@@ -7,8 +7,7 @@ use ed25519_dalek::Signer as DalekSigner;
 use zeroize::Zeroizing;
 
 use crate::ed25519::{sign_digest as sign_ed25519_digest, signing_key_from_bytes};
-pub use crate::secp256k1::public_key_from_private as secp256k1_public_key;
-use crate::secp256k1::sign_digest as sign_secp256k1_digest;
+pub use crate::secp256k1::{apply_ethereum_recovery_id, public_key_from_private as secp256k1_public_key};
 
 pub use decode::{decode_private_key, encode_private_key, supports_private_key_import};
 pub use eip712::hash_typed_data as hash_eip712;
@@ -28,8 +27,18 @@ impl Signer {
         let private_key = Zeroizing::new(private_key);
         match scheme {
             SignatureScheme::Ed25519 => Ok(sign_ed25519_digest(&digest, &private_key)?.to_bytes().to_vec()),
-            SignatureScheme::Secp256k1 => sign_secp256k1_digest(&digest, &private_key),
+            SignatureScheme::Secp256k1 => {
+                let (mut rs, v) = secp256k1::sign_digest(&digest, &private_key)?;
+                rs.push(v);
+                Ok(rs)
+            }
         }
+    }
+
+    /// Sign a secp256k1 digest returning [r(32), s(32), v(1)] where v ∈ {27, 28}.
+    pub fn sign_eth_digest(digest: &[u8], private_key: &[u8]) -> Result<Vec<u8>, SignerError> {
+        let private_key = Zeroizing::new(private_key.to_vec());
+        secp256k1::sign_eth_digest(digest, &private_key)
     }
 
     /// Sign a digest with Ed25519 and return both the signature and public key bytes.
@@ -45,8 +54,7 @@ impl Signer {
 
     pub fn sign_eip712(typed_data_json: &str, private_key: &[u8]) -> Result<String, SignerError> {
         let digest = eip712::hash_typed_data(typed_data_json)?;
-        let private_key_vec = Zeroizing::new(private_key.to_vec());
-        let signature = Self::sign_digest(SignatureScheme::Secp256k1, digest.to_vec(), private_key_vec.to_vec())?;
+        let signature = Self::sign_eth_digest(&digest, private_key)?;
         Ok(hex::encode(signature))
     }
 }
@@ -54,6 +62,8 @@ impl Signer {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const PRIVATE_KEY: &str = "1e9d38b5274152a78dff1a86fa464ceadc1f4238ca2c17060c3c507349424a34";
 
     #[test]
     fn ed25519_sign_with_public_key_rejects_invalid_length() {
@@ -63,7 +73,7 @@ mod tests {
 
     #[test]
     fn ed25519_sign_with_public_key_returns_correct_lengths() {
-        let private_key = hex::decode("1e9d38b5274152a78dff1a86fa464ceadc1f4238ca2c17060c3c507349424a34").unwrap();
+        let private_key = hex::decode(PRIVATE_KEY).unwrap();
         let digest = b"test message";
 
         let (signature, public_key) = Signer::sign_ed25519_with_public_key(digest, &private_key).unwrap();
@@ -71,4 +81,5 @@ mod tests {
         assert_eq!(signature.len(), 64, "Ed25519 signature should be 64 bytes");
         assert_eq!(public_key.len(), 32, "Ed25519 public key should be 32 bytes");
     }
+
 }

@@ -3,12 +3,12 @@ use std::borrow::Cow;
 use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64;
 use bs58;
-use gem_evm::{ETHEREUM_RECOVERY_ID_OFFSET, RECOVERY_ID_INDEX, SIGNATURE_LENGTH, message::eip191_hash_message};
+use gem_evm::{SIGNATURE_LENGTH, message::eip191_hash_message};
 use gem_sui::signer as sui_signer;
 use gem_ton::address::base64_to_hex_address;
 use gem_ton::signer::{TonSignDataResponse, TonSignMessageData, TonSignResult, sign_personal as ton_sign_personal};
 use primitives::hex::encode_with_0x;
-use signer::{SignatureScheme, Signer, hash_eip712};
+use signer::{SignatureScheme, Signer, apply_ethereum_recovery_id, hash_eip712};
 use std::time::{SystemTime, UNIX_EPOCH};
 use sui_types::PersonalMessage;
 
@@ -163,9 +163,7 @@ impl MessageSigner {
                     return encode_with_0x(data);
                 }
                 let mut signature = data.to_vec();
-                if signature[RECOVERY_ID_INDEX] < ETHEREUM_RECOVERY_ID_OFFSET {
-                    signature[RECOVERY_ID_INDEX] += ETHEREUM_RECOVERY_ID_OFFSET;
-                }
+                apply_ethereum_recovery_id(&mut signature);
                 encode_with_0x(&signature)
             }
             SignDigestType::SuiPersonal | SignDigestType::TonPersonal => BASE64.encode(data),
@@ -185,8 +183,8 @@ impl MessageSigner {
                 self.get_ton_result(&result)
             }
             SignDigestType::Eip191 | SignDigestType::Eip712 | SignDigestType::Siwe | SignDigestType::TronPersonal => {
-                let signed = Signer::sign_digest(SignatureScheme::Secp256k1, hash, private_key.to_vec())?;
-                Ok(self.get_result(&signed))
+                let signature = Signer::sign_eth_digest(&hash, &private_key)?;
+                Ok(encode_with_0x(&signature))
             }
             SignDigestType::Base58 => {
                 let signed = Signer::sign_digest(SignatureScheme::Ed25519, hash, private_key.to_vec())?;
@@ -325,16 +323,16 @@ Issued At: 2026-03-09T15:48:34.458Z"#;
             data: b"test".to_vec(),
         });
 
-        // Test recovery ID 0 -> 27 (0x1b)
+        // Raw recovery ID 0 -> 27 (0x1b)
         let mut sig = vec![0u8; 65];
         sig[64] = 0;
         assert!(decoder.get_result(&sig).ends_with("1b"));
 
-        // Test recovery ID 1 -> 28 (0x1c)
+        // Raw recovery ID 1 -> 28 (0x1c)
         sig[64] = 1;
         assert!(decoder.get_result(&sig).ends_with("1c"));
 
-        // Test already converted IDs stay unchanged
+        // Already converted IDs stay unchanged
         sig[64] = 27;
         assert!(decoder.get_result(&sig).ends_with("1b"));
 
