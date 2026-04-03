@@ -56,9 +56,6 @@ impl FiatQuotesClient {
 
         let transactions = FiatRepository::get_fiat_transactions_by_addresses(&mut self.database.fiat()?, addresses)?;
 
-        Ok(transactions
-            .into_iter()
-            .map(fiat::fiat_transaction_info)
-            .collect())
+        Ok(transactions.into_iter().map(fiat::fiat_transaction_info).collect())
     }
 }

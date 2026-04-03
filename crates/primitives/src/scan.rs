@@ -49,7 +49,7 @@ impl AddressType {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ScanAddress {
     pub chain: Chain,
@@ -60,4 +60,18 @@ pub struct ScanAddress {
     pub is_malicious: Option<bool>,
     pub is_memo_required: Option<bool>,
     pub is_verified: Option<bool>,
+}
+
+impl ScanAddress {
+    pub fn contract(chain: Chain, address: impl Into<String>, name: impl Into<String>) -> Self {
+        Self {
+            chain,
+            address: address.into(),
+            name: Some(name.into()),
+            address_type: Some(AddressType::Contract),
+            is_malicious: Some(false),
+            is_memo_required: Some(false),
+            is_verified: Some(true),
+        }
+    }
 }

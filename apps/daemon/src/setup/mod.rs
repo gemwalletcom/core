@@ -1,3 +1,6 @@
+mod scan_addresses;
+
+use self::scan_addresses::setup_scan_addresses;
 use chrono::Utc;
 use gem_tracing::info_with_fields;
 use prices_dex::PriceFeedProvider;
@@ -22,6 +25,7 @@ pub async fn run_setup(settings: Settings) -> Result<(), Box<dyn std::error::Err
     let database: Database = Database::new(&settings.postgres.url, settings.postgres.pool);
 
     setup_database(&database)?;
+    setup_scan_addresses(&database)?;
     setup_search_index(&settings).await?;
     setup_queues(&settings).await?;
 
