@@ -13,9 +13,7 @@ pub struct AssetFull {
     pub tags: Vec<String>,
     pub links: Vec<AssetLink>,
     pub perpetuals: Vec<PerpetualBasic>,
-    #[typeshare(skip)]
     pub price: Option<Price>,
-    #[typeshare(skip)]
     pub market: Option<AssetMarket>,
 }
 
@@ -144,12 +142,12 @@ mod tests {
 
         let base = AssetPriceMetadata {
             asset: AssetBasic::new(asset.clone(), AssetProperties::default(asset.id.clone()), AssetScore::default()),
-            price: Some(price.clone()),
+            price: Some(price),
         }
         .asset_basic_with_rate(1.0);
         let converted = AssetPriceMetadata {
             asset: AssetBasic::new(asset.clone(), AssetProperties::default(asset.id.clone()), AssetScore::default()),
-            price: Some(price.clone()),
+            price: Some(price),
         }
         .asset_basic_with_rate(2.0);
         let missing = AssetPriceMetadata {
