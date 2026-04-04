@@ -246,6 +246,11 @@ impl RewardsClient {
             Err(e) => return ReferralProcessResult::Failed(e.into()),
         };
 
+        let referrer_referral_count = match client.rewards().get_referral_count_by_username(referrer_username) {
+            Ok(count) => count as i64,
+            Err(e) => return ReferralProcessResult::Failed(e.into()),
+        };
+
         let scoring_input = RiskScoringInput {
             username: referrer_username.to_string(),
             device_id: device.id,
@@ -257,6 +262,7 @@ impl RewardsClient {
             device_currency: device.currency.clone(),
             ip_result,
             referrer_status,
+            referrer_referral_count,
             user_agent: user_agent.to_string(),
         };
 
@@ -460,6 +466,8 @@ impl RewardsClient {
             penalty_isps: self.config.get_vec_string(ConfigKey::ReferralPenaltyIsps)?,
             isp_penalty_score: self.config.get_i64(ConfigKey::ReferralPenaltyIspsScore)?,
             verified_user_reduction: self.config.get_i64(ConfigKey::ReferralRiskScoreVerifiedUserReduction)?,
+            early_referral_reduction_initial: self.config.get_i64(ConfigKey::ReferralRiskScoreEarlyReferralReductionInitial)?,
+            early_referral_reduction_step: self.config.get_i64(ConfigKey::ReferralRiskScoreEarlyReferralReductionStep)?,
             max_allowed_score: self.config.get_i64(ConfigKey::ReferralRiskScoreMaxAllowed)?,
             same_referrer_pattern_threshold: self.config.get_i64(ConfigKey::ReferralRiskScoreSameReferrerPatternThreshold)?,
             same_referrer_pattern_penalty: self.config.get_i64(ConfigKey::ReferralRiskScoreSameReferrerPatternPenalty)?,

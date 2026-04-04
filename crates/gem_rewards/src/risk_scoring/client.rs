@@ -18,6 +18,7 @@ pub struct RiskScoringInput {
     pub device_currency: String,
     pub ip_result: IpCheckResult,
     pub referrer_status: RewardStatus,
+    pub referrer_referral_count: i64,
     pub user_agent: String,
 }
 
@@ -38,6 +39,7 @@ impl RiskScoringInput {
             ip_isp: self.ip_result.isp.clone(),
             ip_abuse_score: self.ip_result.confidence_score,
             referrer_status: self.referrer_status,
+            referrer_referral_count: self.referrer_referral_count,
             user_agent: self.user_agent.clone(),
         }
     }
@@ -119,6 +121,7 @@ mod tests {
                 isp: "Comcast".to_string(),
             },
             referrer_status: RewardStatus::Unverified,
+            referrer_referral_count: 2,
             user_agent: String::new(),
         }
     }

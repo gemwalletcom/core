@@ -48,6 +48,7 @@ pub fn calculate_risk_score(
             0
         },
         verified_user_reduction: if input.referrer_status.is_verified() { -config.verified_user_reduction } else { 0 },
+        early_referral_reduction: input.early_referral_reduction(config),
         platform_store_score: if is_high_risk_platform_store { config.high_risk_platform_store_penalty } else { 0 },
         country_score: if is_high_risk_country { config.high_risk_country_penalty } else { 0 },
         locale_score: if is_high_risk_locale { config.high_risk_locale_penalty } else { 0 },
@@ -194,7 +195,8 @@ pub fn calculate_risk_score(
         + breakdown.cross_referrer_fingerprint_score
         + breakdown.country_diversity_score
         + breakdown.device_farming_score
-        + breakdown.verified_user_reduction)
+        + breakdown.verified_user_reduction
+        + breakdown.early_referral_reduction)
         .max(0);
 
     RiskScore {
@@ -242,6 +244,7 @@ mod tests {
             ip_isp: "Comcast".to_string(),
             ip_abuse_score: 0,
             referrer_status: RewardStatus::Unverified,
+            referrer_referral_count: 2,
             user_agent: String::new(),
         }
     }
@@ -500,6 +503,51 @@ mod tests {
         assert_eq!(result.breakdown.verified_user_reduction, -30);
         assert_eq!(result.score, 0);
         assert!(result.is_allowed);
+    }
+
+    #[test]
+    fn early_referral_reduction_uses_generic_initial_and_step() {
+        let config = RiskScoreConfig {
+            early_referral_reduction_initial: 20,
+            early_referral_reduction_step: 7,
+            ..RiskScoreConfig::default()
+        };
+
+        let mut first = create_test_input();
+        first.ip_abuse_score = 60;
+        first.referrer_referral_count = 0;
+
+        let mut second = create_test_input();
+        second.ip_abuse_score = 60;
+        second.referrer_referral_count = 1;
+
+        let mut third = create_test_input();
+        third.ip_abuse_score = 60;
+        third.referrer_referral_count = 2;
+
+        let mut fourth = create_test_input();
+        fourth.ip_abuse_score = 60;
+        fourth.referrer_referral_count = 3;
+
+        let first_result = calculate_risk_score(&first, &[], 0, 0, 0, 0, 0, &config);
+        let second_result = calculate_risk_score(&second, &[], 0, 0, 0, 0, 0, &config);
+        let third_result = calculate_risk_score(&third, &[], 0, 0, 0, 0, 0, &config);
+        let fourth_result = calculate_risk_score(&fourth, &[], 0, 0, 0, 0, 0, &config);
+
+        assert_eq!(first_result.breakdown.early_referral_reduction, -20);
+        assert_eq!(second_result.breakdown.early_referral_reduction, -13);
+        assert_eq!(third_result.breakdown.early_referral_reduction, -6);
+        assert_eq!(fourth_result.breakdown.early_referral_reduction, 0);
+
+        assert_eq!(first_result.score, 40);
+        assert_eq!(second_result.score, 47);
+        assert_eq!(third_result.score, 54);
+        assert_eq!(fourth_result.score, 60);
+
+        assert!(first_result.is_allowed);
+        assert!(second_result.is_allowed);
+        assert!(third_result.is_allowed);
+        assert!(!fourth_result.is_allowed);
     }
 
     #[test]

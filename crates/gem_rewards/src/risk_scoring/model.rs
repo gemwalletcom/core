@@ -18,6 +18,8 @@ pub struct RiskScoreConfig {
     pub penalty_isps: Vec<String>,
     pub isp_penalty_score: i64,
     pub verified_user_reduction: i64,
+    pub early_referral_reduction_initial: i64,
+    pub early_referral_reduction_step: i64,
     pub max_allowed_score: i64,
     pub same_referrer_pattern_threshold: i64,
     pub same_referrer_pattern_penalty: i64,
@@ -71,6 +73,8 @@ impl Default for RiskScoreConfig {
             penalty_isps: vec![],
             isp_penalty_score: 30,
             verified_user_reduction: 30,
+            early_referral_reduction_initial: 20,
+            early_referral_reduction_step: 10,
             max_allowed_score: 60,
             same_referrer_pattern_threshold: 3,
             same_referrer_pattern_penalty: 40,
@@ -132,6 +136,7 @@ pub struct RiskSignalInput {
     pub ip_isp: String,
     pub ip_abuse_score: i64,
     pub referrer_status: RewardStatus,
+    pub referrer_referral_count: i64,
     pub user_agent: String,
 }
 
@@ -145,6 +150,14 @@ impl RiskSignalInput {
         ]
         .concat();
         hex::encode(sha256(&data))
+    }
+
+    pub fn early_referral_reduction(&self, config: &RiskScoreConfig) -> i64 {
+        let initial = config.early_referral_reduction_initial.max(0);
+        let step = config.early_referral_reduction_step.max(0);
+        let referral_count = self.referrer_referral_count.max(0);
+        let reduction = (initial - referral_count.saturating_mul(step)).max(0);
+        -reduction
     }
 }
 
@@ -172,6 +185,8 @@ pub struct RiskScoreBreakdown {
     pub ineligible_ip_type_score: i64,
     #[serde(skip_serializing_if = "is_zero")]
     pub verified_user_reduction: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub early_referral_reduction: i64,
     #[serde(skip_serializing_if = "is_zero")]
     pub same_referrer_pattern_score: i64,
     #[serde(skip_serializing_if = "is_zero")]
@@ -235,6 +250,7 @@ mod tests {
             ip_isp: "Comcast".to_string(),
             ip_abuse_score: 0,
             referrer_status: RewardStatus::Unverified,
+            referrer_referral_count: 0,
             user_agent: String::new(),
         };
         assert_eq!(input.generate_fingerprint().len(), 64);
