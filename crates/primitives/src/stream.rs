@@ -35,6 +35,7 @@ pub struct StreamMessagePrices {
 #[serde(tag = "type", content = "data", rename_all = "camelCase")]
 #[typeshare(swift = "Sendable")]
 pub enum StreamMessage {
+    GetPrices(StreamMessagePrices),
     SubscribePrices(StreamMessagePrices),
     UnsubscribePrices(StreamMessagePrices),
     AddPrices(StreamMessagePrices),

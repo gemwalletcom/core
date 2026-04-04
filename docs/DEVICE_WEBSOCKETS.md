@@ -30,6 +30,16 @@ Uses the same device authentication as all `/v2/devices/*` endpoints.
 }
 ```
 
+**Get Current Prices Once:**
+```json
+{
+  "type": "getPrices",
+  "data": {
+    "assets": ["bitcoin", "ethereum"]
+  }
+}
+```
+
 **Add More Assets:**
 ```json
 {

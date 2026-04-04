@@ -48,7 +48,7 @@ impl PriceObserverClient {
         self.assets.iter().map(|id| CacheKey::Price(&id.to_string()).key()).collect()
     }
 
-    async fn fetch_payload(&self, fetch_rates: bool) -> Result<WebSocketPricePayload, Box<dyn Error + Send + Sync>> {
+    async fn price_payload(&self, include_rates: bool) -> Result<WebSocketPricePayload, Box<dyn Error + Send + Sync>> {
         let client = self.price_client.lock().await;
         let prices = client
             .get_cache_prices(self.assets.ids())
@@ -56,7 +56,7 @@ impl PriceObserverClient {
             .into_iter()
             .map(|x| x.as_asset_price_primitive())
             .collect();
-        let rates = if fetch_rates { client.get_cache_fiat_rates().await? } else { vec![] };
+        let rates = if include_rates { client.get_cache_fiat_rates().await? } else { vec![] };
         Ok(WebSocketPricePayload { prices, rates })
     }
 
@@ -79,7 +79,7 @@ impl PriceObserverClient {
         let action = serde_json::from_slice::<WebSocketPriceAction>(&data)?;
         let new_assets: HashSet<AssetId> = action.assets.iter().cloned().collect();
 
-        let needs_rates = match action.action {
+        let (needs_rates, subscribe_channels) = match action.action {
             WebSocketPriceActionType::Subscribe => {
                 let old_channels = self.get_channel_ids();
                 self.assets.clear();
@@ -88,20 +88,24 @@ impl PriceObserverClient {
                     redis_connection.unsubscribe(old_channels).await?;
                 }
                 self.assets.extend(new_assets);
-                true
+                (true, self.get_channel_ids())
             }
             WebSocketPriceActionType::Add => {
-                self.assets.extend(new_assets);
-                false
+                let added_assets: Vec<AssetId> = new_assets.into_iter().filter(|asset| !self.assets.contains(asset)).collect();
+                let subscribe_channels: Vec<String> = added_assets.iter().map(|id| CacheKey::Price(&id.to_string()).key()).collect();
+                self.assets.extend(added_assets);
+                (false, subscribe_channels)
             }
         };
 
         let _ = self.price_client.lock().await.track_observed_assets(&self.assets.ids()).await;
 
-        let payload = self.fetch_payload(needs_rates).await?;
+        let payload = self.price_payload(needs_rates).await?;
         self.send_payload(stream, payload).await?;
 
-        redis_connection.subscribe(self.get_channel_ids()).await?;
+        if !subscribe_channels.is_empty() {
+            redis_connection.subscribe(subscribe_channels).await?;
+        }
         Ok(())
     }
 
@@ -115,6 +119,9 @@ impl PriceObserverClient {
             return Ok(());
         };
         let info = serde_json::from_slice::<AssetPriceInfo>(value)?;
+        if !self.assets.contains(&info.asset_id) {
+            return Ok(());
+        }
         self.prices_to_publish.insert(info.asset_id.to_string(), info.as_asset_price_primitive());
         Ok(())
     }
