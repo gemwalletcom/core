@@ -28,7 +28,7 @@ pub use near_intents::NearIntents;
 mod blocksec;
 pub use blocksec::Blocksec;
 mod algorand;
-pub use algorand::AlgorandAllo;
+pub use algorand::{AlgorandAllo, AlgorandPera};
 pub mod blockvision;
 pub use blockvision::BlockVision;
 mod subscan;

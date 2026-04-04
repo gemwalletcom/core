@@ -66,4 +66,6 @@ pub struct TransactionBroadcast {
 pub struct TransactionStatus {
     #[serde(rename = "confirmed-round")]
     pub confirmed_round: Option<i64>,
+    #[serde(rename = "pool-error")]
+    pub pool_error: Option<String>,
 }
