@@ -209,6 +209,24 @@ impl SignerInput {
             .parse::<u32>()
             .map_err(|_| SignerError::invalid_input("invalid transaction fee"))
     }
+
+    pub fn get_fee_u64(&self) -> Result<u64, SignerError> {
+        self.fee
+            .fee
+            .to_string()
+            .parse::<u64>()
+            .map_err(|_| SignerError::invalid_input("invalid transaction fee"))
+    }
+
+    pub fn get_value_u64(&self, error_message: &'static str) -> Result<u64, SignerError> {
+        self.value.parse::<u64>().map_err(|_| SignerError::invalid_input(error_message))
+    }
+
+    pub fn get_token_id_u64(&self, error_message: &'static str) -> Result<u64, SignerError> {
+        self.get_token_id()?
+            .parse::<u64>()
+            .map_err(|_| SignerError::invalid_input(error_message))
+    }
 }
 
 impl Deref for SignerInput {

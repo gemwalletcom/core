@@ -2,10 +2,10 @@ use crate::address::{Base32Address, parse_address};
 use primitives::{SignerError, SignerInput};
 
 #[derive(Clone)]
-#[allow(unused)]
 pub(crate) enum Memo {
     None,
     Text(String),
+    #[cfg_attr(not(test), allow(dead_code))]
     Id(u64),
 }
 
@@ -83,7 +83,7 @@ impl StellarAssetData {
 
 impl StellarTransaction {
     pub(crate) fn transfer(input: &SignerInput) -> Result<Self, SignerError> {
-        let amount = input.value.parse::<u64>().map_err(|_| SignerError::invalid_input("invalid Stellar amount"))?;
+        let amount = input.get_value_u64("invalid Stellar amount")?;
         let destination = parse_address(&input.destination_address)?;
         let is_destination_address_exist = input.metadata.get_is_destination_address_exist().map_err(SignerError::from_display)?;
 
@@ -98,7 +98,7 @@ impl StellarTransaction {
 
     pub(crate) fn token_transfer(input: &SignerInput) -> Result<Self, SignerError> {
         let asset = StellarAssetData::from_input(input)?;
-        let amount = input.value.parse::<u64>().map_err(|_| SignerError::invalid_input("invalid Stellar amount"))?;
+        let amount = input.get_value_u64("invalid Stellar amount")?;
         let operation = Operation::Payment {
             destination: parse_address(&input.destination_address)?,
             asset: Some(asset),
@@ -117,7 +117,7 @@ impl StellarTransaction {
         Self::from_public_input(input, input.get_fee_u32()?, operation)
     }
 
-    pub(crate) fn from_public_input(input: &SignerInput, fee: u32, operation: Operation) -> Result<Self, SignerError> {
+    fn from_public_input(input: &SignerInput, fee: u32, operation: Operation) -> Result<Self, SignerError> {
         Ok(Self {
             account: parse_address(&input.sender_address)?,
             fee,
@@ -127,7 +127,6 @@ impl StellarTransaction {
             operation,
         })
     }
-
 }
 
 impl StellarAssetData {

@@ -1,6 +1,5 @@
 use crate::address::{Base32Address, parse_address};
 use base64::{Engine as _, engine::general_purpose::STANDARD};
-use num_traits::ToPrimitive;
 use primitives::{SignerError, SignerInput};
 
 const TRANSACTION_VALIDITY_ROUNDS: u64 = 1000;
@@ -40,37 +39,33 @@ impl AlgorandTransaction {
             input,
             Operation::Payment {
                 destination: parse_address(&input.destination_address)?,
-                amount: input.value.parse::<u64>().map_err(|_| SignerError::invalid_input("invalid Algorand amount"))?,
+                amount: input.get_value_u64("invalid Algorand amount")?,
             },
         )
     }
 
     pub(crate) fn token_transfer(input: &SignerInput) -> Result<Self, SignerError> {
-        let asset_id = input.get_token_id()?;
-
         Self::from_input(
             input,
             Operation::AssetTransfer {
                 destination: parse_address(&input.destination_address)?,
-                amount: input.value.parse::<u64>().map_err(|_| SignerError::invalid_input("invalid Algorand amount"))?,
-                asset_id: asset_id.parse::<u64>().map_err(|_| SignerError::invalid_input("invalid Algorand asset id"))?,
+                amount: input.get_value_u64("invalid Algorand amount")?,
+                asset_id: input.get_token_id_u64("invalid Algorand asset id")?,
             },
         )
     }
 
     pub(crate) fn account_action(input: &SignerInput) -> Result<Self, SignerError> {
-        let asset_id = input.get_token_id()?;
-
         Self::from_input(
             input,
             Operation::AssetOptIn {
-                asset_id: asset_id.parse::<u64>().map_err(|_| SignerError::invalid_input("invalid Algorand asset id"))?,
+                asset_id: input.get_token_id_u64("invalid Algorand asset id")?,
             },
         )
     }
 
     fn from_input(input: &SignerInput, operation: Operation) -> Result<Self, SignerError> {
-        let fee = input.fee.fee.to_u64().ok_or_else(|| SignerError::invalid_input("invalid Algorand fee"))?;
+        let fee = input.get_fee_u64()?;
         let first_round = input.metadata.get_sequence().map_err(SignerError::from_display)?;
 
         Ok(Self {

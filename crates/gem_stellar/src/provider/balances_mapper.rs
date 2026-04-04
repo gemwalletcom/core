@@ -27,11 +27,11 @@ pub fn map_token_balances(account: &Account, token_ids: Vec<String>, chain: Chai
     token_ids
         .into_iter()
         .map(|token_id| {
-            if let Some((issuer, symbol)) = token_id.split_once("::") {
+            if let Ok((issuer, symbol)) = AssetId::from_token(chain, &token_id).split_sub_token_parts() {
                 if let Some(balance) = account
                     .balances
                     .iter()
-                    .find(|b| b.asset_issuer.as_deref() == Some(issuer) && b.asset_code.as_deref() == Some(symbol) && b.asset_type != "native")
+                    .find(|b| b.asset_issuer.as_deref() == Some(issuer.as_str()) && b.asset_code.as_deref() == Some(symbol.as_str()) && b.asset_type != "native")
                 {
                     let amount = BigNumberFormatter::value_from_amount_biguint(&balance.balance, STELLAR_DECIMALS).unwrap_or_default();
                     AssetBalance::new_with_active(AssetId::from_token(chain, &token_id), Balance::coin_balance(amount), true)
