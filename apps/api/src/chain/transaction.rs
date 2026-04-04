@@ -27,7 +27,7 @@ pub async fn add_transaction(
     let transaction = client.get_transaction_by_hash(transaction_id.chain, transaction_id.hash).await?;
 
     if let Some(transaction) = transaction.as_ref() {
-        let payload = TransactionsPayload::new(transaction.asset_id.chain, vec![], vec![transaction.clone()]);
+        let payload = TransactionsPayload::new(transaction.asset_id.chain, vec![transaction.clone()]);
         stream_producer.publish_transactions(payload).await?;
     }
 

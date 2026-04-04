@@ -42,7 +42,12 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
     let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
     let stream_producer = StreamProducer::new(&rabbitmq_config, "transactions_worker", shutdown_rx.clone()).await?;
     let cacher = CacherClient::new(&settings.redis.url).await;
-    let pending_updater = Arc::new(PendingTransactionsUpdater::new(providers.clone(), cacher.clone(), stream_producer.clone()));
+    let pending_updater = Arc::new(PendingTransactionsUpdater::new(
+        providers.clone(),
+        cacher.clone(),
+        stream_producer.clone(),
+        database.clone(),
+    ));
 
     JobPlanBuilder::with_config(WorkerService::Transactions, runtime.plan(shutdown_rx), &config)
         .job(WorkerJob::UpdateInTransitTransactions, {

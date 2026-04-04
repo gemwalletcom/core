@@ -209,7 +209,7 @@ impl Parser {
         }
         self.reporter.record_transactions(&transactions);
         let count = transactions.len();
-        let payload = TransactionsPayload::new(self.chain, blocks, transactions);
+        let payload = TransactionsPayload::new_with_notify(self.chain, blocks, transactions);
         self.stream_producer.publish_transactions(payload).await?;
         Ok(count)
     }

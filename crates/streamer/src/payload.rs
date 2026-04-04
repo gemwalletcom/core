@@ -10,6 +10,8 @@ pub struct TransactionsPayload {
     pub chain: Chain,
     pub blocks: Vec<u64>,
     pub transactions: Vec<Transaction>,
+    #[serde(default)]
+    pub notify_devices: bool,
 }
 
 impl fmt::Display for TransactionsPayload {
@@ -19,8 +21,26 @@ impl fmt::Display for TransactionsPayload {
 }
 
 impl TransactionsPayload {
-    pub fn new(chain: Chain, blocks: Vec<u64>, transactions: Vec<Transaction>) -> Self {
-        Self { chain, blocks, transactions }
+    pub fn new(chain: Chain, transactions: Vec<Transaction>) -> Self {
+        Self {
+            chain,
+            blocks: vec![],
+            transactions,
+            notify_devices: false,
+        }
+    }
+
+    pub fn new_with_notify(chain: Chain, blocks: Vec<u64>, transactions: Vec<Transaction>) -> Self {
+        Self {
+            chain,
+            blocks,
+            transactions,
+            notify_devices: true,
+        }
+    }
+
+    pub fn should_notify_devices(&self) -> bool {
+        self.notify_devices
     }
 }
 
@@ -237,6 +257,18 @@ impl fmt::Display for PricesPayload {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChartsPayload {
     pub charts: Vec<ChartData>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::TransactionsPayload;
+    use primitives::Chain;
+
+    #[test]
+    fn test_transactions_payload_should_notify_devices() {
+        assert!(!TransactionsPayload::new(Chain::Ethereum, vec![]).should_notify_devices());
+        assert!(TransactionsPayload::new_with_notify(Chain::Ethereum, vec![], vec![]).should_notify_devices());
+    }
 }
 
 impl ChartsPayload {

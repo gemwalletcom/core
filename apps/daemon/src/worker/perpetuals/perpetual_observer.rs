@@ -79,7 +79,7 @@ impl PerpetualPositionObserver {
 
         let count = transactions.len();
         if !transactions.is_empty() {
-            let payload = TransactionsPayload::new(self.chain, vec![0], transactions);
+            let payload = TransactionsPayload::new_with_notify(self.chain, vec![], transactions);
             self.stream_producer.publish_transactions(payload).await?;
         }
 

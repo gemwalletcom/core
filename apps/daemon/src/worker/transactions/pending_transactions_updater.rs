@@ -4,22 +4,25 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use cacher::{CacheKey, CacherClient};
 use gem_tracing::{DurationMs, error_with_fields, info_with_fields};
-use primitives::{Chain, chain_transaction_timeout_seconds};
+use primitives::{Chain, TransactionId, chain_transaction_timeout_seconds};
 use settings_chain::ChainProviders;
+use storage::{Database, TransactionsRepository};
 use streamer::{StreamProducer, StreamProducerQueue, TransactionsPayload};
 
 pub struct PendingTransactionsUpdater {
     providers: Arc<ChainProviders>,
     cacher: CacherClient,
     stream_producer: StreamProducer,
+    database: Database,
 }
 
 impl PendingTransactionsUpdater {
-    pub fn new(providers: Arc<ChainProviders>, cacher: CacherClient, stream_producer: StreamProducer) -> Self {
+    pub fn new(providers: Arc<ChainProviders>, cacher: CacherClient, stream_producer: StreamProducer, database: Database) -> Self {
         Self {
             providers,
             cacher,
             stream_producer,
+            database,
         }
     }
 
@@ -57,9 +60,15 @@ impl PendingTransactionsUpdater {
 
     async fn process_identifier(&self, chain: Chain, identifier: &str, expires_at: f64, now: f64) -> Result<bool, Box<dyn Error + Send + Sync>> {
         let elapsed = DurationMs(pending_transaction_elapsed(chain, expires_at, now));
+        let transaction_id = TransactionId::new(chain, identifier.to_string());
 
         if expires_at <= now {
             info_with_fields!("pending transaction expired", chain = chain.as_ref(), identifier = identifier, elapsed = elapsed);
+            return Ok(true);
+        }
+
+        if self.database.transactions()?.get_transaction_exists(&transaction_id)? {
+            info_with_fields!("pending transaction already stored", chain = chain.as_ref(), identifier = identifier, elapsed = elapsed);
             return Ok(true);
         }
 
@@ -67,20 +76,18 @@ impl PendingTransactionsUpdater {
         match self.providers.get_transaction_by_hash(chain, identifier.to_string()).await {
             Ok(Some(transaction)) => {
                 info_with_fields!(
-                    "pending transaction fetch success",
+                    "pending transaction load success",
                     chain = chain.as_ref(),
                     identifier = identifier,
                     elapsed = elapsed,
                     latency = DurationMs(start.elapsed())
                 );
-                self.stream_producer
-                    .publish_transactions(TransactionsPayload::new(chain, vec![], vec![transaction]))
-                    .await?;
+                self.stream_producer.publish_transactions(TransactionsPayload::new_with_notify(chain, vec![], vec![transaction])).await?;
                 Ok(true)
             }
             Ok(None) => {
                 info_with_fields!(
-                    "pending transaction not fetched",
+                    "pending transaction not loaded",
                     chain = chain.as_ref(),
                     identifier = identifier,
                     elapsed = elapsed,
@@ -90,7 +97,7 @@ impl PendingTransactionsUpdater {
             }
             Err(err) => {
                 error_with_fields!(
-                    "pending transaction fetch failed",
+                    "pending transaction load failed",
                     &*err,
                     chain = chain.as_ref(),
                     identifier = identifier,

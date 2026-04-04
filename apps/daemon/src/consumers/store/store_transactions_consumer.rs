@@ -38,7 +38,7 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
 
     async fn process(&self, payload: TransactionsPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let chain = payload.chain;
-        let is_notify_devices = !payload.blocks.is_empty();
+        let is_notify_devices = payload.should_notify_devices();
         let deposit_addresses = self.vault_client.get_deposit_address_map().await?;
         let send_addresses = self.vault_client.get_send_address_map().await?;
         let transactions = Self::transactions_for_storage(payload.transactions, &deposit_addresses, &send_addresses);
@@ -123,6 +123,10 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
                     .filter_map(|id| existing_assets_map.get(id))
                     .map(|asset_price| asset_price.asset.asset.clone())
                     .collect();
+
+                if self.database.transactions()?.get_transaction_exists(&transaction.id)? {
+                    continue;
+                }
 
                 if let Ok(push_notifications) = self.pusher.get_messages(subscription, transaction.clone(), assets).await {
                     notifications.push(NotificationsPayload::new(push_notifications));

@@ -7,6 +7,7 @@ use primitives::{AssetId, Transaction, TransactionId};
 
 pub trait TransactionsRepository {
     fn get_transaction_by_id(&mut self, id: &TransactionId) -> Result<TransactionRow, DatabaseError>;
+    fn get_transaction_exists(&mut self, id: &TransactionId) -> Result<bool, DatabaseError>;
     fn add_transactions(&mut self, transactions: Vec<Transaction>) -> Result<usize, DatabaseError>;
     fn get_transactions_by_device_id(
         &mut self,
@@ -28,6 +29,10 @@ pub trait TransactionsRepository {
 impl TransactionsRepository for DatabaseClient {
     fn get_transaction_by_id(&mut self, id: &TransactionId) -> Result<TransactionRow, DatabaseError> {
         TransactionsStore::get_transaction_by_id(self, id.chain.as_ref(), &id.hash).or_not_found(id.to_string())
+    }
+
+    fn get_transaction_exists(&mut self, id: &TransactionId) -> Result<bool, DatabaseError> {
+        Ok(TransactionsStore::get_transaction_exists(self, id.chain.as_ref(), &id.hash)?)
     }
 
     fn add_transactions(&mut self, transactions: Vec<Transaction>) -> Result<usize, DatabaseError> {
