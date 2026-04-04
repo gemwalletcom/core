@@ -1,7 +1,7 @@
 use super::models::NearTransfer;
 use primitives::SignerError;
 
-const ED25519_KEY_TYPE: u8 = 0;
+pub(super) const NEAR_ED25519_KEY_TYPE: u8 = 0;
 const TRANSFER_ACTION: u8 = 3;
 
 pub(crate) fn encode_transfer(transfer: &NearTransfer, public_key: &[u8]) -> Result<Vec<u8>, SignerError> {
@@ -11,7 +11,7 @@ pub(crate) fn encode_transfer(transfer: &NearTransfer, public_key: &[u8]) -> Res
 
     let mut data = Vec::new();
     write_string(&mut data, &transfer.signer_id);
-    data.push(ED25519_KEY_TYPE);
+    data.push(NEAR_ED25519_KEY_TYPE);
     data.extend_from_slice(public_key);
     data.extend_from_slice(&transfer.nonce.to_le_bytes());
     write_string(&mut data, &transfer.receiver_id);

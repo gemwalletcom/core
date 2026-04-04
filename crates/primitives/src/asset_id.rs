@@ -133,6 +133,14 @@ impl AssetId {
         Ok((parts[0].to_string(), parts[1].to_string()))
     }
 
+    pub fn split_sub_token_parts(&self) -> Result<(String, String), crate::SignerError> {
+        let token_id = self.get_token_id()?;
+        let (first, second) = token_id
+            .split_once(TOKEN_ID_SEPARATOR)
+            .ok_or_else(|| crate::SignerError::InvalidInput(format!("Invalid token ID format: {}", token_id)))?;
+        Ok((first.to_string(), second.to_string()))
+    }
+
     pub fn is_native(&self) -> bool {
         self.token_id.is_none()
     }
@@ -242,5 +250,14 @@ mod tests {
         );
         assert_eq!(AssetId::decode_token_id("perpetual::BTC"), vec!["perpetual", "BTC"]);
         assert_eq!(AssetId::decode_token_id(""), vec![""]);
+    }
+
+    #[test]
+    fn test_split_sub_token_parts() {
+        let asset_id = AssetId::from_token(Chain::Stellar, "issuer::USDC");
+        assert_eq!(
+            asset_id.split_sub_token_parts().unwrap(),
+            ("issuer".to_string(), "USDC".to_string())
+        );
     }
 }

@@ -1,5 +1,5 @@
 use super::models::NearTransfer;
-use super::serialization::encode_transfer;
+use super::serialization::{NEAR_ED25519_KEY_TYPE, encode_transfer};
 use base64::{Engine, engine::general_purpose::STANDARD};
 use gem_hash::sha2::sha256;
 use primitives::SignerError;
@@ -12,7 +12,7 @@ pub(crate) fn sign_transfer(transfer: &NearTransfer, private_key: &[u8]) -> Resu
     let signature = key_pair.sign(&digest);
 
     let mut signed_transaction = preimage;
-    signed_transaction.push(0);
+    signed_transaction.push(NEAR_ED25519_KEY_TYPE);
     signed_transaction.extend_from_slice(&signature);
     Ok(STANDARD.encode(signed_transaction))
 }

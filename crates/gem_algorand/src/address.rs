@@ -7,16 +7,21 @@ pub(crate) use signer::Base32Address;
 const ADDRESS_LENGTH: usize = 58;
 const ADDRESS_DATA_LENGTH: usize = 32;
 const ADDRESS_CHECKSUM_LENGTH: usize = 4;
+const INVALID_ADDRESS: &str = "invalid Algorand address";
 
 pub(crate) fn parse_address(value: &str) -> Result<Base32Address, SignerError> {
-    if value.len() != ADDRESS_LENGTH {
-        return Err(SignerError::invalid_input("invalid Algorand address"));
-    }
+    let decoded = (|| -> Result<Vec<u8>, &'static str> {
+        if value.len() != ADDRESS_LENGTH {
+            return Err(INVALID_ADDRESS);
+        }
 
-    let decoded = decode_base32(value.as_bytes()).ok_or_else(|| SignerError::invalid_input("invalid Algorand address"))?;
-    if decoded.len() != ADDRESS_DATA_LENGTH + ADDRESS_CHECKSUM_LENGTH {
-        return Err(SignerError::invalid_input("invalid Algorand address"));
-    }
+        let decoded = decode_base32(value.as_bytes()).ok_or(INVALID_ADDRESS)?;
+        if decoded.len() != ADDRESS_DATA_LENGTH + ADDRESS_CHECKSUM_LENGTH {
+            return Err(INVALID_ADDRESS);
+        }
+        Ok(decoded)
+    })()
+    .map_err(SignerError::from_display)?;
 
     let address = Base32Address::from_slice(&decoded[..ADDRESS_DATA_LENGTH])?;
     let checksum = address_checksum(address.payload());

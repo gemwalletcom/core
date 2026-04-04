@@ -10,6 +10,9 @@ enum KeyEncoding {
     Base32,
 }
 
+const CRC16_XMODEM_POLY: u16 = 0x1021;
+const CRC16_XMODEM_MSB_MASK: u16 = 0x8000;
+
 fn import_encodings_for_chain(chain: &Chain) -> &'static [KeyEncoding] {
     match chain.chain_type() {
         ChainType::Bitcoin => &[],
@@ -88,7 +91,7 @@ fn crc16_xmodem(data: &[u8]) -> u16 {
     for &byte in data {
         crc ^= (byte as u16) << 8;
         for _ in 0..8 {
-            crc = if crc & 0x8000 != 0 { (crc << 1) ^ 0x1021 } else { crc << 1 };
+            crc = if crc & CRC16_XMODEM_MSB_MASK != 0 { (crc << 1) ^ CRC16_XMODEM_POLY } else { crc << 1 };
         }
     }
     crc

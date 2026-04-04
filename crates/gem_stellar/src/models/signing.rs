@@ -85,7 +85,6 @@ impl StellarTransaction {
     pub(crate) fn transfer(input: &SignerInput) -> Result<Self, SignerError> {
         let amount = input.value.parse::<u64>().map_err(|_| SignerError::invalid_input("invalid Stellar amount"))?;
         let destination = parse_address(&input.destination_address)?;
-        let fee = input.fee.fee.to_string().parse::<u32>().map_err(|_| SignerError::invalid_input("invalid Stellar fee"))?;
         let is_destination_address_exist = input.metadata.get_is_destination_address_exist().map_err(SignerError::from_display)?;
 
         let operation = if is_destination_address_exist {
@@ -94,35 +93,28 @@ impl StellarTransaction {
             Operation::CreateAccount { destination, amount }
         };
 
-        Self::from_public_input(input, fee, operation)
+        Self::from_public_input(input, input.get_fee_u32()?, operation)
     }
 
     pub(crate) fn token_transfer(input: &SignerInput) -> Result<Self, SignerError> {
-        let token_id = input.get_token_id()?;
-        let (issuer, code) = token_id.split_once("::").ok_or_else(|| SignerError::invalid_input("invalid Stellar token id"))?;
-
-        let fee = input.fee.fee.to_string().parse::<u32>().map_err(|_| SignerError::invalid_input("invalid Stellar fee"))?;
+        let asset = StellarAssetData::from_input(input)?;
         let amount = input.value.parse::<u64>().map_err(|_| SignerError::invalid_input("invalid Stellar amount"))?;
         let operation = Operation::Payment {
             destination: parse_address(&input.destination_address)?,
-            asset: Some(StellarAssetData::new(issuer, code)?),
+            asset: Some(asset),
             amount,
         };
 
-        Self::from_public_input(input, fee, operation)
+        Self::from_public_input(input, input.get_fee_u32()?, operation)
     }
 
     pub(crate) fn account_action(input: &SignerInput) -> Result<Self, SignerError> {
-        let token_id = input.get_token_id()?;
-        let (issuer, code) = token_id.split_once("::").ok_or_else(|| SignerError::invalid_input("invalid Stellar token id"))?;
-        let fee = input.fee.fee.to_string().parse::<u32>().map_err(|_| SignerError::invalid_input("invalid Stellar fee"))?;
-
         let operation = Operation::ChangeTrust {
-            asset: StellarAssetData::new(issuer, code)?,
+            asset: StellarAssetData::from_input(input)?,
             valid_before: None,
         };
 
-        Self::from_public_input(input, fee, operation)
+        Self::from_public_input(input, input.get_fee_u32()?, operation)
     }
 
     pub(crate) fn from_public_input(input: &SignerInput, fee: u32, operation: Operation) -> Result<Self, SignerError> {
@@ -134,5 +126,13 @@ impl StellarTransaction {
             time_bounds: None,
             operation,
         })
+    }
+
+}
+
+impl StellarAssetData {
+    fn from_input(input: &SignerInput) -> Result<Self, SignerError> {
+        let (issuer, code) = input.get_sub_token_parts()?;
+        Self::new(&issuer, &code)
     }
 }

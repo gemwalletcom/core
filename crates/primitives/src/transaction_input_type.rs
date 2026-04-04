@@ -197,6 +197,18 @@ impl SignerInput {
     pub fn get_token_id(&self) -> Result<&str, SignerError> {
         self.input_type.get_asset().id.get_token_id().map(|id| id.as_str())
     }
+
+    pub fn get_sub_token_parts(&self) -> Result<(String, String), SignerError> {
+        self.input_type.get_asset().id.split_sub_token_parts()
+    }
+
+    pub fn get_fee_u32(&self) -> Result<u32, SignerError> {
+        self.fee
+            .fee
+            .to_string()
+            .parse::<u32>()
+            .map_err(|_| SignerError::invalid_input("invalid transaction fee"))
+    }
 }
 
 impl Deref for SignerInput {
@@ -225,7 +237,7 @@ impl TransactionLoadData {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Asset, DelegationValidator, PerpetualConfirmData, PerpetualDirection, Resource};
+    use crate::{Asset, AssetType, Chain, DelegationValidator, PerpetualConfirmData, PerpetualDirection, Resource};
 
     #[test]
     fn transaction_types() {
