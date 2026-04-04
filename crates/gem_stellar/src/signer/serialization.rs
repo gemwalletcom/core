@@ -1,5 +1,9 @@
 use crate::address::Base32Address;
-use crate::models::signing::{Memo, Operation, StellarAssetData, StellarTransaction};
+use crate::models::signing::{Memo, Operation, StellarAssetCode, StellarAssetData, StellarTransaction};
+
+const ASSET_TYPE_NATIVE: u32 = 0;
+const ASSET_TYPE_ALPHANUM4: u32 = 1;
+const ASSET_TYPE_ALPHANUM12: u32 = 2;
 const MEMO_NONE: u32 = 0;
 const MEMO_TEXT: u32 = 1;
 const MEMO_ID: u32 = 2;
@@ -69,11 +73,19 @@ fn encode_memo(data: &mut Vec<u8>, memo: &Memo) {
 fn encode_asset(data: &mut Vec<u8>, asset: Option<&StellarAssetData>) {
     match asset {
         Some(asset) => {
-            write_u32_be(data, 1);
-            data.extend_from_slice(&asset.code);
+            match &asset.code {
+                StellarAssetCode::Alphanum4(code) => {
+                    write_u32_be(data, ASSET_TYPE_ALPHANUM4);
+                    data.extend_from_slice(code);
+                }
+                StellarAssetCode::Alphanum12(code) => {
+                    write_u32_be(data, ASSET_TYPE_ALPHANUM12);
+                    data.extend_from_slice(code);
+                }
+            }
             encode_address(data, &asset.issuer);
         }
-        None => write_u32_be(data, 0),
+        None => write_u32_be(data, ASSET_TYPE_NATIVE),
     }
 }
 
@@ -93,4 +105,35 @@ fn write_u64_be(data: &mut Vec<u8>, value: u64) {
 fn pad_to_four_bytes(data: &mut Vec<u8>) {
     let padding = (4 - (data.len() % 4)) % 4;
     data.extend(std::iter::repeat_n(0, padding));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::address::parse_address;
+
+    #[test]
+    fn encode_asset_supports_alphanum4_and_alphanum12() {
+        let issuer = parse_address("GA6HCMBLTZS5VYYBCATRBRZ3BZJMAFUDKYYF6AH6MVCMGWMRDNSWJPIH").unwrap();
+        let alphanum4 = StellarAssetData::new("GA6HCMBLTZS5VYYBCATRBRZ3BZJMAFUDKYYF6AH6MVCMGWMRDNSWJPIH", "MOBI").unwrap();
+        let alphanum12 = StellarAssetData::new("GA6HCMBLTZS5VYYBCATRBRZ3BZJMAFUDKYYF6AH6MVCMGWMRDNSWJPIH", "USDC12345678").unwrap();
+
+        let mut native_bytes = Vec::new();
+        encode_asset(&mut native_bytes, None);
+        assert_eq!(native_bytes, ASSET_TYPE_NATIVE.to_be_bytes());
+
+        let mut alphanum4_bytes = Vec::new();
+        encode_asset(&mut alphanum4_bytes, Some(&alphanum4));
+        assert_eq!(&alphanum4_bytes[..4], &ASSET_TYPE_ALPHANUM4.to_be_bytes());
+        assert_eq!(&alphanum4_bytes[4..8], b"MOBI");
+        assert_eq!(&alphanum4_bytes[8..12], &[0, 0, 0, 0]);
+        assert_eq!(&alphanum4_bytes[12..44], issuer.payload());
+
+        let mut alphanum12_bytes = Vec::new();
+        encode_asset(&mut alphanum12_bytes, Some(&alphanum12));
+        assert_eq!(&alphanum12_bytes[..4], &ASSET_TYPE_ALPHANUM12.to_be_bytes());
+        assert_eq!(&alphanum12_bytes[4..16], b"USDC12345678");
+        assert_eq!(&alphanum12_bytes[16..20], &[0, 0, 0, 0]);
+        assert_eq!(&alphanum12_bytes[20..52], issuer.payload());
+    }
 }

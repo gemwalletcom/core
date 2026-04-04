@@ -1,6 +1,10 @@
 use crate::address::{Base32Address, parse_address};
 use base64::{Engine as _, engine::general_purpose::STANDARD};
+use num_traits::ToPrimitive;
 use primitives::{SignerError, SignerInput};
+
+const TRANSACTION_VALIDITY_ROUNDS: u64 = 1000;
+
 const ALGORAND_TX_TYPE_PAYMENT: &str = "pay";
 const ALGORAND_TX_TYPE_ASSET_TRANSFER: &str = "axfer";
 
@@ -66,14 +70,14 @@ impl AlgorandTransaction {
     }
 
     fn from_input(input: &SignerInput, operation: Operation) -> Result<Self, SignerError> {
-        let fee = input.fee.fee.to_string().parse::<u64>().map_err(|_| SignerError::invalid_input("invalid Algorand fee"))?;
+        let fee = input.fee.fee.to_u64().ok_or_else(|| SignerError::invalid_input("invalid Algorand fee"))?;
         let first_round = input.metadata.get_sequence().map_err(SignerError::from_display)?;
 
         Ok(Self {
             sender: parse_address(&input.sender_address)?,
             fee,
             first_round,
-            last_round: first_round + 1000,
+            last_round: first_round + TRANSACTION_VALIDITY_ROUNDS,
             genesis_id: input.metadata.get_chain_id().map_err(SignerError::from_display)?,
             genesis_hash: STANDARD
                 .decode(input.metadata.get_block_hash().map_err(SignerError::from_display)?)

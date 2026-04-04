@@ -3,7 +3,7 @@ use crate::signer::serialization::encode_transaction;
 use base64::{Engine, engine::general_purpose::STANDARD};
 use gem_hash::sha2::sha256;
 use primitives::SignerError;
-use signer::Signer;
+use signer::Ed25519KeyPair;
 
 const STELLAR_NETWORK_PASSPHRASE: &str = "Public Global Stellar Network ; September 2015";
 // Stellar signs the transaction hash preimage as: network id + ENVELOPE_TYPE_TX + transaction XDR.
@@ -13,7 +13,8 @@ pub(crate) fn sign_transaction(transaction: &StellarTransaction, private_key: &[
     let encoded = encode_transaction(transaction);
     let preimage = signature_preimage(&encoded);
     let digest = sha256(&preimage);
-    let (signature, _) = Signer::sign_ed25519_with_public_key(&digest, private_key)?;
+    let key_pair = Ed25519KeyPair::from_private_key(private_key)?;
+    let signature = key_pair.sign(&digest);
 
     let mut envelope = encoded;
     envelope.extend_from_slice(&1u32.to_be_bytes());

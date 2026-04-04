@@ -27,8 +27,7 @@ mod tests {
     use super::*;
     use crate::address::parse_address;
     use crate::models::signing::{Memo, Operation, StellarAssetData, StellarTransaction};
-    use primitives::{Asset, AssetType, Chain, FeeOption, GasPriceType, SignerInput, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata};
-    use std::collections::HashMap;
+    use primitives::{Asset, AssetType, Chain, GasPriceType, SignerInput, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata};
 
     const PRIVATE_KEY: &str = "59a313f46ef1c23a9e4f71cea10fc0c56a2a6bb8a4b9ea3d5348823e5a478722";
 
@@ -140,7 +139,7 @@ mod tests {
     }
 
     #[test]
-    fn sign_transfer_uses_create_account_when_fee_option_is_present() {
+    fn sign_transfer_uses_create_account_when_destination_does_not_exist() {
         let input = SignerInput::new(
             TransactionLoadInput {
                 input_type: TransactionInputType::Transfer(Asset::from_chain(Chain::Stellar)),
@@ -155,19 +154,14 @@ mod tests {
                     is_destination_address_exist: false,
                 },
             },
-            TransactionFee::new_gas_price_type(
-                GasPriceType::regular(1000),
-                1000.into(),
-                0.into(),
-                HashMap::from([(FeeOption::TokenAccountCreation, 0.into())]),
-            ),
+            TransactionFee::new_from_fee(1000.into()),
         );
 
         let signed = StellarChainSigner.sign_transfer(&input, &hex::decode(PRIVATE_KEY).unwrap()).unwrap();
 
-        assert_ne!(
+        assert_eq!(
             signed,
-            "AAAAAAmpZryqzBA+OIlrquP4wvBsIf1H3U+GT/DTP5gZ31yiAAAD6AAAAAAAAAACAAAAAAAAAAAAAAABAAAAAAAAAAEAAAAAxYC2MXoOs5v3/NT6PBn9q0uJu6u/YQle5FBa9uzteq4AAAAAAAAAAACYloAAAAAAAAAAARnfXKIAAABAocQZwTnVvGMQlpdGacWvgenxN5ku8YB8yhEGrDfEV48yDqcj6QaePAitDj/N2gxfYD9Q2pJ+ZpkQMsZZG4ACAg=="
+            "AAAAAAmpZryqzBA+OIlrquP4wvBsIf1H3U+GT/DTP5gZ31yiAAAD6AAAAAAAAAACAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAxYC2MXoOs5v3/NT6PBn9q0uJu6u/YQle5FBa9uzteq4AAAAAAJiWgAAAAAAAAAABGd9cogAAAEA6vrVXe4OUNPKKlGtzJiNzGi1p1yAd6pxoTEcoixXZbWponp6L5XOVweg5tTM36pZVQjQIxEjOgktinR96Wf8O"
         );
     }
 }

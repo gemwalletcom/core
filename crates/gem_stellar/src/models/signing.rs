@@ -1,5 +1,5 @@
 use crate::address::{Base32Address, parse_address};
-use primitives::{FeeOption, SignerError, SignerInput};
+use primitives::{SignerError, SignerInput};
 
 #[derive(Clone)]
 #[allow(unused)]
@@ -37,9 +37,15 @@ impl Operation {
 }
 
 #[derive(Clone)]
+pub(crate) enum StellarAssetCode {
+    Alphanum4([u8; 4]),
+    Alphanum12([u8; 12]),
+}
+
+#[derive(Clone)]
 pub(crate) struct StellarAssetData {
     pub(crate) issuer: Base32Address,
-    pub(crate) code: [u8; 4],
+    pub(crate) code: StellarAssetCode,
 }
 
 #[derive(Clone)]
@@ -54,16 +60,23 @@ pub(crate) struct StellarTransaction {
 
 impl StellarAssetData {
     pub(crate) fn new(issuer: &str, code: &str) -> Result<Self, SignerError> {
-        if code.is_empty() || code.len() > 4 {
-            return Err(SignerError::invalid_input("Stellar asset code must fit alphanum4"));
-        }
-
-        let mut asset_code = [0u8; 4];
-        asset_code[..code.len()].copy_from_slice(code.as_bytes());
+        let code = match code.len() {
+            1..=4 => {
+                let mut asset_code = [0u8; 4];
+                asset_code[..code.len()].copy_from_slice(code.as_bytes());
+                StellarAssetCode::Alphanum4(asset_code)
+            }
+            5..=12 => {
+                let mut asset_code = [0u8; 12];
+                asset_code[..code.len()].copy_from_slice(code.as_bytes());
+                StellarAssetCode::Alphanum12(asset_code)
+            }
+            _ => return Err(SignerError::invalid_input("Stellar asset code must fit alphanum4 or alphanum12")),
+        };
 
         Ok(Self {
             issuer: parse_address(issuer)?,
-            code: asset_code,
+            code,
         })
     }
 }
@@ -73,11 +86,12 @@ impl StellarTransaction {
         let amount = input.value.parse::<u64>().map_err(|_| SignerError::invalid_input("invalid Stellar amount"))?;
         let destination = parse_address(&input.destination_address)?;
         let fee = input.fee.fee.to_string().parse::<u32>().map_err(|_| SignerError::invalid_input("invalid Stellar fee"))?;
+        let is_destination_address_exist = input.metadata.get_is_destination_address_exist().map_err(SignerError::from_display)?;
 
-        let operation = if input.fee.options.contains_key(&FeeOption::TokenAccountCreation) {
-            Operation::CreateAccount { destination, amount }
-        } else {
+        let operation = if is_destination_address_exist {
             Operation::Payment { destination, asset: None, amount }
+        } else {
+            Operation::CreateAccount { destination, amount }
         };
 
         Self::from_public_input(input, fee, operation)

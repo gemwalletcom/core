@@ -3064,6 +3064,7 @@ dependencies = [
  "gem_hash",
  "hex",
  "num-bigint",
+ "num-traits",
  "primitives",
  "reqwest 0.13.2",
  "serde",

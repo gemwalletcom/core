@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use primitives::SignerError;
-use signer::Signer;
+use signer::Ed25519KeyPair;
 use sui_types::{Ed25519PublicKey, Ed25519Signature, PersonalMessage, SimpleSignature, UserSignature};
 
 /// 1-byte flag + 64-byte signature + 32-byte public key.
@@ -14,9 +14,10 @@ pub fn sign_personal_message(message: &[u8], private_key: &[u8]) -> Result<Strin
 }
 
 pub fn sign_digest(digest: &[u8], private_key: &[u8]) -> Result<String, SignerError> {
-    let (signature_bytes, public_key_bytes) = Signer::sign_ed25519_with_public_key(digest, private_key).map_err(|e| SignerError::InvalidInput(e.to_string()))?;
+    let key_pair = Ed25519KeyPair::from_private_key(private_key).map_err(|e| SignerError::InvalidInput(e.to_string()))?;
+    let signature_bytes = key_pair.sign(digest);
 
-    assemble_signature(&signature_bytes, &public_key_bytes)
+    assemble_signature(&signature_bytes, &key_pair.public_key_bytes)
 }
 
 fn assemble_signature(signature: &[u8], public_key: &[u8]) -> Result<String, SignerError> {
