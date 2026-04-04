@@ -37,15 +37,13 @@ install-diesel:
     @echo Install Diesel
     cargo install diesel_cli --no-default-features --features postgres --version 2.3.3 --force
 
-test-workspace:
-    cargo test --all-features --lib --workspace --quiet
-
-test-all:
-    @echo "Running unit tests only (excluding integration tests)..."
-    cargo test --lib --bins --all
-
-test CRATE:
-    cargo test --all-features --package {{CRATE}} -- --skip integration_tests
+test CRATE="":
+    @echo "Running unit tests only..."
+    @if [ -n "{{CRATE}}" ]; then \
+        cargo test --package {{CRATE}} --lib --bins; \
+    else \
+        cargo test --lib --bins --workspace --quiet; \
+    fi
 
 test-integration:
     @echo "Running integration tests only..."

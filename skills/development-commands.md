@@ -14,9 +14,9 @@ just gemstone build-android     # Build Android AAR (run in gemstone/)
 ## Test
 
 ```sh
-just test-workspace             # Run all workspace tests
-just test-all                   # Run all tests including integration
-just test <CRATE>               # Test a specific crate
+just test                       # Run workspace unit tests
+just test <CRATE>               # Run unit tests for a specific crate
+just test-integration           # Run integration tests only
 just gemstone test-ios          # Run iOS integration tests (run in gemstone/)
 cargo test --test integration_test --package <CRATE> --features <FEATURE>  # Manual integration test
 ```

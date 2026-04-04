@@ -21,7 +21,7 @@ Read this file first, then load the relevant skills for your current task. `proj
 Before finishing a task:
 1. **Review for simplification** — reduce duplication, extract helpers, consolidate modules, remove dead code
 2. **Keep changes minimal** — code must be concise and focused; reviewers cannot realistically review thousands of lines per PR, so only include what is necessary for the task
-3. **Run tests**: `just test <CRATE>`
+3. **Run tests**: `just test` or `just test <CRATE>`
 4. **Run clippy**: `cargo clippy -p <crate> -- -D warnings`
 5. **Format**: `just format`
 

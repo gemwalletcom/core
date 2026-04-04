@@ -10,13 +10,9 @@ build:
 build-release:
     cargo build --release
 
-# Run all tests
-test-all:
-    cargo test --all
-
-# Run library tests only
+# Run unit tests
 test:
-    cargo test --lib
+    cargo test --lib --bins
 
 # Check code compilation without building
 check:
@@ -40,14 +36,14 @@ run:
 
 # Run tests with output
 test-verbose:
-    cargo test --all -- --nocapture
+    cargo test --lib --bins -- --nocapture
 
 # Build and test everything
-ci: check lint test-all
+ci: check lint test
 
 # Watch for changes and run tests
 watch-test:
     cargo watch -x test
 
 # Check, build, and test
-all: check build test-all
+all: check build test
