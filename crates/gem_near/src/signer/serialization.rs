@@ -1,10 +1,10 @@
 use super::models::NearTransfer;
 use primitives::SignerError;
 
-pub(super) const NEAR_ED25519_KEY_TYPE: u8 = 0;
+pub const NEAR_ED25519_KEY_TYPE: u8 = 0;
 const TRANSFER_ACTION: u8 = 3;
 
-pub(crate) fn encode_transfer(transfer: &NearTransfer, public_key: &[u8]) -> Result<Vec<u8>, SignerError> {
+pub fn encode_transfer(transfer: &NearTransfer, public_key: &[u8]) -> Result<Vec<u8>, SignerError> {
     if public_key.len() != 32 {
         return Err(SignerError::invalid_input("Near public key must be 32 bytes"));
     }
@@ -27,7 +27,7 @@ fn write_string(data: &mut Vec<u8>, value: &str) {
     data.extend_from_slice(value.as_bytes());
 }
 
-pub(crate) fn parse_u128_le(value: &str) -> Result<[u8; 16], SignerError> {
+pub fn parse_u128_le(value: &str) -> Result<[u8; 16], SignerError> {
     let parsed = value.parse::<u128>().map_err(|_| SignerError::invalid_input("invalid Near amount"))?;
     Ok(parsed.to_le_bytes())
 }

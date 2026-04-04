@@ -7,14 +7,14 @@ const TRANSACTION_VALIDITY_ROUNDS: u64 = 1000;
 const ALGORAND_TX_TYPE_PAYMENT: &str = "pay";
 const ALGORAND_TX_TYPE_ASSET_TRANSFER: &str = "axfer";
 
-pub(crate) enum Operation {
+pub enum Operation {
     Payment { destination: Base32Address, amount: u64 },
     AssetTransfer { destination: Base32Address, amount: u64, asset_id: u64 },
     AssetOptIn { asset_id: u64 },
 }
 
 impl Operation {
-    pub(crate) fn tx_type(&self) -> &'static str {
+    pub fn tx_type(&self) -> &'static str {
         match self {
             Self::Payment { .. } => ALGORAND_TX_TYPE_PAYMENT,
             Self::AssetTransfer { .. } | Self::AssetOptIn { .. } => ALGORAND_TX_TYPE_ASSET_TRANSFER,
@@ -22,19 +22,19 @@ impl Operation {
     }
 }
 
-pub(crate) struct AlgorandTransaction {
-    pub(crate) sender: Base32Address,
-    pub(crate) fee: u64,
-    pub(crate) first_round: u64,
-    pub(crate) last_round: u64,
-    pub(crate) genesis_id: String,
-    pub(crate) genesis_hash: Vec<u8>,
-    pub(crate) note: Vec<u8>,
-    pub(crate) operation: Operation,
+pub struct AlgorandTransaction {
+    pub sender: Base32Address,
+    pub fee: u64,
+    pub first_round: u64,
+    pub last_round: u64,
+    pub genesis_id: String,
+    pub genesis_hash: Vec<u8>,
+    pub note: Vec<u8>,
+    pub operation: Operation,
 }
 
 impl AlgorandTransaction {
-    pub(crate) fn transfer(input: &SignerInput) -> Result<Self, SignerError> {
+    pub fn transfer(input: &SignerInput) -> Result<Self, SignerError> {
         Self::from_input(
             input,
             Operation::Payment {
@@ -44,7 +44,7 @@ impl AlgorandTransaction {
         )
     }
 
-    pub(crate) fn token_transfer(input: &SignerInput) -> Result<Self, SignerError> {
+    pub fn token_transfer(input: &SignerInput) -> Result<Self, SignerError> {
         Self::from_input(
             input,
             Operation::AssetTransfer {
@@ -55,7 +55,7 @@ impl AlgorandTransaction {
         )
     }
 
-    pub(crate) fn account_action(input: &SignerInput) -> Result<Self, SignerError> {
+    pub fn account_action(input: &SignerInput) -> Result<Self, SignerError> {
         Self::from_input(
             input,
             Operation::AssetOptIn {

@@ -255,7 +255,7 @@ impl TransactionLoadData {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Asset, AssetType, Chain, DelegationValidator, PerpetualConfirmData, PerpetualDirection, Resource};
+    use crate::{Asset, DelegationValidator, PerpetualConfirmData, PerpetualDirection, Resource};
 
     #[test]
     fn transaction_types() {

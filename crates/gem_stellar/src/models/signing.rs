@@ -2,7 +2,7 @@ use crate::address::{Base32Address, parse_address};
 use primitives::{SignerError, SignerInput};
 
 #[derive(Clone)]
-pub(crate) enum Memo {
+pub enum Memo {
     None,
     Text(String),
     #[cfg_attr(not(test), allow(dead_code))]
@@ -10,7 +10,7 @@ pub(crate) enum Memo {
 }
 
 #[derive(Clone)]
-pub(crate) enum Operation {
+pub enum Operation {
     CreateAccount {
         destination: Base32Address,
         amount: u64,
@@ -27,7 +27,7 @@ pub(crate) enum Operation {
 }
 
 impl Operation {
-    pub(crate) fn operation_type(&self) -> u32 {
+    pub fn operation_type(&self) -> u32 {
         match self {
             Self::CreateAccount { .. } => 0,
             Self::Payment { .. } => 1,
@@ -37,29 +37,29 @@ impl Operation {
 }
 
 #[derive(Clone)]
-pub(crate) enum StellarAssetCode {
+pub enum StellarAssetCode {
     Alphanum4([u8; 4]),
     Alphanum12([u8; 12]),
 }
 
 #[derive(Clone)]
-pub(crate) struct StellarAssetData {
-    pub(crate) issuer: Base32Address,
-    pub(crate) code: StellarAssetCode,
+pub struct StellarAssetData {
+    pub issuer: Base32Address,
+    pub code: StellarAssetCode,
 }
 
 #[derive(Clone)]
-pub(crate) struct StellarTransaction {
-    pub(crate) account: Base32Address,
-    pub(crate) fee: u32,
-    pub(crate) sequence: u64,
-    pub(crate) memo: Memo,
-    pub(crate) time_bounds: Option<u64>,
-    pub(crate) operation: Operation,
+pub struct StellarTransaction {
+    pub account: Base32Address,
+    pub fee: u32,
+    pub sequence: u64,
+    pub memo: Memo,
+    pub time_bounds: Option<u64>,
+    pub operation: Operation,
 }
 
 impl StellarAssetData {
-    pub(crate) fn new(issuer: &str, code: &str) -> Result<Self, SignerError> {
+    pub fn new(issuer: &str, code: &str) -> Result<Self, SignerError> {
         let code = match code.len() {
             1..=4 => {
                 let mut asset_code = [0u8; 4];
@@ -82,7 +82,7 @@ impl StellarAssetData {
 }
 
 impl StellarTransaction {
-    pub(crate) fn transfer(input: &SignerInput) -> Result<Self, SignerError> {
+    pub fn transfer(input: &SignerInput) -> Result<Self, SignerError> {
         let amount = input.get_value_u64("invalid Stellar amount")?;
         let destination = parse_address(&input.destination_address)?;
         let is_destination_address_exist = input.metadata.get_is_destination_address_exist().map_err(SignerError::from_display)?;
@@ -96,7 +96,7 @@ impl StellarTransaction {
         Self::from_public_input(input, input.get_fee_u32()?, operation)
     }
 
-    pub(crate) fn token_transfer(input: &SignerInput) -> Result<Self, SignerError> {
+    pub fn token_transfer(input: &SignerInput) -> Result<Self, SignerError> {
         let asset = StellarAssetData::from_input(input)?;
         let amount = input.get_value_u64("invalid Stellar amount")?;
         let operation = Operation::Payment {
@@ -108,7 +108,7 @@ impl StellarTransaction {
         Self::from_public_input(input, input.get_fee_u32()?, operation)
     }
 
-    pub(crate) fn account_action(input: &SignerInput) -> Result<Self, SignerError> {
+    pub fn account_action(input: &SignerInput) -> Result<Self, SignerError> {
         let operation = Operation::ChangeTrust {
             asset: StellarAssetData::from_input(input)?,
             valid_before: None,

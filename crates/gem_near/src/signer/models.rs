@@ -10,7 +10,7 @@ pub struct NearTransfer {
 }
 
 impl NearTransfer {
-    pub(crate) fn from_input(input: &SignerInput) -> Result<Self, SignerError> {
+    pub fn from_input(input: &SignerInput) -> Result<Self, SignerError> {
         let block_hash = bs58::decode(input.metadata.get_block_hash().map_err(SignerError::from_display)?)
             .into_vec()
             .map_err(|e| SignerError::invalid_input(format!("invalid Near block hash: {e}")))?;
