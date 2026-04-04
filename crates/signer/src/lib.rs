@@ -1,3 +1,4 @@
+mod base32;
 mod decode;
 mod ed25519;
 mod eip712;
@@ -14,6 +15,7 @@ use zeroize::Zeroizing;
 use crate::ed25519::{sign_digest as sign_ed25519_digest, signing_key_from_bytes};
 pub use crate::secp256k1::{RECOVERY_ID_INDEX, SIGNATURE_LENGTH, apply_eth_recovery_id, public_key_from_private as secp256k1_public_key};
 
+pub use base32::{Base32Address, decode_base32};
 pub use decode::{decode_private_key, encode_private_key, supports_private_key_import};
 pub use eip712::hash_typed_data as hash_eip712;
 pub use primitives::SignerError;
@@ -53,6 +55,12 @@ impl Signer {
         Ok((signature_bytes, public_key_bytes))
     }
 
+    pub fn ed25519_public_key(private_key: &[u8]) -> Result<Vec<u8>, SignerError> {
+        let private_key = Zeroizing::new(private_key.to_vec());
+        let signing_key = signing_key_from_bytes(&private_key)?;
+        Ok(signing_key.verifying_key().to_bytes().to_vec())
+    }
+
     pub fn sign_eip712(typed_data_json: &str, private_key: &[u8]) -> Result<String, SignerError> {
         let digest = eip712::hash_typed_data(typed_data_json)?;
         let signature = Self::sign_eth_digest(&digest, private_key)?;
@@ -80,5 +88,16 @@ mod tests {
 
         assert_eq!(signature.len(), 64, "Ed25519 signature should be 64 bytes");
         assert_eq!(public_key.len(), 32, "Ed25519 public key should be 32 bytes");
+    }
+
+    #[test]
+    fn ed25519_public_key_matches_sign_ed25519_with_public_key() {
+        let private_key = hex::decode(TEST_PRIVATE_KEY).unwrap();
+        let digest = b"test message";
+
+        let (_, expected_public_key) = Signer::sign_ed25519_with_public_key(digest, &private_key).unwrap();
+        let public_key = Signer::ed25519_public_key(&private_key).unwrap();
+
+        assert_eq!(public_key, expected_public_key);
     }
 }

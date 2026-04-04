@@ -4,6 +4,7 @@ version = "1.0.0"
 edition = { workspace = true }
 
 [dependencies]
+data-encoding = "2.10.0"
 ed25519-dalek = { version = "2.2.0", default-features = false, features = ["std", "zeroize"] }
 k256 = { workspace = true }
 hex = { workspace = true }

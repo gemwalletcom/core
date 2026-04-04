@@ -1,9 +1,12 @@
 use crate::{GemstoneError, models::transaction::GemSignerInput};
+use gem_algorand::AlgorandChainSigner;
 use gem_aptos::AptosChainSigner;
 use gem_cosmos::signer::CosmosChainSigner;
 use gem_evm::signer::EvmChainSigner;
 use gem_hypercore::signer::HyperCoreSigner;
+use gem_near::NearChainSigner;
 use gem_solana::signer::SolanaChainSigner;
+use gem_stellar::StellarChainSigner;
 use gem_sui::signer::SuiChainSigner;
 use gem_tron::TronChainSigner;
 use primitives::{Chain, ChainSigner, ChainType, EVMChain, SignerError, SignerInput};
@@ -26,6 +29,9 @@ impl GemChainSigner {
             ChainType::Solana => Box::new(SolanaChainSigner),
             ChainType::Tron => Box::new(TronChainSigner),
             ChainType::Cosmos => Box::new(CosmosChainSigner),
+            ChainType::Algorand => Box::new(AlgorandChainSigner),
+            ChainType::Near => Box::new(NearChainSigner),
+            ChainType::Stellar => Box::new(StellarChainSigner),
             _ => todo!("Signer not implemented for chain {:?}", chain),
         };
 

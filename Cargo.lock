@@ -2184,9 +2184,9 @@ dependencies = [
 
 [[package]]
 name = "data-encoding"
-version = "2.9.0"
+version = "2.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2a2330da5de22e8a3cb63252ce2abb30116bf5265e89c0e01bc17015ce30a476"
+checksum = "d7a1e2f27636f116493b8b860f5546edb47c8d8f8ea73e1d2a20be88e28d1fea"
 
 [[package]]
 name = "der"
@@ -3061,12 +3061,15 @@ dependencies = [
  "chain_traits",
  "chrono",
  "gem_client",
+ "gem_hash",
+ "hex",
  "num-bigint",
  "primitives",
  "reqwest 0.13.2",
  "serde",
  "serde_json",
  "settings",
+ "signer",
  "tokio",
 ]
 
@@ -3289,11 +3292,13 @@ name = "gem_near"
 version = "1.0.0"
 dependencies = [
  "async-trait",
+ "base64",
  "bs58",
  "chain_traits",
  "chrono",
  "futures",
  "gem_client",
+ "gem_hash",
  "gem_jsonrpc",
  "hex",
  "num-bigint",
@@ -3303,6 +3308,7 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "settings",
+ "signer",
  "tokio",
 ]
 
@@ -3378,10 +3384,13 @@ name = "gem_stellar"
 version = "1.0.0"
 dependencies = [
  "async-trait",
+ "base64",
  "chain_traits",
  "chrono",
  "futures",
  "gem_client",
+ "gem_hash",
+ "hex",
  "num-bigint",
  "number_formatter",
  "primitives",
@@ -3390,6 +3399,7 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "settings",
+ "signer",
  "tokio",
  "url",
 ]
@@ -6963,6 +6973,7 @@ version = "1.0.0"
 dependencies = [
  "alloy-primitives",
  "bs58",
+ "data-encoding",
  "ed25519-dalek",
  "gem_hash",
  "hex",

@@ -1,3 +1,4 @@
+use crate::SignerError;
 use crate::contract_call_data::ContractCallData;
 use crate::earn_type::EarnType;
 use crate::stake_type::StakeType;
@@ -191,6 +192,10 @@ pub struct SignerInput {
 impl SignerInput {
     pub fn new(input: TransactionLoadInput, fee: TransactionFee) -> Self {
         Self { input, fee }
+    }
+
+    pub fn get_token_id(&self) -> Result<&str, SignerError> {
+        self.input_type.get_asset().id.get_token_id().map(|id| id.as_str())
     }
 }
 
