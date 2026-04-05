@@ -164,6 +164,11 @@ pub fn get_oku_deployment_by_chain(chain: &Chain) -> Option<V3Deployment> {
             universal_router: "0x1b35fbA9357fD9bda7ed0429C8BbAbe1e8CC88fc",
             permit2: UNISWAP_PERMIT2_CONTRACT,
         }),
+        Chain::SeiEvm => Some(V3Deployment {
+            quoter_v2: "0x807F4E281B7A3B324825C64ca53c69F0b418dE40",
+            universal_router: "0xa683c66045ad16abb1bCE5ad46A64d95f9A25785",
+            permit2: "0xB952578f3520EE8Ea45b7914994dcf4702cEe578",
+        }),
         _ => None,
     }
 }
