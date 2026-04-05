@@ -6,8 +6,9 @@ use fiat::FiatProviderFactory;
 use gem_tracing::{error_with_fields, info_with_fields};
 use settings::Settings;
 use storage::Database;
+use primitives::{FiatTransactionStatus, TransactionId};
 use streamer::consumer::MessageConsumer;
-use streamer::{FiatWebhook, FiatWebhookPayload, StreamProducer, StreamProducerQueue, WalletStreamEvent, WalletStreamPayload};
+use streamer::{FiatWebhook, FiatWebhookPayload, QueueName, StreamProducer, StreamProducerQueue, WalletStreamEvent, WalletStreamPayload};
 
 pub struct FiatWebhookConsumer {
     pub database: Database,
@@ -74,6 +75,14 @@ impl MessageConsumer<FiatWebhookPayload, bool> for FiatWebhookConsumer {
                     quote_id = updated.quote_id.as_str(),
                     transaction_hash = updated.transaction_hash.as_deref().unwrap_or("")
                 );
+
+                if updated.status.0 == FiatTransactionStatus::Complete
+                    && let Some(hash) = &updated.transaction_hash
+                {
+                    let transaction_id = TransactionId::new(updated.asset_id.chain, hash.clone());
+                    let _ = self.stream_producer.publish(QueueName::StorePendingTransactions, &transaction_id).await;
+                    info_with_fields!("published fiat transaction to pending", provider = provider_id, transaction_id = transaction_id.to_string());
+                }
 
                 let payload = WalletStreamPayload {
                     wallet_id: updated.wallet_id,
