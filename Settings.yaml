@@ -138,6 +138,8 @@ chains:
     url: https://injective-rest.publicnode.com
   sei:
     url: https://sei-api.polkachu.com
+  seievm:
+    url: https://evm-rpc.sei-apis.com
   manta:
     url: https://pacific-rpc.manta.network/http
   blast:

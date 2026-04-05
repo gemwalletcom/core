@@ -103,6 +103,7 @@ impl ProviderFactory {
             | Chain::World
             | Chain::Plasma
             | Chain::Sonic
+            | Chain::SeiEvm
             | Chain::Abstract
             | Chain::Berachain
             | Chain::Ink
@@ -171,6 +172,7 @@ impl ProviderFactory {
             Chain::Celestia => &settings.chains.celestia,
             Chain::Injective => &settings.chains.injective,
             Chain::Sei => &settings.chains.sei,
+            Chain::SeiEvm => &settings.chains.seievm,
             Chain::Manta => &settings.chains.manta,
             Chain::Blast => &settings.chains.blast,
             Chain::Noble => &settings.chains.noble,

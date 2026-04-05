@@ -51,6 +51,7 @@ pub fn ankr_chain(chain: EVMChain) -> Option<String> {
         EVMChain::Celo => None,   //Some("celo".to_string()),
         EVMChain::World => None,
         EVMChain::Sonic => None, //Some("sonic_mainnet".to_string()),
+        EVMChain::SeiEvm => None,
         EVMChain::Abstract => None,
         EVMChain::Berachain => None,
         EVMChain::Ink => None,

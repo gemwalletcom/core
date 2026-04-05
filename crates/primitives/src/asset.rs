@@ -89,6 +89,7 @@ impl Asset {
             Chain::Gnosis => chain.new_asset("Gnosis Chain".to_string(), "xDai".to_string(), 18, AssetType::NATIVE),
             Chain::Injective => chain.new_asset("Injective".to_string(), "INJ".to_string(), 18, AssetType::NATIVE),
             Chain::Sei => chain.new_asset("Sei".to_string(), "SEI".to_string(), 6, AssetType::NATIVE),
+            Chain::SeiEvm => chain.new_asset("Sei EVM".to_string(), "SEI".to_string(), 18, AssetType::NATIVE),
             Chain::Manta => chain.new_asset("Manta ETH".to_string(), "ETH".to_string(), 18, AssetType::NATIVE),
             Chain::Blast => chain.new_asset("Blast ETH".to_string(), "ETH".to_string(), 18, AssetType::NATIVE),
             Chain::Noble => chain.new_asset("Noble".to_string(), "USDC".to_string(), 6, AssetType::NATIVE),
@@ -161,5 +162,14 @@ mod tests {
         let asset = Asset::from_chain(Chain::Gnosis);
 
         assert_eq!(asset.symbol, "xDai");
+    }
+
+    #[test]
+    fn test_sei_evm_asset() {
+        let asset = Asset::from_chain(Chain::SeiEvm);
+
+        assert_eq!(asset.name, "Sei EVM");
+        assert_eq!(asset.symbol, "SEI");
+        assert_eq!(asset.decimals, 18);
     }
 }

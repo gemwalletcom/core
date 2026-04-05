@@ -83,6 +83,7 @@ pub fn deployment_by_chain(chain: &EVMChain) -> &'static str {
         | EVMChain::Celo
         | EVMChain::World
         | EVMChain::Sonic
+        | EVMChain::SeiEvm
         | EVMChain::Berachain
         | EVMChain::Ink
         | EVMChain::Unichain

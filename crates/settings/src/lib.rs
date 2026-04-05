@@ -214,6 +214,7 @@ pub struct Chains {
     pub gnosis: Chain,
     pub injective: Chain,
     pub sei: Chain,
+    pub seievm: Chain,
     pub manta: Chain,
     pub blast: Chain,
     pub noble: Chain,

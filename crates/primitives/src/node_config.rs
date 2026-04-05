@@ -113,6 +113,11 @@ pub fn get_nodes_for_chain(chain: Chain) -> Vec<Node> {
             Node::new("https://api-sei.stingray.plus", NodePriority::High),
             Node::new("https://sei-api.polkachu.com", NodePriority::High),
         ],
+        Chain::SeiEvm => vec![
+            Node::new("https://evm-rpc.sei-apis.com", NodePriority::High),
+            Node::new("https://evm-rpc-sei.stingray.plus", NodePriority::High),
+            Node::new("https://sei-evm-rpc.publicnode.com", NodePriority::High),
+        ],
         Chain::Manta => vec![
             Node::new("https://pacific-rpc.manta.network/http", NodePriority::High),
             Node::new("https://manta-pacific.drpc.org", NodePriority::High),

@@ -1,8 +1,8 @@
 use crate::chain::Chain;
 use crate::chain_evm::EVMChain;
 use crate::explorers::{
-    AlgorandAllo, BlockScout, BlockVision, Blocksec, Cardanocan, EtherScan, FlowScan, HyperliquidExplorer, HypurrScan, MantleExplorer, NearBlocks, OkxExplorer, RouteScan,
-    RuneScan, SubScan, TonScan, TronScan, Viewblock, XrpScan, ZkSync, aptos, blockchair, mempool, mintscan, solana, stellar_expert, sui, threexpl, ton,
+    AlgorandAllo, BlockScout, BlockVision, Blocksec, Cardanocan, EtherScan, Explorer, FlowScan, HyperliquidExplorer, HypurrScan, MantleExplorer, Metadata, NearBlocks, OkxExplorer,
+    RouteScan, RuneScan, SubScan, TonScan, TronScan, Viewblock, XrpScan, ZkSync, aptos, blockchair, mempool, mintscan, solana, stellar_expert, sui, threexpl, ton,
 };
 use std::str::FromStr;
 use typeshare::typeshare;
@@ -80,6 +80,7 @@ pub fn get_block_explorers(chain: Chain) -> Vec<Box<dyn BlockExplorer>> {
         Chain::Celestia => vec![mintscan::new_celestia()],
         Chain::Injective => vec![mintscan::new_injective()],
         Chain::Sei => vec![mintscan::new_sei()],
+        Chain::SeiEvm => vec![Explorer::boxed(Metadata::with_token("Seiscan", "https://seiscan.io"))],
         Chain::Noble => vec![mintscan::new_noble()],
         Chain::Mantle => vec![MantleExplorer::boxed(), EtherScan::boxed(EVMChain::Mantle)],
 

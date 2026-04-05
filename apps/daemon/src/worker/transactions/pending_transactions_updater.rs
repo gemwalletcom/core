@@ -82,7 +82,9 @@ impl PendingTransactionsUpdater {
                     elapsed = elapsed,
                     latency = DurationMs(start.elapsed())
                 );
-                self.stream_producer.publish_transactions(TransactionsPayload::new_with_notify(chain, vec![], vec![transaction])).await?;
+                self.stream_producer
+                    .publish_transactions(TransactionsPayload::new_with_notify(chain, vec![], vec![transaction]))
+                    .await?;
                 Ok(true)
             }
             Ok(None) => {

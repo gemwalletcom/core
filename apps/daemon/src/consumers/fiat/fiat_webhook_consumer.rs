@@ -4,9 +4,9 @@ use async_trait::async_trait;
 use fiat::FiatProvider;
 use fiat::FiatProviderFactory;
 use gem_tracing::{error_with_fields, info_with_fields};
+use primitives::{FiatTransactionStatus, TransactionId};
 use settings::Settings;
 use storage::Database;
-use primitives::{FiatTransactionStatus, TransactionId};
 use streamer::consumer::MessageConsumer;
 use streamer::{FiatWebhook, FiatWebhookPayload, QueueName, StreamProducer, StreamProducerQueue, WalletStreamEvent, WalletStreamPayload};
 

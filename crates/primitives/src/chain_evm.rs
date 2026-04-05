@@ -33,6 +33,7 @@ pub enum EVMChain {
     Celo,
     World,
     Sonic,
+    SeiEvm,
     Abstract,
     Berachain,
     Ink,
@@ -100,6 +101,13 @@ mod tests {
     #[test]
     fn test_from_chain() {
         assert_eq!(EVMChain::from_chain(Chain::Ethereum), Some(EVMChain::Ethereum));
+        assert_eq!(EVMChain::from_chain(Chain::SeiEvm), Some(EVMChain::SeiEvm));
         assert_eq!(EVMChain::from_chain(Chain::Bitcoin), None);
+    }
+
+    #[test]
+    fn test_sei_evm_chain_id() {
+        assert_eq!(EVMChain::SeiEvm.chain_id(), 1329);
+        assert_eq!(Chain::from_chain_id(1329), Some(Chain::SeiEvm));
     }
 }

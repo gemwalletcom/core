@@ -124,6 +124,7 @@ impl GemGateway {
             | Chain::Celo
             | Chain::World
             | Chain::Sonic
+            | Chain::SeiEvm
             | Chain::Abstract
             | Chain::Berachain
             | Chain::Ink

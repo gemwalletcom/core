@@ -39,6 +39,7 @@ pub enum Chain {
     Celestia,
     Injective,
     Sei,
+    SeiEvm,
     Manta,
     Blast,
     Noble,

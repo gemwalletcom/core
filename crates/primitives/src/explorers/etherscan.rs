@@ -26,6 +26,7 @@ impl EtherScan {
             EVMChain::Mantle => Explorer::boxed(Metadata::with_token("MantleScan", "https://mantlescan.xyz")),
             EVMChain::World => Explorer::boxed(Metadata::with_token("WorldScan", "https://worldscan.org")),
             EVMChain::Sonic => Explorer::boxed(Metadata::with_token("SonicScan", "https://sonicscan.org")),
+            EVMChain::SeiEvm => Explorer::boxed(Metadata::with_token("Seiscan", "https://seiscan.io")),
             EVMChain::Abstract => Explorer::boxed(Metadata::with_token("Abscan", "https://abscan.org")),
             EVMChain::Berachain => Explorer::boxed(Metadata::with_token("Berascan", "https://berascan.com")),
             EVMChain::Unichain => Explorer::boxed(Metadata::with_token("Uniscan", "https://uniscan.xyz")),
