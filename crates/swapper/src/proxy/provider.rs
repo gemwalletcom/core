@@ -139,6 +139,7 @@ impl ProxyProvider<RpcClient> {
                 SwapperChainAsset::All(Chain::Mantle),
                 SwapperChainAsset::All(Chain::Celo),
                 SwapperChainAsset::All(Chain::Sonic),
+                SwapperChainAsset::All(Chain::SeiEvm),
                 SwapperChainAsset::All(Chain::Abstract),
                 SwapperChainAsset::All(Chain::Berachain),
                 SwapperChainAsset::All(Chain::Unichain),

@@ -190,8 +190,8 @@ fn get_paths(_folder: &str, path: String) -> Vec<String> {
 //TODO: Pass from the command
 fn ignored_files_by_generator(generator_type: &GeneratorType) -> Vec<&'static str> {
     match generator_type {
-        GeneratorType::Swift => vec![""],
-        GeneratorType::Kotlin => vec!["asset_data.rs"],
+        GeneratorType::Swift => vec!["quote_asset.rs"],
+        GeneratorType::Kotlin => vec!["asset_data.rs", "quote_asset.rs"],
         GeneratorType::TypeScript => vec!["transaction_input_type.rs"],
     }
 }
