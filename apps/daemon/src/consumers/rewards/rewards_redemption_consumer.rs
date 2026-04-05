@@ -2,14 +2,14 @@ use async_trait::async_trait;
 use gem_rewards::{RedemptionAsset, RedemptionRequest, RedemptionService};
 use gem_tracing::info_with_fields;
 use primitives::rewards::RedemptionStatus as PrimitiveRedemptionStatus;
-use primitives::{NotificationRewardsRedeemMetadata, NotificationType};
+use primitives::{NotificationRewardsRedeemMetadata, NotificationType, TransactionId};
 use std::error::Error;
 use std::sync::Arc;
 use std::time::Duration;
 use storage::sql_types::RedemptionStatus;
 use storage::{Database, RedemptionUpdate, RewardsRedemptionsRepository, RewardsRepository};
 use streamer::consumer::MessageConsumer;
-use streamer::{InAppNotificationPayload, RewardsRedemptionPayload, StreamProducer, StreamProducerQueue};
+use streamer::{InAppNotificationPayload, QueueName, RewardsRedemptionPayload, StreamProducer, StreamProducerQueue};
 
 pub struct RedemptionRetryConfig {
     pub max_retries: u32,
@@ -91,6 +91,13 @@ impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, PrimitiveRe
                 self.database.rewards_redemptions()?.update_redemption(payload.redemption_id, updates)?;
 
                 if let Some(id) = &asset_id {
+                    let pending_tx_id = TransactionId::new(id.chain, transaction_id.clone());
+                    if let Err(e) = self.stream_producer.publish(QueueName::StorePendingTransactions, &pending_tx_id).await {
+                        info_with_fields!("failed to publish redemption transaction to pending", transaction_id = pending_tx_id.to_string(), error = e.to_string());
+                    } else {
+                        info_with_fields!("published redemption transaction to pending", transaction_id = pending_tx_id.to_string());
+                    }
+
                     let metadata = NotificationRewardsRedeemMetadata {
                         transaction_id: transaction_id.clone(),
                         points,
