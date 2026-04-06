@@ -12,15 +12,13 @@ use primitives::{
 };
 
 use crate::{
-    SUI_COIN_TYPE,
+    ESTIMATION_GAS_BUDGET, SUI_COIN_TYPE,
     models::{SuiCoin, SuiObject},
 };
 use crate::{
     provider::preload_mapper::{map_transaction_data, map_transaction_rate_rates},
     rpc::client::SuiClient,
 };
-
-const ESTIMATION_GAS_BUDGET: u64 = 50_000_000;
 
 #[cfg(feature = "rpc")]
 #[async_trait]

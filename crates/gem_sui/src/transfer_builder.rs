@@ -1,5 +1,5 @@
 use crate::{
-    SUI_COIN_TYPE, SuiClient,
+    ESTIMATION_GAS_BUDGET, SUI_COIN_TYPE, SuiClient,
     models::{Coin, Gas, TokenTransferInput, TransferInput},
     operations::{encode_token_transfer, encode_transfer},
 };
@@ -7,8 +7,6 @@ use futures::try_join;
 use gem_client::Client;
 use num_traits::ToPrimitive;
 use std::error::Error;
-
-const ESTIMATION_GAS_BUDGET: u64 = 50_000_000;
 
 #[allow(clippy::too_many_arguments)]
 pub async fn build_transfer_message_bytes<C: Client + Clone>(

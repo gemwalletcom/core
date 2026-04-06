@@ -37,6 +37,7 @@ pub const SUI_COIN_TYPE: &str = "0x2::sui::SUI";
 pub const SUI_COIN_TYPE_FULL: &str = "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI";
 pub const EMPTY_ADDRESS: &str = "0x0000000000000000000000000000000000000000000000000000000000000000";
 pub const STORAGE_FEE_UNIT: u64 = 76; // https://blog.sui.io/storage-fees-explained
+pub const ESTIMATION_GAS_BUDGET: u64 = 50_000_000;
 pub const SUI_STAKE_EVENT: &str = "0x3::validator::StakingRequestEvent";
 pub const SUI_UNSTAKE_EVENT: &str = "0x3::validator::UnstakingRequestEvent";
 
