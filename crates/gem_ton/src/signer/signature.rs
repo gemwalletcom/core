@@ -1,5 +1,5 @@
 use primitives::SignerError;
-use signer::Signer;
+use signer::Ed25519KeyPair;
 
 use super::types::{TonSignMessageData, TonSignResult};
 
@@ -7,8 +7,12 @@ pub fn sign_personal(data: &[u8], private_key: &[u8], timestamp: u64) -> Result<
     let ton_data = TonSignMessageData::from_bytes(data)?;
     let digest = ton_data.hash(timestamp)?;
 
-    let (signature, public_key) = Signer::sign_ed25519_with_public_key(&digest, private_key).map_err(|e| SignerError::InvalidInput(e.to_string()))?;
-    Ok(TonSignResult { signature, public_key, timestamp })
+    let key_pair = Ed25519KeyPair::from_private_key(private_key)?;
+    Ok(TonSignResult {
+        signature: key_pair.sign(&digest).to_vec(),
+        public_key: key_pair.public_key_bytes.to_vec(),
+        timestamp,
+    })
 }
 
 #[cfg(test)]
