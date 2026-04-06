@@ -116,6 +116,9 @@ pub static WORLD_USDC_E_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::
 pub const ZKSYNC_USDC_E_TOKEN_ID: &str = "0x3355df6D4c9C3035724Fd0e3914dE96A5a83aaf4";
 pub static ZKSYNC_USDC_E_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::ZkSync, ZKSYNC_USDC_E_TOKEN_ID));
 
+pub const SEIEVM_USDC_N_TOKEN_ID: &str = "0x3894085Ef7Ff0f0aeDf52E2A2704928d1Ec074F1";
+pub static SEIEVM_USDC_N_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::SeiEvm, SEIEVM_USDC_N_TOKEN_ID));
+
 pub const ARBITRUM_USDT_TOKEN_ID: &str = "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9";
 pub static ARBITRUM_USDT_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::Arbitrum, ARBITRUM_USDT_TOKEN_ID));
 
