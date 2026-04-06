@@ -1,7 +1,10 @@
 use num_bigint::BigUint;
+use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_serializers::deserialize_biguint_from_str;
+
+use crate::gas_budget::calculate_gas_budget;
 
 #[cfg(feature = "rpc")]
 use serde_serializers::deserialize_u64_from_str;
@@ -54,6 +57,15 @@ pub struct GasUsed {
     pub storage_rebate: BigUint,
     #[serde(deserialize_with = "deserialize_biguint_from_str")]
     pub non_refundable_storage_fee: BigUint,
+}
+
+impl GasUsed {
+    pub fn calculate_gas_budget(&self) -> Result<(u64, u64), Box<dyn std::error::Error + Send + Sync>> {
+        let computation_cost = self.computation_cost.to_u64().ok_or("computation_cost overflow")?;
+        let storage_cost = self.storage_cost.to_u64().ok_or("storage_cost overflow")?;
+        let storage_rebate = self.storage_rebate.to_u64().ok_or("storage_rebate overflow")?;
+        Ok(calculate_gas_budget(computation_cost, storage_cost, storage_rebate))
+    }
 }
 
 pub use TransactionBroadcast as SuiBroadcastTransaction;
