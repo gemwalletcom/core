@@ -8,7 +8,7 @@ use primitives::{
     asset_constants::{
         ARBITRUM_USDC_ASSET_ID, ARBITRUM_USDT_ASSET_ID, AVALANCHE_USDC_ASSET_ID, AVALANCHE_USDT_ASSET_ID, BASE_USDC_ASSET_ID, ETHEREUM_USDC_ASSET_ID, ETHEREUM_USDT_ASSET_ID,
         HYPEREVM_USDC_ASSET_ID, HYPEREVM_USDT_ASSET_ID, LINEA_USDT_ASSET_ID, OPTIMISM_USDC_ASSET_ID, OPTIMISM_USDT_ASSET_ID, POLYGON_USDC_ASSET_ID, POLYGON_USDT_ASSET_ID,
-        SMARTCHAIN_USDC_ASSET_ID, SMARTCHAIN_USDT_ASSET_ID, ZKSYNC_USDT_ASSET_ID,
+        SEIEVM_USDC_N_ASSET_ID, SMARTCHAIN_USDC_ASSET_ID, SMARTCHAIN_USDT_ASSET_ID, ZKSYNC_USDT_ASSET_ID,
     },
     contract_constants::EVM_ZERO_ADDRESS,
 };
@@ -46,6 +46,7 @@ pub static SUPPORTED_CHAINS: LazyLock<Vec<SwapperChainAsset>> = LazyLock::new(||
         SwapperChainAsset::Assets(Chain::Linea, vec![LINEA_USDT_ASSET_ID.clone()]),
         SwapperChainAsset::Assets(Chain::ZkSync, vec![ZKSYNC_USDT_ASSET_ID.clone()]),
         SwapperChainAsset::Assets(Chain::Hyperliquid, vec![HYPEREVM_USDC_ASSET_ID.clone(), HYPEREVM_USDT_ASSET_ID.clone()]),
+        SwapperChainAsset::Assets(Chain::SeiEvm, vec![SEIEVM_USDC_N_ASSET_ID.clone()]),
         SwapperChainAsset::Assets(Chain::Berachain, vec![]),
         SwapperChainAsset::Assets(Chain::Manta, vec![]),
         SwapperChainAsset::Assets(Chain::Sonic, vec![]),
