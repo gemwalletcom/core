@@ -51,7 +51,7 @@ pub fn sign_message(message: &[u8], private_key: &[u8]) -> Result<(Vec<u8>, Vec<
 
 fn sign_ed25519(preimage: &[u8], private_key: &[u8]) -> Result<(Vec<u8>, Vec<u8>), SignerError> {
     let key_pair = Ed25519KeyPair::from_private_key(private_key)?;
-    Ok((key_pair.sign(preimage), key_pair.public_key_bytes.to_vec()))
+    Ok((key_pair.sign(preimage).to_vec(), key_pair.public_key_bytes.to_vec()))
 }
 
 pub fn build_submit_transaction_bcs(raw_tx: RawTransaction, signature: Vec<u8>, public_key: Vec<u8>) -> Result<String, SignerError> {

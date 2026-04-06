@@ -30,7 +30,7 @@ impl Signer {
     pub fn sign_digest(scheme: SignatureScheme, digest: Vec<u8>, private_key: Vec<u8>) -> Result<Vec<u8>, SignerError> {
         let private_key = Zeroizing::new(private_key);
         match scheme {
-            SignatureScheme::Ed25519 => Ok(Ed25519KeyPair::from_private_key(&private_key)?.sign(&digest)),
+            SignatureScheme::Ed25519 => Ok(Ed25519KeyPair::from_private_key(&private_key)?.sign(&digest).to_vec()),
             SignatureScheme::Secp256k1 => secp256k1::sign_digest_append_recovery(&digest, &private_key),
         }
     }

@@ -18,7 +18,7 @@ impl Ed25519KeyPair {
         })
     }
 
-    pub fn sign(&self, digest: &[u8]) -> Vec<u8> {
-        self.signing_key.sign(digest).to_bytes().to_vec()
+    pub fn sign(&self, digest: &[u8]) -> [u8; ed25519_dalek::SIGNATURE_LENGTH] {
+        self.signing_key.sign(digest).to_bytes()
     }
 }

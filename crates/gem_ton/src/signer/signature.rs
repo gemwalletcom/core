@@ -9,7 +9,7 @@ pub fn sign_personal(data: &[u8], private_key: &[u8], timestamp: u64) -> Result<
 
     let key_pair = Ed25519KeyPair::from_private_key(private_key)?;
     Ok(TonSignResult {
-        signature: key_pair.sign(&digest),
+        signature: key_pair.sign(&digest).to_vec(),
         public_key: key_pair.public_key_bytes.to_vec(),
         timestamp,
     })
