@@ -1,18 +1,13 @@
 use crate::{
-    SUI_COIN_TYPE, SuiClient,
+    ESTIMATION_GAS_BUDGET, SUI_COIN_TYPE, SuiClient,
     models::{Coin, Gas, TokenTransferInput, TransferInput},
     operations::{encode_token_transfer, encode_transfer},
-    provider::preload_mapper::GAS_BUDGET,
 };
 use futures::try_join;
 use gem_client::Client;
 use num_traits::ToPrimitive;
 use std::error::Error;
 
-/// Builds a base64 encoded programmable transaction payload for Sui transfers.
-///
-/// When `token_type` is `None`, a native SUI transfer is constructed. Otherwise the provided
-/// token type is used to fetch token coins and construct a token transfer transaction.
 #[allow(clippy::too_many_arguments)]
 pub async fn build_transfer_message_bytes<C: Client + Clone>(
     client: &SuiClient<C>,
@@ -28,57 +23,70 @@ pub async fn build_transfer_message_bytes<C: Client + Clone>(
         .ok_or_else(|| format!("Failed to convert Sui gas price to u64: {gas_price_bigint}"))?;
 
     let sui_coins: Vec<Coin> = sui_coin_objects.into_iter().map(Into::into).collect();
-
     if sui_coins.is_empty() {
         return Err("No SUI coins available for gas budget".into());
     }
 
+    let token_coins = match token_type {
+        None => None,
+        Some(token_type) => Some(get_token_coins(client, sender, token_type).await?),
+    };
+
+    let estimate_output = build_tx_output(sender, recipient, amount, &sui_coins, token_coins.as_deref(), ESTIMATION_GAS_BUDGET, gas_price)?;
+    let dry_run_result = client.dry_run(estimate_output.base64_encoded()).await?;
+    let (_, gas_budget) = dry_run_result.effects.gas_used.calculate_gas_budget()?;
+
+    let tx_output = build_tx_output(sender, recipient, amount, &sui_coins, token_coins.as_deref(), gas_budget, gas_price)?;
+    Ok(tx_output.base64_encoded())
+}
+
+async fn get_token_coins<C: Client + Clone>(client: &SuiClient<C>, sender: &str, token_type: &str) -> Result<Vec<Coin>, Box<dyn Error + Send + Sync>> {
+    let objs = client.get_coins(sender, token_type).await?;
+    let coins: Vec<Coin> = objs.into_iter().map(Into::into).collect();
+    if coins.is_empty() {
+        return Err(format!("No coins found for token type {token_type}").into());
+    }
+    Ok(coins)
+}
+
+fn build_tx_output(
+    sender: &str,
+    recipient: &str,
+    amount: u64,
+    sui_coins: &[Coin],
+    token_coins: Option<&[Coin]>,
+    gas_budget: u64,
+    gas_price: u64,
+) -> Result<crate::models::TxOutput, Box<dyn Error + Send + Sync>> {
     let gas = Gas {
-        budget: GAS_BUDGET,
+        budget: gas_budget,
         price: gas_price,
     };
 
-    let tx_output = match token_type {
+    match token_coins {
+        Some(tokens) => {
+            let token_transfer_input = TokenTransferInput {
+                sender: sender.to_string(),
+                recipient: recipient.to_string(),
+                amount,
+                tokens: tokens.to_vec(),
+                gas,
+                gas_coin: sui_coins.first().unwrap().clone(),
+            };
+            encode_token_transfer(&token_transfer_input)
+        }
         None => {
             let transfer_input = TransferInput {
                 sender: sender.to_string(),
                 recipient: recipient.to_string(),
                 amount,
-                coins: sui_coins.clone(),
+                coins: sui_coins.to_vec(),
                 send_max: false,
                 gas,
             };
-
-            encode_transfer(&transfer_input)?
+            encode_transfer(&transfer_input)
         }
-        Some(token_type) => {
-            let token_coin_objects = client.get_coins(sender, token_type).await?;
-            let token_coins: Vec<Coin> = token_coin_objects.into_iter().map(Into::into).collect();
-
-            if token_coins.is_empty() {
-                return Err(format!("No coins found for token type {token_type}").into());
-            }
-
-            let gas_coin = sui_coins
-                .first()
-                .cloned()
-                .ok_or_else(|| "No SUI coins available to use as gas coin".to_string())
-                .map_err(|err| -> Box<dyn Error + Send + Sync> { err.into() })?;
-
-            let token_transfer_input = TokenTransferInput {
-                sender: sender.to_string(),
-                recipient: recipient.to_string(),
-                amount,
-                tokens: token_coins,
-                gas,
-                gas_coin,
-            };
-
-            encode_token_transfer(&token_transfer_input)?
-        }
-    };
-
-    Ok(tx_output.base64_encoded())
+    }
 }
 
 #[cfg(all(test, feature = "chain_integration_tests"))]

@@ -12,11 +12,11 @@ use primitives::{
 };
 
 use crate::{
-    SUI_COIN_TYPE,
+    ESTIMATION_GAS_BUDGET, SUI_COIN_TYPE,
     models::{SuiCoin, SuiObject},
 };
 use crate::{
-    provider::preload_mapper::{GAS_BUDGET, map_transaction_data, map_transaction_rate_rates},
+    provider::preload_mapper::{map_transaction_data, map_transaction_rate_rates},
     rpc::client::SuiClient,
 };
 
@@ -29,9 +29,14 @@ impl<C: Client + Clone> ChainTransactionLoad for SuiClient<C> {
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
         let (gas_coins, coins, objects) = self.get_coins_for_input_type(&input.sender_address.clone(), input.input_type.clone()).await?;
-        let message_bytes = map_transaction_data(input.clone(), gas_coins.clone(), coins.clone(), objects)?;
 
-        let fee = self.calculate_actual_fee(&message_bytes, &input.gas_price).await?;
+        let estimate_bytes = map_transaction_data(input.clone(), gas_coins.clone(), coins.clone(), objects.clone(), ESTIMATION_GAS_BUDGET)?;
+        let fee = self.estimate_fee(&estimate_bytes, &input.gas_price).await?;
+
+        let message_bytes = match estimated_gas_budget(&input.input_type, &fee)? {
+            Some(budget) => map_transaction_data(input, gas_coins, coins, objects, budget)?,
+            None => estimate_bytes,
+        };
 
         Ok(TransactionLoadData {
             fee,
@@ -45,22 +50,23 @@ impl<C: Client + Clone> ChainTransactionLoad for SuiClient<C> {
     }
 }
 
+fn estimated_gas_budget(input_type: &TransactionInputType, fee: &TransactionFee) -> Result<Option<u64>, Box<dyn Error + Send + Sync>> {
+    match input_type {
+        TransactionInputType::Swap(..) | TransactionInputType::Generic(..) => Ok(None),
+        _ => Ok(Some(fee.gas_limit()?)),
+    }
+}
+
 impl<C: Client + Clone> SuiClient<C> {
-    async fn calculate_actual_fee(&self, tx_data: &str, gas_price: &GasPriceType) -> Result<TransactionFee, Box<dyn Error + Send + Sync>> {
+    async fn estimate_fee(&self, tx_data: &str, gas_price: &GasPriceType) -> Result<TransactionFee, Box<dyn Error + Send + Sync>> {
         let tx_data_only = tx_data.split('_').next().unwrap_or(tx_data);
-        let dry_run_result = self.dry_run(tx_data_only.to_string()).await?;
-        let gas_used = &dry_run_result.effects.gas_used;
-
-        let computation_cost: BigInt = gas_used.computation_cost.clone().into();
-        let storage_cost: BigInt = gas_used.storage_cost.clone().into();
-        let storage_rebate: BigInt = gas_used.storage_rebate.clone().into();
-
-        let fee = std::cmp::max(computation_cost.clone(), &computation_cost + &storage_cost - &storage_rebate);
+        let result = self.dry_run(tx_data_only.to_string()).await?;
+        let (fee, gas_limit) = result.effects.gas_used.calculate_gas_budget()?;
 
         Ok(TransactionFee {
-            fee,
+            fee: BigInt::from(fee),
             gas_price_type: gas_price.clone(),
-            gas_limit: BigInt::from(GAS_BUDGET),
+            gas_limit: BigInt::from(gas_limit),
             options: HashMap::new(),
         })
     }
@@ -132,14 +138,6 @@ mod chain_integration_tests {
 
         let _metadata = client.get_transaction_preload(input).await?;
 
-        // match metadata {
-        //     TransactionLoadMetadata::Sui { message_bytes } => {
-        //         assert!(!message_bytes.is_empty());
-        //         println!("Sui preload metadata: {} chars", message_bytes.len());
-        //     }
-        //     _ => panic!("Expected Sui metadata"),
-        // }
-
         Ok(())
     }
 
@@ -147,10 +145,17 @@ mod chain_integration_tests {
     async fn test_sui_get_transaction_preload_unstake() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_sui_test_client();
 
-        let delegation_id = "0x32c6c9d1de51d1df1d69687ee29c9759c06ae48e6dbb024e2cd81499b4058d51";
         let user_address = "0x93f65b8c16c263343bbf66cf9f8eef69cb1dbc92d13f0c331b0dcaeb76b4aab6";
+        let delegation_id = client
+            .get_stake_delegations(user_address.to_string())
+            .await?
+            .into_iter()
+            .flat_map(|delegation| delegation.stakes.into_iter())
+            .find(|stake| stake.status == "Active")
+            .ok_or("No active Sui stake found for test address")?
+            .staked_sui_id;
 
-        let delegation = primitives::Delegation::mock_with_id(delegation_id.to_string());
+        let delegation = primitives::Delegation::mock_with_id(delegation_id);
         let stake_type = StakeType::Unstake(delegation);
 
         let input = TransactionLoadInput {
@@ -182,7 +187,8 @@ mod chain_integration_tests {
         }
 
         assert!(result.fee.fee > BigInt::from(0));
-        assert_eq!(result.fee.gas_limit, BigInt::from(GAS_BUDGET));
+        assert!(result.fee.gas_limit > BigInt::from(0));
+        assert!(result.fee.gas_limit >= result.fee.fee);
 
         println!("Unstake transaction fee: {}", result.fee.fee);
 

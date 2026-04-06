@@ -4,7 +4,7 @@ use std::str::FromStr;
 use sui_transaction_builder::{Argument, ObjectInput, TransactionBuilder};
 use sui_types::Address;
 
-pub fn encode_transfer(input: &TransferInput) -> Result<TxOutput, Box<dyn Error + Send + Sync>> {
+fn build_transfer_ptb(input: &TransferInput) -> Result<(TransactionBuilder, Address), Box<dyn Error + Send + Sync>> {
     if let Some(err) = crate::validate_enough_balance(&input.coins, input.amount) {
         return Err(err);
     }
@@ -28,6 +28,11 @@ pub fn encode_transfer(input: &TransferInput) -> Result<TxOutput, Box<dyn Error 
         ptb.transfer_objects(vec![split_result], recipient_argument);
     }
 
+    Ok((ptb, sender))
+}
+
+pub fn encode_transfer(input: &TransferInput) -> Result<TxOutput, Box<dyn Error + Send + Sync>> {
+    let (mut ptb, sender) = build_transfer_ptb(input)?;
     let coins = input.coins.iter().map(|x| x.object.to_input()).collect::<Vec<_>>();
     super::tx::fill_tx(&mut ptb, sender, input.gas.price, input.gas.budget, coins);
     let tx = ptb.try_build()?;
@@ -35,7 +40,7 @@ pub fn encode_transfer(input: &TransferInput) -> Result<TxOutput, Box<dyn Error 
     TxOutput::from_tx(&tx)
 }
 
-pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Box<dyn Error + Send + Sync>> {
+fn build_token_transfer_ptb(input: &TokenTransferInput) -> Result<(TransactionBuilder, Address), Box<dyn Error + Send + Sync>> {
     if let Some(err) = crate::validate_enough_balance(&input.tokens, input.amount) {
         return Err(err);
     }
@@ -64,14 +69,17 @@ pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Box
     let recipient_argument = ptb.pure(&recipient);
     ptb.transfer_objects(vec![split_result], recipient_argument);
 
+    Ok((ptb, sender))
+}
+
+pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Box<dyn Error + Send + Sync>> {
+    let (mut ptb, sender) = build_token_transfer_ptb(input)?;
     let gas_coin = ObjectInput::immutable(
         input.gas_coin.object.object_id.parse().unwrap(),
         input.gas_coin.object.version,
         input.gas_coin.object.digest.parse().unwrap(),
     );
-
     super::tx::fill_tx(&mut ptb, sender, input.gas.price, input.gas.budget, vec![gas_coin]);
-
     let tx = ptb.try_build()?;
     TxOutput::from_tx(&tx)
 }

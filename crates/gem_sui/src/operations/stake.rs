@@ -11,7 +11,7 @@ use sui_types::{Address, Identifier};
 pub const SUI_REQUEST_ADD_STAKE: &str = "request_add_stake";
 pub const SUI_REQUEST_WITHDRAW_STAKE: &str = "request_withdraw_stake";
 
-pub fn encode_split_and_stake(input: &StakeInput) -> Result<TxOutput, Box<dyn Error + Send + Sync>> {
+fn build_split_and_stake_ptb(input: &StakeInput) -> Result<(TransactionBuilder, Address), Box<dyn Error + Send + Sync>> {
     if let Some(err) = crate::validate_enough_balance(&input.coins, input.stake_amount) {
         return Err(err);
     }
@@ -43,6 +43,13 @@ pub fn encode_split_and_stake(input: &StakeInput) -> Result<TxOutput, Box<dyn Er
     let sys_state = ptb.object(sui_system_state_object_input());
     let validator_argument = ptb.pure(&validator);
 
+    ptb.move_call(function, vec![sys_state, split_result, validator_argument]);
+
+    Ok((ptb, sender))
+}
+
+pub fn encode_split_and_stake(input: &StakeInput) -> Result<TxOutput, Box<dyn Error + Send + Sync>> {
+    let (mut ptb, sender) = build_split_and_stake_ptb(input)?;
     crate::tx::fill_tx(
         &mut ptb,
         sender,
@@ -50,13 +57,11 @@ pub fn encode_split_and_stake(input: &StakeInput) -> Result<TxOutput, Box<dyn Er
         input.gas.budget,
         input.coins.iter().map(|x| x.object.to_input()).collect(),
     );
-    ptb.move_call(function, vec![sys_state, split_result, validator_argument]);
-
     let tx = ptb.try_build()?;
     TxOutput::from_tx(&tx)
 }
 
-pub fn encode_unstake(input: &UnstakeInput) -> Result<TxOutput, Box<dyn Error + Send + Sync>> {
+fn build_unstake_ptb(input: &UnstakeInput) -> Result<(TransactionBuilder, Address, ObjectInput), Box<dyn Error + Send + Sync>> {
     let mut ptb = TransactionBuilder::new();
 
     let sender = Address::from_str(&input.sender)?;
@@ -81,6 +86,11 @@ pub fn encode_unstake(input: &UnstakeInput) -> Result<TxOutput, Box<dyn Error + 
 
     ptb.move_call(function, vec![sys_state, staked_sui]);
 
+    Ok((ptb, sender, gas_coin))
+}
+
+pub fn encode_unstake(input: &UnstakeInput) -> Result<TxOutput, Box<dyn Error + Send + Sync>> {
+    let (mut ptb, sender, gas_coin) = build_unstake_ptb(input)?;
     crate::tx::fill_tx(&mut ptb, sender, input.gas.price, input.gas.budget, vec![gas_coin]);
     let tx = ptb.try_build()?;
     TxOutput::from_tx(&tx)
