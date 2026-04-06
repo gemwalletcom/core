@@ -47,6 +47,7 @@ pub enum QueueName {
     RewardsEvents,
     // Rewards redemptions
     RewardsRedemptions,
+    NotificationsFiatPurchase,
     NotificationsInApp,
     FetchPrices,
     UpdateCoinInfo,
@@ -95,6 +96,7 @@ impl fmt::Display for QueueName {
             QueueName::NotificationsFailed => write!(f, "notifications_failed"),
             QueueName::StorePrices => write!(f, "store_prices"),
             QueueName::StoreCharts => write!(f, "store_charts"),
+            QueueName::NotificationsFiatPurchase => write!(f, "notifications_fiat_purchase"),
             QueueName::NotificationsInApp => write!(f, "notifications_in_app"),
             QueueName::FetchPrices => write!(f, "fetch_prices"),
             QueueName::UpdateCoinInfo => write!(f, "update_coin_info"),

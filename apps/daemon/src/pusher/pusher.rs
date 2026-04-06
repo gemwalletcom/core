@@ -3,8 +3,8 @@ use std::error::Error;
 use localizer::LanguageLocalizer;
 use number_formatter::{ValueFormatter, ValueStyle};
 use primitives::{
-    AddressFormatStyle, AddressFormatter, Asset, AssetVecExt, Chain, DeviceSubscription, GorushNotification, NFTAssetId, PushNotification, PushNotificationTransaction,
-    PushNotificationTypes, Transaction, TransactionNFTTransferMetadata, TransactionPerpetualMetadata, TransactionSwapMetadata, TransactionType,
+    AddressFormatStyle, AddressFormatter, Asset, AssetVecExt, Chain, DeviceSubscription, FiatQuoteType, GorushNotification, NFTAssetId, PushNotification,
+    PushNotificationTransaction, PushNotificationTypes, Transaction, TransactionNFTTransferMetadata, TransactionPerpetualMetadata, TransactionSwapMetadata, TransactionType,
 };
 use storage::{Database, ScanAddressesRepository};
 
@@ -31,7 +31,25 @@ impl Pusher {
         }
     }
 
-    pub fn message(&self, localizer: LanguageLocalizer, transaction: Transaction, address: &str, assets: Vec<Asset>) -> Result<Message, Box<dyn Error + Send + Sync>> {
+    pub fn fiat_transaction_message(
+        localizer: &LanguageLocalizer,
+        quote_type: &FiatQuoteType,
+        provider_name: &str,
+        asset: &Asset,
+        crypto_value: &str,
+    ) -> Result<Message, Box<dyn Error + Send + Sync>> {
+        let crypto_amount = ValueFormatter::format_with_symbol(ValueStyle::Auto, crypto_value, asset.decimals, &asset.symbol)?;
+        let title = match quote_type {
+            FiatQuoteType::Buy => localizer.notification_fiat_purchase_title(&crypto_amount),
+            FiatQuoteType::Sell => localizer.notification_fiat_sale_title(&crypto_amount),
+        };
+        Ok(Message {
+            title,
+            message: Some(localizer.notification_received_description(provider_name)),
+        })
+    }
+
+    pub fn message(&self, localizer: LanguageLocalizer, transaction: &Transaction, address: &str, assets: &Vec<Asset>) -> Result<Message, Box<dyn Error + Send + Sync>> {
         let asset = assets.asset_result(transaction.asset_id.clone())?;
         let amount = ValueFormatter::format_with_symbol(ValueStyle::Auto, transaction.value.as_str(), asset.decimals, &asset.symbol)?;
         let chain = transaction.asset_id.chain;
@@ -47,7 +65,7 @@ impl Pusher {
                 Ok(Message { title, message: Some(message) })
             }
             TransactionType::TransferNFT => {
-                let metadata = transaction.clone().metadata.ok_or("Missing metadata")?;
+                let metadata = transaction.metadata.clone().ok_or("Missing metadata")?;
                 let metadata: TransactionNFTTransferMetadata = serde_json::from_value(metadata)?;
                 let nft_asset_id = NFTAssetId::from_id(&metadata.asset_id.clone()).ok_or("Missing nft asset id")?;
                 let name = if let Some(name) = metadata.name {
@@ -87,7 +105,7 @@ impl Pusher {
                 message: Some(localizer.notification_received_description(&to_address)),
             }),
             TransactionType::Swap => {
-                let metadata = transaction.metadata.ok_or("Missing metadata")?;
+                let metadata = transaction.metadata.clone().ok_or("Missing metadata")?;
                 let metadata: TransactionSwapMetadata = serde_json::from_value(metadata)?;
                 let from_asset = assets.asset_result(metadata.from_asset.clone())?;
                 let to_asset = assets.asset_result(metadata.to_asset.clone())?;
@@ -100,7 +118,7 @@ impl Pusher {
                 })
             }
             TransactionType::PerpetualOpenPosition | TransactionType::PerpetualClosePosition => {
-                let metadata: TransactionPerpetualMetadata = serde_json::from_value(transaction.metadata.ok_or("Missing metadata")?)?;
+                let metadata: TransactionPerpetualMetadata = serde_json::from_value(transaction.metadata.clone().ok_or("Missing metadata")?)?;
                 let coin = &asset.symbol;
                 let price = ValueFormatter::format_f64_currency(ValueStyle::Auto, metadata.price, "$");
                 let title = match metadata.direction {
@@ -143,7 +161,7 @@ impl Pusher {
         let transaction = transaction.finalize(vec![subscription.address.clone()]).without_utxo();
 
         let localizer = LanguageLocalizer::new_with_language(subscription.device.locale.as_str());
-        let message = self.message(localizer, transaction.clone(), &subscription.address, assets.clone())?;
+        let message = self.message(localizer, &transaction, &subscription.address, &assets)?;
 
         let notification_transaction = PushNotificationTransaction {
             wallet_id: subscription.wallet_id.id(),

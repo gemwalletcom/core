@@ -12,12 +12,13 @@ pub enum PushNotificationTypes {
     Test,        // Test payload
     Transaction, // PushNotificationTransaction (Transaction)
     Asset,
-    PriceAlert, // PriceAlert payload
-    BuyAsset,   // PushNotificationBuyAsset payload
-    SwapAsset,  // PushNotificationSwapAsset payload
-    Support,    // PushNotificationSupport payload
-    Rewards,    // PushNotificationReward payload
-    Stake,      // PushNotificationStake payload
+    PriceAlert,      // PriceAlert payload
+    BuyAsset,        // PushNotificationBuyAsset payload
+    SwapAsset,       // PushNotificationSwapAsset payload
+    Support,         // PushNotificationSupport payload
+    Rewards,         // PushNotificationReward payload
+    Stake,           // PushNotificationWalletAsset payload
+    FiatTransaction, // PushNotificationWalletAsset payload
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -35,10 +36,17 @@ impl PushNotification {
         }
     }
 
+    pub fn new_fiat_transaction(asset_id: AssetId) -> Self {
+        Self {
+            notification_type: PushNotificationTypes::FiatTransaction,
+            data: serde_json::to_value(PushNotificationAsset { asset_id: asset_id.to_string() }).ok(),
+        }
+    }
+
     pub fn new_stake(wallet_id: WalletId, asset_id: AssetId) -> Self {
         Self {
             notification_type: PushNotificationTypes::Stake,
-            data: serde_json::to_value(PushNotificationStake { wallet_id, asset_id }).ok(),
+            data: serde_json::to_value(PushNotificationWalletAsset { wallet_id, asset_id }).ok(),
         }
     }
 }
@@ -92,7 +100,7 @@ pub struct PushNotificationReward {
 #[typeshare(swift = "Equatable, Sendable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct PushNotificationStake {
+pub struct PushNotificationWalletAsset {
     pub wallet_id: WalletId,
     pub asset_id: AssetId,
 }

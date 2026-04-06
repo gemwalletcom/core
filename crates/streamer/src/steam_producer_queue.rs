@@ -16,6 +16,7 @@ pub trait StreamProducerQueue {
     async fn publish_notifications_price_alerts(&self, payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_notifications_observers(&self, payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_notifications_support(&self, payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
+    async fn publish_notifications_fiat_purchase(&self, payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_notifications_rewards(&self, payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_rewards_events(&self, payload: Vec<RewardsNotificationPayload>) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_rewards_redemption(&self, payload: RewardsRedemptionPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
@@ -74,6 +75,13 @@ impl StreamProducerQueue for StreamProducer {
             return Ok(true);
         }
         self.publish(QueueName::NotificationsSupport, &payload).await
+    }
+
+    async fn publish_notifications_fiat_purchase(&self, payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        if payload.notifications.is_empty() {
+            return Ok(true);
+        }
+        self.publish(QueueName::NotificationsFiatPurchase, &payload).await
     }
 
     async fn publish_notifications_rewards(&self, payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {

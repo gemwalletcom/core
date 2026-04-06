@@ -1,4 +1,4 @@
-CREATE TYPE push_notification_type AS ENUM ('test', 'transaction', 'asset', 'priceAlert', 'buyAsset', 'swapAsset', 'support', 'rewards', 'stake');
+CREATE TYPE push_notification_type AS ENUM ('test', 'transaction', 'asset', 'priceAlert', 'buyAsset', 'swapAsset', 'support', 'rewards', 'stake', 'fiatTransaction');
 
 CREATE TABLE devices_notifications (
     id SERIAL PRIMARY KEY,
