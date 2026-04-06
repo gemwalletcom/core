@@ -2,7 +2,7 @@ use crate::models::{Ed25519Authenticator, RawTransaction, SignedTransaction, Sub
 use gem_hash::sha3::sha3_256;
 use hex::encode;
 use primitives::SignerError;
-use signer::Signer;
+use signer::Ed25519KeyPair;
 use std::time::SystemTime;
 
 use super::{AccountAddress, EntryFunction};
@@ -37,7 +37,7 @@ pub fn sign_raw_transaction(raw_tx: &RawTransaction, private_key: &[u8]) -> Resu
     preimage.extend_from_slice(&seed);
     preimage.extend_from_slice(&raw_tx_bytes);
 
-    Signer::sign_ed25519_with_public_key(&preimage, private_key).map_err(|err| SignerError::InvalidInput(err.to_string()))
+    sign_ed25519(&preimage, private_key)
 }
 
 pub fn sign_message(message: &[u8], private_key: &[u8]) -> Result<(Vec<u8>, Vec<u8>), SignerError> {
@@ -46,7 +46,12 @@ pub fn sign_message(message: &[u8], private_key: &[u8]) -> Result<(Vec<u8>, Vec<
     preimage.extend_from_slice(&seed);
     preimage.extend_from_slice(message);
 
-    Signer::sign_ed25519_with_public_key(&preimage, private_key).map_err(|err| SignerError::InvalidInput(err.to_string()))
+    sign_ed25519(&preimage, private_key)
+}
+
+fn sign_ed25519(preimage: &[u8], private_key: &[u8]) -> Result<(Vec<u8>, Vec<u8>), SignerError> {
+    let key_pair = Ed25519KeyPair::from_private_key(private_key)?;
+    Ok((key_pair.sign(preimage), key_pair.public_key_bytes.to_vec()))
 }
 
 pub fn build_submit_transaction_bcs(raw_tx: RawTransaction, signature: Vec<u8>, public_key: Vec<u8>) -> Result<String, SignerError> {
