@@ -2,7 +2,7 @@ use std::cmp::max;
 
 /// Returns (fee, gas_limit) where gas_limit includes a 20% buffer.
 pub fn calculate_gas_budget(computation_cost: u64, storage_cost: u64, storage_rebate: u64) -> (u64, u64) {
-    let fee = max(computation_cost, computation_cost + storage_cost - storage_rebate);
+    let fee = max(computation_cost, computation_cost.saturating_add(storage_cost).saturating_sub(storage_rebate));
     (fee, fee * 120 / 100)
 }
 
