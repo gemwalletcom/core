@@ -2,9 +2,9 @@ use base64::{Engine as _, engine::general_purpose};
 use serde::de::DeserializeOwned;
 use std::error::Error;
 use sui_transaction_builder::{ObjectInput, TransactionBuilder};
-use sui_types::{Address, Digest, Transaction};
+use sui_types::Address;
 
-use crate::{EMPTY_ADDRESS, models::TxOutput};
+use crate::models::TxOutput;
 
 pub fn decode_transaction<T: DeserializeOwned>(tx: &str) -> Result<T, Box<dyn Error + Send + Sync>> {
     let bytes = general_purpose::STANDARD.decode(tx)?;
@@ -19,16 +19,6 @@ pub fn validate_and_hash(encoded: &str) -> Result<TxOutput, Box<dyn Error + Send
 
     let tx = decode_transaction(encoded).map_err(|err| format!("Invalid Sui transaction payload: {err}"))?;
     TxOutput::from_tx(&tx)
-}
-
-pub fn prefill_tx(ptb: TransactionBuilder) -> Transaction {
-    let mut ptb = ptb;
-    let empty_address = EMPTY_ADDRESS.parse::<Address>().unwrap();
-    ptb.set_sender(empty_address);
-    ptb.set_gas_price(0);
-    ptb.set_gas_budget(0);
-    ptb.add_gas_objects(vec![ObjectInput::owned(empty_address, 0, Digest::ZERO)]);
-    ptb.try_build().unwrap()
 }
 
 pub fn fill_tx(ptb: &mut TransactionBuilder, sender_address: Address, gas_price: u64, gas_budget: u64, gas_objects: Vec<ObjectInput>) {

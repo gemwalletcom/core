@@ -1,24 +1,10 @@
-use std::{collections::HashMap, error::Error};
+use std::error::Error;
 
 use base64::{Engine, engine::general_purpose};
 use num_bigint::BigInt;
-use primitives::{FeePriority, FeeRate, GasPriceType, StakeType, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata};
+use primitives::{FeePriority, FeeRate, GasPriceType, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata};
 
 use crate::{encode_split_and_stake, encode_token_transfer, encode_transfer, encode_unstake, models::*, validate_and_hash};
-
-pub const GAS_BUDGET: u64 = 25_000_000;
-
-pub fn calculate_transaction_fee(input_type: &TransactionInputType, gas_price_type: &GasPriceType) -> TransactionFee {
-    let gas_limit = get_gas_limit(input_type);
-    let fee = get_fee(input_type);
-
-    TransactionFee {
-        fee,
-        gas_price_type: gas_price_type.clone(),
-        gas_limit: BigInt::from(gas_limit),
-        options: HashMap::new(),
-    }
-}
 
 pub fn map_transaction_rate_rates(base_gas_price: BigInt) -> Vec<FeeRate> {
     vec![
@@ -26,25 +12,6 @@ pub fn map_transaction_rate_rates(base_gas_price: BigInt) -> Vec<FeeRate> {
         FeeRate::new(FeePriority::Normal, GasPriceType::regular(&base_gas_price * BigInt::from(110) / BigInt::from(100))),
         FeeRate::new(FeePriority::Fast, GasPriceType::regular(&base_gas_price * BigInt::from(2))),
     ]
-}
-
-fn get_gas_limit(input_type: &TransactionInputType) -> u64 {
-    match input_type {
-        TransactionInputType::Transfer(_)
-        | TransactionInputType::TransferNft(_, _)
-        | TransactionInputType::Account(_, _)
-        | TransactionInputType::Deposit(_)
-        | TransactionInputType::TokenApprove(_, _)
-        | TransactionInputType::Generic(_, _, _)
-        | TransactionInputType::Perpetual(_, _)
-        | TransactionInputType::Earn(_, _, _) => GAS_BUDGET,
-        TransactionInputType::Swap(_, _, _) => 50_000_000,
-        TransactionInputType::Stake(_, _) => GAS_BUDGET,
-    }
-}
-
-fn get_fee(_input_type: &TransactionInputType) -> BigInt {
-    BigInt::from(GAS_BUDGET)
 }
 
 impl From<SuiCoin> for crate::models::Coin {
@@ -65,7 +32,13 @@ pub fn map_preload_metadata(_coins: Vec<SuiCoin>) -> Result<TransactionLoadMetad
     Ok(TransactionLoadMetadata::Sui { message_bytes: "".to_string() })
 }
 
-pub fn map_transaction_data(input: TransactionLoadInput, gas_coins: Vec<SuiCoin>, coins: Vec<SuiCoin>, objects: Vec<SuiObject>) -> Result<String, Box<dyn Error + Send + Sync>> {
+pub fn map_transaction_data(
+    input: TransactionLoadInput,
+    gas_coins: Vec<SuiCoin>,
+    coins: Vec<SuiCoin>,
+    objects: Vec<SuiObject>,
+    gas_budget: u64,
+) -> Result<String, Box<dyn Error + Send + Sync>> {
     let gas_price = input.gas_price.gas_price().to_string().parse().unwrap_or(0);
 
     match input.input_type {
@@ -76,9 +49,9 @@ pub fn map_transaction_data(input: TransactionLoadInput, gas_coins: Vec<SuiCoin>
                     recipient: input.destination_address,
                     amount: input.value.parse().unwrap_or(0),
                     coins: gas_coins.into_iter().map(Into::into).collect(),
-                    send_max: false,
+                    send_max: input.is_max_value,
                     gas: Gas {
-                        budget: GAS_BUDGET,
+                        budget: gas_budget,
                         price: gas_price,
                     },
                 };
@@ -95,7 +68,7 @@ pub fn map_transaction_data(input: TransactionLoadInput, gas_coins: Vec<SuiCoin>
                     amount: input.value.parse().unwrap_or(0),
                     tokens: coins.into_iter().map(Into::into).collect(),
                     gas: Gas {
-                        budget: GAS_BUDGET,
+                        budget: gas_budget,
                         price: gas_price,
                     },
                     gas_coin,
@@ -113,7 +86,7 @@ pub fn map_transaction_data(input: TransactionLoadInput, gas_coins: Vec<SuiCoin>
                     validator: validator.id.clone(),
                     stake_amount: input.value.parse().unwrap_or(0),
                     gas: Gas {
-                        budget: GAS_BUDGET,
+                        budget: gas_budget,
                         price: gas_price,
                     },
                     coins: gas_coins.into_iter().map(Into::into).collect(),
@@ -140,7 +113,7 @@ pub fn map_transaction_data(input: TransactionLoadInput, gas_coins: Vec<SuiCoin>
                     sender: input.sender_address,
                     staked_sui,
                     gas: Gas {
-                        budget: GAS_BUDGET,
+                        budget: gas_budget,
                         price: gas_price,
                     },
                     gas_coin,
@@ -199,7 +172,7 @@ mod tests {
             digest: "CU86BjXRF1XHFRjKBasCYEuaQxhHuyGBpuoJyqsrYoX5".to_string(),
         }];
 
-        let result = map_transaction_data(input, gas_coins, vec![], objects);
+        let result = map_transaction_data(input, gas_coins, vec![], objects, 25_000_000);
         assert!(result.is_ok());
     }
 

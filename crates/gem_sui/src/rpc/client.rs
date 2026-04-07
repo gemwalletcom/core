@@ -70,9 +70,14 @@ impl<C: Client + Clone> SuiClient<C> {
         Ok(coins.data)
     }
 
-    pub async fn inspect_transaction_block(&self, sender: &str, tx_data: &[u8]) -> Result<InspectResult, Box<dyn Error + Send + Sync>> {
+    pub async fn inspect_transaction_block(&self, sender: &str, tx_data: &[u8], gas_price: Option<u64>) -> Result<InspectResult, Box<dyn Error + Send + Sync>> {
         let tx_bytes_base64 = general_purpose::STANDARD.encode(tx_data);
-        self.rpc_call(SuiRpc::InspectTransactionBlock(sender.to_string(), tx_bytes_base64)).await
+        self.rpc_call(SuiRpc::InspectTransactionBlock(
+            sender.to_string(),
+            tx_bytes_base64,
+            gas_price.map(|value| value.to_string()),
+        ))
+        .await
     }
 
     pub async fn get_balance(&self, address: String) -> Result<Balance, Box<dyn Error + Send + Sync>> {

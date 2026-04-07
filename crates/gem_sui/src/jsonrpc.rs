@@ -8,7 +8,7 @@ use sui_types::{Address, Digest};
 pub enum SuiRpc {
     GetObject(String, Option<ObjectDataOptions>),
     GetMultipleObjects(Vec<String>, Option<ObjectDataOptions>),
-    InspectTransactionBlock(String, String), // sender_address, tx_bytes (base64)
+    InspectTransactionBlock(String, String, Option<String>), // (sender_address, tx_bytes (base64), gas_price)
     NormalizedMoveFunction(Vec<String>),
     GetAllCoins { owner: String },
     GetGasPrice,
@@ -19,7 +19,7 @@ impl Display for SuiRpc {
         match self {
             Self::GetObject(_, _) => write!(f, "sui_getObject"),
             Self::GetMultipleObjects(_, _) => write!(f, "sui_multiGetObjects"),
-            Self::InspectTransactionBlock(_, _) => write!(f, "sui_devInspectTransactionBlock"),
+            Self::InspectTransactionBlock(_, _, _) => write!(f, "sui_devInspectTransactionBlock"),
             Self::NormalizedMoveFunction(_) => write!(f, "sui_getNormalizedMoveFunction"),
             Self::GetAllCoins { owner: _ } => write!(f, "suix_getAllCoins"),
             Self::GetGasPrice => write!(f, "suix_getReferenceGasPrice"),
@@ -50,11 +50,11 @@ impl JsonRpcRequestConvert for SuiRpc {
                 array
             }
             SuiRpc::NormalizedMoveFunction(params) => params.iter().map(|x| Value::String(x.into())).collect(),
-            SuiRpc::InspectTransactionBlock(sender, tx_bytes) => {
+            SuiRpc::InspectTransactionBlock(sender, tx_bytes, gas_price) => {
                 vec![
                     Value::String(sender.into()),
                     Value::String(tx_bytes.into()),
-                    Value::Null, // gas_price
+                    gas_price.as_ref().map_or(Value::Null, |value| Value::String(value.into())),
                 ]
             }
             SuiRpc::GetAllCoins { owner } => {

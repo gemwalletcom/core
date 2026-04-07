@@ -28,11 +28,20 @@ pub struct RpcSuiSystemState {
 }
 
 #[cfg(feature = "rpc")]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "PascalCase")]
+pub enum SuiStakeStatus {
+    Active,
+    Pending,
+    Unstaked,
+}
+
+#[cfg(feature = "rpc")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SuiStake {
     pub staked_sui_id: String,
-    pub status: String,
+    pub status: SuiStakeStatus,
     #[serde(deserialize_with = "deserialize_biguint_from_str")]
     pub principal: BigUint,
     pub stake_request_epoch: String,
