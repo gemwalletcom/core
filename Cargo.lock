@@ -3239,9 +3239,9 @@ dependencies = [
 name = "gem_hash"
 version = "1.0.0"
 dependencies = [
+ "hex",
  "sha2 0.11.0",
  "sha3",
- "tiny-keccak",
 ]
 
 [[package]]
@@ -4008,7 +4008,7 @@ dependencies = [
  "libc",
  "percent-encoding",
  "pin-project-lite",
- "socket2 0.5.10",
+ "socket2 0.6.3",
  "system-configuration",
  "tokio",
  "tower-service",
@@ -5632,7 +5632,7 @@ dependencies = [
  "quinn-udp",
  "rustc-hash",
  "rustls",
- "socket2 0.5.10",
+ "socket2 0.6.3",
  "thiserror 2.0.17",
  "tokio",
  "tracing",
@@ -5670,7 +5670,7 @@ dependencies = [
  "cfg_aliases",
  "libc",
  "once_cell",
- "socket2 0.5.10",
+ "socket2 0.6.3",
  "tracing",
  "windows-sys 0.60.2",
 ]

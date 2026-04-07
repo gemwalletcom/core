@@ -1,10 +1,22 @@
-use tiny_keccak::{Hasher, Keccak};
+use sha3::{Digest, Keccak256};
 
 pub fn keccak256(bytes: &[u8]) -> [u8; 32] {
-    let mut hasher = Keccak::v256();
-    hasher.update(bytes);
+    Keccak256::digest(bytes).into()
+}
 
-    let mut hash = [0u8; 32];
-    hasher.finalize(&mut hash);
-    hash
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_keccak256() {
+        assert_eq!(
+            hex::encode(keccak256(b"hello")),
+            "1c8aff950685c2ed4bc3174f3472287b56d9517b9c948127319a09a7a36deac8"
+        );
+        assert_eq!(
+            hex::encode(keccak256(b"")),
+            "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
+        );
+    }
 }
