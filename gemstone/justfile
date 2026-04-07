@@ -69,9 +69,9 @@ build-targets:
     #!/usr/bin/env bash
     echo "Host: ${HOST_ARCH}, iOS deployment target ${DEPLOYMENT_TARGET}, BUILD_MODE_TARGET: ${BUILD_MODE_TARGET}"
     if [ ${HOST_ARCH} == "x86_64" ]; then \
-        IPHONEOS_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET} cargo build --timings --target x86_64-apple-ios ${BUILD_FLAG}; \
+        IPHONEOS_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET} cargo build --target x86_64-apple-ios ${BUILD_FLAG}; \
     else \
-        IPHONEOS_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET} cargo build --timings --target aarch64-apple-ios-sim --target aarch64-apple-ios --target aarch64-apple-ios-macabi --target aarch64-apple-darwin ${BUILD_FLAG}; \
+        IPHONEOS_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET} cargo build --target aarch64-apple-ios-sim --target aarch64-apple-ios --target aarch64-apple-ios-macabi --target aarch64-apple-darwin ${BUILD_FLAG}; \
     fi
 
 bindgen-swift:
