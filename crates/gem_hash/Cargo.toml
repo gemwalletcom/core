@@ -4,6 +4,6 @@ version = { workspace = true }
 edition = { workspace = true }
 
 [dependencies]
+hex = { workspace = true }
 sha2 = { workspace = true }
 sha3 = { workspace = true }
-tiny-keccak = { workspace = true }
