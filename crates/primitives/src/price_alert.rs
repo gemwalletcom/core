@@ -12,9 +12,13 @@ pub struct PriceAlert {
     pub asset_id: AssetId,
     #[serde(default = "default_currency")]
     pub currency: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub price: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub price_percent_change: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub price_direction: Option<PriceAlertDirection>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub last_notified_at: Option<DateTime<Utc>>,
     #[typeshare(skip)]
     #[serde(skip)]
