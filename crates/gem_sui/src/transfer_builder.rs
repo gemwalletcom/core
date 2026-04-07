@@ -1,5 +1,6 @@
 use crate::{
     ESTIMATION_GAS_BUDGET, SUI_COIN_TYPE, SuiClient,
+    gas_budget::GAS_BUDGET_MULTIPLIER,
     models::{Coin, Gas, TokenTransferInput, TransferInput},
     operations::{encode_token_transfer, encode_transfer},
 };
@@ -34,7 +35,8 @@ pub async fn build_transfer_message_bytes<C: Client + Clone>(
 
     let estimate_output = build_tx_output(sender, recipient, amount, &sui_coins, token_coins.as_deref(), ESTIMATION_GAS_BUDGET, gas_price)?;
     let dry_run_result = client.dry_run(estimate_output.base64_encoded()).await?;
-    let (_, gas_budget) = dry_run_result.effects.gas_used.calculate_gas_budget()?;
+    let fee = dry_run_result.effects.gas_used.calculate_gas_budget()?;
+    let gas_budget = fee * GAS_BUDGET_MULTIPLIER / 100;
 
     let tx_output = build_tx_output(sender, recipient, amount, &sui_coins, token_coins.as_deref(), gas_budget, gas_price)?;
     Ok(tx_output.base64_encoded())

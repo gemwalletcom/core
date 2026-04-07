@@ -13,6 +13,7 @@ use primitives::{
 
 use crate::{
     ESTIMATION_GAS_BUDGET, SUI_COIN_TYPE,
+    gas_budget::GAS_BUDGET_MULTIPLIER,
     models::{SuiCoin, SuiObject},
 };
 use crate::{
@@ -31,7 +32,7 @@ impl<C: Client + Clone> ChainTransactionLoad for SuiClient<C> {
         let (gas_coins, coins, objects) = self.get_coins_for_input_type(&input.sender_address.clone(), input.input_type.clone()).await?;
 
         let estimate_bytes = map_transaction_data(input.clone(), gas_coins.clone(), coins.clone(), objects.clone(), ESTIMATION_GAS_BUDGET)?;
-        let fee = self.estimate_fee(&estimate_bytes, &input.gas_price).await?;
+        let fee = self.estimate_fee(&estimate_bytes, &input.gas_price, input.is_max_value).await?;
 
         let message_bytes = match estimated_gas_budget(&input.input_type, &fee)? {
             Some(budget) => map_transaction_data(input, gas_coins, coins, objects, budget)?,
@@ -58,10 +59,11 @@ fn estimated_gas_budget(input_type: &TransactionInputType, fee: &TransactionFee)
 }
 
 impl<C: Client + Clone> SuiClient<C> {
-    async fn estimate_fee(&self, tx_data: &str, gas_price: &GasPriceType) -> Result<TransactionFee, Box<dyn Error + Send + Sync>> {
+    async fn estimate_fee(&self, tx_data: &str, gas_price: &GasPriceType, is_max_value: bool) -> Result<TransactionFee, Box<dyn Error + Send + Sync>> {
         let tx_data_only = tx_data.split('_').next().unwrap_or(tx_data);
         let result = self.dry_run(tx_data_only.to_string()).await?;
-        let (fee, gas_limit) = result.effects.gas_used.calculate_gas_budget()?;
+        let fee = result.effects.gas_used.calculate_gas_budget()?;
+        let gas_limit = if is_max_value { fee } else { fee * GAS_BUDGET_MULTIPLIER / 100 };
 
         Ok(TransactionFee {
             fee: BigInt::from(fee),
@@ -110,7 +112,8 @@ mod chain_integration_tests {
     use crate::provider::testkit::*;
     use base64::{Engine, engine::general_purpose};
     use chain_traits::ChainTransactionLoad;
-    use primitives::{Asset, Chain, FeePriority, StakeType, TransactionLoadInput};
+    use crate::models::SuiStakeStatus;
+    use primitives::{Asset, Chain, Delegation, FeePriority, StakeType, TransactionLoadInput};
 
     #[tokio::test]
     async fn test_sui_get_transaction_fee_rates() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -151,11 +154,11 @@ mod chain_integration_tests {
             .await?
             .into_iter()
             .flat_map(|delegation| delegation.stakes.into_iter())
-            .find(|stake| stake.status == "Active")
+            .find(|stake| stake.status == SuiStakeStatus::Active)
             .ok_or("No active Sui stake found for test address")?
             .staked_sui_id;
 
-        let delegation = primitives::Delegation::mock_with_id(delegation_id);
+        let delegation = Delegation::mock_with_id(delegation_id);
         let stake_type = StakeType::Unstake(delegation);
 
         let input = TransactionLoadInput {

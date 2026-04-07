@@ -60,11 +60,11 @@ pub struct GasUsed {
 }
 
 impl GasUsed {
-    pub fn calculate_gas_budget(&self) -> Result<(u64, u64), Box<dyn std::error::Error + Send + Sync>> {
-        let computation_cost = self.computation_cost.to_u64().ok_or("computation_cost overflow")?;
-        let storage_cost = self.storage_cost.to_u64().ok_or("storage_cost overflow")?;
-        let storage_rebate = self.storage_rebate.to_u64().ok_or("storage_rebate overflow")?;
-        Ok(calculate_gas_budget(computation_cost, storage_cost, storage_rebate))
+    pub fn calculate_gas_budget(&self) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
+        match (self.computation_cost.to_u64(), self.storage_cost.to_u64(), self.storage_rebate.to_u64()) {
+            (Some(computation), Some(storage), Some(rebate)) => Ok(calculate_gas_budget(computation, storage, rebate)),
+            _ => Err("gas cost overflow".into()),
+        }
     }
 }
 
