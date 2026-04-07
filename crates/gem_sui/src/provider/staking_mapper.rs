@@ -1,5 +1,5 @@
 use crate::models::RpcSuiSystemState;
-use crate::models::staking::{SuiStakeDelegation, SuiSystemState, SuiValidators};
+use crate::models::staking::{SuiStakeDelegation, SuiStakeStatus, SuiSystemState, SuiValidators};
 use chrono::{DateTime, Utc};
 use num_bigint::BigUint;
 use primitives::{Chain, DelegationBase, DelegationState, DelegationValidator, StakeValidator};
@@ -50,10 +50,10 @@ pub fn map_staking_apy(validators: SuiValidators) -> Result<f64, Box<dyn std::er
     Ok(max_apy * 100.0)
 }
 
-fn map_stake_state(status: &str) -> DelegationState {
+fn map_stake_state(status: &SuiStakeStatus) -> DelegationState {
     match status {
-        "Active" => DelegationState::Active,
-        "Pending" => DelegationState::Activating,
-        _ => DelegationState::Pending,
+        SuiStakeStatus::Active => DelegationState::Active,
+        SuiStakeStatus::Pending => DelegationState::Activating,
+        SuiStakeStatus::Unstaked => DelegationState::Deactivating,
     }
 }
