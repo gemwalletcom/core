@@ -49,7 +49,7 @@ pub fn map_transaction_data(
                     recipient: input.destination_address,
                     amount: input.value.parse().unwrap_or(0),
                     coins: gas_coins.into_iter().map(Into::into).collect(),
-                    send_max: false,
+                    send_max: input.is_max_value,
                     gas: Gas {
                         budget: gas_budget,
                         price: gas_price,
