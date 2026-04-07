@@ -78,7 +78,7 @@ impl FiatProviderName {
             FiatProviderName::MoonPay => "MoonPay",
             FiatProviderName::Banxa => "Banxa",
             FiatProviderName::Paybis => "Paybis",
-            FiatProviderName::Flashnet => "CashApp",
+            FiatProviderName::Flashnet => "Cash App",
         }
     }
     pub fn as_fiat_provider(&self) -> FiatProvider {

@@ -1,6 +1,9 @@
 use localizer::LanguageLocalizer;
 use number_formatter::{ValueFormatter, ValueStyle};
-use primitives::{CoreEmoji, CoreListItem, CoreListItemBadge, CoreListItemIcon, Deeplink, InAppNotification, NotificationData, NotificationType, WalletId};
+use primitives::{
+    CoreEmoji, CoreListItem, CoreListItemBadge, CoreListItemIcon, Deeplink, InAppNotification, JsonDecode, NotificationData, NotificationRewardsMetadata,
+    NotificationRewardsRedeemMetadata, NotificationType, WalletId,
+};
 
 pub fn map_notification(notification: NotificationData, localizer: &LanguageLocalizer) -> Option<InAppNotification> {
     let wallet_id = WalletId::from_id(&notification.wallet_id)?;
@@ -37,22 +40,23 @@ fn notification_item(
 }
 
 fn map_to_list_item(notification: &NotificationData, localizer: &LanguageLocalizer) -> CoreListItem {
-    let metadata = &notification.metadata;
-    let points = get_i32(metadata, "points");
     let id = notification.id.to_string();
     let url = Some(Deeplink::Rewards.to_url());
 
     match notification.notification_type {
-        NotificationType::ReferralJoined => notification_item(
-            id,
-            localizer.notification_reward_pending_title(),
-            Some(localizer.notification_reward_invite_description()),
-            Some(format!("+{}", points)),
-            None,
-            CoreEmoji::Party,
-            Some(CoreListItemBadge::New),
-            url,
-        ),
+        NotificationType::ReferralJoined => {
+            let points = notification.metadata.decode::<NotificationRewardsMetadata>().and_then(|m| m.points).unwrap_or(0);
+            notification_item(
+                id,
+                localizer.notification_reward_pending_title(),
+                Some(localizer.notification_reward_invite_description()),
+                Some(format!("+{}", points)),
+                None,
+                CoreEmoji::Party,
+                Some(CoreListItemBadge::New),
+                url,
+            )
+        }
         NotificationType::RewardsEnabled => notification_item(
             id,
             localizer.notification_rewards_enabled_title(),
@@ -74,50 +78,50 @@ fn map_to_list_item(notification: &NotificationData, localizer: &LanguageLocaliz
             url,
         ),
         NotificationType::RewardsRedeemed => {
-            let raw_value = get_string(metadata, "value");
-            let value = notification.asset.as_ref().and_then(|asset| {
-                let value = ValueFormatter::format_with_symbol(ValueStyle::Auto, &raw_value, asset.decimals, &asset.symbol).ok()?;
-                Some(format!("+{}", value))
+            let redeem = notification.metadata.decode::<NotificationRewardsRedeemMetadata>();
+            let points = redeem.as_ref().map(|m| m.points).unwrap_or(0);
+            let value = redeem.as_ref().and_then(|m| {
+                let asset = notification.asset.as_ref()?;
+                ValueFormatter::format_with_symbol(ValueStyle::Auto, &m.value, asset.decimals, &asset.symbol).ok()
             });
+            let subtitle = Some(localizer.notification_reward_redeemed_description(points, value.as_deref()));
             let subvalue = Some(format!("-{}", points));
             notification_item(
                 id,
                 localizer.notification_reward_redeemed_title(),
-                Some(localizer.notification_reward_redeemed_description(points)),
-                value,
+                subtitle,
+                value.map(|value| format!("+{}", value)),
                 subvalue,
                 CoreEmoji::Gift,
                 None,
                 url,
             )
         }
-        NotificationType::RewardsCreateUsername => notification_item(
-            id,
-            localizer.notification_reward_title(points),
-            Some(localizer.notification_reward_create_username_description()),
-            Some(format!("+{}", points)),
-            None,
-            CoreEmoji::Gem,
-            Some(CoreListItemBadge::New),
-            url,
-        ),
-        NotificationType::RewardsInvite => notification_item(
-            id,
-            localizer.notification_reward_title(points),
-            Some(localizer.notification_reward_invite_description()),
-            Some(format!("+{}", points)),
-            None,
-            CoreEmoji::Party,
-            Some(CoreListItemBadge::New),
-            url,
-        ),
+        NotificationType::RewardsCreateUsername => {
+            let points = notification.metadata.decode::<NotificationRewardsMetadata>().and_then(|m| m.points).unwrap_or(0);
+            notification_item(
+                id,
+                localizer.notification_reward_title(points),
+                Some(localizer.notification_reward_create_username_description()),
+                Some(format!("+{}", points)),
+                None,
+                CoreEmoji::Gem,
+                Some(CoreListItemBadge::New),
+                url,
+            )
+        }
+        NotificationType::RewardsInvite => {
+            let points = notification.metadata.decode::<NotificationRewardsMetadata>().and_then(|m| m.points).unwrap_or(0);
+            notification_item(
+                id,
+                localizer.notification_reward_title(points),
+                Some(localizer.notification_reward_invite_description()),
+                Some(format!("+{}", points)),
+                None,
+                CoreEmoji::Party,
+                Some(CoreListItemBadge::New),
+                url,
+            )
+        }
     }
-}
-
-fn get_i32(metadata: &Option<serde_json::Value>, key: &str) -> i32 {
-    metadata.as_ref().and_then(|m| m.get(key)).and_then(|v| v.as_i64()).unwrap_or(0) as i32
-}
-
-fn get_string(metadata: &Option<serde_json::Value>, key: &str) -> String {
-    metadata.as_ref().and_then(|m| m.get(key)).and_then(|v| v.as_str()).unwrap_or("").to_string()
 }

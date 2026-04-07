@@ -67,6 +67,13 @@ pub async fn run(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Ar
             shutdown_rx.clone(),
             reporter.clone(),
         )),
+        tokio::spawn(run_notification_consumer(
+            settings.clone(),
+            database.clone(),
+            QueueName::NotificationsFiatPurchase,
+            shutdown_rx.clone(),
+            reporter.clone(),
+        )),
         tokio::spawn(run_notifications_failed_consumer(
             settings.clone(),
             database.clone(),

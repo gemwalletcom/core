@@ -181,6 +181,14 @@ impl LanguageLocalizer {
         )
     }
 
+    pub fn notification_fiat_purchase_title(&self, value: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_fiat_purchase_title", value = value)
+    }
+
+    pub fn notification_fiat_sale_title(&self, value: &str) -> String {
+        fl!(self.loader.as_ref(), "notification_fiat_sale_title", value = value)
+    }
+
     // support
     pub fn notification_support_new_message_title(&self) -> String {
         fl!(self.loader.as_ref(), "support_new_message_title")
@@ -215,8 +223,18 @@ impl LanguageLocalizer {
         fl!(self.loader.as_ref(), "notification_rewards_redeem_points_title")
     }
 
-    pub fn notification_reward_redeemed_description(&self, points: i32) -> String {
-        fl!(self.loader.as_ref(), "notification_rewards_redeem_points_description", value = points.abs())
+    pub fn notification_reward_redeemed_description(&self, points: i32, value: Option<&str>) -> String {
+        match value {
+            Some(value) => {
+                fl!(
+                    self.loader.as_ref(),
+                    "notification_rewards_redeem_points_for_description",
+                    points = points.abs(),
+                    value = value
+                )
+            }
+            None => fl!(self.loader.as_ref(), "notification_rewards_redeem_points_description", value = points.abs()),
+        }
     }
 
     pub fn errors_generic(&self) -> String {

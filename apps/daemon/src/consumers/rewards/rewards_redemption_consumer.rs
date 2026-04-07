@@ -93,7 +93,11 @@ impl<S: RedemptionService> MessageConsumer<RewardsRedemptionPayload, PrimitiveRe
                 if let Some(id) = &asset_id {
                     let pending_tx_id = TransactionId::new(id.chain, transaction_id.clone());
                     if let Err(e) = self.stream_producer.publish(QueueName::StorePendingTransactions, &pending_tx_id).await {
-                        info_with_fields!("failed to publish redemption transaction to pending", transaction_id = pending_tx_id.to_string(), error = e.to_string());
+                        info_with_fields!(
+                            "failed to publish redemption transaction to pending",
+                            transaction_id = pending_tx_id.to_string(),
+                            error = e.to_string()
+                        );
                     } else {
                         info_with_fields!("published redemption transaction to pending", transaction_id = pending_tx_id.to_string());
                     }

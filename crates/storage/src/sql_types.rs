@@ -184,7 +184,7 @@ diesel_enum!(
     PushNotificationType,
     PrimitivePushNotificationTypes,
     PushNotificationTypeSql,
-    [Test, Transaction, Asset, PriceAlert, BuyAsset, SwapAsset, Support, Rewards, Stake]
+    [Test, Transaction, Asset, PriceAlert, BuyAsset, SwapAsset, Support, Rewards, Stake, FiatTransaction]
 );
 
 diesel_enum!(
