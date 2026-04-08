@@ -15,7 +15,7 @@ impl ChainSigner for NearChainSigner {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::{Asset, Chain, GasPriceType, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata};
+    use primitives::{TransactionFee, TransactionLoadInput};
 
     #[test]
     fn test_sign_near_transfer() {
@@ -24,19 +24,7 @@ mod tests {
             .unwrap();
 
         let input = SignerInput::new(
-            TransactionLoadInput {
-                input_type: TransactionInputType::Transfer(Asset::from_chain(Chain::Near)),
-                sender_address: "test.near".into(),
-                destination_address: "whatever.near".into(),
-                value: "1".into(),
-                gas_price: GasPriceType::regular(0),
-                memo: None,
-                is_max_value: false,
-                metadata: TransactionLoadMetadata::Near {
-                    sequence: 1,
-                    block_hash: "244ZQ9cgj3CQ6bWBdytfrJMuMQ1jdXLFGnr4HhvtCTnM".into(),
-                },
-            },
+            TransactionLoadInput::mock_near("test.near", "whatever.near", "1", 1, "244ZQ9cgj3CQ6bWBdytfrJMuMQ1jdXLFGnr4HhvtCTnM"),
             TransactionFee::new_from_fee(0.into()),
         );
 
