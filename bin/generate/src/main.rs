@@ -134,7 +134,7 @@ fn process_paths(paths: Vec<String>, _folder: &str, generator_type: &GeneratorTy
 fn output_path(platform: Platform, directory: &str, module_name: &str, path: String) -> String {
     match platform {
         Platform::IOS => format!("{directory}/{module_name}/Sources/{IOS_GENERATED_DIR}/{path}"),
-        Platform::Android => format!("{directory}/{module_name}/{path}"),
+        Platform::Android => format!("{directory}/{module_name}/generated/{path}"),
     }
 }
 
