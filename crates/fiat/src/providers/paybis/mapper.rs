@@ -374,6 +374,28 @@ mod tests {
     }
 
     #[test]
+    fn test_map_process_webhook_completed_with_transaction_hash() {
+        let data: serde_json::Value = serde_json::from_str(include_str!("../../../testdata/paybis/webhook_transaction_completed.json")).unwrap();
+
+        let result = map_process_webhook(data).unwrap();
+        let FiatWebhook::Transaction(transaction) = result else {
+            panic!("Expected FiatWebhook::Transaction variant");
+        };
+
+        assert_eq!(
+            transaction,
+            FiatTransactionUpdate {
+                transaction_id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx".to_string(),
+                provider_transaction_id: Some("PBXXXXXXXXXXTXX".to_string()),
+                status: FiatTransactionStatus::Complete,
+                transaction_hash: Some("x".to_string()),
+                fiat_amount: Some(50.0),
+                fiat_currency: Some("USD".to_string()),
+            }
+        );
+    }
+
+    #[test]
     fn test_verification_webhook_maps_to_none() {
         let data: serde_json::Value = serde_json::from_str(include_str!("../../../testdata/paybis/webhook_transaction_no_changes.json")).unwrap();
 

@@ -109,10 +109,10 @@ impl<C: Client + Clone> SuiClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use super::*;
+    use crate::models::SuiStakeStatus;
     use crate::provider::testkit::*;
     use base64::{Engine, engine::general_purpose};
     use chain_traits::ChainTransactionLoad;
-    use crate::models::SuiStakeStatus;
     use primitives::{Asset, Chain, Delegation, FeePriority, StakeType, TransactionLoadInput};
 
     #[tokio::test]

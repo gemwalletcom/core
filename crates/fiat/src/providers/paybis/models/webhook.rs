@@ -18,7 +18,6 @@ pub struct PaybisWebhookData {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct PaybisPayout {
     pub transaction_hash: Option<String>,
 }

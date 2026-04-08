@@ -1,0 +1,25 @@
+{
+    "event": "TRANSACTION_STATUS_CHANGED",
+    "data": {
+        "partnerTransactionId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+        "quote": {
+            "quoteId": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+        },
+        "transaction": {
+            "invoice": "PBXXXXXXXXXXTXX",
+            "status": "completed",
+            "flow": "buyCrypto"
+        },
+        "amountFrom": {
+            "amount": "50.00",
+            "currency": "USD"
+        },
+        "amountTo": {
+            "amount": "0.1",
+            "currency": "BTC"
+        },
+        "payout": {
+            "transaction_hash": "x"
+        }
+    }
+}
