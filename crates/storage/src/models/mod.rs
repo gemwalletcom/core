@@ -29,7 +29,7 @@ pub mod username;
 pub mod wallet;
 
 pub use self::asset::{AssetLinkRow, AssetRow, NewAssetRow};
-pub use self::asset_address::AssetAddressRow;
+pub use self::asset_address::{AssetAddressRow, AssetAddressRowsExt};
 pub use self::asset_usage_rank::AssetUsageRankRow;
 pub use self::chain::ChainIdRow;
 pub use self::chart::{ChartRow, DailyChartRow, HourlyChartRow};

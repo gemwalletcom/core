@@ -123,6 +123,7 @@ pub enum PriceAlertType {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[serde(rename_all = "camelCase")]
 pub enum PriceAlertNotificationType {
     Auto,
     Price,

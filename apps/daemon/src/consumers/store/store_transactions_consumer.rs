@@ -25,8 +25,8 @@ pub struct StoreTransactionsConsumer {
 
 struct ProcessingResult {
     transactions: Vec<Transaction>,
-    notifications: Vec<NotificationsPayload>,
     assets_addresses: Vec<AssetAddress>,
+    notifications: Vec<NotificationsPayload>,
     wallet_events: Vec<WalletStreamPayload>,
 }
 
@@ -65,8 +65,8 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
         let _ = self.stream_producer.publish_fetch_assets(missing_assets).await;
 
         let mut transactions_map: HashMap<TransactionId, Transaction> = HashMap::new();
+        let mut assets_addresses = HashSet::new();
         let mut notifications: Vec<NotificationsPayload> = Vec::new();
-        let mut assets_addresses: HashSet<AssetAddress> = HashSet::new();
         let mut wallet_events_map: HashMap<i32, (HashSet<TransactionId>, HashSet<AssetId>)> = HashMap::new();
 
         for subscription in &subscriptions {
@@ -85,18 +85,21 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
                     continue;
                 };
 
-                assets_addresses.extend(
-                    transaction
-                        .assets_addresses_with_fee()
-                        .into_iter()
-                        .filter(|x| existing_assets_map.contains_key(&x.asset_id) && subscription.address == x.address),
-                );
-
                 if self
                     .config
                     .is_transaction_insufficient_amount(transaction, &asset_price.asset.asset, asset_price.price, min_amount)
                 {
                     continue;
+                }
+
+                if Self::should_store_asset_addresses(transaction) {
+                    assets_addresses.extend(
+                        transaction
+                            .assets_addresses_with_fee()
+                            .into_iter()
+                            .filter(|address| address.address == subscription.address)
+                            .filter(|address| existing_assets_map.contains_key(&address.asset_id)),
+                    );
                 }
 
                 transactions_map.entry(transaction.id.clone()).or_insert_with(|| transaction.clone());
@@ -145,10 +148,11 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
             })
             .collect();
 
+        let transactions: Vec<_> = transactions_map.into_values().collect();
         let result = ProcessingResult {
-            transactions: transactions_map.into_values().collect(),
-            notifications,
+            transactions,
             assets_addresses: assets_addresses.into_iter().collect(),
+            notifications,
             wallet_events,
         };
         self.publish_results(result).await
@@ -156,6 +160,13 @@ impl MessageConsumer<TransactionsPayload, usize> for StoreTransactionsConsumer {
 }
 
 impl StoreTransactionsConsumer {
+    fn should_store_asset_addresses(transaction: &Transaction) -> bool {
+        match transaction.state {
+            TransactionState::Confirmed | TransactionState::InTransit => true,
+            TransactionState::Pending | TransactionState::Failed | TransactionState::Reverted => false,
+        }
+    }
+
     fn unique_subscriptions_per_device(subscriptions: Vec<DeviceSubscription>) -> Vec<DeviceSubscription> {
         subscriptions
             .into_iter()
@@ -196,12 +207,8 @@ impl StoreTransactionsConsumer {
 
     async fn publish_results(&self, result: ProcessingResult) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let transactions_count = self.store_transactions(result.transactions).await?;
+        self.database.assets_addresses()?.add_assets_addresses(result.assets_addresses)?;
         let _ = self.stream_producer.publish_notifications_transactions(result.notifications).await;
-
-        if !result.assets_addresses.is_empty() {
-            let _ = self.database.assets_addresses()?.add_assets_addresses(result.assets_addresses);
-        }
-
         let _ = self.stream_producer.publish_wallet_stream_events(result.wallet_events).await;
 
         Ok(transactions_count)
@@ -316,6 +323,27 @@ mod tests {
         let transactions = StoreTransactionsConsumer::transactions_for_storage(vec![outbound, regular.clone()], &DepositAddressMap::new(), &send_addresses);
 
         assert_eq!(transactions, vec![regular]);
+    }
+
+    #[test]
+    fn test_should_store_asset_addresses() {
+        assert!(StoreTransactionsConsumer::should_store_asset_addresses(&Transaction::mock()));
+        assert!(StoreTransactionsConsumer::should_store_asset_addresses(&Transaction {
+            state: TransactionState::InTransit,
+            ..Transaction::mock()
+        }));
+        assert!(!StoreTransactionsConsumer::should_store_asset_addresses(&Transaction {
+            state: TransactionState::Pending,
+            ..Transaction::mock()
+        }));
+        assert!(!StoreTransactionsConsumer::should_store_asset_addresses(&Transaction {
+            state: TransactionState::Failed,
+            ..Transaction::mock()
+        }));
+        assert!(!StoreTransactionsConsumer::should_store_asset_addresses(&Transaction {
+            state: TransactionState::Reverted,
+            ..Transaction::mock()
+        }));
     }
 
     #[test]
