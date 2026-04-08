@@ -1,3 +1,4 @@
+use super::signer_mock::{TEST_EVM_RECIPIENT, TEST_EVM_SENDER};
 use crate::{
     Asset, Chain, GasPriceType, SignerInput, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransferDataExtra, TransferDataOutputAction,
     TransferDataOutputType, WalletConnectionSessionAppMetadata,
@@ -56,7 +57,6 @@ impl TransactionLoadInput {
     }
 
     pub fn mock_evm_with_metadata(input_type: TransactionInputType, value: &str, metadata: TransactionLoadMetadata) -> Self {
-        use super::signer_mock::{TEST_EVM_RECIPIENT, TEST_EVM_SENDER};
         TransactionLoadInput {
             input_type,
             sender_address: TEST_EVM_SENDER.to_string(),
@@ -84,6 +84,22 @@ impl SignerInput {
 }
 
 impl TransactionLoadInput {
+    pub fn mock_near(sender: &str, destination: &str, value: &str, sequence: u64, block_hash: &str) -> Self {
+        TransactionLoadInput {
+            input_type: TransactionInputType::Transfer(Asset::from_chain(Chain::Near)),
+            sender_address: sender.into(),
+            destination_address: destination.into(),
+            value: value.into(),
+            gas_price: GasPriceType::regular(0),
+            memo: None,
+            is_max_value: false,
+            metadata: TransactionLoadMetadata::Near {
+                sequence,
+                block_hash: block_hash.into(),
+            },
+        }
+    }
+
     pub fn mock_sign_data(chain: Chain, data: &str, output_type: TransferDataOutputType) -> Self {
         TransactionLoadInput {
             input_type: TransactionInputType::Generic(

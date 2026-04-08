@@ -3289,11 +3289,13 @@ name = "gem_near"
 version = "1.0.0"
 dependencies = [
  "async-trait",
+ "base64",
  "bs58",
  "chain_traits",
  "chrono",
  "futures",
  "gem_client",
+ "gem_hash",
  "gem_jsonrpc",
  "hex",
  "num-bigint",
@@ -3303,6 +3305,7 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "settings",
+ "signer",
  "tokio",
 ]
 
