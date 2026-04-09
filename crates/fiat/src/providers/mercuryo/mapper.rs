@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 
 use super::models::{
-    Asset, BuyAcquirerTransaction, BuyTransaction, CurrencyLimits, DepositTransaction, MercuryoTransactionResponse, MobilePayTransaction, SellTransaction, WithdrawTransaction,
+    Asset, BuyAcquirerTransaction, BuyTransaction, CurrencyLimits, DepositTransaction, MercuryoTransactionResponse, MobilePayTransaction, SellTransaction, WebhookData,
+    WithdrawTransaction,
 };
 use crate::{model::FiatProviderAsset, providers::mercuryo::models::FiatPaymentMethod};
 use primitives::{Chain, FiatProviderName, FiatTransactionStatus, FiatTransactionUpdate};
@@ -111,6 +112,17 @@ pub fn map_order_from_response(transaction: MercuryoTransactionResponse) -> Resu
     }
 
     Err("No valid transaction data found".into())
+}
+
+pub fn map_order_from_webhook(webhook: WebhookData) -> FiatTransactionUpdate {
+    FiatTransactionUpdate {
+        transaction_id: webhook.merchant_transaction_id.unwrap_or(webhook.id),
+        provider_transaction_id: None,
+        status: map_status(&webhook.status, None),
+        transaction_hash: None,
+        fiat_amount: Some(webhook.fiat_amount),
+        fiat_currency: Some(webhook.fiat_currency.to_ascii_uppercase()),
+    }
 }
 
 fn map_status(status: &str, withdraw_status: Option<&str>) -> FiatTransactionStatus {
@@ -247,7 +259,7 @@ pub fn map_asset_limits(currency_limits: Option<&CurrencyLimits>, currency: Curr
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::providers::mercuryo::models::{Currencies, MercuryoTransactionResponse, Response};
+    use crate::providers::mercuryo::models::{Currencies, MercuryoTransactionResponse, Response, Webhook};
     use primitives::FiatTransactionStatus;
 
     #[test]
@@ -319,6 +331,22 @@ mod tests {
             result.transaction_hash,
             Some("0x0000000000000000000000000000000000000000000000000000000000000001".to_string())
         );
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_map_order_from_webhook() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let webhook: Webhook = serde_json::from_str(include_str!("../../../testdata/mercuryo/webhook_buy_complete.json"))?;
+
+        let result = map_order_from_webhook(webhook.data);
+
+        assert_eq!(result.transaction_id, "f34d79d6-b8d4-4213-a29d-756467d003cb");
+        assert_eq!(result.provider_transaction_id, None);
+        assert_eq!(result.status, FiatTransactionStatus::Failed);
+        assert_eq!(result.fiat_amount, Some(270.0));
+        assert_eq!(result.fiat_currency, Some("USD".to_string()));
+        assert_eq!(result.transaction_hash, None);
 
         Ok(())
     }

@@ -2,11 +2,6 @@ use serde::Deserialize;
 use serde_serializers::deserialize_f64_from_str;
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct Order {
-    pub merchant_transaction_id: Option<String>,
-}
-
-#[derive(Debug, Deserialize, Clone)]
 pub struct MercuryoTransactionResponse {
     pub buy: Option<BuyTransaction>,
     pub buy_acquirer: Option<BuyAcquirerTransaction>,

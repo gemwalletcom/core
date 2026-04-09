@@ -11,7 +11,7 @@ use super::{
     client::PaybisClient,
     mapper::{map_assets, map_process_webhook, supported_payment_methods},
 };
-use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatTransactionUpdate, PaymentType};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, PaymentType};
 use streamer::FiatWebhook;
 
 #[async_trait]
@@ -43,10 +43,6 @@ impl FiatProvider for PaybisClient {
             .collect();
 
         Ok(countries)
-    }
-
-    async fn get_order_status(&self, _order_id: &str) -> Result<FiatTransactionUpdate, Box<dyn std::error::Error + Send + Sync>> {
-        Err("not implemented".into())
     }
 
     async fn process_webhook(&self, data: serde_json::Value) -> Result<FiatWebhook, Box<dyn std::error::Error + Send + Sync>> {

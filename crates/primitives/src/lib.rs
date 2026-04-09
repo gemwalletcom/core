@@ -21,7 +21,7 @@ pub use self::chain_nft::NFTChain;
 pub mod chain_type;
 pub use self::chain_type::ChainType;
 pub mod chain_transaction_timeout;
-pub use self::chain_transaction_timeout::chain_transaction_timeout_seconds;
+pub use self::chain_transaction_timeout::chain_transaction_timeout;
 pub mod chain_evm;
 pub use self::chain_evm::EVMChain;
 pub mod chain_bitcoin;

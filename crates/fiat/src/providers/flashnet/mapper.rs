@@ -1,3 +1,5 @@
+use std::io;
+
 use std::collections::{BTreeMap, HashMap};
 
 use number_formatter::{BigNumberFormatter, NumberFormatterError};
@@ -87,7 +89,7 @@ pub fn map_redirect_url(response: &FlashnetOnrampResponse) -> String {
     response.payment_links.cash_app.clone()
 }
 
-pub fn map_webhook(payload: FlashnetWebhookPayload) -> FiatWebhook {
+pub fn map_webhook(payload: FlashnetWebhookPayload) -> Result<FiatWebhook, io::Error> {
     match payload.event.as_str() {
         "order.processing"
         | "order.confirming"
@@ -98,24 +100,23 @@ pub fn map_webhook(payload: FlashnetWebhookPayload) -> FiatWebhook {
         | "order.delivering"
         | "order.completed"
         | "order.failed"
-        | "order.refunded" => FiatWebhook::OrderId(payload.data.id),
-        _ => FiatWebhook::None,
+        | "order.refunded" => Ok(FiatWebhook::Transaction(map_order(
+            payload.data.into_order().ok_or_else(|| io::Error::other("Missing Flashnet order fields in webhook"))?,
+        ))),
+        _ => Ok(FiatWebhook::None),
     }
 }
 
 pub fn map_order(order: FlashnetOrder) -> FiatTransactionUpdate {
     let transaction_id = order.id.clone();
-    let fiat_amount = order
-        .effective_amount_out()
-        .and_then(|value| BigNumberFormatter::value_as_f64(value, USDB_DECIMALS).ok())
-        .unwrap_or_default();
+    let fiat_amount = order.effective_amount_out().and_then(|value| BigNumberFormatter::value_as_f64(value, USDB_DECIMALS).ok());
 
     FiatTransactionUpdate {
         transaction_id,
         provider_transaction_id: None,
         status: map_status(&order.status),
         transaction_hash: order.destination_tx_hash().map(str::to_string),
-        fiat_amount: Some(fiat_amount),
+        fiat_amount,
         fiat_currency: Some(Currency::USD.to_string()),
     }
 }
@@ -243,10 +244,40 @@ mod tests {
         let data: serde_json::Value = serde_json::from_str(r#"{"event":"quote.updated","timestamp":"2026-03-13T00:00:00Z","data":{"id":"ord_123"}}"#).unwrap();
         let payload: FlashnetWebhookPayload = serde_json::from_value(data).unwrap();
 
-        match map_webhook(payload) {
+        match map_webhook(payload).unwrap() {
             FiatWebhook::None => {}
             payload => panic!("Expected ignored webhook, got {:?}", payload),
         }
+    }
+
+    #[test]
+    fn map_webhook_uses_embedded_order_fields_when_present() {
+        let payload: FlashnetWebhookPayload = serde_json::from_str(include_str!("../../../testdata/flashnet/webhook_completed.json")).unwrap();
+
+        match map_webhook(payload).unwrap() {
+            FiatWebhook::Transaction(transaction) => {
+                assert_eq!(
+                    transaction,
+                    FiatTransactionUpdate {
+                        transaction_id: "ord_test_completed".to_string(),
+                        provider_transaction_id: None,
+                        status: FiatTransactionStatus::Complete,
+                        transaction_hash: Some("solana_test_signature_completed".to_string()),
+                        fiat_amount: Some(24.737625),
+                        fiat_currency: Some("USD".to_string()),
+                    }
+                );
+            }
+            payload => panic!("Expected transaction webhook, got {:?}", payload),
+        }
+    }
+
+    #[test]
+    fn map_webhook_returns_error_when_order_fields_are_missing() {
+        let data: serde_json::Value = serde_json::from_str(r#"{"event":"order.completed","timestamp":"2026-03-13T00:00:00Z","data":{"id":"ord_123"}}"#).unwrap();
+        let payload: FlashnetWebhookPayload = serde_json::from_value(data).unwrap();
+
+        assert!(map_webhook(payload).is_err());
     }
 
     #[test]

@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use async_trait::async_trait;
-use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, FiatTransactionUpdate, PaymentType};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteUrl, FiatQuoteUrlData, PaymentType};
 use streamer::FiatWebhook;
 
 use crate::FiatProvider;
@@ -10,7 +10,7 @@ use crate::provider::generate_quote_id;
 
 use super::{
     client::FlashnetClient,
-    mapper::{map_amount, map_assets, map_crypto_amount, map_order, map_redirect_url, map_source_amount, map_webhook},
+    mapper::{map_amount, map_assets, map_crypto_amount, map_redirect_url, map_source_amount, map_webhook},
     model::{FlashnetOnrampRequest, FlashnetWebhookPayload},
 };
 
@@ -43,14 +43,9 @@ impl FiatProvider for FlashnetClient {
         }])
     }
 
-    async fn get_order_status(&self, order_id: &str) -> Result<FiatTransactionUpdate, Box<dyn Error + Send + Sync>> {
-        let response = self.get_order_status(order_id).await?;
-        Ok(map_order(response.order))
-    }
-
     async fn process_webhook(&self, data: serde_json::Value) -> Result<FiatWebhook, Box<dyn Error + Send + Sync>> {
         let payload = serde_json::from_value::<FlashnetWebhookPayload>(data)?;
-        Ok(map_webhook(payload))
+        Ok(map_webhook(payload)?)
     }
 
     async fn get_quote_buy(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {

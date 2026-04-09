@@ -28,12 +28,7 @@ impl FiatProviderFactory {
         let request_client = crate::client::FiatClient::request_client(settings.fiat.timeout);
 
         let moonpay = MoonPayClient::new(request_client.clone(), settings.moonpay.key.public.clone(), settings.moonpay.key.secret.clone());
-        let mercuryo = MercuryoClient::new(
-            request_client.clone(),
-            settings.mercuryo.key.public.clone(),
-            settings.mercuryo.key.secret.clone(),
-            settings.mercuryo.key.token.clone(),
-        );
+        let mercuryo = MercuryoClient::new(request_client.clone(), settings.mercuryo.key.public.clone(), settings.mercuryo.key.secret.clone());
         let transak = TransakClient::new(
             request_client.clone(),
             settings.transak.key.public,

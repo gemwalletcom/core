@@ -116,7 +116,6 @@ pub struct Mercuryo {
 pub struct MercuryoKey {
     pub secret: String,
     pub public: String,
-    pub token: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]

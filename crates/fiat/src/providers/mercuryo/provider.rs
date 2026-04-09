@@ -7,11 +7,11 @@ use crate::{
 use async_trait::async_trait;
 use futures::future;
 use primitives::currency::Currency;
-use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatTransactionUpdate};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData};
 use std::error::Error;
 use streamer::FiatWebhook;
 
-use super::{client::MercuryoClient, mapper::map_order_from_response, models::Webhook, widget::MercuryoWidget};
+use super::{client::MercuryoClient, mapper::map_order_from_webhook, models::Webhook, widget::MercuryoWidget};
 
 #[async_trait]
 impl FiatProvider for MercuryoClient {
@@ -55,17 +55,10 @@ impl FiatProvider for MercuryoClient {
             .collect())
     }
 
-    async fn get_order_status(&self, order_id: &str) -> Result<FiatTransactionUpdate, Box<dyn std::error::Error + Send + Sync>> {
-        let response = self.get_transaction(order_id).await?;
-        let transaction = response.data.into_iter().next().ok_or("Transaction not found")?;
-        map_order_from_response(transaction)
-    }
-
     // full transaction: https://github.com/mercuryoio/api-migration-docs/blob/master/Widget_API_Mercuryo_v1.6.md#22-callbacks-response-body
     async fn process_webhook(&self, data: serde_json::Value) -> Result<FiatWebhook, Box<dyn std::error::Error + Send + Sync>> {
         let webhook_data = serde_json::from_value::<Webhook>(data)?.data;
-        let order_id = webhook_data.merchant_transaction_id.unwrap_or(webhook_data.id);
-        Ok(FiatWebhook::OrderId(order_id))
+        Ok(FiatWebhook::Transaction(map_order_from_webhook(webhook_data)))
     }
 
     async fn get_quote_buy(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {

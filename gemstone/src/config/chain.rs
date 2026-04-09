@@ -1,4 +1,4 @@
-use primitives::{Chain, ChainType, FeeUnitType, chain_transaction_timeout_seconds};
+use primitives::{Chain, ChainType, FeeUnitType, chain_transaction_timeout};
 
 #[derive(uniffi::Record, Debug, Clone, PartialEq)]
 pub struct ChainConfig {
@@ -24,7 +24,7 @@ pub struct ChainConfig {
 pub fn get_chain_config(chain: Chain) -> ChainConfig {
     ChainConfig {
         network_id: chain.network_id().to_string(),
-        transaction_timeout: chain_transaction_timeout_seconds(chain),
+        transaction_timeout: chain_transaction_timeout(chain),
         slip_44: chain.as_slip44() as i32,
         rank: chain.rank(),
         denom: chain.as_denom().map(|x| x.to_string()),

@@ -4,7 +4,7 @@ use gem_client::json_response;
 use primitives::FiatProviderName;
 use reqwest::Client;
 
-use super::model::{FlashnetEstimateResponse, FlashnetOnrampRequest, FlashnetOnrampResponse, FlashnetRoutesResponse, FlashnetStatusResponse};
+use super::model::{FlashnetEstimateResponse, FlashnetOnrampRequest, FlashnetOnrampResponse, FlashnetRoutesResponse};
 
 pub struct FlashnetClient {
     client: Client,
@@ -55,17 +55,6 @@ impl FlashnetClient {
                 ("amount", amount),
                 ("affiliateId", self.affiliate_id.as_str()),
             ])
-            .send()
-            .await?;
-        Ok(json_response(response).await?)
-    }
-
-    pub async fn get_order_status(&self, order_id: &str) -> Result<FlashnetStatusResponse, Box<dyn Error + Send + Sync>> {
-        let response = self
-            .client
-            .get(format!("{}/v1/orchestration/status", self.base_url))
-            .bearer_auth(&self.api_key)
-            .query(&[("id", order_id)])
             .send()
             .await?;
         Ok(json_response(response).await?)

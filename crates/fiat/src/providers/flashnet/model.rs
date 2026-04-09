@@ -26,12 +26,6 @@ pub struct FlashnetPaymentLinks {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct FlashnetStatusResponse {
-    pub order: FlashnetOrder,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct FlashnetRoutesResponse {
     pub routes: Vec<FlashnetRoute>,
 }
@@ -79,6 +73,24 @@ pub struct FlashnetWebhookPayload {
 #[serde(rename_all = "camelCase")]
 pub struct FlashnetWebhookData {
     pub id: String,
+    pub status: Option<String>,
+    pub amount_out: Option<String>,
+    pub destination: Option<FlashnetDestination>,
+    pub payment_intent: Option<FlashnetPaymentIntent>,
+}
+
+impl FlashnetWebhookData {
+    pub fn into_order(self) -> Option<FlashnetOrder> {
+        let status = self.status?;
+
+        Some(FlashnetOrder {
+            id: self.id,
+            status,
+            amount_out: self.amount_out,
+            destination: self.destination,
+            payment_intent: self.payment_intent,
+        })
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -86,26 +98,12 @@ pub struct FlashnetWebhookData {
 pub struct FlashnetOrder {
     pub id: String,
     pub status: String,
-    pub destination_chain: Option<String>,
-    pub destination_asset: Option<String>,
     pub amount_out: Option<String>,
     pub destination: Option<FlashnetDestination>,
     pub payment_intent: Option<FlashnetPaymentIntent>,
 }
 
 impl FlashnetOrder {
-    pub fn destination_chain(&self) -> Option<&str> {
-        self.destination_chain
-            .as_deref()
-            .or(self.destination.as_ref().and_then(|destination| destination.chain.as_deref()))
-    }
-
-    pub fn destination_asset(&self) -> Option<&str> {
-        self.destination_asset
-            .as_deref()
-            .or(self.destination.as_ref().and_then(|destination| destination.asset.as_deref()))
-    }
-
     pub fn destination_tx_hash(&self) -> Option<&str> {
         self.destination.as_ref().and_then(|destination| destination.tx_hash.as_deref())
     }

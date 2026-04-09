@@ -47,7 +47,7 @@ pub fn create_banxa_test_client() -> BanxaClient {
 pub fn create_mercuryo_test_client() -> MercuryoClient {
     let settings = get_test_settings();
     let client = FiatClient::request_client(settings.fiat.timeout);
-    MercuryoClient::new(client, settings.mercuryo.key.public, settings.mercuryo.key.secret, settings.mercuryo.key.token)
+    MercuryoClient::new(client, settings.mercuryo.key.public, settings.mercuryo.key.secret)
 }
 
 #[cfg(all(test, feature = "fiat_integration_tests"))]

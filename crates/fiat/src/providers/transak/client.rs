@@ -1,6 +1,4 @@
-use super::models::{
-    Asset, CachedToken, Country, CreateWidgetUrlRequest, CreateWidgetUrlResponse, Data, FiatCurrency, Response, TokenResponse, TransakOrderResponse, TransakQuote, TransakResponse,
-};
+use super::models::{Asset, CachedToken, Country, CreateWidgetUrlRequest, CreateWidgetUrlResponse, Data, FiatCurrency, Response, TokenResponse, TransakQuote, TransakResponse};
 use gem_encoding::decode_base64_url;
 use primitives::{FiatProviderName, FiatQuoteType};
 use reqwest::Client;
@@ -188,14 +186,6 @@ impl TransakClient {
 
         Ok(response.data.access_token)
     }
-
-    pub async fn get_transaction(&self, order_id: &str) -> Result<TransakOrderResponse, reqwest::Error> {
-        let access_token = self.get_access_token().await?;
-        let url = format!("{TRANSAK_API_URL}/partners/api/v2/order/{order_id}");
-        let response: Data<TransakOrderResponse> = self.client.get(&url).header("access-token", &access_token).send().await?.json().await?;
-        Ok(response.data)
-    }
-
     pub fn decode_jwt_content(&self, jwt: &str) -> Result<String, Box<dyn std::error::Error>> {
         let parts: Vec<&str> = jwt.split('.').collect();
         if parts.len() != 3 {

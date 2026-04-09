@@ -9,7 +9,7 @@ use std::error::Error;
 use streamer::FiatWebhook;
 
 use super::{client::MoonPayClient, mapper::map_order};
-use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatTransactionUpdate};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData};
 
 #[async_trait]
 impl FiatProvider for MoonPayClient {
@@ -33,11 +33,6 @@ impl FiatProvider for MoonPayClient {
                 is_allowed: x.is_allowed,
             })
             .collect())
-    }
-
-    async fn get_order_status(&self, order_id: &str) -> Result<FiatTransactionUpdate, Box<dyn std::error::Error + Send + Sync>> {
-        let payload = self.get_any_transaction(order_id).await?;
-        Ok(map_order(payload))
     }
 
     async fn process_webhook(&self, data: serde_json::Value) -> Result<FiatWebhook, Box<dyn std::error::Error + Send + Sync>> {

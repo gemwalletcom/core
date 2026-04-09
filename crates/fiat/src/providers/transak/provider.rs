@@ -1,7 +1,7 @@
 use super::{
     client::TransakClient,
     mapper::map_order_from_response,
-    models::{Data, TransakQuote, WebhookPayload},
+    models::{Data, TransakOrderResponse, TransakQuote},
 };
 use crate::{
     FiatProvider,
@@ -9,7 +9,7 @@ use crate::{
     providers::transak::mapper::map_asset_with_limits,
 };
 use async_trait::async_trait;
-use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData, FiatTransactionUpdate};
+use primitives::{FiatProviderCountry, FiatProviderName, FiatQuoteRequest, FiatQuoteResponse, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData};
 use std::error::Error;
 use streamer::FiatWebhook;
 
@@ -42,16 +42,15 @@ impl FiatProvider for TransakClient {
             .collect())
     }
 
-    async fn get_order_status(&self, order_id: &str) -> Result<FiatTransactionUpdate, Box<dyn std::error::Error + Send + Sync>> {
-        let response = self.get_transaction(order_id).await?;
-        Ok(map_order_from_response(response))
-    }
-
     async fn process_webhook(&self, data: serde_json::Value) -> Result<FiatWebhook, Box<dyn std::error::Error + Send + Sync>> {
         let encrypted_data = serde_json::from_value::<Data<String>>(data)?;
         let decoded_payload = self.decode_jwt_content(&encrypted_data.data).map_err(|e| format!("Failed to decode Transak JWT: {}", e))?;
-        let webhook_payload = serde_json::from_str::<WebhookPayload>(&decoded_payload)?;
-        Ok(FiatWebhook::OrderId(webhook_payload.webhook_data.id))
+        let order = match serde_json::from_str::<Data<TransakOrderResponse>>(&decoded_payload) {
+            Ok(payload) => payload.data,
+            Err(_) => serde_json::from_str::<TransakOrderResponse>(&decoded_payload)?,
+        };
+
+        Ok(FiatWebhook::Transaction(map_order_from_response(order)))
     }
 
     async fn get_quote_buy(&self, request: FiatQuoteRequest, request_map: FiatMapping) -> Result<FiatQuoteResponse, Box<dyn Error + Send + Sync>> {
