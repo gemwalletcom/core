@@ -27,7 +27,7 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.9
 
       - name: Install just
-        uses: extractions/setup-just@v3
+        uses: extractions/setup-just@v4
 
       - name: Run tests
         run: just test
@@ -47,7 +47,7 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.9
 
       - name: Install just
-        uses: extractions/setup-just@v3
+        uses: extractions/setup-just@v4
 
       - name: Build all integration tests only
         run: just build-integration-tests

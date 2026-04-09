@@ -38,7 +38,7 @@ jobs:
         uses: mozilla-actions/sccache-action@v0.0.9
 
       - name: Install just
-        uses: extractions/setup-just@v3
+        uses: extractions/setup-just@v4
 
       - name: Install iOS targets
         run: just install-ios-targets
