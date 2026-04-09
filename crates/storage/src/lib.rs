@@ -35,7 +35,7 @@ pub use self::repositories::{
     perpetuals_repository::PerpetualsRepository, price_alerts_repository::PriceAlertsRepository, prices_dex_repository::PricesDexRepository, prices_repository::PricesRepository,
     releases_repository::ReleasesRepository, rewards_redemptions_repository::RewardsRedemptionsRepository, rewards_repository::RewardsRepository,
     risk_signals_repository::RiskSignalsRepository, scan_addresses_repository::ScanAddressesRepository, tag_repository::TagRepository,
-    transactions_repository::TransactionsRepository, wallets_repository::WalletsRepository,
+    transactions_repository::TransactionsRepository, wallets_repository::WalletsRepository, webhooks_repository::WebhooksRepository,
 };
 pub use self::sql_types::{NotificationType, PushNotificationType, TransactionState, TransactionType, WalletSource, WalletType};
 pub use diesel::OptionalExtension;
@@ -147,6 +147,10 @@ impl Database {
     }
 
     pub fn wallets(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
+        self.client()
+    }
+
+    pub fn webhooks(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
         self.client()
     }
 }

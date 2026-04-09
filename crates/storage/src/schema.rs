@@ -80,6 +80,10 @@ pub mod sql_types {
     #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
     #[diesel(postgres_type(name = "wallet_type"))]
     pub struct WalletType;
+
+    #[derive(diesel::query_builder::QueryId, diesel::sql_types::SqlType)]
+    #[diesel(postgres_type(name = "webhook_kind"))]
+    pub struct WebhookKind;
 }
 
 diesel::table! {
@@ -913,6 +917,22 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    use diesel::sql_types::*;
+    use super::sql_types::WebhookKind;
+
+    webhook_endpoints (kind, sender) {
+        kind -> WebhookKind,
+        #[max_length = 128]
+        sender -> Varchar,
+        #[max_length = 64]
+        secret -> Varchar,
+        enabled -> Bool,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
 diesel::joinable!(assets -> chains (chain));
 diesel::joinable!(assets_addresses -> assets (asset_id));
 diesel::joinable!(assets_addresses -> chains (chain));
@@ -1030,4 +1050,5 @@ diesel::allow_tables_to_appear_in_same_query!(
     wallets,
     wallets_addresses,
     wallets_subscriptions,
+    webhook_endpoints,
 );

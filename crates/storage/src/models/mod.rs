@@ -26,6 +26,7 @@ pub mod transaction;
 pub mod transaction_addresses;
 pub mod username;
 pub mod wallet;
+pub mod webhook;
 
 pub use self::asset::{AssetLinkRow, AssetRow, NewAssetRow};
 pub use self::asset_address::{AssetAddressRow, AssetAddressRowsExt};
@@ -58,3 +59,4 @@ pub use self::transaction::{NewTransactionRow, TransactionRow};
 pub use self::transaction_addresses::{AddressChainIdResultRow, NewTransactionAddressesRow, TransactionAddressesRow};
 pub use self::username::{NewUsernameRow, UsernameRow};
 pub use self::wallet::{NewWalletAddressRow, NewWalletRow, NewWalletSubscriptionRow, WalletAddressRow, WalletRow, WalletSubscriptionRow};
+pub use self::webhook::NewWebhookEndpointRow;

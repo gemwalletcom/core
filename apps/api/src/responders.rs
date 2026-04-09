@@ -60,6 +60,12 @@ impl From<DatabaseError> for ApiError {
     }
 }
 
+impl From<serde_json::Error> for ApiError {
+    fn from(error: serde_json::Error) -> Self {
+        ApiError::InternalServerError(error.to_string())
+    }
+}
+
 impl From<swapper::SwapperError> for ApiError {
     fn from(error: swapper::SwapperError) -> Self {
         ApiError::InternalServerError(error.to_string())

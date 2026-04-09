@@ -25,6 +25,7 @@ pub mod tag;
 pub mod transactions;
 pub mod usernames;
 pub mod wallets;
+pub mod webhooks;
 
 use diesel::pg::PgConnection;
 use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
@@ -42,6 +43,7 @@ use crate::repositories::{
     perpetuals_repository::PerpetualsRepository, price_alerts_repository::PriceAlertsRepository, prices_dex_repository::PricesDexRepository, prices_repository::PricesRepository,
     releases_repository::ReleasesRepository, rewards_redemptions_repository::RewardsRedemptionsRepository, rewards_repository::RewardsRepository,
     scan_addresses_repository::ScanAddressesRepository, tag_repository::TagRepository, transactions_repository::TransactionsRepository, wallets_repository::WalletsRepository,
+    webhooks_repository::WebhooksRepository,
 };
 
 pub fn create_pool(database_url: &str, pool_size: u32) -> PgPool {
@@ -159,6 +161,10 @@ impl DatabaseClient {
     }
 
     pub fn wallets(&mut self) -> &mut dyn WalletsRepository {
+        self
+    }
+
+    pub fn webhooks(&mut self) -> &mut dyn WebhooksRepository {
         self
     }
 }

@@ -15,7 +15,7 @@ use primitives::{
     FiatTransactionStatus as PrimitiveFiatTransactionStatus, IpUsageType as PrimitiveIpUsageType, LinkType as PrimitiveLinkType, NotificationType as PrimitiveNotificationType,
     PerpetualProvider as PrimitivePerpetualProvider, Platform as PrimitivePlatform, PlatformStore as PrimitivePlatformStore, PriceAlertDirection as PrimitivePriceAlertDirection,
     PriceFeedProvider as PrimitivePriceFeedProvider, TransactionState as PrimitiveTransactionState, TransactionType as PrimitiveTransactionType,
-    UsernameStatus as PrimitiveUsernameStatus, WalletSource as PrimitiveWalletSource, WalletType as PrimitiveWalletType,
+    UsernameStatus as PrimitiveUsernameStatus, WalletSource as PrimitiveWalletSource, WalletType as PrimitiveWalletType, WebhookKind as PrimitiveWebhookKind,
 };
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -28,7 +28,7 @@ use crate::schema::sql_types::{
     IpUsageType as IpUsageTypeSql, LinkType as LinkTypeSql, NftType as NftTypeSql, NotificationType as NotificationTypeSql, Platform as PlatformSql,
     PlatformStore as PlatformStoreSql, PushNotificationType as PushNotificationTypeSql, RedemptionStatus as RedemptionStatusSql, RewardEventType as RewardEventTypeSql,
     RewardRedemptionType as RewardRedemptionTypeSql, RewardStatus as RewardStatusSql, TransactionState as TransactionStateSql, TransactionType as TransactionTypeSql,
-    UsernameStatus as UsernameStatusSql, WalletSource as WalletSourceSql, WalletType as WalletTypeSql,
+    UsernameStatus as UsernameStatusSql, WalletSource as WalletSourceSql, WalletType as WalletTypeSql, WebhookKind as WebhookKindSql,
 };
 
 macro_rules! diesel_enum {
@@ -193,6 +193,7 @@ diesel_enum!(
     IpUsageTypeSql,
     [DataCenter, Hosting, Isp, Mobile, Business, Education, Government, Unknown]
 );
+diesel_enum!(WebhookKind, PrimitiveWebhookKind, WebhookKindSql, [Transactions, Support, SupportBot, Fiat]);
 
 macro_rules! diesel_varchar {
     ($wrapper:ident, $inner:ty) => {

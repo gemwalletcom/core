@@ -24,3 +24,4 @@ pub mod scan_addresses_repository;
 pub mod tag_repository;
 pub mod transactions_repository;
 pub mod wallets_repository;
+pub mod webhooks_repository;

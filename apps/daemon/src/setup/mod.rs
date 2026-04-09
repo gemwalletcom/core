@@ -6,16 +6,19 @@ use gem_tracing::info_with_fields;
 use prices_dex::PriceFeedProvider;
 use primitives::{
     Asset, AssetId, AssetTag, Chain, ConfigKey, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus, NFTChain, NotificationType, ParamConfigKey,
-    PlatformStore as PrimitivePlatformStore, PriceAlert, PriceAlertDirection,
+    PlatformStore as PrimitivePlatformStore, PriceAlert, PriceAlertDirection, WebhookKind,
 };
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
 use storage::Database;
-use storage::models::{ChartRow, ConfigRow, FiatAssetRow, FiatProviderCountryRow, FiatRateRow, NewFiatTransactionRow, PriceAssetRow, PriceRow, UpdateDeviceRow};
+use storage::models::{
+    ChartRow, ConfigRow, FiatAssetRow, FiatProviderCountryRow, FiatRateRow, NewFiatTransactionRow, NewWebhookEndpointRow, PriceAssetRow, PriceRow, UpdateDeviceRow,
+};
 use storage::sql_types::{Platform, PlatformStore};
 use storage::{
     AssetsRepository, ChainsRepository, ChartsRepository, ConfigRepository, DevicesRepository, MigrationsRepository, NewNotificationRow, NewWalletRow, NotificationsRepository,
     PriceAlertsRepository, PricesDexRepository, PricesRepository, ReleasesRepository, RewardsRepository, TagRepository, WalletSource, WalletType, WalletsRepository,
+    WebhooksRepository,
 };
 use streamer::{ExchangeKind, ExchangeName, QueueName, StreamProducer, StreamProducerConfig};
 
@@ -59,6 +62,9 @@ fn setup_database(database: &Database) -> Result<(), Box<dyn std::error::Error +
         .collect::<Vec<_>>();
     let _ = database.fiat()?.add_fiat_providers(providers);
 
+    info_with_fields!("setup", step = "webhook endpoints");
+    let _ = database.webhooks()?.add_webhook_endpoints(webhook_endpoints());
+
     info_with_fields!("setup", step = "releases");
     let releases = PrimitivePlatformStore::all()
         .into_iter()
@@ -92,6 +98,22 @@ fn setup_database(database: &Database) -> Result<(), Box<dyn std::error::Error +
     let _ = database.client()?.add_config(param_configs);
 
     Ok(())
+}
+
+fn webhook_endpoints() -> Vec<NewWebhookEndpointRow> {
+    let endpoints = [
+        (WebhookKind::Transactions, "dynode"),
+        (WebhookKind::Support, "chatwoot"),
+        (WebhookKind::SupportBot, "chatwoot"),
+    ]
+    .into_iter()
+    .map(|(kind, sender)| NewWebhookEndpointRow::new(kind, sender));
+
+    let fiat = FiatProviderName::all()
+        .into_iter()
+        .map(|provider| NewWebhookEndpointRow::new(WebhookKind::Fiat, provider.id()));
+
+    endpoints.chain(fiat).collect()
 }
 
 async fn setup_search_index(settings: &Settings) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
