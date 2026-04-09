@@ -4,7 +4,7 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use cacher::{CacheKey, CacherClient};
 use gem_tracing::{DurationMs, error_with_fields, info_with_fields};
-use primitives::{Chain, TransactionId, chain_transaction_timeout_seconds};
+use primitives::{Chain, TransactionId, chain_transaction_timeout};
 use settings_chain::ChainProviders;
 use storage::{Database, TransactionsRepository};
 use streamer::{StreamProducer, StreamProducerQueue, TransactionsPayload};
@@ -125,7 +125,7 @@ impl PendingTransactionsUpdater {
 }
 
 fn pending_transaction_elapsed(chain: Chain, expires_at: f64, now: f64) -> Duration {
-    let timeout = f64::from(chain_transaction_timeout_seconds(chain));
+    let timeout = f64::from(chain_transaction_timeout(chain)) / 1000.0;
     let added_at = expires_at - timeout;
     Duration::from_secs_f64((now - added_at).max(0.0))
 }
@@ -135,13 +135,13 @@ mod tests {
     use super::pending_transaction_elapsed;
     use std::time::Duration;
 
-    use primitives::{Chain, chain_transaction_timeout_seconds};
+    use primitives::{Chain, chain_transaction_timeout};
 
     #[test]
     fn test_pending_transaction_elapsed_uses_added_at() {
         let chain = Chain::Ethereum;
         let expires_at = 10_000.0;
-        let now = expires_at - f64::from(chain_transaction_timeout_seconds(chain)) + 42.0;
+        let now = expires_at - f64::from(chain_transaction_timeout(chain) / 1000) + 42.0;
 
         assert_eq!(pending_transaction_elapsed(chain, expires_at, now), Duration::from_secs(42));
     }
@@ -150,7 +150,7 @@ mod tests {
     fn test_pending_transaction_elapsed_is_zero_before_added_at() {
         let chain = Chain::Xrp;
         let expires_at = 10_000.0;
-        let now = expires_at - f64::from(chain_transaction_timeout_seconds(chain)) - 1.0;
+        let now = expires_at - f64::from(chain_transaction_timeout(chain) / 1000) - 1.0;
 
         assert_eq!(pending_transaction_elapsed(chain, expires_at, now), Duration::ZERO);
     }
