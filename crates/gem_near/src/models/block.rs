@@ -12,6 +12,13 @@ pub struct BlockHeader {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GenesisConfig {
+pub struct NodeStatus {
     pub chain_id: String,
+    pub sync_info: NodeSyncInfo,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NodeSyncInfo {
+    pub latest_block_height: u64,
+    pub syncing: bool,
 }

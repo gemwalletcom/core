@@ -11,7 +11,7 @@ use crate::rpc::client::NearClient;
 #[async_trait]
 impl<C: Client + Clone> ChainState for NearClient<C> {
     async fn get_chain_id(&self) -> Result<String, Box<dyn Error + Sync + Send>> {
-        Ok(self.get_genesis_config().await?.chain_id)
+        Ok(self.get_status().await?.chain_id)
     }
 
     async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
@@ -27,7 +27,7 @@ impl<C: Client + Clone> ChainState for NearClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use crate::rpc::client::NearClient;
-    use chain_traits::ChainProvider;
+    use chain_traits::{ChainProvider, ChainState};
     use gem_client::ReqwestClient;
     use gem_jsonrpc::{client::JsonRpcClient, new_client};
 
@@ -41,20 +41,18 @@ mod chain_integration_tests {
     }
 
     #[tokio::test]
-    async fn test_near_genesis_config() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    async fn test_get_chain_id() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let jsonrpc_client = new_client("https://rpc.mainnet.near.org".to_string())?;
         let near_client: NearClient<gem_client::ReqwestClient> = NearClient::new(jsonrpc_client);
 
-        let genesis_config = near_client.get_genesis_config().await?;
-        assert_eq!(genesis_config.chain_id, "mainnet");
+        let chain_id = near_client.get_chain_id().await?;
+        assert_eq!(chain_id, "mainnet");
 
         Ok(())
     }
 
     #[tokio::test]
     async fn test_get_node_status() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        use chain_traits::ChainState;
-
         let jsonrpc_client = new_client("https://rpc.mainnet.near.org".to_string())?;
         let near_client: NearClient<gem_client::ReqwestClient> = NearClient::new(jsonrpc_client);
         let node_status = near_client.get_node_status().await?;

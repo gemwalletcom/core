@@ -1,4 +1,4 @@
-use crate::models::{Account, AccountAccessKey, Block, BroadcastResult, GasPrice, GenesisConfig};
+use crate::models::{Account, AccountAccessKey, Block, BroadcastResult, GasPrice, NodeStatus};
 use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainProvider, ChainStaking, ChainToken, ChainTraits};
 use gem_client::Client;
 use gem_jsonrpc::{client::JsonRpcClient, types::JsonRpcError};
@@ -45,9 +45,9 @@ impl<C: Client + Clone> NearClient<C> {
         self.client.call("gas_price", params).await
     }
 
-    pub async fn get_genesis_config(&self) -> Result<GenesisConfig, JsonRpcError> {
-        let params = json!({});
-        self.client.call("EXPERIMENTAL_genesis_config", params).await
+    pub async fn get_status(&self) -> Result<NodeStatus, JsonRpcError> {
+        let params = json!([]);
+        self.client.call("status", params).await
     }
 
     pub async fn broadcast_transaction(&self, signed_tx_base64: &str) -> Result<BroadcastResult, JsonRpcError> {
