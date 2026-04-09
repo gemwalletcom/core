@@ -108,7 +108,7 @@ mod fiat_integration_tests {
         TRON_USDT_TOKEN_ID,
     };
     use primitives::currency::Currency;
-    use primitives::{Chain, FiatProviderName, FiatQuoteRequest};
+    use primitives::{Chain, FiatProviderName, FiatQuoteRequest, FiatTransactionStatus, FiatTransactionUpdate};
     use streamer::FiatWebhook;
 
     #[tokio::test]
@@ -231,12 +231,21 @@ mod fiat_integration_tests {
         let transaction_webhook: serde_json::Value = serde_json::from_str(include_str!("../../../testdata/paybis/webhook_transaction_started.json"))?;
 
         let result = client.process_webhook(transaction_webhook).await?;
-        if let FiatWebhook::Transaction(transaction) = result {
-            assert_eq!(transaction.transaction_id, "3b388a91-d1fa-456e-b94a");
-            assert_eq!(transaction.provider_transaction_id, Some("PB21095868675TX1".to_string()));
-        } else {
+        let FiatWebhook::Transaction(transaction) = result else {
             panic!("Expected FiatWebhook::Transaction variant");
-        }
+        };
+
+        assert_eq!(
+            transaction,
+            FiatTransactionUpdate {
+                transaction_id: "3b388a91-d1fa-456e-b94a".to_string(),
+                provider_transaction_id: Some("PB21095868675TX1".to_string()),
+                status: FiatTransactionStatus::Pending,
+                transaction_hash: None,
+                fiat_amount: Some(50.0),
+                fiat_currency: Some("USD".to_string()),
+            }
+        );
 
         Ok(())
     }

@@ -14,4 +14,10 @@ pub struct WebhookData {
     #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub fiat_amount: f64,
     pub fiat_currency: String,
+    pub tx: Option<WebhookTransaction>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct WebhookTransaction {
+    pub id: Option<String>,
 }

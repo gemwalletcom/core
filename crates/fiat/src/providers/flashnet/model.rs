@@ -116,8 +116,6 @@ impl FlashnetOrder {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FlashnetDestination {
-    pub chain: Option<String>,
-    pub asset: Option<String>,
     pub tx_hash: Option<String>,
 }
 

@@ -1,0 +1,12 @@
+{
+    "data": {
+        "id": "withdraw_provider_tx_123456789",
+        "tx": {
+            "id": "CELESTIA_TX_HASH_123"
+        },
+        "merchant_transaction_id": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+        "status": "completed",
+        "fiat_amount": "39.23",
+        "fiat_currency": "EUR"
+    }
+}

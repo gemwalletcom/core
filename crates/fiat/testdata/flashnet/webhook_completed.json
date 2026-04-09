@@ -1,14 +1,11 @@
 {
+  "event": "order.completed",
   "data": {
     "id": "ord_test_completed",
     "status": "completed",
     "amountOut": "24737625",
     "destination": {
-      "asset": "USDC",
-      "chain": "solana",
-      "txHash": "solana_test_signature_completed",
-      "address": "solana_test_recipient_completed"
+      "txHash": "solana_test_signature_completed"
     }
-  },
-  "event": "order.completed"
+  }
 }

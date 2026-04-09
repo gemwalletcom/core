@@ -3,7 +3,7 @@ use reqwest::Client;
 use std::collections::HashMap;
 
 use super::mapper::map_sell_quote;
-use super::models::{Asset, Currencies, CurrencyLimits, MercuryoResponse, Quote, QuoteQuery, QuoteSellQuery, Response};
+use super::models::{Currencies, CurrencyLimits, MercuryoResponse, Quote, QuoteQuery, QuoteSellQuery, Response};
 
 const MERCURYO_API_BASE_URL: &str = "https://api.mercuryo.io";
 pub struct MercuryoClient {
@@ -50,12 +50,6 @@ impl MercuryoClient {
         };
         let url = format!("{MERCURYO_API_BASE_URL}/v1.6/public/convert");
         self.client.get(url.as_str()).query(&query).send().await?.json::<MercuryoResponse<Quote>>().await?.into()
-    }
-
-    pub async fn get_assets(&self) -> Result<Vec<Asset>, reqwest::Error> {
-        let url = format!("{MERCURYO_API_BASE_URL}/v1.6/lib/currencies");
-        let response = self.client.get(&url).send().await?.json::<Response<Currencies>>().await?;
-        Ok(response.data.config.crypto_currencies)
     }
 
     pub async fn get_currencies(&self) -> Result<Currencies, reqwest::Error> {

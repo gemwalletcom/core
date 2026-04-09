@@ -94,60 +94,84 @@ mod tests {
     use super::*;
     use crate::providers::moonpay::client::MoonPayClient;
     use crate::providers::moonpay::models::{Data, Transaction};
+    use primitives::{FiatTransactionStatus, FiatTransactionUpdate};
 
     #[test]
     fn test_map_order_buy_failed() {
-        let webhook_data: Data<Transaction> = serde_json::from_str(include_str!("../../../testdata/moonpay/webhook_buy_complete.json")).expect("Failed to parse test data");
+        let webhook_data: Data<Transaction> = serde_json::from_str(include_str!("../../../testdata/moonpay/webhook_buy_complete.json")).unwrap();
         let payload = webhook_data.data;
 
         let result = map_order(payload);
 
-        assert_eq!(result.transaction_id, "1b6cdb1e-9299-45b1-9670-54db1ea5a21f");
-        assert_eq!(result.provider_transaction_id, None);
-        assert!(matches!(result.status, FiatTransactionStatus::Failed));
-        assert_eq!(result.fiat_amount, Some(20.0)); // 15.39 + 3.99 + 0.47 + 0.15
-        assert_eq!(result.fiat_currency, Some("USD".to_string()));
+        assert_eq!(
+            result,
+            FiatTransactionUpdate {
+                transaction_id: "1b6cdb1e-9299-45b1-9670-54db1ea5a21f".to_string(),
+                provider_transaction_id: None,
+                status: FiatTransactionStatus::Failed,
+                transaction_hash: None,
+                fiat_amount: Some(20.0),
+                fiat_currency: Some("USD".to_string()),
+            }
+        );
     }
 
     #[test]
     fn test_map_order_sell_pending() {
-        let webhook_data: Data<Transaction> = serde_json::from_str(include_str!("../../../testdata/moonpay/webhook_sell_complete_.json")).expect("Failed to parse test data");
+        let webhook_data: Data<Transaction> = serde_json::from_str(include_str!("../../../testdata/moonpay/webhook_sell_complete_.json")).unwrap();
         let payload = webhook_data.data;
 
         let result = map_order(payload);
 
-        assert_eq!(result.transaction_id, "557d8fc1-0657-4505-8702-6bd9e1cd6241");
-        assert_eq!(result.provider_transaction_id, None);
-        assert!(matches!(result.status, FiatTransactionStatus::Pending));
-        assert_eq!(result.fiat_amount, Some(3123.07)); // quoteCurrencyAmount - what user actually receives
-        assert_eq!(result.fiat_currency, Some("USD".to_string()));
+        assert_eq!(
+            result,
+            FiatTransactionUpdate {
+                transaction_id: "557d8fc1-0657-4505-8702-6bd9e1cd6241".to_string(),
+                provider_transaction_id: None,
+                status: FiatTransactionStatus::Pending,
+                transaction_hash: None,
+                fiat_amount: Some(3123.07),
+                fiat_currency: Some("USD".to_string()),
+            }
+        );
     }
 
     #[test]
     fn test_map_order_v3_sell_complete() {
-        let webhook_data: Transaction = serde_json::from_str(include_str!("../../../testdata/moonpay/sell_transaction_complete.json")).expect("Failed to parse test data");
+        let webhook_data: Transaction = serde_json::from_str(include_str!("../../../testdata/moonpay/sell_transaction_complete.json")).unwrap();
 
         let result = map_order(webhook_data);
 
-        assert_eq!(result.transaction_id, "bcd0315e-4264-48bb-8c10-1a5207297341");
-        assert_eq!(result.provider_transaction_id, None);
-        assert!(matches!(result.status, FiatTransactionStatus::Complete));
-        assert_eq!(result.fiat_amount, Some(3123.07)); // quoteCurrencyAmount - what user actually receives
-        assert_eq!(result.fiat_currency, Some("USD".to_string()));
-        assert_eq!(result.transaction_hash, Some("0xabc123456789".to_string()));
+        assert_eq!(
+            result,
+            FiatTransactionUpdate {
+                transaction_id: "bcd0315e-4264-48bb-8c10-1a5207297341".to_string(),
+                provider_transaction_id: None,
+                status: FiatTransactionStatus::Complete,
+                transaction_hash: Some("0xabc123456789".to_string()),
+                fiat_amount: Some(3123.07),
+                fiat_currency: Some("USD".to_string()),
+            }
+        );
     }
 
     #[test]
     fn test_map_order_sell_failed() {
-        let webhook_data: Transaction = serde_json::from_str(include_str!("../../../testdata/moonpay/transaction_sell_failed.json")).expect("Failed to parse test data");
+        let webhook_data: Transaction = serde_json::from_str(include_str!("../../../testdata/moonpay/transaction_sell_failed.json")).unwrap();
 
         let result = map_order(webhook_data);
 
-        assert_eq!(result.transaction_id, "bcd0315e-4264-48bb-8c10-1a5207297341");
-        assert_eq!(result.provider_transaction_id, None);
-        assert!(matches!(result.status, FiatTransactionStatus::Failed));
-        assert_eq!(result.fiat_amount, Some(8419.77)); // quoteCurrencyAmount - what user actually receives
-        assert_eq!(result.fiat_currency, Some("USD".to_string()));
+        assert_eq!(
+            result,
+            FiatTransactionUpdate {
+                transaction_id: "bcd0315e-4264-48bb-8c10-1a5207297341".to_string(),
+                provider_transaction_id: None,
+                status: FiatTransactionStatus::Failed,
+                transaction_hash: None,
+                fiat_amount: Some(8419.77),
+                fiat_currency: Some("USD".to_string()),
+            }
+        );
     }
 
     #[test]
@@ -171,34 +195,35 @@ mod tests {
                 "minSellAmount": null,
                 "maxSellAmount": null
             },
-            "currency": null,
             "quoteCurrency": null,
-            "walletAddress": "bc1qacjrh89lukj82agg2ujze5l2e3nss3pru96733",
-            "refundWalletAddress": null,
             "cryptoTransactionId": null,
             "networkFeeAmount": 0.81,
             "extraFeeAmount": 0.67,
-            "feeAmount": 3.99,
-            "country": "ITA",
-            "failureReason": null
+            "feeAmount": 3.99
         }))
-        .expect("Failed to parse test payload");
+        .unwrap();
 
         let result = map_order(payload);
 
-        assert_eq!(result.transaction_id, "9a1a7efe-c6f1-4c69-ad9f-6abd2a7c6385");
-        assert_eq!(result.provider_transaction_id, None);
-        assert_eq!(result.status, FiatTransactionStatus::Pending);
-        assert_eq!(result.fiat_amount, Some(72.0));
-        assert_eq!(result.fiat_currency, Some("EUR".to_string()));
+        assert_eq!(
+            result,
+            FiatTransactionUpdate {
+                transaction_id: "9a1a7efe-c6f1-4c69-ad9f-6abd2a7c6385".to_string(),
+                provider_transaction_id: None,
+                status: FiatTransactionStatus::Pending,
+                transaction_hash: None,
+                fiat_amount: Some(72.0),
+                fiat_currency: Some("EUR".to_string()),
+            }
+        );
     }
 
     #[test]
     fn test_map_asset_with_limits() {
-        let assets: Vec<Asset> = serde_json::from_str(include_str!("../../../testdata/moonpay/assets.json")).expect("Failed to parse test data");
-        let cardano = assets.iter().find(|a| a.code == "ada").expect("Cardano not found");
+        let assets: Vec<Asset> = serde_json::from_str(include_str!("../../../testdata/moonpay/assets.json")).unwrap();
+        let cardano = assets.iter().find(|a| a.code == "ada").unwrap();
 
-        let result = MoonPayClient::map_asset(cardano.clone()).expect("Failed to map asset");
+        let result = MoonPayClient::map_asset(cardano.clone()).unwrap();
 
         assert_eq!(result.symbol, "ada");
         assert_eq!(result.chain, Some(Chain::Cardano));

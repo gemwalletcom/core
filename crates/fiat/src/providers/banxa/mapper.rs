@@ -143,7 +143,7 @@ fn map_payment_type(payment_id: &str) -> Option<PaymentType> {
 mod tests {
     use crate::providers::banxa::models::{FiatCurrency, Order};
     use primitives::currency::Currency;
-    use primitives::{FiatTransactionStatus, PaymentType};
+    use primitives::{FiatTransactionStatus, FiatTransactionUpdate, PaymentType};
 
     use super::{map_limits, map_order};
 
@@ -152,12 +152,17 @@ mod tests {
         let response: Order = serde_json::from_str(include_str!("../../../testdata/banxa/transaction_sell_failed.json")).unwrap();
         let result = map_order(response).unwrap();
 
-        assert_eq!(result.transaction_id, "123");
-        assert_eq!(result.provider_transaction_id, None);
-        assert_eq!(result.status, FiatTransactionStatus::Failed);
-        assert_eq!(result.fiat_amount, Some(595.3));
-        assert_eq!(result.fiat_currency, Some("USD".to_string()));
-        assert_eq!(result.transaction_hash, None);
+        assert_eq!(
+            result,
+            FiatTransactionUpdate {
+                transaction_id: "123".to_string(),
+                provider_transaction_id: None,
+                status: FiatTransactionStatus::Failed,
+                transaction_hash: None,
+                fiat_amount: Some(595.3),
+                fiat_currency: Some("USD".to_string()),
+            }
+        );
     }
 
     #[test]
@@ -173,12 +178,17 @@ mod tests {
         })
         .unwrap();
 
-        assert_eq!(result.transaction_id, "quote_123");
-        assert_eq!(result.provider_transaction_id, Some("banxa_order_123".to_string()));
-        assert_eq!(result.status, FiatTransactionStatus::Complete);
-        assert_eq!(result.fiat_amount, Some(100.0));
-        assert_eq!(result.fiat_currency, Some("USD".to_string()));
-        assert_eq!(result.transaction_hash, Some("tx_hash".to_string()));
+        assert_eq!(
+            result,
+            FiatTransactionUpdate {
+                transaction_id: "quote_123".to_string(),
+                provider_transaction_id: Some("banxa_order_123".to_string()),
+                status: FiatTransactionStatus::Complete,
+                transaction_hash: Some("tx_hash".to_string()),
+                fiat_amount: Some(100.0),
+                fiat_currency: Some("USD".to_string()),
+            }
+        );
     }
 
     #[test]

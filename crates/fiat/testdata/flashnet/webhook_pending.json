@@ -1,17 +1,10 @@
 {
+  "event": "order.processing",
   "data": {
     "id": "ord_test_pending",
     "status": "processing",
-    "amountOut": null,
     "paymentIntent": {
       "targetAmountOut": "49475250"
-    },
-    "destination": {
-      "asset": "USDC",
-      "chain": "solana",
-      "txHash": null,
-      "address": "solana_test_recipient_processing"
     }
-  },
-  "event": "order.processing"
+  }
 }

@@ -1,9 +1,6 @@
 {
   "id": "ord_123",
   "status": "completed",
-  "destinationChain": "solana",
-  "destinationAsset": "USDC",
-  "recipientAddress": "8gw9b9rcoW1f7a8r6Rj7H57A9x5o7oJH5Q2M5xVwqpj1",
   "amountOut": "1234500",
   "destination": {
     "txHash": "solana_sig_123"

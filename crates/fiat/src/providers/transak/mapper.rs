@@ -155,19 +155,25 @@ fn map_payment_type(payment_id: &str) -> Option<PaymentType> {
 mod tests {
     use super::*;
     use crate::providers::transak::models::{Data, FiatCurrency, Response, TransakOrderResponse};
-    use primitives::{FiatTransactionStatus, PaymentType};
+    use primitives::{FiatTransactionStatus, FiatTransactionUpdate, PaymentType};
 
     #[test]
     fn test_map_order_buy_failed() {
-        let response: Data<TransakOrderResponse> = serde_json::from_str(include_str!("../../../testdata/transak/transaction_buy_error.json")).expect("Failed to parse test data");
+        let response: Data<TransakOrderResponse> = serde_json::from_str(include_str!("../../../testdata/transak/transaction_buy_error.json")).unwrap();
 
         let result = map_order_from_response(response.data);
 
-        assert_eq!(result.transaction_id, "e75764cd-1275-476e-b6fa-9af787b40974");
-        assert_eq!(result.provider_transaction_id, Some("df7997b7-a19f-447e-b9fe-2f0eb7cb7b3a".to_string()));
-        assert_eq!(result.status, FiatTransactionStatus::Failed);
-        assert_eq!(result.fiat_amount, Some(108.0));
-        assert_eq!(result.fiat_currency, Some("USD".to_string()));
+        assert_eq!(
+            result,
+            FiatTransactionUpdate {
+                transaction_id: "e75764cd-1275-476e-b6fa-9af787b40974".to_string(),
+                provider_transaction_id: Some("df7997b7-a19f-447e-b9fe-2f0eb7cb7b3a".to_string()),
+                status: FiatTransactionStatus::Failed,
+                transaction_hash: None,
+                fiat_amount: Some(108.0),
+                fiat_currency: Some("USD".to_string()),
+            }
+        );
     }
 
     #[test]

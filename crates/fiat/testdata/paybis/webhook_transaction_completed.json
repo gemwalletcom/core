@@ -19,7 +19,7 @@
             "currency": "BTC"
         },
         "payout": {
-            "transaction_hash": "x"
+            "transaction_hash": "paybis_test_tx_hash"
         }
     }
 }

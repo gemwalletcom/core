@@ -206,11 +206,11 @@ pub fn map_assets(buy_currencies: Vec<PaybisCurrency>, sell_codes: HashSet<Strin
 mod tests {
     use super::*;
     use crate::providers::paybis::models::{PaybisAmount, PaybisTransaction, PaybisWebhookData, PaybisWebhookQuote};
-    use primitives::Chain;
     use primitives::asset_constants::{
         ARBITRUM_ARB_ASSET_ID, BASE_USDC_ASSET_ID, ETHEREUM_USDC_ASSET_ID, ETHEREUM_USDT_ASSET_ID, OPTIMISM_OP_ASSET_ID, POLYGON_USDC_ASSET_ID, POLYGON_USDT_ASSET_ID,
         SOLANA_USDC_ASSET_ID, SOLANA_USDT_ASSET_ID, TRON_USDT_ASSET_ID,
     };
+    use primitives::{Chain, FiatTransactionStatus, FiatTransactionUpdate};
 
     #[test]
     fn test_map_asset_id() {
@@ -301,12 +301,21 @@ mod tests {
         let webhook_json: serde_json::Value = serde_json::from_str(include_str!("../../../testdata/paybis/webhook_transaction_started.json")).unwrap();
 
         let result = map_process_webhook(webhook_json).unwrap();
-        if let FiatWebhook::Transaction(transaction) = result {
-            assert_eq!(transaction.transaction_id, "a4a211ad-3bcf-47d9-b4ae-073e841e3e7a");
-            assert_eq!(transaction.provider_transaction_id, Some("PB21095868675TX1".to_string()));
-        } else {
+        let FiatWebhook::Transaction(transaction) = result else {
             panic!("Expected FiatWebhook::Transaction variant");
-        }
+        };
+
+        assert_eq!(
+            transaction,
+            FiatTransactionUpdate {
+                transaction_id: "a4a211ad-3bcf-47d9-b4ae-073e841e3e7a".to_string(),
+                provider_transaction_id: Some("PB21095868675TX1".to_string()),
+                status: FiatTransactionStatus::Pending,
+                transaction_hash: None,
+                fiat_amount: Some(50.0),
+                fiat_currency: Some("USD".to_string()),
+            }
+        );
     }
 
     #[test]
@@ -314,16 +323,21 @@ mod tests {
         let webhook_json: serde_json::Value = serde_json::from_str(include_str!("../../../testdata/paybis/webhook_transaction_started.json")).unwrap();
 
         let result = map_process_webhook(webhook_json).unwrap();
-        if let FiatWebhook::Transaction(transaction) = result {
-            assert_eq!(transaction.transaction_id, "a4a211ad-3bcf-47d9-b4ae-073e841e3e7a");
-            assert_eq!(transaction.provider_transaction_id, Some("PB21095868675TX1".to_string()));
-            assert_eq!(transaction.fiat_amount, Some(50.0));
-            assert_eq!(transaction.fiat_currency, Some("USD".to_string()));
-            assert_eq!(transaction.status, FiatTransactionStatus::Pending);
-            assert_eq!(transaction.transaction_hash, None);
-        } else {
+        let FiatWebhook::Transaction(transaction) = result else {
             panic!("Expected FiatWebhook::Transaction variant");
-        }
+        };
+
+        assert_eq!(
+            transaction,
+            FiatTransactionUpdate {
+                transaction_id: "a4a211ad-3bcf-47d9-b4ae-073e841e3e7a".to_string(),
+                provider_transaction_id: Some("PB21095868675TX1".to_string()),
+                status: FiatTransactionStatus::Pending,
+                transaction_hash: None,
+                fiat_amount: Some(50.0),
+                fiat_currency: Some("USD".to_string()),
+            }
+        );
     }
 
     #[test]
@@ -331,13 +345,21 @@ mod tests {
         let webhook_json: serde_json::Value = serde_json::from_str(include_str!("../../../testdata/paybis/webhook_transaction_started_no_payment.json")).unwrap();
 
         let result = map_process_webhook(webhook_json).unwrap();
-        if let FiatWebhook::Transaction(transaction) = result {
-            assert_eq!(transaction.transaction_id, "59b799d4-dc8c-458d-b9c7-292726ab6255");
-            assert_eq!(transaction.provider_transaction_id, Some("PB25095868675TX8".to_string()));
-            assert_eq!(transaction.fiat_currency, Some("USD".to_string()));
-        } else {
+        let FiatWebhook::Transaction(transaction) = result else {
             panic!("Expected FiatWebhook::Transaction variant");
-        }
+        };
+
+        assert_eq!(
+            transaction,
+            FiatTransactionUpdate {
+                transaction_id: "59b799d4-dc8c-458d-b9c7-292726ab6255".to_string(),
+                provider_transaction_id: Some("PB25095868675TX8".to_string()),
+                status: FiatTransactionStatus::Pending,
+                transaction_hash: None,
+                fiat_amount: Some(50.0),
+                fiat_currency: Some("USD".to_string()),
+            }
+        );
     }
 
     #[test]
@@ -367,10 +389,17 @@ mod tests {
             panic!("Expected FiatWebhook::Transaction variant");
         };
 
-        assert_eq!(transaction.transaction_id, "partner_tx_123");
-        assert_eq!(transaction.provider_transaction_id, Some("invoice_123".to_string()));
-        assert_eq!(transaction.fiat_amount, Some(1234.56));
-        assert_eq!(transaction.fiat_currency, Some("EUR".to_string()));
+        assert_eq!(
+            transaction,
+            FiatTransactionUpdate {
+                transaction_id: "partner_tx_123".to_string(),
+                provider_transaction_id: Some("invoice_123".to_string()),
+                status: FiatTransactionStatus::Complete,
+                transaction_hash: None,
+                fiat_amount: Some(1234.56),
+                fiat_currency: Some("EUR".to_string()),
+            }
+        );
     }
 
     #[test]
@@ -388,7 +417,7 @@ mod tests {
                 transaction_id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx".to_string(),
                 provider_transaction_id: Some("PBXXXXXXXXXXTXX".to_string()),
                 status: FiatTransactionStatus::Complete,
-                transaction_hash: Some("x".to_string()),
+                transaction_hash: Some("paybis_test_tx_hash".to_string()),
                 fiat_amount: Some(50.0),
                 fiat_currency: Some("USD".to_string()),
             }
