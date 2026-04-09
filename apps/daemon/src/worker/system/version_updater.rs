@@ -60,7 +60,7 @@ impl VersionUpdater {
     }
 
     async fn get_github_version(&self) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let url = "https://api.github.com/repos/gemwalletcom/gem-android/releases";
+        let url = "https://api.github.com/repos/gemwalletcom/wallet/releases";
         let response = reqwest::Client::builder()
             .user_agent("gem-daemon")
             .build()?
