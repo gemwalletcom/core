@@ -21,8 +21,8 @@ use std::{fmt::Debug, sync::Arc};
 
 const DEFAULT_DEADLINE_MINUTES: i64 = 30;
 
-// https://docs.near-intents.org/security-compliance/treasury-addresses
-const TREASURY_ADDRESSES: [&str; 12] = [
+// Supported-chain subset of https://docs.near-intents.org/security-compliance/treasury-addresses
+const TREASURY_ADDRESSES: [&str; 15] = [
     "0x2CfF890f0378a11913B6129B2E97417a2c302680",                         // EVM
     "1C6XJtNXiuXvk4oUAVMkKF57CRpaTrN5Ra",                                 // Bitcoin
     "1LxByjYMdnogW9Nc73srT4NCbS8oPVaXvZ",                                 // Bitcoin Cash
@@ -33,8 +33,11 @@ const TREASURY_ADDRESSES: [&str; 12] = [
     "HWjmoUNYckccg9Qrwi43JTzBcGcM1nbdAtATf9GXmz16",                       // Solana
     "UQAfoBd_f0pIvNpUPAkOguUrFWpGWV9TWBeZs_5TXE95_trZ",                   // TON
     "GDJ4JZXZELZD737NVFORH4PSSQDWFDZTKW3AIDKHYQG23ZXBPDGGQBJK",           // Stellar
-    "0xd5b41e30268042a7875e40a40671fc5a022f2b4b06528ec6b788eaa9b0023beb", // Sui
-    "rMxRcHcbw2RgPaSMLqdZbY2EUxwFEMpEAF",                                 // XRP
+    "0x00ea18889868519abd2f238966cab9875750bb2859ed3a34debec37781520138", // Sui
+    "0xd1a1c1804e91ba85a569c7f018bb7502d2f13d4742d2611953c9c14681af6446", // Aptos
+    "TX5XiRXdyz7sdFwF5mnhT1QoGCpbkncpke",                                 // TRON
+    "r9R8jciZBYGq32DxxQrBPi5ysZm67iQitH",                                 // XRP
+    "addr1v8wfpcg4qfhmnzprzysj6j9c53u5j56j8rvhyjp08s53s6g07rfjm",         // Cardano
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
