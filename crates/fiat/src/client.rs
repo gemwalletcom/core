@@ -13,7 +13,7 @@ use gem_tracing::{error_with_fields, info_with_fields};
 use number_formatter::BigNumberFormatter;
 use primitives::{
     Asset, FiatAssetSymbol, FiatAssets, FiatProvider as PrimitiveFiatProvider, FiatProviderCountry, FiatQuote, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuoteUrlData,
-    FiatQuotes, FiatTransaction,
+    FiatQuotes, FiatTransaction, PaymentType,
 };
 use reqwest::Client as RequestClient;
 use storage::{AssetFilter, AssetsRepository, Database, FiatRepository, WalletsRepository};
@@ -175,93 +175,29 @@ impl FiatClient {
 
         let provider_impls = self.get_providers(request.provider_id.clone());
 
+        let country_code = &ip_address_info.alpha2;
+
         let futures = provider_impls.into_iter().filter_map(|provider| {
             let provider_name = provider.name();
             let provider_id = provider_name.id().to_string();
-
             let db_provider = db_providers.iter().find(|p| p.id == provider_name)?;
-            let is_enabled = match request.quote_type {
-                FiatQuoteType::Buy => db_provider.is_buy_enabled(),
-                FiatQuoteType::Sell => db_provider.is_sell_enabled(),
-            };
 
-            if !is_enabled {
+            let countries: HashSet<String> = fiat_providers_countries.iter().filter(|x| x.provider == provider_name).map(|x| x.alpha2.clone()).collect();
+
+            let mapping = fiat_mapping_map.get(&provider_id);
+            if !is_provider_eligible(db_provider, &countries, mapping, country_code, &request.quote_type) {
                 return None;
             }
+            let mapping = mapping.unwrap().clone();
+            let request = request.clone();
+            let asset = asset.clone();
+            let db_payment_methods = db_provider.payment_methods.clone();
+            let country_code = country_code.clone();
 
-            let countries = fiat_providers_countries
-                .iter()
-                .filter(|x| x.provider == provider_name)
-                .map(|x| x.alpha2.clone())
-                .collect::<HashSet<_>>();
-
-            fiat_mapping_map.get(&provider_id).map(|mapping| {
-                let request = request.clone();
-                let asset = asset.clone();
-                let mapping = mapping.clone();
-                let country_code = ip_address_info.clone().alpha2;
-                let provider_id_clone = provider_id.clone();
-                let db_payment_methods = db_provider.payment_methods.clone();
-
-                async move {
-                    if !countries.contains(&country_code) {
-                        return Err((
-                            provider_id_clone.clone(),
-                            Box::<dyn Error + Send + Sync>::from(format!("Unsupported country: {}", country_code)),
-                        ));
-                    }
-                    if mapping.unsupported_countries.clone().contains_key(&country_code) {
-                        return Err((
-                            provider_id_clone.clone(),
-                            Box::<dyn Error + Send + Sync>::from(format!("Unsupported country for asset: {}", country_code)),
-                        ));
-                    }
-
-                    let quote_request = FiatQuoteRequest {
-                        asset_id: request.asset_id.clone(),
-                        quote_type: request.quote_type.clone(),
-                        currency: request.currency.clone(),
-                        amount: request.amount,
-                        provider_id: request.provider_id.clone(),
-                        ip_address: request.ip_address.clone(),
-                    };
-
-                    let start = std::time::Instant::now();
-                    let response = match request.quote_type {
-                        FiatQuoteType::Buy => provider.get_quote_buy(quote_request.clone(), mapping.clone()).await,
-                        FiatQuoteType::Sell => provider.get_quote_sell(quote_request.clone(), mapping.clone()).await,
-                    }
-                    .map_err(|e| (provider_id_clone.clone(), e))?;
-                    let latency = start.elapsed().as_millis() as u64;
-                    let payment_methods = if !response.payment_methods.is_empty() {
-                        response.payment_methods
-                    } else if !db_payment_methods.is_empty() {
-                        db_payment_methods
-                    } else {
-                        provider.payment_methods().await
-                    };
-                    let value = quote_value(&asset, response.crypto_amount).map_err(|e| (provider_id_clone.clone(), e))?;
-                    let quote = FiatQuote::new(
-                        response.quote_id,
-                        asset,
-                        provider.name().as_fiat_provider(),
-                        quote_request.quote_type,
-                        response.fiat_amount,
-                        quote_request.currency,
-                        response.crypto_amount,
-                        value,
-                        latency,
-                        payment_methods,
-                    );
-                    Ok((
-                        provider_id_clone,
-                        CachedFiatQuoteData {
-                            quote,
-                            asset_symbol: mapping.asset_symbol,
-                            country_code: Some(country_code),
-                        },
-                    ))
-                }
+            Some(async move {
+                get_provider_quote(provider, &request, &asset, &mapping, &db_payment_methods, country_code)
+                    .await
+                    .map_err(|e| (provider_id, e))
             })
         });
 
@@ -272,7 +208,7 @@ impl FiatClient {
 
         for result in results {
             match result {
-                Ok((_, cached_quote)) => quotes.push(cached_quote),
+                Ok(cached_quote) => quotes.push(cached_quote),
                 Err((provider_id, e)) => errors.push(primitives::FiatQuoteError::new(Some(provider_id), e.to_string())),
             }
         }
@@ -334,6 +270,66 @@ impl FiatClient {
             .get_or_set_cached(CacheKey::FiatIpCheck(ip_address), || self.ip_check_client.get_ip_address(ip_address))
             .await
     }
+}
+
+fn is_provider_eligible(db_provider: &PrimitiveFiatProvider, countries: &HashSet<String>, mapping: Option<&FiatMapping>, country_code: &str, quote_type: &FiatQuoteType) -> bool {
+    let is_enabled = match quote_type {
+        FiatQuoteType::Buy => db_provider.is_buy_enabled(),
+        FiatQuoteType::Sell => db_provider.is_sell_enabled(),
+    };
+    if !is_enabled {
+        return false;
+    }
+    let Some(mapping) = mapping else {
+        return false;
+    };
+    countries.contains(country_code) && !mapping.unsupported_countries.contains_key(country_code)
+}
+
+async fn get_provider_quote(
+    provider: &(dyn FiatProvider + Send + Sync),
+    request: &FiatQuoteRequest,
+    asset: &Asset,
+    mapping: &FiatMapping,
+    db_payment_methods: &[PaymentType],
+    country_code: String,
+) -> Result<CachedFiatQuoteData, Box<dyn Error + Send + Sync>> {
+    let start = std::time::Instant::now();
+    let response = match request.quote_type {
+        FiatQuoteType::Buy => provider.get_quote_buy(request.clone(), mapping.clone()).await,
+        FiatQuoteType::Sell => provider.get_quote_sell(request.clone(), mapping.clone()).await,
+    }?;
+
+    if response.fiat_amount <= 0.0 || response.crypto_amount <= 0.0 {
+        return Err("Invalid quote amounts".into());
+    }
+
+    let latency = start.elapsed().as_millis() as u64;
+    let payment_methods = if !response.payment_methods.is_empty() {
+        response.payment_methods
+    } else if !db_payment_methods.is_empty() {
+        db_payment_methods.to_vec()
+    } else {
+        provider.payment_methods().await
+    };
+    let value = quote_value(asset, response.crypto_amount)?;
+    let quote = FiatQuote::new(
+        response.quote_id,
+        asset.clone(),
+        provider.name().as_fiat_provider(),
+        request.quote_type.clone(),
+        response.fiat_amount,
+        request.currency.clone(),
+        response.crypto_amount,
+        value,
+        latency,
+        payment_methods,
+    );
+    Ok(CachedFiatQuoteData {
+        quote,
+        asset_symbol: mapping.asset_symbol.clone(),
+        country_code: Some(country_code),
+    })
 }
 
 use primitives::sort_by_priority_then_amount;
