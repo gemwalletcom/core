@@ -17,6 +17,7 @@ pub fn build_commands(
     swap_routes: &[Route],
     permit: Option<Permit2Permit>,
     fee_token_is_input: bool,
+    input_is_native: bool,
 ) -> Result<Vec<UniversalRouterCommand>, SwapperError> {
     let options = request.options.clone();
     let fee_options = options.fee.unwrap_or_default().evm;
@@ -25,7 +26,6 @@ pub fn build_commands(
     let mode = request.mode;
     let pay_fees = fee_options.bps > 0;
 
-    let input_is_native = request.from_asset.is_native();
     let mut commands: Vec<UniversalRouterCommand> = vec![];
 
     match mode {
@@ -129,4 +129,69 @@ fn build_v4_swap_command(
         },
     ];
     Ok(UniversalRouterCommand::V4_SWAP { actions })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        fees::{ReferralFee, ReferralFees},
+        models::Options,
+    };
+    use primitives::{
+        AssetId, Chain,
+        asset_constants::{CELO_USDT_TOKEN_ID, CELO_WETH_TOKEN_ID},
+    };
+
+    #[test]
+    fn test_build_commands_celo_tokenized_native() {
+        let token_celo = Address::from_str(CELO_WETH_TOKEN_ID).unwrap();
+        let token_usdt = Address::from_str(CELO_USDT_TOKEN_ID).unwrap();
+        let wallet = "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7";
+        let routes = vec![Route::mock(
+            AssetId::from(Chain::Celo, Some(CELO_WETH_TOKEN_ID.into())),
+            AssetId::from(Chain::Celo, Some(CELO_USDT_TOKEN_ID.into())),
+        )];
+
+        // CELO -> USDT: no wrap, direct swap through token path
+        let request = QuoteRequest {
+            from_asset: AssetId::from(Chain::Celo, None).into(),
+            to_asset: AssetId::from(Chain::Celo, Some(CELO_USDT_TOKEN_ID.into())).into(),
+            wallet_address: wallet.into(),
+            destination_address: wallet.into(),
+            value: "22000000000000000000".into(),
+            mode: SwapperMode::ExactIn,
+            options: Options::default(),
+        };
+        let commands = build_commands(&request, &token_celo, &token_usdt, 22_000_000_000_000_000_000, 14_804_757, &routes, None, false, false).unwrap();
+
+        assert_eq!(commands.len(), 1);
+        assert!(matches!(commands[0], UniversalRouterCommand::V4_SWAP { .. }));
+
+        // USDT -> CELO with fees: sweep instead of unwrap
+        let request = QuoteRequest {
+            from_asset: AssetId::from(Chain::Celo, Some(CELO_USDT_TOKEN_ID.into())).into(),
+            to_asset: AssetId::from(Chain::Celo, None).into(),
+            wallet_address: wallet.into(),
+            destination_address: wallet.into(),
+            value: "900000".into(),
+            mode: SwapperMode::ExactIn,
+            options: Options {
+                slippage: 50.into(),
+                fee: Some(ReferralFees::evm(ReferralFee { bps: 50, address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into() })),
+                preferred_providers: vec![],
+                use_max_amount: false,
+            },
+        };
+        let routes = vec![Route::mock(
+            AssetId::from(Chain::Celo, Some(CELO_USDT_TOKEN_ID.into())),
+            AssetId::from(Chain::Celo, Some(CELO_WETH_TOKEN_ID.into())),
+        )];
+        let commands = build_commands(&request, &token_usdt, &token_celo, 900_000, 10_752_991_111_111_111_170, &routes, None, false, false).unwrap();
+
+        assert_eq!(commands.len(), 3);
+        assert!(matches!(commands[0], UniversalRouterCommand::V4_SWAP { .. }));
+        assert!(matches!(commands[1], UniversalRouterCommand::PAY_PORTION(_)));
+        assert!(matches!(commands[2], UniversalRouterCommand::SWEEP(_)));
+    }
 }
