@@ -1,4 +1,4 @@
-use base64::{Engine as _, engine::general_purpose};
+use gem_encoding::decode_base64;
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 use std::str;
@@ -96,7 +96,7 @@ impl TransactionResponse {
         let value = attributes
             .into_iter()
             .filter(|x| {
-                if let Ok(value) = general_purpose::STANDARD.decode(x.key.clone()) {
+                if let Ok(value) = decode_base64(&x.key) {
                     str::from_utf8(&value).unwrap() == crate::constants::EVENTS_ATTRIBUTE_AMOUNT
                 } else {
                     x.key == crate::constants::EVENTS_ATTRIBUTE_AMOUNT
@@ -105,7 +105,7 @@ impl TransactionResponse {
             .map(|x| {
                 let value = x.value.unwrap_or_default();
                 let decoded_value;
-                let str_value = if let Ok(decoded) = general_purpose::STANDARD.decode(value.clone()) {
+                let str_value = if let Ok(decoded) = decode_base64(&value) {
                     decoded_value = decoded;
                     str::from_utf8(&decoded_value).unwrap_or_default()
                 } else {

@@ -1,6 +1,6 @@
 use alloy_ens::namehash;
 use async_trait::async_trait;
-use base64::{Engine as _, engine::general_purpose};
+use gem_encoding::encode_base64;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
@@ -63,7 +63,7 @@ impl NameClient for InjectiveNameClient {
         };
 
         let string = serde_json::to_string(&resolve)?;
-        let encoded = general_purpose::STANDARD.encode(string).to_string();
+        let encoded = encode_base64(string.as_bytes());
 
         let url = format!("{}/cosmwasm/wasm/v1/contract/{}/smart/{}", self.url, RESOLVER_ADDRESS, encoded);
 

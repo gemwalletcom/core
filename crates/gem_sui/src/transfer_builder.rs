@@ -95,14 +95,14 @@ fn build_tx_output(
 mod chain_integration_tests {
     use super::*;
     use crate::provider::testkit::{TEST_ADDRESS, TEST_TOKEN_ADDRESS, create_sui_test_client};
-    use base64::{Engine, engine::general_purpose};
+    use gem_encoding::decode_base64;
 
     #[tokio::test]
     async fn test_build_transfer_message_bytes_native() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_sui_test_client();
         let message = build_transfer_message_bytes(&client, TEST_ADDRESS, TEST_ADDRESS, 1, None).await?;
         let (payload, digest) = message.split_once('_').ok_or("Missing digest separator")?;
-        general_purpose::STANDARD.decode(payload)?;
+        decode_base64(payload)?;
         hex::decode(digest)?;
         Ok(())
     }
@@ -112,7 +112,7 @@ mod chain_integration_tests {
         let client = create_sui_test_client();
         let message = build_transfer_message_bytes(&client, TEST_ADDRESS, TEST_ADDRESS, 1, Some(TEST_TOKEN_ADDRESS)).await?;
         let (payload, digest) = message.split_once('_').ok_or("Missing digest separator")?;
-        general_purpose::STANDARD.decode(payload)?;
+        decode_base64(payload)?;
         hex::decode(digest)?;
         Ok(())
     }

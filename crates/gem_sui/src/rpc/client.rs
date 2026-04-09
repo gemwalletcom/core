@@ -1,9 +1,9 @@
 use std::error::Error;
 
 #[cfg(feature = "rpc")]
-use base64::{Engine as _, engine::general_purpose};
-#[cfg(feature = "rpc")]
 use gem_client::Client;
+#[cfg(feature = "rpc")]
+use gem_encoding::encode_base64;
 #[cfg(all(feature = "reqwest", not(feature = "rpc")))]
 use gem_jsonrpc::JsonRpcClient;
 #[cfg(feature = "rpc")]
@@ -71,7 +71,7 @@ impl<C: Client + Clone> SuiClient<C> {
     }
 
     pub async fn inspect_transaction_block(&self, sender: &str, tx_data: &[u8], gas_price: Option<u64>) -> Result<InspectResult, Box<dyn Error + Send + Sync>> {
-        let tx_bytes_base64 = general_purpose::STANDARD.encode(tx_data);
+        let tx_bytes_base64 = encode_base64(tx_data);
         self.rpc_call(SuiRpc::InspectTransactionBlock(
             sender.to_string(),
             tx_bytes_base64,

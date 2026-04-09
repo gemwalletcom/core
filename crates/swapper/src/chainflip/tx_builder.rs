@@ -2,8 +2,7 @@ use super::broker::SolanaVaultSwapResponse;
 use crate::{alien::RpcProvider, client_factory::create_client_with_chain};
 
 use alloy_primitives::hex;
-use base64::Engine;
-use base64::engine::general_purpose::STANDARD;
+use gem_encoding::encode_base64;
 use gem_solana::{jsonrpc::SolanaRpc, models::LatestBlockhash};
 use primitives::Chain;
 use solana_primitives::{AccountMeta, InstructionBuilder, Pubkey, TransactionBuilder};
@@ -36,7 +35,7 @@ pub async fn build_solana_tx(fee_payer: &str, response: &SolanaVaultSwapResponse
     let transaction = transaction_builder.build().map_err(|e| e.to_string())?;
     let bytes = transaction.serialize_legacy().map_err(|e| e.to_string())?;
 
-    Ok(STANDARD.encode(&bytes))
+    Ok(encode_base64(&bytes))
 }
 
 #[cfg(test)]

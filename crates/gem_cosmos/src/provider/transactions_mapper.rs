@@ -1,5 +1,5 @@
-use base64::{Engine as _, engine::general_purpose};
 use chrono::DateTime;
+use gem_encoding::decode_base64;
 use gem_hash::sha2::sha256;
 use primitives::chain_cosmos::CosmosChain;
 use primitives::{AssetId, StakeValidator, Transaction, TransactionState, TransactionType};
@@ -24,7 +24,7 @@ pub fn map_transaction_broadcast(response: &BroadcastResponse) -> Result<String,
 }
 
 pub fn map_transaction_decode(body: &str) -> Option<String> {
-    let bytes = general_purpose::STANDARD.decode(body).ok()?;
+    let bytes = decode_base64(body).ok()?;
     let decoded_str = String::from_utf8_lossy(&bytes);
     let has_supported_type = crate::constants::SUPPORTED_MESSAGES.iter().any(|msg_type| decoded_str.contains(msg_type));
     if has_supported_type { Some(get_hash(&bytes)) } else { None }

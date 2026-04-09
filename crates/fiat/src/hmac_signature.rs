@@ -1,4 +1,4 @@
-use base64::{Engine as _, engine::general_purpose};
+use gem_encoding::{decode_base64, encode_base64};
 use hmac::{Hmac, KeyInit, Mac};
 use sha2::Sha256;
 
@@ -6,7 +6,7 @@ fn generate_hmac_from_bytes(key_bytes: &[u8], message: &str) -> String {
     type HmacSha256 = Hmac<Sha256>;
     let mut mac = HmacSha256::new_from_slice(key_bytes).expect("HMAC can take key of any size");
     mac.update(message.as_bytes());
-    general_purpose::STANDARD.encode(mac.finalize().into_bytes())
+    encode_base64(&mac.finalize().into_bytes())
 }
 
 pub fn generate_hmac_signature(secret_key: &str, message: &str) -> String {
@@ -14,7 +14,7 @@ pub fn generate_hmac_signature(secret_key: &str, message: &str) -> String {
 }
 
 pub fn generate_hmac_signature_from_base64_key(base64_secret_key: &str, message: &str) -> Option<String> {
-    let decoded_key = general_purpose::STANDARD.decode(base64_secret_key).ok()?;
+    let decoded_key = decode_base64(base64_secret_key).ok()?;
     Some(generate_hmac_from_bytes(&decoded_key, message))
 }
 

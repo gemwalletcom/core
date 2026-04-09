@@ -87,7 +87,7 @@ pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Box
 #[cfg(test)]
 mod tests {
     use crate::{SUI_COIN_TYPE, tx::decode_transaction};
-    use base64::{Engine as _, engine::general_purpose};
+    use gem_encoding::encode_base64;
     use sui_types::Transaction;
 
     use super::*;
@@ -113,7 +113,7 @@ mod tests {
 
         let output = encode_transfer(&input).unwrap();
         let tx: Transaction = bcs::from_bytes(&output.tx_data).unwrap();
-        let b64_encoded = general_purpose::STANDARD.encode(output.tx_data);
+        let b64_encoded = encode_base64(&output.tx_data);
         let expected_tx = "AAABACDmr4D+GwtC/NlnYuXHD16Nrjn48O4PEYysDVW3TiknwgEBAQABAACpvQST+b0feSpK7cH5nVRTWnWkbDj9VqjyxrfI11gXoQGfJYyFVm2Xe0yZu2AZVgupnHlucSkSadj588ydnzfbRoz/EwQAAAAAIOqzQffiRRpexyiDEtyjm40KqFMf60ohK5jCJ0z3+Lqwqb0Ek/m9H3kqSu3B+Z1UU1p1pGw4/Vao8sa3yNdYF6HuAgAAAAAAAEB4fQEAAAAAAA==";
         let expected_decoded = decode_transaction(expected_tx).unwrap();
 
@@ -161,7 +161,7 @@ mod tests {
 
         let output = encode_token_transfer(&input).unwrap();
         let tx: Transaction = bcs::from_bytes(&output.tx_data).unwrap();
-        let b64_encoded = general_purpose::STANDARD.encode(output.tx_data);
+        let b64_encoded = encode_base64(&output.tx_data);
         let expected_tx = "AAAEAQAaa2Aj02P13K0Cb4PdubsPmHyUHxDbKrhlcXEaGpoe5ji0AAQAAAAAIKZSBGYgBc5PwYeX01SAZHnJYxA3pJRvrUZmR7ToQZTWAQAv2VDzPs355deXyjEwgR56lz1MHaVCesDJEKjF9ui3LTe0AAQAAAAAIFwwpOhb+onitRHRqj+wsEA0nNO2KqqOt8/IVbcC0O7oAAgAGA2PAAAAAAAg5q+A/hsLQvzZZ2Llxw9eja45+PDuDxGMrA1Vt04pJ8IDAwEAAAEBAQACAQAAAQECAAEBAwEAAAABAwCpvQST+b0feSpK7cH5nVRTWnWkbDj9VqjyxrfI11gXoQGJD4xgTHy1zBlNv0lTrT2+vYHvdSa+NR01FMw8wmycHfRmHQQAAAAAICYtptS+v/0HkfChzkJo0QzRDQxhli84CM3mMV/dqUBbqb0Ek/m9H3kqSu3B+Z1UU1p1pGw4/Vao8sa3yNdYF6HuAgAAAAAAAEB4fQEAAAAAAA==";
         let expected_decoded = decode_transaction(expected_tx).unwrap();
 

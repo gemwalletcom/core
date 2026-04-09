@@ -1,6 +1,6 @@
 use alloy_primitives::hex;
-use base64::{Engine, engine::general_purpose::STANDARD};
 use ed25519_dalek::{Signature, VerifyingKey};
+use gem_encoding::decode_base64;
 
 pub const GEM_AUTH_SCHEME: &str = "Gem ";
 
@@ -21,7 +21,7 @@ pub struct DeviceAuthPayload {
 
 pub fn parse_device_auth(header_value: &str) -> Option<DeviceAuthPayload> {
     let encoded = header_value.strip_prefix(GEM_AUTH_SCHEME)?;
-    let decoded = STANDARD.decode(encoded).ok()?;
+    let decoded = decode_base64(encoded).ok()?;
     let payload = String::from_utf8(decoded).ok()?;
     let parts: Vec<&str> = payload.splitn(5, '.').collect();
     if parts.len() != 5 {
@@ -39,7 +39,7 @@ pub fn parse_device_auth(header_value: &str) -> Option<DeviceAuthPayload> {
 
 // TODO: remove base64 fallback once all clients use hex signatures
 pub fn decode_signature(value: &str) -> Option<Vec<u8>> {
-    hex::decode(value).ok().or_else(|| STANDARD.decode(value).ok())
+    hex::decode(value).ok().or_else(|| decode_base64(value).ok())
 }
 
 pub fn verify_device_signature(public_key_hex: &str, message: &str, signature: &[u8]) -> bool {
@@ -64,6 +64,7 @@ mod tests {
     use super::*;
     use alloy_primitives::hex;
     use ed25519_dalek::{Signer, SigningKey};
+    use gem_encoding::encode_base64;
 
     #[test]
     fn test_verify_valid_signature() {
@@ -122,7 +123,7 @@ mod tests {
         let signature_hex = hex::encode(signature.to_bytes());
 
         let payload = format!("{}.{}.{}.{}.{}", public_key_hex, timestamp, wallet_id, body_hash, signature_hex);
-        let encoded = STANDARD.encode(payload.as_bytes());
+        let encoded = encode_base64(payload.as_bytes());
         let header = format!("Gem {}", encoded);
 
         let result = parse_device_auth(&header).unwrap();
@@ -137,7 +138,7 @@ mod tests {
     fn test_parse_device_auth_invalid() {
         assert!(parse_device_auth("Bearer token").is_none());
         assert!(parse_device_auth("Gem !!!").is_none());
-        let encoded = STANDARD.encode(b"only.two.parts");
+        let encoded = encode_base64(b"only.two.parts");
         assert!(parse_device_auth(&format!("Gem {}", encoded)).is_none());
     }
 
@@ -151,7 +152,7 @@ mod tests {
         let signature_hex = hex::encode(signature.to_bytes());
 
         let payload = format!("{}.{}..{}.{}", public_key_hex, timestamp, body_hash, signature_hex);
-        let encoded = STANDARD.encode(payload.as_bytes());
+        let encoded = encode_base64(payload.as_bytes());
         let header = format!("Gem {}", encoded);
 
         let result = parse_device_auth(&header).unwrap();

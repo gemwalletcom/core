@@ -104,7 +104,7 @@ mod tests {
         models::{Coin, Gas, Object},
         tx::decode_transaction,
     };
-    use base64::{Engine as _, engine::general_purpose};
+    use gem_encoding::encode_base64;
     use sui_types::Transaction;
 
     #[test]
@@ -161,7 +161,7 @@ mod tests {
         };
         let output = encode_unstake(&input).unwrap();
 
-        let b64_encoded = general_purpose::STANDARD.encode(&output.tx_data);
+        let b64_encoded = encode_base64(&output.tx_data);
         let expected_tx = "AAACAQDIwWZq5o9GtgnUC7UdHsI9wuBWD5hqroeGQ7bSFVSfz9SM0wMAAAAAIKpjQQjo/YvOPLh6HhyTHqLP/lLvy8vGI66VEJwCDARwAQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABQEAAAAAAAAAAQEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMKc3VpX3N5c3RlbRZyZXF1ZXN0X3dpdGhkcmF3X3N0YWtlAAIBAQABAADmr4D+GwtC/NlnYuXHD16Nrjn48O4PEYysDVW3TiknwgE2uDgKp1Mdc3I2V9c6EUz6/t+J3Ix2tnUvba7xfkPdos8fGQQAAAAAINREZGL0SD9y5n7te55Ju78nQ/PVWycQpwYPm4+JrWej5q+A/hsLQvzZZ2Llxw9eja45+PDuDxGMrA1Vt04pJ8LuAgAAAAAAAEB4fQEAAAAAAA==";
         let expected_decoded: Transaction = decode_transaction(expected_tx).unwrap();
         let output_tx: Transaction = bcs::from_bytes(&output.tx_data).unwrap();

@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use base64::{Engine, engine::general_purpose};
+use gem_encoding::encode_base64;
 use num_bigint::BigInt;
 use primitives::{FeePriority, FeeRate, GasPriceType, StakeType, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata};
 
@@ -56,7 +56,7 @@ pub fn map_transaction_data(
                     },
                 };
                 let tx_output = encode_transfer(&transfer_input)?;
-                let data = general_purpose::STANDARD.encode(&tx_output.tx_data);
+                let data = encode_base64(&tx_output.tx_data);
                 let digest = hex::encode(&tx_output.hash);
                 Ok(format!("{}_{}", data, digest))
             }
@@ -74,7 +74,7 @@ pub fn map_transaction_data(
                     gas_coin,
                 };
                 let tx_output = encode_token_transfer(&token_transfer_input)?;
-                let data = general_purpose::STANDARD.encode(&tx_output.tx_data);
+                let data = encode_base64(&tx_output.tx_data);
                 let digest = hex::encode(&tx_output.hash);
                 Ok(format!("{}_{}", data, digest))
             }
@@ -92,7 +92,7 @@ pub fn map_transaction_data(
                     coins: gas_coins.into_iter().map(Into::into).collect(),
                 };
                 let tx_output = encode_split_and_stake(&stake_input)?;
-                let data = general_purpose::STANDARD.encode(&tx_output.tx_data);
+                let data = encode_base64(&tx_output.tx_data);
                 let digest = hex::encode(&tx_output.hash);
                 Ok(format!("{}_{}", data, digest))
             }
@@ -119,7 +119,7 @@ pub fn map_transaction_data(
                     gas_coin,
                 };
                 let tx_output = encode_unstake(&unstake_input)?;
-                let data = general_purpose::STANDARD.encode(&tx_output.tx_data);
+                let data = encode_base64(&tx_output.tx_data);
                 let digest = hex::encode(&tx_output.hash);
                 Ok(format!("{}_{}", data, digest))
             }
@@ -129,7 +129,7 @@ pub fn map_transaction_data(
         },
         TransactionInputType::Swap(_, _, data) => {
             let tx_output = validate_and_hash(&data.data.data)?;
-            let data = general_purpose::STANDARD.encode(&tx_output.tx_data);
+            let data = encode_base64(&tx_output.tx_data);
             let digest = hex::encode(&tx_output.hash);
             Ok(format!("{}_{}", data, digest))
         }
@@ -137,7 +137,7 @@ pub fn map_transaction_data(
             let raw_data = extra.data.ok_or("Missing transaction data for Sui generic input")?;
             let encoded = String::from_utf8(raw_data).map_err(|_| "Invalid UTF-8 data for Sui generic input")?;
             let tx_output = validate_and_hash(&encoded)?;
-            let data = general_purpose::STANDARD.encode(&tx_output.tx_data);
+            let data = encode_base64(&tx_output.tx_data);
             let digest = hex::encode(&tx_output.hash);
             Ok(format!("{}_{}", data, digest))
         }

@@ -1,4 +1,4 @@
-use base64::{Engine as _, engine::general_purpose};
+use gem_encoding::decode_base64;
 use serde::de::DeserializeOwned;
 use std::error::Error;
 use sui_transaction_builder::{ObjectInput, TransactionBuilder};
@@ -7,7 +7,7 @@ use sui_types::Address;
 use crate::models::TxOutput;
 
 pub fn decode_transaction<T: DeserializeOwned>(tx: &str) -> Result<T, Box<dyn Error + Send + Sync>> {
-    let bytes = general_purpose::STANDARD.decode(tx)?;
+    let bytes = decode_base64(tx)?;
     let tx = bcs::from_bytes::<T>(&bytes)?;
     Ok(tx)
 }

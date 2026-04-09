@@ -1,4 +1,4 @@
-use base64::{Engine, engine::general_purpose::STANDARD};
+use gem_encoding::{decode_base64, encode_base64};
 use primitives::{ChainSigner, SignerError, SignerInput, TransferDataOutputType};
 use solana_primitives::{VersionedTransaction, sign_message};
 
@@ -20,9 +20,8 @@ impl ChainSigner for SolanaChainSigner {
 
     fn sign_data(&self, input: &SignerInput, private_key: &[u8]) -> Result<String, SignerError> {
         let extra = input.input_type.get_generic_data().map_err(SignerError::invalid_input)?;
-        let tx_bytes = STANDARD
-            .decode(extra.data_as_str().map_err(SignerError::invalid_input)?)
-            .map_err(|e| SignerError::invalid_input(format!("base64 decode: {e}")))?;
+        let data = extra.data_as_str().map_err(SignerError::invalid_input)?;
+        let tx_bytes = decode_base64(data).map_err(|_| SignerError::invalid_input("base64 decode failed"))?;
 
         let mut transaction = VersionedTransaction::deserialize_with_version(&tx_bytes).map_err(|e| SignerError::invalid_input(format!("parse transaction: {e}")))?;
 
@@ -39,7 +38,7 @@ impl ChainSigner for SolanaChainSigner {
             TransferDataOutputType::EncodedTransaction => {
                 transaction.signatures_mut()[0] = signature;
                 let bytes = transaction.serialize().map_err(|e| SignerError::signing_error(format!("serialize transaction: {e}")))?;
-                Ok(STANDARD.encode(&bytes))
+                Ok(encode_base64(&bytes))
             }
         }
     }
@@ -47,7 +46,7 @@ impl ChainSigner for SolanaChainSigner {
 
 impl SolanaChainSigner {
     fn sign_transaction(tx_base64: &str, private_key: &[u8], unit_price: u64, gas_limit: u32) -> Result<String, SignerError> {
-        let data = STANDARD.decode(tx_base64).map_err(|e| SignerError::invalid_input(format!("base64 decode: {e}")))?;
+        let data = decode_base64(tx_base64).map_err(|_| SignerError::invalid_input("base64 decode failed"))?;
 
         let mut tx = VersionedTransaction::deserialize_with_version(&data).map_err(|e| SignerError::invalid_input(format!("parse transaction: {e}")))?;
 
@@ -76,7 +75,7 @@ impl SolanaChainSigner {
 
         let bytes = tx.serialize().map_err(|e| SignerError::signing_error(format!("serialize transaction: {e}")))?;
 
-        Ok(STANDARD.encode(&bytes))
+        Ok(encode_base64(&bytes))
     }
 }
 
@@ -88,7 +87,7 @@ mod tests {
 
     #[test]
     fn test_deserialize_single_signature_transaction() {
-        let bytes = STANDARD.decode(SINGLE_SIG_TX).unwrap();
+        let bytes = decode_base64(SINGLE_SIG_TX).unwrap();
         let transaction = VersionedTransaction::deserialize_with_version(&bytes).unwrap();
 
         assert_eq!(transaction.signatures().len(), 1);
@@ -100,7 +99,7 @@ mod tests {
 
     #[test]
     fn test_deserialize_double_signature_transaction() {
-        let bytes = STANDARD.decode(DOUBLE_SIG_TX).unwrap();
+        let bytes = decode_base64(DOUBLE_SIG_TX).unwrap();
         let transaction = VersionedTransaction::deserialize_with_version(&bytes).unwrap();
 
         assert_eq!(transaction.signatures().len(), 2);
@@ -115,7 +114,7 @@ mod tests {
 
         let result = signer.sign_data(&input, &TEST_PRIVATE_KEY).unwrap();
 
-        let signed_bytes = STANDARD.decode(&result).unwrap();
+        let signed_bytes = decode_base64(&result).unwrap();
         let signed_tx = VersionedTransaction::deserialize_with_version(&signed_bytes).unwrap();
         assert_eq!(signed_tx.signatures().len(), 1);
         assert_ne!(signed_tx.signatures()[0].as_bytes(), &[0u8; 64]);

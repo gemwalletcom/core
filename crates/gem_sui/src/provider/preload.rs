@@ -111,8 +111,8 @@ mod chain_integration_tests {
     use super::*;
     use crate::models::SuiStakeStatus;
     use crate::provider::testkit::*;
-    use base64::{Engine, engine::general_purpose};
     use chain_traits::ChainTransactionLoad;
+    use gem_encoding::decode_base64;
     use primitives::{Asset, Chain, Delegation, FeePriority, StakeType, TransactionLoadInput};
 
     #[tokio::test]
@@ -183,7 +183,7 @@ mod chain_integration_tests {
                 let parts: Vec<&str> = message_bytes.split('_').collect();
                 assert_eq!(parts.len(), 2);
 
-                assert!(general_purpose::STANDARD.decode(parts[0]).is_ok());
+                assert!(decode_base64(parts[0]).is_ok());
                 assert!(hex::decode(parts[1]).is_ok());
             }
             _ => panic!("Expected Sui metadata for unstake transaction"),

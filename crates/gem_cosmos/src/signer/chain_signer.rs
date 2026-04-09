@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use base64::{Engine, engine::general_purpose::STANDARD};
+use gem_encoding::encode_base64;
 use gem_hash::{keccak::keccak256, sha2::sha256};
 use primitives::{ChainSigner, SignerError, SignerInput, chain_cosmos::CosmosChain};
 use signer::{SignatureScheme, Signer};
@@ -84,7 +84,7 @@ impl CosmosChainSigner {
         signature.truncate(64);
 
         let tx_raw = CosmosTxParams::encode_tx_raw(&params.body_bytes, &auth_info_bytes, &signature);
-        let tx_base64 = STANDARD.encode(&tx_raw);
+        let tx_base64 = encode_base64(&tx_raw);
         Ok(serde_json::json!({
             "mode": "BROADCAST_MODE_SYNC",
             "tx_bytes": tx_base64,
