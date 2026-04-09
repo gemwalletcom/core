@@ -1,6 +1,8 @@
+use gem_auth::create_device_token;
 use gem_tracing::{error_with_fields, info_with_fields};
 use primitives::{ChainRequest, ChainRequestProtocol, ChainRequestType, TransactionId};
 use settings_chain::BroadcastProviders;
+use std::time::Duration;
 
 use crate::config::WebhookConfig;
 use crate::jsonrpc_types::{JsonRpcRequest, RequestType};
@@ -10,14 +12,18 @@ use crate::proxy::proxy_request::ProxyRequest;
 pub struct DynodeBroadcastWebhookClient {
     enabled: bool,
     url: String,
+    jwt_secret: String,
+    expiry: Duration,
     client: reqwest::Client,
 }
 
 impl DynodeBroadcastWebhookClient {
-    pub fn new(config: WebhookConfig) -> Result<Self, reqwest::Error> {
+    pub fn new(config: WebhookConfig, jwt_secret: String) -> Result<Self, reqwest::Error> {
         Ok(Self {
             enabled: config.enabled,
             url: config.url,
+            jwt_secret,
+            expiry: config.expiry,
             client: reqwest::Client::builder().timeout(config.timeout).build()?,
         })
     }
@@ -27,6 +33,8 @@ impl DynodeBroadcastWebhookClient {
         Self {
             enabled: false,
             url: String::new(),
+            jwt_secret: String::new(),
+            expiry: Duration::from_secs(60),
             client: reqwest::Client::new(),
         }
     }
@@ -54,16 +62,24 @@ impl DynodeBroadcastWebhookClient {
     }
 
     fn spawn_notify(&self, payload: TransactionId, request_id: String) {
+        let (token, _) = match create_device_token("dynode", &self.jwt_secret, self.expiry) {
+            Ok(result) => result,
+            Err(err) => {
+                error_with_fields!("broadcast webhook token creation failed", &err, request_id = request_id.as_str());
+                return;
+            }
+        };
+
         let url = self.url.clone();
         let client = self.client.clone();
 
-        tokio::spawn(Self::deliver(client, url, payload, request_id));
+        tokio::spawn(Self::deliver(client, url, token, payload, request_id));
     }
 
-    async fn deliver(client: reqwest::Client, url: String, payload: TransactionId, request_id: String) {
+    async fn deliver(client: reqwest::Client, url: String, token: String, payload: TransactionId, request_id: String) {
         let transaction_id = payload.to_string();
 
-        match client.post(&url).json(&payload).send().await {
+        match client.post(&url).bearer_auth(&token).json(&payload).send().await {
             Ok(response) => {
                 if response.status().is_success() {
                     info_with_fields!("broadcast webhook delivered", transaction_id = transaction_id.as_str(), request_id = request_id.as_str(),);

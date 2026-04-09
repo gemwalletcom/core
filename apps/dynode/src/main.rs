@@ -141,7 +141,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     };
     let metrics = Metrics::new(metrics_config);
     info_with_fields!("broadcast webhook config", enabled = config.webhook.enabled, url = config.webhook.url.as_str(),);
-    let broadcast_webhook = DynodeBroadcastWebhookClient::new(config.webhook.clone())?;
+    let broadcast_webhook = DynodeBroadcastWebhookClient::new(config.webhook.clone(), config.jwt.secret.clone())?;
     let client = gem_client::builder().timeout(config.request.timeout).build()?;
     let node_service = NodeService::new(
         chains,

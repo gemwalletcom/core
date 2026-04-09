@@ -188,7 +188,7 @@ impl FiatClient {
             if !is_provider_eligible(db_provider, &countries, mapping, country_code, &request.quote_type) {
                 return None;
             }
-            let mapping = mapping.unwrap().clone();
+            let mapping = mapping?.clone();
             let request = request.clone();
             let asset = asset.clone();
             let db_payment_methods = db_provider.payment_methods.clone();

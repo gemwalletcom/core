@@ -226,6 +226,8 @@ pub struct WebhookConfig {
     pub url: String,
     #[serde(deserialize_with = "duration::deserialize")]
     pub timeout: Duration,
+    #[serde(deserialize_with = "duration::deserialize")]
+    pub expiry: Duration,
 }
 
 #[derive(Debug, Deserialize, Clone)]
