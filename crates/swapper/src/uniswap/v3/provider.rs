@@ -9,8 +9,8 @@ use crate::{
         deadline::get_sig_deadline,
         fee_token::get_fee_token,
         quote_result::get_best_quote,
-        swap_route::{RouteData, build_swap_route},
         requires_native_wrapping,
+        swap_route::{RouteData, build_swap_route},
     },
 };
 use alloy_primitives::{Address, Bytes, U256, hex::encode_prefixed as HexEncode};

@@ -58,7 +58,7 @@ impl FiatProvider for FlashnetClient {
         let symbol = request_map.asset_symbol.symbol;
         let amount = map_source_amount(request.amount);
         let estimate = self.get_estimate(&chain, &symbol, &amount).await?;
-        let crypto_amount = map_crypto_amount(&estimate.estimated_out, request_map.asset.decimals as u32);
+        let crypto_amount = map_crypto_amount(&estimate.estimated_out, request_map.asset.decimals as u32)?;
 
         Ok(FiatQuoteResponse::new(generate_quote_id(), request.amount, crypto_amount))
     }

@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, HashMap};
 
-use number_formatter::BigNumberFormatter;
+use number_formatter::{BigNumberFormatter, NumberFormatterError};
 use primitives::currency::Currency;
 use primitives::fiat_assets::FiatAssetLimits;
 use primitives::{Chain, FiatTransactionStatus, FiatTransactionUpdate, PaymentType};
@@ -79,8 +79,8 @@ pub fn map_source_amount(fiat_amount: f64) -> String {
     map_amount(fiat_amount, USDB_DECIMALS)
 }
 
-pub fn map_crypto_amount(estimated_out: &str, decimals: u32) -> f64 {
-    BigNumberFormatter::value_as_f64(estimated_out, decimals).unwrap_or(0.0)
+pub fn map_crypto_amount(estimated_out: &str, decimals: u32) -> Result<f64, NumberFormatterError> {
+    BigNumberFormatter::value_as_f64(estimated_out, decimals)
 }
 
 pub fn map_redirect_url(response: &FlashnetOnrampResponse) -> String {
@@ -161,6 +161,13 @@ mod tests {
     fn map_source_amount_uses_usdb_decimals() {
         assert_eq!(map_source_amount(100.0), "100000000");
         assert_eq!(map_source_amount(1.0), "1000000");
+    }
+
+    #[test]
+    fn map_crypto_amount_parses_valid_values_and_rejects_invalid_ones() {
+        assert_eq!(map_crypto_amount("1000000", 6).unwrap(), 1.0);
+        assert_eq!(map_crypto_amount("500000", 6).unwrap(), 0.5);
+        assert!(map_crypto_amount("invalid", 6).is_err());
     }
 
     #[test]

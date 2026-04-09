@@ -13,8 +13,8 @@ use crate::{
         fee_token::get_fee_token,
         is_native_erc20,
         quote_result::get_best_quote,
-        swap_route::{RouteData, build_swap_route, get_intermediaries},
         requires_native_wrapping,
+        swap_route::{RouteData, build_swap_route, get_intermediaries},
     },
 };
 use futures::future::{BoxFuture, join_all};
