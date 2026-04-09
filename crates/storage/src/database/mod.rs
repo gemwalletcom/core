@@ -6,7 +6,6 @@ pub mod assets_usage_ranks;
 pub mod chains;
 pub mod charts;
 pub mod config;
-pub mod device_sessions;
 pub mod devices;
 pub mod devices_notifications;
 pub mod fiat;

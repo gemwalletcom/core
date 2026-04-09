@@ -3,7 +3,6 @@ use rocket::http::Status;
 use rocket::outcome::Outcome::{Error, Success};
 use rocket::request::{FromRequest, Outcome};
 use storage::Database;
-use storage::database::device_sessions::DeviceSessionsStore;
 use storage::database::devices::DevicesStore;
 use storage::database::wallets::WalletsStore;
 use storage::models::DeviceRow;
@@ -173,10 +172,6 @@ async fn lookup_device<T>(req: &Request<'_>, device_id: &str) -> Result<(DeviceR
     let Ok(device_row) = DevicesStore::get_device(&mut db_client, device_id) else {
         return Err(auth_error_outcome(req, DeviceError::DeviceNotFound, Some(device_id), None));
     };
-
-    if DeviceSessionsStore::add_device_session(&mut db_client, device_row.id).is_err() {
-        return Err(auth_error_outcome(req, DeviceError::DatabaseError, Some(device_id), None));
-    }
 
     Ok((device_row, db_client))
 }
