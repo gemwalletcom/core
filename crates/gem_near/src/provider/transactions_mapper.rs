@@ -1,4 +1,4 @@
-use crate::constants::TRANSACTION_STATUS_FINAL;
+use crate::constants::{TRANSACTION_STATUS_EXECUTED, TRANSACTION_STATUS_EXECUTED_OPTIMISTIC, TRANSACTION_STATUS_FINAL};
 use crate::models::{rpc, transaction::BroadcastResult};
 use chrono::DateTime;
 use primitives::{Transaction, TransactionState, TransactionType, chain::Chain};
@@ -6,7 +6,7 @@ use std::error::Error;
 
 pub fn map_transaction_broadcast(response: &BroadcastResult) -> Result<String, Box<dyn Error + Sync + Send>> {
     match response.final_execution_status.as_str() {
-        TRANSACTION_STATUS_FINAL => Ok(response.transaction.hash.clone()),
+        TRANSACTION_STATUS_FINAL | TRANSACTION_STATUS_EXECUTED | TRANSACTION_STATUS_EXECUTED_OPTIMISTIC => Ok(response.transaction.hash.clone()),
         _ => Err(format!("Broadcast failed with status: {}", response.final_execution_status).into()),
     }
 }
@@ -65,14 +65,16 @@ mod tests {
 
     #[test]
     fn test_map_transaction_broadcast_success() {
-        let response = BroadcastResult {
-            final_execution_status: "FINAL".to_string(),
-            transaction: create_test_transaction(),
-            transaction_outcome: create_test_outcome("417494768750000000000"),
-        };
+        for status in [TRANSACTION_STATUS_FINAL, TRANSACTION_STATUS_EXECUTED, TRANSACTION_STATUS_EXECUTED_OPTIMISTIC] {
+            let response = BroadcastResult {
+                final_execution_status: status.to_string(),
+                transaction: create_test_transaction(),
+                transaction_outcome: create_test_outcome("417494768750000000000"),
+            };
 
-        let result = map_transaction_broadcast(&response).unwrap();
-        assert_eq!(result, "5qSP5dRVr5KQ37Dd9CV2gi7KDuvtU4eFaRK7cDKREVL2");
+            let result = map_transaction_broadcast(&response).unwrap();
+            assert_eq!(result, "5qSP5dRVr5KQ37Dd9CV2gi7KDuvtU4eFaRK7cDKREVL2");
+        }
     }
 
     #[test]
