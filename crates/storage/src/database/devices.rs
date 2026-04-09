@@ -21,7 +21,6 @@ pub trait DevicesStore {
     fn update_device(&mut self, device: UpdateDeviceRow) -> Result<DeviceRow, diesel::result::Error>;
     fn update_device_fields(&mut self, device_ids: Vec<String>, updates: Vec<DeviceFieldUpdate>) -> Result<usize, diesel::result::Error>;
     fn migrate_device_id(&mut self, old_device_id: &str, new_device_id: &str) -> Result<DeviceRow, diesel::result::Error>;
-    fn delete_device(&mut self, device_id: &str) -> Result<usize, diesel::result::Error>;
     fn get_stale_device_ids(&mut self, days: i64) -> Result<Vec<i32>, diesel::result::Error>;
     fn get_devices_by_filter(&mut self, filters: Vec<DeviceFilter>) -> Result<Vec<DeviceRow>, diesel::result::Error>;
 }
@@ -84,11 +83,6 @@ impl DevicesStore for DatabaseClient {
             .set(device_id.eq(new_device_id))
             .returning(DeviceRow::as_returning())
             .get_result(&mut self.connection)
-    }
-
-    fn delete_device(&mut self, _device_id: &str) -> Result<usize, diesel::result::Error> {
-        use crate::schema::devices::dsl::*;
-        diesel::delete(devices.filter(device_id.eq(_device_id))).execute(&mut self.connection)
     }
 
     fn get_stale_device_ids(&mut self, days: i64) -> Result<Vec<i32>, diesel::result::Error> {

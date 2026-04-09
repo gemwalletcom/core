@@ -44,10 +44,6 @@ impl DevicesClient {
         Ok(self.pusher.push_notifications(notifications).await?.response.counts > 0)
     }
 
-    pub fn delete_device(&self, device_id: &str) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.devices()?.delete_device(device_id)?)
-    }
-
     pub fn is_device_registered(&self, device_id: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
         Ok(self.database.devices()?.get_device_exist(device_id)?)
     }

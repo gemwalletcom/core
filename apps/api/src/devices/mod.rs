@@ -56,19 +56,9 @@ pub async fn update_device(device: DeviceParam, #[allow(unused)] device_id: Devi
     Ok(client.lock().await.update_device(device.0)?.into())
 }
 
-#[delete("/devices/<device_id>")]
-pub async fn delete_device(device_id: DeviceIdParam, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<usize>, ApiError> {
-    Ok(client.lock().await.delete_device(&device_id.0)?.into())
-}
-
 #[get("/devices")]
 pub async fn get_device_v2(device: AuthenticatedDevice, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<Device>, ApiError> {
     Ok(client.lock().await.get_device(&device.device_row.device_id)?.into())
-}
-
-#[delete("/devices")]
-pub async fn delete_device_v2(device: AuthenticatedDevice, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<usize>, ApiError> {
-    Ok(client.lock().await.delete_device(&device.device_row.device_id)?.into())
 }
 
 #[get("/devices/is_registered")]

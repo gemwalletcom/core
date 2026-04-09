@@ -12,7 +12,6 @@ pub trait DevicesRepository {
     fn update_device(&mut self, device: crate::models::UpdateDeviceRow) -> Result<Device, DatabaseError>;
     fn update_device_fields(&mut self, device_ids: Vec<String>, updates: Vec<DeviceFieldUpdate>) -> Result<usize, DatabaseError>;
     fn migrate_device_id(&mut self, old_device_id: &str, new_device_id: &str) -> Result<Device, DatabaseError>;
-    fn delete_device(&mut self, device_id: &str) -> Result<usize, DatabaseError>;
     fn delete_devices_subscriptions_after_days(&mut self, days: i64) -> Result<usize, DatabaseError>;
     fn devices_inactive_days(&mut self, min_days: i64, max_days: i64, push_enabled: Option<bool>) -> Result<Vec<Device>, DatabaseError>;
 }
@@ -55,10 +54,6 @@ impl DevicesRepository for DatabaseClient {
         Ok(DevicesStore::migrate_device_id(self, old_device_id, new_device_id)
             .or_not_found(old_device_id.to_string())?
             .as_primitive())
-    }
-
-    fn delete_device(&mut self, device_id: &str) -> Result<usize, DatabaseError> {
-        Ok(DevicesStore::delete_device(self, device_id)?)
     }
 
     fn delete_devices_subscriptions_after_days(&mut self, days: i64) -> Result<usize, DatabaseError> {
