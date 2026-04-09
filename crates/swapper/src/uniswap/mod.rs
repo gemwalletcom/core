@@ -9,4 +9,4 @@ pub mod universal_router;
 pub mod v3;
 pub mod v4;
 
-pub(crate) use native_asset::{is_tokenized_native, uses_msg_value};
+pub(crate) use native_asset::{is_native_erc20, requires_native_wrapping};

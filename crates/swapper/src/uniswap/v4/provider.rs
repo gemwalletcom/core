@@ -11,10 +11,10 @@ use crate::{
     uniswap::{
         deadline::get_sig_deadline,
         fee_token::get_fee_token,
-        is_tokenized_native,
+        is_native_erc20,
         quote_result::get_best_quote,
         swap_route::{RouteData, build_swap_route, get_intermediaries},
-        uses_msg_value,
+        requires_native_wrapping,
     },
 };
 use futures::future::{BoxFuture, join_all};
@@ -66,13 +66,13 @@ impl UniswapV4 {
     }
 
     fn is_base_pair(token_in: &Address, token_out: &Address, evm_chain: &EVMChain) -> bool {
-        let base_set: HashSet<Address> = HashSet::from_iter(get_base_pair(evm_chain, is_tokenized_native(evm_chain.to_chain())).unwrap().path_building_array());
+        let base_set: HashSet<Address> = HashSet::from_iter(get_base_pair(evm_chain, is_native_erc20(evm_chain.to_chain())).unwrap().path_building_array());
         base_set.contains(token_in) || base_set.contains(token_out)
     }
 
     fn parse_asset_address(asset_id: &str, evm_chain: EVMChain) -> Result<Address, SwapperError> {
         let asset_id = AssetId::new(asset_id).ok_or(SwapperError::NotSupportedAsset)?;
-        if uses_msg_value(&asset_id) {
+        if requires_native_wrapping(&asset_id) {
             Ok(Address::ZERO)
         } else {
             eth_address::parse_or_weth_address(&asset_id, evm_chain)
@@ -111,7 +111,7 @@ impl Swapper for UniswapV4 {
         let deployment = get_uniswap_deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
         let (evm_chain, token_in, token_out, from_value) = Self::parse_request(request)?;
         let fee_tiers = self.get_tiers();
-        let base_pair = get_base_pair(&evm_chain, is_tokenized_native(from_chain)).ok_or(SwapperError::ComputeQuoteError("base pair not found".into()))?;
+        let base_pair = get_base_pair(&evm_chain, is_native_erc20(from_chain)).ok_or(SwapperError::ComputeQuoteError("base pair not found".into()))?;
         let fee_preference = get_fee_token(&request.mode, Some(&base_pair), &token_in, &token_out);
         let fee_bps = request.options.clone().fee.unwrap_or_default().evm.bps;
         let quote_amount_in = if fee_preference.is_input_token && fee_bps > 0 {
@@ -189,7 +189,7 @@ impl Swapper for UniswapV4 {
 
     async fn get_permit2_for_quote(&self, quote: &Quote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         let from_asset = quote.request.from_asset.asset_id();
-        if uses_msg_value(&from_asset) {
+        if requires_native_wrapping(&from_asset) {
             return Ok(None);
         }
         let (_, token_in, _, amount_in) = Self::parse_request(&quote.request)?;
@@ -220,7 +220,7 @@ impl Swapper for UniswapV4 {
 
         let client = self.client_for(from_asset.chain)?;
         let permit = data.permit2_data().map(|data| data.into());
-        let wrap_input_eth = uses_msg_value(&request.from_asset.asset_id());
+        let wrap_input_eth = requires_native_wrapping(&request.from_asset.asset_id());
 
         let mut gas_limit: Option<String> = None;
         let approval: Option<ApprovalData> = if wrap_input_eth {
@@ -242,7 +242,7 @@ impl Swapper for UniswapV4 {
 
         let sig_deadline = get_sig_deadline();
         let evm_chain = EVMChain::from_chain(from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
-        let base_pair = get_base_pair(&evm_chain, is_tokenized_native(from_asset.chain));
+        let base_pair = get_base_pair(&evm_chain, is_native_erc20(from_asset.chain));
         let fee_preference = get_fee_token(&request.mode, base_pair.as_ref(), &token_in, &token_out);
 
         let commands = build_commands(
@@ -254,7 +254,6 @@ impl Swapper for UniswapV4 {
             &quote.data.routes,
             permit,
             fee_preference.is_input_token,
-            wrap_input_eth,
         )?;
         let encoded = encode_commands(&commands, U256::from(sig_deadline));
 

@@ -10,7 +10,7 @@ use crate::{
         fee_token::get_fee_token,
         quote_result::get_best_quote,
         swap_route::{RouteData, build_swap_route},
-        uses_msg_value,
+        requires_native_wrapping,
     },
 };
 use alloy_primitives::{Address, Bytes, U256, hex::encode_prefixed as HexEncode};
@@ -116,7 +116,7 @@ impl Swapper for UniswapV3 {
         let to_chain = request.to_asset.chain();
         let deployment = self.provider.get_deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
         let (evm_chain, token_in, token_out, from_value) = Self::parse_request(request)?;
-        if uses_msg_value(&request.from_asset.asset_id()) || uses_msg_value(&request.to_asset.asset_id()) {
+        if requires_native_wrapping(&request.from_asset.asset_id()) || requires_native_wrapping(&request.to_asset.asset_id()) {
             _ = evm_chain.weth_contract().ok_or(SwapperError::NotSupportedChain)?;
         }
 
@@ -193,7 +193,7 @@ impl Swapper for UniswapV3 {
 
     async fn get_permit2_for_quote(&self, quote: &Quote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
         let from_asset = quote.request.from_asset.asset_id();
-        if uses_msg_value(&from_asset) {
+        if requires_native_wrapping(&from_asset) {
             return Ok(None);
         }
         let client = self.client_for(from_asset.chain)?;
@@ -216,8 +216,7 @@ impl Swapper for UniswapV3 {
 
         let wallet_address = eth_address::parse_str(&request.wallet_address)?;
         let permit = data.permit2_data().map(|data| data.into());
-        let wrap_input_eth = uses_msg_value(&request.from_asset.asset_id());
-        let unwrap_output_weth = uses_msg_value(&request.to_asset.asset_id());
+        let wrap_input_eth = requires_native_wrapping(&request.from_asset.asset_id());
 
         let mut gas_limit: Option<String> = None;
         let approval: Option<ApprovalData> = if wrap_input_eth {
@@ -239,18 +238,7 @@ impl Swapper for UniswapV3 {
         let fee_preference = get_fee_token(&request.mode, base_pair.as_ref(), &token_in, &token_out);
 
         let path: Bytes = build_paths_with_routes(&quote.data.routes)?;
-        let commands = build_commands(
-            request,
-            &token_in,
-            &token_out,
-            amount_in,
-            to_amount,
-            &path,
-            permit,
-            fee_preference.is_input_token,
-            wrap_input_eth,
-            unwrap_output_weth,
-        )?;
+        let commands = build_commands(request, &token_in, &token_out, amount_in, to_amount, &path, permit, fee_preference.is_input_token)?;
         let encoded = encode_commands(&commands, U256::from(sig_deadline));
 
         let value = if wrap_input_eth { request.value.clone() } else { String::from("0") };

@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::{QuoteRequest, Route, SwapperError, SwapperMode, eth_address, fees::apply_slippage_in_bp};
+use crate::{QuoteRequest, Route, SwapperError, SwapperMode, eth_address, fees::apply_slippage_in_bp, uniswap::requires_native_wrapping};
 use alloy_primitives::{Address, U256};
 use gem_evm::uniswap::{
     actions::V4Action::{SETTLE, SWAP_EXACT_IN, TAKE},
@@ -17,13 +17,13 @@ pub fn build_commands(
     swap_routes: &[Route],
     permit: Option<Permit2Permit>,
     fee_token_is_input: bool,
-    input_is_native: bool,
 ) -> Result<Vec<UniversalRouterCommand>, SwapperError> {
     let options = request.options.clone();
     let fee_options = options.fee.unwrap_or_default().evm;
     let recipient = eth_address::parse_str(&request.wallet_address)?;
 
     let mode = request.mode;
+    let input_is_native = requires_native_wrapping(&request.from_asset.asset_id());
     let pay_fees = fee_options.bps > 0;
 
     let mut commands: Vec<UniversalRouterCommand> = vec![];
@@ -163,7 +163,7 @@ mod tests {
             mode: SwapperMode::ExactIn,
             options: Options::default(),
         };
-        let commands = build_commands(&request, &token_celo, &token_usdt, 22_000_000_000_000_000_000, 14_804_757, &routes, None, false, false).unwrap();
+        let commands = build_commands(&request, &token_celo, &token_usdt, 22_000_000_000_000_000_000, 14_804_757, &routes, None, false).unwrap();
 
         assert_eq!(commands.len(), 1);
         assert!(matches!(commands[0], UniversalRouterCommand::V4_SWAP { .. }));
@@ -178,7 +178,10 @@ mod tests {
             mode: SwapperMode::ExactIn,
             options: Options {
                 slippage: 50.into(),
-                fee: Some(ReferralFees::evm(ReferralFee { bps: 50, address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into() })),
+                fee: Some(ReferralFees::evm(ReferralFee {
+                    bps: 50,
+                    address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
+                })),
                 preferred_providers: vec![],
                 use_max_amount: false,
             },
@@ -187,7 +190,7 @@ mod tests {
             AssetId::from(Chain::Celo, Some(CELO_USDT_TOKEN_ID.into())),
             AssetId::from(Chain::Celo, Some(CELO_WETH_TOKEN_ID.into())),
         )];
-        let commands = build_commands(&request, &token_usdt, &token_celo, 900_000, 10_752_991_111_111_111_170, &routes, None, false, false).unwrap();
+        let commands = build_commands(&request, &token_usdt, &token_celo, 900_000, 10_752_991_111_111_111_170, &routes, None, false).unwrap();
 
         assert_eq!(commands.len(), 3);
         assert!(matches!(commands[0], UniversalRouterCommand::V4_SWAP { .. }));
