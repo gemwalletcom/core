@@ -143,6 +143,9 @@ pub static SMARTCHAIN_USDT_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetI
 pub const AVALANCHE_USDT_TOKEN_ID: &str = "0x9702230A8Ea53601f5cD2dc00fDBc13d4dF4A8c7";
 pub static AVALANCHE_USDT_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::AvalancheC, AVALANCHE_USDT_TOKEN_ID));
 
+pub const CELO_USDT_TOKEN_ID: &str = "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e";
+pub static CELO_USDT_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::Celo, CELO_USDT_TOKEN_ID));
+
 pub const SOLANA_USDT_TOKEN_ID: &str = "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB";
 pub static SOLANA_USDT_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::Solana, SOLANA_USDT_TOKEN_ID));
 
@@ -235,6 +238,9 @@ pub static ZKSYNC_WETH_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::f
 
 pub const UNICHAIN_WETH_TOKEN_ID: &str = "0x4200000000000000000000000000000000000006";
 pub static UNICHAIN_WETH_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::Unichain, UNICHAIN_WETH_TOKEN_ID));
+
+pub const CELO_WETH_TOKEN_ID: &str = "0x471EcE3750Da237f93B8E339c536989b8978a438";
+pub static CELO_WETH_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::Celo, CELO_WETH_TOKEN_ID));
 
 pub const BASE_CBBTC_TOKEN_ID: &str = "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf";
 pub static BASE_CBBTC_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::Base, BASE_CBBTC_TOKEN_ID));

@@ -850,7 +850,7 @@ static CHAIN_CONFIGS: LazyLock<Vec<ChainConfig>> = LazyLock::new(|| {
                 min_priority_fee: 10_000_000,
                 chain_stack: ChainStack::Optimism,
                 is_ethereum_layer2: true,
-                weth_contract: Some("0x471EcE3750Da237f93B8E339c536989b8978a438"),
+                weth_contract: Some(CELO_WETH_TOKEN_ID),
             }),
             stake: None,
         },

@@ -1,5 +1,5 @@
 use crate::{
-    FetchQuoteData, ProviderData, ProviderType, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, SwapperSlippage,
+    FetchQuoteData, ProviderData, ProviderType, Route, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, SwapperSlippage,
     SwapperSlippageMode, config::get_swap_config,
 };
 use async_trait::async_trait;
@@ -13,6 +13,20 @@ impl ProviderData {
             provider: ProviderType::new(SwapperProvider::Okx),
             routes: vec![],
             slippage_bps: 50,
+        }
+    }
+}
+
+impl Route {
+    pub fn mock(input: AssetId, output: AssetId) -> Self {
+        Route {
+            input,
+            output,
+            route_data: serde_json::json!({
+                "fee_tier": "100",
+                "min_amount_out": "1",
+            })
+            .to_string(),
         }
     }
 }

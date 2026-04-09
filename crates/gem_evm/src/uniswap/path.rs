@@ -130,7 +130,7 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
         EVMChain::Optimism => OPTIMISM_USDT_TOKEN_ID,
         EVMChain::Base => "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2",
         EVMChain::AvalancheC => AVALANCHE_USDT_TOKEN_ID,
-        EVMChain::Celo => "0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e",
+        EVMChain::Celo => CELO_USDT_TOKEN_ID,
         EVMChain::SmartChain => SMARTCHAIN_USDT_TOKEN_ID,
         EVMChain::ZkSync => ZKSYNC_USDT_TOKEN_ID,
         EVMChain::Abstract => "0x0709F39376dEEe2A2dfC94A58EdEb2Eb9DF012bD",
