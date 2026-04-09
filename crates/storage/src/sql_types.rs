@@ -4,7 +4,6 @@ use diesel::pg::{Pg, PgValue};
 use diesel::serialize::{self, Output, ToSql};
 use primitives::AssetId as PrimitiveAssetId;
 use primitives::nft::NFTType as PrimitiveNFTType;
-use primitives::push_notification::PushNotificationTypes as PrimitivePushNotificationTypes;
 use primitives::rewards::{
     RedemptionStatus as PrimitiveRedemptionStatus, RewardEventType as PrimitiveRewardEventType, RewardRedemptionType as PrimitiveRewardRedemptionType,
     RewardStatus as PrimitiveRewardStatus,
@@ -26,9 +25,9 @@ use std::str::FromStr;
 use crate::schema::sql_types::{
     AddressType as AddressTypeSql, AssetType as AssetTypeSql, FiatTransactionStatus as FiatTransactionStatusSql, FiatTransactionType as FiatTransactionTypeSql,
     IpUsageType as IpUsageTypeSql, LinkType as LinkTypeSql, NftType as NftTypeSql, NotificationType as NotificationTypeSql, Platform as PlatformSql,
-    PlatformStore as PlatformStoreSql, PushNotificationType as PushNotificationTypeSql, RedemptionStatus as RedemptionStatusSql, RewardEventType as RewardEventTypeSql,
-    RewardRedemptionType as RewardRedemptionTypeSql, RewardStatus as RewardStatusSql, TransactionState as TransactionStateSql, TransactionType as TransactionTypeSql,
-    UsernameStatus as UsernameStatusSql, WalletSource as WalletSourceSql, WalletType as WalletTypeSql, WebhookKind as WebhookKindSql,
+    PlatformStore as PlatformStoreSql, RedemptionStatus as RedemptionStatusSql, RewardEventType as RewardEventTypeSql, RewardRedemptionType as RewardRedemptionTypeSql,
+    RewardStatus as RewardStatusSql, TransactionState as TransactionStateSql, TransactionType as TransactionTypeSql, UsernameStatus as UsernameStatusSql,
+    WalletSource as WalletSourceSql, WalletType as WalletTypeSql, WebhookKind as WebhookKindSql,
 };
 
 macro_rules! diesel_enum {
@@ -178,13 +177,6 @@ diesel_enum!(
     PrimitiveNotificationType,
     NotificationTypeSql,
     [ReferralJoined, RewardsEnabled, RewardsCodeDisabled, RewardsRedeemed, RewardsCreateUsername, RewardsInvite]
-);
-
-diesel_enum!(
-    PushNotificationType,
-    PrimitivePushNotificationTypes,
-    PushNotificationTypeSql,
-    [Test, Transaction, Asset, PriceAlert, BuyAsset, SwapAsset, Support, Rewards, Stake, FiatTransaction]
 );
 
 diesel_enum!(

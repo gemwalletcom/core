@@ -7,7 +7,6 @@ pub mod chains;
 pub mod charts;
 pub mod config;
 pub mod devices;
-pub mod devices_notifications;
 pub mod fiat;
 pub mod migrations;
 pub mod nft;
@@ -38,12 +37,11 @@ pub type PgPooledConnection = PooledConnection<ConnectionManager<PgConnection>>;
 use crate::repositories::{
     assets_addresses_repository::AssetsAddressesRepository, assets_links_repository::AssetsLinksRepository, assets_repository::AssetsRepository,
     assets_usage_ranks_repository::AssetsUsageRanksRepository, chains_repository::ChainsRepository, charts_repository::ChartsRepository, config_repository::ConfigRepository,
-    devices_notifications_repository::DevicesNotificationsRepository, devices_repository::DevicesRepository, fiat_repository::FiatRepository,
-    migrations_repository::MigrationsRepository, nft_repository::NftRepository, notifications_repository::NotificationsRepository, parser_state_repository::ParserStateRepository,
-    perpetuals_repository::PerpetualsRepository, price_alerts_repository::PriceAlertsRepository, prices_dex_repository::PricesDexRepository, prices_repository::PricesRepository,
-    releases_repository::ReleasesRepository, rewards_redemptions_repository::RewardsRedemptionsRepository, rewards_repository::RewardsRepository,
-    scan_addresses_repository::ScanAddressesRepository, tag_repository::TagRepository, transactions_repository::TransactionsRepository, wallets_repository::WalletsRepository,
-    webhooks_repository::WebhooksRepository,
+    devices_repository::DevicesRepository, fiat_repository::FiatRepository, migrations_repository::MigrationsRepository, nft_repository::NftRepository,
+    notifications_repository::NotificationsRepository, parser_state_repository::ParserStateRepository, perpetuals_repository::PerpetualsRepository,
+    price_alerts_repository::PriceAlertsRepository, prices_dex_repository::PricesDexRepository, prices_repository::PricesRepository, releases_repository::ReleasesRepository,
+    rewards_redemptions_repository::RewardsRedemptionsRepository, rewards_repository::RewardsRepository, scan_addresses_repository::ScanAddressesRepository,
+    tag_repository::TagRepository, transactions_repository::TransactionsRepository, wallets_repository::WalletsRepository, webhooks_repository::WebhooksRepository,
 };
 
 pub fn create_pool(database_url: &str, pool_size: u32) -> PgPool {
@@ -93,10 +91,6 @@ impl DatabaseClient {
     }
 
     pub fn devices(&mut self) -> &mut dyn DevicesRepository {
-        self
-    }
-
-    pub fn devices_notifications(&mut self) -> &mut dyn DevicesNotificationsRepository {
         self
     }
 
