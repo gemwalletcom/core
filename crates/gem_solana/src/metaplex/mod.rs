@@ -5,8 +5,8 @@ mod uses;
 
 pub mod metadata;
 use crate::metaplex::metadata::Metadata;
-use base64::{Engine as _, engine::general_purpose};
 use borsh::{BorshDeserialize, BorshSerialize};
+use gem_encoding::decode_base64;
 
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone, Copy)]
 pub enum Key {
@@ -38,7 +38,7 @@ pub enum TokenStandard {
 }
 
 pub fn decode_metadata(base64_str: &str) -> Result<Metadata, Box<dyn std::error::Error>> {
-    let data = general_purpose::STANDARD.decode(base64_str)?;
+    let data = decode_base64(base64_str)?;
     let metadata = Metadata::deserialize(&mut data.as_slice())?;
     Ok(metadata)
 }

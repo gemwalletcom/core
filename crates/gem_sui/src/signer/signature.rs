@@ -37,8 +37,7 @@ fn assemble_signature(signature: &[u8], public_key: &[u8]) -> Result<String, Sig
 #[cfg(test)]
 mod tests {
     use super::*;
-    use base64::Engine as _;
-    use base64::engine::general_purpose::STANDARD;
+    use gem_encoding::decode_base64;
 
     #[test]
     fn test_sui_sign_personal_message() {
@@ -47,7 +46,7 @@ mod tests {
 
         let signature_base64 = sign_personal_message(&message, &private_key).expect("signing succeeds");
 
-        let signature_bytes = STANDARD.decode(&signature_base64).expect("valid base64");
+        let signature_bytes = decode_base64(&signature_base64).unwrap();
         assert_eq!(signature_bytes.len(), SUI_PERSONAL_MESSAGE_SIGNATURE_LEN, "signature layout length");
         assert_eq!(signature_bytes[0], 0x00, "expected Ed25519 flag prefix");
 

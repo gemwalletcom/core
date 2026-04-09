@@ -1,0 +1,15 @@
+[package]
+name = "gem_encoding"
+version = { workspace = true }
+edition = { workspace = true }
+
+[features]
+default = ["base64"]
+base32 = ["dep:data-encoding"]
+base58 = ["dep:bs58"]
+base64 = ["dep:base64"]
+
+[dependencies]
+base64 = { workspace = true, optional = true }
+bs58 = { workspace = true, optional = true }
+data-encoding = { version = "2.10.0", optional = true }

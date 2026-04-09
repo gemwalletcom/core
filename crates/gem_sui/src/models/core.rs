@@ -1,5 +1,5 @@
-use base64::{Engine as _, engine::general_purpose};
 use bcs;
+use gem_encoding::encode_base64;
 use std::error::Error;
 use sui_transaction_builder::ObjectInput;
 use sui_types::Transaction;
@@ -81,6 +81,6 @@ impl TxOutput {
     }
 
     pub fn base64_encoded(&self) -> String {
-        general_purpose::STANDARD.encode(self.tx_data.clone())
+        encode_base64(&self.tx_data)
     }
 }

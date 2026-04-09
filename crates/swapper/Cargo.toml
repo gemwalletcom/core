@@ -29,7 +29,7 @@ typeshare = { version = "1.0.4" }
 
 strum = { workspace = true }
 
-base64.workspace = true
+gem_encoding = { path = "../gem_encoding" }
 serde.workspace = true
 serde_json.workspace = true
 serde_urlencoded.workspace = true

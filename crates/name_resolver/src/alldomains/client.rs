@@ -1,7 +1,7 @@
 use std::{error::Error, str::FromStr};
 
 use async_trait::async_trait;
-use base64::Engine;
+use gem_encoding::decode_base64;
 use gem_hash::sha2::sha256;
 use serde_json::{self, json};
 
@@ -122,7 +122,7 @@ impl AllDomainsClient {
         }
 
         let base64_data = data_array[0].as_str().ok_or("Invalid base64 data format")?;
-        let data = base64::engine::general_purpose::STANDARD.decode(base64_data)?;
+        let data = decode_base64(base64_data)?;
         let name_record = NameRecordHeader::try_from_slice(&data)?;
 
         if !name_record.is_valid() {

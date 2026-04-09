@@ -1,7 +1,7 @@
 use super::models::{
     Asset, CachedToken, Country, CreateWidgetUrlRequest, CreateWidgetUrlResponse, Data, FiatCurrency, Response, TokenResponse, TransakOrderResponse, TransakQuote, TransakResponse,
 };
-use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD as BASE64};
+use gem_encoding::decode_base64_url;
 use primitives::{FiatProviderName, FiatQuoteType};
 use reqwest::Client;
 use serde_json::{Value, json};
@@ -202,7 +202,7 @@ impl TransakClient {
             return Err("Invalid JWT format".to_string().into());
         }
         let payload = parts[1];
-        let payload = BASE64.decode(payload)?;
+        let payload = decode_base64_url(payload)?;
         Ok(String::from_utf8(payload)?)
     }
 }

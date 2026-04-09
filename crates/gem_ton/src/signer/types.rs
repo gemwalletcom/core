@@ -1,5 +1,4 @@
-use base64::Engine;
-use base64::engine::general_purpose::STANDARD as BASE64;
+use gem_encoding::decode_base64;
 use gem_hash::sha2::sha256;
 use primitives::SignerError;
 use serde::{Deserialize, Serialize};
@@ -28,7 +27,7 @@ impl TonSignDataPayload {
     pub fn encode(&self) -> Result<(&str, Vec<u8>), SignerError> {
         match self {
             Self::Text { text } => Ok(("txt", text.as_bytes().to_vec())),
-            Self::Binary { bytes } => Ok(("bin", BASE64.decode(bytes).map_err(|e| SignerError::InvalidInput(e.to_string()))?)),
+            Self::Binary { bytes } => Ok(("bin", decode_base64(bytes).map_err(|_| SignerError::invalid_input("invalid base64"))?)),
             Self::Cell { .. } => Err(SignerError::InvalidInput("Cell payload not supported for sign-data".to_string())),
         }
     }

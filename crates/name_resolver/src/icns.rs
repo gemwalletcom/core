@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use base64::{Engine, engine::general_purpose};
+use gem_encoding::encode_base64;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, error::Error, sync::LazyLock};
@@ -62,7 +62,7 @@ impl NameClient for IcnsClient {
             },
         });
 
-        let b64 = general_purpose::STANDARD.encode(rpc_query.to_string());
+        let b64 = encode_base64(rpc_query.to_string().as_bytes());
         let url = format!("{}/cosmwasm/wasm/v1/contract/{}/smart/{}", self.api_url, RESOLVER, b64);
         let address = self.client.get(&url).send().await?.json::<Data<Record>>().await?.data.bech32_address;
 

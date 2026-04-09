@@ -14,7 +14,7 @@ impl ChainSigner for TonChainSigner {
             .map_err(|e| SignerError::InvalidInput(e.to_string()))?
             .as_secs();
         let result = sign_personal(message, private_key, timestamp)?;
-        Ok(base64::Engine::encode(&base64::engine::general_purpose::STANDARD, result.signature))
+        Ok(gem_encoding::encode_base64(&result.signature))
     }
 
     fn sign_transfer(&self, input: &SignerInput, private_key: &[u8]) -> Result<String, SignerError> {
