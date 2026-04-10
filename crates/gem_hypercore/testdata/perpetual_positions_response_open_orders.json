@@ -1,0 +1,10 @@
+[
+  {
+    "coin": "BTC",
+    "oid": 1,
+    "triggerPx": "110.0",
+    "limitPx": null,
+    "isPositionTpsl": true,
+    "orderType": "Take Profit Market"
+  }
+]
