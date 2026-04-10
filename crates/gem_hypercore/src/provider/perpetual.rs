@@ -183,6 +183,7 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     use gem_client::{ClientError, testkit::MockClient};
+    use primitives::testkit::json::load_testdata;
     use serde_json::Value;
 
     use crate::rpc::client::InMemoryPreferences;
@@ -264,30 +265,27 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_positions_fetches_open_orders_only_for_dexes_with_positions() {
-        let perp_dexs_request = load_json(include_str!("../../testdata/perpetual_positions_request_perp_dexs.json"));
-        let clearinghouse_state_request = load_json(include_str!("../../testdata/perpetual_positions_request_clearinghouse_state.json"));
-        let clearinghouse_state_dex1_request = load_json(include_str!("../../testdata/perpetual_positions_request_clearinghouse_state_dex1.json"));
-        let clearinghouse_state_dex2_request = load_json(include_str!("../../testdata/perpetual_positions_request_clearinghouse_state_dex2.json"));
-        let open_orders_request = load_json(include_str!("../../testdata/perpetual_positions_request_open_orders.json"));
-        let open_orders_dex1_request = load_json(include_str!("../../testdata/perpetual_positions_request_open_orders_dex1.json"));
-        let open_orders_dex2_request = load_json(include_str!("../../testdata/perpetual_positions_request_open_orders_dex2.json"));
+    async fn test_get_positions_skips_open_orders_for_dexes_without_positions() {
+        let perp_dexs_request: Value = load_testdata("perpetual_positions_request_perp_dexs.json");
+        let clearinghouse_state_request: Value = load_testdata("perpetual_positions_request_clearinghouse_state.json");
+        let clearinghouse_state_dex1_request: Value = load_testdata("perpetual_positions_request_clearinghouse_state_dex1.json");
+        let clearinghouse_state_dex2_request: Value = load_testdata("perpetual_positions_request_clearinghouse_state_dex2.json");
+        let open_orders_request: Value = load_testdata("perpetual_positions_request_open_orders.json");
+        let open_orders_dex1_request: Value = load_testdata("perpetual_positions_request_open_orders_dex1.json");
+        let open_orders_dex2_request: Value = load_testdata("perpetual_positions_request_open_orders_dex2.json");
 
         let responses = Arc::new(vec![
+            (perp_dexs_request, include_bytes!("../../testdata/perpetual_positions_response_perp_dexs.json").to_vec()),
             (
-                perp_dexs_request.clone(),
-                include_bytes!("../../testdata/perpetual_positions_response_perp_dexs.json").to_vec(),
-            ),
-            (
-                clearinghouse_state_request.clone(),
+                clearinghouse_state_request,
                 include_bytes!("../../testdata/perpetual_positions_response_clearinghouse_state.json").to_vec(),
             ),
             (
-                clearinghouse_state_dex1_request.clone(),
+                clearinghouse_state_dex1_request,
                 include_bytes!("../../testdata/perpetual_positions_response_clearinghouse_state_dex1.json").to_vec(),
             ),
             (
-                clearinghouse_state_dex2_request.clone(),
+                clearinghouse_state_dex2_request,
                 include_bytes!("../../testdata/perpetual_positions_response_clearinghouse_state_dex2.json").to_vec(),
             ),
             (
@@ -323,45 +321,26 @@ mod tests {
         let summary = client.get_positions("0x123".to_string()).await.unwrap();
         let seen_requests = seen_requests.lock().unwrap().clone();
 
-        assert_eq!(summary.positions.len(), 2);
+        let btc = summary.positions.iter().find(|position| position.perpetual_id == "hypercore_BTC").unwrap();
+        let eth = summary.positions.iter().find(|position| position.perpetual_id == "hypercore_ETH").unwrap();
+
         assert!(seen_requests.contains(&open_orders_request));
         assert!(seen_requests.contains(&open_orders_dex1_request));
         assert!(!seen_requests.contains(&open_orders_dex2_request));
-        assert_eq!(
-            summary
-                .positions
-                .iter()
-                .find(|position| position.perpetual_id == "hypercore_BTC")
-                .unwrap()
-                .take_profit
-                .as_ref()
-                .unwrap()
-                .price,
-            110.0
-        );
-        assert_eq!(
-            summary
-                .positions
-                .iter()
-                .find(|position| position.perpetual_id == "hypercore_ETH")
-                .unwrap()
-                .stop_loss
-                .as_ref()
-                .unwrap()
-                .price,
-            90.0
-        );
+        assert_eq!(summary.positions.len(), 2);
+        assert_eq!(btc.take_profit.as_ref().map(|order| order.price), Some(110.0));
+        assert_eq!(eth.stop_loss.as_ref().map(|order| order.price), Some(90.0));
     }
 
     #[tokio::test]
     async fn test_get_positions_skips_hip3_requests_when_enabled_markets_empty() {
-        let perp_dexs_request = load_json(include_str!("../../testdata/perpetual_positions_request_perp_dexs.json"));
-        let clearinghouse_state_request = load_json(include_str!("../../testdata/perpetual_positions_request_clearinghouse_state.json"));
-        let clearinghouse_state_dex1_request = load_json(include_str!("../../testdata/perpetual_positions_request_clearinghouse_state_dex1.json"));
-        let clearinghouse_state_dex2_request = load_json(include_str!("../../testdata/perpetual_positions_request_clearinghouse_state_dex2.json"));
-        let open_orders_request = load_json(include_str!("../../testdata/perpetual_positions_request_open_orders.json"));
-        let open_orders_dex1_request = load_json(include_str!("../../testdata/perpetual_positions_request_open_orders_dex1.json"));
-        let open_orders_dex2_request = load_json(include_str!("../../testdata/perpetual_positions_request_open_orders_dex2.json"));
+        let perp_dexs_request: Value = load_testdata("perpetual_positions_request_perp_dexs.json");
+        let clearinghouse_state_request: Value = load_testdata("perpetual_positions_request_clearinghouse_state.json");
+        let clearinghouse_state_dex1_request: Value = load_testdata("perpetual_positions_request_clearinghouse_state_dex1.json");
+        let clearinghouse_state_dex2_request: Value = load_testdata("perpetual_positions_request_clearinghouse_state_dex2.json");
+        let open_orders_request: Value = load_testdata("perpetual_positions_request_open_orders.json");
+        let open_orders_dex1_request: Value = load_testdata("perpetual_positions_request_open_orders_dex1.json");
+        let open_orders_dex2_request: Value = load_testdata("perpetual_positions_request_open_orders_dex2.json");
 
         let responses = Arc::new(vec![
             (
@@ -404,10 +383,6 @@ mod tests {
         assert!(!seen_requests.contains(&clearinghouse_state_dex2_request));
         assert!(!seen_requests.contains(&open_orders_dex1_request));
         assert!(!seen_requests.contains(&open_orders_dex2_request));
-    }
-
-    fn load_json(input: &str) -> Value {
-        serde_json::from_str(input).unwrap()
     }
 }
 
