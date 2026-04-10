@@ -1,6 +1,6 @@
 use super::models::NearTransfer;
+use signer::ED25519_KEY_TYPE;
 
-pub const ED25519_KEY_TYPE: u8 = 0;
 const TRANSFER_ACTION: u8 = 3;
 
 pub fn encode_transfer(transfer: &NearTransfer, public_key: &[u8; 32]) -> Vec<u8> {

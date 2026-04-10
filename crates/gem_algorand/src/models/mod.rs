@@ -2,6 +2,8 @@ pub mod account;
 pub mod asset;
 pub mod block;
 pub mod indexer;
+#[cfg(feature = "signer")]
+pub mod signing;
 pub mod transaction;
 
 pub use account::*;

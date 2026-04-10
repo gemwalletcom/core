@@ -4,6 +4,8 @@ pub mod block;
 pub mod common;
 pub mod fee;
 pub mod node;
+#[cfg(feature = "signer")]
+pub mod signing;
 pub mod transaction;
 
 pub use account::*;

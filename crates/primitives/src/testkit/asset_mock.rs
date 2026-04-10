@@ -38,6 +38,10 @@ impl Asset {
         )
     }
 
+    pub fn mock_algo_token() -> Self {
+        Asset::new(AssetId::token(Chain::Algorand, "13379146"), "AlgoToken".into(), "ALGO".into(), 6, AssetType::TOKEN)
+    }
+
     pub fn mock_with_chain(chain: Chain) -> Self {
         Asset::from_chain(chain)
     }

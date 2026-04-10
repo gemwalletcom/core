@@ -100,6 +100,39 @@ impl TransactionLoadInput {
         }
     }
 
+    pub fn mock_algorand(asset: Asset, sender: &str, destination: &str, value: &str, fee: u64, sequence: u64, block_hash: &str, chain_id: &str) -> Self {
+        TransactionLoadInput {
+            input_type: TransactionInputType::Transfer(asset),
+            sender_address: sender.into(),
+            destination_address: destination.into(),
+            value: value.into(),
+            gas_price: GasPriceType::regular(fee),
+            memo: None,
+            is_max_value: false,
+            metadata: TransactionLoadMetadata::Algorand {
+                sequence,
+                block_hash: block_hash.into(),
+                chain_id: chain_id.into(),
+            },
+        }
+    }
+
+    pub fn mock_stellar(asset: Asset, sender: &str, destination: &str, value: &str, fee: u64, memo: Option<&str>, sequence: u64, is_destination_exist: bool) -> Self {
+        TransactionLoadInput {
+            input_type: TransactionInputType::Transfer(asset),
+            sender_address: sender.into(),
+            destination_address: destination.into(),
+            value: value.into(),
+            gas_price: GasPriceType::regular(fee),
+            memo: memo.map(String::from),
+            is_max_value: false,
+            metadata: TransactionLoadMetadata::Stellar {
+                sequence,
+                is_destination_address_exist: is_destination_exist,
+            },
+        }
+    }
+
     pub fn mock_sign_data(chain: Chain, data: &str, output_type: TransferDataOutputType) -> Self {
         TransactionLoadInput {
             input_type: TransactionInputType::Generic(

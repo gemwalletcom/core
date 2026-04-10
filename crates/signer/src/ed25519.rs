@@ -2,6 +2,9 @@ use ed25519_dalek::{Signer as DalekSigner, SigningKey};
 
 use primitives::SignerError;
 
+/// Byte value representing the Ed25519 scheme in on-chain serialization formats.
+pub const ED25519_KEY_TYPE: u8 = 0;
+
 #[derive(Debug)]
 pub struct Ed25519KeyPair {
     signing_key: SigningKey,

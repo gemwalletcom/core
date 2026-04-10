@@ -13,6 +13,7 @@ alloy-primitives = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 gem_hash = { path = "../gem_hash" }
+gem_encoding = { path = "../gem_encoding", features = ["base32"] }
 zeroize = { workspace = true }
 
 [dev-dependencies]

@@ -1,6 +1,8 @@
+mod address;
 mod decode;
 mod ed25519;
 mod eip712;
+mod error;
 mod secp256k1;
 
 #[cfg(test)]
@@ -10,7 +12,9 @@ pub(crate) mod testkit {
 
 use zeroize::Zeroizing;
 
-pub use crate::ed25519::Ed25519KeyPair;
+pub use crate::address::Base32Address;
+pub use crate::ed25519::{ED25519_KEY_TYPE, Ed25519KeyPair};
+pub use crate::error::InvalidInput;
 pub use crate::secp256k1::{RECOVERY_ID_INDEX, SIGNATURE_LENGTH, apply_eth_recovery_id, public_key_from_private as secp256k1_public_key};
 
 pub use decode::{decode_private_key, encode_private_key, supports_private_key_import};

@@ -6,6 +6,7 @@ edition = { workspace = true }
 [features]
 default = []
 rpc = ["dep:number_formatter", "dep:chrono", "dep:async-trait", "dep:chain_traits", "dep:futures"]
+signer = ["dep:gem_encoding", "dep:gem_hash", "dep:num-traits", "dep:signer"]
 reqwest = ["gem_client/reqwest"]
 chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 
@@ -13,6 +14,7 @@ chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 serde = { workspace = true, features = ["derive"] }
 primitives = { path = "../primitives" }
 num-bigint = { workspace = true }
+num-traits = { workspace = true, optional = true }
 url = { workspace = true }
 
 # Optional dependencies for the rpc feature
@@ -24,9 +26,13 @@ futures = { workspace = true, optional = true }
 serde_json = { workspace = true }
 gem_client = { path = "../gem_client" }
 serde_serializers = { path = "../serde_serializers", features = ["bigint"] }
+gem_encoding = { path = "../gem_encoding", optional = true }
+gem_hash = { path = "../gem_hash", optional = true }
+signer = { path = "../signer", optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 reqwest = { workspace = true }
 settings = { path = "../settings", features = ["testkit"] }
 primitives = { path = "../primitives", features = ["testkit"] }
+hex = { workspace = true }

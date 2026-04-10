@@ -133,6 +133,12 @@ impl AssetId {
         Ok((parts[0].to_string(), parts[1].to_string()))
     }
 
+    pub fn split_sub_token_parts(&self) -> Option<(String, String)> {
+        let token_id = self.token_id.as_ref()?;
+        let (first, second) = token_id.split_once(TOKEN_ID_SEPARATOR)?;
+        Some((first.to_string(), second.to_string()))
+    }
+
     pub fn is_native(&self) -> bool {
         self.token_id.is_none()
     }

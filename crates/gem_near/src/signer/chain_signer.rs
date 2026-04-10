@@ -17,6 +17,7 @@ mod tests {
     use super::*;
     use primitives::{TransactionFee, TransactionLoadInput};
 
+    // Tests taken from https://github.com/trustwallet/wallet-core/blob/master/tests/chains/NEAR/SignerTests.cpp
     #[test]
     fn test_sign_near_transfer() {
         let private_key = bs58::decode("3hoMW1HvnRLSFCLZnvPzWeoGwtdHzke34B2cTHM8rhcbG3TbuLKtShTv3DvyejnXKXKBiV7YPkLeqUHN1ghnqpFv")
