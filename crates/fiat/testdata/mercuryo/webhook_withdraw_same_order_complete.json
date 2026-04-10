@@ -1,0 +1,13 @@
+{
+    "data": {
+        "id": "withdraw_provider_tx_987654321",
+        "merchant_transaction_id": "0d274c2f-cd7f-4137-a5b4-e63c4c2c020b",
+        "type": "withdraw",
+        "status": "completed",
+        "fiat_amount": "1192.13",
+        "fiat_currency": "EUR",
+        "tx": {
+            "id": "WITHDRAW_TX_HASH_123"
+        }
+    }
+}

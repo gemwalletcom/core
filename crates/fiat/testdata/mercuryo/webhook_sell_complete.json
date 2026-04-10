@@ -1,0 +1,14 @@
+{
+    "data": {
+        "id": "sell_provider_tx_123456789",
+        "merchant_transaction_id": "bbbbbbbb-cccc-4ddd-8eee-ffffffffffff",
+        "type": "sell",
+        "payment_method": "bank_card",
+        "status": "succeeded",
+        "fiat_amount": "250.50",
+        "fiat_currency": "GBP",
+        "tx": {
+            "id": "SELL_DEPOSIT_TX_HASH_123"
+        }
+    }
+}

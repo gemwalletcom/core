@@ -2,6 +2,8 @@
     "data": {
         "id": "buy_provider_tx_123456789",
         "merchant_transaction_id": "11111111-2222-4333-8444-555555555555",
+        "type": "buy",
+        "payment_method": "card",
         "status": "cancelled",
         "fiat_amount": "270.00",
         "fiat_currency": "USD"

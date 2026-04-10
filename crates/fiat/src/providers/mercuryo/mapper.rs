@@ -89,19 +89,17 @@ fn map_payment_type(payment_code: &str, payment_name: &str) -> Option<PaymentTyp
 
 pub fn map_order_from_webhook(webhook: WebhookData) -> FiatTransactionUpdate {
     let WebhookData {
-        id,
         merchant_transaction_id,
         status,
         fiat_amount,
         fiat_currency,
         tx,
+        ..
     } = webhook;
-    let transaction_id = merchant_transaction_id.unwrap_or_else(|| id.clone());
-    let provider_transaction_id = (transaction_id != id).then_some(id);
 
     FiatTransactionUpdate {
-        transaction_id,
-        provider_transaction_id,
+        transaction_id: merchant_transaction_id,
+        provider_transaction_id: None,
         status: map_status(&status),
         transaction_hash: tx.and_then(|tx| tx.id),
         fiat_amount: Some(fiat_amount),
@@ -166,16 +164,17 @@ mod tests {
     use primitives::FiatTransactionStatus;
 
     #[test]
-    fn test_map_order_from_webhook() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let webhook: Webhook = serde_json::from_str(include_str!("../../../testdata/mercuryo/webhook_buy_complete.json"))?;
-
-        let result = map_order_from_webhook(webhook.data);
+    fn test_map_order_from_webhook_payloads() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let buy: Webhook = serde_json::from_str(include_str!("../../../testdata/mercuryo/webhook_buy_complete.json"))?;
+        let mobile_pay: Webhook = serde_json::from_str(include_str!("../../../testdata/mercuryo/webhook_mobile_pay_complete.json"))?;
+        let sell: Webhook = serde_json::from_str(include_str!("../../../testdata/mercuryo/webhook_sell_complete.json"))?;
+        let withdraw: Webhook = serde_json::from_str(include_str!("../../../testdata/mercuryo/webhook_withdraw_same_order_complete.json"))?;
 
         assert_eq!(
-            result,
+            map_order_from_webhook(buy.data),
             FiatTransactionUpdate {
                 transaction_id: "11111111-2222-4333-8444-555555555555".to_string(),
-                provider_transaction_id: Some("buy_provider_tx_123456789".to_string()),
+                provider_transaction_id: None,
                 status: FiatTransactionStatus::Failed,
                 transaction_hash: None,
                 fiat_amount: Some(270.0),
@@ -183,23 +182,38 @@ mod tests {
             }
         );
 
-        Ok(())
-    }
-
-    #[test]
-    fn test_map_order_from_withdraw_webhook() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let webhook: Webhook = serde_json::from_str(include_str!("../../../testdata/mercuryo/webhook_withdraw_complete.json"))?;
-
-        let result = map_order_from_webhook(webhook.data);
+        assert_eq!(
+            map_order_from_webhook(sell.data),
+            FiatTransactionUpdate {
+                transaction_id: "bbbbbbbb-cccc-4ddd-8eee-ffffffffffff".to_string(),
+                provider_transaction_id: None,
+                status: FiatTransactionStatus::Complete,
+                transaction_hash: Some("SELL_DEPOSIT_TX_HASH_123".to_string()),
+                fiat_amount: Some(250.5),
+                fiat_currency: Some("GBP".to_string()),
+            }
+        );
 
         assert_eq!(
-            result,
+            map_order_from_webhook(mobile_pay.data),
             FiatTransactionUpdate {
-                transaction_id: "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee".to_string(),
-                provider_transaction_id: Some("withdraw_provider_tx_123456789".to_string()),
+                transaction_id: "0d274c2f-cd7f-4137-a5b4-e63c4c2c020b".to_string(),
+                provider_transaction_id: None,
                 status: FiatTransactionStatus::Complete,
-                transaction_hash: Some("CELESTIA_TX_HASH_123".to_string()),
-                fiat_amount: Some(39.23),
+                transaction_hash: None,
+                fiat_amount: Some(1500.0),
+                fiat_currency: Some("USD".to_string()),
+            }
+        );
+
+        assert_eq!(
+            map_order_from_webhook(withdraw.data),
+            FiatTransactionUpdate {
+                transaction_id: "0d274c2f-cd7f-4137-a5b4-e63c4c2c020b".to_string(),
+                provider_transaction_id: None,
+                status: FiatTransactionStatus::Complete,
+                transaction_hash: Some("WITHDRAW_TX_HASH_123".to_string()),
+                fiat_amount: Some(1192.13),
                 fiat_currency: Some("EUR".to_string()),
             }
         );

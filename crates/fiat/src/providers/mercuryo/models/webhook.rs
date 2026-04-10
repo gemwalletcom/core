@@ -9,7 +9,7 @@ pub struct Webhook {
 #[derive(Debug, Deserialize, Clone)]
 pub struct WebhookData {
     pub id: String,
-    pub merchant_transaction_id: Option<String>,
+    pub merchant_transaction_id: String,
     pub status: String,
     #[serde(deserialize_with = "deserialize_f64_from_str")]
     pub fiat_amount: f64,

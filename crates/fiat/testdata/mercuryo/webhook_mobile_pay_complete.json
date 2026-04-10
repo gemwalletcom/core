@@ -1,0 +1,11 @@
+{
+    "data": {
+        "id": "0f93bf39e3e918172",
+        "merchant_transaction_id": "0d274c2f-cd7f-4137-a5b4-e63c4c2c020b",
+        "type": "buy",
+        "payment_method": "mobile_pay",
+        "status": "paid",
+        "fiat_amount": "1500.00",
+        "fiat_currency": "USD"
+    }
+}
