@@ -97,7 +97,7 @@ pub use self::payment_type::PaymentType;
 pub mod contact;
 pub use self::contact::Contact;
 pub mod device;
-pub use self::device::{Device, MigrateDeviceIdRequest};
+pub use self::device::Device;
 pub mod device_token;
 pub use self::device_token::DeviceToken;
 pub mod transaction;

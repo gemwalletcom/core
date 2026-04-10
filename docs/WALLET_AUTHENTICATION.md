@@ -6,7 +6,7 @@ Wallet authentication endpoints require proof of wallet ownership via blockchain
 
 ## Authentication Flow
 
-1. Client requests nonce from `/v1/devices/{device_id}/auth/nonce`
+1. Client requests nonce from `/v2/devices/auth/nonce`
 2. Client signs `AuthMessage` with wallet private key
 3. Client sends authenticated request with signature
 4. Server processes request
@@ -36,7 +36,7 @@ Wallet authentication endpoints require proof of wallet ownership via blockchain
 
 **Endpoint:**
 ```
-GET /v1/devices/{device_id}/auth/nonce
+GET /v2/devices/auth/nonce
 ```
 
 **Response:**
@@ -70,7 +70,7 @@ GET /v1/devices/{device_id}/auth/nonce
 ## Request Example
 
 ```
-POST https://api.gemwallet.com/v1/rewards/referrals/create
+POST https://api.gemwallet.com/v2/devices/rewards/referrals/create
 Content-Type: application/json
 x-device-body-hash: a1b2c3d4e5f6...
 

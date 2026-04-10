@@ -7,9 +7,7 @@ pub mod guard;
 pub mod signature;
 use crate::assets::AssetsClient;
 use crate::metrics::fiat::FiatMetrics;
-use crate::params::{
-    AssetIdParam, ChainParam, ChartPeriodParam, CurrencyParam, DeviceIdParam, DeviceParam, FiatProviderIdParam, FiatQuoteTypeParam, TransactionIdParam, UserAgent,
-};
+use crate::params::{AssetIdParam, ChainParam, ChartPeriodParam, CurrencyParam, DeviceParam, FiatProviderIdParam, FiatQuoteTypeParam, TransactionIdParam, UserAgent};
 use crate::responders::{ApiError, ApiResponse};
 use auth_config::AuthConfig;
 pub use client::DevicesClient;
@@ -27,9 +25,8 @@ use primitives::device::Device;
 use primitives::name::NameRecord;
 use primitives::rewards::{RedemptionRequest, RedemptionResult, RewardRedemptionOption};
 use primitives::{
-    AddressName, AssetId, AuthNonce, ChainAddress, FiatAssets, FiatQuote, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuotes, InAppNotification, MigrateDeviceIdRequest,
-    NFTData, PortfolioAssets, PortfolioAssetsRequest, PriceAlerts, ReportNft, RewardEvent, Rewards, ScanTransaction, ScanTransactionPayload, Transaction, TransactionsResponse,
-    WalletSubscriptionChains,
+    AddressName, AssetId, AuthNonce, ChainAddress, FiatAssets, FiatQuote, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuotes, InAppNotification, NFTData, PortfolioAssets,
+    PortfolioAssetsRequest, PriceAlerts, ReportNft, RewardEvent, Rewards, ScanTransaction, ScanTransactionPayload, Transaction, TransactionsResponse, WalletSubscriptionChains,
 };
 use rocket::{State, delete, get, post, put, serde::json::Json, tokio::sync::Mutex};
 use std::sync::Arc;
@@ -37,23 +34,12 @@ use std::sync::Arc;
 use crate::auth::WalletSigned;
 
 #[post("/devices", format = "json", data = "<device>")]
-pub async fn add_device(device: DeviceParam, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<Device>, ApiError> {
-    Ok(client.lock().await.add_device(device.0)?.into())
-}
-
-#[post("/devices", format = "json", data = "<device>")]
-pub async fn add_device_v2(_device_id: VerifiedDeviceId, device: DeviceParam, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<Device>, ApiError> {
-    Ok(client.lock().await.add_device(device.0)?.into())
-}
-
-#[get("/devices/<device_id>")]
-pub async fn get_device(device_id: DeviceIdParam, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<Device>, ApiError> {
-    Ok(client.lock().await.get_device(&device_id.0)?.into())
-}
-
-#[put("/devices/<device_id>", format = "json", data = "<device>")]
-pub async fn update_device(device: DeviceParam, #[allow(unused)] device_id: DeviceIdParam, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<Device>, ApiError> {
-    Ok(client.lock().await.update_device(device.0)?.into())
+pub async fn add_device_v2(device_id: VerifiedDeviceId, device: DeviceParam, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<Device>, ApiError> {
+    let device = device.0;
+    if device.id != device_id.0 {
+        return Err(ApiError::BadRequest("Device id mismatch".to_string()));
+    }
+    Ok(client.lock().await.add_device(device)?.into())
 }
 
 #[get("/devices")]
@@ -64,11 +50,6 @@ pub async fn get_device_v2(device: AuthenticatedDevice, client: &State<Mutex<Dev
 #[get("/devices/is_registered")]
 pub async fn is_device_registered_v2(device_id: VerifiedDeviceId, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<bool>, ApiError> {
     Ok(client.lock().await.is_device_registered(&device_id.0)?.into())
-}
-
-#[post("/devices/migrate", format = "json", data = "<request>")]
-pub async fn migrate_device_id_v2(request: Json<MigrateDeviceIdRequest>, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<Device>, ApiError> {
-    Ok(client.lock().await.migrate_device_id(&request.old_device_id, &request.public_key)?.into())
 }
 
 #[get("/devices/assets?<from_timestamp>")]
@@ -190,8 +171,12 @@ pub async fn redeem_device_rewards_v2(
 }
 
 #[put("/devices", format = "json", data = "<device_param>")]
-pub async fn update_device_v2(_device: AuthenticatedDevice, device_param: DeviceParam, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<Device>, ApiError> {
-    Ok(client.lock().await.update_device(device_param.0)?.into())
+pub async fn update_device_v2(device: AuthenticatedDevice, device_param: DeviceParam, client: &State<Mutex<DevicesClient>>) -> Result<ApiResponse<Device>, ApiError> {
+    let device_param = device_param.0;
+    if device_param.id != device.device_row.device_id {
+        return Err(ApiError::BadRequest("Device id mismatch".to_string()));
+    }
+    Ok(client.lock().await.update_device(device_param)?.into())
 }
 
 #[post("/devices/push-notification")]

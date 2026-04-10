@@ -11,7 +11,6 @@ use unic_langid::LanguageIdentifier;
 
 const MAX_ADDRESS_LENGTH: usize = 256;
 const MAX_ASSET_ID_LENGTH: usize = 256;
-const MAX_DEVICE_ID_LENGTH: usize = 32;
 const MAX_SEARCH_QUERY_LENGTH: usize = 128;
 
 pub struct ChainParam(pub Chain);
@@ -129,19 +128,6 @@ impl<'r> FromFormField<'r> for AssetIdParam {
         AssetId::new(field.value)
             .map(AssetIdParam)
             .ok_or_else(|| form::Error::validation(format!("Invalid asset_id: {}", field.value)).into())
-    }
-}
-
-pub struct DeviceIdParam(pub String);
-
-impl<'r> FromParam<'r> for DeviceIdParam {
-    type Error = &'r str;
-
-    fn from_param(param: &'r str) -> Result<Self, Self::Error> {
-        if param.is_empty() || param.len() > MAX_DEVICE_ID_LENGTH {
-            return Err(param);
-        }
-        Ok(DeviceIdParam(param.to_string()))
     }
 }
 
