@@ -44,11 +44,6 @@ impl Address for StellarAddress {
 }
 
 impl StellarAddress {
-    /// Last 4 bytes of the public key, used as a key hint in Stellar signature envelopes.
-    pub(crate) fn key_hint(&self) -> &[u8; 4] {
-        self.base32.payload()[28..32].try_into().unwrap()
-    }
-
     fn crc16_xmodem(data: &[u8]) -> u16 {
         let mut crc: u16 = 0;
         for &byte in data {

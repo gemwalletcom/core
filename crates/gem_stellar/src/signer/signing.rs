@@ -24,7 +24,7 @@ pub(crate) fn sign_transaction(transaction: &StellarTransaction, private_key: &[
 
     let mut envelope = encoded;
     envelope.extend_from_slice(&SIGNATURE_COUNT);
-    envelope.extend_from_slice(transaction.account.key_hint());
+    envelope.extend_from_slice(&key_pair.public_key_bytes[28..32]);
     envelope.extend_from_slice(&(signature.len() as u32).to_be_bytes());
     envelope.extend_from_slice(&signature);
     Ok(encode_base64(&envelope))

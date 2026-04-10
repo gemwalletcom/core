@@ -26,7 +26,9 @@ mod tests {
     use crate::address::StellarAddress;
     use crate::models::signing::{Memo, Operation, StellarAssetData, StellarTransaction};
     use crate::signer::signing::sign_transaction;
+    use gem_encoding::decode_base64;
     use primitives::{Address, Asset, AssetType, Chain, TransactionFee, TransactionLoadInput};
+    use signer::Ed25519KeyPair;
 
     const PRIVATE_KEY: &str = "59a313f46ef1c23a9e4f71cea10fc0c56a2a6bb8a4b9ea3d5348823e5a478722";
     const SENDER: &str = "GAE2SZV4VLGBAPRYRFV2VY7YYLYGYIP5I7OU7BSP6DJT7GAZ35OKFDYI";
@@ -108,5 +110,27 @@ mod tests {
             signed,
             "AAAAAMpFJQVVMv16RJUPlzQUTlgZOHVurhw3igGacP1305F1AAAnEAH/8MgAAAADAAAAAQAAAAAAAAAAAAAAAGApkAAAAAAAAAAAAQAAAAAAAAAGAAAAAU1PQkkAAAAAPHEwK55l2uMBECcQxzsOUsAWg1YwXwD+ZUTDWZEbZWR//////////wAAAAAAAAABd9ORdQAAAEAnfyXyaNQX5Bq3AEQVBIaYd+cLib+y2sNY7DF/NYVSE51dZ6swGGElz094ObsPefmVmeRrkGsSc/fF5pmth+wJ"
         );
+    }
+
+    #[test]
+    fn test_stellar_signing_validation_and_hint() {
+        let transfer_key = hex::decode("3c0635f8638605aed6e461cf3fa2d508dd895df1a1655ff92c79bfbeaf88d4b9").unwrap();
+
+        let signed = StellarChainSigner
+            .sign_transfer(
+                &SignerInput::new(
+                    TransactionLoadInput::mock_stellar(Asset::from_chain(Chain::Stellar), SENDER, DESTINATION, "10000000", 1000, None, 2, true),
+                    TransactionFee::new_from_fee(1000.into()),
+                ),
+                &transfer_key,
+            )
+            .unwrap();
+        let envelope = decode_base64(&signed).unwrap();
+        let signer_key = Ed25519KeyPair::from_private_key(&transfer_key).unwrap();
+        let sender = StellarAddress::from_str(SENDER).unwrap();
+        let hint_offset = envelope.len() - 72;
+
+        assert_eq!(&envelope[hint_offset..hint_offset + 4], &signer_key.public_key_bytes[28..32]);
+        assert_ne!(&envelope[hint_offset..hint_offset + 4], &sender.as_bytes()[28..32]);
     }
 }

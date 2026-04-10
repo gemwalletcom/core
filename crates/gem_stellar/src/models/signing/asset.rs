@@ -16,6 +16,10 @@ pub struct StellarAssetData {
 
 impl StellarAssetData {
     pub fn new(issuer: &str, code: &str) -> Result<Self, SignerError> {
+        if !(code.is_ascii() && code.bytes().all(|byte| byte.is_ascii_alphanumeric())) {
+            return SignerError::invalid_input_err("Stellar asset code must be ASCII alphanumeric");
+        }
+
         let code = match code.len() {
             1..=4 => {
                 let mut buf = [0u8; 4];
