@@ -36,3 +36,9 @@ pub struct SamsungStoreDetails {
     #[serde(rename = "contentBinaryVersion")]
     pub version: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SolanaStoreRelease {
+    pub version_name: String,
+}

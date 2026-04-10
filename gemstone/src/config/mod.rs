@@ -68,7 +68,7 @@ impl Config {
     }
 
     fn get_public_url(&self, item: PublicUrl) -> String {
-        get_public_url(item).to_string()
+        get_public_url(item)
     }
 
     fn get_chain_config(&self, chain: String) -> ChainConfig {

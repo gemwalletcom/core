@@ -7,6 +7,8 @@ pub use self::localize::Localize;
 
 pub mod auth;
 pub use self::auth::{AuthMessage, AuthNonce, AuthPayload, AuthenticatedRequest};
+pub mod app_constants;
+pub use self::app_constants::{GEM_ANDROID_PACKAGE_ID, GEM_IOS_BUNDLE_ID};
 pub mod auth_status;
 pub use self::auth_status::AuthStatus;
 pub mod chain;

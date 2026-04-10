@@ -1,8 +1,8 @@
-use primitives::{PlatformStore, config::Release};
+use primitives::{GEM_ANDROID_PACKAGE_ID, GEM_IOS_BUNDLE_ID, PlatformStore, config::Release};
 use std::error::Error;
 use storage::{Database, ReleasesRepository, models::ReleaseRow};
 
-use super::model::{GitHubRepository, ITunesLookupResponse, SamsungStoreDetail};
+use super::model::{GitHubRepository, ITunesLookupResponse, SamsungStoreDetail, SolanaStoreRelease};
 
 pub struct VersionUpdater {
     database: Database,
@@ -14,7 +14,12 @@ impl VersionUpdater {
     }
 
     pub fn stores() -> &'static [PlatformStore] {
-        &[PlatformStore::AppStore, PlatformStore::ApkUniversal, PlatformStore::SamsungStore]
+        &[
+            PlatformStore::AppStore,
+            PlatformStore::ApkUniversal,
+            PlatformStore::SamsungStore,
+            PlatformStore::SolanaStore,
+        ]
     }
 
     pub async fn update_store(&self, store: PlatformStore) -> Result<String, Box<dyn Error + Send + Sync>> {
@@ -43,6 +48,7 @@ impl VersionUpdater {
             PlatformStore::AppStore => self.get_app_store_version().await,
             PlatformStore::ApkUniversal => self.get_github_version().await,
             PlatformStore::SamsungStore => self.get_samsung_version().await,
+            PlatformStore::SolanaStore => self.get_solana_store_version().await,
             _ => Err(format!("unsupported store: {:?}", store).into()),
         }
     }
@@ -54,7 +60,7 @@ impl VersionUpdater {
     }
 
     async fn get_app_store_version(&self) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let url = "https://itunes.apple.com/lookup?bundleId=com.gemwallet.ios";
+        let url = format!("https://itunes.apple.com/lookup?bundleId={GEM_IOS_BUNDLE_ID}");
         let response = reqwest::get(url).await?.json::<ITunesLookupResponse>().await?;
         response.results.first().map(|r| r.version.clone()).ok_or_else(|| "no results".into())
     }
@@ -77,11 +83,17 @@ impl VersionUpdater {
     }
 
     async fn get_samsung_version(&self) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let url = "https://galaxystore.samsung.com/api/detail/com.gemwallet.android";
+        let url = format!("https://galaxystore.samsung.com/api/detail/{GEM_ANDROID_PACKAGE_ID}");
         let response = reqwest::get(url).await?.json::<SamsungStoreDetail>().await?;
         match response.details {
             Some(details) => Ok(details.version),
             None => Err(response.error_message.unwrap_or_else(|| "no version found".to_string()).into()),
         }
+    }
+
+    async fn get_solana_store_version(&self) -> Result<String, Box<dyn Error + Send + Sync>> {
+        let url = format!("https://publish.solanamobile.com/api/{GEM_ANDROID_PACKAGE_ID}/release");
+        let response = reqwest::get(url).await?.json::<SolanaStoreRelease>().await?;
+        Ok(response.version_name)
     }
 }
