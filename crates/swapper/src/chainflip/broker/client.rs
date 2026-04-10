@@ -8,9 +8,6 @@ use gem_jsonrpc::client::JsonRpcClient;
 use serde_json::{Value, json};
 use std::fmt::Debug;
 
-const RPC_PATH: &str = "/rpc";
-const RPC_KEY: &str = "ed08651813cc4d4798bf9b953b5d33fb";
-
 #[derive(Clone, Debug)]
 pub struct BrokerClient<C>
 where
@@ -106,8 +103,4 @@ where
 
         result.take().map_err(SwapperError::from)
     }
-}
-
-pub fn build_broker_path(base_url: &str) -> String {
-    format!("{base_url}{RPC_PATH}/{RPC_KEY}")
 }
