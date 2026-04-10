@@ -23,7 +23,7 @@ pub(crate) fn encode_transaction(tx: &StellarTransaction) -> Vec<u8> {
     match &tx.operation {
         Operation::CreateAccount { destination, amount } => encode_create_account(&mut data, destination, *amount),
         Operation::Payment { destination, asset, amount } => encode_payment(&mut data, destination, asset.as_ref(), *amount),
-        Operation::ChangeTrust { asset, .. } => encode_change_trust(&mut data, asset),
+        Operation::ChangeTrust { asset } => encode_change_trust(&mut data, asset),
     }
 
     // ext (union void)
@@ -48,12 +48,7 @@ fn encode_change_trust(data: &mut Vec<u8>, asset: &StellarAssetData) {
 }
 
 fn encode_time_bounds(data: &mut Vec<u8>, tx: &StellarTransaction) {
-    let valid_before = match &tx.operation {
-        Operation::ChangeTrust { valid_before, .. } => *valid_before,
-        _ => tx.time_bounds,
-    };
-
-    if let Some(to) = valid_before.filter(|v| *v > 0) {
+    if let Some(to) = tx.time_bounds.filter(|v| *v > 0) {
         write_u32(data, 1);
         write_u64(data, 0);
         write_u64(data, to);

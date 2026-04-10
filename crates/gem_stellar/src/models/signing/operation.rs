@@ -22,7 +22,6 @@ pub enum Operation {
     },
     ChangeTrust {
         asset: StellarAssetData,
-        valid_before: Option<u64>,
     },
 }
 

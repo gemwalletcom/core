@@ -50,7 +50,6 @@ impl StellarTransaction {
     pub fn account_action(input: &SignerInput) -> Result<Self, SignerError> {
         let operation = Operation::ChangeTrust {
             asset: StellarAssetData::from_input(input)?,
-            valid_before: None,
         };
 
         Self::build(input, fee_u32(input)?, operation)

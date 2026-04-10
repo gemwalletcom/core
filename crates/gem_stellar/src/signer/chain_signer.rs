@@ -98,10 +98,9 @@ mod tests {
             fee: 10000,
             sequence: 144098454883270659,
             memo: Memo::None,
-            time_bounds: None,
+            time_bounds: Some(1613336576),
             operation: Operation::ChangeTrust {
                 asset: StellarAssetData::new("GA6HCMBLTZS5VYYBCATRBRZ3BZJMAFUDKYYF6AH6MVCMGWMRDNSWJPIH", "MOBI").unwrap(),
-                valid_before: Some(1613336576),
             },
         };
 
