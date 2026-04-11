@@ -27,12 +27,19 @@ mod tests {
     use crate::models::signing::{Memo, Operation, StellarAssetData, StellarTransaction};
     use crate::signer::signing::sign_transaction;
     use gem_encoding::decode_base64;
-    use primitives::{Address, Asset, AssetType, Chain, TransactionFee, TransactionLoadInput};
+    use primitives::{Address, Asset, AssetType, Chain, TransactionFee, TransactionLoadInput, TransactionLoadMetadata};
     use signer::Ed25519KeyPair;
 
     const PRIVATE_KEY: &str = "59a313f46ef1c23a9e4f71cea10fc0c56a2a6bb8a4b9ea3d5348823e5a478722";
     const SENDER: &str = "GAE2SZV4VLGBAPRYRFV2VY7YYLYGYIP5I7OU7BSP6DJT7GAZ35OKFDYI";
     const DESTINATION: &str = "GDCYBNRRPIHLHG7X7TKPUPAZ7WVUXCN3VO7WCCK64RIFV5XM5V5K4A52";
+
+    fn metadata(sequence: u64, is_destination_address_exist: bool) -> TransactionLoadMetadata {
+        TransactionLoadMetadata::Stellar {
+            sequence,
+            is_destination_address_exist,
+        }
+    }
 
     #[test]
     fn test_sign_stellar_transactions() {
@@ -40,7 +47,15 @@ mod tests {
 
         // Native transfer with memo
         let input = SignerInput::new(
-            TransactionLoadInput::mock_stellar(Asset::from_chain(Chain::Stellar), SENDER, DESTINATION, "10000000", 1000, Some("Hello, world!"), 2, true),
+            TransactionLoadInput::mock_transfer(
+                Asset::from_chain(Chain::Stellar),
+                SENDER,
+                DESTINATION,
+                "10000000",
+                1000,
+                Some("Hello, world!"),
+                metadata(2, true),
+            ),
             TransactionFee::new_from_fee(1000.into()),
         );
         let signed = StellarChainSigner.sign_transfer(&input, &key).unwrap();
@@ -51,7 +66,7 @@ mod tests {
 
         // Transfer to non-existent destination (creates account)
         let input = SignerInput::new(
-            TransactionLoadInput::mock_stellar(Asset::from_chain(Chain::Stellar), SENDER, DESTINATION, "10000000", 1000, None, 2, false),
+            TransactionLoadInput::mock_transfer(Asset::from_chain(Chain::Stellar), SENDER, DESTINATION, "10000000", 1000, None, metadata(2, false)),
             TransactionFee::new_from_fee(1000.into()),
         );
         let signed = StellarChainSigner.sign_transfer(&input, &key).unwrap();
@@ -70,15 +85,14 @@ mod tests {
             AssetType::TOKEN,
         );
         let input = SignerInput::new(
-            TransactionLoadInput::mock_stellar(
+            TransactionLoadInput::mock_transfer(
                 mobi,
                 "GDFEKJIFKUZP26SESUHZONAUJZMBSODVN2XBYN4KAGNHB7LX2OIXLPUL",
                 "GA3ISGYIE2ZTH3UAKEKBVHBPKUSL3LT4UQ6C5CUGP2IM5F467O267KI7",
                 "12000000",
                 1000,
                 None,
-                144098454883270661,
-                true,
+                metadata(144098454883270661, true),
             ),
             TransactionFee::new_from_fee(1000.into()),
         );
@@ -118,7 +132,7 @@ mod tests {
         let signed = StellarChainSigner
             .sign_transfer(
                 &SignerInput::new(
-                    TransactionLoadInput::mock_stellar(Asset::from_chain(Chain::Stellar), SENDER, DESTINATION, "10000000", 1000, None, 2, true),
+                    TransactionLoadInput::mock_transfer(Asset::from_chain(Chain::Stellar), SENDER, DESTINATION, "10000000", 1000, None, metadata(2, true)),
                     TransactionFee::new_from_fee(1000.into()),
                 ),
                 &transfer_key,
