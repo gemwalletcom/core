@@ -1,10 +1,10 @@
 use std::collections::{HashMap, HashSet};
 
-use primitives::{AssetId, PerpetualPosition};
+use primitives::{AssetId, PerpetualMarketData, PerpetualPosition};
 
 use crate::models::{
     order::OpenOrder,
-    websocket::{HyperliquidSocketMessage, PositionsDiff, RawSocketMessage},
+    websocket::{ActiveAssetCtxData, HyperliquidSocketMessage, PositionsDiff, RawSocketMessage},
 };
 
 use super::perpetual_mapper::{map_positions, map_tp_sl_from_orders};
@@ -13,24 +13,50 @@ pub fn parse_websocket_data(data: &[u8]) -> Result<HyperliquidSocketMessage, ser
     let raw: RawSocketMessage = serde_json::from_slice(data)?;
 
     match raw {
-        RawSocketMessage::ClearinghouseState(data) => {
-            let summary = map_positions(data.clearinghouse_state, data.user, &[]);
-            Ok(HyperliquidSocketMessage::ClearinghouseState {
+        RawSocketMessage::AccountState(data) => {
+            let summary = map_positions(data.clearinghouse_state, data.address, &[]);
+            Ok(HyperliquidSocketMessage::AccountState {
                 balance: summary.balance,
                 positions: summary.positions,
             })
         }
         RawSocketMessage::OpenOrders(data) => Ok(HyperliquidSocketMessage::OpenOrders { orders: data.orders }),
         RawSocketMessage::Candle(candlestick) => Ok(HyperliquidSocketMessage::Candle { candle: candlestick.into() }),
-        RawSocketMessage::AllMids(data) => {
-            let prices = data.mids.into_iter().filter_map(|(k, v)| v.parse::<f64>().ok().map(|p| (k, p))).collect();
-            Ok(HyperliquidSocketMessage::AllMids { prices })
-        }
+        RawSocketMessage::MarketData(data) => Ok(HyperliquidSocketMessage::MarketData {
+            market: map_active_asset_ctx(data)?,
+        }),
+        RawSocketMessage::MarketPrices(data) => Ok(HyperliquidSocketMessage::MarketPrices {
+            prices: data
+                .mids
+                .into_iter()
+                .filter_map(|(coin, price)| price.parse::<f64>().ok().map(|price| (coin, price)))
+                .collect(),
+        }),
         RawSocketMessage::SubscriptionResponse(data) => Ok(HyperliquidSocketMessage::SubscriptionResponse {
             subscription_type: data.subscription.subscription_type,
         }),
         RawSocketMessage::Unknown => Ok(HyperliquidSocketMessage::Unknown),
     }
+}
+
+fn map_active_asset_ctx(data: ActiveAssetCtxData) -> Result<PerpetualMarketData, serde_json::Error> {
+    let ActiveAssetCtxData { symbol, ctx } = data;
+    let mark_price = ctx.mark_px;
+    let price = ctx.mid_px.unwrap_or(mark_price);
+    let prev_price = ctx.prev_day_px;
+    let price_percent_change_24h = if prev_price > 0.0 { ((price - prev_price) / prev_price) * 100.0 } else { 0.0 };
+    let open_interest = ctx.open_interest * price;
+    let volume_24h = ctx.day_ntl_vlm;
+    let funding = ctx.funding * 100.0;
+
+    Ok(PerpetualMarketData {
+        coin: symbol,
+        price,
+        price_percent_change_24h,
+        open_interest,
+        volume_24h,
+        funding,
+    })
 }
 
 pub fn diff_clearinghouse_positions(new_positions: Vec<PerpetualPosition>, existing_positions: Vec<PerpetualPosition>) -> PositionsDiff {
@@ -83,8 +109,8 @@ mod tests {
     #[test]
     fn test_parse_all_mids() {
         let json = include_bytes!("../../testdata/ws_all_mids.json");
-        let HyperliquidSocketMessage::AllMids { prices } = parse_websocket_data(json).unwrap() else {
-            panic!("expected AllMids");
+        let HyperliquidSocketMessage::MarketPrices { prices } = parse_websocket_data(json).unwrap() else {
+            panic!("expected MarketPrices");
         };
 
         assert_eq!(prices.len(), 5);
@@ -93,6 +119,46 @@ mod tests {
         assert_eq!(prices["SOL"], 260.48);
         assert_eq!(prices["DOGE"], 0.40381);
         assert_eq!(prices["HYPE"], 26.65);
+    }
+
+    #[test]
+    fn test_parse_active_asset_ctx() {
+        let json = include_bytes!("../../testdata/ws_active_asset_ctx.json");
+        let HyperliquidSocketMessage::MarketData { market } = parse_websocket_data(json).unwrap() else {
+            panic!("expected MarketData");
+        };
+
+        assert_eq!(
+            market,
+            PerpetualMarketData {
+                coin: "ETH".to_string(),
+                price: 2236.45,
+                price_percent_change_24h: 11.822499999999991,
+                open_interest: 1_118_225.0,
+                volume_24h: 1_169_046.29406,
+                funding: 0.00125,
+            }
+        );
+    }
+
+    #[test]
+    fn test_parse_active_asset_ctx_rejects_invalid_numbers() {
+        let json = br#"{
+          "channel": "activeAssetCtx",
+          "data": {
+            "coin": "ETH",
+            "ctx": {
+              "dayNtlVlm": "1169046.29406",
+              "prevDayPx": "invalid",
+              "markPx": "2236.40",
+              "midPx": "2236.45",
+              "funding": "0.0000125",
+              "openInterest": "500"
+            }
+          }
+        }"#;
+
+        assert!(parse_websocket_data(json).is_err());
     }
 
     #[test]
@@ -136,8 +202,8 @@ mod tests {
     #[test]
     fn test_parse_clearinghouse_state() {
         let json = include_bytes!("../../testdata/ws_clearinghouse_state.json");
-        let HyperliquidSocketMessage::ClearinghouseState { balance, positions } = parse_websocket_data(json).unwrap() else {
-            panic!("expected ClearinghouseState");
+        let HyperliquidSocketMessage::AccountState { balance, positions } = parse_websocket_data(json).unwrap() else {
+            panic!("expected AccountState");
         };
 
         assert_eq!(balance.available, 15230.5 - 830.5);

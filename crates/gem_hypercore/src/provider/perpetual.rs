@@ -44,6 +44,17 @@ fn filter_active_dex(perp_dexs: &[Option<PerpDex>], enabled_hip3_markets: &[Stri
         .collect()
 }
 
+pub fn candle_interval(period: &ChartPeriod) -> &'static str {
+    match period {
+        ChartPeriod::Hour => "1m",
+        ChartPeriod::Day => "30m",
+        ChartPeriod::Week => "4h",
+        ChartPeriod::Month => "12h",
+        ChartPeriod::Year => "1w",
+        ChartPeriod::All => "1M",
+    }
+}
+
 impl<C: Client> HyperCoreClient<C> {
     async fn get_active_dex_entries(&self) -> Vec<(u32, Option<String>)> {
         if self.config.enabled_hip3_markets.is_empty() {
@@ -134,14 +145,7 @@ impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
     }
 
     async fn get_perpetual_candlesticks(&self, symbol: String, period: ChartPeriod) -> Result<Vec<ChartCandleStick>, Box<dyn Error + Sync + Send>> {
-        let interval = match period {
-            ChartPeriod::Hour => "1m",
-            ChartPeriod::Day => "30m",
-            ChartPeriod::Week => "4h",
-            ChartPeriod::Month => "12h",
-            ChartPeriod::Year => "1w",
-            ChartPeriod::All => "1M",
-        };
+        let interval = candle_interval(&period);
 
         let end_time = chrono::Utc::now().timestamp() * 1000;
         let start_time = match period {

@@ -24,6 +24,18 @@ pub struct Perpetual {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "camelCase")]
+pub struct PerpetualMarketData {
+    pub coin: String,
+    pub price: f64,
+    pub price_percent_change_24h: f64,
+    pub open_interest: f64,
+    pub volume_24h: f64,
+    pub funding: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(rename_all = "camelCase")]
 pub struct PerpetualBasic {
     pub asset_id: AssetId,
     pub perpetual_id: String,
