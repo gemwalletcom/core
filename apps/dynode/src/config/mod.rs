@@ -232,7 +232,7 @@ pub struct WebhookConfig {
 pub struct NodeConfig {
     pub port: u16,
     pub address: String,
-    pub metrics: MetricsSettings,
+    pub metrics: MetricsConfig,
     #[serde(default)]
     pub cache: CacheConfig,
     pub monitoring: NodeMonitoringConfig,
@@ -319,11 +319,4 @@ fn find_chain_files(base_dir: &Path) -> Vec<PathBuf> {
 
     files.sort();
     files
-}
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct MetricsSettings {
-    pub port: u16,
-    pub address: String,
-    pub prefix: String,
 }

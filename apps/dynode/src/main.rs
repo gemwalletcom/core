@@ -134,12 +134,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let (config, chains) = load_config()?;
 
     let node_address = IpAddr::from_str(config.address.as_str())?;
-    let metrics_address = IpAddr::from_str(config.metrics.address.as_str())?;
-
-    let metrics_config = dynode::config::MetricsConfig {
-        prefix: config.metrics.prefix.clone(),
-    };
-    let metrics = Metrics::new(metrics_config);
+    let metrics = Metrics::new(config.metrics.clone());
     info_with_fields!("broadcast webhook config", enabled = config.webhook.enabled, url = config.webhook.url.as_str(),);
     let broadcast_webhook = DynodeBroadcastWebhookClient::new(config.webhook.clone())?;
     let client = gem_client::builder().timeout(config.request.timeout).build()?;
@@ -167,24 +162,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         });
     }
 
-    info_with_fields!(
-        "Server started",
-        node_address = &format!("{}:{}", node_address, config.port),
-        metrics_address = &format!("{}:{}", metrics_address, config.metrics.port),
-    );
+    info_with_fields!("Server started", node_address = &format!("{}:{}", node_address, config.port), metrics_path = "/metrics",);
 
     let proxy_server = rocket::custom(Config::figment().merge(("address", node_address)).merge(("port", config.port)))
         .manage(node_service)
         .manage(metrics.clone())
         .manage(config.jwt)
         .mount("/", proxy_routes())
-        .mount("/", rocket::routes![health_endpoint, root_endpoint, auth_endpoint]);
+        .mount("/", rocket::routes![health_endpoint, root_endpoint, auth_endpoint, metrics_endpoint]);
 
-    let metrics_server = rocket::custom(Config::figment().merge(("address", metrics_address)).merge(("port", config.metrics.port)))
-        .manage(metrics)
-        .mount("/", rocket::routes![metrics_endpoint]);
-
-    rocket::tokio::try_join!(proxy_server.launch(), metrics_server.launch())?;
+    proxy_server.launch().await?;
 
     Ok(())
 }

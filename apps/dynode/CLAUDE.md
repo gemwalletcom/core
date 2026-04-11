@@ -11,7 +11,7 @@ A high-performance blockchain proxy service written in Rust that routes requests
 
 ## Architecture
 
-- `main.rs` - Starts dual HTTP servers (proxy + metrics)
+- `main.rs` - Starts a single HTTP server for proxy, auth, health, and metrics
 - `node_service.rs` - Manages node health monitoring and failover logic
 - `proxy_request_service.rs` - Handles incoming requests and proxies to blockchain nodes  
 - `chain_service/` - Blockchain-specific API implementations
