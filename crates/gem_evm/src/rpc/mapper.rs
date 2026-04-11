@@ -65,6 +65,8 @@ impl EthereumMapper {
         let created_at = DateTime::from_timestamp(timestamp.clone().try_into().ok()?, 0)?;
 
         let is_smart_contract_call = transaction.to.is_some() && transaction.input.len() > 2;
+        let is_erc20_approve = transaction.input.starts_with(FUNCTION_ERC20_APPROVE);
+        let is_erc20_transfer = transaction.input.starts_with(FUNCTION_ERC20_TRANSFER);
         let is_native_transfer = transaction.input == INPUT_0X && transaction_reciept.gas_used == BigUint::from(TRANSFER_GAS_LIMIT);
         let is_native_transfer_with_data = transaction.input.len() > 2
             && transaction.gas > TRANSFER_GAS_LIMIT
@@ -150,12 +152,11 @@ impl EthereumMapper {
         }
 
         // erc20 approve
-        if transaction.input.starts_with(FUNCTION_ERC20_APPROVE)
-            && transaction_reciept
+        if is_erc20_approve
+            && let Some(log) = transaction_reciept
                 .logs
-                .last()
-                .is_some_and(|log| log.topics.len() == 3 && log.topics.first().is_some_and(|x| x == APPROVAL_TOPIC))
-            && let Some(log) = transaction_reciept.logs.last()
+                .iter()
+                .find(|log| log.topics.len() == 3 && log.topics.first().is_some_and(|x| x == APPROVAL_TOPIC))
         {
             let to_address = ethereum_address_from_topic(&log.topics[2])?;
             let value = BigUint::from_str_radix(&log.data.replace("0x", ""), 16).ok()?;
@@ -191,9 +192,10 @@ impl EthereumMapper {
             let token_id = ethereum_address_checksum(&log.address).ok()?;
 
             // Check if this is a relevant ERC20 transfer
-            let is_direct_transfer = transaction.input.starts_with(FUNCTION_ERC20_TRANSFER);
+            let is_contract_transfer =
+                !is_erc20_approve && is_smart_contract_call && (from_address_in_log == from || from_address_in_log == to) && transaction_reciept.logs.len() <= 2;
 
-            if is_direct_transfer || (is_smart_contract_call && (from_address_in_log == from || from_address_in_log == to)) && transaction_reciept.logs.len() <= 2 {
+            if is_erc20_transfer || is_contract_transfer {
                 return Some(PrimitivesTransaction::new(
                     hash,
                     AssetId::from_token(chain, &token_id),
@@ -397,10 +399,23 @@ mod tests {
     #[test]
     fn test_erc20_approve() {
         let transaction = load_json_rpc_result::<Transaction>(include_str!("../../testdata/approve.json"));
-        let receipt = load_json_rpc_result::<TransactionReciept>(include_str!("../../testdata/approve_receipt.json"));
+        let mut receipt = load_json_rpc_result::<TransactionReciept>(include_str!("../../testdata/approve_receipt.json"));
 
         let result = EthereumMapper::map_transaction(Chain::Ethereum, &transaction, &receipt, None, &BigUint::from(1735671600u64), None).unwrap();
+        assert_eq!(result.transaction_type, TransactionType::TokenApproval);
+        assert_eq!(result.asset_id, ETHEREUM_DAI_ASSET_ID.clone());
+        assert_eq!(result.from, "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4");
+        assert_eq!(result.to, UNISWAP_PERMIT2_CONTRACT);
+        assert_eq!(result.value, "115792089237316195423570985008687907853269984665640564039457584007913129639935");
 
+        receipt.logs.push(Log {
+            address: "0x0000000000000000000000000000000000001010".to_string(),
+            topics: vec!["0x4dfe1bbbcf077ddc3e01291eea2d5c70c2b422b415d95645b9adcfd678cb1d63".to_string()],
+            data: "0x".to_string(),
+            transaction_hash: None,
+        });
+
+        let result = EthereumMapper::map_transaction(Chain::Ethereum, &transaction, &receipt, None, &BigUint::from(1735671600u64), None).unwrap();
         assert_eq!(result.transaction_type, TransactionType::TokenApproval);
         assert_eq!(result.asset_id, ETHEREUM_DAI_ASSET_ID.clone());
         assert_eq!(result.from, "0xBA4D1d35bCe0e8F28E5a3403e7a0b996c5d50AC4");
