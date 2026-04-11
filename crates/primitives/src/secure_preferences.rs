@@ -1,5 +1,9 @@
-use std::error::Error;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::{
+    collections::HashMap,
+    error::Error,
+    sync::Mutex,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 pub trait SecurePreferences: Send + Sync {
     fn get(&self, key: String) -> Result<Option<String>, Box<dyn Error + Send + Sync>>;
@@ -11,6 +15,39 @@ pub trait Preferences: Send + Sync {
     fn get(&self, key: String) -> Result<Option<String>, Box<dyn Error + Send + Sync>>;
     fn set(&self, key: String, value: String) -> Result<(), Box<dyn Error + Send + Sync>>;
     fn remove(&self, key: String) -> Result<(), Box<dyn Error + Send + Sync>>;
+}
+
+#[derive(Debug)]
+pub struct InMemoryPreferences {
+    data: Mutex<HashMap<String, String>>,
+}
+
+impl Default for InMemoryPreferences {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl InMemoryPreferences {
+    pub fn new() -> Self {
+        Self { data: Mutex::new(HashMap::new()) }
+    }
+}
+
+impl Preferences for InMemoryPreferences {
+    fn get(&self, key: String) -> Result<Option<String>, Box<dyn Error + Send + Sync>> {
+        Ok(self.data.lock().unwrap().get(&key).cloned())
+    }
+
+    fn set(&self, key: String, value: String) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.data.lock().unwrap().insert(key, value);
+        Ok(())
+    }
+
+    fn remove(&self, key: String) -> Result<(), Box<dyn Error + Send + Sync>> {
+        self.data.lock().unwrap().remove(&key);
+        Ok(())
+    }
 }
 
 pub trait PreferencesExt {

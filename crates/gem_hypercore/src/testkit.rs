@@ -3,9 +3,11 @@ pub use crate::models::order::OpenOrder;
 pub use crate::models::portfolio::{HypercoreDataPoint, HypercorePortfolioResponse, HypercorePortfolioTimeframeData};
 pub use crate::models::position::{AssetPositions, MarginSummary};
 #[cfg(test)]
-use crate::rpc::client::{HyperCoreClient, InMemoryPreferences};
+use crate::rpc::client::HyperCoreClient;
 #[cfg(test)]
 use gem_client::testkit::MockClient;
+#[cfg(test)]
+use primitives::InMemoryPreferences;
 #[cfg(test)]
 use std::sync::Arc;
 

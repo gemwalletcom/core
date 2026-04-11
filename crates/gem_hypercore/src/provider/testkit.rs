@@ -1,7 +1,9 @@
 #[cfg(all(test, feature = "chain_integration_tests"))]
-use crate::rpc::client::{HyperCoreClient, InMemoryPreferences};
+use crate::rpc::client::HyperCoreClient;
 #[cfg(all(test, feature = "chain_integration_tests"))]
 use gem_client::ReqwestClient;
+#[cfg(all(test, feature = "chain_integration_tests"))]
+use primitives::InMemoryPreferences;
 #[cfg(all(test, feature = "chain_integration_tests"))]
 use std::sync::Arc;
 

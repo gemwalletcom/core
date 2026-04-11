@@ -13,12 +13,9 @@ use crate::models::{
 };
 use chain_traits::ChainTraits;
 use gem_client::{CONTENT_TYPE, Client, ClientExt, ContentType};
+use primitives::InMemoryPreferences;
 use serde::de::DeserializeOwned;
-use std::{
-    collections::HashMap,
-    error::Error,
-    sync::{Arc, Mutex},
-};
+use std::{collections::HashMap, error::Error, sync::Arc};
 
 use crate::config::HypercoreConfig;
 use gem_client::X_CACHE_TTL;
@@ -36,39 +33,6 @@ fn transaction_sender_cache_key(id: &str) -> String {
 
 pub(crate) fn agent_owner_cache_key(agent_address: &str) -> String {
     format!("{AGENT_OWNER_CACHE_PREFIX}{}", agent_address.to_lowercase())
-}
-
-#[derive(Debug)]
-pub struct InMemoryPreferences {
-    data: Mutex<HashMap<String, String>>,
-}
-
-impl Default for InMemoryPreferences {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl InMemoryPreferences {
-    pub fn new() -> Self {
-        Self { data: Mutex::new(HashMap::new()) }
-    }
-}
-
-impl Preferences for InMemoryPreferences {
-    fn get(&self, key: String) -> Result<Option<String>, Box<dyn Error + Send + Sync>> {
-        Ok(self.data.lock().unwrap().get(&key).cloned())
-    }
-
-    fn set(&self, key: String, value: String) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.data.lock().unwrap().insert(key, value);
-        Ok(())
-    }
-
-    fn remove(&self, key: String) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.data.lock().unwrap().remove(&key);
-        Ok(())
-    }
 }
 
 pub struct HyperCoreClient<C: Client> {

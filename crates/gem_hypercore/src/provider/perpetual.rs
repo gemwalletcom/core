@@ -187,10 +187,9 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     use gem_client::{ClientError, testkit::MockClient};
+    use primitives::InMemoryPreferences;
     use primitives::testkit::json::load_testdata;
     use serde_json::Value;
-
-    use crate::rpc::client::InMemoryPreferences;
 
     #[test]
     fn test_filter_active_dex_filters_inactive() {

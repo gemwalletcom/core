@@ -267,7 +267,7 @@ pub use self::transaction_data_output::{TransferDataOutputAction, TransferDataOu
 pub mod broadcast_options;
 pub use self::broadcast_options::BroadcastOptions;
 pub mod secure_preferences;
-pub use self::secure_preferences::{Preferences, PreferencesExt, SecurePreferences};
+pub use self::secure_preferences::{InMemoryPreferences, Preferences, PreferencesExt, SecurePreferences};
 
 pub mod signer_error;
 pub use self::signer_error::SignerError;
