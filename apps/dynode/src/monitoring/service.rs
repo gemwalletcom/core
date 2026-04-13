@@ -167,19 +167,14 @@ impl NodeService {
         }
 
         let current_node = NodeService::get_node_domain(&self.nodes, chain_config.chain).await?;
-        let urls = self.get_ordered_urls(&chain_config.urls, &current_node.url, request.id.as_str());
-        if urls.is_empty() {
-            return None;
-        }
-
-        Some(urls)
+        Some(Self::get_ordered_urls(&chain_config.urls, &current_node.url, request.id.as_str()))
     }
 
     fn node_not_found_response(&self, request: &ProxyRequest) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {
         self.log_and_create_error_response(request, None, NODE_NOT_FOUND, None)
     }
 
-    fn get_ordered_urls(&self, urls: &[Url], current: &Url, request_id: &str) -> Vec<Url> {
+    fn get_ordered_urls(urls: &[Url], current: &Url, request_id: &str) -> Vec<Url> {
         let mut ordered_urls = urls.to_vec();
         if let Some(current_index) = ordered_urls.iter().position(|url| *url == *current) {
             ordered_urls.swap(0, current_index);

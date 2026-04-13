@@ -43,6 +43,7 @@ impl NodeMonitor {
             let nodes = Arc::clone(&self.nodes);
             let metrics = Arc::clone(&self.metrics);
             let monitoring_config = self.monitoring_config.clone();
+            let poll_interval = chain_config.poll_interval(&monitoring_config);
             let initial_delay = Duration::from_millis(((index as u64) + 1) * 250);
 
             tokio::task::spawn(async move {
@@ -53,7 +54,7 @@ impl NodeMonitor {
                         NodeTelemetry::log_monitor_error(&chain_config, err.as_ref());
                     }
 
-                    sleep(Duration::from_secs(chain_config.get_poll_interval_seconds(&monitoring_config))).await;
+                    sleep(poll_interval).await;
                 }
             });
         }

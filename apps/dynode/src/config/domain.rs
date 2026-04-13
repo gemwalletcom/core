@@ -1,5 +1,6 @@
 use primitives::Chain;
 use serde::Deserialize;
+use std::time::Duration;
 
 use super::NodeMonitoringConfig;
 use super::url::{Override, Url};
@@ -13,8 +14,8 @@ pub struct ChainConfig {
 }
 
 impl ChainConfig {
-    pub fn get_poll_interval_seconds(&self, monitoring_config: &NodeMonitoringConfig) -> u64 {
-        self.poll_interval_seconds.unwrap_or(monitoring_config.get_poll_interval_seconds())
+    pub fn poll_interval(&self, monitoring_config: &NodeMonitoringConfig) -> Duration {
+        self.poll_interval_seconds.map(Duration::from_secs).unwrap_or(monitoring_config.poll_interval)
     }
 
     pub fn resolve_url(&self, base_url: &Url, rpc_method: Option<&str>, request_path: Option<&str>) -> Url {
@@ -81,17 +82,17 @@ mod tests {
     }
 
     #[test]
-    fn get_poll_interval_seconds_uses_chain_override() {
+    fn poll_interval_uses_chain_override() {
         let chain_config = make_chain_config(Some(20));
         let config = make_monitoring_config(45);
-        assert_eq!(chain_config.get_poll_interval_seconds(&config), 20);
+        assert_eq!(chain_config.poll_interval(&config), Duration::from_secs(20));
     }
 
     #[test]
-    fn get_poll_interval_seconds_uses_global_fallback() {
+    fn poll_interval_uses_global_fallback() {
         let chain_config = make_chain_config(None);
         let config = make_monitoring_config(45);
-        assert_eq!(chain_config.get_poll_interval_seconds(&config), 45);
+        assert_eq!(chain_config.poll_interval(&config), Duration::from_secs(45));
     }
 
     #[test]

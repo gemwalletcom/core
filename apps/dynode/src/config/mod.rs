@@ -35,10 +35,6 @@ pub struct NodeMonitoringConfig {
 }
 
 impl NodeMonitoringConfig {
-    pub fn get_poll_interval_seconds(&self) -> u64 {
-        self.poll_interval.as_secs()
-    }
-
     pub fn block_delay_threshold(&self, chain: Chain) -> u64 {
         let block_time_ms = chain.block_time() as u64;
         if block_time_ms == 0 {

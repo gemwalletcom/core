@@ -39,6 +39,7 @@ retry:
     error_messages:
       - "daily request limit"
       - "rate limit"
+      - "Exceeded the quota usage"
       - "Unauthorized"
 
 cache:
