@@ -23,9 +23,9 @@ CREATE TABLE rewards (
     referrer_username VARCHAR(64) REFERENCES rewards(username) ON DELETE SET NULL ON UPDATE CASCADE,
     referral_count INT NOT NULL DEFAULT 0 CHECK (referral_count >= 0),
     device_id INTEGER NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
-    is_swap_complete BOOLEAN NOT NULL DEFAULT false,
     comment VARCHAR(512),
     disable_reason VARCHAR(256),
+    verify_after TIMESTAMP,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp
 );

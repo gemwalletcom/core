@@ -8,7 +8,6 @@ use crate::sql_types::{RewardEventType, RewardRedemptionType, RewardStatus, User
 use crate::{DatabaseClient, DatabaseError, DieselResultExt, ReferralValidationError};
 use chrono::Duration as ChronoDuration;
 use chrono::NaiveDateTime;
-use primitives::rewards::{ReferralActivation, ReferralCodeActivation};
 use primitives::{Chain, ConfigKey, Device, NaiveDateTimeExt, ReferralLeader, ReferralLeaderboard, RewardEvent, Rewards, WalletId, now};
 
 fn create_username_and_rewards(client: &mut DatabaseClient, wallet_id: i32, address: &str, device_id: i32) -> Result<RewardsRow, DatabaseError> {
@@ -116,9 +115,6 @@ impl RewardsRepository for DatabaseClient {
             vec![]
         };
 
-        let referral_code_activation = self.build_referral_code_activation(has_custom_code, rewards.is_swap_complete)?;
-        let referral_activation = self.build_referral_activation(&username.username, &rewards)?;
-
         Ok(Rewards {
             code,
             referral_count: rewards.referral_count,
@@ -128,11 +124,10 @@ impl RewardsRepository for DatabaseClient {
             is_enabled: status.is_enabled(),
             verified: status.is_verified(),
             created_at: rewards.created_at,
+            verify_after: rewards.verify_after.map(|dt| dt.and_utc()),
             redemption_options: options,
             disable_reason: rewards.disable_reason.clone(),
             referral_allowance: Default::default(),
-            referral_code_activation,
-            referral_activation,
         })
     }
 
@@ -189,9 +184,9 @@ impl RewardsRepository for DatabaseClient {
                     referrer_username: None,
                     referral_count: 0,
                     device_id,
-                    is_swap_complete: false,
                     comment: None,
                     disable_reason: None,
+                    verify_after: None,
                 },
             )?;
         }
@@ -404,38 +399,6 @@ impl DatabaseClient {
         } else {
             Ok(None)
         }
-    }
-
-    fn build_referral_code_activation(&mut self, has_custom_code: bool, is_swap_complete: bool) -> Result<Option<ReferralCodeActivation>, DatabaseError> {
-        if !has_custom_code {
-            return Ok(None);
-        }
-
-        let swap_amount = self.config().get_config_i64(ConfigKey::ReferralCodeActivationSwapAmount)? as i32;
-        Ok(Some(ReferralCodeActivation {
-            swap_completed: is_swap_complete,
-            swap_amount,
-        }))
-    }
-
-    fn build_referral_activation(&mut self, username: &str, rewards: &RewardsRow) -> Result<Option<ReferralActivation>, DatabaseError> {
-        if rewards.referrer_username.is_none() {
-            return Ok(None);
-        }
-
-        let swap_amount = self.config().get_config_i64(ConfigKey::ReferralCodeActivationSwapAmount)? as i32;
-        let referral = RewardsStore::get_referral_by_username(self, username)?;
-        let verify_completed = referral.as_ref().map(|r| r.verified_at.is_some()).unwrap_or(false);
-        let verify_after = referral
-            .filter(|r| r.verified_at.is_none())
-            .and_then(|pending| self.get_referral_verification_date(pending.created_at).ok().flatten());
-
-        Ok(Some(ReferralActivation {
-            verify_completed,
-            verify_after,
-            swap_completed: rewards.is_swap_complete,
-            swap_amount,
-        }))
     }
 
     fn add_new_referral(

@@ -101,24 +101,6 @@ impl RewardEventType {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
-pub struct ReferralCodeActivation {
-    pub swap_completed: bool,
-    pub swap_amount: i32,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Hashable, Sendable")]
-#[serde(rename_all = "camelCase")]
-pub struct ReferralActivation {
-    pub verify_completed: bool,
-    pub verify_after: Option<DateTime<Utc>>,
-    pub swap_completed: bool,
-    pub swap_amount: i32,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, Hashable, Sendable")]
-#[serde(rename_all = "camelCase")]
 #[derive(Default)]
 pub struct Rewards {
     pub code: Option<String>,
@@ -133,11 +115,10 @@ pub struct Rewards {
     #[typeshare(skip)]
     #[serde(skip)]
     pub created_at: chrono::NaiveDateTime,
+    pub verify_after: Option<DateTime<Utc>>,
     pub redemption_options: Vec<RewardRedemptionOption>,
     pub disable_reason: Option<String>,
     pub referral_allowance: ReferralAllowance,
-    pub referral_code_activation: Option<ReferralCodeActivation>,
-    pub referral_activation: Option<ReferralActivation>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]

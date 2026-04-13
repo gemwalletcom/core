@@ -16,9 +16,10 @@ pub struct RewardsRow {
     pub referrer_username: Option<String>,
     pub referral_count: i32,
     pub device_id: i32,
-    pub is_swap_complete: bool,
+
     pub comment: Option<String>,
     pub disable_reason: Option<String>,
+    pub verify_after: Option<NaiveDateTime>,
     pub created_at: NaiveDateTime,
 }
 
@@ -32,9 +33,10 @@ pub struct NewRewardsRow {
     pub referrer_username: Option<String>,
     pub referral_count: i32,
     pub device_id: i32,
-    pub is_swap_complete: bool,
+
     pub comment: Option<String>,
     pub disable_reason: Option<String>,
+    pub verify_after: Option<NaiveDateTime>,
 }
 
 impl NewRewardsRow {
@@ -47,9 +49,9 @@ impl NewRewardsRow {
             referrer_username: None,
             referral_count: 0,
             device_id,
-            is_swap_complete: false,
             comment: None,
             disable_reason: None,
+            verify_after: None,
         }
     }
 }

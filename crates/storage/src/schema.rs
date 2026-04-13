@@ -631,11 +631,11 @@ diesel::table! {
         referrer_username -> Nullable<Varchar>,
         referral_count -> Int4,
         device_id -> Int4,
-        is_swap_complete -> Bool,
         #[max_length = 512]
         comment -> Nullable<Varchar>,
         #[max_length = 256]
         disable_reason -> Nullable<Varchar>,
+        verify_after -> Nullable<Timestamp>,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
