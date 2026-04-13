@@ -6,7 +6,6 @@ use tokio::sync::RwLock;
 use tokio::time::{Duration, sleep};
 
 use super::chain_client::ChainClient;
-use super::request_health::RequestAdaptiveMonitor;
 use super::sync::{NodeStatusObservation, NodeSwitchResult, NodeSyncAnalyzer};
 use super::telemetry::NodeTelemetry;
 use crate::config::{ChainConfig, NodeMonitoringConfig, Url};
@@ -19,23 +18,15 @@ pub struct NodeMonitor {
     nodes: Arc<RwLock<HashMap<Chain, NodeDomain>>>,
     metrics: Arc<Metrics>,
     monitoring_config: NodeMonitoringConfig,
-    adaptive_monitor: Arc<RequestAdaptiveMonitor>,
 }
 
 impl NodeMonitor {
-    pub fn new(
-        chains: HashMap<Chain, ChainConfig>,
-        nodes: Arc<RwLock<HashMap<Chain, NodeDomain>>>,
-        metrics: Arc<Metrics>,
-        monitoring_config: NodeMonitoringConfig,
-        adaptive_monitor: Arc<RequestAdaptiveMonitor>,
-    ) -> Self {
+    pub fn new(chains: HashMap<Chain, ChainConfig>, nodes: Arc<RwLock<HashMap<Chain, NodeDomain>>>, metrics: Arc<Metrics>, monitoring_config: NodeMonitoringConfig) -> Self {
         Self {
             chains,
             nodes,
             metrics,
             monitoring_config,
-            adaptive_monitor,
         }
     }
 
@@ -52,14 +43,13 @@ impl NodeMonitor {
             let nodes = Arc::clone(&self.nodes);
             let metrics = Arc::clone(&self.metrics);
             let monitoring_config = self.monitoring_config.clone();
-            let adaptive_monitor = Arc::clone(&self.adaptive_monitor);
             let initial_delay = Duration::from_millis(((index as u64) + 1) * 250);
 
             tokio::task::spawn(async move {
                 sleep(initial_delay).await;
 
                 loop {
-                    if let Err(err) = Self::evaluate_chain(&chain_config, &nodes, &metrics, &monitoring_config, &adaptive_monitor).await {
+                    if let Err(err) = Self::evaluate_chain(&chain_config, &nodes, &metrics, &monitoring_config).await {
                         NodeTelemetry::log_monitor_error(&chain_config, err.as_ref());
                     }
 
@@ -74,7 +64,6 @@ impl NodeMonitor {
         nodes: &Arc<RwLock<HashMap<Chain, NodeDomain>>>,
         metrics: &Arc<Metrics>,
         monitoring_config: &NodeMonitoringConfig,
-        adaptive_monitor: &Arc<RequestAdaptiveMonitor>,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         if chain_config.urls.len() <= 1 {
             return Ok(());
@@ -98,10 +87,6 @@ impl NodeMonitor {
 
         NodeTelemetry::log_node_unhealthy(chain_config, &current_observation);
 
-        if adaptive_monitor.is_switch_on_cooldown(chain_config.chain).await {
-            return Ok(());
-        }
-
         let fallback_urls: Vec<Url> = chain_config.urls.iter().filter(|&url| *url != current_node.url).cloned().collect();
 
         if fallback_urls.is_empty() {
@@ -116,27 +101,19 @@ impl NodeMonitor {
         all_observations.extend(fallback_statuses);
 
         match NodeSyncAnalyzer::select_best_node(&current_node.url, &all_observations, monitoring_config, chain_config.chain) {
-            Some(switch) => Self::try_switch(chain_config, nodes, metrics, adaptive_monitor, &current_node.url, &switch).await,
+            Some(switch) => Self::try_switch(chain_config, nodes, metrics, &current_node.url, &switch).await,
             None => NodeTelemetry::log_no_candidate(chain_config, &all_observations),
         }
 
         Ok(())
     }
 
-    async fn try_switch(
-        chain_config: &ChainConfig,
-        nodes: &Arc<RwLock<HashMap<Chain, NodeDomain>>>,
-        metrics: &Arc<Metrics>,
-        adaptive_monitor: &Arc<RequestAdaptiveMonitor>,
-        current_url: &Url,
-        switch: &NodeSwitchResult,
-    ) {
+    async fn try_switch(chain_config: &ChainConfig, nodes: &Arc<RwLock<HashMap<Chain, NodeDomain>>>, metrics: &Arc<Metrics>, current_url: &Url, switch: &NodeSwitchResult) {
         let new_url = &switch.observation.url;
         if NodeService::switch_node_if_current(nodes, metrics, chain_config, current_url, new_url, &switch.reason)
             .await
             .is_some()
         {
-            adaptive_monitor.mark_switch(chain_config.chain).await;
             NodeTelemetry::log_node_switch(chain_config, current_url, switch);
         }
     }

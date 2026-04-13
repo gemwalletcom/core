@@ -28,11 +28,10 @@ pub struct NodeMonitoringConfig {
     #[serde(deserialize_with = "duration::deserialize")]
     pub max_sync_delay: Duration,
     pub max_sync_blocks: u64,
-    #[serde(default, deserialize_with = "duration::deserialize_option")]
+    #[serde(deserialize_with = "duration::deserialize_option")]
     pub latency_threshold: Option<Duration>,
     #[serde(default)]
     pub latency_threshold_percent: Option<f64>,
-    pub adaptive: AdaptiveMonitoringConfig,
 }
 
 impl NodeMonitoringConfig {
@@ -66,21 +65,6 @@ impl NodeMonitoringConfig {
         }
         true
     }
-}
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct AdaptiveMonitoringConfig {
-    pub enabled: bool,
-    #[serde(deserialize_with = "duration::deserialize")]
-    pub window: Duration,
-    pub min_samples: usize,
-    pub error_threshold: f64,
-    pub recovery_threshold: f64,
-    #[serde(deserialize_with = "duration::deserialize")]
-    pub cooldown: Duration,
-    #[serde(deserialize_with = "duration::deserialize")]
-    pub min_switch_interval: Duration,
-    pub errors: ErrorMatcherConfig,
 }
 
 #[derive(Debug, Deserialize, Clone, Default)]
@@ -246,7 +230,6 @@ pub struct NodeConfig {
 impl NodeConfig {
     fn normalize(&mut self) {
         normalize_matcher(&mut self.retry.errors);
-        normalize_matcher(&mut self.monitoring.adaptive.errors);
     }
 }
 

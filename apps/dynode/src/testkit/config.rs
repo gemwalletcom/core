@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::config::{AdaptiveMonitoringConfig, ErrorMatcherConfig, NodeMonitoringConfig, RetryConfig};
+use crate::config::{ErrorMatcherConfig, NodeMonitoringConfig, RetryConfig};
 
 pub fn monitoring_config() -> NodeMonitoringConfig {
     NodeMonitoringConfig {
@@ -8,22 +8,8 @@ pub fn monitoring_config() -> NodeMonitoringConfig {
         poll_interval: Duration::from_secs(600),
         max_sync_delay: Duration::from_secs(24),
         max_sync_blocks: 20,
-        latency_threshold: None,
-        latency_threshold_percent: None,
-        adaptive: adaptive_monitoring_config(),
-    }
-}
-
-pub fn adaptive_monitoring_config() -> AdaptiveMonitoringConfig {
-    AdaptiveMonitoringConfig {
-        enabled: true,
-        window: Duration::from_secs(30),
-        min_samples: 20,
-        error_threshold: 0.5,
-        recovery_threshold: 0.2,
-        cooldown: Duration::from_secs(45),
-        min_switch_interval: Duration::from_secs(15),
-        errors: error_matcher_config(vec![429], vec!["rate limit"]),
+        latency_threshold: Some(Duration::from_millis(250)),
+        latency_threshold_percent: Some(20.0),
     }
 }
 
