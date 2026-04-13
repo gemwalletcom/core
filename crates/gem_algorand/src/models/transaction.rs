@@ -1,6 +1,7 @@
 use core::str;
 
 use gem_encoding::decode_base64;
+use primitives::TransactionState;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -66,4 +67,22 @@ pub struct TransactionBroadcast {
 pub struct TransactionStatus {
     #[serde(rename = "confirmed-round")]
     pub confirmed_round: Option<i64>,
+    #[serde(rename = "pool-error")]
+    pub pool_error: Option<String>,
+}
+
+impl TransactionStatus {
+    pub fn state(&self) -> TransactionState {
+        if self.confirmed_round.unwrap_or(0) > 0 {
+            TransactionState::Confirmed
+        } else if self.has_pool_error() {
+            TransactionState::Failed
+        } else {
+            TransactionState::Pending
+        }
+    }
+
+    fn has_pool_error(&self) -> bool {
+        self.pool_error.as_ref().is_some_and(|error| !error.trim().is_empty())
+    }
 }
