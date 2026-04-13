@@ -117,7 +117,7 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
         EVMChain::Linea => LINEA_USDC_E_TOKEN_ID,
         EVMChain::Ink => "0xF1815bd50389c46847f0Bda824eC8da914045D14",
         EVMChain::Monad => MONAD_USDC_TOKEN_ID,
-        EVMChain::SeiEvm => "0xe15fC38F6D8c56aF07bbCBe3BAf5708A2Bf42392", // USDC (Circle native)
+        EVMChain::SeiEvm => SEIEVM_USDC_TOKEN_ID,
         EVMChain::OpBNB | EVMChain::Plasma => "",
         EVMChain::Stable => "0x8a2b28364102bea189d99a475c494330ef2bdd0b", // USDC.e (Stargate)
         _ => panic!("USDC is not configured for this chain"),
@@ -144,7 +144,7 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
         EVMChain::Ink => INK_USDT_TOKEN_ID,
         EVMChain::Plasma => PLASMA_USDT_TOKEN_ID,
         EVMChain::Monad => MONAD_USDT_TOKEN_ID,
-        EVMChain::SeiEvm => "0x9151434b16b9763660705744891fA906F660EcC5", // USDT0
+        EVMChain::SeiEvm => SEIEVM_USDT_TOKEN_ID, // USDT0
         EVMChain::Stable => "0x779Ded0c9e1022225f8E0630b35a9b54bE713736", // USDT0
         EVMChain::Blast | EVMChain::World => "",                          // None
         _ => panic!("USDT is not configured for this chain"),
