@@ -138,23 +138,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     info_with_fields!("broadcast webhook config", enabled = config.webhook.enabled, url = config.webhook.url.as_str(),);
     let broadcast_webhook = DynodeBroadcastWebhookClient::new(config.webhook.clone())?;
     let client = gem_client::builder().timeout(config.request.timeout).build()?;
+    let monitoring_config = config.monitoring.clone();
     let node_service = NodeService::new(
         chains,
         metrics.clone(),
         client,
         config.cache.clone(),
-        config.monitoring.clone(),
         config.retry.clone(),
         config.headers.clone(),
         broadcast_webhook,
     );
-    if node_service.monitoring_config.enabled {
+    if monitoring_config.enabled {
         let monitor = NodeMonitor::new(
             node_service.chains.clone(),
             Arc::clone(&node_service.nodes),
             Arc::clone(&node_service.metrics),
-            node_service.monitoring_config.clone(),
-            node_service.adaptive_monitor(),
+            monitoring_config,
         );
 
         rocket::tokio::spawn(async move {

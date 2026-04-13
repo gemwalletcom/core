@@ -18,18 +18,6 @@ monitoring:
   max_sync_blocks: 20
   latency_threshold: 250ms
   latency_threshold_percent: 20
-  adaptive:
-    enabled: true
-    window: 30s
-    min_samples: 20
-    error_threshold: 0.5
-    recovery_threshold: 0.2
-    cooldown: 45s
-    min_switch_interval: 15s
-    errors:
-      status_codes: [429]
-      error_messages:
-        - "rate limit"
 
 request:
   timeout: 3s
@@ -51,6 +39,7 @@ retry:
     error_messages:
       - "daily request limit"
       - "rate limit"
+      - "Exceeded the quota usage"
       - "Unauthorized"
 
 cache:

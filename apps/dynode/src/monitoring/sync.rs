@@ -27,10 +27,7 @@ pub struct NodeSyncAnalyzer;
 
 impl NodeSyncAnalyzer {
     pub fn is_node_healthy(observation: &NodeStatusObservation) -> bool {
-        match &observation.state {
-            NodeStatusState::Healthy(status) => status.in_sync,
-            NodeStatusState::Error { .. } => false,
-        }
+        observation.state.is_healthy()
     }
 
     pub fn select_best_node(current: &Url, observations: &[NodeStatusObservation], monitoring_config: &NodeMonitoringConfig, chain: Chain) -> Option<NodeSwitchResult> {

@@ -8,10 +8,9 @@ use std::{
 use reqwest::StatusCode;
 use tokio::sync::RwLock;
 
-use super::request_health::RequestAdaptiveMonitor;
 use super::switch_reason::NodeSwitchReason;
 use crate::cache::RequestCache;
-use crate::config::{CacheConfig, ChainConfig, ErrorMatcherConfig, HeadersConfig, NodeMonitoringConfig, RetryConfig, Url};
+use crate::config::{CacheConfig, ChainConfig, ErrorMatcherConfig, HeadersConfig, RetryConfig, Url};
 use crate::jsonrpc_types::{JsonRpcErrorResponse, RequestType};
 use crate::metrics::Metrics;
 use crate::proxy::constants::JSON_CONTENT_TYPE;
@@ -32,9 +31,7 @@ pub struct NodeService {
     pub chains: HashMap<Chain, ChainConfig>,
     pub nodes: Arc<RwLock<HashMap<Chain, NodeDomain>>>,
     pub metrics: Arc<Metrics>,
-    pub monitoring_config: NodeMonitoringConfig,
     pub retry_config: RetryConfig,
-    request_adaptive_monitor: Arc<RequestAdaptiveMonitor>,
     proxy_builder: ProxyBuilder,
 }
 
@@ -44,7 +41,6 @@ impl NodeService {
         metrics: Metrics,
         client: reqwest::Client,
         cache_config: CacheConfig,
-        monitoring_config: NodeMonitoringConfig,
         retry_config: RetryConfig,
         headers_config: HeadersConfig,
         broadcast_webhook: DynodeBroadcastWebhookClient,
@@ -54,21 +50,14 @@ impl NodeService {
         let cache = RequestCache::new(cache_config);
         let broadcast_providers = Arc::new(BroadcastProviders::from_chains(chains.keys().copied()));
         let proxy_builder = ProxyBuilder::new(metrics.clone(), cache, client, headers_config, broadcast_webhook, broadcast_providers);
-        let request_adaptive_monitor = Arc::new(RequestAdaptiveMonitor::new(monitoring_config.adaptive.clone()));
 
         Self {
             chains,
             nodes: Arc::new(RwLock::new(nodes)),
             metrics: Arc::new(metrics),
-            monitoring_config,
             retry_config,
-            request_adaptive_monitor,
             proxy_builder,
         }
-    }
-
-    pub fn adaptive_monitor(&self) -> Arc<RequestAdaptiveMonitor> {
-        Arc::clone(&self.request_adaptive_monitor)
     }
 
     pub async fn get_node_domain(nodes: &Arc<RwLock<HashMap<Chain, NodeDomain>>>, chain: Chain) -> Option<NodeDomain> {
@@ -126,10 +115,7 @@ impl NodeService {
             match self.proxy_builder.handle_request(request.clone(), &node_domain).await {
                 Ok(response) => {
                     let retry_error = self.matches_response_error_signal(&request, &response, &self.retry_config.errors);
-                    let adaptive_error = self.matches_response_error_signal(&request, &response, &self.monitoring_config.adaptive.errors);
-                    self.record_attempt(chain_config.chain, remote_host.as_str(), adaptive_error).await;
                     if !retry_error {
-                        self.switch_after_success_if_allowed(chain_config, url).await;
                         return Ok(response);
                     }
 
@@ -141,7 +127,6 @@ impl NodeService {
                     last_error_data = upstream_data;
                 }
                 Err(e) => {
-                    self.record_attempt(chain_config.chain, remote_host.as_str(), true).await;
                     if !retry_enabled {
                         return Err(e);
                     }
@@ -182,31 +167,21 @@ impl NodeService {
         }
 
         let current_node = NodeService::get_node_domain(&self.nodes, chain_config.chain).await?;
-        let urls = self.get_ordered_urls(chain_config.chain, &chain_config.urls, &current_node.url, request.id.as_str()).await;
-        if urls.is_empty() {
-            return None;
-        }
-
-        Some(urls)
+        Some(Self::get_ordered_urls(&chain_config.urls, &current_node.url, request.id.as_str()))
     }
 
     fn node_not_found_response(&self, request: &ProxyRequest) -> Result<ProxyResponse, Box<dyn Error + Send + Sync>> {
         self.log_and_create_error_response(request, None, NODE_NOT_FOUND, None)
     }
 
-    async fn get_ordered_urls(&self, chain: Chain, urls: &[Url], current: &Url, request_id: &str) -> Vec<Url> {
+    fn get_ordered_urls(urls: &[Url], current: &Url, request_id: &str) -> Vec<Url> {
         let mut ordered_urls = urls.to_vec();
         if let Some(current_index) = ordered_urls.iter().position(|url| *url == *current) {
             ordered_urls.swap(0, current_index);
         }
 
         Self::rotate_fallback_urls(&mut ordered_urls, request_id);
-
-        if ordered_urls.len() <= 1 || !self.request_adaptive_monitor.is_enabled() {
-            return ordered_urls;
-        }
-
-        self.request_adaptive_monitor.reorder_urls(chain, &ordered_urls).await
+        ordered_urls
     }
 
     fn rotate_fallback_urls(urls: &mut [Url], request_id: &str) {
@@ -221,66 +196,6 @@ impl NodeService {
         if offset > 0 {
             urls[1..].rotate_left(offset);
         }
-    }
-
-    async fn record_attempt(&self, chain: Chain, host: &str, has_error_signal: bool) {
-        let snapshot = self.request_adaptive_monitor.record_attempt(chain, host, has_error_signal).await;
-        let Some(snapshot) = snapshot else {
-            return;
-        };
-
-        if !snapshot.blocked_now {
-            return;
-        }
-
-        let ratio = format!("{:.3}", snapshot.ratio);
-        info_with_fields!(
-            "Node host blocked",
-            chain = chain.as_ref(),
-            host = host,
-            error_ratio = ratio.as_str(),
-            samples = snapshot.total,
-            errors = snapshot.errors,
-        );
-    }
-
-    async fn switch_after_success_if_allowed(&self, chain_config: &ChainConfig, selected_url: &Url) {
-        let Some(current_node) = NodeService::get_node_domain(&self.nodes, chain_config.chain).await else {
-            return;
-        };
-        if current_node.url.url == selected_url.url {
-            return;
-        }
-
-        let old_host = current_node.url.host();
-        let new_host = selected_url.host();
-        let snapshot = self
-            .request_adaptive_monitor
-            .allow_switch_after_success(chain_config.chain, old_host.as_str(), new_host.as_str())
-            .await;
-        let Some(snapshot) = snapshot else {
-            return;
-        };
-
-        let ratio = if snapshot.ratio.is_finite() { snapshot.ratio.clamp(0.0, 1.0) } else { 1.0 };
-        let reason = NodeSwitchReason::AdaptiveError {
-            error_ratio: ratio,
-            samples: snapshot.total,
-        };
-        let detail = reason.to_string();
-        let Some((old_host, new_host)) = NodeService::switch_node_if_current(&self.nodes, &self.metrics, chain_config, &current_node.url, selected_url, &reason).await else {
-            return;
-        };
-        self.request_adaptive_monitor.mark_switch(chain_config.chain).await;
-
-        info_with_fields!(
-            "Node switch",
-            chain = chain_config.chain.as_ref(),
-            old_host = old_host.as_str(),
-            new_host = new_host.as_str(),
-            reason = reason.as_str(),
-            detail = detail.as_str(),
-        );
     }
 
     fn matches_response_error_signal(&self, request: &ProxyRequest, response: &ProxyResponse, matcher: &ErrorMatcherConfig) -> bool {
@@ -364,7 +279,6 @@ mod tests {
             metrics,
             reqwest::Client::new(),
             CacheConfig::default(),
-            testkit::monitoring_config(),
             retry_config,
             HeadersConfig {
                 forward: vec![header::CONTENT_TYPE.to_string()],
@@ -426,7 +340,7 @@ mod tests {
     }
 
     #[test]
-    fn test_adaptive_uses_retry_status_codes() {
+    fn test_matches_retry_status_codes() {
         let chains = HashMap::from([(Chain::Ethereum, create_chain_config(Chain::Ethereum, "https://ethereum.example.com"))]);
         let service = create_service_with_retry(chains, create_retry_config(true, vec![429], vec![]));
 
@@ -437,7 +351,7 @@ mod tests {
     }
 
     #[test]
-    fn test_adaptive_uses_retry_jsonrpc_messages() {
+    fn test_matches_retry_jsonrpc_messages() {
         let chains = HashMap::from([(Chain::Ethereum, create_chain_config(Chain::Ethereum, "https://ethereum.example.com"))]);
         let service = create_service_with_retry(chains, create_retry_config(true, vec![], vec!["Exceeded the quota usage"]));
 
