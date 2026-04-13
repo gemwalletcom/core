@@ -16,3 +16,19 @@ impl AlgorandAllo {
         })
     }
 }
+
+pub struct AlgorandPera;
+
+impl AlgorandPera {
+    pub fn boxed() -> Box<dyn BlockExplorer> {
+        Explorer::boxed(Metadata {
+            name: "Pera",
+            base_url: "https://explorer.perawallet.app",
+            tx_path: TX_PATH,
+            address_path: ACCOUNT_PATH,
+            token_path: Some("/assets"),
+            nft_path: None,
+            validator_path: Some(ACCOUNT_PATH),
+        })
+    }
+}
