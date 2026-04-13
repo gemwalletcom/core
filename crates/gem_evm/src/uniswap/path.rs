@@ -144,7 +144,7 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
         EVMChain::Ink => INK_USDT_TOKEN_ID,
         EVMChain::Plasma => PLASMA_USDT_TOKEN_ID,
         EVMChain::Monad => MONAD_USDT_TOKEN_ID,
-        EVMChain::SeiEvm => "0x9151434b16b9763660705744891fA906F660EcC5", // USDT0
+        EVMChain::SeiEvm => SEIEVM_USDT_TOKEN_ID, // USDT0
         EVMChain::Stable => "0x779Ded0c9e1022225f8E0630b35a9b54bE713736", // USDT0
         EVMChain::Blast | EVMChain::World => "",                          // None
         _ => panic!("USDT is not configured for this chain"),

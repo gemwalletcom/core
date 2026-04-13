@@ -167,7 +167,7 @@ pub static INK_USDT_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from
 pub const HYPEREVM_USDT_TOKEN_ID: &str = "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb";
 pub static HYPEREVM_USDT_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::Hyperliquid, HYPEREVM_USDT_TOKEN_ID));
 
-pub const SEIEVM_USDT_TOKEN_ID: &str = "0xB75D0B03c06A926e488e2659DF1A861F860bD3d1";
+pub const SEIEVM_USDT_TOKEN_ID: &str = "0x9151434b16b9763660705744891fA906F660EcC5";
 pub static SEIEVM_USDT_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::SeiEvm, SEIEVM_USDT_TOKEN_ID));
 
 pub const PLASMA_USDT_TOKEN_ID: &str = "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb";
