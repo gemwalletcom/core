@@ -20,7 +20,7 @@ chrono = { workspace = true, features = ["serde"], optional = true }
 bs58 = { workspace = true, optional = true }
 hex = { workspace = true, optional = true }
 futures = { workspace = true, optional = true }
-base64 = { workspace = true, optional = true }
+gem_encoding = { path = "../gem_encoding", optional = true }
 gem_hash = { path = "../gem_hash", optional = true }
 signer = { path = "../signer", optional = true }
 
@@ -33,6 +33,6 @@ hex = { workspace = true }
 [features]
 default = []
 rpc = ["dep:gem_jsonrpc", "dep:gem_client", "dep:chain_traits", "dep:async-trait", "dep:chrono", "dep:bs58", "dep:hex", "dep:futures"]
-signer = ["dep:base64", "dep:bs58", "dep:gem_hash", "dep:signer"]
+signer = ["dep:gem_encoding", "dep:bs58", "dep:gem_hash", "dep:signer"]
 reqwest = ["gem_client/reqwest", "gem_jsonrpc/reqwest"]
 chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]

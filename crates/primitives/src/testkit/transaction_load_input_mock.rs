@@ -100,6 +100,19 @@ impl TransactionLoadInput {
         }
     }
 
+    pub fn mock_transfer(asset: Asset, sender: &str, destination: &str, value: &str, fee: u64, memo: Option<&str>, metadata: TransactionLoadMetadata) -> Self {
+        TransactionLoadInput {
+            input_type: TransactionInputType::Transfer(asset),
+            sender_address: sender.into(),
+            destination_address: destination.into(),
+            value: value.into(),
+            gas_price: GasPriceType::regular(fee),
+            memo: memo.map(String::from),
+            is_max_value: false,
+            metadata,
+        }
+    }
+
     pub fn mock_sign_data(chain: Chain, data: &str, output_type: TransferDataOutputType) -> Self {
         TransactionLoadInput {
             input_type: TransactionInputType::Generic(

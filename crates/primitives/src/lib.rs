@@ -118,6 +118,8 @@ pub mod subscription;
 pub mod transaction_utxo;
 pub use self::subscription::{AddressChains, DeviceSubscription, WalletSubscription, WalletSubscriptionChains, WalletSubscriptionLegacy};
 pub use self::transaction_utxo::TransactionUtxoInput;
+pub mod address;
+pub use self::address::{Address, AddressError};
 pub mod address_formatter;
 pub use self::address_formatter::{AddressFormatStyle, AddressFormatter};
 pub mod address_name;
