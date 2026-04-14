@@ -123,5 +123,6 @@ mod tests {
         assert_eq!(transaction.hash, TEST_TRANSACTION_ID);
         assert_eq!(transaction.from, "GFROM");
         assert_eq!(transaction.to, "GTO");
+        assert_eq!(transaction.memo, Some("49639518".to_string()));
     }
 }

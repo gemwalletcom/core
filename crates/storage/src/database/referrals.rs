@@ -1,5 +1,5 @@
 use crate::DatabaseClient;
-use crate::models::{NewRewardReferralRow, ReferralAttemptRow, RewardReferralRow, NewRiskSignalRow, RiskSignalRow};
+use crate::models::{NewRewardReferralRow, NewRiskSignalRow, ReferralAttemptRow, RewardReferralRow, RiskSignalRow};
 use crate::sql_types::{Platform, RewardStatus};
 use chrono::NaiveDateTime;
 use diesel::prelude::*;

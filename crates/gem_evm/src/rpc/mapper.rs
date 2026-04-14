@@ -3,7 +3,7 @@ use num_bigint::BigUint;
 use num_traits::Num;
 use std::sync::LazyLock;
 
-use super::{parsers::ProtocolParsers, staking_mapper::StakingMapper, swap_mapper::SwapMapper};
+use super::{parsers::ProtocolParsers, staking_mapper::StakingMapper};
 use crate::{
     address::{ethereum_address_checksum, ethereum_address_from_topic},
     registry::ContractRegistry,
@@ -74,15 +74,7 @@ impl EthereumMapper {
 
         if transaction.to.is_some()
             && transaction.input.len() >= 8
-            && let Some(tx) = ProtocolParsers::map_transaction(&chain, transaction, transaction_reciept, trace, created_at)
-        {
-            return Some(tx);
-        }
-
-        // Try to decode Uniswap V3 or V4 transaction
-        if transaction.to.is_some()
-            && transaction.input.len() >= 8
-            && let Some(tx) = SwapMapper::map_transaction(&chain, transaction, transaction_reciept, trace, created_at, contract_registry)
+            && let Some(tx) = ProtocolParsers::map_transaction(&chain, transaction, transaction_reciept, trace, contract_registry, created_at)
         {
             return Some(tx);
         }

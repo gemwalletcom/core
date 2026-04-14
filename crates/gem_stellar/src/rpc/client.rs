@@ -69,12 +69,13 @@ impl<C: Client> StellarClient<C> {
     }
 
     pub async fn get_account_payments(&self, account_id: String) -> Result<AccountResult<Embedded<Payment>>, Box<dyn Error + Send + Sync>> {
-        self.get_payments(&format!("/accounts/{account_id}/payments?order=desc&limit=200&include_failed=true"))
+        self.get_payments(&format!("/accounts/{account_id}/payments?order=desc&limit=200&include_failed=true&join=transactions"))
             .await
     }
 
     pub async fn get_transaction_payments(&self, transaction_id: &str) -> Result<AccountResult<Embedded<Payment>>, Box<dyn Error + Send + Sync>> {
-        self.get_payments(&format!("/transactions/{transaction_id}/payments?include_failed=true")).await
+        self.get_payments(&format!("/transactions/{transaction_id}/payments?include_failed=true&join=transactions"))
+            .await
     }
 
     async fn get_payments(&self, path: &str) -> Result<AccountResult<Embedded<Payment>>, Box<dyn Error + Send + Sync>> {
@@ -89,7 +90,10 @@ impl<C: Client> StellarClient<C> {
         let cursor_param = cursor.unwrap_or_default();
         let result: Embedded<Payment> = self
             .client
-            .get(&format!("/ledgers/{}/payments?limit={}&include_failed=true&cursor={}", block_number, limit, cursor_param))
+            .get(&format!(
+                "/ledgers/{}/payments?limit={}&include_failed=true&cursor={}&join=transactions",
+                block_number, limit, cursor_param
+            ))
             .await?;
         Ok(result._embedded.records)
     }

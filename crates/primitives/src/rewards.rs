@@ -98,6 +98,20 @@ impl RewardEventType {
     }
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ReferralQuota {
+    pub limit: i32,
+    pub available: i32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ReferralAllowance {
+    pub daily: ReferralQuota,
+    pub weekly: ReferralQuota,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
@@ -110,15 +124,13 @@ pub struct Rewards {
     pub used_referral_code: Option<String>,
     pub status: RewardStatus,
     #[typeshare(skip)]
-    pub is_enabled: bool,
-    #[typeshare(skip)]
-    pub verified: bool,
-    #[typeshare(skip)]
     #[serde(skip)]
     pub created_at: chrono::NaiveDateTime,
     pub verify_after: Option<DateTime<Utc>>,
     pub redemption_options: Vec<RewardRedemptionOption>,
     pub disable_reason: Option<String>,
+    #[typeshare(skip)]
+    pub referral_allowance: ReferralAllowance,
 }
 
 impl Default for Rewards {
@@ -130,12 +142,11 @@ impl Default for Rewards {
             points: 0,
             used_referral_code: None,
             status: RewardStatus::Unverified,
-            is_enabled: false,
-            verified: false,
             created_at: chrono::DateTime::<Utc>::UNIX_EPOCH.naive_utc(),
             verify_after: None,
             redemption_options: vec![],
             disable_reason: None,
+            referral_allowance: ReferralAllowance::default(),
         }
     }
 }

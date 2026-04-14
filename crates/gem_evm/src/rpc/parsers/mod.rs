@@ -1,4 +1,7 @@
+pub mod dex;
 pub mod okx;
+pub mod pancakeswap;
+pub mod universal_router;
 pub mod yo;
 
 use chrono::{DateTime, Utc};
@@ -7,17 +10,18 @@ use super::{
     balance_differ::BalanceDiffer,
     model::{Transaction, TransactionReciept, TransactionReplayTrace},
 };
-use crate::ethereum_address_checksum;
+use crate::{ethereum_address_checksum, registry::ContractRegistry};
 use chain_primitives::SwapMapper as BalanceSwapMapper;
 use primitives::{AssetId, Chain, Transaction as PrimitivesTransaction, TransactionSwapMetadata, TransactionType};
 
-use self::{okx::OkxParser, yo::YoParser};
+use self::{dex::DexSwapParser, okx::OkxParser, pancakeswap::PancakeSwapParser, universal_router::UniversalRouterParser, yo::YoParser};
 
 pub struct ParseContext<'a> {
     pub chain: &'a Chain,
     pub transaction: &'a Transaction,
     pub receipt: &'a TransactionReciept,
     pub trace: Option<&'a TransactionReplayTrace>,
+    pub contract_registry: Option<&'a ContractRegistry>,
     pub created_at: DateTime<Utc>,
 }
 
@@ -29,8 +33,8 @@ pub trait ProtocolParser {
 pub struct ProtocolParsers;
 
 impl ProtocolParsers {
-    fn parsers() -> [&'static dyn ProtocolParser; 2] {
-        [&OkxParser, &YoParser]
+    fn parsers() -> [&'static dyn ProtocolParser; 5] {
+        [&OkxParser, &YoParser, &PancakeSwapParser, &UniversalRouterParser, &DexSwapParser]
     }
 
     pub fn map_transaction(
@@ -38,6 +42,7 @@ impl ProtocolParsers {
         transaction: &Transaction,
         receipt: &TransactionReciept,
         trace: Option<&TransactionReplayTrace>,
+        contract_registry: Option<&ContractRegistry>,
         created_at: DateTime<Utc>,
     ) -> Option<PrimitivesTransaction> {
         let context = ParseContext {
@@ -45,6 +50,7 @@ impl ProtocolParsers {
             transaction,
             receipt,
             trace,
+            contract_registry,
             created_at,
         };
 

@@ -14,7 +14,11 @@ pub struct RewardsEligibilityChecker {
 impl RewardsEligibilityChecker {
     pub fn new(database: Database, stream_producer: StreamProducer) -> Self {
         let config = ConfigCacher::new(database.clone());
-        Self { database, config, stream_producer }
+        Self {
+            database,
+            config,
+            stream_producer,
+        }
     }
 
     pub async fn check(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
@@ -23,10 +27,7 @@ impl RewardsEligibilityChecker {
         let usernames = self
             .database
             .rewards()?
-            .get_rewards_by_filter(vec![
-                RewardsFilter::Statuses(vec![RewardStatus::Unverified]),
-                RewardsFilter::Limit(limit),
-            ])?
+            .get_rewards_by_filter(vec![RewardsFilter::Statuses(vec![RewardStatus::Unverified]), RewardsFilter::Limit(limit)])?
             .into_iter()
             .map(|reward| reward.username)
             .collect::<Vec<_>>();
@@ -60,7 +61,12 @@ impl RewardsEligibilityChecker {
 
         let reward_event_ids = self.database.rewards()?.promote_to_verified(username)?;
 
-        info_with_fields!("rewards eligibility promoted user", username = username, wallet_id = wallet_id, events = reward_event_ids.len());
+        info_with_fields!(
+            "rewards eligibility promoted user",
+            username = username,
+            wallet_id = wallet_id,
+            events = reward_event_ids.len()
+        );
 
         self.publish_promotion(wallet_id, reward_event_ids).await?;
         Ok(true)
