@@ -41,6 +41,14 @@ pub struct Payment {
     pub funder: Option<String>,
     pub account: Option<String>,
     pub starting_balance: Option<String>,
+
+    pub transaction: Option<StellarPaymentTransaction>,
+}
+
+#[cfg(feature = "rpc")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct StellarPaymentTransaction {
+    pub memo: Option<String>,
 }
 
 #[cfg(feature = "rpc")]
@@ -87,6 +95,6 @@ impl Payment {
     }
 
     pub fn get_memo(&self) -> Option<String> {
-        None
+        self.transaction.as_ref()?.memo.clone()
     }
 }
