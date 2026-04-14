@@ -11,7 +11,7 @@ use crate::sql_types::ChainRow;
 use crate::sql_types::{RewardEventType, RewardRedemptionType, RewardStatus, TransactionState, UsernameStatus};
 use crate::{DatabaseClient, DatabaseError, DieselResultExt, ReferralValidationError};
 use chrono::NaiveDateTime;
-use primitives::{Chain, ConfigKey, Device, DurationExt, NaiveDateTimeExt, ReferralLeader, ReferralLeaderboard, RewardEvent, Rewards, WalletId, now};
+use primitives::{Chain, ConfigKey, Device, NaiveDateTimeExt, ReferralLeader, ReferralLeaderboard, RewardEvent, Rewards, WalletId, now};
 
 fn create_username_and_rewards(client: &mut DatabaseClient, wallet_id: i32, address: &str, device_id: i32) -> Result<RewardsRow, DatabaseError> {
     UsernamesStore::create_username(
@@ -77,8 +77,10 @@ fn require_wallet_by_id(client: &mut DatabaseClient, wallet_id: i32) -> Result<W
     WalletsStore::get_wallet_by_id(client, wallet_id).or_not_found_internal(wallet_id.to_string())
 }
 
-fn is_reward_eligible(active_days_current: i64, active_days_required: i64, transactions_current: i64, transactions_required: i64) -> bool {
-    active_days_current >= active_days_required && transactions_current >= transactions_required
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct RewardsEligibilityConfig {
+    pub activity_cutoff: NaiveDateTime,
+    pub transactions_required: i64,
 }
 
 fn can_verify_referral(status: &primitives::rewards::RewardStatus, verify_after: Option<NaiveDateTime>) -> bool {
@@ -218,7 +220,7 @@ pub trait RewardsRepository {
     fn get_rewards_leaderboard(&mut self) -> Result<ReferralLeaderboard, DatabaseError>;
     fn disable_rewards(&mut self, username: &str, reason: &str, comment: &str) -> Result<i32, DatabaseError>;
     fn get_rewards_by_filter(&mut self, filters: Vec<RewardsFilter>) -> Result<Vec<RewardsRow>, DatabaseError>;
-    fn check_eligibility(&mut self, username: &str) -> Result<Option<i32>, DatabaseError>;
+    fn check_eligibility(&mut self, username: &str, eligibility: RewardsEligibilityConfig) -> Result<Option<i32>, DatabaseError>;
     fn promote_to_verified(&mut self, username: &str) -> Result<Vec<i32>, DatabaseError>;
 
     fn use_or_verify_referral(&mut self, referrer_username: &str, referred_wallet_id: i32, device_id: i32, risk_signal_id: i32) -> Result<Vec<RewardEvent>, DatabaseError>;
@@ -455,7 +457,7 @@ impl RewardsRepository for DatabaseClient {
         Ok(RewardsStore::get_rewards_by_filter(self, filters)?)
     }
 
-    fn check_eligibility(&mut self, username: &str) -> Result<Option<i32>, DatabaseError> {
+    fn check_eligibility(&mut self, username: &str, eligibility: RewardsEligibilityConfig) -> Result<Option<i32>, DatabaseError> {
         let username_row = require_username(self, UsernameLookup::Username(username))?;
         let rewards = require_rewards(self, &username_row.username)?;
 
@@ -467,28 +469,35 @@ impl RewardsRepository for DatabaseClient {
             return Ok(None);
         }
 
-        let active_days_required = self.config().get_config_duration(ConfigKey::RewardsEligibilityActiveDuration)?.as_days();
-        let transactions_required = self.config().get_config_i64(ConfigKey::RewardsEligibilityTransactionsCount)?;
-        let first_subscription_at = WalletsStore::get_first_subscription_date_by_wallet_id(self, username_row.wallet_id)?;
-        let latest_activity_at = WalletsStore::get_devices_by_wallet_id(self, username_row.wallet_id)?
+        let Some(first_subscription_at) = WalletsStore::get_first_subscription_date_by_wallet_id(self, username_row.wallet_id)? else {
+            return Ok(None);
+        };
+
+        if first_subscription_at > eligibility.activity_cutoff {
+            return Ok(None);
+        }
+
+        let Some(latest_activity_at) = WalletsStore::get_devices_by_wallet_id(self, username_row.wallet_id)?
             .into_iter()
             .map(|device| device.updated_at)
-            .max();
-
-        let active_days_current = match (first_subscription_at, latest_activity_at) {
-            (Some(start), Some(last_seen)) if last_seen >= start => (last_seen - start).num_days(),
-            _ => 0,
+            .max()
+        else {
+            return Ok(None);
         };
 
-        let transactions_current = match first_subscription_at {
-            Some(start) => {
-                TransactionsStore::get_transactions_by_wallet_since(self, username_row.wallet_id, start, vec![TransactionFilter::States(vec![TransactionState::Confirmed])])?.len()
-                    as i64
-            }
-            None => 0,
-        };
+        if latest_activity_at < eligibility.activity_cutoff {
+            return Ok(None);
+        }
 
-        if !is_reward_eligible(active_days_current, active_days_required, transactions_current, transactions_required) {
+        let transactions_current = TransactionsStore::get_transactions_by_wallet_since(
+            self,
+            username_row.wallet_id,
+            first_subscription_at,
+            vec![TransactionFilter::States(vec![TransactionState::Confirmed])],
+        )?
+        .len() as i64;
+
+        if transactions_current < eligibility.transactions_required {
             return Ok(None);
         }
 
@@ -595,15 +604,6 @@ mod tests {
         assert!(validate_username("user-name").is_err());
         assert!(validate_username("user.name").is_err());
         assert!(validate_username("user name").is_err());
-    }
-
-    #[test]
-    fn test_reward_eligibility_unlock_rule() {
-        assert!(is_reward_eligible(7, 7, 3, 3));
-        assert!(is_reward_eligible(10, 7, 5, 3));
-        assert!(!is_reward_eligible(6, 7, 3, 3));
-        assert!(!is_reward_eligible(7, 7, 2, 3));
-        assert!(!is_reward_eligible(0, 7, 0, 3));
     }
 
     #[test]
