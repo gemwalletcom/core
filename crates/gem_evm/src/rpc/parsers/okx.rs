@@ -194,7 +194,7 @@ mod tests {
     }
 
     fn map_transaction(chain: &Chain, transaction: &Transaction, receipt: &TransactionReciept, trace: Option<&TransactionReplayTrace>) -> PrimitivesTransaction {
-        ProtocolParsers::map_transaction(chain, transaction, receipt, trace, DateTime::from_timestamp(1743373403, 0).unwrap()).unwrap()
+        ProtocolParsers::map_transaction(chain, transaction, receipt, trace, None, DateTime::from_timestamp(1743373403, 0).unwrap()).unwrap()
     }
 
     #[test]
