@@ -2,11 +2,12 @@ use crate::address::Address;
 use crate::constants::FAILED_OPERATION_OPCODES;
 use crate::models::{BroadcastTransaction, HasMemo, TransactionMessage};
 use chrono::DateTime;
+use gem_encoding::decode_base64;
 use primitives::{Transaction, TransactionState, TransactionType, chain::Chain};
 use std::error::Error;
 
 pub fn map_transaction_broadcast(broadcast_result: BroadcastTransaction) -> Result<String, Box<dyn Error + Sync + Send>> {
-    let hash_bytes = base64::prelude::Engine::decode(&base64::prelude::BASE64_STANDARD, &broadcast_result.hash)?;
+    let hash_bytes = decode_base64(&broadcast_result.hash)?;
     Ok(hex::encode(hash_bytes))
 }
 
