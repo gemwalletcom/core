@@ -11,7 +11,7 @@ use typeshare::typeshare;
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[derive(Debug, Default, Clone)]
 pub struct ExplorerInput {
-    pub tx_hash: String,
+    pub hash: String,
     pub recipient: Option<String>,
     pub memo: Option<String>,
 }
@@ -19,7 +19,7 @@ pub struct ExplorerInput {
 impl ExplorerInput {
     pub fn new_recipient(recipient: impl Into<String>) -> Self {
         Self {
-            tx_hash: String::new(),
+            hash: String::new(),
             recipient: Some(recipient.into()),
             memo: None,
         }
@@ -27,7 +27,7 @@ impl ExplorerInput {
 
     pub fn new_memo(recipient: impl Into<String>, memo: impl Into<String>) -> Self {
         Self {
-            tx_hash: String::new(),
+            hash: String::new(),
             recipient: Some(recipient.into()),
             memo: Some(memo.into()),
         }
@@ -35,9 +35,9 @@ impl ExplorerInput {
 }
 
 impl<T: Into<String>> From<T> for ExplorerInput {
-    fn from(tx_hash: T) -> Self {
+    fn from(hash: T) -> Self {
         Self {
-            tx_hash: tx_hash.into(),
+            hash: hash.into(),
             recipient: None,
             memo: None,
         }
@@ -59,7 +59,7 @@ pub trait BlockExplorer: Send + Sync {
     }
 
     fn get_swap_tx_url(&self, input: &ExplorerInput) -> String {
-        self.get_tx_url(&input.tx_hash)
+        self.get_tx_url(&input.hash)
     }
 
     fn new() -> Box<Self>

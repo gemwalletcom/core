@@ -312,7 +312,7 @@ mod tests {
             .get_transaction_swap_url(
                 "Near",
                 GemExplorerInput {
-                    tx_hash: String::new(),
+                    hash: String::new(),
                     recipient: Some(recipient.into()),
                     memo: None,
                 },
@@ -326,7 +326,7 @@ mod tests {
             .get_transaction_swap_url(
                 "Near",
                 GemExplorerInput {
-                    tx_hash: String::new(),
+                    hash: String::new(),
                     recipient: Some(recipient.into()),
                     memo: Some("48694126".into()),
                 },
