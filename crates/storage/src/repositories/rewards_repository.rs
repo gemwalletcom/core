@@ -234,15 +234,11 @@ impl RewardsRepository for DatabaseClient {
         let code = if has_custom_code { Some(username.username.clone()) } else { None };
 
         let status = *rewards.status;
-        let options = if status.is_verified() {
-            let types = [RewardRedemptionType::Asset];
-            RewardsRedemptionsRepository::get_redemption_options(self, &types)?
-                .into_iter()
-                .filter(|x| x.remaining.unwrap_or_default() > 0)
-                .collect()
-        } else {
-            vec![]
-        };
+        let types = [RewardRedemptionType::Asset];
+        let options = RewardsRedemptionsRepository::get_redemption_options(self, &types)?
+            .into_iter()
+            .filter(|x| x.remaining.unwrap_or_default() > 0)
+            .collect();
 
         Ok(Rewards {
             code,
