@@ -1,9 +1,9 @@
-use primitives::block_explorer::SwapExplorerInput;
+use primitives::block_explorer::ExplorerInput;
 
-pub type GemSwapExplorerInput = SwapExplorerInput;
+pub type GemExplorerInput = ExplorerInput;
 
 #[uniffi::remote(Record)]
-pub struct GemSwapExplorerInput {
+pub struct GemExplorerInput {
     pub tx_hash: String,
     pub recipient: Option<String>,
     pub memo: Option<String>,

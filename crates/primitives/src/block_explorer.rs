@@ -10,25 +10,31 @@ use typeshare::typeshare;
 
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[derive(Debug, Default, Clone)]
-pub struct SwapExplorerInput {
+pub struct ExplorerInput {
     pub tx_hash: String,
     pub recipient: Option<String>,
     pub memo: Option<String>,
 }
 
-impl SwapExplorerInput {
-    pub fn with_recipient(mut self, recipient: impl Into<String>) -> Self {
-        self.recipient = Some(recipient.into());
-        self
+impl ExplorerInput {
+    pub fn new_recipient(recipient: impl Into<String>) -> Self {
+        Self {
+            tx_hash: String::new(),
+            recipient: Some(recipient.into()),
+            memo: None,
+        }
     }
 
-    pub fn with_memo(mut self, memo: impl Into<String>) -> Self {
-        self.memo = Some(memo.into());
-        self
+    pub fn new_memo(recipient: impl Into<String>, memo: impl Into<String>) -> Self {
+        Self {
+            tx_hash: String::new(),
+            recipient: Some(recipient.into()),
+            memo: Some(memo.into()),
+        }
     }
 }
 
-impl<T: Into<String>> From<T> for SwapExplorerInput {
+impl<T: Into<String>> From<T> for ExplorerInput {
     fn from(tx_hash: T) -> Self {
         Self {
             tx_hash: tx_hash.into(),
@@ -52,7 +58,7 @@ pub trait BlockExplorer: Send + Sync {
         None
     }
 
-    fn get_swap_tx_url(&self, input: &SwapExplorerInput) -> String {
+    fn get_swap_tx_url(&self, input: &ExplorerInput) -> String {
         self.get_tx_url(&input.tx_hash)
     }
 

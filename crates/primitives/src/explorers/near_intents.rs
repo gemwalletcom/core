@@ -1,5 +1,5 @@
 use super::near::NEAR_BLOCKS_BASE_URL;
-use crate::block_explorer::{BlockExplorer, SwapExplorerInput};
+use crate::block_explorer::{BlockExplorer, ExplorerInput};
 
 pub struct NearIntents;
 
@@ -24,7 +24,7 @@ impl BlockExplorer for NearIntents {
         format!("{NEAR_BLOCKS_BASE_URL}/address/{address}")
     }
 
-    fn get_swap_tx_url(&self, input: &SwapExplorerInput) -> String {
+    fn get_swap_tx_url(&self, input: &ExplorerInput) -> String {
         let base = self.get_tx_url(input.recipient.as_deref().unwrap_or_default());
         if let Some(memo) = input.memo.as_deref() {
             format!("{base}?depositMemo={memo}")
@@ -43,9 +43,9 @@ mod tests {
         let recipient = "GDJ4JZXZELZD737NVFORH4PSSQDWFDZTKW3AIDKHYQG23ZXBPDGGQBJK";
         let base = format!("{}/transactions/{recipient}", NearIntents::BASE_URL);
 
-        assert_eq!(NearIntents.get_swap_tx_url(&SwapExplorerInput::default().with_recipient(recipient)), base);
+        assert_eq!(NearIntents.get_swap_tx_url(&ExplorerInput::new_recipient(recipient)), base);
         assert_eq!(
-            NearIntents.get_swap_tx_url(&SwapExplorerInput::default().with_recipient(recipient).with_memo("48694126")),
+            NearIntents.get_swap_tx_url(&ExplorerInput::new_memo(recipient, "48694126")),
             format!("{base}?depositMemo=48694126")
         );
     }

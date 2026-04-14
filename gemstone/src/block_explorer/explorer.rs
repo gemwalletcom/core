@@ -2,7 +2,7 @@ use primitives::{block_explorer::get_block_explorer, chain::Chain};
 use std::str::FromStr;
 use swapper::SwapperProvider;
 
-use super::remote_types::GemSwapExplorerInput;
+use super::remote_types::GemExplorerInput;
 
 #[derive(uniffi::Object)]
 pub struct Explorer {
@@ -37,7 +37,7 @@ impl Explorer {
         get_block_explorer(self.chain, explorer_name).get_tx_url(transaction_id)
     }
 
-    pub fn get_transaction_swap_url(&self, explorer_name: &str, input: GemSwapExplorerInput, provider_id: &str) -> Option<ExplorerURL> {
+    pub fn get_transaction_swap_url(&self, explorer_name: &str, input: GemExplorerInput, provider_id: &str) -> Option<ExplorerURL> {
         let provider = SwapperProvider::from_str(provider_id).ok()?;
         let explorer = provider.swap_explorer(self.chain).unwrap_or_else(|| get_block_explorer(self.chain, explorer_name));
         Some(ExplorerURL::new(&explorer.name(), &explorer.get_swap_tx_url(&input)))
@@ -311,7 +311,7 @@ mod tests {
         let url = explorer
             .get_transaction_swap_url(
                 "Near",
-                GemSwapExplorerInput {
+                GemExplorerInput {
                     tx_hash: String::new(),
                     recipient: Some(recipient.into()),
                     memo: None,
@@ -325,7 +325,7 @@ mod tests {
         let url = explorer
             .get_transaction_swap_url(
                 "Near",
-                GemSwapExplorerInput {
+                GemExplorerInput {
                     tx_hash: String::new(),
                     recipient: Some(recipient.into()),
                     memo: Some("48694126".into()),
