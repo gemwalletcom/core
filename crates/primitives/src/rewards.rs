@@ -110,10 +110,6 @@ pub struct Rewards {
     pub used_referral_code: Option<String>,
     pub status: RewardStatus,
     #[typeshare(skip)]
-    pub is_enabled: bool,
-    #[typeshare(skip)]
-    pub verified: bool,
-    #[typeshare(skip)]
     #[serde(skip)]
     pub created_at: chrono::NaiveDateTime,
     pub verify_after: Option<DateTime<Utc>>,
@@ -130,8 +126,6 @@ impl Default for Rewards {
             points: 0,
             used_referral_code: None,
             status: RewardStatus::Unverified,
-            is_enabled: false,
-            verified: false,
             created_at: chrono::DateTime::<Utc>::UNIX_EPOCH.naive_utc(),
             verify_after: None,
             redemption_options: vec![],
