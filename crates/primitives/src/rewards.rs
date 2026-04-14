@@ -98,6 +98,20 @@ impl RewardEventType {
     }
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ReferralQuota {
+    pub limit: i32,
+    pub available: i32,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ReferralAllowance {
+    pub daily: ReferralQuota,
+    pub weekly: ReferralQuota,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
@@ -115,6 +129,8 @@ pub struct Rewards {
     pub verify_after: Option<DateTime<Utc>>,
     pub redemption_options: Vec<RewardRedemptionOption>,
     pub disable_reason: Option<String>,
+    #[typeshare(skip)]
+    pub referral_allowance: ReferralAllowance,
 }
 
 impl Default for Rewards {
@@ -130,6 +146,7 @@ impl Default for Rewards {
             verify_after: None,
             redemption_options: vec![],
             disable_reason: None,
+            referral_allowance: ReferralAllowance::default(),
         }
     }
 }

@@ -251,6 +251,7 @@ impl RewardsRepository for DatabaseClient {
             verify_after: rewards.verify_after.map(|dt| dt.and_utc()),
             redemption_options: options,
             disable_reason: rewards.disable_reason.clone(),
+            referral_allowance: Default::default(),
         })
     }
 
