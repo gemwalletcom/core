@@ -2,7 +2,7 @@ use std::error::Error;
 use std::sync::Arc;
 
 use cacher::{CacheKey, CacherClient};
-use primitives::{ConfigKey, IpUsageType};
+use primitives::ConfigKey;
 
 use crate::UsernameError;
 use crate::ip_check_provider::IpCheckProvider;
@@ -72,20 +72,6 @@ impl IpSecurityClient {
             return Err(UsernameError::LimitReached(ConfigKey::UsernameCreationPerCountryDailyLimit).into());
         }
 
-        Ok(())
-    }
-
-    pub fn check_username_creation_country_eligibility(&self, country_code: &str, ineligible_countries: &[String]) -> Result<(), Box<dyn Error + Send + Sync>> {
-        if ineligible_countries.contains(&country_code.to_string()) {
-            return Err(UsernameError::LimitReached(ConfigKey::ReferralIneligibleCountries).into());
-        }
-        Ok(())
-    }
-
-    pub fn check_username_creation_ip_type(&self, usage_type: IpUsageType, blocked_ip_types: &[IpUsageType]) -> Result<(), Box<dyn Error + Send + Sync>> {
-        if blocked_ip_types.contains(&usage_type) {
-            return Err(UsernameError::LimitReached(ConfigKey::ReferralBlockedIpTypes).into());
-        }
         Ok(())
     }
 
