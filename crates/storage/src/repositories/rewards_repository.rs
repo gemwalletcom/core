@@ -223,7 +223,7 @@ impl RewardsRepository for DatabaseClient {
         let code = if has_custom_code { Some(username.username.clone()) } else { None };
 
         let status = *rewards.status;
-        let options = if status.is_enabled() {
+        let options = if status.is_verified() {
             let types = [RewardRedemptionType::Asset];
             RewardsRedemptionsRepository::get_redemption_options(self, &types)?
                 .into_iter()
@@ -240,7 +240,7 @@ impl RewardsRepository for DatabaseClient {
             points: rewards.points,
             used_referral_code: rewards.referrer_username,
             status,
-            is_enabled: status.is_enabled(),
+            is_enabled: status.is_verified(),
             verified: status.is_verified(),
             created_at: rewards.created_at,
             verify_after: rewards.verify_after.map(|dt| dt.and_utc()),
@@ -280,7 +280,7 @@ impl RewardsRepository for DatabaseClient {
         }
 
         let existing_rewards = require_rewards(self, &existing.username)?;
-        if !existing_rewards.status.is_enabled() {
+        if existing_rewards.status.is_disabled() {
             return Err(DatabaseError::Error("Rewards are not enabled for this user".into()));
         }
 
@@ -317,7 +317,7 @@ impl RewardsRepository for DatabaseClient {
         }
 
         let rewards = require_rewards(self, &existing.username)?;
-        if !rewards.status.is_enabled() {
+        if rewards.status.is_disabled() {
             return Err(DatabaseError::Error("Rewards are not enabled for this user".into()));
         }
 
@@ -334,7 +334,7 @@ impl RewardsRepository for DatabaseClient {
         let referrer = require_username(self, UsernameLookup::Username(referrer_username))?;
         let referrer_rewards = require_rewards(self, referrer_username)?;
 
-        if !referrer_rewards.status.is_enabled() {
+        if !referrer_rewards.status.is_verified() {
             return Err(ReferralValidationError::RewardsNotEnabled(referrer_username.to_string()));
         }
 
@@ -456,7 +456,7 @@ impl RewardsRepository for DatabaseClient {
         let username_row = require_username(self, UsernameLookup::Username(username))?;
         let rewards = require_rewards(self, &username_row.username)?;
 
-        if rewards.status.is_enabled() || *rewards.status == primitives::rewards::RewardStatus::Disabled {
+        if *rewards.status != primitives::rewards::RewardStatus::Unverified {
             return Ok(None);
         }
 
@@ -501,7 +501,8 @@ impl RewardsRepository for DatabaseClient {
         let can_verify = if referred_rewards.status.is_verified() {
             true
         } else if referred_rewards.verify_after.is_some_and(|dt| dt <= now()) {
-            RewardsStore::update_rewards(self, &referred_username, RewardsUpdate::Status(RewardStatus::Verified))?;
+            RewardsStore::update_rewards(self, &referred_username, RewardsUpdate::Status(RewardStatus::Unverified))?;
+            RewardsStore::update_rewards(self, &referred_username, RewardsUpdate::ClearVerifyAfter)?;
             true
         } else {
             false
@@ -528,7 +529,11 @@ impl RewardsRepository for DatabaseClient {
             None => {
                 let delay = self.config().get_config_duration(ConfigKey::ReferralVerificationDelay)?;
                 let verify_after = now() + chrono::Duration::seconds(delay.as_secs() as i64);
-                RewardsStore::update_rewards(self, &referred_username, RewardsUpdate::VerifyAfter(verify_after))?;
+
+                if !can_verify {
+                    RewardsStore::update_rewards(self, &referred_username, RewardsUpdate::VerifyAfter(verify_after))?;
+                    RewardsStore::update_rewards(self, &referred_username, RewardsUpdate::Status(RewardStatus::Pending))?;
+                }
 
                 let verified_at = can_verify.then_some(now());
                 add_referral_with_events(self, referrer_username, &referred_username, device_id, risk_signal_id, verified_at)

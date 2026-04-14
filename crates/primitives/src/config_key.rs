@@ -166,6 +166,7 @@ pub enum ConfigKey {
     RewardsTimerEligibilityChecker,
     RewardsEligibilityActiveDuration,
     RewardsEligibilityTransactionsCount,
+    RewardsEligibilityPromotionLimit,
 
     // Device
     DeviceTimerUpdater,
@@ -357,6 +358,7 @@ impl ConfigKey {
             Self::RewardsTimerEligibilityChecker => "60s",
             Self::RewardsEligibilityActiveDuration => "7d",
             Self::RewardsEligibilityTransactionsCount => "3",
+            Self::RewardsEligibilityPromotionLimit => "1",
             Self::AlerterStakeRewardsTimer => "6h",
             Self::AlerterStakeRewardsThreshold => "0.01",
             Self::AlerterStakeRewardsLookback => "30d",

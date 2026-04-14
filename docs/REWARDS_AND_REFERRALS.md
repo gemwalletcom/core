@@ -1,24 +1,48 @@
 # Rewards and Referrals
 
-## Reward Activation
+## Activation Flow
 
-New users start in an unverified state. A background worker (`RewardsEligibilityChecker`) periodically evaluates pending users and promotes them to verified status once they meet the required activity thresholds (configurable via `RewardsEligibilityActiveDuration` and `RewardsEligibilityTransactionsCount`).
-
-A `verify_after` timestamp may be set on the rewards record to enforce a minimum waiting period before activation can occur, regardless of activity.
+```
+[New User] ─> create_username ─> [Unverified] ─> worker checks activity ─> [Verified] or [Trusted]
+```
 
 ## Referral Flow
 
-1. **User1** (verified) shares their referral code
-2. **User2** redeems the code via `use_referral_code`
-3. A pending referral is created and a `verify_after` delay is set on User2's record (configured via `ReferralVerificationDelay`)
-4. User2 must return after the delay period expires to complete activation
-5. On activation, the referral is finalized and both users receive reward events
+```
+User1 (Verified): shares code ─> User2 redeems [Pending, verify_after set] ─> delay passes ─> User2 confirms [Unverified] ─> both get rewards
+```
+
+## Statuses
+
+| Status | Can Invite | Description |
+|--------|-----------|-------------|
+| `Unverified` | No | Default after username creation. Awaiting promotion by worker. |
+| `Pending` | No | Used a referral code, awaiting `verify_after` delay. |
+| `Verified` | Yes | Promoted by worker. Can share referral code. |
+| `Trusted` | Yes | Higher-tier verified. Higher referral limits. |
+| `Disabled` | No | Account disabled. |
+
+## Worker Promotion
+
+`RewardsEligibilityChecker` promotes `Unverified` users to `Verified` when activity thresholds are met (`RewardsEligibilityActiveDuration`, `RewardsEligibilityTransactionsCount`). No explicit user action needed.
+
+## Client UI States
+
+| State | UI |
+|-------|----|
+| No username | "Get Started" button |
+| `Unverified`, no `verify_after` | Rewards not active yet message |
+| `verify_after` in future | "Bonus Pending" + countdown, confirm disabled |
+| `verify_after` in past | "Your bonus is ready!", confirm enabled |
+| `Verified`/`Trusted` | Invite Friends + share button |
+| `Disabled` | Error with `disable_reason` |
 
 ## Key Config
 
 | Key | Purpose |
 |-----|---------|
-| `RewardsEligibilityActiveDuration` | Minimum activity duration for organic promotion |
-| `RewardsEligibilityTransactionsCount` | Minimum confirmed transactions for promotion |
-| `RewardsTimerEligibilityChecker` | Interval for the background eligibility worker |
-| `ReferralVerificationDelay` | Waiting period before a referred user can be activated |
+| `RewardsEligibilityActiveDuration` | Min activity duration for promotion |
+| `RewardsEligibilityTransactionsCount` | Min confirmed transactions for promotion |
+| `RewardsTimerEligibilityChecker` | Worker check interval |
+| `RewardsEligibilityPromotionLimit` | Max users promoted per worker run |
+| `ReferralVerificationDelay` | Delay before referral confirmation |

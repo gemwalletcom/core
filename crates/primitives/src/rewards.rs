@@ -58,10 +58,10 @@ impl RewardStatus {
         }
     }
 
-    pub fn is_enabled(&self) -> bool {
+    pub fn is_disabled(&self) -> bool {
         match self {
-            Self::Disabled => false,
-            Self::Unverified | Self::Pending | Self::Verified | Self::Trusted => true,
+            Self::Disabled => true,
+            Self::Unverified | Self::Pending | Self::Verified | Self::Trusted => false,
         }
     }
 }
@@ -237,16 +237,16 @@ mod tests {
 
     #[test]
     fn test_reward_status() {
-        assert!(RewardStatus::Unverified.is_enabled());
-        assert!(RewardStatus::Pending.is_enabled());
-        assert!(RewardStatus::Verified.is_enabled());
-        assert!(RewardStatus::Trusted.is_enabled());
-        assert!(!RewardStatus::Disabled.is_enabled());
-
         assert!(!RewardStatus::Unverified.is_verified());
         assert!(!RewardStatus::Pending.is_verified());
         assert!(RewardStatus::Verified.is_verified());
         assert!(RewardStatus::Trusted.is_verified());
         assert!(!RewardStatus::Disabled.is_verified());
+
+        assert!(!RewardStatus::Unverified.is_disabled());
+        assert!(!RewardStatus::Pending.is_disabled());
+        assert!(!RewardStatus::Verified.is_disabled());
+        assert!(!RewardStatus::Trusted.is_disabled());
+        assert!(RewardStatus::Disabled.is_disabled());
     }
 }

@@ -10,12 +10,14 @@ use primitives::RewardStatus as PrimitiveRewardStatus;
 pub enum RewardsUpdate {
     Status(RewardStatus),
     VerifyAfter(NaiveDateTime),
+    ClearVerifyAfter,
 }
 
 #[derive(Debug, Clone)]
 pub enum RewardsFilter {
     Username(String),
     Statuses(Vec<PrimitiveRewardStatus>),
+    Limit(i64),
 }
 
 pub(crate) trait RewardsStore {
@@ -42,6 +44,9 @@ impl RewardsStore for DatabaseClient {
                 RewardsFilter::Statuses(statuses) => {
                     query = query.filter(dsl::status.eq_any(statuses.into_iter().map(RewardStatus::from).collect::<Vec<_>>()));
                 }
+                RewardsFilter::Limit(limit) => {
+                    query = query.limit(limit);
+                }
             }
         }
 
@@ -62,6 +67,7 @@ impl RewardsStore for DatabaseClient {
         match update {
             RewardsUpdate::Status(status) => diesel::update(target).set(dsl::status.eq(status)).execute(&mut self.connection),
             RewardsUpdate::VerifyAfter(dt) => diesel::update(target).set(dsl::verify_after.eq(dt)).execute(&mut self.connection),
+            RewardsUpdate::ClearVerifyAfter => diesel::update(target).set(dsl::verify_after.eq(None::<NaiveDateTime>)).execute(&mut self.connection),
         }
     }
 

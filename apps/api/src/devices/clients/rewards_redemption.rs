@@ -23,7 +23,7 @@ impl RewardsRedemptionClient {
     pub async fn redeem_by_wallet_id(&self, wallet_id: i32, id: &str, device_id: i32) -> Result<RedemptionResult, Box<dyn std::error::Error + Send + Sync>> {
         let rewards = self.database.rewards()?.get_reward_by_wallet_id(wallet_id)?;
 
-        if !rewards.status.is_enabled() {
+        if !rewards.status.is_verified() {
             return Err(RewardsRedemptionError::NotEligible("Not eligible for rewards".to_string()).into());
         }
 

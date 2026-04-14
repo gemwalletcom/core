@@ -1,25 +1,32 @@
 use std::error::Error;
 
 use gem_tracing::{error_with_fields, info_with_fields};
-use primitives::{NotificationType, RewardStatus};
-use storage::{Database, RewardsFilter, RewardsRepository};
+use primitives::{ConfigKey, NotificationType, RewardStatus};
+use storage::{ConfigCacher, Database, RewardsFilter, RewardsRepository};
 use streamer::{InAppNotificationPayload, RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
 
 pub struct RewardsEligibilityChecker {
     database: Database,
+    config: ConfigCacher,
     stream_producer: StreamProducer,
 }
 
 impl RewardsEligibilityChecker {
     pub fn new(database: Database, stream_producer: StreamProducer) -> Self {
-        Self { database, stream_producer }
+        let config = ConfigCacher::new(database.clone());
+        Self { database, config, stream_producer }
     }
 
     pub async fn check(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        let limit = self.config.get_i64(ConfigKey::RewardsEligibilityPromotionLimit)?;
+
         let usernames = self
             .database
             .rewards()?
-            .get_rewards_by_filter(vec![RewardsFilter::Statuses(vec![RewardStatus::Pending, RewardStatus::Unverified])])?
+            .get_rewards_by_filter(vec![
+                RewardsFilter::Statuses(vec![RewardStatus::Unverified]),
+                RewardsFilter::Limit(limit),
+            ])?
             .into_iter()
             .map(|reward| reward.username)
             .collect::<Vec<_>>();
