@@ -42,7 +42,7 @@ impl RewardsConsumer {
                 let wallet_id = self.database.rewards()?.get_wallet_id_by_username(&event.username)?;
                 Ok(vec![InAppNotificationPayload::new(wallet_id, NotificationType::RewardsCreateUsername, metadata_value)])
             }
-            RewardEventType::InvitePending | RewardEventType::InviteNew | RewardEventType::InviteExisting => {
+            RewardEventType::InvitePending | RewardEventType::InviteNew => {
                 let wallet_id = self.database.rewards()?.get_wallet_id_by_username(&event.username)?;
                 Ok(vec![InAppNotificationPayload::new(wallet_id, NotificationType::RewardsInvite, metadata_value)])
             }

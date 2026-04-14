@@ -147,7 +147,7 @@ diesel_enum!(
     RewardEventType,
     PrimitiveRewardEventType,
     RewardEventTypeSql,
-    [CreateUsername, InvitePending, InviteNew, InviteExisting, Joined, Disabled]
+    [CreateUsername, InvitePending, InviteNew, Joined, Disabled]
 );
 
 diesel_enum!(
