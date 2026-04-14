@@ -3,7 +3,9 @@ use crate::database::rewards::{RewardsFilter, RewardsStore, RewardsUpdate};
 use crate::database::transactions::{TransactionFilter, TransactionsStore};
 use crate::database::usernames::{UsernameLookup, UsernamesStore};
 use crate::database::wallets::WalletsStore;
-use crate::models::{NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, NewUsernameRow, ReferralAttemptRow, RewardEventRow, RewardReferralRow, RewardsRow, UsernameRow, WalletRow};
+use crate::models::{
+    NewRewardEventRow, NewRewardReferralRow, NewRewardsRow, NewUsernameRow, ReferralAttemptRow, RewardEventRow, RewardReferralRow, RewardsRow, UsernameRow, WalletRow,
+};
 use crate::repositories::rewards_redemptions_repository::RewardsRedemptionsRepository;
 use crate::sql_types::ChainRow;
 use crate::sql_types::{RewardEventType, RewardRedemptionType, RewardStatus, TransactionState, UsernameStatus};
@@ -480,7 +482,8 @@ impl RewardsRepository for DatabaseClient {
 
         let transactions_current = match first_subscription_at {
             Some(start) => {
-                TransactionsStore::get_transactions_by_wallet_since(self, username_row.wallet_id, start, vec![TransactionFilter::States(vec![TransactionState::Confirmed])])?.len() as i64
+                TransactionsStore::get_transactions_by_wallet_since(self, username_row.wallet_id, start, vec![TransactionFilter::States(vec![TransactionState::Confirmed])])?.len()
+                    as i64
             }
             None => 0,
         };
@@ -508,13 +511,9 @@ impl RewardsRepository for DatabaseClient {
         }
 
         match ReferralsStore::get_referral_by_username(self, &referred_username)? {
-            Some(referral) if referral.verified_at.is_none() => {
-                self.confirm_pending_referral(referral, referrer_username, &referred_username, device_id, can_verify)
-            }
+            Some(referral) if referral.verified_at.is_none() => self.confirm_pending_referral(referral, referrer_username, &referred_username, device_id, can_verify),
             Some(_) => Err(DatabaseError::Error("Referral already verified".to_string())),
-            None => {
-                self.create_new_referral(referrer_username, &referred_username, device_id, risk_signal_id, can_verify)
-            }
+            None => self.create_new_referral(referrer_username, &referred_username, device_id, risk_signal_id, can_verify),
         }
     }
 }
