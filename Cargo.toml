@@ -116,18 +116,18 @@ sui-types = { package = "sui-sdk-types", version = "0.3.0", features = [
 ] }
 k256 = { version = "0.13.4", features = ["ecdsa", "sha256"] }
 
-uniffi = { version = "0.31.0" }
+uniffi = { version = "0.31.1" }
 regex = { version = "1.12.3" }
 
-alloy-primitives = { version = "1.5.6", features = ["k256"] }
-alloy-sol-types = { version = "1.5.6", features = ["eip712-serde"] }
-alloy-dyn-abi = { version = "1.5.6", features = ["eip712"] }
-alloy-json-abi = { version = "1.5.6" }
-alloy-signer = { version = "1.8.3" }
-alloy-signer-local = { version = "1.8.3" }
-alloy-network = { version = "1.8.3" }
-alloy-consensus = { version = "1.8.3" }
-alloy-rlp = { version = "0.3.13" }
+alloy-primitives = { version = "1.5.7", features = ["k256"] }
+alloy-sol-types = { version = "1.5.7", features = ["eip712-serde"] }
+alloy-dyn-abi = { version = "1.5.7", features = ["eip712"] }
+alloy-json-abi = { version = "1.5.7" }
+alloy-signer = { version = "2.0.0" }
+alloy-signer-local = { version = "2.0.0" }
+alloy-network = { version = "2.0.0" }
+alloy-consensus = { version = "2.0.0" }
+alloy-rlp = { version = "0.3.15" }
 jsonwebtoken = { version = "10.3.0" }
 
 [profile.dev]
