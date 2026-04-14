@@ -173,7 +173,7 @@ fn add_referral_with_events(
     }
 }
 
-fn finalize_pending_referral(client: &mut DatabaseClient, referred_username: &str) -> Result<Vec<i32>, DatabaseError> {
+fn complete_referral(client: &mut DatabaseClient, referred_username: &str) -> Result<Vec<i32>, DatabaseError> {
     let Some(referral) = ReferralsStore::get_referral_by_username(client, referred_username)? else {
         return Ok(vec![]);
     };
@@ -210,7 +210,8 @@ pub trait RewardsRepository {
     fn get_rewards_leaderboard(&mut self) -> Result<ReferralLeaderboard, DatabaseError>;
     fn disable_rewards(&mut self, username: &str, reason: &str, comment: &str) -> Result<i32, DatabaseError>;
     fn get_rewards_by_filter(&mut self, filters: Vec<RewardsFilter>) -> Result<Vec<RewardsRow>, DatabaseError>;
-    fn promote_pending_reward(&mut self, username: &str) -> Result<Option<(i32, Vec<i32>)>, DatabaseError>;
+    fn check_eligibility(&mut self, username: &str) -> Result<Option<i32>, DatabaseError>;
+    fn promote_to_verified(&mut self, username: &str) -> Result<Vec<i32>, DatabaseError>;
 
     fn use_or_verify_referral(&mut self, referrer_username: &str, referred_wallet_id: i32, device_id: i32, risk_signal_id: i32) -> Result<Vec<RewardEvent>, DatabaseError>;
 }
@@ -452,7 +453,7 @@ impl RewardsRepository for DatabaseClient {
         Ok(RewardsStore::get_rewards_by_filter(self, filters)?)
     }
 
-    fn promote_pending_reward(&mut self, username: &str) -> Result<Option<(i32, Vec<i32>)>, DatabaseError> {
+    fn check_eligibility(&mut self, username: &str) -> Result<Option<i32>, DatabaseError> {
         let username_row = require_username(self, UsernameLookup::Username(username))?;
         let rewards = require_rewards(self, &username_row.username)?;
 
@@ -488,10 +489,12 @@ impl RewardsRepository for DatabaseClient {
             return Ok(None);
         }
 
-        RewardsStore::update_rewards(self, &username_row.username, RewardsUpdate::Status(RewardStatus::Verified))?;
-        let reward_event_ids = finalize_pending_referral(self, &username_row.username)?;
+        Ok(Some(username_row.wallet_id))
+    }
 
-        Ok(Some((username_row.wallet_id, reward_event_ids)))
+    fn promote_to_verified(&mut self, username: &str) -> Result<Vec<i32>, DatabaseError> {
+        RewardsStore::update_rewards(self, username, RewardsUpdate::Status(RewardStatus::Verified))?;
+        complete_referral(self, username)
     }
 
     fn use_or_verify_referral(&mut self, referrer_username: &str, referred_wallet_id: i32, device_id: i32, risk_signal_id: i32) -> Result<Vec<RewardEvent>, DatabaseError> {

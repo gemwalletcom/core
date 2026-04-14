@@ -54,9 +54,13 @@ impl RewardsEligibilityChecker {
     }
 
     async fn evaluate_and_promote(&self, username: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        let Some((wallet_id, reward_event_ids)) = self.database.rewards()?.promote_pending_reward(username)? else {
+        let Some(wallet_id) = self.database.rewards()?.check_eligibility(username)? else {
             return Ok(false);
         };
+
+        let reward_event_ids = self.database.rewards()?.promote_to_verified(username)?;
+
+        info_with_fields!("rewards eligibility promoted user", username = username, wallet_id = wallet_id, events = reward_event_ids.len());
 
         self.publish_promotion(wallet_id, reward_event_ids).await?;
         Ok(true)
