@@ -1,4 +1,4 @@
-use crate::database::rewards::{AbusePatterns, RiskSignalsStore};
+use crate::database::referrals::{AbusePatterns, RiskSignalsStore};
 use crate::models::{NewRiskSignalRow, RiskSignalRow};
 use crate::{DatabaseClient, DatabaseError};
 use chrono::NaiveDateTime;

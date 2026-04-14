@@ -1,4 +1,4 @@
-use crate::database::rewards::RewardsStore;
+use crate::database::rewards::{RewardsFilter, RewardsStore};
 use crate::database::rewards_redemptions::{RedemptionUpdate, RewardsRedemptionsStore};
 use crate::models::{NewRewardRedemptionRow, RewardRedemptionRow};
 use crate::sql_types::{RedemptionStatus, RewardRedemptionType};
@@ -18,7 +18,10 @@ pub trait RewardsRedemptionsRepository {
 impl RewardsRedemptionsRepository for DatabaseClient {
     fn add_redemption(&mut self, username: &str, option_id: &str, device_id: i32, wallet_id: i32) -> Result<RewardRedemption, DatabaseError> {
         let redemption_option = RewardsRedemptionsStore::get_redemption_option(self, option_id).or_not_found(option_id.to_string())?;
-        let rewards = RewardsStore::get_rewards(self, username).or_not_found(username.to_string())?;
+        let rewards = RewardsStore::get_rewards_by_filter(self, vec![RewardsFilter::Username(username.to_string())])?
+            .into_iter()
+            .next()
+            .ok_or_else(|| DatabaseError::not_found("Rewards", username.to_string()))?;
 
         if rewards.points < redemption_option.option.points {
             return Err(DatabaseError::Error("Not enough points".into()));

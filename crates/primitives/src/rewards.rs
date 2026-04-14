@@ -60,8 +60,8 @@ impl RewardStatus {
 
     pub fn is_enabled(&self) -> bool {
         match self {
-            Self::Unverified | Self::Pending | Self::Verified | Self::Trusted => true,
             Self::Disabled => false,
+            Self::Unverified | Self::Pending | Self::Verified | Self::Trusted => true,
         }
     }
 }
@@ -101,9 +101,10 @@ impl RewardEventType {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, Hashable, Sendable")]
 #[serde(rename_all = "camelCase")]
-#[derive(Default)]
 pub struct Rewards {
     pub code: Option<String>,
+    #[typeshare(skip)]
+    pub invite_reward_points: i32,
     pub referral_count: i32,
     pub points: i32,
     pub used_referral_code: Option<String>,
@@ -118,23 +119,25 @@ pub struct Rewards {
     pub verify_after: Option<DateTime<Utc>>,
     pub redemption_options: Vec<RewardRedemptionOption>,
     pub disable_reason: Option<String>,
-    pub referral_allowance: ReferralAllowance,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-#[typeshare(swift = "Equatable, Hashable, Sendable")]
-#[serde(rename_all = "camelCase")]
-pub struct ReferralAllowance {
-    pub daily: ReferralQuota,
-    pub weekly: ReferralQuota,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-#[typeshare(swift = "Equatable, Hashable, Sendable")]
-#[serde(rename_all = "camelCase")]
-pub struct ReferralQuota {
-    pub limit: i32,
-    pub available: i32,
+impl Default for Rewards {
+    fn default() -> Self {
+        Self {
+            code: None,
+            invite_reward_points: RewardEventType::InviteNew.points(),
+            referral_count: 0,
+            points: 0,
+            used_referral_code: None,
+            status: RewardStatus::Unverified,
+            is_enabled: false,
+            verified: false,
+            created_at: chrono::DateTime::<Utc>::UNIX_EPOCH.naive_utc(),
+            verify_after: None,
+            redemption_options: vec![],
+            disable_reason: None,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -226,4 +229,24 @@ pub struct ReferralLeaderboard {
     pub daily: Vec<ReferralLeader>,
     pub weekly: Vec<ReferralLeader>,
     pub monthly: Vec<ReferralLeader>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::RewardStatus;
+
+    #[test]
+    fn test_reward_status() {
+        assert!(RewardStatus::Unverified.is_enabled());
+        assert!(RewardStatus::Pending.is_enabled());
+        assert!(RewardStatus::Verified.is_enabled());
+        assert!(RewardStatus::Trusted.is_enabled());
+        assert!(!RewardStatus::Disabled.is_enabled());
+
+        assert!(!RewardStatus::Unverified.is_verified());
+        assert!(!RewardStatus::Pending.is_verified());
+        assert!(RewardStatus::Verified.is_verified());
+        assert!(RewardStatus::Trusted.is_verified());
+        assert!(!RewardStatus::Disabled.is_verified());
+    }
 }

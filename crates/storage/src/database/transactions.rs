@@ -11,7 +11,8 @@ use diesel::upsert::excluded;
 use primitives::Transaction;
 
 pub enum TransactionFilter {
-    State(TransactionState),
+    States(Vec<TransactionState>),
+    Kinds(Vec<TransactionType>),
 }
 
 #[derive(Debug, Clone)]
@@ -37,6 +38,7 @@ pub(crate) trait TransactionsStore {
     fn delete_transactions_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<i64>, diesel::result::Error>;
     fn delete_orphaned_transactions(&mut self, candidate_ids: Vec<i64>) -> Result<usize, diesel::result::Error>;
     fn get_asset_usage_counts(&mut self, since: NaiveDateTime) -> Result<Vec<(AssetId, i64)>, diesel::result::Error>;
+    fn get_transactions_by_wallet_since(&mut self, wallet_id: i32, since: NaiveDateTime, filters: Vec<TransactionFilter>) -> Result<Vec<TransactionRow>, diesel::result::Error>;
     fn get_transactions_by_filter(&mut self, filters: Vec<TransactionFilter>, limit: i64) -> Result<Vec<TransactionRow>, diesel::result::Error>;
     fn update_transaction(&mut self, chain: &str, hash: &str, updates: Vec<TransactionUpdate>) -> Result<usize, diesel::result::Error>;
     fn get_addresses_by_chain_and_kind(&mut self, chain: &str, kinds: Vec<TransactionType>, since: NaiveDateTime) -> Result<Vec<String>, diesel::result::Error>;
@@ -189,14 +191,45 @@ impl TransactionsStore for DatabaseClient {
             .load::<(AssetId, i64)>(&mut self.connection)
     }
 
+    fn get_transactions_by_wallet_since(&mut self, wallet_id: i32, since: NaiveDateTime, filters: Vec<TransactionFilter>) -> Result<Vec<TransactionRow>, diesel::result::Error> {
+        use crate::schema::transactions::dsl as tx_dsl;
+        use crate::schema::transactions_addresses::dsl as addr_dsl;
+        use crate::schema::wallets_addresses::dsl as wallet_addr_dsl;
+        use crate::schema::wallets_subscriptions::dsl as wallet_sub_dsl;
+
+        let mut query = tx_dsl::transactions
+            .inner_join(addr_dsl::transactions_addresses.on(tx_dsl::id.eq(addr_dsl::transaction_id)))
+            .inner_join(wallet_addr_dsl::wallets_addresses.on(addr_dsl::address.eq(wallet_addr_dsl::address)))
+            .inner_join(wallet_sub_dsl::wallets_subscriptions.on(wallet_addr_dsl::id.eq(wallet_sub_dsl::address_id)))
+            .into_boxed()
+            .filter(wallet_sub_dsl::wallet_id.eq(wallet_id))
+            .filter(tx_dsl::created_at.ge(since));
+
+        for filter in filters {
+            match filter {
+                TransactionFilter::States(states) => {
+                    query = query.filter(tx_dsl::state.eq_any(states));
+                }
+                TransactionFilter::Kinds(kinds) => {
+                    query = query.filter(tx_dsl::kind.eq_any(kinds));
+                }
+            }
+        }
+
+        query.distinct().select(TransactionRow::as_select()).load(&mut self.connection)
+    }
+
     fn get_transactions_by_filter(&mut self, filters: Vec<TransactionFilter>, limit: i64) -> Result<Vec<TransactionRow>, diesel::result::Error> {
         use crate::schema::transactions::dsl;
         let mut query = dsl::transactions.into_boxed();
 
         for filter in filters {
             match filter {
-                TransactionFilter::State(state) => {
-                    query = query.filter(dsl::state.eq(state));
+                TransactionFilter::States(states) => {
+                    query = query.filter(dsl::state.eq_any(states));
+                }
+                TransactionFilter::Kinds(kinds) => {
+                    query = query.filter(dsl::kind.eq_any(kinds));
                 }
             }
         }

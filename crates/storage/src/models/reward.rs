@@ -16,7 +16,6 @@ pub struct RewardsRow {
     pub referrer_username: Option<String>,
     pub referral_count: i32,
     pub device_id: i32,
-
     pub comment: Option<String>,
     pub disable_reason: Option<String>,
     pub verify_after: Option<NaiveDateTime>,
@@ -33,7 +32,6 @@ pub struct NewRewardsRow {
     pub referrer_username: Option<String>,
     pub referral_count: i32,
     pub device_id: i32,
-
     pub comment: Option<String>,
     pub disable_reason: Option<String>,
     pub verify_after: Option<NaiveDateTime>,

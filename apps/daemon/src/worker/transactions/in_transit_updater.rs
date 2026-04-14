@@ -43,7 +43,7 @@ impl InTransitUpdater {
         let transactions = self
             .database
             .transactions()?
-            .get_transactions_by_filter(vec![TransactionFilter::State(TransactionState::InTransit)], self.config.query_limit)?;
+            .get_transactions_by_filter(vec![TransactionFilter::States(vec![TransactionState::InTransit])], self.config.query_limit)?;
 
         if transactions.is_empty() {
             return Ok(0);

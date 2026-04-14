@@ -21,7 +21,8 @@ pub use self::database::{
     nft::NftCollectionFilter,
     perpetuals::PerpetualFilter,
     prices::AssetsWithPricesFilter,
-    rewards::{AbusePatterns, ReferralUpdate},
+    referrals::{AbusePatterns, ReferralUpdate},
+    rewards::{RewardsFilter, RewardsUpdate},
     rewards_redemptions::RedemptionUpdate,
     transactions::{TransactionFilter, TransactionUpdate},
 };

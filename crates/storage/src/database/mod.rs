@@ -17,6 +17,7 @@ pub mod price_alerts;
 pub mod prices;
 pub mod prices_dex;
 pub mod releases;
+pub mod referrals;
 pub mod rewards;
 pub mod rewards_redemptions;
 pub mod scan_addresses;

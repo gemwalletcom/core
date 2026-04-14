@@ -35,7 +35,7 @@ pub trait WalletsStore {
     fn add_subscriptions_exclude_addresses(&mut self, values: Vec<SubscriptionAddressExcludeRow>) -> Result<usize, diesel::result::Error>;
     fn get_subscriptions_exclude_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<String>, diesel::result::Error>;
     fn get_device_addresses(&mut self, device_id: i32, chain: ChainRow) -> Result<Vec<String>, diesel::result::Error>;
-    fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, diesel::result::Error>;
+    fn get_first_subscription_date_by_wallet_id(&mut self, wallet_id: i32) -> Result<Option<NaiveDateTime>, diesel::result::Error>;
 }
 
 impl WalletsStore for DatabaseClient {
@@ -229,10 +229,9 @@ impl WalletsStore for DatabaseClient {
             .load(&mut self.connection)
     }
 
-    fn get_first_subscription_date(&mut self, addresses: Vec<String>) -> Result<Option<NaiveDateTime>, diesel::result::Error> {
+    fn get_first_subscription_date_by_wallet_id(&mut self, wallet_id: i32) -> Result<Option<NaiveDateTime>, diesel::result::Error> {
         wallets_subscriptions::table
-            .inner_join(wallets_addresses::table)
-            .filter(wallets_addresses::address.eq_any(addresses))
+            .filter(wallets_subscriptions::wallet_id.eq(wallet_id))
             .select(wallets_subscriptions::created_at)
             .order(wallets_subscriptions::created_at.asc())
             .first(&mut self.connection)

@@ -290,8 +290,8 @@ fn setup_dev_devices(database: &Database) -> Result<(), Box<dyn std::error::Erro
 
     info_with_fields!("setup_dev", step = "add rewards");
     let devices = database.wallets()?.get_devices_by_wallet_id(wallet.id)?;
-    if let Some(device) = devices.first() {
-        let result = database.rewards()?.create_reward(wallet.id, "gemcoder", device.id);
+    if !devices.is_empty() {
+        let result = database.rewards()?.create_reward(wallet.id, "gemcoder");
         match result {
             Ok((rewards, _)) => info_with_fields!("setup_dev", step = "rewards added", code = rewards.code.unwrap_or_default(), points = rewards.points),
             Err(e) => info_with_fields!("setup_dev", step = "rewards skipped (may already exist)", error = e.to_string()),

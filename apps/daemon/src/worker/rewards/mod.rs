@@ -1,9 +1,11 @@
 mod rewards_abuse_checker;
+mod rewards_eligibility_checker;
 
 use std::error::Error;
 
 use job_runner::{JobHandle, ShutdownReceiver};
 use rewards_abuse_checker::RewardsAbuseChecker;
+use rewards_eligibility_checker::RewardsEligibilityChecker;
 use storage::ConfigCacher;
 use streamer::{StreamProducer, StreamProducerConfig};
 
@@ -19,7 +21,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
     let config = ConfigCacher::new(database.clone());
     let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
     let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
-    let stream_producer = StreamProducer::new(&rabbitmq_config, "check_rewards_abuse", shutdown_rx.clone()).await?;
+    let stream_producer = StreamProducer::new(&rabbitmq_config, "rewards_worker", shutdown_rx.clone()).await?;
 
     JobPlanBuilder::with_config(WorkerService::Rewards, runtime.plan(shutdown_rx), &config)
         .job(WorkerJob::CheckRewardsAbuse, {
@@ -30,6 +32,18 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                 let stream_producer = stream_producer.clone();
                 async move {
                     let checker = RewardsAbuseChecker::new(database, stream_producer);
+                    checker.check().await
+                }
+            }
+        })
+        .job(WorkerJob::CheckRewardsEligibility, {
+            let database = database.clone();
+            let stream_producer = stream_producer.clone();
+            move |_| {
+                let database = database.clone();
+                let stream_producer = stream_producer.clone();
+                async move {
+                    let checker = RewardsEligibilityChecker::new(database, stream_producer);
                     checker.check().await
                 }
             }

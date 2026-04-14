@@ -19,7 +19,6 @@ pub enum ConfigKey {
     ReferralIneligibleCountries,
     ReferralVerificationDelay,
     ReferralEligibility,
-    ReferralCodeActivationSwapAmount,
 
     // Username
     UsernameCreationPerIp,
@@ -164,6 +163,9 @@ pub enum ConfigKey {
 
     // Rewards
     RewardsTimerAbuseChecker,
+    RewardsTimerEligibilityChecker,
+    RewardsEligibilityActiveDuration,
+    RewardsEligibilityTransactionsCount,
 
     // Device
     DeviceTimerUpdater,
@@ -238,7 +240,6 @@ impl ConfigKey {
             Self::ReferralIneligibleCountries => "[]",
             Self::ReferralVerificationDelay => "24h",
             Self::ReferralEligibility => "7d",
-            Self::ReferralCodeActivationSwapAmount => "10",
             Self::UsernameCreationPerIp => "10",
             Self::UsernameCreationPerDevice => "1",
             Self::UsernameCreationGlobalDailyLimit => "1000",
@@ -353,6 +354,9 @@ impl ConfigKey {
             Self::ScanTimerUpdateValidators => "1d",
             Self::ScanTimerUpdateValidatorsStatic => "1h",
             Self::RewardsTimerAbuseChecker => "60s",
+            Self::RewardsTimerEligibilityChecker => "60s",
+            Self::RewardsEligibilityActiveDuration => "7d",
+            Self::RewardsEligibilityTransactionsCount => "3",
             Self::AlerterStakeRewardsTimer => "6h",
             Self::AlerterStakeRewardsThreshold => "0.01",
             Self::AlerterStakeRewardsLookback => "30d",
