@@ -1,9 +1,6 @@
 use primitives::SignerError;
 
-use super::cell::Cell;
-use super::indexed_cell::IndexedCells;
-use super::invalid;
-use super::reader::BitReader;
+use super::{cell::Cell, indexed_cell::IndexedCells, invalid, reader::BitReader};
 
 #[derive(Clone)]
 pub(super) struct RawCell {

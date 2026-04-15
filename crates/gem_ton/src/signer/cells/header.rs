@@ -1,10 +1,16 @@
 use primitives::SignerError;
 
-use super::invalid;
-use super::reader::BitReader;
+use super::{invalid, reader::BitReader};
 
 pub(super) const BOC_MAGIC: u32 = 0xb5ee9c72;
 const MAX_CELLS: usize = 4096;
+
+// Header flag byte layout: has_idx:1 | has_crc32c:1 | _:1 | _:1 | _:1 | ref_size:3
+const REF_SIZE_MASK: u8 = 0b0000_0111;
+const HAS_IDX_FLAG: u8 = 0b1000_0000;
+const HAS_CRC32C_FLAG: u8 = 0b0100_0000;
+const MAX_REF_BYTES: usize = 4;
+const MAX_OFF_BYTES: usize = 8;
 
 pub(super) struct BocHeader {
     pub has_idx: bool,
@@ -23,13 +29,13 @@ impl BocHeader {
         }
 
         let flags = reader.read_u8()?;
-        let ref_bytes = (flags & 0b111) as usize;
-        if ref_bytes == 0 || ref_bytes > 4 {
+        let ref_bytes = (flags & REF_SIZE_MASK) as usize;
+        if ref_bytes == 0 || ref_bytes > MAX_REF_BYTES {
             return Err(invalid("unsupported BoC size"));
         }
 
         let off_bytes = reader.read_u8()? as usize;
-        if off_bytes == 0 || off_bytes > 8 {
+        if off_bytes == 0 || off_bytes > MAX_OFF_BYTES {
             return Err(invalid("unsupported BoC offset size"));
         }
 
@@ -49,8 +55,8 @@ impl BocHeader {
         }
 
         Ok(Self {
-            has_idx: flags & 0b1000_0000 != 0,
-            has_crc32c: flags & 0b0100_0000 != 0,
+            has_idx: flags & HAS_IDX_FLAG != 0,
+            has_crc32c: flags & HAS_CRC32C_FLAG != 0,
             ref_bytes,
             off_bytes,
             cells_count,

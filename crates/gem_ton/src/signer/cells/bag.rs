@@ -2,12 +2,14 @@ use crc::Crc;
 use gem_encoding::{EncodingError, decode_base64, decode_base64_no_pad, decode_base64_url, decode_base64_url_padded, encode_base64};
 use primitives::SignerError;
 
-use super::cell::{Cell, CellArc};
-use super::header::{BOC_MAGIC, BocHeader};
-use super::indexed_cell::{build_index, ordered_indexed_cells};
-use super::invalid;
-use super::raw_cell::{RawCell, raw_cell_from_cell, raw_cell_size, read_raw_cell, write_raw_cell, write_var_uint};
-use super::reader::BitReader;
+use super::{
+    cell::{Cell, CellArc},
+    header::{BOC_MAGIC, BocHeader},
+    indexed_cell::{build_index, ordered_indexed_cells},
+    invalid,
+    raw_cell::{RawCell, raw_cell_from_cell, raw_cell_size, read_raw_cell, write_raw_cell, write_var_uint},
+    reader::BitReader,
+};
 
 const CRC32C: Crc<u32> = Crc::<u32>::new(&crc::CRC_32_ISCSI);
 

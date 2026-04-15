@@ -1,25 +1,27 @@
 use num_bigint::BigUint;
 use primitives::{
-    Asset, AssetId, AssetType, Chain, GasPriceType, SignerInput, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransferDataExtra,
-    TransferDataOutputAction, TransferDataOutputType, WalletConnectionSessionAppMetadata,
-    swap::{SwapData, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteDataType},
+    Asset, AssetId, AssetType, Chain, SignerInput, TransactionInputType, TransactionLoadMetadata, TransferDataExtra, WalletConnectionSessionAppMetadata, swap::SwapData,
 };
 use signer::Ed25519KeyPair;
 
-use super::request::TransferRequest;
-use super::signing::{DEFAULT_SEND_MODE, WalletV4R2, parse_address, sign_data, sign_requests, sign_swap, sign_token_transfer, sign_transfer};
+use super::{
+    message::DEFAULT_SEND_MODE,
+    request::TransferRequest,
+    signing::{parse_address, sign_data, sign_requests, sign_swap, sign_token_transfer, sign_transfer},
+    wallet::WalletV4R2,
+};
 use crate::signer::cells::{BagOfCells, CellBuilder};
 
 const TEST_TON_PRIVATE_KEY: &str = "c7702dadcd00d470df27dee0ddd97fbcf9deba52b60f7dd2b296ff42bb1fcad6";
 const TRUST_WALLET_PRIVATE_KEY: &str = "63474e5fe9511f1526a50567ce142befc343e71a49b865ac3908f58667319cb8";
+const SENDER_TOKEN_ADDRESS: &str = "EQAlgB03OjJKdXrlwZiGJD5snSzPKF2VL5bErJn_cqJANGH9";
+const JETTON_ASSET_ADDRESS: &str = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs";
+const WC_TON_MESSAGE_FIXTURE: &str = include_str!("../../../testdata/wc_ton_message.json");
 
-fn mock_wc_metadata() -> WalletConnectionSessionAppMetadata {
-    WalletConnectionSessionAppMetadata {
-        name: "Test Dapp".to_string(),
-        description: "Test Dapp".to_string(),
-        url: "https://example.com".to_string(),
-        icon: "https://example.com/icon.png".to_string(),
-    }
+fn test_wallet_address() -> String {
+    let private_key = hex::decode(TEST_TON_PRIVATE_KEY).unwrap();
+    let key_pair = Ed25519KeyPair::from_private_key(&private_key).unwrap();
+    WalletV4R2::new(key_pair.public_key_bytes).unwrap().address().to_base64_url()
 }
 
 fn sample_boc() -> String {
@@ -28,28 +30,20 @@ fn sample_boc() -> String {
     BagOfCells::from_root(builder.build().unwrap()).to_base64(true).unwrap()
 }
 
+fn wc_ton_payload(payload_boc: &str) -> Vec<u8> {
+    WC_TON_MESSAGE_FIXTURE.trim().replace("{PAYLOAD}", payload_boc).into_bytes()
+}
+
 #[test]
 fn test_sign_native_transfer_matches_android_vector() {
     let private_key = hex::decode(TEST_TON_PRIVATE_KEY).unwrap();
-    let wallet = WalletV4R2::new(Ed25519KeyPair::from_private_key(&private_key).unwrap().public_key_bytes).unwrap();
-    let address = wallet.address().to_base64_url();
-
-    let input = SignerInput::new(
-        TransactionLoadInput {
-            input_type: TransactionInputType::Transfer(Asset::from_chain(Chain::Ton)),
-            sender_address: address.clone(),
-            destination_address: address,
-            value: "10000".to_string(),
-            gas_price: GasPriceType::regular(0),
-            memo: None,
-            is_max_value: false,
-            metadata: TransactionLoadMetadata::Ton {
-                sender_token_address: None,
-                recipient_token_address: None,
-                sequence: 1,
-            },
-        },
-        TransactionFee::default(),
+    let address = test_wallet_address();
+    let input = SignerInput::mock_with_input_type(
+        TransactionInputType::Transfer(Asset::from_chain(Chain::Ton)),
+        &address,
+        &address,
+        "10000",
+        TransactionLoadMetadata::mock_ton(1),
     );
 
     let signed = sign_transfer(&input, &private_key, Some(1_000_000_000)).unwrap();
@@ -62,31 +56,14 @@ fn test_sign_native_transfer_matches_android_vector() {
 #[test]
 fn test_sign_jetton_transfer_matches_android_vector() {
     let private_key = hex::decode(TEST_TON_PRIVATE_KEY).unwrap();
-    let wallet = WalletV4R2::new(Ed25519KeyPair::from_private_key(&private_key).unwrap().public_key_bytes).unwrap();
-    let address = wallet.address().to_base64_url();
-
-    let input = SignerInput::new(
-        TransactionLoadInput {
-            input_type: TransactionInputType::Transfer(Asset::new(
-                AssetId::from_token(Chain::Ton, "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"),
-                "".to_string(),
-                "".to_string(),
-                8,
-                AssetType::TOKEN,
-            )),
-            sender_address: address.clone(),
-            destination_address: address,
-            value: "10000".to_string(),
-            gas_price: GasPriceType::regular(0),
-            memo: None,
-            is_max_value: false,
-            metadata: TransactionLoadMetadata::Ton {
-                sender_token_address: Some("EQAlgB03OjJKdXrlwZiGJD5snSzPKF2VL5bErJn_cqJANGH9".to_string()),
-                recipient_token_address: None,
-                sequence: 1,
-            },
-        },
-        TransactionFee::default(),
+    let address = test_wallet_address();
+    let asset = Asset::new(AssetId::from_token(Chain::Ton, JETTON_ASSET_ADDRESS), String::new(), String::new(), 8, AssetType::TOKEN);
+    let input = SignerInput::mock_with_input_type(
+        TransactionInputType::Transfer(asset),
+        &address,
+        &address,
+        "10000",
+        TransactionLoadMetadata::mock_ton_jetton(1, SENDER_TOKEN_ADDRESS),
     );
 
     let signed = sign_token_transfer(&input, &private_key, Some(1_000_000_000)).unwrap();
@@ -121,38 +98,14 @@ fn test_sign_deploy_matches_trust_wallet_core_vector() {
 #[test]
 fn test_sign_data_supports_state_init() {
     let private_key = hex::decode(TEST_TON_PRIVATE_KEY).unwrap();
-    let wallet = WalletV4R2::new(Ed25519KeyPair::from_private_key(&private_key).unwrap().public_key_bytes).unwrap();
-    let address = wallet.address().to_base64_url();
-    let payload_boc = sample_boc();
-    let payload = format!(r#"[{{"address":"EQAlgB03OjJKdXrlwZiGJD5snSzPKF2VL5bErJn_cqJANGH9","amount":"241000000","payload":"{payload_boc}","stateInit":"{payload_boc}"}}]"#);
-
-    let input = SignerInput::new(
-        TransactionLoadInput {
-            input_type: TransactionInputType::Generic(
-                Asset::from_chain(Chain::Ton),
-                mock_wc_metadata(),
-                TransferDataExtra {
-                    to: "".to_string(),
-                    gas_limit: None,
-                    gas_price: None,
-                    data: Some(payload.into_bytes()),
-                    output_type: TransferDataOutputType::EncodedTransaction,
-                    output_action: TransferDataOutputAction::Send,
-                },
-            ),
-            sender_address: address,
-            destination_address: "".to_string(),
-            value: "0".to_string(),
-            gas_price: GasPriceType::regular(0),
-            memo: None,
-            is_max_value: false,
-            metadata: TransactionLoadMetadata::Ton {
-                sender_token_address: None,
-                recipient_token_address: None,
-                sequence: 1,
-            },
-        },
-        TransactionFee::default(),
+    let address = test_wallet_address();
+    let extra = TransferDataExtra::mock_encoded_transaction(wc_ton_payload(&sample_boc()));
+    let input = SignerInput::mock_with_input_type(
+        TransactionInputType::Generic(Asset::from_chain(Chain::Ton), WalletConnectionSessionAppMetadata::mock(), extra),
+        &address,
+        "",
+        "0",
+        TransactionLoadMetadata::mock_ton(1),
     );
 
     let signed = sign_data(&input, &private_key, Some(1_000_000_000)).unwrap();
@@ -162,51 +115,17 @@ fn test_sign_data_supports_state_init() {
 #[test]
 fn test_sign_swap_uses_custom_payload_transfer() {
     let private_key = hex::decode(TEST_TON_PRIVATE_KEY).unwrap();
-    let payload_boc = sample_boc();
-    let input = SignerInput::new(
-        TransactionLoadInput {
-            input_type: TransactionInputType::Swap(
-                Asset::from_chain(Chain::Ton),
-                Asset::from_chain(Chain::Ton),
-                SwapData {
-                    quote: SwapQuote {
-                        from_address: "from".to_string(),
-                        from_value: "1000".to_string(),
-                        to_address: "to".to_string(),
-                        to_value: "900".to_string(),
-                        provider_data: SwapProviderData {
-                            provider: primitives::SwapProvider::StonfiV2,
-                            name: "STON.fi".to_string(),
-                            protocol_name: "STON.fi".to_string(),
-                        },
-                        slippage_bps: 100,
-                        eta_in_seconds: None,
-                        use_max_amount: None,
-                    },
-                    data: SwapQuoteData {
-                        to: "EQAlgB03OjJKdXrlwZiGJD5snSzPKF2VL5bErJn_cqJANGH9".to_string(),
-                        data_type: SwapQuoteDataType::Contract,
-                        value: "241000000".to_string(),
-                        data: payload_boc,
-                        memo: None,
-                        approval: None,
-                        gas_limit: None,
-                    },
-                },
-            ),
-            sender_address: "".to_string(),
-            destination_address: "".to_string(),
-            value: "0".to_string(),
-            gas_price: GasPriceType::regular(0),
-            memo: None,
-            is_max_value: false,
-            metadata: TransactionLoadMetadata::Ton {
-                sender_token_address: None,
-                recipient_token_address: None,
-                sequence: 1,
-            },
-        },
-        TransactionFee::default(),
+    let mut swap_data = SwapData::mock_with_provider(primitives::SwapProvider::StonfiV2);
+    swap_data.data.to = SENDER_TOKEN_ADDRESS.to_string();
+    swap_data.data.value = "241000000".to_string();
+    swap_data.data.data = sample_boc();
+    swap_data.data.gas_limit = None;
+    let input = SignerInput::mock_with_input_type(
+        TransactionInputType::Swap(Asset::from_chain(Chain::Ton), Asset::from_chain(Chain::Ton), swap_data),
+        "",
+        "",
+        "0",
+        TransactionLoadMetadata::mock_ton(1),
     );
 
     let signed = sign_swap(&input, &private_key, Some(1_000_000_000)).unwrap();

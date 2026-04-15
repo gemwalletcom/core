@@ -1,8 +1,10 @@
 use num_bigint::BigUint;
 use primitives::SignerError;
 
-use super::cell::{Cell, CellArc, MAX_CELL_REFERENCES};
-use super::writer::BitWriter;
+use super::{
+    cell::{Cell, CellArc, MAX_CELL_REFERENCES},
+    writer::BitWriter,
+};
 use crate::address::Address;
 
 #[derive(Default)]

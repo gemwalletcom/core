@@ -41,3 +41,4 @@ gem_hash = { path = "../gem_hash", optional = true }
 tokio = { workspace = true, features = ["macros", "rt"] }
 reqwest = { workspace = true }
 settings = { path = "../settings", features = ["testkit"] }
+primitives = { path = "../primitives", features = ["testkit"] }

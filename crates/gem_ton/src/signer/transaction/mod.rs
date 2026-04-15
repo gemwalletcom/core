@@ -1,5 +1,7 @@
+mod message;
 mod request;
 mod signing;
+mod wallet;
 #[cfg(test)]
 mod tests;
 
