@@ -25,6 +25,27 @@ User1 (Verified/Trusted): shares code
   ─> worker later promotes User2 Unverified ─> Verified
 ```
 
+## Validation Pipeline
+
+Two paths depending on whether the referred user is confirming a pending referral:
+
+**Pending confirmation path** (user already redeemed, delay passed, calling again):
+1. `is_pending_referral` — checks Pending status, matching referrer+device+unverified referral
+2. `get_referrer_info` — verifies referrer is still Verified/Trusted (rejects if Disabled)
+3. `use_or_verify_referral` — confirms the referral, creates reward events
+
+**New referral path** (first-time redemption):
+1. `get_referrer_info` — fetches referrer status, referral_count, wallet_id (single query)
+2. Referrer rate limits — cooldown, hourly, daily, weekly (multiplied by status tier)
+3. `validate_referral_use` — device/wallet eligibility, subscription age, self-refer check
+4. DB connection released
+5. Android device token validation (async)
+6. IP check + geo restrictions (async, tor, ineligible countries)
+7. New DB connection acquired
+8. Global rate limits — daily total, per-device, per-IP (daily + weekly), per-country
+9. Risk scoring — fingerprint, abuse patterns, device model rings
+10. Signal storage + threshold check
+
 ## Statuses
 
 | Status | Can Invite | Description |
@@ -32,7 +53,7 @@ User1 (Verified/Trusted): shares code
 | `Unverified` | No | Default after username creation. Awaiting promotion by worker. |
 | `Pending` | No | Used a referral code, awaiting `verify_after` delay. |
 | `Verified` | Yes | Promoted by worker. Can share referral code. |
-| `Trusted` | Yes | Higher-tier verified. Higher referral limits. |
+| `Trusted` | Yes | Higher-tier verified. Higher referral limits, no verification delay. |
 | `Disabled` | No | Account disabled. |
 
 ## Worker Promotion
@@ -58,4 +79,6 @@ User1 (Verified/Trusted): shares code
 | `RewardsEligibilityTransactionsCount` | Min confirmed transactions for promotion |
 | `RewardsTimerEligibilityChecker` | Worker check interval |
 | `RewardsEligibilityPromotionLimit` | Max users promoted per worker run |
-| `ReferralVerificationDelay` | Delay before referral confirmation |
+| `ReferralVerificationDelay` | Base delay before referral confirmation |
+| `ReferralVerifiedMultiplier` | Divides delay for Verified referrers (also scales rate limits) |
+| `ReferralTrustedMultiplier` | Scales rate limits for Trusted referrers (delay = 0) |

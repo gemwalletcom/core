@@ -1,6 +1,7 @@
 use std::error::Error;
 
 use api_connector::PusherClient;
+use chrono::NaiveDateTime;
 use gem_rewards::{IpSecurityClient, ReferralError, RewardsError, RiskScoreConfig, RiskScoringInput, UsernameError, evaluate_risk};
 use primitives::rewards::{RewardRedemptionOption, RewardStatus};
 use primitives::{ConfigKey, Localize, NaiveDateTimeExt, Platform, ReferralLeaderboard, RewardEvent, Rewards, WalletId, now};
@@ -12,7 +13,7 @@ use storage::{
 use streamer::{RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
 
 enum ReferralProcessResult {
-    Success(i32),
+    Success { risk_signal_id: i32, referrer_status: RewardStatus },
     Failed(ReferralError),
     RiskScoreExceeded(i32, ReferralError),
 }
@@ -25,6 +26,14 @@ struct ReferralLimitsConfig {
     ip_daily_limit: i64,
     ip_weekly_limit: i64,
     country_daily_limit: i64,
+}
+
+fn referrer_multiplier(config: &ConfigCacher, status: &RewardStatus) -> Result<i64, storage::DatabaseError> {
+    if *status == RewardStatus::Trusted {
+        config.get_i64(ConfigKey::ReferralTrustedMultiplier)
+    } else {
+        config.get_i64(ConfigKey::ReferralVerifiedMultiplier)
+    }
 }
 
 pub struct RewardsClient {
@@ -117,14 +126,34 @@ impl RewardsClient {
             source: WalletSource::Import,
         })?;
 
-        let referrer_username = self.db.rewards()?.get_referral_code(code)?.ok_or_else(|| {
+        let mut client = self.db.client()?;
+
+        let referrer_username = client.rewards().get_referral_code(code)?.ok_or_else(|| {
             let error = ReferralError::from(ReferralValidationError::CodeDoesNotExist);
             RewardsError::Referral(error.localize(locale))
         })?;
 
+        if client.rewards().is_pending_referral(&referrer_username, wallet.id, device.id)? {
+            let referrer_info = client.rewards().get_referrer_info(&referrer_username)?;
+            if !referrer_info.status.is_verified() {
+                return Err(RewardsError::Referral(
+                    ReferralError::from(ReferralValidationError::RewardsNotEnabled(referrer_username.clone())).localize(locale),
+                )
+                .into());
+            }
+            let events = client
+                .rewards()
+                .use_or_verify_referral(&referrer_username, &referrer_info.status, wallet.id, device.id, 0)?;
+            return Ok(events);
+        }
+        drop(client);
+
         match self.validate_and_score_referral(device, wallet.id, &referrer_username, ip_address, user_agent).await {
-            ReferralProcessResult::Success(risk_signal_id) => {
-                let events = self.db.rewards()?.use_or_verify_referral(&referrer_username, wallet.id, device.id, risk_signal_id)?;
+            ReferralProcessResult::Success { risk_signal_id, referrer_status } => {
+                let events = self
+                    .db
+                    .rewards()?
+                    .use_or_verify_referral(&referrer_username, &referrer_status, wallet.id, device.id, risk_signal_id)?;
                 Ok(events)
             }
             ReferralProcessResult::Failed(error) => {
@@ -142,64 +171,66 @@ impl RewardsClient {
     }
 
     async fn validate_and_score_referral(&self, device: &DeviceRow, wallet_id: i32, referrer_username: &str, ip_address: &str, user_agent: &str) -> ReferralProcessResult {
-        if let Err(e) = self.check_referrer_limits(referrer_username) {
-            return ReferralProcessResult::Failed(e);
+        match self.validate_and_score_referral_inner(device, wallet_id, referrer_username, ip_address, user_agent).await {
+            Ok(result) => result,
+            Err(e) => ReferralProcessResult::Failed(e),
         }
+    }
 
-        if let Err(e) = self.validate_referral_usage(device, wallet_id, referrer_username) {
-            return ReferralProcessResult::Failed(e);
+    async fn validate_and_score_referral_inner(
+        &self,
+        device: &DeviceRow,
+        wallet_id: i32,
+        referrer_username: &str,
+        ip_address: &str,
+        user_agent: &str,
+    ) -> Result<ReferralProcessResult, ReferralError> {
+        let referrer_info;
+        {
+            let mut client = self.db.client()?;
+
+            referrer_info = client.rewards().get_referrer_info(referrer_username)?;
+            if !referrer_info.status.is_verified() {
+                return Err(ReferralValidationError::RewardsNotEnabled(referrer_username.to_string()).into());
+            }
+
+            let multiplier = referrer_multiplier(&self.config, &referrer_info.status)?;
+            let current = now();
+            let cooldown = self.config.get_duration(ConfigKey::ReferralCooldown)?;
+
+            self.check_referrer_rate_limit(&mut client, referrer_username, current.days_ago(7), ConfigKey::ReferralPerUserWeekly, multiplier)?;
+            self.check_referrer_rate_limit(&mut client, referrer_username, current.days_ago(1), ConfigKey::ReferralPerUserDaily, multiplier)?;
+            self.check_referrer_rate_limit(&mut client, referrer_username, current.hours_ago(1), ConfigKey::ReferralPerUserHourly, multiplier)?;
+
+            if client.rewards().count_referrals_since(referrer_username, current.ago(cooldown))? >= 1 {
+                return Err(ReferralError::ReferrerLimitReached(ConfigKey::ReferralCooldown));
+            }
+
+            let eligibility = self.config.get_duration(ConfigKey::ReferralEligibility)?;
+            let eligibility_days = (eligibility.as_secs() / 86400) as i64;
+            client
+                .rewards()
+                .validate_referral_use(referrer_username, referrer_info.wallet_id, wallet_id, device.id, device.created_at, eligibility_days)?;
         }
 
         if *device.platform == Platform::Android {
             match self.pusher.is_device_token_valid(&device.token, device.platform.as_i32()).await {
                 Ok(true) => {}
-                Ok(false) => return ReferralProcessResult::Failed(ReferralError::InvalidDeviceToken("token_not_registered".to_string())),
-                Err(e) => return ReferralProcessResult::Failed(ReferralError::InvalidDeviceToken(e.to_string())),
+                Ok(false) => return Err(ReferralError::InvalidDeviceToken("token_not_registered".to_string())),
+                Err(e) => return Err(ReferralError::InvalidDeviceToken(e.to_string())),
             }
         }
 
-        let ip_result = match self.ip_security_client.check_ip(ip_address).await {
-            Ok(result) => result,
-            Err(e) => return ReferralProcessResult::Failed(e.into()),
-        };
-
-        let limits_config = match self.load_referral_limits_config() {
-            Ok(config) => config,
-            Err(e) => return ReferralProcessResult::Failed(e.into()),
-        };
-
-        let risk_score_config = match self.load_risk_score_config() {
-            Ok(config) => config,
-            Err(e) => return ReferralProcessResult::Failed(e.into()),
-        };
-
+        let ip_result = self.ip_security_client.check_ip(ip_address).await?;
+        let limits_config = self.load_referral_limits_config()?;
+        let risk_score_config = self.load_risk_score_config()?;
         let since = now().ago(risk_score_config.lookback);
 
-        let banned_user_count = match self.db.client() {
-            Ok(mut client) => match client.count_disabled_users_by_device(device.id, since) {
-                Ok(count) => count,
-                Err(e) => return ReferralProcessResult::Failed(e.into()),
-            },
-            Err(e) => return ReferralProcessResult::Failed(e.into()),
-        };
-        if banned_user_count > 0 {
-            return ReferralProcessResult::Failed(ReferralError::LimitReached(ConfigKey::ReferralPerDeviceDaily));
+        let mut client = self.db.client()?;
+
+        if client.count_disabled_users_by_device(device.id, since)? > 0 {
+            return Err(ReferralError::LimitReached(ConfigKey::ReferralPerDeviceDaily));
         }
-
-        let mut client = match self.db.client() {
-            Ok(c) => c,
-            Err(e) => return ReferralProcessResult::Failed(e.into()),
-        };
-
-        let referrer_status = match client.rewards().get_status_by_username(referrer_username) {
-            Ok(status) => status,
-            Err(e) => return ReferralProcessResult::Failed(e.into()),
-        };
-
-        let referrer_referral_count = match client.rewards().get_referral_count_by_username(referrer_username) {
-            Ok(count) => count as i64,
-            Err(e) => return ReferralProcessResult::Failed(e.into()),
-        };
 
         let scoring_input = RiskScoringInput {
             username: referrer_username.to_string(),
@@ -211,8 +242,8 @@ impl RewardsClient {
             device_locale: device.locale.as_str().to_string(),
             device_currency: device.currency.clone(),
             ip_result,
-            referrer_status,
-            referrer_referral_count,
+            referrer_status: referrer_info.status,
+            referrer_referral_count: referrer_info.referral_count as i64,
             user_agent: user_agent.to_string(),
         };
 
@@ -220,94 +251,51 @@ impl RewardsClient {
         let fingerprint = signal_input.generate_fingerprint();
 
         if client.has_fingerprint_for_referrer(&fingerprint, referrer_username, since).unwrap_or(false) {
-            return ReferralProcessResult::Failed(ReferralError::DuplicateAttempt);
+            return Err(ReferralError::DuplicateAttempt);
         }
 
         if !limits_config.tor_allowed && scoring_input.ip_result.is_tor {
-            return ReferralProcessResult::Failed(ReferralError::IpTorNotAllowed);
+            return Err(ReferralError::IpTorNotAllowed);
         }
 
         if limits_config.ineligible_countries.contains(&scoring_input.ip_result.country_code) {
-            return ReferralProcessResult::Failed(ReferralError::IpCountryIneligible(scoring_input.ip_result.country_code.clone()));
+            return Err(ReferralError::IpCountryIneligible(scoring_input.ip_result.country_code.clone()));
         }
 
-        let daily_count = match client.count_signals_since(None, now().days_ago(1)) {
-            Ok(count) => count,
-            Err(e) => return ReferralProcessResult::Failed(e.into()),
-        };
-        if daily_count >= limits_config.daily_limit {
-            return ReferralProcessResult::Failed(ReferralError::LimitReached(ConfigKey::ReferralUseDailyLimit));
-        }
+        let one_day_ago = now().days_ago(1);
+        self.check_global_rate_limit(&mut client, None, one_day_ago, limits_config.daily_limit, ConfigKey::ReferralUseDailyLimit)?;
+        self.check_device_rate_limit(&mut client, scoring_input.device_id, one_day_ago, limits_config.device_daily_limit)?;
+        self.check_global_rate_limit(
+            &mut client,
+            Some(&scoring_input.ip_result.ip_address),
+            one_day_ago,
+            limits_config.ip_daily_limit,
+            ConfigKey::ReferralPerIpDaily,
+        )?;
+        self.check_global_rate_limit(
+            &mut client,
+            Some(&scoring_input.ip_result.ip_address),
+            now().days_ago(7),
+            limits_config.ip_weekly_limit,
+            ConfigKey::ReferralPerIpWeekly,
+        )?;
+        self.check_country_rate_limit(&mut client, &scoring_input.ip_result.country_code, one_day_ago, limits_config.country_daily_limit)?;
 
-        let device_daily_count = match client.count_signals_for_device_id(scoring_input.device_id, now().days_ago(1)) {
-            Ok(count) => count,
-            Err(e) => return ReferralProcessResult::Failed(e.into()),
-        };
-        if device_daily_count >= limits_config.device_daily_limit {
-            return ReferralProcessResult::Failed(ReferralError::LimitReached(ConfigKey::ReferralPerDeviceDaily));
-        }
-
-        let ip_daily_count = match client.count_signals_since(Some(&scoring_input.ip_result.ip_address), now().days_ago(1)) {
-            Ok(count) => count,
-            Err(e) => return ReferralProcessResult::Failed(e.into()),
-        };
-        if ip_daily_count >= limits_config.ip_daily_limit {
-            return ReferralProcessResult::Failed(ReferralError::LimitReached(ConfigKey::ReferralPerIpDaily));
-        }
-
-        let ip_weekly_count = match client.count_signals_since(Some(&scoring_input.ip_result.ip_address), now().days_ago(7)) {
-            Ok(count) => count,
-            Err(e) => return ReferralProcessResult::Failed(e.into()),
-        };
-        if ip_weekly_count >= limits_config.ip_weekly_limit {
-            return ReferralProcessResult::Failed(ReferralError::LimitReached(ConfigKey::ReferralPerIpWeekly));
-        }
-
-        let country_daily_count = match client.count_signals_for_country(&scoring_input.ip_result.country_code, now().days_ago(1)) {
-            Ok(count) => count,
-            Err(e) => return ReferralProcessResult::Failed(e.into()),
-        };
-        if country_daily_count >= limits_config.country_daily_limit {
-            return ReferralProcessResult::Failed(ReferralError::LimitReached(ConfigKey::ReferralPerCountryDaily));
-        }
-
-        let existing_signals = match client.get_matching_risk_signals(
+        let existing_signals = client.get_matching_risk_signals(
             &fingerprint,
             &signal_input.ip_address,
             &signal_input.ip_isp,
             &signal_input.device_model,
             signal_input.device_id,
             since,
-        ) {
-            Ok(signals) => signals,
-            Err(e) => return ReferralProcessResult::Failed(e.into()),
-        };
+        )?;
 
         let device_model_ring_count =
-            match client.count_unique_referrers_for_device_model_pattern(&signal_input.device_model, signal_input.device_platform, &signal_input.device_locale, since) {
-                Ok(count) => count,
-                Err(e) => return ReferralProcessResult::Failed(e.into()),
-            };
-
-        let ip_abuser_count = match client.count_disabled_users_by_ip(&signal_input.ip_address, since) {
-            Ok(count) => count,
-            Err(e) => return ReferralProcessResult::Failed(e.into()),
-        };
-
-        let cross_referrer_fingerprint_count = match client.count_unique_referrers_for_fingerprint(&fingerprint, since) {
-            Ok(count) => count,
-            Err(e) => return ReferralProcessResult::Failed(e.into()),
-        };
-
-        let referrer_country_count = match client.count_unique_countries_for_referrer(referrer_username, since) {
-            Ok(count) => count,
-            Err(e) => return ReferralProcessResult::Failed(e.into()),
-        };
-
-        let referrer_device_count = match client.count_unique_devices_for_referrer(referrer_username, since) {
-            Ok(count) => count,
-            Err(e) => return ReferralProcessResult::Failed(e.into()),
-        };
+            client.count_unique_referrers_for_device_model_pattern(&signal_input.device_model, signal_input.device_platform, &signal_input.device_locale, since)?;
+        let ip_abuser_count = client.count_disabled_users_by_ip(&signal_input.ip_address, since)?;
+        let cross_referrer_fingerprint_count = client.count_unique_referrers_for_fingerprint(&fingerprint, since)?;
+        let referrer_country_count = client.count_unique_countries_for_referrer(referrer_username, since)?;
+        let referrer_device_count = client.count_unique_devices_for_referrer(referrer_username, since)?;
 
         let risk_result = evaluate_risk(
             &scoring_input,
@@ -319,73 +307,65 @@ impl RewardsClient {
             referrer_device_count,
             &risk_score_config,
         );
-        let risk_signal_id = match client.add_risk_signal(risk_result.signal) {
-            Ok(id) => id,
-            Err(e) => return ReferralProcessResult::Failed(e.into()),
-        };
+        let risk_signal_id = client.add_risk_signal(risk_result.signal)?;
 
         if !risk_result.score.is_allowed {
-            let error = ReferralError::RiskScoreExceeded {
-                score: risk_result.score.score,
-                max_allowed: risk_score_config.max_allowed_score,
-            };
-            return ReferralProcessResult::RiskScoreExceeded(risk_signal_id, error);
+            return Ok(ReferralProcessResult::RiskScoreExceeded(
+                risk_signal_id,
+                ReferralError::RiskScoreExceeded {
+                    score: risk_result.score.score,
+                    max_allowed: risk_score_config.max_allowed_score,
+                },
+            ));
         }
 
-        ReferralProcessResult::Success(risk_signal_id)
+        Ok(ReferralProcessResult::Success {
+            risk_signal_id,
+            referrer_status: referrer_info.status,
+        })
     }
 
-    fn check_referrer_limits(&self, referrer_username: &str) -> Result<(), ReferralError> {
-        let status = self.db.rewards()?.get_status_by_username(referrer_username)?;
-        let multiplier = if status == RewardStatus::Trusted {
-            self.config.get_i64(ConfigKey::ReferralTrustedMultiplier)?
-        } else if status.is_verified() {
-            self.config.get_i64(ConfigKey::ReferralVerifiedMultiplier)?
-        } else {
-            1
-        };
-
-        let current = now();
-
-        let cooldown = self.config.get_duration(ConfigKey::ReferralCooldown)?;
-        if self.db.rewards()?.count_referrals_since(referrer_username, current.ago(cooldown))? >= 1 {
-            return Err(ReferralError::ReferrerLimitReached(ConfigKey::ReferralCooldown));
+    fn check_referrer_rate_limit(
+        &self,
+        client: &mut storage::DatabaseClient,
+        referrer_username: &str,
+        since: NaiveDateTime,
+        key: ConfigKey,
+        multiplier: i64,
+    ) -> Result<(), ReferralError> {
+        let count = client.rewards().count_referrals_since(referrer_username, since)?;
+        let limit = self.config.get_i64(key.clone())? * multiplier;
+        if count >= limit {
+            return Err(ReferralError::ReferrerLimitReached(key));
         }
-
-        let hourly_limit = self.config.get_i64(ConfigKey::ReferralPerUserHourly)? * multiplier;
-        if self.db.rewards()?.count_referrals_since(referrer_username, current.hours_ago(1))? >= hourly_limit {
-            return Err(ReferralError::ReferrerLimitReached(ConfigKey::ReferralPerUserHourly));
-        }
-
-        let daily_limit = self.config.get_i64(ConfigKey::ReferralPerUserDaily)? * multiplier;
-        if self.db.rewards()?.count_referrals_since(referrer_username, current.days_ago(1))? >= daily_limit {
-            return Err(ReferralError::ReferrerLimitReached(ConfigKey::ReferralPerUserDaily));
-        }
-
-        let weekly_limit = self.config.get_i64(ConfigKey::ReferralPerUserWeekly)? * multiplier;
-        if self.db.rewards()?.count_referrals_since(referrer_username, current.days_ago(7))? >= weekly_limit {
-            return Err(ReferralError::ReferrerLimitReached(ConfigKey::ReferralPerUserWeekly));
-        }
-
         Ok(())
     }
 
-    fn validate_referral_usage(&self, device: &DeviceRow, wallet_id: i32, referrer_username: &str) -> Result<(), ReferralError> {
-        let eligibility = self.config.get_duration(ConfigKey::ReferralEligibility)?;
-        let eligibility_days = (eligibility.as_secs() / 86400) as i64;
-        let eligibility_cutoff = now().ago(eligibility);
-
-        self.db.rewards()?.validate_referral_use(referrer_username, wallet_id, device.id, eligibility_days)?;
-
-        let first_subscription_date = self.db.rewards()?.get_first_subscription_date_by_wallet_id(wallet_id)?;
-
-        let is_new_device = device.created_at > eligibility_cutoff;
-        let is_new_subscription = first_subscription_date.map(|d| d > eligibility_cutoff).unwrap_or(true);
-
-        if !is_new_device || !is_new_subscription {
-            return Err(ReferralValidationError::EligibilityExpired(eligibility_days).into());
+    fn check_global_rate_limit(
+        &self,
+        client: &mut storage::DatabaseClient,
+        ip_address: Option<&str>,
+        since: NaiveDateTime,
+        limit: i64,
+        key: ConfigKey,
+    ) -> Result<(), ReferralError> {
+        if client.count_signals_since(ip_address, since)? >= limit {
+            return Err(ReferralError::LimitReached(key));
         }
+        Ok(())
+    }
 
+    fn check_device_rate_limit(&self, client: &mut storage::DatabaseClient, device_id: i32, since: NaiveDateTime, limit: i64) -> Result<(), ReferralError> {
+        if client.count_signals_for_device_id(device_id, since)? >= limit {
+            return Err(ReferralError::LimitReached(ConfigKey::ReferralPerDeviceDaily));
+        }
+        Ok(())
+    }
+
+    fn check_country_rate_limit(&self, client: &mut storage::DatabaseClient, country_code: &str, since: NaiveDateTime, limit: i64) -> Result<(), ReferralError> {
+        if client.count_signals_for_country(country_code, since)? >= limit {
+            return Err(ReferralError::LimitReached(ConfigKey::ReferralPerCountryDaily));
+        }
         Ok(())
     }
 
