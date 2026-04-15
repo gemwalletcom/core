@@ -6,16 +6,16 @@ use crate::asset_id::AssetId;
 use crate::asset_price::{ChartPeriod, ChartValue};
 use crate::chart::ChartDateValue;
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
-#[typeshare(swift = "Equatable, Sendable, CaseIterable, Identifiable")]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[typeshare(swift = "Equatable, Sendable, CaseIterable, Identifiable, Hashable")]
 #[serde(rename_all = "camelCase")]
 pub enum PortfolioType {
     Wallet,
     Perpetuals,
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
-#[typeshare(swift = "Equatable, Sendable, CaseIterable, Identifiable")]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[typeshare(swift = "Equatable, Sendable, CaseIterable, Identifiable, Hashable")]
 #[serde(rename_all = "camelCase")]
 pub enum PortfolioChartType {
     Value,
@@ -23,7 +23,7 @@ pub enum PortfolioChartType {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[typeshare(swift = "Equatable, Sendable")]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "camelCase")]
 pub struct PortfolioChartData {
     pub chart_type: PortfolioChartType,
@@ -123,7 +123,7 @@ pub struct PortfolioMarginUsage {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
-#[typeshare(swift = "Equatable, Sendable")]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(tag = "type", content = "content", rename_all = "camelCase")]
 pub enum PortfolioStatistic {
     AllTimeHigh(ChartValuePercentage),
@@ -135,8 +135,8 @@ pub enum PortfolioStatistic {
     Volume(f64),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[typeshare(swift = "Sendable")]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[typeshare(swift = "Equatable, Sendable")]
 #[serde(rename_all = "camelCase")]
 pub struct PortfolioData {
     pub charts: Vec<PortfolioChartData>,
