@@ -58,16 +58,18 @@ impl AssetAddressRowsExt for Vec<AssetAddressRow> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::Asset;
+    use primitives::{Asset, asset_constants::ETHEREUM_USDC_ASSET_ID};
 
     #[test]
     fn test_asset_ids() {
+        let eth = Asset::from_chain(Chain::Ethereum).id;
+        let usdc = ETHEREUM_USDC_ASSET_ID.clone();
         let rows = vec![
-            AssetAddressRow::new(Chain::Ethereum, Asset::mock_eth().id, "0xwallet".to_string(), Some("100".to_string())),
-            AssetAddressRow::new(Chain::Ethereum, Asset::mock_ethereum_usdc().id.clone(), "0xwallet".to_string(), Some("1".to_string())),
-            AssetAddressRow::new(Chain::Ethereum, Asset::mock_ethereum_usdc().id.clone(), "0xother".to_string(), Some("2".to_string())),
+            AssetAddressRow::new(Chain::Ethereum, eth.clone(), "0xwallet".to_string(), Some("100".to_string())),
+            AssetAddressRow::new(Chain::Ethereum, usdc.clone(), "0xwallet".to_string(), Some("1".to_string())),
+            AssetAddressRow::new(Chain::Ethereum, usdc.clone(), "0xother".to_string(), Some("2".to_string())),
         ];
 
-        assert_eq!(rows.asset_ids(), vec![Asset::mock_eth().id, Asset::mock_ethereum_usdc().id]);
+        assert_eq!(rows.asset_ids(), vec![eth, usdc]);
     }
 }

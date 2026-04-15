@@ -8,6 +8,42 @@ use crate::explorers::{
 use std::str::FromStr;
 use typeshare::typeshare;
 
+#[typeshare(swift = "Equatable, Hashable, Sendable")]
+#[derive(Debug, Default, Clone)]
+pub struct ExplorerInput {
+    pub hash: String,
+    pub recipient: Option<String>,
+    pub memo: Option<String>,
+}
+
+impl ExplorerInput {
+    pub fn new_recipient(recipient: impl Into<String>) -> Self {
+        Self {
+            hash: String::new(),
+            recipient: Some(recipient.into()),
+            memo: None,
+        }
+    }
+
+    pub fn new_memo(recipient: impl Into<String>, memo: impl Into<String>) -> Self {
+        Self {
+            hash: String::new(),
+            recipient: Some(recipient.into()),
+            memo: Some(memo.into()),
+        }
+    }
+}
+
+impl<T: Into<String>> From<T> for ExplorerInput {
+    fn from(hash: T) -> Self {
+        Self {
+            hash: hash.into(),
+            recipient: None,
+            memo: None,
+        }
+    }
+}
+
 pub trait BlockExplorer: Send + Sync {
     fn name(&self) -> String;
     fn get_tx_url(&self, hash: &str) -> String;
@@ -20,6 +56,10 @@ pub trait BlockExplorer: Send + Sync {
     }
     fn get_validator_url(&self, _validator: &str) -> Option<String> {
         None
+    }
+
+    fn get_swap_tx_url(&self, input: &ExplorerInput) -> String {
+        self.get_tx_url(&input.hash)
     }
 
     fn new() -> Box<Self>

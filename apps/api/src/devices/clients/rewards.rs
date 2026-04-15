@@ -3,7 +3,7 @@ use std::error::Error;
 use api_connector::PusherClient;
 use gem_rewards::{IpSecurityClient, ReferralError, RewardsError, RiskScoreConfig, RiskScoringInput, UsernameError, evaluate_risk};
 use primitives::rewards::{RewardRedemptionOption, RewardStatus};
-use primitives::{ConfigKey, IpUsageType, Localize, NaiveDateTimeExt, Platform, ReferralLeaderboard, RewardEvent, Rewards, WalletId, now};
+use primitives::{ConfigKey, Localize, NaiveDateTimeExt, Platform, ReferralLeaderboard, RewardEvent, Rewards, WalletId, now};
 use storage::models::DeviceRow;
 use storage::{
     ConfigCacher, Database, NewWalletRow, ReferralValidationError, RewardsRedemptionsRepository, RewardsRepository, RiskSignalsRepository, WalletSource, WalletType,
@@ -82,8 +82,6 @@ impl RewardsClient {
         let ip_limit = self.config.get_i64(ConfigKey::UsernameCreationPerIp)?;
         let device_limit = self.config.get_i64(ConfigKey::UsernameCreationPerDevice)?;
         let country_daily_limit = self.config.get_i64(ConfigKey::UsernameCreationPerCountryDailyLimit)?;
-        let ineligible_countries = self.config.get_vec_string(ConfigKey::ReferralIneligibleCountries)?;
-        let blocked_ip_types: Vec<IpUsageType> = self.config.get_vec(ConfigKey::ReferralBlockedIpTypes)?;
 
         self.ip_security_client
             .check_username_creation_limits(ip_address, device_id, global_daily_limit, ip_limit, device_limit)
@@ -95,14 +93,6 @@ impl RewardsClient {
         self.ip_security_client
             .check_username_creation_country_limit(&ip_result.country_code, country_daily_limit)
             .await
-            .map_err(|e| self.map_username_error(e, locale))?;
-
-        self.ip_security_client
-            .check_username_creation_country_eligibility(&ip_result.country_code, &ineligible_countries)
-            .map_err(|e| self.map_username_error(e, locale))?;
-
-        self.ip_security_client
-            .check_username_creation_ip_type(ip_result.usage_type, &blocked_ip_types)
             .map_err(|e| self.map_username_error(e, locale))?;
 
         let (rewards, event_id) = self.db.rewards()?.create_reward(wallet.id, code)?;

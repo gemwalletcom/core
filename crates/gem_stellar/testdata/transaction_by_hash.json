@@ -14,7 +14,10 @@
         "source_account": null,
         "funder": null,
         "account": null,
-        "starting_balance": null
+        "starting_balance": null,
+        "transaction": {
+          "memo": "49639518"
+        }
       }
     ]
   }
