@@ -1,8 +1,8 @@
 use std::error::Error;
 
 use gem_tracing::{error_with_fields, info_with_fields};
-use primitives::{ConfigKey, NotificationType, RewardStatus};
-use storage::{ConfigCacher, Database, RewardsFilter, RewardsRepository};
+use primitives::{ConfigKey, NaiveDateTimeExt, NotificationType, RewardStatus, now};
+use storage::{ConfigCacher, Database, RewardsEligibilityConfig, RewardsFilter, RewardsRepository};
 use streamer::{InAppNotificationPayload, RewardsNotificationPayload, StreamProducer, StreamProducerQueue};
 
 pub struct RewardsEligibilityChecker {
@@ -22,19 +22,28 @@ impl RewardsEligibilityChecker {
     }
 
     pub async fn check(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let limit = self.config.get_i64(ConfigKey::RewardsEligibilityPromotionLimit)?;
+        let promotion_limit = self.config.get_i64(ConfigKey::RewardsEligibilityPromotionLimit)?;
+        let active_duration = self.config.get_duration(ConfigKey::RewardsEligibilityActiveDuration)?;
+        let eligibility = RewardsEligibilityConfig {
+            activity_cutoff: now().ago(active_duration),
+            transactions_required: self.config.get_i64(ConfigKey::RewardsEligibilityTransactionsCount)?,
+        };
 
         let usernames = self
             .database
             .rewards()?
-            .get_rewards_by_filter(vec![RewardsFilter::Statuses(vec![RewardStatus::Unverified]), RewardsFilter::Limit(limit)])?
+            .get_rewards_by_filter(vec![RewardsFilter::Statuses(vec![RewardStatus::Unverified])])?
             .into_iter()
             .map(|reward| reward.username)
             .collect::<Vec<_>>();
         let mut promoted = 0;
 
         for username in usernames {
-            let result = match self.evaluate_and_promote(&username).await {
+            if promoted >= promotion_limit as usize {
+                break;
+            }
+
+            let result = match self.evaluate_and_promote(&username, eligibility).await {
                 Ok(result) => result,
                 Err(error) => {
                     error_with_fields!("rewards eligibility check failed", &*error, username = username);
@@ -47,15 +56,11 @@ impl RewardsEligibilityChecker {
             }
         }
 
-        if promoted > 0 {
-            info_with_fields!("rewards eligibility promoted users", count = promoted);
-        }
-
         Ok(promoted)
     }
 
-    async fn evaluate_and_promote(&self, username: &str) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        let Some(wallet_id) = self.database.rewards()?.check_eligibility(username)? else {
+    async fn evaluate_and_promote(&self, username: &str, eligibility: RewardsEligibilityConfig) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        let Some(wallet_id) = self.database.rewards()?.check_eligibility(username, eligibility)? else {
             return Ok(false);
         };
 
