@@ -26,7 +26,9 @@ impl BlockExplorer for NearIntents {
 
     fn get_swap_tx_url(&self, input: &ExplorerInput) -> String {
         let base = self.get_tx_url(input.recipient.as_deref().unwrap_or_default());
-        if let Some(memo) = input.memo.as_deref() {
+        if let Some(memo) = input.memo.as_deref()
+            && !memo.is_empty()
+        {
             format!("{base}?depositMemo={memo}")
         } else {
             base
