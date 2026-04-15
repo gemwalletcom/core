@@ -66,6 +66,10 @@ impl StakeChain {
         self.config().can_claim_rewards
     }
 
+    pub fn get_can_claim_all_rewards(&self) -> bool {
+        self.config().can_claim_all_rewards
+    }
+
     pub fn get_reserved_for_fees(&self) -> u64 {
         self.config().reserved_for_fees
     }
