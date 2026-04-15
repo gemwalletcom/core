@@ -2,6 +2,12 @@ use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
 
+use crate::{
+    block_explorer::BlockExplorer,
+    chain::Chain,
+    explorers::{ChainflipScan, MayanScan, NearIntents, RelayScan, RuneScan, SkipExplorer, SocketScan},
+};
+
 #[derive(Debug, Copy, Clone, PartialEq, AsRefStr, EnumString, Eq, PartialOrd, Ord, Serialize, Deserialize, EnumIter)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "snake_case")]
@@ -58,6 +64,31 @@ impl SwapProvider {
 
     pub fn cross_chain_providers() -> Vec<Self> {
         Self::all().into_iter().filter(Self::is_cross_chain).collect()
+    }
+
+    pub fn swap_explorer(&self, chain: Chain) -> Option<Box<dyn BlockExplorer>> {
+        match self {
+            Self::Mayan => Some(MayanScan::boxed()),
+            Self::Thorchain => Some(RuneScan::boxed()),
+            Self::Across => Some(SocketScan::boxed()),
+            Self::Chainflip => Some(ChainflipScan::boxed()),
+            Self::NearIntents => Some(NearIntents::boxed()),
+            Self::Relay => Some(RelayScan::boxed()),
+            Self::Squid => Some(SkipExplorer::boxed(chain)),
+            Self::UniswapV3
+            | Self::UniswapV4
+            | Self::PancakeswapV3
+            | Self::Panora
+            | Self::Jupiter
+            | Self::Okx
+            | Self::Oku
+            | Self::Wagmi
+            | Self::CetusAggregator
+            | Self::StonfiV2
+            | Self::Aerodrome
+            | Self::Hyperliquid
+            | Self::Orca => None,
+        }
     }
 
     pub fn name(&self) -> &str {
