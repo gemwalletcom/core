@@ -90,12 +90,26 @@ fn can_verify_referral(status: &primitives::rewards::RewardStatus, verify_after:
     verify_after.is_some_and(|dt| dt <= now())
 }
 
+fn is_matching_pending_referral_confirmation(referral: &RewardReferralRow, referrer_username: &str, referred_username: &str) -> bool {
+    referral.verified_at.is_none() && referral.referrer_username == referrer_username && referral.referred_username == referred_username
+}
+
 fn latest_wallet_device_id(client: &mut DatabaseClient, wallet_id: i32) -> Result<i32, DatabaseError> {
     WalletsStore::get_devices_by_wallet_id(client, wallet_id)?
         .into_iter()
         .max_by_key(|device| device.updated_at)
         .map(|device| device.id)
         .ok_or_else(|| DatabaseError::Error(format!("Wallet {wallet_id} has no subscribed devices")))
+}
+
+fn referred_username(client: &mut DatabaseClient, wallet_id: i32) -> Result<String, DatabaseError> {
+    match find_username(client, UsernameLookup::WalletId(wallet_id))? {
+        Some(username) => Ok(username.username),
+        None => {
+            let wallet = require_wallet_by_id(client, wallet_id)?;
+            Ok(wallet.wallet_id.address().to_string())
+        }
+    }
 }
 
 fn ensure_wallet_reward_identity(client: &mut DatabaseClient, wallet_id: i32) -> Result<UsernameRow, DatabaseError> {
@@ -208,7 +222,7 @@ pub trait RewardsRepository {
     fn create_reward(&mut self, wallet_id: i32, username: &str) -> Result<(Rewards, i32), DatabaseError>;
     fn change_username(&mut self, wallet_id: i32, new_username: &str) -> Result<Rewards, DatabaseError>;
     fn get_referral_code(&mut self, code: &str) -> Result<Option<String>, DatabaseError>;
-    fn validate_referral_use(&mut self, referrer_username: &str, device_id: i32, eligibility_days: i64) -> Result<(), ReferralValidationError>;
+    fn validate_referral_use(&mut self, referrer_username: &str, wallet_id: i32, device_id: i32, eligibility_days: i64) -> Result<(), ReferralValidationError>;
     fn add_referral_attempt(&mut self, referrer_username: &str, referred_wallet_id: i32, device_id: i32, risk_signal_id: Option<i32>, reason: &str) -> Result<(), DatabaseError>;
     fn get_first_subscription_date_by_wallet_id(&mut self, wallet_id: i32) -> Result<Option<NaiveDateTime>, DatabaseError>;
     fn get_wallet_id_by_username(&mut self, username: &str) -> Result<i32, DatabaseError>;
@@ -336,7 +350,7 @@ impl RewardsRepository for DatabaseClient {
         Ok(find_username(self, UsernameLookup::Username(code))?.map(|username| username.username))
     }
 
-    fn validate_referral_use(&mut self, referrer_username: &str, device_id: i32, eligibility_days: i64) -> Result<(), ReferralValidationError> {
+    fn validate_referral_use(&mut self, referrer_username: &str, wallet_id: i32, device_id: i32, eligibility_days: i64) -> Result<(), ReferralValidationError> {
         let referrer = require_username(self, UsernameLookup::Username(referrer_username))?;
         let referrer_rewards = require_rewards(self, referrer_username)?;
 
@@ -360,8 +374,11 @@ impl RewardsRepository for DatabaseClient {
             }
         }
 
-        if ReferralsStore::get_referral_by_referred_device_id(self, device_id)?.is_some() {
-            return Err(ReferralValidationError::DeviceAlreadyUsed);
+        if let Some(referral) = ReferralsStore::get_referral_by_referred_device_id(self, device_id)? {
+            let referred_username = referred_username(self, wallet_id)?;
+            if !is_matching_pending_referral_confirmation(&referral, referrer_username, &referred_username) {
+                return Err(ReferralValidationError::DeviceAlreadyUsed);
+            }
         }
 
         Ok(())
@@ -621,5 +638,30 @@ mod tests {
         assert!(!can_verify_referral(&RewardStatus::Pending, Some(future)));
 
         assert!(can_verify_referral(&RewardStatus::Verified, Some(future)));
+    }
+
+    #[test]
+    fn test_is_matching_pending_referral_confirmation() {
+        let now = chrono::Utc::now().naive_utc();
+        let referral = RewardReferralRow {
+            id: 1,
+            referrer_username: "alice".to_string(),
+            referred_username: "bob".to_string(),
+            referred_device_id: 10,
+            risk_signal_id: 20,
+            verified_at: None,
+            updated_at: now,
+            created_at: now,
+        };
+
+        assert!(is_matching_pending_referral_confirmation(&referral, "alice", "bob"));
+        assert!(!is_matching_pending_referral_confirmation(&referral, "charlie", "bob"));
+        assert!(!is_matching_pending_referral_confirmation(&referral, "alice", "dave"));
+
+        let verified_referral = RewardReferralRow {
+            verified_at: Some(now),
+            ..referral
+        };
+        assert!(!is_matching_pending_referral_confirmation(&verified_referral, "alice", "bob"));
     }
 }

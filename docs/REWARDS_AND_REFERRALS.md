@@ -9,7 +9,15 @@
 ## Referral Flow
 
 ```
-User1 (Verified): shares code ─> User2 redeems [Pending, verify_after set] ─> delay passes ─> User2 confirms [Unverified] ─> both get rewards
+User1 (Verified): shares code
+  ─> User2 redeems (same endpoint)
+     ─> status = Pending, verify_after = now + delay
+  ─> delay passes
+  ─> User2 calls same endpoint again
+     ─> status reset to Unverified, verify_after cleared
+     ─> referral marked verified_at = now
+     ─> both get reward events (InviteNew / Joined)
+  ─> worker later promotes User2 Unverified ─> Verified
 ```
 
 ## Statuses

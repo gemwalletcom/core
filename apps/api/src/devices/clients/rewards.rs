@@ -375,7 +375,7 @@ impl RewardsClient {
         let eligibility_days = (eligibility.as_secs() / 86400) as i64;
         let eligibility_cutoff = now().ago(eligibility);
 
-        self.db.rewards()?.validate_referral_use(referrer_username, device.id, eligibility_days)?;
+        self.db.rewards()?.validate_referral_use(referrer_username, wallet_id, device.id, eligibility_days)?;
 
         let first_subscription_date = self.db.rewards()?.get_first_subscription_date_by_wallet_id(wallet_id)?;
 
