@@ -9,9 +9,14 @@
 ## Referral Flow
 
 ```
-User1 (Verified): shares code
-  ─> User2 redeems (same endpoint)
-     ─> status = Pending, verify_after = now + delay
+User1 (Verified/Trusted): shares code
+  ─> User2 redeems (POST /devices/rewards/referrals/use)
+     ─> delay = compute_verification_delay(base, multiplier, referrer_status)
+        Trusted referrer: no delay (immediate verification)
+        Verified referrer: base_delay / verified_multiplier
+        Other: base_delay
+     ─> if delay: status = Pending, verify_after = now + delay
+     ─> if no delay: verified immediately, both get rewards
   ─> delay passes
   ─> User2 calls same endpoint again
      ─> status reset to Unverified, verify_after cleared
