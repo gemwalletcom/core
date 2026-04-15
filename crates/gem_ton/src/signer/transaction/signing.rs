@@ -128,13 +128,10 @@ fn parse_optional_boc_root(value: &str) -> Result<Option<CellArc>, SignerError> 
 }
 
 fn token_account_creation_fee(input: &SignerInput) -> Result<BigUint, SignerError> {
-    input
-        .fee
-        .options
-        .get(&FeeOption::TokenAccountCreation)
-        .map(|value| parse_biguint(&value.to_string()))
-        .transpose()
-        .map(|value| value.unwrap_or_else(|| BigUint::from(0u8)))
+    let Some(value) = input.fee.options.get(&FeeOption::TokenAccountCreation) else {
+        return Ok(BigUint::ZERO);
+    };
+    value.to_biguint().ok_or_else(|| SignerError::invalid_input("invalid TON amount"))
 }
 
 fn build_custom_payload_transfer(
