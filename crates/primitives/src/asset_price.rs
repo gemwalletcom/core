@@ -116,8 +116,8 @@ impl PartialEq for ChartValue {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[typeshare(swift = "Sendable")]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "lowercase")]
 pub enum ChartPeriod {
     Hour,
