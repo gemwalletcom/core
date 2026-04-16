@@ -2,7 +2,7 @@ use num_bigint::BigUint;
 use primitives::SignerError;
 
 use super::{
-    cell::{Cell, CellArc, MAX_CELL_REFERENCES},
+    cell::{Cell, CellArc, MAX_CELL_BITS, MAX_CELL_REFERENCES},
     writer::BitWriter,
 };
 use crate::address::Address;
@@ -50,6 +50,25 @@ impl CellBuilder {
 
     pub fn store_string(&mut self, value: &str) -> Result<&mut Self, SignerError> {
         self.store_slice(value.as_bytes())
+    }
+
+    pub fn store_slice_snake(&mut self, slice: &[u8]) -> Result<&mut Self, SignerError> {
+        let byte_capacity = self.remaining_bits() / 8;
+        if slice.len() <= byte_capacity {
+            return self.store_slice(slice);
+        }
+
+        let (head, tail) = slice.split_at(byte_capacity);
+        self.store_slice(head)?;
+
+        let mut child = Self::new();
+        child.store_slice_snake(tail)?;
+        self.store_child(child.build()?)?;
+        Ok(self)
+    }
+
+    pub fn store_string_snake(&mut self, value: &str) -> Result<&mut Self, SignerError> {
+        self.store_slice_snake(value.as_bytes())
     }
 
     pub fn store_uint(&mut self, bit_len: usize, value: &BigUint) -> Result<&mut Self, SignerError> {
@@ -109,7 +128,7 @@ impl CellBuilder {
         self.store_u8(2, 0b10)?;
         self.store_bit(false)?;
         self.store_u8(8, address.workchain() as i8 as u8)?;
-        self.store_slice(address.get_hash_part())?;
+        self.store_slice(address.hash_part())?;
         Ok(self)
     }
 
@@ -137,6 +156,10 @@ impl CellBuilder {
             self.store_reference(reference)?;
         }
         Ok(self)
+    }
+
+    pub fn remaining_bits(&self) -> usize {
+        MAX_CELL_BITS.saturating_sub(self.writer.bit_len())
     }
 
     pub fn build(self) -> Result<Cell, SignerError> {

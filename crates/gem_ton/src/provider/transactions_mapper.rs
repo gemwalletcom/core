@@ -3,7 +3,7 @@ use crate::constants::FAILED_OPERATION_OPCODES;
 use crate::models::{BroadcastTransaction, HasMemo, TransactionMessage};
 use chrono::DateTime;
 use gem_encoding::decode_base64;
-use primitives::{Transaction, TransactionState, TransactionType, chain::Chain};
+use primitives::{Address as AddressTrait, Transaction, TransactionState, TransactionType, chain::Chain};
 use std::error::Error;
 
 pub fn map_transaction_broadcast(broadcast_result: BroadcastTransaction) -> Result<String, Box<dyn Error + Sync + Send>> {
@@ -123,7 +123,7 @@ fn map_transaction_message(transaction: TransactionMessage) -> Option<Transactio
 }
 
 fn parse_address(address: &str) -> Option<String> {
-    Some(Address::from_hex_str(address).ok()?.to_base64_url())
+    Some(Address::from_hex_str(address).ok()?.encode())
 }
 
 fn is_simple_transfer(out_message: &crate::models::OutMessage) -> bool {

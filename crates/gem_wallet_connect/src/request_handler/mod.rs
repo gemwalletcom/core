@@ -8,7 +8,7 @@ mod tron;
 use crate::actions::{WCSolanaTransactionData, WCSuiTransactionData, WalletConnectAction, WalletConnectChainOperation, WalletConnectTransaction, WalletConnectTransactionType};
 use bitcoin::BitcoinRequestHandler;
 use ethereum::EthereumRequestHandler;
-use primitives::{Chain, ValueAccess, WCEthereumTransaction, WalletConnectRequest, WalletConnectionMethods, hex};
+use primitives::{Chain, ValueAccess, WCEthereumTransaction, WCTonSendTransaction, WalletConnectRequest, WalletConnectionMethods, hex};
 use serde_json::Value;
 use solana::SolanaRequestHandler;
 use sui::SuiRequestHandler;
@@ -110,9 +110,8 @@ impl WalletConnectRequestHandler {
                 })
             }
             WalletConnectTransactionType::Ton { output_type } => {
-                let json: serde_json::Value = serde_json::from_str(&data).map_err(|e| e.to_string())?;
-                let messages = json.get("messages").ok_or_else(|| "Missing messages field".to_string())?.to_string();
-                Ok(WalletConnectTransaction::Ton { messages, output_type })
+                WCTonSendTransaction::from_bytes(data.as_bytes()).map_err(|e| e.to_string())?;
+                Ok(WalletConnectTransaction::Ton { messages: data, output_type })
             }
             WalletConnectTransactionType::Bitcoin { output_type } => Ok(WalletConnectTransaction::Bitcoin { data, output_type }),
             WalletConnectTransactionType::Tron { output_type } => Ok(WalletConnectTransaction::Tron { data, output_type }),
@@ -177,6 +176,21 @@ mod tests {
         let params = r#"[{}]"#;
         let request = WalletConnectRequest::mock("wallet_switchEthereumChain", params, None);
         assert!(WalletConnectRequestHandler::parse_request(request).is_err());
+    }
+
+    #[test]
+    fn test_decode_send_transaction_ton_preserves_request() {
+        let transaction_type = WalletConnectTransactionType::Ton {
+            output_type: TransferDataOutputType::EncodedTransaction,
+        };
+        let data = include_str!("../../testdata/ton_send_transaction_preserves_request.json").trim().to_string();
+
+        let WalletConnectTransaction::Ton { messages: decoded, output_type } = WalletConnectRequestHandler::decode_send_transaction(transaction_type, data.clone()).unwrap() else {
+            panic!("expected TON transaction")
+        };
+
+        assert_eq!(decoded, data);
+        assert_eq!(output_type, TransferDataOutputType::EncodedTransaction);
     }
 
     #[test]

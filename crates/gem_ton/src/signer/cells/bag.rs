@@ -83,7 +83,12 @@ impl BagOfCells {
         let root_indexes = self
             .roots
             .iter()
-            .map(|root| indexed_cells.get(&root.cell_hash()).map(|indexed| indexed.borrow().index).ok_or_else(|| invalid("missing BoC root")))
+            .map(|root| {
+                indexed_cells
+                    .get(&root.cell_hash())
+                    .map(|indexed| indexed.borrow().index)
+                    .ok_or_else(|| invalid("missing BoC root"))
+            })
             .collect::<Result<Vec<_>, _>>()?;
 
         let ref_bytes = bytes_needed(raw_cells.len());

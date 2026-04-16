@@ -1,16 +1,17 @@
 use num_bigint::BigUint;
 use primitives::{
-    Asset, AssetId, AssetType, Chain, SignerInput, TransactionInputType, TransactionLoadMetadata, TransferDataExtra, WalletConnectionSessionAppMetadata, swap::SwapData,
+    Address as AddressTrait, Asset, AssetId, AssetType, Chain, SignerInput, TransactionInputType, TransactionLoadMetadata, TransferDataExtra, WCTonMessage, WCTonSendTransaction,
+    WalletConnectionSessionAppMetadata, swap::SwapData,
 };
 use signer::Ed25519KeyPair;
 
 use super::{
-    message::DEFAULT_SEND_MODE,
-    request::TransferRequest,
+    message::{DEFAULT_SEND_MODE, build_internal_message},
+    request::{JettonTransferRequest, TransferPayload, TransferRequest},
     signing::{parse_address, sign_data, sign_requests, sign_swap, sign_token_transfer, sign_transfer},
     wallet::WalletV4R2,
 };
-use crate::signer::cells::{BagOfCells, CellBuilder};
+use crate::signer::cells::{BagOfCells, BitReader, CellBuilder};
 
 const TEST_TON_PRIVATE_KEY: &str = "c7702dadcd00d470df27dee0ddd97fbcf9deba52b60f7dd2b296ff42bb1fcad6";
 const TRUST_WALLET_PRIVATE_KEY: &str = "63474e5fe9511f1526a50567ce142befc343e71a49b865ac3908f58667319cb8";
@@ -21,7 +22,7 @@ const WC_TON_MESSAGE_FIXTURE: &str = include_str!("../../../testdata/wc_ton_mess
 fn test_wallet_address() -> String {
     let private_key = hex::decode(TEST_TON_PRIVATE_KEY).unwrap();
     let key_pair = Ed25519KeyPair::from_private_key(&private_key).unwrap();
-    WalletV4R2::new(key_pair.public_key_bytes).unwrap().address().to_base64_url()
+    WalletV4R2::new(key_pair.public_key_bytes).unwrap().address().encode()
 }
 
 fn sample_boc() -> String {
@@ -32,6 +33,27 @@ fn sample_boc() -> String {
 
 fn wc_ton_payload(payload_boc: &str) -> Vec<u8> {
     WC_TON_MESSAGE_FIXTURE.trim().replace("{PAYLOAD}", payload_boc).into_bytes()
+}
+
+fn wc_ton_request(payload_boc: &str, valid_until: Option<u32>, from: Option<&str>) -> Vec<u8> {
+    let messages: Vec<WCTonMessage> = serde_json::from_str(&WC_TON_MESSAGE_FIXTURE.trim().replace("{PAYLOAD}", payload_boc)).unwrap();
+    serde_json::to_vec(&WCTonSendTransaction {
+        valid_until,
+        messages,
+        r#from: from.map(|from| from.to_string()),
+        network: None,
+    })
+    .unwrap()
+}
+
+fn signed_expire_at(signed: &str) -> u32 {
+    let signed = BagOfCells::parse_base64(signed).unwrap();
+    let root = signed.single_root().unwrap();
+    let signed_body = root.references().last().unwrap();
+    let mut reader = BitReader::from_bits(signed_body.data(), signed_body.bit_len()).unwrap();
+    reader.read_bytes(64).unwrap();
+    let _wallet_id = reader.read_u32().unwrap();
+    reader.read_u32().unwrap()
 }
 
 #[test]
@@ -96,10 +118,10 @@ fn test_sign_deploy_matches_trust_wallet_core_vector() {
 }
 
 #[test]
-fn test_sign_data_supports_state_init() {
+fn test_sign_data_supports_request_envelopes() {
     let private_key = hex::decode(TEST_TON_PRIVATE_KEY).unwrap();
     let address = test_wallet_address();
-    let extra = TransferDataExtra::mock_encoded_transaction(wc_ton_payload(&sample_boc()));
+    let extra = TransferDataExtra::mock_encoded_transaction(wc_ton_request(&sample_boc(), Some(1_000_000_000), Some(&address)));
     let input = SignerInput::mock_with_input_type(
         TransactionInputType::Generic(Asset::from_chain(Chain::Ton), WalletConnectionSessionAppMetadata::mock(), extra),
         &address,
@@ -108,8 +130,41 @@ fn test_sign_data_supports_state_init() {
         TransactionLoadMetadata::mock_ton(1),
     );
 
-    let signed = sign_data(&input, &private_key, Some(1_000_000_000)).unwrap();
+    let signed = sign_data(&input, &private_key, None).unwrap();
     assert!(signed.starts_with("te6cc"));
+    assert_eq!(signed_expire_at(&signed), 1_000_000_000);
+
+    let legacy = SignerInput::mock_with_input_type(
+        TransactionInputType::Generic(
+            Asset::from_chain(Chain::Ton),
+            WalletConnectionSessionAppMetadata::mock(),
+            TransferDataExtra::mock_encoded_transaction(wc_ton_payload(&sample_boc())),
+        ),
+        &address,
+        "",
+        "0",
+        TransactionLoadMetadata::mock_ton(1),
+    );
+
+    let signed_legacy = sign_data(&legacy, &private_key, Some(1_000_000_000)).unwrap();
+    assert!(signed_legacy.starts_with("te6cc"));
+
+    let mismatched = SignerInput::mock_with_input_type(
+        TransactionInputType::Generic(
+            Asset::from_chain(Chain::Ton),
+            WalletConnectionSessionAppMetadata::mock(),
+            TransferDataExtra::mock_encoded_transaction(wc_ton_request(&sample_boc(), Some(1_000_000_000), Some(SENDER_TOKEN_ADDRESS))),
+        ),
+        &address,
+        "",
+        "0",
+        TransactionLoadMetadata::mock_ton(1),
+    );
+
+    assert_eq!(
+        sign_data(&mismatched, &private_key, None).unwrap_err().to_string(),
+        "Invalid input: TON from does not match sender address"
+    );
 }
 
 #[test]
@@ -131,4 +186,43 @@ fn test_sign_swap_uses_custom_payload_transfer() {
     let signed = sign_swap(&input, &private_key, Some(1_000_000_000)).unwrap();
     assert_eq!(signed.len(), 1);
     assert!(signed[0].starts_with("te6cc"));
+}
+
+#[test]
+fn test_long_comments_use_snake_cells() {
+    let address = parse_address(SENDER_TOKEN_ADDRESS).unwrap();
+    let comment = "memo".repeat(80);
+
+    let transfer = TransferRequest {
+        destination: address,
+        value: BigUint::from(10u8),
+        mode: DEFAULT_SEND_MODE,
+        bounceable: false,
+        comment: Some(comment.clone()),
+        payload: None,
+        state_init: None,
+    };
+    let native_payload = build_internal_message(&transfer).unwrap().message.references().first().unwrap().clone();
+    assert!(!native_payload.references().is_empty());
+
+    let jetton = TransferRequest {
+        destination: address,
+        value: BigUint::ZERO,
+        mode: DEFAULT_SEND_MODE,
+        bounceable: true,
+        comment: None,
+        payload: Some(TransferPayload::Jetton(JettonTransferRequest {
+            query_id: 0,
+            value: BigUint::from(10u8),
+            destination: address,
+            response_address: address,
+            custom_payload: None,
+            forward_ton_amount: BigUint::from(1u8),
+            comment: Some(comment),
+        })),
+        state_init: None,
+    };
+    let jetton_payload = build_internal_message(&jetton).unwrap().message.references().first().unwrap().clone();
+    assert_eq!(jetton_payload.references().len(), 1);
+    assert!(!jetton_payload.references()[0].references().is_empty());
 }

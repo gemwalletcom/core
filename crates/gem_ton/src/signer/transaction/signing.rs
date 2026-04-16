@@ -1,7 +1,7 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use num_bigint::BigUint;
-use primitives::{FeeOption, SignerError, SignerInput, WCTonMessage};
+use primitives::{FeeOption, SignerError, SignerInput, WCTonSendTransaction};
 use signer::Ed25519KeyPair;
 
 use super::{
@@ -70,9 +70,11 @@ pub(crate) fn sign_swap(input: &SignerInput, private_key: &[u8], expire_at: Opti
 pub(crate) fn sign_data(input: &SignerInput, private_key: &[u8], expire_at: Option<u32>) -> Result<String, SignerError> {
     let extra = input.input_type.get_generic_data()?;
     let data = extra.data.as_ref().ok_or_else(|| SignerError::invalid_input("missing TON messages"))?;
-    let messages: Vec<WCTonMessage> = serde_json::from_slice(data)?;
+    let request = WCTonSendTransaction::from_bytes(data)?;
+    validate_from(request.r#from.as_deref(), &input.sender_address)?;
 
-    let requests = messages
+    let requests = request
+        .messages
         .into_iter()
         .map(|message| {
             build_custom_payload_transfer(
@@ -85,7 +87,7 @@ pub(crate) fn sign_data(input: &SignerInput, private_key: &[u8], expire_at: Opti
             )
         })
         .collect::<Result<Vec<_>, _>>()?;
-    sign_requests(requests, input.metadata.get_sequence()?, private_key, expire_at)
+    sign_requests(requests, input.metadata.get_sequence()?, private_key, expire_at.or(request.valid_until))
 }
 
 pub(crate) fn sign_requests(requests: Vec<TransferRequest>, sequence: u64, private_key: &[u8], expire_at: Option<u32>) -> Result<String, SignerError> {
@@ -119,6 +121,19 @@ fn parse_boc_root(value: &str) -> Result<CellArc, SignerError> {
 
 fn parse_optional_boc_root(value: &str) -> Result<Option<CellArc>, SignerError> {
     if value.is_empty() { Ok(None) } else { parse_boc_root(value).map(Some) }
+}
+
+fn validate_from(from: Option<&str>, sender_address: &str) -> Result<(), SignerError> {
+    let Some(from) = from.filter(|from| !from.is_empty()) else {
+        return Ok(());
+    };
+
+    let from = parse_address(from)?;
+    let sender = parse_address(sender_address)?;
+    if from != sender {
+        return Err(SignerError::invalid_input("TON from does not match sender address"));
+    }
+    Ok(())
 }
 
 fn token_account_creation_fee(input: &SignerInput) -> Result<BigUint, SignerError> {
@@ -156,6 +171,8 @@ fn resolve_expire_at(sequence: u32, expire_at: Option<u32>) -> Result<u32, Signe
     }
 
     let now = SystemTime::now().duration_since(UNIX_EPOCH).map_err(SignerError::from_display)?.as_secs();
-    let expire_at = now.checked_add(EXTERNAL_EXPIRE_WINDOW_SECS).ok_or_else(|| SignerError::invalid_input("TON expire time overflow"))?;
+    let expire_at = now
+        .checked_add(EXTERNAL_EXPIRE_WINDOW_SECS)
+        .ok_or_else(|| SignerError::invalid_input("TON expire time overflow"))?;
     u32::try_from(expire_at).map_err(|_| SignerError::invalid_input("TON expire time does not fit in u32"))
 }

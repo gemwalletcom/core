@@ -51,10 +51,6 @@ impl Address {
         self.bytes[1..].try_into().unwrap()
     }
 
-    pub fn get_hash_part(&self) -> &HashPart {
-        self.hash_part()
-    }
-
     pub fn from_base64_url(base64: &str) -> Result<Self, AddressError> {
         let bytes = decode_base64_url(base64)
             .or_else(|_| decode_base64_no_pad(base64))
@@ -86,10 +82,6 @@ impl Address {
         let hash_part: HashPart = hash_part.try_into().map_err(|_| AddressError::new("invalid hash length"))?;
 
         Ok(Self::new(workchain, hash_part))
-    }
-
-    pub fn to_base64_url(&self) -> String {
-        self.encode()
     }
 }
 
@@ -150,7 +142,6 @@ mod tests {
         let address = Address::from_hex_str(hex).unwrap();
 
         assert_eq!(address.encode(), encoded);
-        assert_eq!(address.to_base64_url(), encoded);
         assert_eq!(<Address as AddressTrait>::from_str(hex).unwrap(), address);
         assert_eq!(<Address as AddressTrait>::from_str(encoded).unwrap(), address);
         assert_eq!(Address::try_parse(encoded), Some(address));

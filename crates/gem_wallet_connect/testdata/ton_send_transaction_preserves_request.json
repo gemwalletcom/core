@@ -1,0 +1,10 @@
+{
+  "valid_until": 1234567890,
+  "from": "EQAlgB03OjJKdXrlwZiGJD5snSzPKF2VL5bErJn_cqJANGH9",
+  "messages": [
+    {
+      "address": "EQAlgB03OjJKdXrlwZiGJD5snSzPKF2VL5bErJn_cqJANGH9",
+      "amount": "1000000000"
+    }
+  ]
+}

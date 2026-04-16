@@ -2,11 +2,11 @@ use num_bigint::BigUint;
 use primitives::SignerError;
 
 use super::request::{JettonTransferRequest, TransferPayload, TransferRequest};
+use crate::constants::JETTON_TRANSFER_OPCODE;
 use crate::signer::cells::{Cell, CellArc, CellBuilder};
 
 pub(super) const DEFAULT_SEND_MODE: u8 = 0b11;
 pub(super) const TRANSFER_ALL_TON_MODE: u8 = DEFAULT_SEND_MODE | 0b1000_0000;
-const JETTON_TRANSFER_OPCODE: u32 = 0x0f8a7ea5;
 
 pub(super) struct InternalMessage {
     pub mode: u8,
@@ -64,7 +64,7 @@ fn build_payload(request: &TransferRequest) -> Result<CellArc, SignerError> {
 
 fn build_comment_payload(comment: &str) -> Result<CellArc, SignerError> {
     let mut builder = CellBuilder::new();
-    builder.store_u32(32, 0)?.store_string(comment)?;
+    builder.store_u32(32, 0)?.store_string_snake(comment)?;
     Ok(builder.build()?.into_arc())
 }
 
@@ -86,10 +86,11 @@ fn build_jetton_payload(request: &JettonTransferRequest) -> Result<CellArc, Sign
         }
     }
 
-    builder.store_coins(&request.forward_ton_amount)?.store_bit(false)?;
-
     if let Some(comment) = &request.comment {
-        builder.store_u32(32, 0)?.store_string(comment)?;
+        let payload = build_comment_payload(comment)?;
+        builder.store_coins(&request.forward_ton_amount)?.store_bit(true)?.store_reference(&payload)?;
+    } else {
+        builder.store_coins(&request.forward_ton_amount)?.store_bit(false)?;
     }
     Ok(builder.build()?.into_arc())
 }

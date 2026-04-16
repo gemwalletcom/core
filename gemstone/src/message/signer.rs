@@ -6,7 +6,7 @@ use bs58;
 use gem_evm::message::eip191_hash_message;
 use gem_sui::signer as sui_signer;
 use gem_ton::address::base64_to_hex_address;
-use gem_ton::signer::{TonSignDataResponse, TonSignMessageData, TonSignResult, sign_personal as ton_sign_personal};
+use gem_ton::signer::{TonSignDataResponse, TonSignMessageData, TonSignResult, sign_personal as ton_sign_personal, wallet_address_from_public_key};
 use primitives::hex::encode_with_0x;
 use signer::{SIGNATURE_LENGTH, SignatureScheme, Signer, apply_eth_recovery_id, hash_eip712};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -174,19 +174,23 @@ impl MessageSigner {
 
     pub fn sign(&self, private_key: Vec<u8>) -> Result<String, GemstoneError> {
         let private_key = Zeroizing::new(private_key);
-        let hash = self.hash()?;
         match &self.message.sign_type {
-            SignDigestType::SuiPersonal => sui_signer::sign_digest(&hash, &private_key).map_err(GemstoneError::from),
+            SignDigestType::SuiPersonal => {
+                let hash = self.hash()?;
+                sui_signer::sign_digest(&hash, &private_key).map_err(GemstoneError::from)
+            }
             SignDigestType::TonPersonal => {
                 let timestamp = current_timestamp()?;
                 let result = ton_sign_personal(&self.message.data, &private_key, timestamp)?;
                 self.get_ton_result(&result)
             }
             SignDigestType::Eip191 | SignDigestType::Eip712 | SignDigestType::Siwe | SignDigestType::TronPersonal => {
+                let hash = self.hash()?;
                 let signature = Signer::sign_eth_digest(&hash, &private_key)?;
                 Ok(encode_with_0x(&signature))
             }
             SignDigestType::Base58 => {
+                let hash = self.hash()?;
                 let signed = Signer::sign_digest(SignatureScheme::Ed25519, hash, private_key.to_vec())?;
                 Ok(self.get_result(&signed))
             }
@@ -205,16 +209,16 @@ impl MessageSigner {
     fn get_ton_result(&self, result: &TonSignResult) -> Result<String, GemstoneError> {
         let string = String::from_utf8(self.message.data.clone())?;
         let data = TonSignMessageData::from_bytes(string.as_bytes())?;
-        let raw_address = base64_to_hex_address(data.address.clone())?;
+        let address = match data.address {
+            Some(address) => address,
+            None => {
+                let public_key: [u8; 32] = result.public_key.as_slice().try_into().map_err(|_| GemstoneError::from("Invalid TON public key length"))?;
+                wallet_address_from_public_key(public_key)?
+            }
+        };
+        let raw_address = base64_to_hex_address(address)?;
 
-        let response = TonSignDataResponse::new(
-            BASE64.encode(&result.signature),
-            hex::encode(&result.public_key),
-            raw_address,
-            result.timestamp,
-            data.domain,
-            data.payload,
-        );
+        let response = TonSignDataResponse::new(BASE64.encode(&result.signature), raw_address, result.timestamp, data.domain, data.payload);
 
         Ok(response.to_json()?)
     }
@@ -228,6 +232,7 @@ mod tests {
         sign_type::SignDigestType,
     };
     use gem_evm::EIP712Domain;
+    use gem_ton::signer::TonSignDataPayload;
     use primitives::Chain;
 
     #[test]
@@ -649,7 +654,7 @@ Issued At: 2026-03-09T15:48:34.458Z"#;
         let ton_data = TonSignMessageData::from_value(
             serde_json::json!({"type": "text", "text": "Hello TON"}),
             "example.com".to_string(),
-            "UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg".to_string(),
+            Some("UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg".to_string()),
         )
         .unwrap();
         let data = String::from_utf8(ton_data.to_bytes()).unwrap();
@@ -665,5 +670,27 @@ Issued At: 2026-03-09T15:48:34.458Z"#;
         }
 
         assert_eq!(decoder.plain_preview(), "Hello TON");
+    }
+
+    #[test]
+    fn test_ton_personal_sign_without_address() {
+        let ton_data = TonSignMessageData::new(TonSignDataPayload::Text { text: "Hello TON".to_string() }, "example.com".to_string(), None);
+        let decoder = MessageSigner::new(SignMessage {
+            chain: Chain::Ton,
+            sign_type: SignDigestType::TonPersonal,
+            data: ton_data.to_bytes(),
+        });
+
+        let signed = decoder
+            .sign(hex::decode("1e9d38b5274152a78dff1a86fa464ceadc1f4238ca2c17060c3c507349424a34").unwrap())
+            .unwrap();
+        let parsed: serde_json::Value = serde_json::from_str(&signed).unwrap();
+        let public_key = <[u8; 32]>::try_from(hex::decode("d369452197c2a56481e5e2d3e8bf03de2349f67a63151956822208c2334adee2").unwrap()).unwrap();
+        let expected_address = base64_to_hex_address(wallet_address_from_public_key(public_key).unwrap()).unwrap();
+
+        assert!(parsed.get("publicKey").is_none());
+        assert_eq!(parsed["domain"], "example.com");
+        assert_eq!(parsed["payload"]["text"], "Hello TON");
+        assert_eq!(parsed["address"], expected_address);
     }
 }

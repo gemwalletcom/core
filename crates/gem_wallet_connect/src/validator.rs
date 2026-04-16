@@ -4,7 +4,7 @@ use crate::actions::WalletConnectTransactionType;
 use crate::sign_type::SignDigestType;
 use gem_evm::domain::host_only;
 use gem_evm::siwe::SiweMessage;
-use primitives::Chain;
+use primitives::{Chain, WCTonSendTransaction, WalletConnectCAIP2};
 
 pub struct SignMessageValidation<'a> {
     pub chain: Chain,
@@ -28,7 +28,8 @@ pub fn validate_sign_message(input: &SignMessageValidation) -> Result<(), String
             gem_evm::eip712::validate_eip712_chain_id(input.data, expected_chain_id)
         }
         SignDigestType::TonPersonal => {
-            gem_ton::signer::TonSignMessageData::from_bytes(input.data.as_bytes()).map_err(|e| e.to_string())?;
+            let data = gem_ton::signer::TonSignMessageData::from_bytes(input.data.as_bytes()).map_err(|e| e.to_string())?;
+            validate_ton_network(data.network.as_deref(), input.chain)?;
             Ok(())
         }
         SignDigestType::Eip191 | SignDigestType::Siwe => validate_siwe(input),
@@ -70,14 +71,26 @@ pub fn validate_send_transaction(transaction_type: &WalletConnectTransactionType
         return Ok(());
     };
 
-    let json: serde_json::Value = serde_json::from_str(data).map_err(|_| "Invalid JSON".to_string())?;
+    let request = WCTonSendTransaction::from_bytes(data.as_bytes()).map_err(|_| "Invalid JSON".to_string())?;
+    validate_ton_network(request.network.as_deref(), Chain::Ton)?;
 
-    if let Some(valid_until) = json.get("valid_until").and_then(|v| v.as_i64())
+    if let Some(valid_until) = request.valid_until.map(i64::from)
         && current_timestamp() >= valid_until
     {
         return Err("Transaction expired".to_string());
     }
 
+    Ok(())
+}
+
+fn validate_ton_network(network: Option<&str>, chain: Chain) -> Result<(), String> {
+    let Some(network) = network.filter(|network| !network.is_empty()) else {
+        return Ok(());
+    };
+    let expected = WalletConnectCAIP2::get_reference(chain).ok_or_else(|| "Unsupported TON chain".to_string())?;
+    if network != expected {
+        return Err(format!("Network mismatch: TON network {} does not match wallet network {}", network, expected));
+    }
     Ok(())
 }
 
@@ -132,7 +145,7 @@ mod tests {
         let ton_type = WalletConnectTransactionType::Ton {
             output_type: TransferDataOutputType::EncodedTransaction,
         };
-        assert!(validate_send_transaction(&ton_type, r#"{"valid_until": 9999999999, "messages": []}"#).is_ok());
+        assert!(validate_send_transaction(&ton_type, r#"{"valid_until": 2000000000, "messages": []}"#).is_ok());
     }
 
     #[test]
@@ -146,6 +159,17 @@ mod tests {
             output_type: TransferDataOutputType::EncodedTransaction,
         };
         assert!(validate_send_transaction(&ton_type, r#"{"messages": []}"#).is_ok());
+    }
+
+    #[test]
+    fn test_validate_ton_send_transaction_network_mismatch() {
+        let ton_type = WalletConnectTransactionType::Ton {
+            output_type: TransferDataOutputType::EncodedTransaction,
+        };
+        assert_eq!(
+            validate_send_transaction(&ton_type, r#"{"network":"-3","messages":[]}"#).unwrap_err(),
+            "Network mismatch: TON network -3 does not match wallet network -239"
+        );
     }
 
     #[test]
@@ -178,7 +202,7 @@ mod tests {
         let ton_data = TonSignMessageData::new(
             TonSignDataPayload::Text { text: "Hello".to_string() },
             "example.com".to_string(),
-            "UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg".to_string(),
+            Some("UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg".to_string()),
         );
         assert!(
             validate_sign_message(&sign_validation(
@@ -194,7 +218,7 @@ mod tests {
         let ton_data = TonSignMessageData::new(
             TonSignDataPayload::Binary { bytes: "SGVsbG8=".to_string() },
             "example.com".to_string(),
-            "UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg".to_string(),
+            Some("UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg".to_string()),
         );
         assert!(
             validate_sign_message(&sign_validation(
@@ -208,9 +232,12 @@ mod tests {
 
         // Valid: cell payload
         let ton_data = TonSignMessageData::new(
-            TonSignDataPayload::Cell { cell: "te6c".to_string() },
+            TonSignDataPayload::Cell {
+                schema: "comment#00000000 text:SnakeData = InMsgBody;".to_string(),
+                cell: "te6c".to_string(),
+            },
             "example.com".to_string(),
-            "UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg".to_string(),
+            Some("UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg".to_string()),
         );
         assert!(
             validate_sign_message(&sign_validation(
@@ -220,6 +247,34 @@ mod tests {
                 ""
             ))
             .is_ok()
+        );
+
+        let ton_data = TonSignMessageData::new(TonSignDataPayload::Text { text: "Hello".to_string() }, "example.com".to_string(), None);
+        assert!(
+            validate_sign_message(&sign_validation(
+                Chain::Ton,
+                &SignDigestType::TonPersonal,
+                &String::from_utf8(ton_data.to_bytes()).unwrap(),
+                ""
+            ))
+            .is_ok()
+        );
+
+        let ton_data = TonSignMessageData::new(
+            TonSignDataPayload::Text { text: "Hello".to_string() },
+            "example.com".to_string(),
+            Some("UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg".to_string()),
+        )
+        .with_network(Some("-3".to_string()));
+        assert_eq!(
+            validate_sign_message(&sign_validation(
+                Chain::Ton,
+                &SignDigestType::TonPersonal,
+                &String::from_utf8(ton_data.to_bytes()).unwrap(),
+                ""
+            ))
+            .unwrap_err(),
+            "Network mismatch: TON network -3 does not match wallet network -239"
         );
     }
 

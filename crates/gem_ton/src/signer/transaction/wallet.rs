@@ -1,5 +1,5 @@
 use num_bigint::BigUint;
-use primitives::SignerError;
+use primitives::{Address as AddressTrait, SignerError};
 
 use super::message::InternalMessage;
 use crate::address::Address;
@@ -82,6 +82,15 @@ impl WalletV4R2 {
         builder.store_bit(true)?.store_child(signed_body)?;
         builder.build()
     }
+}
+
+pub fn wallet_address_from_public_key(public_key: [u8; 32]) -> Result<String, SignerError> {
+    Ok(WalletV4R2::new(public_key)?.address.encode())
+}
+
+pub fn wallet_state_init_base64_from_public_key(public_key: [u8; 32]) -> Result<String, SignerError> {
+    let state_init = wallet_state_init(&public_key)?.to_cell()?;
+    BagOfCells::from_root(state_init).to_base64(true)
 }
 
 fn wallet_state_init(public_key: &[u8; 32]) -> Result<StateInit, SignerError> {
