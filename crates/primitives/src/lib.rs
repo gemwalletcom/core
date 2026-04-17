@@ -232,8 +232,8 @@ pub mod perpetual_position;
 pub use self::perpetual_position::{PerpetualMarginType, PerpetualOrderType, PerpetualPosition, PerpetualTriggerOrder};
 pub mod portfolio;
 pub use self::portfolio::{
-    ChartValuePercentage, PerpetualAccountSummary, PerpetualPortfolio, PerpetualPortfolioChartType, PerpetualPortfolioTimeframeData, PortfolioAllocation, PortfolioAsset,
-    PortfolioAssets, PortfolioAssetsRequest,
+    ChartValuePercentage, PerpetualAccountSummary, PerpetualPortfolio, PerpetualPortfolioTimeframeData, PortfolioAllocation, PortfolioAsset,
+    PortfolioAssets, PortfolioAssetsRequest, PortfolioChartData, PortfolioChartType, PortfolioData, PortfolioMarginUsage, PortfolioStatistic, PortfolioType,
 };
 pub use chrono;
 pub mod tpsl_type;

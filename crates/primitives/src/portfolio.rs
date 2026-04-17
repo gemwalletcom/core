@@ -3,15 +3,31 @@ use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
 use crate::asset_id::AssetId;
-use crate::asset_price::ChartValue;
+use crate::asset_price::{ChartPeriod, ChartValue};
 use crate::chart::ChartDateValue;
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
-#[typeshare(swift = "Equatable, Sendable, CaseIterable, Identifiable")]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[typeshare(swift = "Equatable, Sendable, CaseIterable, Identifiable, Hashable")]
 #[serde(rename_all = "camelCase")]
-pub enum PerpetualPortfolioChartType {
+pub enum PortfolioType {
+    Wallet,
+    Perpetuals,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[typeshare(swift = "Equatable, Sendable, CaseIterable, Identifiable, Hashable")]
+#[serde(rename_all = "camelCase")]
+pub enum PortfolioChartType {
     Value,
     Pnl,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(rename_all = "camelCase")]
+pub struct PortfolioChartData {
+    pub chart_type: PortfolioChartType,
+    pub values: Vec<ChartDateValue>,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
@@ -96,4 +112,34 @@ pub struct PortfolioAssets {
     pub all_time_high: Option<ChartValuePercentage>,
     pub all_time_low: Option<ChartValuePercentage>,
     pub allocation: Vec<PortfolioAllocation>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(rename_all = "camelCase")]
+pub struct PortfolioMarginUsage {
+    pub account_value: f64,
+    pub usage: f64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[typeshare(swift = "Equatable, Sendable, Hashable")]
+#[serde(tag = "type", content = "content", rename_all = "camelCase")]
+pub enum PortfolioStatistic {
+    AllTimeHigh(ChartValuePercentage),
+    AllTimeLow(ChartValuePercentage),
+    UnrealizedPnl(f64),
+    AccountLeverage(f64),
+    MarginUsage(PortfolioMarginUsage),
+    AllTimePnl(f64),
+    Volume(f64),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[typeshare(swift = "Equatable, Sendable")]
+#[serde(rename_all = "camelCase")]
+pub struct PortfolioData {
+    pub charts: Vec<PortfolioChartData>,
+    pub statistics: Vec<PortfolioStatistic>,
+    pub available_periods: Vec<ChartPeriod>,
 }
