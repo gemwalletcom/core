@@ -72,6 +72,7 @@ pub enum TransferDataOutputType {
 pub enum TransferDataOutputAction {
     Sign,
     Send,
+    SignAndSend,
 }
 
 #[uniffi::remote(Record)]

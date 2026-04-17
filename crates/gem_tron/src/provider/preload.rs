@@ -63,7 +63,7 @@ impl<C: Client> ChainTransactionLoad for TronClient<C> {
                 }
             },
             TransactionInputType::Generic(_, _, extra) => match extra.output_action {
-                TransferDataOutputAction::Send => match self
+                TransferDataOutputAction::Send | TransferDataOutputAction::SignAndSend => match self
                     .estimate_fee_with_data(&input.sender_address, extra.data.as_deref(), &chain_parameters, &account_usage)
                     .await?
                 {
