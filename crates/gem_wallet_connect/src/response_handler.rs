@@ -58,6 +58,8 @@ impl WalletConnectResponseHandler {
             ChainType::Tron => WalletConnectResponseType::Object {
                 json: serde_json::json!({ "result": true, "txid": transaction_id }).to_string(),
             },
+            // TON broadcasts and returns the signed BOC, not the broadcast hash.
+            ChainType::Ton => WalletConnectResponseType::String { value: transaction_id },
             _ => WalletConnectResponseType::String { value: transaction_id },
         }
     }
@@ -110,6 +112,11 @@ mod tests {
             WalletConnectResponseHandler::encode_send_transaction(ChainType::Sui, "digest123".to_string()),
             object(r#"{"digest":"digest123"}"#)
         );
+    }
+
+    #[test]
+    fn test_encode_send_transaction_ton() {
+        assert_eq!(WalletConnectResponseHandler::encode_send_transaction(ChainType::Ton, "te6ccg...".to_string()), string("te6ccg..."));
     }
 
     #[test]
