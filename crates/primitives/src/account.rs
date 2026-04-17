@@ -9,5 +9,6 @@ pub struct Account {
     pub chain: Chain,
     pub address: String,
     pub derivation_path: String,
+    pub public_key: Option<String>,
     pub extended_public_key: Option<String>,
 }

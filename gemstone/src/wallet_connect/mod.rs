@@ -1,11 +1,10 @@
-use gem_wallet_connect::session::parse_chains;
 use gem_wallet_connect::{
     SignDigestType as WcSignDigestType, WCEthereumTransactionData as WcEthereumTransactionData, WalletConnectAction as WcWalletConnectAction,
     WalletConnectChainOperation as WcWalletConnectChainOperation, WalletConnectRequestHandler, WalletConnectResponseHandler,
     WalletConnectResponseType as WcWalletConnectResponseType, WalletConnectTransaction as WcWalletConnectTransaction,
     WalletConnectTransactionType as WcWalletConnectTransactionType, WalletConnectVerifier, config_session_properties,
 };
-use primitives::{Chain, TransferDataOutputType, WCEthereumTransaction, WalletConnectRequest, WalletConnectionVerificationStatus};
+use primitives::{Account, Chain, TransferDataOutputType, WCEthereumTransaction, WalletConnectCAIP2, WalletConnectRequest, WalletConnectionVerificationStatus};
 use std::collections::HashMap;
 use std::str::FromStr;
 
@@ -28,6 +27,17 @@ pub enum WalletConnectionVerificationStatus {
 }
 
 // UniFFI types
+
+pub type GemAccount = Account;
+
+#[uniffi::remote(Record)]
+pub struct GemAccount {
+    pub chain: Chain,
+    pub address: String,
+    pub derivation_path: String,
+    pub public_key: Option<String>,
+    pub extended_public_key: Option<String>,
+}
 
 #[derive(Debug, Clone, uniffi::Record)]
 pub struct WCEthereumTransactionData {
@@ -374,9 +384,13 @@ impl WalletConnect {
         simulation::decode_message(chain, sign_type, data)
     }
 
-    pub fn config_session_properties(&self, properties: HashMap<String, String>, chains: Vec<String>) -> HashMap<String, String> {
-        let chains = parse_chains(&chains);
-        config_session_properties(properties, &chains)
+    pub fn config_session_properties(&self, properties: HashMap<String, String>, caip2_chains: Vec<String>, accounts: Vec<GemAccount>) -> HashMap<String, String> {
+        let chains: Vec<Chain> = caip2_chains
+            .into_iter()
+            .filter_map(|caip2| WalletConnectCAIP2::resolve_chain(Some(caip2)).ok())
+            .collect();
+        let filtered: Vec<GemAccount> = accounts.into_iter().filter(|account| chains.contains(&account.chain)).collect();
+        config_session_properties(properties, &chains, &filtered)
     }
 
     pub fn decode_send_transaction(&self, transaction_type: WalletConnectTransactionType, data: String) -> Result<WalletConnectTransaction, GemstoneError> {
@@ -393,11 +407,14 @@ pub fn wallet_connect_app_short_name(metadata: primitives::WalletConnectionSessi
 
 #[cfg(test)]
 mod tests {
-    use primitives::{Chain, SimulationWarning, SimulationWarningType};
+    use std::collections::HashMap;
+
+    use primitives::{Chain, SimulationWarning, SimulationWarningType, WalletConnectionSessionAppMetadata};
+
+    use super::{GemAccount, WalletConnect};
 
     #[test]
     fn short_name_strips_separators() {
-        use primitives::WalletConnectionSessionAppMetadata;
         let meta = |name: &str| WalletConnectionSessionAppMetadata {
             name: name.to_string(),
             description: String::new(),
@@ -410,6 +427,39 @@ mod tests {
         assert_eq!(meta("  Compound  ").short_name(), "Compound");
         assert_eq!(meta("Sushiswap").short_name(), "Sushiswap");
         assert_eq!(meta(&"A".repeat(100)).short_name(), "A".repeat(80));
+    }
+
+    #[test]
+    fn config_session_properties_resolves_caip2_and_filters_accounts() {
+        let wc = WalletConnect::new();
+        let ton_pk = "d369452197c2a56481e5e2d3e8bf03de2349f67a63151956822208c2334adee2".to_string();
+        let accounts = vec![
+            GemAccount {
+                chain: Chain::Ton,
+                address: "EQCEX-MyMiEhdrqxDQ5zFfDIuJ2l8wtsNxkhp4-PNxiL06UX".to_string(),
+                derivation_path: "m/44'/607'/0'".to_string(),
+                public_key: Some(ton_pk.clone()),
+                extended_public_key: None,
+            },
+            GemAccount {
+                chain: Chain::Bitcoin,
+                address: "bc1qexample".to_string(),
+                derivation_path: "m/84'/0'/0'/0/0".to_string(),
+                public_key: None,
+                extended_public_key: Some("xpub-ignored".to_string()),
+            },
+        ];
+
+        let ton = wc.config_session_properties(HashMap::new(), vec!["ton:-239".to_string()], accounts.clone());
+        assert_eq!(ton.get("ton_getPublicKey").unwrap(), &ton_pk);
+        assert!(ton.get("ton_getStateInit").unwrap().starts_with("te6cc"));
+
+        let tron = wc.config_session_properties(HashMap::new(), vec!["tron:728126428".to_string()], accounts);
+        assert_eq!(tron.get("tron_method_version").unwrap(), "v1");
+        assert!(!tron.contains_key("ton_getPublicKey"));
+
+        let unknown = wc.config_session_properties(HashMap::new(), vec!["eip155:1".to_string()], vec![]);
+        assert!(unknown.is_empty());
     }
 
     #[test]
