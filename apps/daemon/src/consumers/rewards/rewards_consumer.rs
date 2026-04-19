@@ -53,6 +53,10 @@ impl RewardsConsumer {
                 let wallet_id = self.database.rewards()?.get_wallet_id_by_username(&referrer)?;
                 Ok(vec![InAppNotificationPayload::new(wallet_id, NotificationType::ReferralJoined, metadata_value)])
             }
+            RewardEventType::Enabled => {
+                let wallet_id = self.database.rewards()?.get_wallet_id_by_username(&event.username)?;
+                Ok(vec![InAppNotificationPayload::new(wallet_id, NotificationType::RewardsEnabled, metadata_value)])
+            }
             RewardEventType::Disabled => {
                 let wallet_id = self.database.rewards()?.get_wallet_id_by_username(&event.username)?;
                 Ok(vec![InAppNotificationPayload::new(wallet_id, NotificationType::RewardsCodeDisabled, metadata_value)])

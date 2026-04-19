@@ -600,7 +600,19 @@ impl RewardsRepository for DatabaseClient {
 
     fn promote_to_verified(&mut self, username: &str) -> Result<Vec<i32>, DatabaseError> {
         RewardsStore::update_rewards(self, username, RewardsUpdate::Status(RewardStatus::Verified))?;
-        complete_referral(self, username)
+
+        let enabled_event = RewardsStore::add_event(
+            self,
+            NewRewardEventRow {
+                username: username.to_string(),
+                event_type: RewardEventType::Enabled,
+            },
+            RewardEventType::Enabled.points(),
+        )?;
+
+        let mut event_ids = vec![enabled_event.id];
+        event_ids.extend(complete_referral(self, username)?);
+        Ok(event_ids)
     }
 
     fn use_or_verify_referral(

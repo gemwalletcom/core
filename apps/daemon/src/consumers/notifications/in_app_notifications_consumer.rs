@@ -94,7 +94,7 @@ fn notification_content(localizer: &LanguageLocalizer, notification_type: Notifi
             localizer.notification_reward_title(RewardEventType::Joined.points()),
             localizer.notification_reward_joined_description(),
         ),
-        NotificationType::RewardsEnabled => (localizer.notification_reward_title(0), localizer.notification_rewards_enabled_description()),
+        NotificationType::RewardsEnabled => (localizer.notification_rewards_enabled_title(), localizer.notification_rewards_enabled_description()),
         NotificationType::RewardsCodeDisabled => (localizer.notification_rewards_disabled_title(), localizer.notification_rewards_disabled_description()),
         NotificationType::RewardsRedeemed => (
             localizer.notification_reward_redeemed_title(),
