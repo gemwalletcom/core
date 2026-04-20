@@ -2,8 +2,8 @@ use crate::models::price::NewPriceRow;
 use crate::sql_types::PriceProviderRow;
 use crate::{DatabaseClient, models::*};
 use chrono::NaiveDateTime;
-use diesel::upsert::excluded;
 use diesel::prelude::*;
+use diesel::upsert::excluded;
 use primitives::PriceProvider;
 
 #[derive(Debug, Clone, PartialEq, Eq)]

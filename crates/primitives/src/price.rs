@@ -25,10 +25,7 @@ impl Price {
     }
 
     pub fn with_rate(self, rate: f64) -> Self {
-        Price {
-            price: self.price * rate,
-            ..self
-        }
+        Price { price: self.price * rate, ..self }
     }
 
     pub fn new_with_rate(&self, base_rate: f64, rate: f64) -> Self {

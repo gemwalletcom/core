@@ -38,10 +38,7 @@ impl ObservedPricesUpdater {
 
         let mut by_provider: HashMap<PriceProvider, Vec<AssetPriceMapping>> = HashMap::new();
         for (asset_id, row) in self.database.prices()?.get_primary_prices(&asset_ids)? {
-            by_provider
-                .entry(row.provider.0)
-                .or_default()
-                .push(AssetPriceMapping::new(asset_id, row.provider_price_id));
+            by_provider.entry(row.provider.0).or_default().push(AssetPriceMapping::new(asset_id, row.provider_price_id));
         }
 
         let mut total = 0;
@@ -49,7 +46,9 @@ impl ObservedPricesUpdater {
             let Some(instance) = self.providers.get(&provider).cloned() else {
                 continue;
             };
-            total += PricesUpdater::new(instance, self.database.clone(), self.stream_producer.clone()).update_prices(mappings).await?;
+            total += PricesUpdater::new(instance, self.database.clone(), self.stream_producer.clone())
+                .update_prices(mappings)
+                .await?;
         }
         Ok(total)
     }

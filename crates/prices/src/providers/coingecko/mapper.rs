@@ -1,8 +1,38 @@
+use std::collections::HashMap;
+
 use chrono::Utc;
-use coingecko::CoinMarket;
-use primitives::{AssetMarket, ChartValuePercentage, Price, PriceProvider};
+use coingecko::{COINGECKO_CHAIN_MAP, Coin, CoinMarket, get_chain_for_coingecko_platform_id};
+use primitives::{AssetId, AssetMarket, ChartValuePercentage, Price, PriceProvider};
 
 use crate::{AssetPriceFull, AssetPriceMapping};
+
+pub fn map_coin_to_mappings(coin: &Coin) -> Vec<AssetPriceMapping> {
+    let mut mappings = Vec::new();
+    if let Some(chain) = COINGECKO_CHAIN_MAP.get(coin.id.as_str()) {
+        mappings.push(AssetPriceMapping::new(chain.as_asset_id(), coin.id.clone()));
+    }
+    for (platform_id, contract) in &coin.platforms {
+        let Some(chain) = get_chain_for_coingecko_platform_id(platform_id) else {
+            continue;
+        };
+        let Some(token_id) = contract.as_ref().filter(|s| !s.is_empty()) else {
+            continue;
+        };
+        mappings.push(AssetPriceMapping::new(AssetId::from(chain, Some(token_id.clone())), coin.id.clone()));
+    }
+    mappings
+}
+
+pub fn map_coins_to_mappings(coins: Vec<Coin>) -> Vec<AssetPriceMapping> {
+    coins.iter().flat_map(map_coin_to_mappings).collect()
+}
+
+pub fn map_coin_markets(markets: Vec<CoinMarket>, by_id: &HashMap<String, AssetPriceMapping>) -> Vec<AssetPriceFull> {
+    markets
+        .into_iter()
+        .filter_map(|market| by_id.get(&market.id).cloned().map(|mapping| map_coin_market(market, mapping)))
+        .collect()
+}
 
 pub fn map_coin_market(market: CoinMarket, mapping: AssetPriceMapping) -> AssetPriceFull {
     let updated_at = market.last_updated.unwrap_or_else(Utc::now);

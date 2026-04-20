@@ -54,7 +54,10 @@ impl AssetsRepository for DatabaseClient {
         use crate::database::tag::TagStore;
 
         let asset = AssetsStore::get_asset(self, asset_id).or_not_found(asset_id.to_string())?;
-        let price_row: Option<PriceRow> = PricesRepository::get_assets_with_prices(self, vec![asset_id.to_string()])?.into_iter().next().and_then(|d| d.price);
+        let price_row: Option<PriceRow> = PricesRepository::get_assets_with_prices(self, vec![asset_id.to_string()])?
+            .into_iter()
+            .next()
+            .and_then(|d| d.price);
         let market = price_row.as_ref().map(|x| x.as_market_primitive());
         let price = price_row.as_ref().map(|x| x.as_primitive());
         let links = AssetsLinksStore::get_asset_links(self, asset_id)?.into_iter().map(|x| x.as_primitive()).collect();

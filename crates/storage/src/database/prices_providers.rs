@@ -21,6 +21,9 @@ impl PricesProvidersStore for DatabaseClient {
 
     fn get_prices_providers(&mut self) -> Result<Vec<PriceProviderConfigRow>, diesel::result::Error> {
         use crate::schema::prices_providers::dsl::*;
-        prices_providers.order(priority.asc()).select(PriceProviderConfigRow::as_select()).load(&mut self.connection)
+        prices_providers
+            .order(priority.asc())
+            .select(PriceProviderConfigRow::as_select())
+            .load(&mut self.connection)
     }
 }

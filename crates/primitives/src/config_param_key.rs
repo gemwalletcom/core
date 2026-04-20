@@ -1,0 +1,39 @@
+use crate::{PriceProvider, SwapProvider};
+use strum::AsRefStr;
+
+#[derive(Debug, AsRefStr)]
+#[strum(serialize_all = "camelCase")]
+pub enum ConfigParamKey {
+    SwapperVaultAddresses(SwapProvider),
+    PriceProviderAssetsDuration(PriceProvider),
+    PriceProviderAssetsNewDuration(PriceProvider),
+    PriceProviderPricesDuration(PriceProvider),
+}
+
+impl ConfigParamKey {
+    pub fn all() -> Vec<Self> {
+        let swapper = SwapProvider::cross_chain_providers().into_iter().map(Self::SwapperVaultAddresses);
+        let assets = PriceProvider::all().into_iter().map(Self::PriceProviderAssetsDuration);
+        let assets_new = PriceProvider::all().into_iter().map(Self::PriceProviderAssetsNewDuration);
+        let prices = PriceProvider::all().into_iter().map(Self::PriceProviderPricesDuration);
+        swapper.chain(assets).chain(assets_new).chain(prices).collect()
+    }
+
+    pub fn key(&self) -> String {
+        match self {
+            Self::SwapperVaultAddresses(provider) => format!("{}.{}", self.as_ref(), provider.as_ref()),
+            Self::PriceProviderAssetsDuration(provider) => format!("{}.{}", self.as_ref(), provider.as_ref()),
+            Self::PriceProviderAssetsNewDuration(provider) => format!("{}.{}", self.as_ref(), provider.as_ref()),
+            Self::PriceProviderPricesDuration(provider) => format!("{}.{}", self.as_ref(), provider.as_ref()),
+        }
+    }
+
+    pub fn default_value(&self) -> &str {
+        match self {
+            Self::SwapperVaultAddresses(_) => "5m",
+            Self::PriceProviderAssetsDuration(_) => "1d",
+            Self::PriceProviderAssetsNewDuration(_) => "15m",
+            Self::PriceProviderPricesDuration(_) => "60s",
+        }
+    }
+}

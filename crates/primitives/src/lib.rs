@@ -51,8 +51,8 @@ pub mod config;
 pub use self::config::{ConfigResponse, ConfigVersions, Release, SwapConfig};
 pub mod config_key;
 pub use self::config_key::ConfigKey;
-pub mod param_config_key;
-pub use self::param_config_key::ParamConfigKey;
+pub mod config_param_key;
+pub use self::config_param_key::ConfigParamKey;
 pub mod duration;
 pub use self::duration::parse_duration;
 pub mod currency;
@@ -232,8 +232,8 @@ pub mod perpetual_position;
 pub use self::perpetual_position::{PerpetualMarginType, PerpetualOrderType, PerpetualPosition, PerpetualTriggerOrder};
 pub mod portfolio;
 pub use self::portfolio::{
-    ChartValuePercentage, PerpetualAccountSummary, PerpetualPortfolio, PerpetualPortfolioTimeframeData, PortfolioAllocation, PortfolioAsset,
-    PortfolioAssets, PortfolioAssetsRequest, PortfolioChartData, PortfolioChartType, PortfolioData, PortfolioMarginUsage, PortfolioStatistic, PortfolioType,
+    ChartValuePercentage, PerpetualAccountSummary, PerpetualPortfolio, PerpetualPortfolioTimeframeData, PortfolioAllocation, PortfolioAsset, PortfolioAssets,
+    PortfolioAssetsRequest, PortfolioChartData, PortfolioChartType, PortfolioData, PortfolioMarginUsage, PortfolioStatistic, PortfolioType,
 };
 pub use chrono;
 pub mod tpsl_type;

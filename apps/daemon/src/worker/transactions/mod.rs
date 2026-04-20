@@ -6,7 +6,7 @@ use cacher::CacherClient;
 use in_transit_updater::{InTransitConfig, InTransitUpdater};
 use job_runner::{JobHandle, ShutdownReceiver};
 use pending_transactions_updater::PendingTransactionsUpdater;
-use primitives::{ConfigKey, ParamConfigKey, SwapProvider};
+use primitives::{ConfigKey, ConfigParamKey, SwapProvider};
 use settings::service_user_agent;
 use settings_chain::{ChainProviders, ProviderFactory};
 use std::error::Error;
@@ -70,7 +70,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
         .jobs_with_config(
             WorkerJob::UpdateSwapVaultAddresses,
             SwapProvider::cross_chain_providers(),
-            ParamConfigKey::SwapperVaultAddresses,
+            ConfigParamKey::SwapperVaultAddresses,
             |provider, _| {
                 let updater = Arc::new(VaultAddressesUpdater::new(swapper.clone(), cacher.clone()));
                 move |ctx| {

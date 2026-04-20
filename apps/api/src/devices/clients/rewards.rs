@@ -140,10 +140,7 @@ impl RewardsClient {
         if client.rewards().is_pending_referral(&referrer_username, wallet.id, device.id)? {
             let referrer_info = client.rewards().get_referrer_info(&referrer_username)?;
             if !referrer_info.status.is_verified() {
-                return Err(RewardsError::Referral(
-                    ReferralError::from(ReferralValidationError::RewardsNotEnabled(referrer_username.clone())).localize(locale),
-                )
-                .into());
+                return Err(RewardsError::Referral(ReferralError::from(ReferralValidationError::RewardsNotEnabled(referrer_username.clone())).localize(locale)).into());
             }
             let events = client
                 .rewards()
