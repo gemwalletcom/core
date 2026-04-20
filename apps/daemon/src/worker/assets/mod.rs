@@ -141,7 +141,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                 let settings = settings.clone();
                 let database = database.clone();
                 async move {
-                    let providers = ChainProviders::from_settings(&settings, &service_user_agent("daemon", Some("staking_apy")));
+                    let providers = ChainProviders::for_chain(chain, &settings, &service_user_agent("daemon", Some("staking_apy")));
                     let updater = StakeApyUpdater::new(providers, database.clone());
                     updater.update_chain(chain).await
                 }
@@ -154,7 +154,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                 let settings = settings.clone();
                 let database = database.clone();
                 async move {
-                    let providers = Arc::new(ChainProviders::from_settings(&settings, &service_user_agent("daemon", Some("scan_validators"))));
+                    let providers = Arc::new(ChainProviders::for_chain(chain, &settings, &service_user_agent("daemon", Some("scan_validators"))));
                     let scanner = ValidatorScanner::new(providers, database);
                     scanner.update_validators_for_chain(chain).await
                 }
@@ -167,7 +167,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                 let settings = settings.clone();
                 let database = database.clone();
                 async move {
-                    let providers = Arc::new(ChainProviders::from_settings(&settings, &service_user_agent("daemon", Some("scan_static_assets"))));
+                    let providers = Arc::new(ChainProviders::for_chain(chain, &settings, &service_user_agent("daemon", Some("scan_static_assets"))));
                     let assets_url = settings.assets.url.clone();
                     let scanner = ValidatorScanner::new(providers, database);
                     scanner.update_validators_from_static_assets_for_chain(chain, &assets_url).await
