@@ -31,7 +31,6 @@ pub struct Settings {
     pub coingecko: CoinGecko,
     pub charter: Charter,
     pub name: Name,
-    pub metrics: Metrics,
     pub chains: Chains,
     pub pusher: Pusher,
     pub scan: Scan,
@@ -139,12 +138,12 @@ pub struct UrlKeySettings {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Prices {
-    pub pyth: PriceProvider,
-    pub jupiter: PriceProvider,
+    pub pyth: PriceProviderEndpoint,
+    pub jupiter: PriceProviderEndpoint,
 }
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct PriceProvider {
+pub struct PriceProviderEndpoint {
     pub url: String,
     pub timer: u64,
 }
@@ -177,11 +176,6 @@ pub struct Name {
 #[derive(Debug, Deserialize, Clone)]
 pub struct URL {
     pub url: String,
-}
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct Metrics {
-    pub path: String,
 }
 
 #[derive(Debug, Deserialize, Clone)]

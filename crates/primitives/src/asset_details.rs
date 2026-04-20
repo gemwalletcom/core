@@ -133,12 +133,12 @@ mod tests {
     use chrono::Utc;
 
     use super::*;
-    use crate::{Asset, Chain};
+    use crate::{Asset, Chain, PriceProvider};
 
     #[test]
     fn test_asset_basic_with_rate() {
         let asset = Asset::from_chain(Chain::Bitcoin);
-        let price = Price::new(100.0, 5.0, Utc::now());
+        let price = Price::new(100.0, 5.0, Utc::now(), PriceProvider::Coingecko);
 
         let base = AssetPriceMetadata {
             asset: AssetBasic::new(asset.clone(), AssetProperties::default(asset.id.clone()), AssetScore::default()),

@@ -30,7 +30,7 @@ impl FiatQuotesClient {
         device_id: i32,
         ip_address: &str,
         locale: &str,
-    ) -> Result<(FiatQuoteUrl, FiatQuote), Box<dyn Error + Send + Sync>> {
+    ) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {
         self.fiat_client.get_quote_url(quote_id, wallet_id, device_id, ip_address, locale).await
     }
 

@@ -3,9 +3,8 @@ use std::error::Error;
 use primitives::{AssetId, Chain};
 
 use crate::{
-    ChainAddressPayload, ChartsPayload, ExchangeName, FetchAssetsPayload, FetchBlocksPayload, FetchPricesPayload, InAppNotificationPayload, NotificationsFailedPayload,
-    NotificationsPayload, PricesPayload, QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, StreamProducer, TransactionsPayload, UpdateCoinInfoPayload,
-    WalletStreamPayload,
+    ChainAddressPayload, ExchangeName, FetchAssetsPayload, FetchBlocksPayload, InAppNotificationPayload, NotificationsFailedPayload, NotificationsPayload, PricesPayload, QueueName,
+    RewardsNotificationPayload, RewardsRedemptionPayload, StreamProducer, TransactionsPayload, UpdateCoinInfoPayload, WalletStreamPayload,
 };
 
 #[async_trait::async_trait]
@@ -22,11 +21,9 @@ pub trait StreamProducerQueue {
     async fn publish_rewards_redemption(&self, payload: RewardsRedemptionPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_notifications_failed(&self, payload: NotificationsFailedPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_prices(&self, payload: PricesPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
-    async fn publish_charts(&self, payload: ChartsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_blocks(&self, chain: Chain, blocks: &[u64]) -> Result<(), Box<dyn Error + Send + Sync>>;
     async fn publish_new_addresses(&self, payload: Vec<ChainAddressPayload>) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_in_app_notifications(&self, payload: Vec<InAppNotificationPayload>) -> Result<bool, Box<dyn Error + Send + Sync>>;
-    async fn publish_fetch_prices(&self, payload: FetchPricesPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_update_coin_info(&self, coin_ids: Vec<String>) -> Result<usize, Box<dyn Error + Send + Sync>>;
     async fn publish_wallet_stream_events(&self, payload: Vec<WalletStreamPayload>) -> Result<bool, Box<dyn Error + Send + Sync>>;
 }
@@ -116,13 +113,6 @@ impl StreamProducerQueue for StreamProducer {
         self.publish(QueueName::StorePrices, &payload).await
     }
 
-    async fn publish_charts(&self, payload: ChartsPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        if payload.charts.is_empty() {
-            return Ok(true);
-        }
-        self.publish(QueueName::StoreCharts, &payload).await
-    }
-
     async fn publish_blocks(&self, chain: Chain, blocks: &[u64]) -> Result<(), Box<dyn Error + Send + Sync>> {
         for block in blocks {
             let payload = FetchBlocksPayload::new(chain, *block);
@@ -144,13 +134,6 @@ impl StreamProducerQueue for StreamProducer {
             return Ok(true);
         }
         self.publish_batch(QueueName::NotificationsInApp, &payload).await
-    }
-
-    async fn publish_fetch_prices(&self, payload: FetchPricesPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
-        if payload.price_ids.is_empty() {
-            return Ok(true);
-        }
-        self.publish(QueueName::FetchPrices, &payload).await
     }
 
     async fn publish_update_coin_info(&self, coin_ids: Vec<String>) -> Result<usize, Box<dyn Error + Send + Sync>> {

@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use cacher::{CacheError, CacheKey, CacherClient};
-use primitives::{AssetId, AssetTag, Markets, MarketsAssets};
+use primitives::{AssetId, AssetTag, Markets, MarketsAssets, PriceProvider};
 use storage::{Database, PricesRepository, TagRepository};
 
 #[derive(Clone)]
@@ -26,13 +26,11 @@ impl MarketsClient {
         self.cacher.set_cached(CacheKey::Markets, &markets).await
     }
 
-    pub async fn get_asset_ids_for_prices_ids(&self, price_ids: Vec<String>) -> Result<Vec<AssetId>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_asset_ids_for_provider_price_ids(&self, provider: PriceProvider, provider_price_ids: Vec<String>) -> Result<Vec<AssetId>, Box<dyn Error + Send + Sync>> {
+        let price_ids: Vec<String> = provider_price_ids.iter().map(|id| provider.price_id(id)).collect();
         let assets = self.database.prices()?.get_prices_assets_for_price_ids(price_ids.clone())?;
         let asset_map: std::collections::HashMap<_, _> = assets.into_iter().map(|x| (x.price_id, x.asset_id)).collect();
-        Ok(price_ids
-            .into_iter()
-            .filter_map(|price_id| asset_map.get(&price_id).map(|asset_id| asset_id.0.clone()))
-            .collect())
+        Ok(price_ids.into_iter().filter_map(|price_id| asset_map.get(&price_id).map(|asset_id| asset_id.0.clone())).collect())
     }
 
     pub fn set_asset_ids_for_tag(&self, tag: AssetTag, asset_ids: Vec<AssetId>) -> Result<usize, Box<dyn Error + Send + Sync>> {

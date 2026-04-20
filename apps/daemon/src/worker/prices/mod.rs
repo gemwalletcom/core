@@ -1,339 +1,235 @@
 mod charts_updater;
 mod markets_updater;
 mod observed_prices_updater;
-pub mod price_updater;
-mod prices_dex_updater;
+pub mod prices_updater;
 
 use crate::model::WorkerService;
 use crate::worker::context::WorkerContext;
 use crate::worker::jobs::{JobVariant, WorkerJob};
 use crate::worker::plan::JobPlanBuilder;
+use chrono::{Duration, Utc};
+use std::collections::HashMap;
 use std::error::Error;
+use std::future::Future;
 use std::sync::Arc;
-use std::time::Duration;
 
 use cacher::CacherClient;
 use charts_updater::ChartsUpdater;
 use coingecko::CoinGeckoClient;
+use gem_client::ReqwestClient;
 use job_runner::{JobHandle, ShutdownReceiver};
 use markets_updater::MarketsUpdater;
 use observed_prices_updater::ObservedPricesUpdater;
-use price_updater::{PriceUpdater, UpdatePrices};
 use pricer::{MarketsClient, PriceClient};
-use prices_dex::PriceFeedProvider;
-use prices_dex_updater::PricesDexUpdater;
+use prices::{CoinGeckoPricesProvider, JupiterProvider, PriceAssetsProvider, PriceProvider, PythProvider};
+use prices_updater::PricesUpdater;
 use primitives::{ChartTimeframe, ConfigKey};
 use settings::Settings;
-use storage::{ConfigCacher, Database};
+use storage::database::prices::PriceFilter;
+use storage::repositories::prices_providers_repository::PricesProvidersRepository;
+use storage::{ConfigCacher, Database, PricesRepository};
 use streamer::{StreamProducer, StreamProducerConfig};
 
-struct DexProviderConfig {
-    provider_type: PriceFeedProvider,
-    name: &'static str,
-    url: String,
-    timer: u64,
-}
+type Providers = Arc<HashMap<PriceProvider, Arc<dyn PriceAssetsProvider>>>;
 
 pub async fn jobs(
     ctx: WorkerContext,
     shutdown_rx: ShutdownReceiver,
-    price_metrics: Arc<crate::metrics::price::PriceMetrics>,
+    only: Option<PriceProvider>,
 ) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
     let runtime = ctx.runtime();
     let database = ctx.database();
     let settings = ctx.settings();
-    let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret);
     let cacher_client = CacherClient::new(&settings.redis.url).await;
     let config = Arc::new(ConfigCacher::new(database.clone()));
-
-    let dex_providers = vec![
-        DexProviderConfig {
-            provider_type: PriceFeedProvider::Pyth,
-            name: "Pyth",
-            url: settings.prices.pyth.url.clone(),
-            timer: settings.prices.pyth.timer,
-        },
-        DexProviderConfig {
-            provider_type: PriceFeedProvider::Jupiter,
-            name: "Jupiter",
-            url: settings.prices.jupiter.url.clone(),
-            timer: settings.prices.jupiter.timer,
-        },
-    ];
-
-    let builder = JobPlanBuilder::with_config(WorkerService::Prices, runtime.plan(shutdown_rx), config.as_ref())
-        .job(WorkerJob::CleanupOutdatedAssets, {
-            let settings = settings.clone();
-            let cacher_client = cacher_client.clone();
-            let database = database.clone();
-            let config = config.clone();
-            let price_metrics = price_metrics.clone();
-            move |_| {
-                let settings = settings.clone();
-                let cacher_client = cacher_client.clone();
-                let database = database.clone();
-                let config = config.clone();
-                let price_metrics = price_metrics.clone();
-                async move {
-                    let price_outdated = config.get_duration(ConfigKey::PriceOutdated)?.as_secs();
-                    price_updater_factory(&database, &cacher_client, &settings, price_metrics)
-                        .await?
-                        .clean_outdated_assets(price_outdated)
-                        .await
-                }
-            }
-        })
-        .job(WorkerJob::UpdateFiatRates, {
-            let settings = settings.clone();
-            let cacher_client = cacher_client.clone();
-            let database = database.clone();
-            let price_metrics = price_metrics.clone();
-            move |_| {
-                let settings = settings.clone();
-                let cacher_client = cacher_client.clone();
-                let database = database.clone();
-                let price_metrics = price_metrics.clone();
-                async move { price_updater_factory(&database, &cacher_client, &settings, price_metrics).await?.update_fiat_rates().await }
-            }
-        })
-        .job(WorkerJob::UpdatePricesTopMarketCap, {
-            let settings = settings.clone();
-            let cacher_client = cacher_client.clone();
-            let database = database.clone();
-            let price_metrics = price_metrics.clone();
-            move |_| {
-                let settings = settings.clone();
-                let cacher_client = cacher_client.clone();
-                let database = database.clone();
-                let price_metrics = price_metrics.clone();
-                async move {
-                    price_updater_factory(&database, &cacher_client, &settings, price_metrics)
-                        .await?
-                        .update_prices_type(UpdatePrices::Top)
-                        .await
-                }
-            }
-        })
-        .job(WorkerJob::UpdatePricesHighMarketCap, {
-            let settings = settings.clone();
-            let cacher_client = cacher_client.clone();
-            let database = database.clone();
-            let price_metrics = price_metrics.clone();
-            move |_| {
-                let settings = settings.clone();
-                let cacher_client = cacher_client.clone();
-                let database = database.clone();
-                let price_metrics = price_metrics.clone();
-                async move {
-                    price_updater_factory(&database, &cacher_client, &settings, price_metrics)
-                        .await?
-                        .update_prices_type(UpdatePrices::High)
-                        .await
-                }
-            }
-        })
-        .job(WorkerJob::UpdatePricesLowMarketCap, {
-            let settings = settings.clone();
-            let cacher_client = cacher_client.clone();
-            let database = database.clone();
-            let price_metrics = price_metrics.clone();
-            move |_| {
-                let settings = settings.clone();
-                let cacher_client = cacher_client.clone();
-                let database = database.clone();
-                let price_metrics = price_metrics.clone();
-                async move {
-                    price_updater_factory(&database, &cacher_client, &settings, price_metrics)
-                        .await?
-                        .update_prices_type(UpdatePrices::Low)
-                        .await
-                }
-            }
-        })
-        .job(WorkerJob::UpdatePricesVeryLowMarketCap, {
-            let settings = settings.clone();
-            let cacher_client = cacher_client.clone();
-            let database = database.clone();
-            let price_metrics = price_metrics.clone();
-            move |_| {
-                let settings = settings.clone();
-                let cacher_client = cacher_client.clone();
-                let database = database.clone();
-                let price_metrics = price_metrics.clone();
-                async move {
-                    price_updater_factory(&database, &cacher_client, &settings, price_metrics)
-                        .await?
-                        .update_prices_type(UpdatePrices::VeryLow)
-                        .await
-                }
-            }
-        })
-        .job(WorkerJob::AggregateHourlyCharts, {
-            let settings = settings.clone();
-            let coingecko_client = coingecko_client.clone();
-            let cacher_client = cacher_client.clone();
-            let database = database.clone();
-            move |_| {
-                let settings = settings.clone();
-                let coingecko_client = coingecko_client.clone();
-                let cacher_client = cacher_client.clone();
-                let database = database.clone();
-                async move {
-                    charts_updater_factory(&database, &cacher_client, &settings, coingecko_client)
-                        .await?
-                        .aggregate_charts(ChartTimeframe::Hourly)
-                        .await
-                }
-            }
-        })
-        .job(WorkerJob::AggregateDailyCharts, {
-            let settings = settings.clone();
-            let coingecko_client = coingecko_client.clone();
-            let cacher_client = cacher_client.clone();
-            let database = database.clone();
-            move |_| {
-                let settings = settings.clone();
-                let coingecko_client = coingecko_client.clone();
-                let cacher_client = cacher_client.clone();
-                let database = database.clone();
-                async move {
-                    charts_updater_factory(&database, &cacher_client, &settings, coingecko_client)
-                        .await?
-                        .aggregate_charts(ChartTimeframe::Daily)
-                        .await
-                }
-            }
-        })
-        .job(WorkerJob::CleanupChartsHourly, {
-            let settings = settings.clone();
-            let coingecko_client = coingecko_client.clone();
-            let cacher_client = cacher_client.clone();
-            let database = database.clone();
-            move |_| {
-                let settings = settings.clone();
-                let coingecko_client = coingecko_client.clone();
-                let cacher_client = cacher_client.clone();
-                let database = database.clone();
-                async move {
-                    charts_updater_factory(&database, &cacher_client, &settings, coingecko_client)
-                        .await?
-                        .cleanup_charts(ChartTimeframe::Hourly)
-                        .await
-                }
-            }
-        })
-        .job(WorkerJob::CleanupChartsDaily, {
-            let settings = settings.clone();
-            let coingecko_client = coingecko_client.clone();
-            let cacher_client = cacher_client.clone();
-            let database = database.clone();
-            move |_| {
-                let settings = settings.clone();
-                let coingecko_client = coingecko_client.clone();
-                let cacher_client = cacher_client.clone();
-                let database = database.clone();
-                async move {
-                    charts_updater_factory(&database, &cacher_client, &settings, coingecko_client)
-                        .await?
-                        .cleanup_charts(ChartTimeframe::Daily)
-                        .await
-                }
-            }
-        })
-        .job(WorkerJob::UpdateMarkets, {
-            let settings = settings.clone();
-            let cacher_client = cacher_client.clone();
-            let database = database.clone();
-            move |_| {
-                let settings = settings.clone();
-                let cacher_client = cacher_client.clone();
-                let database = database.clone();
-                async move { markets_updater_factory(&database, &cacher_client, &settings).update_markets().await }
-            }
-        })
-        .job(WorkerJob::UpdateObservedPrices, {
-            let settings = settings.clone();
-            let cacher_client = cacher_client.clone();
-            let database = database.clone();
-            let config = config.clone();
-            move |_| {
-                let settings = settings.clone();
-                let cacher_client = cacher_client.clone();
-                let database = database.clone();
-                let config = config.clone();
-                async move {
-                    let max_observed_assets = config.get_usize(ConfigKey::PriceObservedMaxAssets)?;
-                    let min_observers = config.get_usize(ConfigKey::PriceObservedMinObservers)?;
-                    let price_client = PriceClient::new(database.clone(), cacher_client.clone());
-                    let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
-                    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
-                    let stream_producer = StreamProducer::new(&rabbitmq_config, "observed_prices_worker", streamer::no_shutdown()).await?;
-                    let updater = ObservedPricesUpdater::new(cacher_client, price_client, stream_producer, max_observed_assets, min_observers);
-                    updater.update().await
-                }
-            }
-        });
-
-    dex_providers
+    let producer_assets = stream_producer(&settings, "prices_provider_assets").await?;
+    let producer_prices = stream_producer(&settings, "prices_provider_prices").await?;
+    let enabled_providers: Vec<PriceProvider> = database
+        .prices_providers()?
+        .get_prices_providers()?
         .into_iter()
-        .fold(builder, |builder, provider| {
-            let slug = provider.name.to_lowercase();
-            let builder = builder.job(JobVariant::labeled(WorkerJob::UpdateDexFeeds, slug.clone()).every(Duration::from_secs(3600)), {
-                let url = provider.url.clone();
-                let database = database.clone();
-                let provider_type = provider.provider_type.clone();
-                move |_| {
-                    let url = url.clone();
-                    let database = database.clone();
-                    let provider_type = provider_type.clone();
-                    async move { PricesDexUpdater::new(provider_type, &url, database).update_feeds().await }
-                }
-            });
+        .filter(|p| p.enabled)
+        .map(|p| p.id.0)
+        .collect();
+    let providers: Providers = Arc::new(enabled_providers.iter().map(|p| (*p, build_provider(*p, &settings))).collect());
 
-            builder.job(JobVariant::labeled(WorkerJob::UpdateDexPrices, slug).every(Duration::from_secs(provider.timer)), {
-                let url = provider.url.clone();
-                let database = database.clone();
-                let provider_type = provider.provider_type.clone();
-                move |_| {
-                    let url = url.clone();
-                    let database = database.clone();
-                    let provider_type = provider_type.clone();
-                    async move { PricesDexUpdater::new(provider_type, &url, database).update_prices().await }
-                }
-            })
+    let builder = JobPlanBuilder::with_config(WorkerService::Prices, runtime.plan(shutdown_rx), config.as_ref());
+    let builder = if only.is_none() {
+        add_platform_jobs(builder, &database, &cacher_client, &config, &providers, producer_prices.clone())
+    } else {
+        builder
+    };
+    enabled_providers
+        .into_iter()
+        .filter(|p| only.is_none_or(|o| o == *p))
+        .fold(builder, |builder, provider| {
+            add_provider_jobs(builder, &database, &cacher_client, &settings, provider, providers[&provider].clone(), &producer_assets, &producer_prices)
         })
         .finish()
 }
 
-async fn price_updater_factory(
+fn add_platform_jobs<'a>(
+    builder: JobPlanBuilder<'a>,
     database: &Database,
-    cacher: &CacherClient,
-    settings: &Settings,
-    price_metrics: Arc<crate::metrics::price::PriceMetrics>,
-) -> Result<PriceUpdater, Box<dyn std::error::Error + Send + Sync>> {
-    let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret.clone());
-    let price_client = PriceClient::new(database.clone(), cacher.clone());
-    let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
-    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
-    let stream_producer = StreamProducer::new(&rabbitmq_config, "pricer_worker", streamer::no_shutdown()).await?;
-    Ok(PriceUpdater::new(price_client, coingecko_client, stream_producer, price_metrics))
+    cacher_client: &CacherClient,
+    config: &Arc<ConfigCacher>,
+    providers: &Providers,
+    producer: StreamProducer,
+) -> JobPlanBuilder<'a> {
+    builder
+        .job(WorkerJob::CleanupOutdatedAssets, {
+            let database = database.clone();
+            let config = config.clone();
+            move |_| {
+                let database = database.clone();
+                let config = config.clone();
+                async move {
+                    let cutoff = Utc::now() - Duration::seconds(config.get_duration(ConfigKey::PriceOutdated)?.as_secs() as i64);
+                    let ids = database.prices()?.get_prices_by_filter(vec![PriceFilter::UpdatedBefore(cutoff.naive_utc())])?.into_iter().map(|p| p.id).collect();
+                    Ok::<usize, Box<dyn std::error::Error + Send + Sync>>(database.prices()?.delete_prices(ids)?)
+                }
+            }
+        })
+        .job(
+            WorkerJob::AggregateHourlyCharts,
+            charts_job(database, cacher_client, ChartsAction::Aggregate(ChartTimeframe::Hourly)),
+        )
+        .job(
+            WorkerJob::AggregateDailyCharts,
+            charts_job(database, cacher_client, ChartsAction::Aggregate(ChartTimeframe::Daily)),
+        )
+        .job(
+            WorkerJob::CleanupChartsHourly,
+            charts_job(database, cacher_client, ChartsAction::Cleanup(ChartTimeframe::Hourly)),
+        )
+        .job(
+            WorkerJob::CleanupChartsDaily,
+            charts_job(database, cacher_client, ChartsAction::Cleanup(ChartTimeframe::Daily)),
+        )
+        .job(WorkerJob::UpdateObservedPrices, {
+            let cacher_client = cacher_client.clone();
+            let database = database.clone();
+            let config = config.clone();
+            let providers = providers.clone();
+            let producer = producer.clone();
+            move |_| {
+                let cacher_client = cacher_client.clone();
+                let database = database.clone();
+                let config = config.clone();
+                let providers = providers.clone();
+                let producer = producer.clone();
+                async move {
+                    let max_observed_assets = config.get_usize(ConfigKey::PriceObservedMaxAssets)?;
+                    let min_observers = config.get_usize(ConfigKey::PriceObservedMinObservers)?;
+                    ObservedPricesUpdater::new(cacher_client, database, providers, producer, max_observed_assets, min_observers).update().await
+                }
+            }
+        })
 }
 
-async fn charts_updater_factory(
+fn add_provider_jobs<'a>(
+    builder: JobPlanBuilder<'a>,
     database: &Database,
-    cacher: &CacherClient,
+    cacher_client: &CacherClient,
     settings: &Settings,
-    coingecko_client: CoinGeckoClient,
-) -> Result<ChartsUpdater, Box<dyn std::error::Error + Send + Sync>> {
-    let price_client = PriceClient::new(database.clone(), cacher.clone());
-    let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
-    let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
-    let stream_producer = StreamProducer::new(&rabbitmq_config, "charts_worker", streamer::no_shutdown()).await?;
-    Ok(ChartsUpdater::new(price_client, coingecko_client, stream_producer))
+    provider: PriceProvider,
+    provider_instance: Arc<dyn PriceAssetsProvider>,
+    producer_assets: &StreamProducer,
+    producer_prices: &StreamProducer,
+) -> JobPlanBuilder<'a> {
+    let slug = provider.id().to_string();
+    let builder = builder.job(
+        JobVariant::labeled(WorkerJob::UpdatePricesAssets, slug.clone()),
+        provider_job(database, provider_instance.clone(), producer_assets.clone(), |u| async move { u.update_assets().await }),
+    );
+    match provider {
+        PriceProvider::Coingecko => builder
+            .job(
+                JobVariant::labeled(WorkerJob::UpdatePricesTop, slug.clone()),
+                provider_job(database, provider_instance.clone(), producer_prices.clone(), |u| async move {
+                    u.update_prices_window(0, 500).await
+                }),
+            )
+            .job(
+                JobVariant::labeled(WorkerJob::UpdatePricesHigh, slug.clone()),
+                provider_job(database, provider_instance.clone(), producer_prices.clone(), |u| async move {
+                    u.update_prices_window(500, 2500).await
+                }),
+            )
+            .job(
+                JobVariant::labeled(WorkerJob::UpdatePricesLow, slug),
+                provider_job(database, provider_instance, producer_prices.clone(), |u| async move {
+                    u.update_prices_window(3000, usize::MAX).await
+                }),
+            )
+            .job(WorkerJob::UpdateMarkets, {
+                let coingecko = CoinGeckoClient::new(&settings.coingecko.key.secret);
+                let markets_client = MarketsClient::new(database.clone(), cacher_client.clone());
+                move |_| {
+                    let updater = MarketsUpdater::new(markets_client.clone(), coingecko.clone());
+                    Box::pin(async move { updater.update_markets().await })
+                }
+            }),
+        PriceProvider::Pyth | PriceProvider::Jupiter => builder.job(
+            JobVariant::labeled(WorkerJob::UpdatePricesAll, slug),
+            provider_job(database, provider_instance, producer_prices.clone(), |u| async move { u.update_prices_all().await }),
+        ),
+    }
 }
 
-fn markets_updater_factory(database: &Database, cacher: &CacherClient, settings: &Settings) -> MarketsUpdater {
-    let coingecko_client = CoinGeckoClient::new(&settings.coingecko.key.secret.clone());
-    let markets_client = MarketsClient::new(database.clone(), cacher.clone());
-    MarketsUpdater::new(markets_client, coingecko_client)
+fn provider_job<F, Fut>(
+    database: &Database,
+    provider: Arc<dyn PriceAssetsProvider>,
+    producer: StreamProducer,
+    run: F,
+) -> impl Fn(job_runner::JobContext) -> futures::future::BoxFuture<'static, Result<usize, Box<dyn std::error::Error + Send + Sync>>> + Clone + Send + Sync + 'static
+where
+    F: Fn(PricesUpdater) -> Fut + Clone + Send + Sync + 'static,
+    Fut: Future<Output = Result<usize, Box<dyn std::error::Error + Send + Sync>>> + Send + 'static,
+{
+    let database = database.clone();
+    move |_| {
+        let database = database.clone();
+        let provider = provider.clone();
+        let producer = producer.clone();
+        let run = run.clone();
+        Box::pin(async move { run(PricesUpdater::new(provider, database, producer)).await })
+    }
+}
+
+#[derive(Clone, Copy)]
+enum ChartsAction {
+    Aggregate(ChartTimeframe),
+    Cleanup(ChartTimeframe),
+}
+
+fn charts_job(
+    database: &Database,
+    cacher: &CacherClient,
+    action: ChartsAction,
+) -> impl Fn(job_runner::JobContext) -> futures::future::BoxFuture<'static, Result<usize, Box<dyn std::error::Error + Send + Sync>>> + Clone + Send + Sync + 'static {
+    let updater = ChartsUpdater::new(PriceClient::new(database.clone(), cacher.clone()));
+    move |_| {
+        let updater = updater.clone();
+        Box::pin(async move {
+            match action {
+                ChartsAction::Aggregate(tf) => updater.aggregate_charts(tf).await,
+                ChartsAction::Cleanup(tf) => updater.cleanup_charts(tf).await,
+            }
+        })
+    }
+}
+
+fn build_provider(provider: PriceProvider, settings: &Settings) -> Arc<dyn PriceAssetsProvider> {
+    match provider {
+        PriceProvider::Coingecko => Arc::new(CoinGeckoPricesProvider::new(&settings.coingecko.key.secret)),
+        PriceProvider::Pyth => Arc::new(PythProvider::new(ReqwestClient::new(settings.prices.pyth.url.clone(), reqwest::Client::new()))),
+        PriceProvider::Jupiter => Arc::new(JupiterProvider::new(ReqwestClient::new(settings.prices.jupiter.url.clone(), reqwest::Client::new()))),
+    }
+}
+
+async fn stream_producer(settings: &Settings, name: &str) -> Result<StreamProducer, Box<dyn Error + Send + Sync>> {
+    let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);
+    let config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
+    StreamProducer::new(&config, name, streamer::no_shutdown()).await
 }

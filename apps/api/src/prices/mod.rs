@@ -35,9 +35,7 @@ pub async fn get_charts(
     let currency_value = currency.unwrap_or(DEFAULT_FIAT_CURRENCY);
 
     let asset_id = asset_id.0.to_string();
-    let coin_id = charts_client.lock().await.get_coin_id(&asset_id)?;
-
-    let prices = charts_client.lock().await.get_charts_prices(&coin_id, period, currency_value).await?;
+    let prices = charts_client.lock().await.get_charts_prices(&asset_id, period, currency_value).await?;
 
     let asset_price = price_client.lock().await.get_asset_price(&asset_id, currency_value).await?;
 

@@ -1,6 +1,6 @@
 use primitives::{
-    AssetAddress, AssetId, Chain, ChainAddress, ChartData, FailedNotification, FiatProviderName, FiatTransactionUpdate, GorushNotification, NotificationType, PriceData,
-    Transaction, TransactionId,
+    AssetAddress, AssetId, Chain, ChainAddress, FailedNotification, FiatProviderName, FiatTransactionUpdate, GorushNotification, NotificationType, PriceData, Transaction,
+    TransactionId,
 };
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -254,11 +254,6 @@ impl fmt::Display for PricesPayload {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ChartsPayload {
-    pub charts: Vec<ChartData>,
-}
-
 #[cfg(test)]
 mod tests {
     use super::TransactionsPayload;
@@ -268,18 +263,6 @@ mod tests {
     fn test_transactions_payload_should_notify_devices() {
         assert!(!TransactionsPayload::new(Chain::Ethereum, vec![]).should_notify_devices());
         assert!(TransactionsPayload::new_with_notify(Chain::Ethereum, vec![], vec![]).should_notify_devices());
-    }
-}
-
-impl ChartsPayload {
-    pub fn new(charts: Vec<ChartData>) -> Self {
-        Self { charts }
-    }
-}
-
-impl fmt::Display for ChartsPayload {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "charts: {}", self.charts.len())
     }
 }
 
@@ -374,23 +357,6 @@ impl UpdateCoinInfoPayload {
 impl fmt::Display for UpdateCoinInfoPayload {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "coin_id: {}", self.coin_id)
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct FetchPricesPayload {
-    pub price_ids: Vec<String>,
-}
-
-impl FetchPricesPayload {
-    pub fn new(price_ids: Vec<String>) -> Self {
-        Self { price_ids }
-    }
-}
-
-impl fmt::Display for FetchPricesPayload {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "price_ids: {}", self.price_ids.len())
     }
 }
 

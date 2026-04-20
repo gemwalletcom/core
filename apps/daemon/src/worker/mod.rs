@@ -14,20 +14,23 @@ pub mod system;
 pub mod transactions;
 
 use std::error::Error;
-use std::sync::Arc;
 
 use job_runner::JobHandle;
 
-use crate::metrics::price::PriceMetrics;
-use crate::model::WorkerService;
+use crate::model::{WorkerOptions, WorkerService};
 use crate::shutdown::ShutdownReceiver;
 use crate::worker::context::WorkerContext;
 
 impl WorkerService {
-    pub async fn run_jobs(self, ctx: WorkerContext, shutdown_rx: ShutdownReceiver, price_metrics: Arc<PriceMetrics>) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
+    pub async fn run_jobs(
+        self,
+        ctx: WorkerContext,
+        shutdown_rx: ShutdownReceiver,
+        options: WorkerOptions,
+    ) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
         match self {
             WorkerService::Alerter => alerter::jobs(ctx, shutdown_rx).await,
-            WorkerService::Prices => prices::jobs(ctx, shutdown_rx, price_metrics).await,
+            WorkerService::Prices => prices::jobs(ctx, shutdown_rx, options.price_provider).await,
             WorkerService::Fiat => fiat::jobs(ctx, shutdown_rx).await,
             WorkerService::Assets => assets::jobs(ctx, shutdown_rx).await,
             WorkerService::System => system::jobs(ctx, shutdown_rx).await,

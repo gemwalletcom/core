@@ -236,7 +236,7 @@ impl FiatClient {
         device_id: i32,
         ip_address: &str,
         locale: &str,
-    ) -> Result<(FiatQuoteUrl, FiatQuote), Box<dyn Error + Send + Sync>> {
+    ) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {
         let crate::CachedFiatQuoteData {
             quote,
             asset_symbol,
@@ -245,7 +245,7 @@ impl FiatClient {
         let provider = self.provider(quote.provider.id.as_ref())?;
         let wallet_address_row = self.database.client()?.subscriptions_wallet_address_for_chain(device_id, wallet_id, quote.asset.chain)?;
         let data = FiatQuoteUrlData {
-            quote: quote.clone(),
+            quote,
             asset_symbol,
             wallet_address: wallet_address_row.address,
             ip_address: ip_address.to_string(),
@@ -262,7 +262,7 @@ impl FiatClient {
 
         self.database.fiat()?.add_fiat_transaction(pending_transaction_row)?;
 
-        Ok((url, quote))
+        Ok(url)
     }
 
     pub async fn get_ip_address(&self, ip_address: &str) -> Result<IPAddressInfo, Box<dyn Error + Send + Sync>> {

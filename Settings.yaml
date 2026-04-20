@@ -51,7 +51,7 @@ prices:
     url: "https://hermes.pyth.network"
     timer: 60
   jupiter:
-    url: ""
+    url: "https://lite-api.jup.ag"
     timer: 60
 charter:
   timer: 60
@@ -90,8 +90,6 @@ name:
   alldomains:
     url: https://solana-rpc.publicnode.com
 
-metrics:
-  path: /metrics
 chains:
   solana:
     url: https://solana-rpc.publicnode.com

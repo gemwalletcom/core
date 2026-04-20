@@ -1,7 +1,8 @@
 use crate::schema::assets::dsl::*;
 
 use crate::DatabaseClient;
-use crate::models::{AssetRow, NewAssetRow, PriceRow};
+use crate::models::{AssetRow, NewAssetRow};
+use chrono::NaiveDateTime;
 use diesel::{prelude::*, upsert::excluded};
 
 #[derive(Debug, Clone)]
@@ -32,7 +33,8 @@ pub(crate) trait AssetsStore {
     fn get_assets_by_filter(&mut self, filters: Vec<AssetFilter>) -> Result<Vec<AssetRow>, diesel::result::Error>;
     fn get_asset(&mut self, asset_id: &str) -> Result<AssetRow, diesel::result::Error>;
     fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetRow>, diesel::result::Error>;
-    fn get_assets_with_prices(&mut self, asset_ids: Vec<String>) -> Result<Vec<(AssetRow, Option<PriceRow>)>, diesel::result::Error>;
+    fn get_all_asset_ids(&mut self) -> Result<Vec<String>, diesel::result::Error>;
+    fn get_asset_ids_updated_since(&mut self, since: NaiveDateTime) -> Result<Vec<String>, diesel::result::Error>;
     fn get_swap_assets(&mut self) -> Result<Vec<String>, diesel::result::Error>;
     fn get_swap_assets_version(&mut self) -> Result<i32, diesel::result::Error>;
 }
@@ -111,16 +113,12 @@ impl AssetsStore for DatabaseClient {
         assets.filter(id.eq_any(asset_ids)).select(AssetRow::as_select()).load(&mut self.connection)
     }
 
-    fn get_assets_with_prices(&mut self, asset_ids: Vec<String>) -> Result<Vec<(AssetRow, Option<PriceRow>)>, diesel::result::Error> {
-        use crate::schema::prices;
-        use crate::schema::prices_assets;
+    fn get_all_asset_ids(&mut self) -> Result<Vec<String>, diesel::result::Error> {
+        assets.select(id).load(&mut self.connection)
+    }
 
-        assets
-            .filter(id.eq_any(asset_ids))
-            .left_join(prices_assets::table.on(id.eq(prices_assets::asset_id)))
-            .left_join(prices::table.on(prices_assets::price_id.eq(prices::id)))
-            .select((AssetRow::as_select(), Option::<PriceRow>::as_select()))
-            .load(&mut self.connection)
+    fn get_asset_ids_updated_since(&mut self, since: NaiveDateTime) -> Result<Vec<String>, diesel::result::Error> {
+        assets.filter(updated_at.gt(since)).select(id).load(&mut self.connection)
     }
 
     fn get_swap_assets(&mut self) -> Result<Vec<String>, diesel::result::Error> {

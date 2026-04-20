@@ -15,7 +15,7 @@ pub mod parser_state;
 pub mod perpetuals;
 pub mod price_alerts;
 pub mod prices;
-pub mod prices_dex;
+pub mod prices_providers;
 pub mod referrals;
 pub mod releases;
 pub mod rewards;
@@ -40,9 +40,10 @@ use crate::repositories::{
     assets_usage_ranks_repository::AssetsUsageRanksRepository, chains_repository::ChainsRepository, charts_repository::ChartsRepository, config_repository::ConfigRepository,
     devices_repository::DevicesRepository, fiat_repository::FiatRepository, migrations_repository::MigrationsRepository, nft_repository::NftRepository,
     notifications_repository::NotificationsRepository, parser_state_repository::ParserStateRepository, perpetuals_repository::PerpetualsRepository,
-    price_alerts_repository::PriceAlertsRepository, prices_dex_repository::PricesDexRepository, prices_repository::PricesRepository, releases_repository::ReleasesRepository,
-    rewards_redemptions_repository::RewardsRedemptionsRepository, rewards_repository::RewardsRepository, scan_addresses_repository::ScanAddressesRepository,
-    tag_repository::TagRepository, transactions_repository::TransactionsRepository, wallets_repository::WalletsRepository, webhooks_repository::WebhooksRepository,
+    price_alerts_repository::PriceAlertsRepository, prices_providers_repository::PricesProvidersRepository, prices_repository::PricesRepository,
+    releases_repository::ReleasesRepository, rewards_redemptions_repository::RewardsRedemptionsRepository, rewards_repository::RewardsRepository,
+    scan_addresses_repository::ScanAddressesRepository, tag_repository::TagRepository, transactions_repository::TransactionsRepository,
+    wallets_repository::WalletsRepository, webhooks_repository::WebhooksRepository,
 };
 
 pub fn create_pool(database_url: &str, pool_size: u32) -> PgPool {
@@ -127,7 +128,7 @@ impl DatabaseClient {
         self
     }
 
-    pub fn prices_dex(&mut self) -> &mut dyn PricesDexRepository {
+    pub fn prices_providers(&mut self) -> &mut dyn PricesProvidersRepository {
         self
     }
 

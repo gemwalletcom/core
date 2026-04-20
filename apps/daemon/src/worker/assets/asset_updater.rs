@@ -1,10 +1,11 @@
 use cacher::{CacheKey, CacherClient};
 use chain_primitives::format_token_id;
 use coingecko::{COINGECKO_CHAIN_MAP, CoinGeckoClient, CoinInfo, get_chain_for_coingecko_platform_id, get_coingecko_market_id_for_chain};
-use primitives::{Asset, AssetBasic, AssetId, AssetLink, AssetProperties, AssetScore, AssetType, Chain, LinkType};
+use primitives::{Asset, AssetBasic, AssetId, AssetLink, AssetProperties, AssetScore, AssetType, Chain, LinkType, PriceProvider};
 use std::collections::HashSet;
 use std::error::Error;
 use std::time::Duration;
+use storage::database::prices::PriceFilter;
 use storage::models::price::{NewPriceRow, PriceAssetRow};
 use storage::{AssetUpdate, AssetsLinksRepository, AssetsRepository, Database, PricesRepository};
 use streamer::{StreamProducer, StreamProducerQueue};
@@ -49,12 +50,10 @@ impl AssetProcessor {
     // MARK: - Storage
 
     fn store_prices(&self, coin_id: &str, assets: &[(Asset, AssetScore)]) -> Result<(), Box<dyn Error + Send + Sync>> {
-        self.database.prices()?.add_prices(vec![NewPriceRow::new(coin_id.to_string())])?;
+        let provider = PriceProvider::Coingecko;
+        self.database.prices()?.add_prices(vec![NewPriceRow::new(provider, coin_id.to_string())])?;
 
-        let price_assets = assets
-            .iter()
-            .map(|(asset, _)| PriceAssetRow::new(asset.id.clone(), coin_id.to_string()))
-            .collect::<Vec<_>>();
+        let price_assets = assets.iter().map(|(asset, _)| PriceAssetRow::new(asset.id.clone(), provider, coin_id)).collect::<Vec<_>>();
 
         self.database.prices()?.set_prices_assets(price_assets)?;
         Ok(())
@@ -227,9 +226,9 @@ impl AssetUpdater {
             .processor
             .database
             .prices()?
-            .get_prices()?
+            .get_prices_by_filter(vec![PriceFilter::Provider(PriceProvider::Coingecko)])?
             .into_iter()
-            .map(|x| x.id)
+            .map(|x| x.provider_price_id)
             .collect::<HashSet<_>>()
             .into_iter()
             .collect::<Vec<String>>();
@@ -246,7 +245,7 @@ impl AssetUpdater {
     pub async fn update_native_prices_assets(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let native_assets = Chain::all()
             .into_iter()
-            .map(|x| PriceAssetRow::new(x.as_asset_id(), get_coingecko_market_id_for_chain(x).to_string()))
+            .map(|x| PriceAssetRow::new(x.as_asset_id(), PriceProvider::Coingecko, get_coingecko_market_id_for_chain(x)))
             .collect::<Vec<_>>();
 
         let ids = native_assets.iter().map(|x| x.price_id.clone()).collect();

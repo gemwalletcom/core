@@ -24,25 +24,52 @@ use fetch_coin_addresses_consumer::FetchCoinAddressesConsumer;
 use fetch_nft_assets_addresses_consumer::FetchNftAssetsAddressesConsumer;
 use fetch_token_addresses_consumer::FetchTokenAddressesConsumer;
 
-pub async fn run_consumer_indexer(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn run_consumer_indexer(
+    settings: Settings,
+    shutdown_rx: ShutdownReceiver,
+    reporter: Arc<dyn ConsumerStatusReporter>,
+    only: Option<crate::model::IndexerConsumer>,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
+    use crate::model::IndexerConsumer::*;
+
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let settings = Arc::new(settings);
 
-    futures::future::try_join_all(vec![
-        tokio::spawn(run_fetch_blocks(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
-        tokio::spawn(run_fetch_assets(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
-        tokio::spawn(run_fetch_token_associations(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
-        tokio::spawn(run_fetch_coin_associations(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
-        tokio::spawn(run_fetch_nft_associations(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
-        tokio::spawn(run_fetch_transaction_associations(
-            settings.clone(),
-            database.clone(),
-            shutdown_rx.clone(),
-            reporter.clone(),
-        )),
-    ])
-    .await?;
+    let selected: Vec<crate::model::IndexerConsumer> = match only {
+        Some(one) => vec![one],
+        None => vec![
+            FetchBlocks,
+            FetchAssets,
+            FetchTokenAssociations,
+            FetchCoinAssociations,
+            FetchNftAssociations,
+            FetchAddressTransactions,
+        ],
+    };
 
+    let handles: Vec<_> = selected
+        .into_iter()
+        .map(|kind| {
+            let settings = settings.clone();
+            let database = database.clone();
+            let shutdown_rx = shutdown_rx.clone();
+            let reporter = reporter.clone();
+            tokio::spawn(async move {
+                match kind {
+                    FetchBlocks => run_fetch_blocks(settings, database, shutdown_rx, reporter).await,
+                    FetchAssets => run_fetch_assets(settings, database, shutdown_rx, reporter).await,
+                    FetchTokenAssociations => run_fetch_token_associations(settings, database, shutdown_rx, reporter).await,
+                    FetchCoinAssociations => run_fetch_coin_associations(settings, database, shutdown_rx, reporter).await,
+                    FetchNftAssociations => run_fetch_nft_associations(settings, database, shutdown_rx, reporter).await,
+                    FetchAddressTransactions => run_fetch_transaction_associations(settings, database, shutdown_rx, reporter).await,
+                }
+            })
+        })
+        .collect();
+
+    for handle in futures::future::join_all(handles).await {
+        handle??;
+    }
     Ok(())
 }
 

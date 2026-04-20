@@ -1,9 +1,9 @@
 use async_trait::async_trait;
 use pricer::PriceClient;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::error::Error;
-use storage::models::PriceRow;
-use storage::{Database, PricesRepository};
+use storage::models::{ChartRow, PriceRow};
+use storage::{ChartsRepository, Database, PricesRepository};
 use streamer::{PricesPayload, consumer::MessageConsumer};
 
 pub struct StorePricesConsumer {
@@ -20,33 +20,6 @@ impl StorePricesConsumer {
             ttl_seconds,
         }
     }
-
-    async fn update_prices_cache(&self, updated_prices: Vec<PriceRow>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let price_ids: HashSet<_> = updated_prices.iter().map(|p| &p.id).collect();
-
-        let prices_assets_map: HashMap<_, Vec<_>> =
-            self.price_client
-                .get_prices_assets()?
-                .into_iter()
-                .filter(|x| price_ids.contains(&x.price_id))
-                .fold(HashMap::new(), |mut map, x| {
-                    map.entry(x.price_id).or_default().push(x.asset_id);
-                    map
-                });
-
-        let prices: Vec<_> = updated_prices
-            .into_iter()
-            .flat_map(|price| {
-                prices_assets_map
-                    .get(&price.id)
-                    .into_iter()
-                    .flatten()
-                    .map(move |asset_id| price.as_price_asset_info(asset_id.0.clone()))
-            })
-            .collect();
-
-        self.price_client.set_cache_prices(prices, self.ttl_seconds).await
-    }
 }
 
 #[async_trait]
@@ -56,11 +29,32 @@ impl MessageConsumer<PricesPayload, usize> for StorePricesConsumer {
     }
 
     async fn process(&self, payload: PricesPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let prices: Vec<PriceRow> = payload.prices.iter().map(|p| PriceRow::from_price_data(p.clone())).collect();
-        self.database.prices()?.set_prices(prices.clone())?;
+        let rows: Vec<PriceRow> = payload.prices.into_iter().map(PriceRow::from_price_data).collect();
+        let price_ids: Vec<String> = rows.iter().map(|r| r.id.clone()).collect();
+        self.database.prices()?.set_prices(rows)?;
 
-        self.update_prices_cache(prices).await?;
+        let asset_ids: Vec<String> = self
+            .database
+            .prices()?
+            .get_prices_assets_for_price_ids(price_ids)?
+            .into_iter()
+            .map(|x| x.asset_id.to_string())
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect();
 
-        Ok(payload.prices.len())
+        let primary = self.database.prices()?.get_primary_prices(&asset_ids)?;
+        if primary.is_empty() {
+            return Ok(0);
+        }
+
+        let charts: Vec<ChartRow> = primary.iter().map(|(_, row)| ChartRow::from_price(row.clone())).collect();
+        self.database.charts()?.add_charts(charts)?;
+
+        let count = primary.len();
+        let infos = primary.into_iter().map(|(id, row)| row.as_price_asset_info(id)).collect();
+        self.price_client.set_cache_prices(infos, self.ttl_seconds).await?;
+
+        Ok(count)
     }
 }

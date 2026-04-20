@@ -7,6 +7,7 @@ use chrono::{DateTime, Utc};
 use pricer::PriceClient;
 use primitives::{Asset, AssetBasic, AssetFull, AssetId, ChainAddress, NFTCollection, PerpetualSearchData};
 use search_index::{ASSETS_INDEX_NAME, AssetDocument, NFTDocument, NFTS_INDEX_NAME, PERPETUALS_INDEX_NAME, PerpetualDocument, SearchIndexClient};
+use storage::repositories::prices_repository::PRIMARY_PRICE_MAX_AGE;
 use storage::{AssetsAddressesRepository, AssetsRepository, Database, WalletsRepository};
 
 #[derive(Clone)]
@@ -48,7 +49,11 @@ impl AssetsClient {
         let chain_addresses: Vec<ChainAddress> = subscriptions.into_iter().map(|(sub, addr)| ChainAddress::new(sub.chain.0, addr.address)).collect();
         let from_datetime = from_timestamp.and_then(|ts| DateTime::<Utc>::from_timestamp(ts as i64, 0).map(|dt| dt.naive_utc()));
 
-        Ok(self.database.assets_addresses()?.get_assets_by_addresses(chain_addresses, from_datetime, true)?)
+        let prices_cutoff = (Utc::now() - chrono::Duration::from_std(PRIMARY_PRICE_MAX_AGE)?).naive_utc();
+        Ok(self
+            .database
+            .assets_addresses()?
+            .get_assets_by_addresses(chain_addresses, from_datetime, Some(prices_cutoff))?)
     }
 }
 

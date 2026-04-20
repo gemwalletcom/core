@@ -1,4 +1,3 @@
-pub mod store_charts_consumer;
 pub mod store_pending_transactions_consumer;
 pub mod store_prices_consumer;
 pub mod store_transactions_consumer;
@@ -17,13 +16,12 @@ use pricer::PriceClient;
 use primitives::{ConfigKey, TransactionId};
 use settings::Settings;
 use storage::{ConfigCacher, Database};
-use streamer::{ChartsPayload, ConsumerStatusReporter, PricesPayload, QueueName, ShutdownReceiver, TransactionsPayload, WalletStreamPayload, run_consumer};
+use streamer::{ConsumerStatusReporter, PricesPayload, QueueName, ShutdownReceiver, TransactionsPayload, WalletStreamPayload, run_consumer};
 
 use crate::consumers::runner::ChainConsumerRunner;
 use crate::consumers::{consumer_config, reader_for_queue};
 use crate::pusher::Pusher;
 
-use store_charts_consumer::StoreChartsConsumer;
 use store_pending_transactions_consumer::StorePendingTransactionsConsumer;
 use store_prices_consumer::StorePricesConsumer;
 use wallet_stream_consumer::WalletStreamConsumer;
@@ -35,7 +33,6 @@ pub async fn run_consumer_store(settings: Settings, shutdown_rx: ShutdownReceive
     futures::future::try_join_all(vec![
         tokio::spawn(run_store_transactions(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
         tokio::spawn(run_store_prices(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
-        tokio::spawn(run_store_charts(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
         tokio::spawn(run_store_pending_transactions(settings.clone(), shutdown_rx.clone(), reporter.clone())),
         tokio::spawn(run_wallet_stream(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
     ])
@@ -99,20 +96,6 @@ async fn run_store_prices(
     let ttl_seconds = config.get_duration(ConfigKey::PriceOutdated)?.as_secs() as i64;
     let consumer = StorePricesConsumer::new(database, price_client, ttl_seconds);
     run_consumer::<PricesPayload, StorePricesConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx, reporter).await
-}
-
-async fn run_store_charts(
-    settings: Arc<Settings>,
-    database: Database,
-    shutdown_rx: ShutdownReceiver,
-    reporter: Arc<dyn ConsumerStatusReporter>,
-) -> Result<(), Box<dyn Error + Send + Sync>> {
-    let queue = QueueName::StoreCharts;
-    let (name, stream_reader) = reader_for_queue(&settings, &queue, &shutdown_rx).await?;
-    let cacher_client = CacherClient::new(&settings.redis.url).await;
-    let price_client = PriceClient::new(database, cacher_client);
-    let consumer = StoreChartsConsumer::new(price_client);
-    run_consumer::<ChartsPayload, StoreChartsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx, reporter).await
 }
 
 async fn run_wallet_stream(
