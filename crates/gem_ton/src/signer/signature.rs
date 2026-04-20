@@ -8,15 +8,9 @@ use crate::address::Address;
 pub fn sign_personal(data: &[u8], private_key: &[u8], timestamp: u64) -> Result<TonSignResult, SignerError> {
     let ton_data = TonSignMessageData::from_bytes(data)?;
     let key_pair = Ed25519KeyPair::from_private_key(private_key)?;
-    let address = WalletV4R2::new(key_pair.public_key_bytes)?.address().encode();
-    if let Some(expected_address) = ton_data.address.as_deref() {
-        let expected = Address::parse(expected_address)?;
-        let actual = Address::parse(&address)?;
-        if expected != actual {
-            return Err(SignerError::invalid_input("TON from does not match signer address"));
-        }
-    }
-    let digest = ton_data.hash_with_address(timestamp, Some(&address))?;
+    let wallet = WalletV4R2::new(key_pair.public_key_bytes)?;
+    Address::ensure_matches(ton_data.address.as_deref(), &wallet.address().encode())?;
+    let digest = ton_data.hash_with_address(timestamp, wallet.address())?;
 
     Ok(TonSignResult {
         signature: key_pair.sign(&digest).to_vec(),
@@ -31,8 +25,11 @@ mod tests {
     use crate::address::base64_to_hex_address;
     use crate::signer::{BagOfCells, CellBuilder, TonSignDataPayload};
 
+    const TEST_PRIVATE_KEY: &str = "1e9d38b5274152a78dff1a86fa464ceadc1f4238ca2c17060c3c507349424a34";
+    const TEST_PUBLIC_KEY: &str = "d369452197c2a56481e5e2d3e8bf03de2349f67a63151956822208c2334adee2";
+
     fn signer_address() -> String {
-        let public_key = <[u8; 32]>::try_from(hex::decode("d369452197c2a56481e5e2d3e8bf03de2349f67a63151956822208c2334adee2").unwrap()).unwrap();
+        let public_key = <[u8; 32]>::try_from(hex::decode(TEST_PUBLIC_KEY).unwrap()).unwrap();
         WalletV4R2::new(public_key).unwrap().address().encode()
     }
 
@@ -48,7 +45,7 @@ mod tests {
         let ton_data = TonSignMessageData::new(payload, "example.com".to_string(), Some(signer_address()));
         let data = ton_data.to_bytes();
 
-        let private_key = hex::decode("1e9d38b5274152a78dff1a86fa464ceadc1f4238ca2c17060c3c507349424a34").unwrap();
+        let private_key = hex::decode(TEST_PRIVATE_KEY).unwrap();
         let timestamp = 1234567890u64;
 
         let result = sign_personal(&data, &private_key, timestamp).unwrap();
@@ -57,7 +54,7 @@ mod tests {
             hex::encode(&result.signature),
             "626168d23a7db9b8fa2716a7d3e3deeb3999f43dc6dfdd747206b6dba01058a4d785130710e2d4140730a643e2d633e76366f52dda8afd5c2acf4a6acb08ba0b"
         );
-        assert_eq!(hex::encode(&result.public_key), "d369452197c2a56481e5e2d3e8bf03de2349f67a63151956822208c2334adee2");
+        assert_eq!(hex::encode(&result.public_key), TEST_PUBLIC_KEY);
         assert_eq!(result.timestamp, timestamp);
     }
 
@@ -68,7 +65,7 @@ mod tests {
         let ton_data = TonSignMessageData::new(payload, "example.com".to_string(), Some(address));
         let data = ton_data.to_bytes();
 
-        let private_key = hex::decode("1e9d38b5274152a78dff1a86fa464ceadc1f4238ca2c17060c3c507349424a34").unwrap();
+        let private_key = hex::decode(TEST_PRIVATE_KEY).unwrap();
         let result = sign_personal(&data, &private_key, 1234567890).unwrap();
 
         assert_eq!(
@@ -93,12 +90,12 @@ mod tests {
         let ton_data = TonSignMessageData::new(payload, "example.com".to_string(), None);
         let data = ton_data.to_bytes();
 
-        let private_key = hex::decode("1e9d38b5274152a78dff1a86fa464ceadc1f4238ca2c17060c3c507349424a34").unwrap();
+        let private_key = hex::decode(TEST_PRIVATE_KEY).unwrap();
         let timestamp = 1234567890u64;
 
         let result = sign_personal(&data, &private_key, timestamp).unwrap();
 
-        assert_eq!(hex::encode(&result.public_key), "d369452197c2a56481e5e2d3e8bf03de2349f67a63151956822208c2334adee2");
+        assert_eq!(hex::encode(&result.public_key), TEST_PUBLIC_KEY);
         assert_eq!(result.signature.len(), 64);
         assert_eq!(result.timestamp, timestamp);
     }
@@ -112,7 +109,7 @@ mod tests {
         let ton_data = TonSignMessageData::new(payload, "example.com".to_string(), Some(signer_address()));
         let data = ton_data.to_bytes();
 
-        let private_key = hex::decode("1e9d38b5274152a78dff1a86fa464ceadc1f4238ca2c17060c3c507349424a34").unwrap();
+        let private_key = hex::decode(TEST_PRIVATE_KEY).unwrap();
         let result = sign_personal(&data, &private_key, 1234567890).unwrap();
 
         assert_eq!(
@@ -132,7 +129,7 @@ mod tests {
         );
         let data = ton_data.to_bytes();
 
-        let private_key = hex::decode("1e9d38b5274152a78dff1a86fa464ceadc1f4238ca2c17060c3c507349424a34").unwrap();
+        let private_key = hex::decode(TEST_PRIVATE_KEY).unwrap();
         let result = sign_personal(&data, &private_key, 1234567890);
 
         assert_eq!(result.err().unwrap().to_string(), "Invalid input: TON from does not match signer address");

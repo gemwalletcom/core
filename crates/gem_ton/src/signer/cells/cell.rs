@@ -18,22 +18,15 @@ pub struct Cell {
 }
 
 impl Cell {
-    pub fn new(data: Vec<u8>, bit_len: usize, references: Vec<CellArc>) -> Result<Self, SignerError> {
-        if bit_len > MAX_CELL_BITS {
-            return Err(SignerError::invalid_input(format!("cell exceeds {MAX_CELL_BITS} bits")));
-        }
-        if references.len() > MAX_CELL_REFERENCES {
-            return Err(SignerError::invalid_input(format!("cell exceeds {MAX_CELL_REFERENCES} references")));
-        }
-        if data.len() != bit_len.div_ceil(8) {
-            return Err(SignerError::invalid_input("cell data length does not match bit length"));
+    pub fn try_new(data: Vec<u8>, bit_len: usize, references: Vec<CellArc>) -> Option<Self> {
+        if bit_len > MAX_CELL_BITS || references.len() > MAX_CELL_REFERENCES || data.len() != bit_len.div_ceil(8) {
+            return None;
         }
 
         let depth = if references.is_empty() {
             0
         } else {
-            let max_depth = references.iter().map(|reference| reference.depth).max().unwrap_or_default();
-            max_depth.checked_add(1).ok_or_else(|| SignerError::invalid_input("cell depth overflow"))?
+            references.iter().map(|reference| reference.depth).max()?.checked_add(1)?
         };
 
         let mut repr = Vec::with_capacity(2 + data.len() + references.len() * 34);
@@ -47,7 +40,7 @@ impl Cell {
             repr.extend_from_slice(&reference.hash);
         }
 
-        Ok(Self {
+        Some(Self {
             data,
             bit_len,
             references,
@@ -56,19 +49,23 @@ impl Cell {
         })
     }
 
+    pub fn new(data: Vec<u8>, bit_len: usize, references: Vec<CellArc>) -> Result<Self, SignerError> {
+        Self::try_new(data, bit_len, references).ok_or_else(|| SignerError::invalid_input("invalid cell"))
+    }
+
     pub fn into_arc(self) -> CellArc {
         Arc::new(self)
     }
 
-    pub(super) fn bits_descriptor(bit_len: usize) -> Result<u8, SignerError> {
+    fn bits_descriptor(bit_len: usize) -> Option<u8> {
         let data_len = bit_len.div_ceil(8);
         if data_len > 128 {
-            return Err(SignerError::invalid_input("cell payload too large"));
+            return None;
         }
-        Ok((data_len * 2 - usize::from(!bit_len.is_multiple_of(8))) as u8)
+        Some((data_len * 2 - usize::from(!bit_len.is_multiple_of(8))) as u8)
     }
 
-    pub(super) fn serialized_bits(data: &[u8], bit_len: usize) -> Vec<u8> {
+    fn serialized_bits(data: &[u8], bit_len: usize) -> Vec<u8> {
         let data_len = bit_len.div_ceil(8);
         if data_len == 0 {
             return Vec::new();

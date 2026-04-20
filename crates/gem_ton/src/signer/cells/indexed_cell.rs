@@ -3,16 +3,16 @@ use std::collections::BTreeMap;
 
 use super::cell::{CellArc, MAX_CELL_REFERENCES};
 
-pub(super) type IndexedCellRef = RefCell<IndexedCell>;
-pub(super) type IndexedCells = BTreeMap<[u8; 32], IndexedCellRef>;
+pub type IndexedCellRef = RefCell<IndexedCell>;
+pub type IndexedCells = BTreeMap<[u8; 32], IndexedCellRef>;
 
 #[derive(Clone)]
-pub(super) struct IndexedCell {
+pub struct IndexedCell {
     pub index: usize,
     pub cell: CellArc,
 }
 
-pub(super) fn build_index(roots: &[CellArc]) -> IndexedCells {
+pub fn build_index(roots: &[CellArc]) -> IndexedCells {
     let mut indexed_cells = BTreeMap::new();
     let mut next_index = 0usize;
 
@@ -63,7 +63,7 @@ pub(super) fn build_index(roots: &[CellArc]) -> IndexedCells {
     indexed_cells
 }
 
-pub(super) fn ordered_indexed_cells(indexed_cells: &IndexedCells) -> Vec<&IndexedCellRef> {
+pub fn ordered_indexed_cells(indexed_cells: &IndexedCells) -> Vec<&IndexedCellRef> {
     let mut ordered = indexed_cells.values().collect::<Vec<_>>();
     ordered.sort_unstable_by_key(|cell| cell.borrow().index);
     for (real_index, cell) in ordered.iter().enumerate() {

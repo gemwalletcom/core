@@ -45,7 +45,7 @@ impl BagOfCells {
             reader.skip(header.cells_count * header.off_bytes)?;
         }
 
-        let raw_cells = read_all_raw_cells(&mut reader, &header)?;
+        let raw_cells = header.read_raw_cells(&mut reader)?;
 
         if header.has_crc32c {
             validate_crc32c(&mut reader, bytes)?;
@@ -56,23 +56,25 @@ impl BagOfCells {
         }
 
         let cells = build_cell_tree(&raw_cells)?;
-        let roots = resolve_indexes(&root_indexes, &cells, "BoC root out of bounds")?;
+        let roots = root_indexes
+            .iter()
+            .map(|index| resolve_reverse_index(*index, cells.len(), &cells, "BoC root out of bounds"))
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(Self { roots })
     }
 
-    pub fn single_root(&self) -> Result<&CellArc, SignerError> {
+    pub fn get_single_root(&self) -> Result<&CellArc, SignerError> {
         match self.roots.as_slice() {
             [root] => Ok(root),
             _ => Err(invalid("BoC must contain exactly one root")),
         }
     }
 
-    pub fn parse_base64_root(value: &str) -> Result<CellArc, SignerError> {
-        Ok(Self::parse_base64(value)?.single_root()?.clone())
-    }
-
-    pub fn parse_optional_base64_root(value: &str) -> Result<Option<CellArc>, SignerError> {
-        if value.is_empty() { Ok(None) } else { Self::parse_base64_root(value).map(Some) }
+    pub fn parse_base64_root(value: &str) -> Result<Option<CellArc>, SignerError> {
+        if value.is_empty() {
+            return Ok(None);
+        }
+        Ok(Some(Self::parse_base64(value)?.get_single_root()?.clone()))
     }
 
     pub fn to_base64(&self, with_crc32c: bool) -> Result<String, SignerError> {
@@ -126,16 +128,6 @@ impl BagOfCells {
     }
 }
 
-fn read_all_raw_cells(reader: &mut BitReader<'_>, header: &BocHeader) -> Result<Vec<RawCell>, SignerError> {
-    let start = reader.position();
-    let raw_cells = (0..header.cells_count).map(|_| RawCell::parse(reader, header.ref_bytes)).collect::<Result<Vec<_>, _>>()?;
-
-    if reader.position().saturating_sub(start) != header.total_cells_size {
-        return Err(invalid("BoC cell size does not match header"));
-    }
-    Ok(raw_cells)
-}
-
 fn validate_crc32c(reader: &mut BitReader<'_>, bytes: &[u8]) -> Result<(), SignerError> {
     let expected = reader.read_u32_le()?;
     let payload_end = bytes.len().checked_sub(4).ok_or_else(|| invalid("invalid BoC length"))?;
@@ -162,10 +154,6 @@ fn build_cell_tree(raw_cells: &[RawCell]) -> Result<Vec<CellArc>, SignerError> {
         cells.push(Cell::new(raw.data.clone(), raw.bit_len, references)?.into_arc());
     }
     Ok(cells)
-}
-
-fn resolve_indexes(indexes: &[usize], cells: &[CellArc], error: &'static str) -> Result<Vec<CellArc>, SignerError> {
-    indexes.iter().map(|index| resolve_reverse_index(*index, cells.len(), cells, error)).collect()
 }
 
 fn resolve_reverse_index(index: usize, total: usize, cells: &[CellArc], error: &'static str) -> Result<CellArc, SignerError> {

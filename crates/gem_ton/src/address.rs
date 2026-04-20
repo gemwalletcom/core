@@ -77,6 +77,16 @@ impl Address {
             .map_err(|e| SignerError::invalid_input(e.to_string()))
     }
 
+    pub fn ensure_matches(claimed: Option<&str>, actual: &str) -> Result<(), SignerError> {
+        let Some(claimed) = claimed.filter(|value| !value.is_empty()) else {
+            return Ok(());
+        };
+        if Self::parse(claimed)? != Self::parse(actual)? {
+            return Err(SignerError::invalid_input("TON from does not match signer address"));
+        }
+        Ok(())
+    }
+
     fn encode_user_friendly(&self) -> String {
         let mut buffer = [0u8; USER_FRIENDLY_ADDRESS_LEN];
 

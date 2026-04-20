@@ -92,13 +92,13 @@ impl TonSignMessageData {
     }
 
     pub fn hash(&self, timestamp: u64) -> Result<Vec<u8>, SignerError> {
-        self.hash_with_address(timestamp, None)
+        let address = self.address.as_deref().ok_or_else(|| SignerError::invalid_input("missing TON address"))?;
+        self.hash_with_address(timestamp, &Address::parse(address)?)
     }
 
-    pub fn hash_with_address(&self, timestamp: u64, fallback_address: Option<&str>) -> Result<Vec<u8>, SignerError> {
-        let address = self.address(fallback_address)?;
+    pub fn hash_with_address(&self, timestamp: u64, address: &Address) -> Result<Vec<u8>, SignerError> {
         match &self.payload {
-            TonSignDataPayload::Cell { schema, cell } => self.cell_payload_hash(schema, cell, &address, timestamp),
+            TonSignDataPayload::Cell { schema, cell } => self.cell_payload_hash(schema, cell, address, timestamp),
             TonSignDataPayload::Text { .. } | TonSignDataPayload::Binary { .. } => {
                 let domain_bytes = self.domain.as_bytes();
                 let (type_prefix, payload_bytes) = self.payload.encode()?;
@@ -119,17 +119,8 @@ impl TonSignMessageData {
         }
     }
 
-    fn address(&self, fallback_address: Option<&str>) -> Result<Address, SignerError> {
-        let address = self
-            .address
-            .as_deref()
-            .or(fallback_address)
-            .ok_or_else(|| SignerError::invalid_input("missing TON address"))?;
-        Address::parse(address)
-    }
-
     fn cell_payload_hash(&self, schema: &str, cell: &str, address: &Address, timestamp: u64) -> Result<Vec<u8>, SignerError> {
-        let payload = BagOfCells::parse_base64(cell)?.single_root()?.clone();
+        let payload = BagOfCells::parse_base64(cell)?.get_single_root()?.clone();
         let domain = self.dns_wire_domain()?;
 
         let mut domain_builder = CellBuilder::new();

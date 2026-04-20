@@ -87,14 +87,9 @@ impl WalletV4R2 {
         data.store_u32(32, 0)?.store_i32(32, DEFAULT_WALLET_ID)?.store_slice(public_key)?.store_bit(false)?;
 
         Ok(StateInit {
-            code: BagOfCells::parse_base64_root(WALLET_V4R2_CODE_BOC)?,
+            code: BagOfCells::parse_base64(WALLET_V4R2_CODE_BOC)?.get_single_root()?.clone(),
             data: data.build()?.into_arc(),
         })
     }
 }
 
-pub(super) fn build_signed_message(signature: &[u8; 64], external_body: &Cell) -> Result<Cell, SignerError> {
-    let mut builder = CellBuilder::new();
-    builder.store_slice(signature)?.store_cell(external_body)?;
-    builder.build()
-}

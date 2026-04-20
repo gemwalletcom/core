@@ -11,19 +11,21 @@ pub(super) struct RawCell {
 
 impl RawCell {
     pub(super) fn try_parse(reader: &mut BitReader<'_>, ref_size: usize) -> Option<Self> {
-        let d1 = reader.read_u8().ok()?;
-        let d2 = reader.read_u8().ok()?;
+        // d1 (refs descriptor): bits[0..3] ref count | bit 3 is_exotic | bit 4 has_hashes | bits[5..7] level mask
+        let refs_descriptor = reader.read_u8().ok()?;
+        // d2 (bits descriptor): encodes data length; LSB=0 means full bytes, LSB=1 means last byte has padding
+        let bits_descriptor = reader.read_u8().ok()?;
 
-        let ref_count = (d1 & 0b111) as usize;
-        let is_exotic = d1 & 0b1000 != 0;
-        let has_hashes = d1 & 0b10000 != 0;
-        let level_mask = d1 >> 5;
+        let ref_count = (refs_descriptor & 0b111) as usize;
+        let is_exotic = refs_descriptor & 0b1000 != 0;
+        let has_hashes = refs_descriptor & 0b10000 != 0;
+        let level_mask = refs_descriptor >> 5;
         if is_exotic || has_hashes || level_mask != 0 {
             return None;
         }
 
-        let data_size = ((d2 >> 1) + (d2 & 1)) as usize;
-        let full_bytes = d2 & 1 == 0;
+        let data_size = ((bits_descriptor >> 1) + (bits_descriptor & 1)) as usize;
+        let full_bytes = bits_descriptor & 1 == 0;
         let data = reader.read_bytes(data_size).ok()?;
         let (data, bit_len) = Self::unpad_cell_bits(data, full_bytes)?;
 

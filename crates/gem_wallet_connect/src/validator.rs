@@ -4,7 +4,7 @@ use crate::actions::WalletConnectTransactionType;
 use crate::sign_type::SignDigestType;
 use gem_evm::domain::host_only;
 use gem_evm::siwe::SiweMessage;
-use gem_ton::signer::TonSignMessageData;
+use gem_ton::signer::{TonSignMessageData, validate_network};
 use primitives::{Chain, WCTonSendTransaction, WalletConnectCAIP2};
 
 pub struct SignMessageValidation<'a> {
@@ -30,8 +30,8 @@ pub fn validate_sign_message(input: &SignMessageValidation) -> Result<(), String
         }
         SignDigestType::TonPersonal => {
             let data = TonSignMessageData::from_bytes(input.data.as_bytes()).map_err(|e| e.to_string())?;
-            validate_ton_network(data.network.as_deref(), input.chain)?;
-            Ok(())
+            let expected = WalletConnectCAIP2::get_reference(input.chain).ok_or_else(|| "Unsupported TON chain".to_string())?;
+            validate_network(data.network.as_deref(), &expected)
         }
         SignDigestType::Eip191 | SignDigestType::Siwe => validate_siwe(input),
         SignDigestType::Base58 | SignDigestType::SuiPersonal | SignDigestType::BitcoinPersonal | SignDigestType::TronPersonal => Ok(()),
@@ -73,7 +73,8 @@ pub fn validate_send_transaction(transaction_type: &WalletConnectTransactionType
     };
 
     let request = WCTonSendTransaction::from_bytes(data.as_bytes()).map_err(|_| "Invalid JSON".to_string())?;
-    validate_ton_network(request.network.as_deref(), Chain::Ton)?;
+    let expected = WalletConnectCAIP2::get_reference(Chain::Ton).ok_or_else(|| "Unsupported TON chain".to_string())?;
+    validate_network(request.network.as_deref(), &expected)?;
 
     if let Some(valid_until) = request.valid_until.map(i64::from)
         && current_timestamp() >= valid_until
@@ -81,17 +82,6 @@ pub fn validate_send_transaction(transaction_type: &WalletConnectTransactionType
         return Err("Transaction expired".to_string());
     }
 
-    Ok(())
-}
-
-fn validate_ton_network(network: Option<&str>, chain: Chain) -> Result<(), String> {
-    let Some(network) = network.filter(|network| !network.is_empty()) else {
-        return Ok(());
-    };
-    let expected = WalletConnectCAIP2::get_reference(chain).ok_or_else(|| "Unsupported TON chain".to_string())?;
-    if network != expected {
-        return Err(format!("Network mismatch: TON network {} does not match wallet network {}", network, expected));
-    }
     Ok(())
 }
 

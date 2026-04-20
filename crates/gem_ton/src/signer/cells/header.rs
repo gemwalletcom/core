@@ -1,6 +1,6 @@
 use primitives::SignerError;
 
-use super::{invalid, reader::BitReader};
+use super::{invalid, raw_cell::RawCell, reader::BitReader};
 
 pub(super) const BOC_MAGIC: u32 = 0xb5ee9c72;
 const MAX_CELLS: usize = 4096;
@@ -67,5 +67,15 @@ impl BocHeader {
 
     pub(super) fn parse(reader: &mut BitReader<'_>) -> Result<Self, SignerError> {
         Self::try_parse(reader).ok_or_else(|| invalid("invalid BoC header"))
+    }
+
+    pub(super) fn read_raw_cells(&self, reader: &mut BitReader<'_>) -> Result<Vec<RawCell>, SignerError> {
+        let start = reader.position();
+        let raw_cells = (0..self.cells_count).map(|_| RawCell::parse(reader, self.ref_bytes)).collect::<Result<Vec<_>, _>>()?;
+
+        if reader.position().saturating_sub(start) != self.total_cells_size {
+            return Err(invalid("BoC cell size does not match header"));
+        }
+        Ok(raw_cells)
     }
 }
