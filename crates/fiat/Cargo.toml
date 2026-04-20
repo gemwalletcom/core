@@ -21,7 +21,7 @@ tokio = { workspace = true }
 
 settings = { path = "../settings" }
 storage = { path = "../storage" }
-primitives = { path = "../primitives", features = ["testkit"] }
+primitives = { path = "../primitives" }
 chain_primitives = { path = "../chain_primitives" }
 serde_serializers = { path = "../serde_serializers" }
 number_formatter = { path = "../number_formatter" }
@@ -31,6 +31,7 @@ gem_client = { path = "../gem_client", features = ["reqwest"] }
 gem_tracing = { path = "../tracing" }
 
 [dev-dependencies]
+primitives = { path = "../primitives", features = ["testkit"] }
 
 [features]
 # Feature flag for integration tests

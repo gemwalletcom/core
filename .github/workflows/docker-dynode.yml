@@ -33,6 +33,6 @@ jobs:
           file: ./Dockerfile
           target: dynode
           push: false
-          cache-from: type=gha,scope=core
-          cache-to: type=gha,mode=max,scope=core
+          cache-from: type=gha,scope=dynode
+          cache-to: type=gha,mode=max,scope=dynode
           tags: dynode:latest

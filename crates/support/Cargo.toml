@@ -10,7 +10,10 @@ reqwest = { workspace = true }
 async-trait = { workspace = true }
 gem_tracing = { path = "../tracing" }
 localizer = { path = "../localizer" }
-primitives = { path = "../primitives", features = ["testkit"] }
+primitives = { path = "../primitives" }
 storage = { path = "../storage" }
 streamer = { path = "../streamer" }
 claude = { path = "../claude" }
+
+[dev-dependencies]
+primitives = { path = "../primitives", features = ["testkit"] }
