@@ -9,6 +9,7 @@ use primitives::{
 };
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
+use std::collections::HashSet;
 use storage::Database;
 use storage::models::{
     ChartRow, ConfigRow, FiatAssetRow, FiatProviderCountryRow, FiatRateRow, NewFiatTransactionRow, NewWebhookEndpointRow, PriceAssetRow, PriceRow, UpdateDeviceRow,
@@ -94,6 +95,18 @@ fn setup_database(database: &Database) -> Result<(), Box<dyn std::error::Error +
     info_with_fields!("setup", step = "param config");
     let param_configs: Vec<ConfigRow> = ConfigParamKey::all().into_iter().map(ConfigRow::from_param).collect();
     let _ = database.client()?.add_config(param_configs);
+
+    info_with_fields!("setup", step = "cleanup stale config keys");
+    let valid: HashSet<String> = ConfigKey::all()
+        .into_iter()
+        .map(|k| k.as_ref().to_string())
+        .chain(ConfigParamKey::all().into_iter().map(|k| k.key()))
+        .collect();
+    let stale: Vec<String> = database.client()?.get_config_keys()?.into_iter().filter(|k| !valid.contains(k)).collect();
+    if !stale.is_empty() {
+        info_with_fields!("setup", step = "delete stale config keys", count = stale.len(), keys = format!("{:?}", stale));
+        let _ = database.client()?.delete_keys(stale);
+    }
 
     Ok(())
 }
