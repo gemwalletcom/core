@@ -94,9 +94,9 @@ diesel::table! {
         #[max_length = 128]
         token_id -> Nullable<Varchar>,
         asset_type -> AssetType,
-        #[max_length = 64]
+        #[max_length = 128]
         name -> Varchar,
-        #[max_length = 16]
+        #[max_length = 32]
         symbol -> Varchar,
         decimals -> Int4,
         updated_at -> Timestamp,

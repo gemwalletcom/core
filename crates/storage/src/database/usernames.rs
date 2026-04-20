@@ -14,7 +14,6 @@ pub(crate) trait UsernamesStore {
     fn get_username(&mut self, lookup: UsernameLookup) -> Result<UsernameRow, diesel::result::Error>;
     fn create_username(&mut self, username: NewUsernameRow) -> Result<UsernameRow, diesel::result::Error>;
     fn update_username(&mut self, wallet_id: i32, new_username: &str) -> Result<UsernameRow, diesel::result::Error>;
-    fn change_username(&mut self, old_username: &str, new_username: &str) -> Result<(), diesel::result::Error>;
 }
 
 impl UsernamesStore for DatabaseClient {
@@ -46,13 +45,5 @@ impl UsernamesStore for DatabaseClient {
             .set(dsl::username.eq(new_username))
             .returning(UsernameRow::as_returning())
             .get_result(&mut self.connection)
-    }
-
-    fn change_username(&mut self, old_username: &str, new_username: &str) -> Result<(), diesel::result::Error> {
-        use crate::schema::usernames::dsl;
-        diesel::update(dsl::usernames.filter(dsl::username.eq(old_username)))
-            .set(dsl::username.eq(new_username))
-            .execute(&mut self.connection)?;
-        Ok(())
     }
 }

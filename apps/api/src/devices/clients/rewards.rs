@@ -104,7 +104,11 @@ impl RewardsClient {
             .await
             .map_err(|e| self.map_username_error(e, locale))?;
 
-        let (rewards, event_id) = self.db.rewards()?.create_reward(wallet.id, code)?;
+        let (rewards, event_id) = self
+            .db
+            .rewards()?
+            .create_reward(wallet.id, code)
+            .map_err(|e| RewardsError::Username(UsernameError::Validation(e).localize(locale)))?;
         self.ip_security_client.record_username_creation(&ip_result.country_code, ip_address, device_id).await?;
         self.publish_events(vec![event_id]).await?;
         Ok(rewards)

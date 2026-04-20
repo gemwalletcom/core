@@ -26,7 +26,7 @@ pub use self::database::{
     rewards_redemptions::RedemptionUpdate,
     transactions::{TransactionFilter, TransactionUpdate},
 };
-pub use self::error::{DatabaseError, DieselResultExt, ReferralValidationError};
+pub use self::error::{DatabaseError, DieselResultExt, ReferralValidationError, UsernameValidationError};
 pub use self::models::{AssetUsageRankRow, FiatAssetRowsExt, NewNotificationRow, NewWalletRow, RewardRedemptionOptionRow};
 pub use self::repositories::{
     assets_addresses_repository::AssetsAddressesRepository,
