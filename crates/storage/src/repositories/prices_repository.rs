@@ -23,6 +23,7 @@ pub trait PricesRepository {
     fn get_primary_price_key(&mut self, asset_id: &str) -> Result<AssetPriceKey, DatabaseError>;
     fn get_primary_prices(&mut self, asset_ids: &[String]) -> Result<Vec<(AssetId, PriceRow)>, DatabaseError>;
     fn get_price_by_id(&mut self, price_id: &str) -> Result<Price, DatabaseError>;
+    fn get_prices_for_asset(&mut self, asset_id: &str) -> Result<Vec<PriceRow>, DatabaseError>;
     fn get_prices_assets_for_price_ids(&mut self, ids: Vec<String>) -> Result<Vec<PriceAssetRow>, DatabaseError>;
     fn delete_prices(&mut self, ids: Vec<String>) -> Result<usize, DatabaseError>;
     fn get_assets_with_prices_by_filter(&mut self, filters: Vec<AssetsWithPricesFilter>) -> Result<Vec<PriceAssetDataRow>, DatabaseError>;
@@ -89,6 +90,13 @@ impl PricesRepository for DatabaseClient {
 
     fn get_price_by_id(&mut self, price_id: &str) -> Result<Price, DatabaseError> {
         Ok(PricesStore::get_price_by_id(self, price_id).or_not_found(price_id.to_string())?.as_primitive())
+    }
+
+    fn get_prices_for_asset(&mut self, asset_id: &str) -> Result<Vec<PriceRow>, DatabaseError> {
+        Ok(PricesStore::get_prices_for_asset_ids(self, &[asset_id.to_string()])?
+            .into_iter()
+            .map(|(_, row)| row)
+            .collect())
     }
 
     fn get_prices_assets_for_price_ids(&mut self, ids: Vec<String>) -> Result<Vec<PriceAssetRow>, DatabaseError> {
