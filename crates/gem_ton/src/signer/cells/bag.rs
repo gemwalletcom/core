@@ -7,7 +7,7 @@ use super::{
     header::{BOC_MAGIC, BocHeader},
     indexed_cell::{build_index, ordered_indexed_cells},
     invalid,
-    raw_cell::{RawCell, raw_cell_from_cell, raw_cell_size, read_raw_cell, write_raw_cell, write_var_uint},
+    raw_cell::{RawCell, write_var_uint},
     reader::BitReader,
 };
 
@@ -67,6 +67,14 @@ impl BagOfCells {
         }
     }
 
+    pub fn parse_base64_root(value: &str) -> Result<CellArc, SignerError> {
+        Ok(Self::parse_base64(value)?.single_root()?.clone())
+    }
+
+    pub fn parse_optional_base64_root(value: &str) -> Result<Option<CellArc>, SignerError> {
+        if value.is_empty() { Ok(None) } else { Self::parse_base64_root(value).map(Some) }
+    }
+
     pub fn to_base64(&self, with_crc32c: bool) -> Result<String, SignerError> {
         Ok(encode_base64(&self.serialize(with_crc32c)?))
     }
@@ -77,7 +85,7 @@ impl BagOfCells {
 
         let raw_cells = ordered_cells
             .iter()
-            .map(|indexed| raw_cell_from_cell(&indexed.borrow().cell, &indexed_cells))
+            .map(|indexed| RawCell::from_cell(&indexed.borrow().cell, &indexed_cells))
             .collect::<Result<Vec<_>, _>>()?;
 
         let root_indexes = self
@@ -85,14 +93,14 @@ impl BagOfCells {
             .iter()
             .map(|root| {
                 indexed_cells
-                    .get(&root.cell_hash())
+                    .get(&root.hash)
                     .map(|indexed| indexed.borrow().index)
                     .ok_or_else(|| invalid("missing BoC root"))
             })
             .collect::<Result<Vec<_>, _>>()?;
 
         let ref_bytes = bytes_needed(raw_cells.len());
-        let total_cells_size = raw_cells.iter().map(|cell| raw_cell_size(cell, ref_bytes)).sum::<usize>();
+        let total_cells_size = raw_cells.iter().map(|cell| cell.size(ref_bytes)).sum::<usize>();
         let offset_bytes = bytes_needed(total_cells_size.max(1));
 
         let mut output = Vec::new();
@@ -107,7 +115,7 @@ impl BagOfCells {
             write_var_uint(&mut output, *root_index, ref_bytes);
         }
         for cell in &raw_cells {
-            write_raw_cell(&mut output, cell, ref_bytes);
+            cell.write(&mut output, ref_bytes);
         }
 
         if with_crc32c {
@@ -120,7 +128,7 @@ impl BagOfCells {
 
 fn read_all_raw_cells(reader: &mut BitReader<'_>, header: &BocHeader) -> Result<Vec<RawCell>, SignerError> {
     let start = reader.position();
-    let raw_cells = (0..header.cells_count).map(|_| read_raw_cell(reader, header.ref_bytes)).collect::<Result<Vec<_>, _>>()?;
+    let raw_cells = (0..header.cells_count).map(|_| RawCell::parse(reader, header.ref_bytes)).collect::<Result<Vec<_>, _>>()?;
 
     if reader.position().saturating_sub(start) != header.total_cells_size {
         return Err(invalid("BoC cell size does not match header"));

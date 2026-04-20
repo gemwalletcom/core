@@ -1,17 +1,17 @@
-use primitives::SignerError;
+use primitives::{Address as AddressTrait, SignerError};
 use signer::Ed25519KeyPair;
 
-use super::transaction::wallet_address_from_public_key;
+use super::transaction::WalletV4R2;
 use super::types::{TonSignMessageData, TonSignResult};
 use crate::address::Address;
 
 pub fn sign_personal(data: &[u8], private_key: &[u8], timestamp: u64) -> Result<TonSignResult, SignerError> {
     let ton_data = TonSignMessageData::from_bytes(data)?;
     let key_pair = Ed25519KeyPair::from_private_key(private_key)?;
-    let address = wallet_address_from_public_key(key_pair.public_key_bytes)?;
+    let address = WalletV4R2::new(key_pair.public_key_bytes)?.address().encode();
     if let Some(expected_address) = ton_data.address.as_deref() {
-        let expected = parse_address(expected_address)?;
-        let actual = parse_address(&address)?;
+        let expected = Address::parse(expected_address)?;
+        let actual = Address::parse(&address)?;
         if expected != actual {
             return Err(SignerError::invalid_input("TON from does not match signer address"));
         }
@@ -25,12 +25,6 @@ pub fn sign_personal(data: &[u8], private_key: &[u8], timestamp: u64) -> Result<
     })
 }
 
-fn parse_address(address: &str) -> Result<Address, SignerError> {
-    Address::from_base64_url(address)
-        .or_else(|_| Address::from_hex_str(address))
-        .map_err(|e| SignerError::invalid_input(e.to_string()))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -39,7 +33,7 @@ mod tests {
 
     fn signer_address() -> String {
         let public_key = <[u8; 32]>::try_from(hex::decode("d369452197c2a56481e5e2d3e8bf03de2349f67a63151956822208c2334adee2").unwrap()).unwrap();
-        wallet_address_from_public_key(public_key).unwrap()
+        WalletV4R2::new(public_key).unwrap().address().encode()
     }
 
     fn sample_cell() -> String {

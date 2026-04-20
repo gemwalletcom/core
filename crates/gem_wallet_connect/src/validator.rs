@@ -4,6 +4,7 @@ use crate::actions::WalletConnectTransactionType;
 use crate::sign_type::SignDigestType;
 use gem_evm::domain::host_only;
 use gem_evm::siwe::SiweMessage;
+use gem_ton::signer::TonSignMessageData;
 use primitives::{Chain, WCTonSendTransaction, WalletConnectCAIP2};
 
 pub struct SignMessageValidation<'a> {
@@ -28,7 +29,7 @@ pub fn validate_sign_message(input: &SignMessageValidation) -> Result<(), String
             gem_evm::eip712::validate_eip712_chain_id(input.data, expected_chain_id)
         }
         SignDigestType::TonPersonal => {
-            let data = gem_ton::signer::TonSignMessageData::from_bytes(input.data.as_bytes()).map_err(|e| e.to_string())?;
+            let data = TonSignMessageData::from_bytes(input.data.as_bytes()).map_err(|e| e.to_string())?;
             validate_ton_network(data.network.as_deref(), input.chain)?;
             Ok(())
         }

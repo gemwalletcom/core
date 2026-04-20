@@ -3,7 +3,7 @@ use std::str::FromStr;
 
 use crc::Crc;
 use gem_encoding::{decode_base64_no_pad, decode_base64_url, encode_base64_url};
-use primitives::{Address as AddressTrait, AddressError};
+use primitives::{Address as AddressTrait, AddressError, SignerError};
 
 type Workchain = i32;
 type HashPart = [u8; 32];
@@ -15,19 +15,6 @@ const USER_FRIENDLY_ADDRESS_LEN: usize = 36;
 
 fn crc16(slice: &[u8]) -> u16 {
     Crc::<u16>::new(&crc::CRC_16_XMODEM).checksum(slice)
-}
-
-fn encode_user_friendly(bytes: &RawBytes) -> String {
-    let mut buffer = [0u8; USER_FRIENDLY_ADDRESS_LEN];
-
-    buffer[0] = USER_FRIENDLY_FLAG;
-    buffer[1..RAW_ADDRESS_LEN + 1].copy_from_slice(bytes);
-
-    let crc = crc16(&buffer[..RAW_ADDRESS_LEN + 1]);
-    buffer[34] = ((crc >> 8) & 0xFF) as u8;
-    buffer[35] = (crc & 0xFF) as u8;
-
-    encode_base64_url(&buffer)
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Hash)]
@@ -83,6 +70,25 @@ impl Address {
 
         Ok(Self::new(workchain, hash_part))
     }
+
+    pub fn parse(value: &str) -> Result<Self, SignerError> {
+        Self::from_base64_url(value)
+            .or_else(|_| Self::from_hex_str(value))
+            .map_err(|e| SignerError::invalid_input(e.to_string()))
+    }
+
+    fn encode_user_friendly(&self) -> String {
+        let mut buffer = [0u8; USER_FRIENDLY_ADDRESS_LEN];
+
+        buffer[0] = USER_FRIENDLY_FLAG;
+        buffer[1..RAW_ADDRESS_LEN + 1].copy_from_slice(&self.bytes);
+
+        let crc = crc16(&buffer[..RAW_ADDRESS_LEN + 1]);
+        buffer[34] = ((crc >> 8) & 0xFF) as u8;
+        buffer[35] = (crc & 0xFF) as u8;
+
+        encode_base64_url(&buffer)
+    }
 }
 
 impl FromStr for Address {
@@ -118,7 +124,7 @@ impl AddressTrait for Address {
     }
 
     fn encode(&self) -> String {
-        encode_user_friendly(&self.bytes)
+        self.encode_user_friendly()
     }
 }
 

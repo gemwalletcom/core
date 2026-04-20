@@ -20,18 +20,18 @@ pub(super) fn build_index(roots: &[CellArc]) -> IndexedCells {
     while !frontier.is_empty() {
         let mut next_frontier = Vec::with_capacity(frontier.len() * MAX_CELL_REFERENCES);
         for cell in frontier {
-            if indexed_cells.contains_key(&cell.cell_hash()) {
+            if indexed_cells.contains_key(&cell.hash) {
                 continue;
             }
             indexed_cells.insert(
-                cell.cell_hash(),
+                cell.hash,
                 RefCell::new(IndexedCell {
                     index: next_index,
                     cell: cell.clone(),
                 }),
             );
             next_index += 1;
-            next_frontier.extend(cell.references().iter().cloned());
+            next_frontier.extend(cell.references.iter().cloned());
         }
         frontier = next_frontier;
     }
@@ -43,7 +43,7 @@ pub(super) fn build_index(roots: &[CellArc]) -> IndexedCells {
                 continue;
             };
             let parent_index = parent.borrow().index;
-            let reference_hashes = parent.borrow().cell.references().iter().map(|reference| reference.cell_hash()).collect::<Vec<_>>();
+            let reference_hashes = parent.borrow().cell.references.iter().map(|reference| reference.hash).collect::<Vec<_>>();
             for reference_hash in reference_hashes {
                 let Some(reference) = indexed_cells.get(&reference_hash) else {
                     continue;

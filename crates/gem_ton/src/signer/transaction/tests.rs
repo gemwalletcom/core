@@ -8,9 +8,10 @@ use signer::Ed25519KeyPair;
 use super::{
     message::{DEFAULT_SEND_MODE, build_internal_message},
     request::{JettonTransferRequest, TransferPayload, TransferRequest},
-    signing::{parse_address, sign_data, sign_requests, sign_swap, sign_token_transfer, sign_transfer},
+    signing::{sign_data, sign_requests, sign_swap, sign_token_transfer, sign_transfer},
     wallet::WalletV4R2,
 };
+use crate::address::Address;
 use crate::signer::cells::{BagOfCells, BitReader, CellBuilder};
 
 const TEST_TON_PRIVATE_KEY: &str = "c7702dadcd00d470df27dee0ddd97fbcf9deba52b60f7dd2b296ff42bb1fcad6";
@@ -49,8 +50,8 @@ fn wc_ton_request(payload_boc: &str, valid_until: Option<u32>, from: Option<&str
 fn signed_expire_at(signed: &str) -> u32 {
     let signed = BagOfCells::parse_base64(signed).unwrap();
     let root = signed.single_root().unwrap();
-    let signed_body = root.references().last().unwrap();
-    let mut reader = BitReader::from_bits(signed_body.data(), signed_body.bit_len()).unwrap();
+    let signed_body = root.references.last().unwrap();
+    let mut reader = BitReader::from_bits(&signed_body.data, signed_body.bit_len).unwrap();
     reader.read_bytes(64).unwrap();
     let _wallet_id = reader.read_u32().unwrap();
     reader.read_u32().unwrap()
@@ -101,7 +102,7 @@ fn test_sign_jetton_transfer_matches_android_vector() {
 fn test_sign_deploy_matches_trust_wallet_core_vector() {
     let private_key = hex::decode(TRUST_WALLET_PRIVATE_KEY).unwrap();
     let request = TransferRequest {
-        destination: parse_address("EQDYW_1eScJVxtitoBRksvoV9cCYo4uKGWLVNIHB1JqRR3n0").unwrap(),
+        destination: Address::parse("EQDYW_1eScJVxtitoBRksvoV9cCYo4uKGWLVNIHB1JqRR3n0").unwrap(),
         value: BigUint::from(10u8),
         mode: DEFAULT_SEND_MODE,
         bounceable: true,
@@ -190,7 +191,7 @@ fn test_sign_swap_uses_custom_payload_transfer() {
 
 #[test]
 fn test_long_comments_use_snake_cells() {
-    let address = parse_address(SENDER_TOKEN_ADDRESS).unwrap();
+    let address = Address::parse(SENDER_TOKEN_ADDRESS).unwrap();
     let comment = "memo".repeat(80);
 
     let transfer = TransferRequest {
@@ -202,8 +203,8 @@ fn test_long_comments_use_snake_cells() {
         payload: None,
         state_init: None,
     };
-    let native_payload = build_internal_message(&transfer).unwrap().message.references().first().unwrap().clone();
-    assert!(!native_payload.references().is_empty());
+    let native_payload = build_internal_message(&transfer).unwrap().message.references.first().unwrap().clone();
+    assert!(!native_payload.references.is_empty());
 
     let jetton = TransferRequest {
         destination: address,
@@ -222,7 +223,7 @@ fn test_long_comments_use_snake_cells() {
         })),
         state_init: None,
     };
-    let jetton_payload = build_internal_message(&jetton).unwrap().message.references().first().unwrap().clone();
-    assert_eq!(jetton_payload.references().len(), 1);
-    assert!(!jetton_payload.references()[0].references().is_empty());
+    let jetton_payload = build_internal_message(&jetton).unwrap().message.references.first().unwrap().clone();
+    assert_eq!(jetton_payload.references.len(), 1);
+    assert!(!jetton_payload.references[0].references.is_empty());
 }

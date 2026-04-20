@@ -23,38 +23,38 @@ pub(super) struct BocHeader {
 }
 
 impl BocHeader {
-    pub(super) fn parse(reader: &mut BitReader<'_>) -> Result<Self, SignerError> {
-        if reader.read_u32()? != BOC_MAGIC {
-            return Err(invalid("unsupported BoC magic"));
+    pub(super) fn try_parse(reader: &mut BitReader<'_>) -> Option<Self> {
+        if reader.read_u32().ok()? != BOC_MAGIC {
+            return None;
         }
 
-        let flags = reader.read_u8()?;
+        let flags = reader.read_u8().ok()?;
         let ref_bytes = (flags & REF_SIZE_MASK) as usize;
         if ref_bytes == 0 || ref_bytes > MAX_REF_BYTES {
-            return Err(invalid("unsupported BoC size"));
+            return None;
         }
 
-        let off_bytes = reader.read_u8()? as usize;
+        let off_bytes = reader.read_u8().ok()? as usize;
         if off_bytes == 0 || off_bytes > MAX_OFF_BYTES {
-            return Err(invalid("unsupported BoC offset size"));
+            return None;
         }
 
-        let cells_count = reader.read_var_uint(ref_bytes)?;
-        let roots_count = reader.read_var_uint(ref_bytes)?;
-        let absent_count = reader.read_var_uint(ref_bytes)?;
-        let total_cells_size = reader.read_var_uint(off_bytes)?;
+        let cells_count = reader.read_var_uint(ref_bytes).ok()?;
+        let roots_count = reader.read_var_uint(ref_bytes).ok()?;
+        let absent_count = reader.read_var_uint(ref_bytes).ok()?;
+        let total_cells_size = reader.read_var_uint(off_bytes).ok()?;
 
         if cells_count == 0 || cells_count > MAX_CELLS {
-            return Err(invalid("unsupported BoC cell count"));
+            return None;
         }
         if roots_count == 0 || roots_count > cells_count {
-            return Err(invalid("unsupported BoC root count"));
+            return None;
         }
         if roots_count + absent_count > cells_count {
-            return Err(invalid("invalid BoC absent count"));
+            return None;
         }
 
-        Ok(Self {
+        Some(Self {
             has_idx: flags & HAS_IDX_FLAG != 0,
             has_crc32c: flags & HAS_CRC32C_FLAG != 0,
             ref_bytes,
@@ -63,5 +63,9 @@ impl BocHeader {
             roots_count,
             total_cells_size,
         })
+    }
+
+    pub(super) fn parse(reader: &mut BitReader<'_>) -> Result<Self, SignerError> {
+        Self::try_parse(reader).ok_or_else(|| invalid("invalid BoC header"))
     }
 }

@@ -1,7 +1,8 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use gem_ton::signer::wallet_state_init_base64_from_public_key;
+use gem_ton::signer::WalletV4R2;
+use primitives::hex::decode_hex;
 use primitives::{Account, Chain};
 
 const TON_PUBLIC_KEY_KEY: &str = "ton_getPublicKey";
@@ -11,23 +12,10 @@ const TRON_METHOD_VERSION_VALUE: &str = "v1";
 
 pub fn config_session_properties(mut properties: HashMap<String, String>, chains: &[Chain], accounts: &[Account]) -> HashMap<String, String> {
     if chains.contains(&Chain::Ton) {
-        if !properties.contains_key(TON_PUBLIC_KEY_KEY)
-            && let Some(public_key) = accounts
-                .iter()
-                .find(|account| account.chain == Chain::Ton)
-                .and_then(|account| account.public_key.as_ref().filter(|value| decode_public_key(value).is_some()).cloned())
-        {
-            properties.insert(TON_PUBLIC_KEY_KEY.to_string(), public_key);
-        }
-        if !properties.contains_key(TON_STATE_INIT_KEY)
-            && let Some(public_key) = properties.get(TON_PUBLIC_KEY_KEY).and_then(|value| decode_public_key(value))
-            && let Ok(state_init) = wallet_state_init_base64_from_public_key(public_key)
-        {
-            properties.insert(TON_STATE_INIT_KEY.to_string(), state_init);
-        }
+        properties = ton_session_properties(properties, accounts);
     }
-    if chains.contains(&Chain::Tron) && !properties.contains_key(TRON_METHOD_VERSION_KEY) {
-        properties.insert(TRON_METHOD_VERSION_KEY.to_string(), TRON_METHOD_VERSION_VALUE.to_string());
+    if chains.contains(&Chain::Tron) {
+        properties = tron_session_properties(properties);
     }
     properties
 }
@@ -36,10 +24,34 @@ pub fn parse_chains(chains: &[String]) -> Vec<Chain> {
     chains.iter().filter_map(|c| Chain::from_str(c).ok()).collect()
 }
 
+fn ton_session_properties(mut properties: HashMap<String, String>, accounts: &[Account]) -> HashMap<String, String> {
+    if !properties.contains_key(TON_PUBLIC_KEY_KEY)
+        && let Some(public_key) = accounts
+            .iter()
+            .find(|account| account.chain == Chain::Ton)
+            .and_then(|account| account.public_key.as_ref().filter(|value| decode_public_key(value).is_some()).cloned())
+    {
+        properties.insert(TON_PUBLIC_KEY_KEY.to_string(), public_key);
+    }
+    if !properties.contains_key(TON_STATE_INIT_KEY)
+        && let Some(public_key) = properties.get(TON_PUBLIC_KEY_KEY).and_then(|value| decode_public_key(value))
+        && let Ok(wallet) = WalletV4R2::new(public_key)
+        && let Ok(state_init) = wallet.state_init_base64()
+    {
+        properties.insert(TON_STATE_INIT_KEY.to_string(), state_init);
+    }
+    properties
+}
+
+fn tron_session_properties(mut properties: HashMap<String, String>) -> HashMap<String, String> {
+    if !properties.contains_key(TRON_METHOD_VERSION_KEY) {
+        properties.insert(TRON_METHOD_VERSION_KEY.to_string(), TRON_METHOD_VERSION_VALUE.to_string());
+    }
+    properties
+}
+
 fn decode_public_key(value: &str) -> Option<[u8; 32]> {
-    let value = value.strip_prefix("0x").unwrap_or(value);
-    let bytes = hex::decode(value).ok()?;
-    bytes.try_into().ok()
+    decode_hex(value).ok()?.try_into().ok()
 }
 
 #[cfg(test)]

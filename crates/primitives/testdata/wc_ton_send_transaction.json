@@ -1,0 +1,13 @@
+{
+    "valid_until": 123,
+    "messages": [
+        {
+            "address": "EQC...",
+            "amount": "1",
+            "payload": null,
+            "stateInit": null
+        }
+    ],
+    "from": "EQD...",
+    "network": "-239"
+}

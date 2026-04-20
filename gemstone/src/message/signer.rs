@@ -6,7 +6,8 @@ use bs58;
 use gem_evm::message::eip191_hash_message;
 use gem_sui::signer as sui_signer;
 use gem_ton::address::base64_to_hex_address;
-use gem_ton::signer::{TonSignDataResponse, TonSignMessageData, TonSignResult, sign_personal as ton_sign_personal, wallet_address_from_public_key};
+use gem_ton::signer::{TonSignDataResponse, TonSignMessageData, TonSignResult, WalletV4R2, sign_personal as ton_sign_personal};
+use primitives::Address as _;
 use primitives::hex::encode_with_0x;
 use signer::{SIGNATURE_LENGTH, SignatureScheme, Signer, apply_eth_recovery_id, hash_eip712};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -213,7 +214,7 @@ impl MessageSigner {
             Some(address) => address,
             None => {
                 let public_key: [u8; 32] = result.public_key.as_slice().try_into().map_err(|_| GemstoneError::from("Invalid TON public key length"))?;
-                wallet_address_from_public_key(public_key)?
+                WalletV4R2::new(public_key)?.address().encode()
             }
         };
         let raw_address = base64_to_hex_address(address)?;
@@ -686,7 +687,7 @@ Issued At: 2026-03-09T15:48:34.458Z"#;
             .unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&signed).unwrap();
         let public_key = <[u8; 32]>::try_from(hex::decode("d369452197c2a56481e5e2d3e8bf03de2349f67a63151956822208c2334adee2").unwrap()).unwrap();
-        let expected_address = base64_to_hex_address(wallet_address_from_public_key(public_key).unwrap()).unwrap();
+        let expected_address = base64_to_hex_address(WalletV4R2::new(public_key).unwrap().address().encode()).unwrap();
 
         assert!(parsed.get("publicKey").is_none());
         assert_eq!(parsed["domain"], "example.com");

@@ -56,16 +56,13 @@ mod tests {
 
     #[test]
     fn test_ton_send_transaction_from_bytes() {
-        let request = WCTonSendTransaction::from_bytes(
-            br#"{"valid_until":123,"messages":[{"address":"EQC...","amount":"1","payload":null,"stateInit":null}],"from":"EQD...","network":"-239"}"#,
-        )
-        .unwrap();
+        let request = WCTonSendTransaction::from_bytes(include_bytes!("../testdata/wc_ton_send_transaction.json")).unwrap();
         assert_eq!(request.valid_until, Some(123));
         assert_eq!(request.messages.len(), 1);
         assert_eq!(request.r#from.as_deref(), Some("EQD..."));
         assert_eq!(request.network.as_deref(), Some("-239"));
 
-        let legacy = WCTonSendTransaction::from_bytes(br#"[{"address":"EQC...","amount":"2","payload":"te6ccg==","stateInit":null}]"#).unwrap();
+        let legacy = WCTonSendTransaction::from_bytes(include_bytes!("../testdata/wc_ton_send_transaction_legacy.json")).unwrap();
         assert_eq!(legacy.valid_until, None);
         assert_eq!(legacy.messages.len(), 1);
         assert_eq!(legacy.messages[0].amount, "2");

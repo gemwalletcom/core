@@ -1,5 +1,5 @@
 use num_bigint::BigUint;
-use primitives::{Address as AddressTrait, SignerError};
+use primitives::SignerError;
 
 use super::message::InternalMessage;
 use crate::address::Address;
@@ -11,8 +11,8 @@ const WALLET_V4R2_CODE_BOC: &str = include_str!("wallet_v4r2_code.boc.b64");
 
 #[derive(Clone)]
 struct StateInit {
-    code: Option<CellArc>,
-    data: Option<CellArc>,
+    code: CellArc,
+    data: CellArc,
 }
 
 impl StateInit {
@@ -21,36 +21,35 @@ impl StateInit {
         builder
             .store_bit(false)?
             .store_bit(false)?
-            .store_bit(self.code.is_some())?
-            .store_bit(self.data.is_some())?
-            .store_bit(false)?;
-        if let Some(code) = &self.code {
-            builder.store_reference(code)?;
-        }
-        if let Some(data) = &self.data {
-            builder.store_reference(data)?;
-        }
+            .store_bit(true)?
+            .store_bit(true)?
+            .store_bit(false)?
+            .store_reference(&self.code)?
+            .store_reference(&self.data)?;
         builder.build()
     }
 }
 
-pub(super) struct WalletV4R2 {
+pub struct WalletV4R2 {
     public_key: [u8; 32],
     address: Address,
 }
 
 impl WalletV4R2 {
-    pub(super) fn new(public_key: [u8; 32]) -> Result<Self, SignerError> {
-        let state_init = wallet_state_init(&public_key)?;
+    pub fn new(public_key: [u8; 32]) -> Result<Self, SignerError> {
+        let state_init = Self::state_init(&public_key)?;
         Ok(Self {
             public_key,
-            address: Address::new(BASE_WORKCHAIN, state_init.to_cell()?.cell_hash()),
+            address: Address::new(BASE_WORKCHAIN, state_init.to_cell()?.hash),
         })
     }
 
-    #[cfg(test)]
-    pub(super) fn address(&self) -> &Address {
+    pub fn address(&self) -> &Address {
         &self.address
+    }
+
+    pub fn state_init_base64(&self) -> Result<String, SignerError> {
+        BagOfCells::from_root(Self::state_init(&self.public_key)?.to_cell()?).to_base64(true)
     }
 
     pub(super) fn build_external_body(&self, expire_at: u32, sequence: u32, messages: &[InternalMessage]) -> Result<Cell, SignerError> {
@@ -75,33 +74,23 @@ impl WalletV4R2 {
             .store_coins(&BigUint::from(0u8))?;
 
         if include_state_init {
-            builder.store_bit(true)?.store_bit(true)?.store_child(wallet_state_init(&self.public_key)?.to_cell()?)?;
+            builder.store_bit(true)?.store_bit(true)?.store_child(Self::state_init(&self.public_key)?.to_cell()?)?;
         } else {
             builder.store_bit(false)?;
         }
         builder.store_bit(true)?.store_child(signed_body)?;
         builder.build()
     }
-}
 
-pub fn wallet_address_from_public_key(public_key: [u8; 32]) -> Result<String, SignerError> {
-    Ok(WalletV4R2::new(public_key)?.address.encode())
-}
+    fn state_init(public_key: &[u8; 32]) -> Result<StateInit, SignerError> {
+        let mut data = CellBuilder::new();
+        data.store_u32(32, 0)?.store_i32(32, DEFAULT_WALLET_ID)?.store_slice(public_key)?.store_bit(false)?;
 
-pub fn wallet_state_init_base64_from_public_key(public_key: [u8; 32]) -> Result<String, SignerError> {
-    let state_init = wallet_state_init(&public_key)?.to_cell()?;
-    BagOfCells::from_root(state_init).to_base64(true)
-}
-
-fn wallet_state_init(public_key: &[u8; 32]) -> Result<StateInit, SignerError> {
-    let mut data = CellBuilder::new();
-    data.store_u32(32, 0)?.store_i32(32, DEFAULT_WALLET_ID)?.store_slice(public_key)?.store_bit(false)?;
-
-    let code = BagOfCells::parse_base64(WALLET_V4R2_CODE_BOC)?.single_root()?.clone();
-    Ok(StateInit {
-        code: Some(code),
-        data: Some(data.build()?.into_arc()),
-    })
+        Ok(StateInit {
+            code: BagOfCells::parse_base64_root(WALLET_V4R2_CODE_BOC)?,
+            data: data.build()?.into_arc(),
+        })
+    }
 }
 
 pub(super) fn build_signed_message(signature: &[u8; 64], external_body: &Cell) -> Result<Cell, SignerError> {

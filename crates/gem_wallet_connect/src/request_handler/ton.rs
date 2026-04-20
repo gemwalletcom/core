@@ -85,10 +85,7 @@ mod tests {
 
     #[test]
     fn test_parse_sign_message_preserves_cell_schema() {
-        let params = serde_json::from_str(
-            r#"[{"type":"cell","schema":"comment#00000000 text:SnakeData = InMsgBody;","cell":"te6c","from":"UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg","network":"-239"}]"#,
-        )
-        .unwrap();
+        let params = serde_json::from_str(include_str!("../../testdata/ton_sign_message_cell_schema.json")).unwrap();
         let action = TonRequestHandler::parse_sign_message(Chain::Ton, params, "https://react-app.walletconnect.com").unwrap();
         let WalletConnectAction::SignMessage { data, .. } = action else {
             panic!("Expected SignMessage action")

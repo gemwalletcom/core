@@ -99,7 +99,7 @@ impl TonSignMessageData {
         let address = self.address(fallback_address)?;
         match &self.payload {
             TonSignDataPayload::Cell { schema, cell } => self.cell_payload_hash(schema, cell, &address, timestamp),
-            _ => {
+            TonSignDataPayload::Text { .. } | TonSignDataPayload::Binary { .. } => {
                 let domain_bytes = self.domain.as_bytes();
                 let (type_prefix, payload_bytes) = self.payload.encode()?;
 
@@ -125,13 +125,7 @@ impl TonSignMessageData {
             .as_deref()
             .or(fallback_address)
             .ok_or_else(|| SignerError::invalid_input("missing TON address"))?;
-        Self::parse_address(address)
-    }
-
-    fn parse_address(address: &str) -> Result<Address, SignerError> {
-        Address::from_base64_url(address)
-            .or_else(|_| Address::from_hex_str(address))
-            .map_err(|e| SignerError::invalid_input(e.to_string()))
+        Address::parse(address)
     }
 
     fn cell_payload_hash(&self, schema: &str, cell: &str, address: &Address, timestamp: u64) -> Result<Vec<u8>, SignerError> {
@@ -150,7 +144,7 @@ impl TonSignMessageData {
             .store_child(domain_builder.build()?)?
             .store_reference(&payload)?;
 
-        Ok(builder.build()?.cell_hash().to_vec())
+        Ok(builder.build()?.hash.to_vec())
     }
 
     fn dns_wire_domain(&self) -> Result<Vec<u8>, SignerError> {
@@ -217,7 +211,7 @@ mod tests {
 
     #[test]
     fn test_parse_payload_cell() {
-        let json = r#"{"type":"cell","schema":"comment#00000000 text:SnakeData = InMsgBody;","cell":"te6c"}"#;
+        let json = include_str!("../../testdata/wc_sign_data_payload_cell.json");
         let parsed: TonSignDataPayload = serde_json::from_str(json).unwrap();
 
         assert_eq!(

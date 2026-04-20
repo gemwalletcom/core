@@ -146,13 +146,13 @@ impl CellBuilder {
     }
 
     pub fn store_cell_data(&mut self, cell: &Cell) -> Result<&mut Self, SignerError> {
-        self.writer.write_bits(cell.data(), cell.bit_len())?;
+        self.writer.write_bits(&cell.data, cell.bit_len)?;
         Ok(self)
     }
 
     pub fn store_cell(&mut self, cell: &Cell) -> Result<&mut Self, SignerError> {
         self.store_cell_data(cell)?;
-        for reference in cell.references() {
+        for reference in &cell.references {
             self.store_reference(reference)?;
         }
         Ok(self)

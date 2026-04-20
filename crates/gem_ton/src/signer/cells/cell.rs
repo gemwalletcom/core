@@ -10,11 +10,11 @@ pub type CellArc = Arc<Cell>;
 
 #[derive(Clone, Debug)]
 pub struct Cell {
-    data: Vec<u8>,
-    bit_len: usize,
-    references: Vec<CellArc>,
-    depth: u16,
-    hash: [u8; 32],
+    pub data: Vec<u8>,
+    pub bit_len: usize,
+    pub references: Vec<CellArc>,
+    pub(super) depth: u16,
+    pub hash: [u8; 32],
 }
 
 impl Cell {
@@ -38,8 +38,8 @@ impl Cell {
 
         let mut repr = Vec::with_capacity(2 + data.len() + references.len() * 34);
         repr.push(references.len() as u8);
-        repr.push(bits_descriptor(bit_len)?);
-        repr.extend_from_slice(&serialized_bits(&data, bit_len));
+        repr.push(Self::bits_descriptor(bit_len)?);
+        repr.extend_from_slice(&Self::serialized_bits(&data, bit_len));
         for reference in &references {
             repr.extend_from_slice(&reference.depth.to_be_bytes());
         }
@@ -60,42 +60,27 @@ impl Cell {
         Arc::new(self)
     }
 
-    pub fn bit_len(&self) -> usize {
-        self.bit_len
+    pub(super) fn bits_descriptor(bit_len: usize) -> Result<u8, SignerError> {
+        let data_len = bit_len.div_ceil(8);
+        if data_len > 128 {
+            return Err(SignerError::invalid_input("cell payload too large"));
+        }
+        Ok((data_len * 2 - usize::from(!bit_len.is_multiple_of(8))) as u8)
     }
 
-    pub fn data(&self) -> &[u8] {
-        &self.data
-    }
+    pub(super) fn serialized_bits(data: &[u8], bit_len: usize) -> Vec<u8> {
+        let data_len = bit_len.div_ceil(8);
+        if data_len == 0 {
+            return Vec::new();
+        }
 
-    pub fn references(&self) -> &[CellArc] {
-        &self.references
-    }
-
-    pub fn cell_hash(&self) -> [u8; 32] {
-        self.hash
+        let mut serialized = data[..data_len].to_vec();
+        if !bit_len.is_multiple_of(8) {
+            let marker_shift = 8 - (bit_len % 8) - 1;
+            let last_index = serialized.len() - 1;
+            serialized[last_index] |= 1 << marker_shift;
+        }
+        serialized
     }
 }
 
-pub(super) fn bits_descriptor(bit_len: usize) -> Result<u8, SignerError> {
-    let data_len = bit_len.div_ceil(8);
-    if data_len > 128 {
-        return Err(SignerError::invalid_input("cell payload too large"));
-    }
-    Ok((data_len * 2 - usize::from(!bit_len.is_multiple_of(8))) as u8)
-}
-
-pub(super) fn serialized_bits(data: &[u8], bit_len: usize) -> Vec<u8> {
-    let data_len = bit_len.div_ceil(8);
-    if data_len == 0 {
-        return Vec::new();
-    }
-
-    let mut serialized = data[..data_len].to_vec();
-    if !bit_len.is_multiple_of(8) {
-        let marker_shift = 8 - (bit_len % 8) - 1;
-        let last_index = serialized.len() - 1;
-        serialized[last_index] |= 1 << marker_shift;
-    }
-    serialized
-}
