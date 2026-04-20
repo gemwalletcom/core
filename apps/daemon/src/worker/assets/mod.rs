@@ -1,5 +1,6 @@
 mod asset_rank_updater;
 pub mod asset_updater;
+mod assets_has_price_updater;
 mod assets_images_updater;
 mod perpetual_updater;
 mod staking_apy_updater;
@@ -12,6 +13,7 @@ use std::sync::Arc;
 use api_connector::StaticAssetsClient;
 use asset_rank_updater::AssetRankUpdater;
 use asset_updater::{AssetUpdater, AssetUpdaterConfig};
+use assets_has_price_updater::AssetsHasPriceUpdater;
 use assets_images_updater::AssetsImagesUpdater;
 use cacher::CacherClient;
 use coingecko::CoinGeckoClient;
@@ -123,6 +125,13 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
             move |_| {
                 let updater = AssetsImagesUpdater::new(static_assets_client.clone(), database.clone());
                 async move { updater.update_chain(chain).await }
+            }
+        })
+        .job(WorkerJob::UpdateAssetsHasPrice, {
+            let database = database.clone();
+            move |_| {
+                let updater = AssetsHasPriceUpdater::new(database.clone());
+                async move { updater.update().await }
             }
         })
         .jobs(WorkerJob::UpdateStakeApy, Chain::stakeable(), |chain, _| {

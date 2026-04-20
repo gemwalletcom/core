@@ -148,6 +148,7 @@ pub enum ConfigKey {
     AssetsTimerUpdatePerpetuals,
     AssetsTimerUpdateUsageRank,
     AssetsTimerUpdateImages,
+    AssetsTimerUpdateHasPrice,
     AssetsUpdateNewCoinInfoInterval,
     AssetsUpdateExistingCoinInfoInterval,
 
@@ -347,6 +348,7 @@ impl ConfigKey {
             Self::AssetsTimerUpdatePerpetuals => "1h",
             Self::AssetsTimerUpdateUsageRank => "1h",
             Self::AssetsTimerUpdateImages => "8h",
+            Self::AssetsTimerUpdateHasPrice => "1h",
             Self::AssetsUpdateNewCoinInfoInterval => "30d",
             Self::AssetsUpdateExistingCoinInfoInterval => "90d",
             Self::FiatTimerUpdateAssets => "1h",

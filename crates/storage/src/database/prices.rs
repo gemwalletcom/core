@@ -15,6 +15,7 @@ pub enum AssetsWithPricesFilter {
 pub enum PriceFilter {
     Provider(PriceProvider),
     UpdatedBefore(NaiveDateTime),
+    UpdatedAfter(NaiveDateTime),
 }
 
 pub(crate) trait PricesStore {
@@ -77,6 +78,7 @@ impl PricesStore for DatabaseClient {
         let query = filters.into_iter().fold(prices.into_boxed(), |q, filter| match filter {
             PriceFilter::Provider(p) => q.filter(provider.eq(PriceProviderRow::from(p))),
             PriceFilter::UpdatedBefore(time) => q.filter(last_updated_at.lt(time).or(last_updated_at.is_null())),
+            PriceFilter::UpdatedAfter(time) => q.filter(last_updated_at.ge(time)),
         });
         query.order(market_cap.desc()).select(PriceRow::as_select()).load(&mut self.connection)
     }

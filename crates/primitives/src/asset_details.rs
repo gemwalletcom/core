@@ -92,6 +92,7 @@ pub struct AssetProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub earn_apr: Option<f64>,
     pub has_image: bool,
+    pub has_price: bool,
 }
 
 impl AssetProperties {
@@ -107,6 +108,7 @@ impl AssetProperties {
             is_earnable: false,
             earn_apr: None,
             has_image: false,
+            has_price: false,
         }
     }
 }

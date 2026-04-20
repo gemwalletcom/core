@@ -22,6 +22,7 @@ CREATE TABLE assets (
     is_earnable boolean NOT NULL default false,
     earn_apr float,
     has_image boolean NOT NULL default false,
+    has_price boolean NOT NULL default false,
 
     UNIQUE(id)
 );

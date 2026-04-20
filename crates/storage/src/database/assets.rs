@@ -14,6 +14,7 @@ pub enum AssetUpdate {
     Rank(i32),
     StakingApr(Option<f64>),
     HasImage(bool),
+    HasPrice(bool),
 }
 
 #[derive(Debug, Clone)]
@@ -22,6 +23,7 @@ pub enum AssetFilter {
     IsBuyable(bool),
     IsSellable(bool),
     HasImage(bool),
+    HasPrice(bool),
     Chain(String),
 }
 
@@ -65,6 +67,7 @@ impl AssetsStore for DatabaseClient {
                 AssetUpdate::Rank(value) => diesel::update(target).set(rank.eq(value)).execute(&mut self.connection)?,
                 AssetUpdate::StakingApr(value) => diesel::update(target).set(staking_apr.eq(value)).execute(&mut self.connection)?,
                 AssetUpdate::HasImage(value) => diesel::update(target).set(has_image.eq(value)).execute(&mut self.connection)?,
+                AssetUpdate::HasPrice(value) => diesel::update(target).set(has_price.eq(value)).execute(&mut self.connection)?,
             };
             Ok(total + updated)
         })
@@ -95,6 +98,9 @@ impl AssetsStore for DatabaseClient {
                 }
                 AssetFilter::HasImage(value) => {
                     query = query.filter(has_image.eq(value));
+                }
+                AssetFilter::HasPrice(value) => {
+                    query = query.filter(has_price.eq(value));
                 }
                 AssetFilter::Chain(value) => {
                     query = query.filter(chain.eq(value));

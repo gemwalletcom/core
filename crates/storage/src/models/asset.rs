@@ -29,6 +29,7 @@ pub struct AssetRow {
     pub is_earnable: bool,
     pub earn_apr: Option<f64>,
     pub has_image: bool,
+    pub has_price: bool,
 
     pub updated_at: NaiveDateTime,
 }
@@ -55,6 +56,7 @@ pub struct NewAssetRow {
     pub is_earnable: bool,
     pub earn_apr: Option<f64>,
     pub has_image: bool,
+    pub has_price: bool,
 }
 
 impl NewAssetRow {
@@ -81,6 +83,7 @@ impl NewAssetRow {
             is_earnable: properties.is_earnable,
             earn_apr: properties.earn_apr,
             has_image: properties.has_image,
+            has_price: properties.has_price,
         }
     }
 }
@@ -118,6 +121,7 @@ impl AssetRow {
             is_earnable: self.is_earnable,
             earn_apr: self.earn_apr,
             has_image: self.has_image,
+            has_price: self.has_price,
         }
     }
 }
