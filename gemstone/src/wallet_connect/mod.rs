@@ -2,7 +2,7 @@ use gem_wallet_connect::{
     SignDigestType as WcSignDigestType, WCEthereumTransactionData as WcEthereumTransactionData, WalletConnectAction as WcWalletConnectAction,
     WalletConnectChainOperation as WcWalletConnectChainOperation, WalletConnectRequestHandler, WalletConnectResponseHandler,
     WalletConnectResponseType as WcWalletConnectResponseType, WalletConnectTransaction as WcWalletConnectTransaction,
-    WalletConnectTransactionType as WcWalletConnectTransactionType, WalletConnectVerifier, config_session_properties,
+    WalletConnectTransactionType as WcWalletConnectTransactionType, WalletConnectVerifier, chains_need_pub_key, config_session_properties,
 };
 use primitives::{Account, Chain, TransferDataOutputType, WCEthereumTransaction, WalletConnectCAIP2, WalletConnectRequest, WalletConnectionVerificationStatus};
 use std::collections::HashMap;
@@ -391,6 +391,10 @@ impl WalletConnect {
             .collect();
         let filtered: Vec<GemAccount> = accounts.into_iter().filter(|account| chains.contains(&account.chain)).collect();
         config_session_properties(properties, &chains, &filtered)
+    }
+
+    pub fn chains_need_pub_key(&self) -> Vec<Chain> {
+        chains_need_pub_key()
     }
 
     pub fn decode_send_transaction(&self, transaction_type: WalletConnectTransactionType, data: String) -> Result<WalletConnectTransaction, GemstoneError> {

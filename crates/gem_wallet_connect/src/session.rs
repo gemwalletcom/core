@@ -20,6 +20,10 @@ pub fn config_session_properties(mut properties: HashMap<String, String>, chains
     properties
 }
 
+pub fn chains_need_pub_key() -> Vec<Chain> {
+    vec![Chain::Ton]
+}
+
 pub fn parse_chains(chains: &[String]) -> Vec<Chain> {
     chains.iter().filter_map(|c| Chain::from_str(c).ok()).collect()
 }

@@ -11,7 +11,7 @@ pub use actions::*;
 pub use decode::decode_sign_message;
 pub use request_handler::WalletConnectRequestHandler;
 pub use response_handler::WalletConnectResponseHandler;
-pub use session::config_session_properties;
+pub use session::{chains_need_pub_key, config_session_properties};
 pub use sign_type::SignDigestType;
 pub use validator::{SignMessageValidation, validate_send_transaction, validate_sign_message};
 pub use verifier::WalletConnectVerifier;
