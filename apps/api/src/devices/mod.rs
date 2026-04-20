@@ -146,13 +146,13 @@ pub async fn use_device_referral_code_v2(
     ip: std::net::IpAddr,
     user_agent: UserAgent,
     client: &State<Mutex<RewardsClient>>,
-) -> Result<ApiResponse<Vec<RewardEvent>>, ApiError> {
-    let events = client
+) -> Result<ApiResponse<bool>, ApiError> {
+    client
         .lock()
         .await
         .use_referral_code(&device.device_row, &request.address, &request.data.code, &ip.to_string(), &user_agent.0)
         .await?;
-    Ok(events.into())
+    Ok(true.into())
 }
 
 #[post("/devices/rewards/redeem", format = "json", data = "<request>")]
