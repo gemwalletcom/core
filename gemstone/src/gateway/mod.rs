@@ -13,7 +13,9 @@ pub(crate) use preferences::PreferencesWrapper;
 use crate::alien::{AlienProvider, AlienProviderWrapper};
 use crate::api_client::GemApiClient;
 use crate::models::*;
+use crate::transaction_state::{TransactionStateInput, TransactionStatusResolver};
 use chain_traits::ChainTraits;
+use gem_jsonrpc::alien::RpcProvider;
 use std::future::Future;
 use std::sync::Arc;
 use yielder::Yielder;
@@ -32,6 +34,7 @@ pub struct GemGateway {
     pub api_client: GemApiClient,
     chain_factory: Arc<ChainClientFactory>,
     yielder: Yielder,
+    status_resolver: TransactionStatusResolver,
 }
 
 impl std::fmt::Debug for GemGateway {
@@ -76,11 +79,14 @@ impl GemGateway {
     pub fn new(provider: Arc<dyn AlienProvider>, preferences: Arc<dyn GemPreferences>, secure_preferences: Arc<dyn GemPreferences>, api_url: String) -> Self {
         let api_client = GemApiClient::new(api_url, provider.clone());
         let chain_factory = Arc::new(ChainClientFactory::new(provider.clone(), preferences, secure_preferences));
-        let yielder = Yielder::new(Arc::new(AlienProviderWrapper::new(provider)));
+        let rpc: Arc<dyn RpcProvider> = Arc::new(AlienProviderWrapper::new(provider));
+        let yielder = Yielder::new(rpc.clone());
+        let status_resolver = TransactionStatusResolver::new(chain_factory.clone(), rpc);
         Self {
             api_client,
             chain_factory,
             yielder,
+            status_resolver,
         }
     }
 
@@ -110,9 +116,8 @@ impl GemGateway {
             .await
     }
 
-    pub async fn get_transaction_status(&self, chain: Chain, request: GemTransactionStateRequest) -> Result<GemTransactionUpdate, GatewayError> {
-        self.with_provider(chain, |provider| async move { provider.get_transaction_status(request.into()).await })
-            .await
+    pub async fn get_transaction_status(&self, input: TransactionStateInput) -> Result<GemTransactionUpdate, GatewayError> {
+        Ok(self.status_resolver.status(input).await?)
     }
 
     pub async fn get_chain_id(&self, chain: Chain) -> Result<String, GatewayError> {

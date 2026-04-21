@@ -4,8 +4,8 @@ use primitives::contract_call_data::ContractCallData;
 use primitives::{
     AccountDataType, Asset, EarnType, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualMarginType, PerpetualProvider, PerpetualType,
     Resource, SignerInput, StakeType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata,
-    TransactionPerpetualMetadata, TransactionState, TransactionStateRequest, TransactionSwapMetadata, TransactionType, TransactionUpdate, TransferDataExtra,
-    TransferDataOutputAction, TransferDataOutputType, TronStakeData, TronUnfreeze, TronVote, UInt64, WalletConnectionSessionAppMetadata,
+    TransactionPerpetualMetadata, TransactionState, TransactionSwapMetadata, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction, TransferDataOutputType,
+    TronStakeData, TronUnfreeze, TronVote, UInt64, WalletConnectionSessionAppMetadata,
     perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualReduceData, TPSLOrderData},
 };
 use std::collections::HashMap;
@@ -139,14 +139,6 @@ pub type GemAccountDataType = AccountDataType;
 #[uniffi::remote(Enum)]
 pub enum GemAccountDataType {
     Activate,
-}
-
-#[derive(Debug, Clone, uniffi::Record)]
-pub struct GemTransactionStateRequest {
-    pub id: String,
-    pub sender_address: String,
-    pub created_at: i64,
-    pub block_number: i64,
 }
 
 pub type GemHyperliquidOrder = HyperliquidOrder;
@@ -663,17 +655,6 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
 pub struct GemSuiCoin {
     pub coin_type: String,
     pub balance: String,
-}
-
-impl From<GemTransactionStateRequest> for TransactionStateRequest {
-    fn from(value: GemTransactionStateRequest) -> Self {
-        TransactionStateRequest {
-            id: value.id,
-            sender_address: value.sender_address,
-            created_at: value.created_at,
-            block_number: value.block_number,
-        }
-    }
 }
 
 impl From<GemTransactionLoadInput> for TransactionLoadInput {

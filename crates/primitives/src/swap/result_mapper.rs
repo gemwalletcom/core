@@ -3,15 +3,11 @@ use crate::transaction_update::{TransactionChange, TransactionMetadata, Transact
 
 pub fn map_swap_result(result: &SwapResult) -> TransactionUpdate {
     let state = result.status.transaction_state();
-    let changes = if state.is_terminal() {
-        result
-            .metadata
-            .clone()
-            .map(|m| vec![TransactionChange::Metadata(TransactionMetadata::Swap(m))])
-            .unwrap_or_default()
-    } else {
-        Vec::new()
-    };
+    let changes = result
+        .metadata
+        .clone()
+        .map(|m| vec![TransactionChange::Metadata(TransactionMetadata::Swap(m))])
+        .unwrap_or_default();
     TransactionUpdate::new(state, changes)
 }
 
@@ -25,6 +21,7 @@ mod tests {
     #[test]
     fn test_map_swap_result() {
         let meta = TransactionSwapMetadata::mock();
+        let meta_change = vec![TransactionChange::Metadata(TransactionMetadata::Swap(meta.clone()))];
 
         let completed = map_swap_result(&SwapResult {
             status: SwapStatus::Completed,
@@ -38,7 +35,7 @@ mod tests {
             metadata: Some(meta.clone()),
         });
         assert_eq!(completed_with_meta.state, TransactionState::Confirmed);
-        assert!(matches!(&completed_with_meta.changes[0], TransactionChange::Metadata(TransactionMetadata::Swap(m)) if *m == meta));
+        assert_eq!(completed_with_meta.changes, meta_change);
 
         let failed = map_swap_result(&SwapResult {
             status: SwapStatus::Failed,
@@ -51,7 +48,7 @@ mod tests {
             metadata: Some(meta.clone()),
         });
         assert_eq!(in_transit.state, TransactionState::InTransit);
-        assert!(in_transit.changes.is_empty());
+        assert_eq!(in_transit.changes, meta_change);
 
         let pending = map_swap_result(&SwapResult {
             status: SwapStatus::Pending,

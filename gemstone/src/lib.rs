@@ -15,6 +15,7 @@ pub mod perpetual;
 pub mod price_alert_formatter;
 pub mod signer;
 pub mod siwe;
+pub mod transaction_state;
 pub mod wallet_connect;
 
 use alien::AlienError;
