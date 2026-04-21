@@ -40,9 +40,9 @@ install-diesel:
 test CRATE="":
     @echo "Running unit tests only..."
     @if [ -n "{{CRATE}}" ]; then \
-        cargo test --package {{CRATE}} --lib --bins; \
+        cargo test --package {{CRATE}} --lib --bins --all-features -- --skip integration_tests; \
     else \
-        cargo test --lib --bins --workspace --quiet; \
+        cargo test --lib --bins --workspace --all-features --quiet -- --skip integration_tests; \
     fi
 
 test-integration:
