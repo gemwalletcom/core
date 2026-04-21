@@ -1,5 +1,5 @@
 use crc::Crc;
-use gem_encoding::{EncodingError, decode_base64, decode_base64_no_pad, decode_base64_url, decode_base64_url_padded, encode_base64};
+use gem_encoding::{decode_base64, encode_base64};
 use primitives::SignerError;
 
 use super::{
@@ -13,13 +13,6 @@ use super::{
 
 const CRC32C: Crc<u32> = Crc::<u32>::new(&crc::CRC_32_ISCSI);
 
-fn decode_boc_base64(value: &str) -> Result<Vec<u8>, EncodingError> {
-    decode_base64(value)
-        .or_else(|_| decode_base64_no_pad(value))
-        .or_else(|_| decode_base64_url_padded(value))
-        .or_else(|_| decode_base64_url(value))
-}
-
 #[derive(Clone, Debug, Default)]
 pub struct BagOfCells {
     roots: Vec<CellArc>,
@@ -31,7 +24,7 @@ impl BagOfCells {
     }
 
     pub fn parse_base64(value: &str) -> Result<Self, SignerError> {
-        let bytes = decode_boc_base64(value).map_err(|_| invalid("invalid base64 BoC"))?;
+        let bytes = decode_base64(value).map_err(|_| invalid("invalid base64 BoC"))?;
         Self::parse(&bytes)
     }
 

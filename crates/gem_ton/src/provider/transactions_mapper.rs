@@ -123,7 +123,7 @@ fn map_transaction_message(transaction: TransactionMessage) -> Option<Transactio
 }
 
 fn parse_address(address: &str) -> Option<String> {
-    Some(Address::from_hex_str(address).ok()?.encode())
+    Address::try_parse_hex(address).map(|a| a.encode())
 }
 
 fn is_simple_transfer(out_message: &crate::models::OutMessage) -> bool {

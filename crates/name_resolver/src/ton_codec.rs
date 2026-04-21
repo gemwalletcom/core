@@ -1,6 +1,6 @@
 use crate::codec::Codec;
 
-use gem_ton::address::{Address, base64_to_hex_address};
+use gem_ton::address::Address;
 use primitives::Address as AddressTrait;
 use std::error::Error;
 
@@ -8,12 +8,7 @@ pub struct TonCodec {}
 
 impl Codec for TonCodec {
     fn decode(string: &str) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
-        if let Ok(address) = Address::from_hex_str(string) {
-            return Ok(address.hash_part().to_vec());
-        }
-
-        let hex = base64_to_hex_address(string.to_string())?;
-        let address = Address::from_hex_str(&hex)?;
+        let address = Address::try_parse(string).ok_or("invalid TON address")?;
         Ok(address.hash_part().to_vec())
     }
 

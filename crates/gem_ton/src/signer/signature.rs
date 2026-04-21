@@ -61,7 +61,7 @@ mod tests {
     #[test]
     fn test_sign_ton_personal_accepts_raw_address() {
         let payload = TonSignDataPayload::Text { text: "Hello TON".to_string() };
-        let address = base64_to_hex_address(signer_address()).unwrap();
+        let address = base64_to_hex_address(&signer_address()).unwrap();
         let ton_data = TonSignMessageData::new(payload, "example.com".to_string(), Some(address));
         let data = ton_data.to_bytes();
 

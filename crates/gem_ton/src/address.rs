@@ -38,43 +38,28 @@ impl Address {
         self.bytes[1..].try_into().unwrap()
     }
 
-    pub fn from_base64_url(base64: &str) -> Result<Self, AddressError> {
-        let bytes = decode_base64_url(base64)
-            .or_else(|_| decode_base64_no_pad(base64))
-            .map_err(|_| AddressError::new("invalid base64"))?;
-
+    pub fn try_parse_base64(base64: &str) -> Option<Self> {
+        let bytes = decode_base64_url(base64).or_else(|_| decode_base64_no_pad(base64)).ok()?;
         if bytes.len() != USER_FRIENDLY_ADDRESS_LEN {
-            return Err(AddressError::new("invalid base64 address length"));
+            return None;
         }
-
-        let expected_crc = u16::from_be_bytes(bytes[34..36].try_into().map_err(|_| AddressError::new("invalid checksum"))?);
-        let actual_crc = crc16(&bytes[..34]);
-        if expected_crc != actual_crc {
-            return Err(AddressError::new("invalid checksum"));
+        let expected_crc = u16::from_be_bytes(bytes[34..36].try_into().ok()?);
+        if expected_crc != crc16(&bytes[..34]) {
+            return None;
         }
-
-        let raw_bytes: RawBytes = bytes[1..RAW_ADDRESS_LEN + 1].try_into().map_err(|_| AddressError::new("invalid address length"))?;
-        Ok(Self { bytes: raw_bytes })
+        let raw_bytes: RawBytes = bytes[1..RAW_ADDRESS_LEN + 1].try_into().ok()?;
+        Some(Self { bytes: raw_bytes })
     }
 
-    pub fn from_hex_str<S>(hex_str: S) -> Result<Self, AddressError>
-    where
-        S: AsRef<str>,
-    {
-        let raw = hex_str.as_ref();
-        let (workchain, hash_part) = raw.split_once(':').ok_or_else(|| AddressError::new("invalid address format"))?;
-
-        let workchain = workchain.parse::<i32>().map_err(|_| AddressError::new("invalid workchain"))?;
-        let hash_part = hex::decode(hash_part).map_err(|_| AddressError::new("invalid hash"))?;
-        let hash_part: HashPart = hash_part.try_into().map_err(|_| AddressError::new("invalid hash length"))?;
-
-        Ok(Self::new(workchain, hash_part))
+    pub fn try_parse_hex(hex_str: &str) -> Option<Self> {
+        let (workchain, hash_part) = hex_str.split_once(':')?;
+        let workchain = workchain.parse::<i32>().ok()?;
+        let hash_part: HashPart = hex::decode(hash_part).ok()?.try_into().ok()?;
+        Some(Self::new(workchain, hash_part))
     }
 
     pub fn parse(value: &str) -> Result<Self, SignerError> {
-        Self::from_base64_url(value)
-            .or_else(|_| Self::from_hex_str(value))
-            .map_err(|e| SignerError::invalid_input(e.to_string()))
+        <Self as AddressTrait>::try_parse(value).ok_or_else(|| SignerError::invalid_input("invalid TON address"))
     }
 
     pub fn ensure_matches(claimed: Option<&str>, actual: &str) -> Result<(), SignerError> {
@@ -126,7 +111,7 @@ impl fmt::Debug for Address {
 
 impl AddressTrait for Address {
     fn try_parse(address: &str) -> Option<Self> {
-        Self::from_base64_url(address).or_else(|_| Self::from_hex_str(address)).ok()
+        Self::try_parse_base64(address).or_else(|| Self::try_parse_hex(address))
     }
 
     fn as_bytes(&self) -> &[u8] {
@@ -138,13 +123,12 @@ impl AddressTrait for Address {
     }
 }
 
-pub fn hex_to_base64_address(hex_str: String) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    Ok(<Address as AddressTrait>::encode(&Address::from_hex_str(&hex_str)?))
+pub fn hex_to_base64_address(hex_str: &str) -> Option<String> {
+    Address::try_parse_hex(hex_str).map(|address| address.encode())
 }
 
-pub fn base64_to_hex_address(base64_str: String) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-    let address = Address::from_base64_url(&base64_str)?;
-    Ok(format!("{}:{}", address.workchain(), hex::encode(address.hash_part())))
+pub fn base64_to_hex_address(base64_str: &str) -> Option<String> {
+    Address::try_parse_base64(base64_str).map(|address| format!("{}:{}", address.workchain(), hex::encode(address.hash_part())))
 }
 
 #[cfg(test)]
@@ -155,7 +139,7 @@ mod tests {
     fn test_parse_address() {
         let hex = "0:8e874b7ad9bbebbfc48810b8939c98f50580246f19982040dbcb253c4c3daf78";
         let encoded = "EQCOh0t62bvrv8SIELiTnJj1BYAkbxmYIEDbyyU8TD2veND8";
-        let address = Address::from_hex_str(hex).unwrap();
+        let address = Address::try_parse_hex(hex).unwrap();
 
         assert_eq!(address.encode(), encoded);
         assert_eq!(<Address as AddressTrait>::from_str(hex).unwrap(), address);
@@ -170,17 +154,17 @@ mod tests {
     #[test]
     fn test_hex_to_base64_address() {
         let addr = "0:8c50a91220a5ccf086a1b2113b1a78787555f02b20d3fa6e97ba1acd710dbdaa";
-        let result = hex_to_base64_address(addr.to_string()).unwrap();
+        let result = hex_to_base64_address(addr).unwrap();
 
         assert_eq!(result, "EQCMUKkSIKXM8IahshE7Gnh4dVXwKyDT-m6XuhrNcQ29qvOh");
     }
 
     #[test]
     fn test_invalid_addresses() {
-        assert!(Address::from_hex_str("invalid").is_err());
-        assert!(Address::from_hex_str("abc:8e874b7ad9bbebbfc48810b8939c98f50580246f19982040dbcb253c4c3daf78").is_err());
-        assert!(Address::from_hex_str("0:invalid_hex").is_err());
-        assert!(Address::from_hex_str("0:abcd1234").is_err());
+        assert!(Address::try_parse_hex("invalid").is_none());
+        assert!(Address::try_parse_hex("abc:8e874b7ad9bbebbfc48810b8939c98f50580246f19982040dbcb253c4c3daf78").is_none());
+        assert!(Address::try_parse_hex("0:invalid_hex").is_none());
+        assert!(Address::try_parse_hex("0:abcd1234").is_none());
         assert!(!Address::is_valid("invalid"));
         assert!(Address::try_parse("invalid").is_none());
     }
@@ -188,14 +172,14 @@ mod tests {
     #[test]
     fn test_base64_to_hex_address() {
         let base64 = "EQCOh0t62bvrv8SIELiTnJj1BYAkbxmYIEDbyyU8TD2veND8";
-        let hex = base64_to_hex_address(base64.to_string()).unwrap();
+        let hex = base64_to_hex_address(base64).unwrap();
 
         assert_eq!(hex, "0:8e874b7ad9bbebbfc48810b8939c98f50580246f19982040dbcb253c4c3daf78");
     }
 
     #[test]
     fn test_from_base64_url() {
-        let addr = Address::from_base64_url("UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg").unwrap();
+        let addr = Address::try_parse_base64("UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg").unwrap();
 
         assert_eq!(addr.workchain(), 0);
         assert_eq!(hex::encode(addr.hash_part()), "58d5c54fbb8488af7eaad0cdc759ca8f6ff79fc9555106c1339b037ec0a40347");
@@ -204,8 +188,8 @@ mod tests {
     #[test]
     fn test_round_trip_conversion() {
         let original_hex = "0:0e97797708411c29a3cb1f3f810ef4f83f41d990838f7f93ce7082c4ff9aa026";
-        let base64 = hex_to_base64_address(original_hex.to_string()).unwrap();
-        let decoded_hex = base64_to_hex_address(base64).unwrap();
+        let base64 = hex_to_base64_address(original_hex).unwrap();
+        let decoded_hex = base64_to_hex_address(&base64).unwrap();
 
         assert_eq!(original_hex, decoded_hex);
     }

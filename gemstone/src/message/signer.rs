@@ -217,7 +217,7 @@ impl MessageSigner {
                 WalletV4R2::new(public_key)?.address().encode()
             }
         };
-        let raw_address = base64_to_hex_address(address)?;
+        let raw_address = base64_to_hex_address(&address).ok_or_else(|| GemstoneError::from("Invalid TON address"))?;
 
         let response = TonSignDataResponse::new(BASE64.encode(&result.signature), raw_address, result.timestamp, data.domain, data.payload);
 
@@ -687,7 +687,7 @@ Issued At: 2026-03-09T15:48:34.458Z"#;
             .unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&signed).unwrap();
         let public_key = <[u8; 32]>::try_from(hex::decode("d369452197c2a56481e5e2d3e8bf03de2349f67a63151956822208c2334adee2").unwrap()).unwrap();
-        let expected_address = base64_to_hex_address(WalletV4R2::new(public_key).unwrap().address().encode()).unwrap();
+        let expected_address = base64_to_hex_address(&WalletV4R2::new(public_key).unwrap().address().encode()).unwrap();
 
         assert!(parsed.get("publicKey").is_none());
         assert_eq!(parsed["domain"], "example.com");
