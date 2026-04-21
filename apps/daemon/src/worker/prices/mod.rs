@@ -113,10 +113,6 @@ fn add_platform_jobs<'a>(
             WorkerJob::CleanupChartsHourly,
             charts_job(database, cacher_client, ChartsAction::Cleanup(ChartTimeframe::Hourly)),
         )
-        .job(
-            WorkerJob::CleanupChartsDaily,
-            charts_job(database, cacher_client, ChartsAction::Cleanup(ChartTimeframe::Daily)),
-        )
         .job(WorkerJob::UpdateObservedPrices, {
             let cacher_client = cacher_client.clone();
             let database = database.clone();
