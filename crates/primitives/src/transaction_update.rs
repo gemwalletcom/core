@@ -1,4 +1,4 @@
-use crate::transaction_metadata_types::TransactionPerpetualMetadata;
+use crate::transaction_metadata_types::{TransactionPerpetualMetadata, TransactionSwapMetadata};
 use crate::transaction_state::TransactionState;
 use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
@@ -30,6 +30,7 @@ pub enum TransactionChange {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum TransactionMetadata {
     Perpetual(TransactionPerpetualMetadata),
+    Swap(TransactionSwapMetadata),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
