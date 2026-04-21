@@ -545,7 +545,7 @@ diesel::table! {
         price_change_percentage_24h -> Float8,
         market_cap -> Float8,
         market_cap_fdv -> Float8,
-        market_cap_rank -> Int4,
+        market_cap_rank -> Nullable<Int4>,
         total_volume -> Float8,
         circulating_supply -> Float8,
         total_supply -> Float8,

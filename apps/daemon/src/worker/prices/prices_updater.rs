@@ -151,7 +151,7 @@ fn price_row_from(provider: PriceProvider, full: AssetPriceFull) -> PriceRow {
         market.all_time_low_date.map(|d| d.naive_utc()),
         market.market_cap.unwrap_or_default(),
         market.market_cap_fdv.unwrap_or_default(),
-        market.market_cap_rank.unwrap_or_default(),
+        market.market_cap_rank,
         market.total_volume.unwrap_or_default(),
         market.circulating_supply.unwrap_or_default(),
         market.total_supply.unwrap_or_default(),

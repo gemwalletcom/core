@@ -16,7 +16,7 @@ CREATE TABLE prices (
     price_change_percentage_24h float NOT NULL DEFAULT 0,
     market_cap float NOT NULL DEFAULT 0,
     market_cap_fdv float NOT NULL DEFAULT 0,
-    market_cap_rank INTEGER NOT NULL DEFAULT 0,
+    market_cap_rank INTEGER,
     total_volume float NOT NULL DEFAULT 0,
     circulating_supply float NOT NULL DEFAULT 0,
     total_supply float NOT NULL DEFAULT 0,

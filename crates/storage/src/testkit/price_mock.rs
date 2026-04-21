@@ -17,7 +17,7 @@ impl PriceRow {
             all_time_low_date: None,
             market_cap: 0.0,
             market_cap_fdv: 0.0,
-            market_cap_rank: 0,
+            market_cap_rank: None,
             total_volume: 0.0,
             circulating_supply: 0.0,
             total_supply: 0.0,

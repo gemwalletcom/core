@@ -159,7 +159,7 @@ impl PriceAlertClient {
         }
 
         // Dynamic threshold based on rank
-        let threshold = rules.calculate_threshold(price_data.market_cap_rank);
+        let threshold = rules.calculate_threshold(price_data.market_cap_rank.unwrap_or(0));
         if price_data.price_change_percentage_24h > threshold {
             return Some(AlertResult::new(PriceAlertType::PriceChangesUp));
         }
