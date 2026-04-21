@@ -41,12 +41,21 @@ impl ChartsHistoryUpdater {
             .collect();
 
         for price in &prices_to_sync {
-            let chart_values = self.provider.get_charts_daily(&price.provider_price_id).await?;
+            info_with_fields!("charts history fetch started", price_id = price.id.clone());
+            let chart_values = match self.provider.get_charts_daily(&price.provider_price_id).await {
+                Ok(values) => values,
+                Err(error) => {
+                    info_with_fields!("charts history fetch failed", price_id = price.id.clone(), error = error.to_string());
+                    return Err(error);
+                }
+            };
             let chart_rows: Vec<ChartRow> = chart_values.into_iter().filter_map(|value| to_daily_row(&price.id, value)).collect();
+            let rows = chart_rows.len();
             if !chart_rows.is_empty() {
                 self.database.charts()?.add_charts_daily(chart_rows)?;
             }
             self.cacher.add_to_set_cached(CacheKey::ChartsHistory(provider_id), &[price.id.clone()]).await?;
+            info_with_fields!("charts history fetch finished", price_id = price.id.clone(), rows = rows);
         }
 
         info_with_fields!("charts history", provider = provider_id, synced = prices_to_sync.len());
