@@ -116,7 +116,10 @@ mod tests {
 
     #[test]
     fn test_encode_send_transaction_ton() {
-        assert_eq!(WalletConnectResponseHandler::encode_send_transaction(ChainType::Ton, "te6ccg...".to_string()), string("te6ccg..."));
+        assert_eq!(
+            WalletConnectResponseHandler::encode_send_transaction(ChainType::Ton, "te6ccg...".to_string()),
+            string("te6ccg...")
+        );
     }
 
     #[test]

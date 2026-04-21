@@ -385,10 +385,7 @@ impl WalletConnect {
     }
 
     pub fn config_session_properties(&self, properties: HashMap<String, String>, caip2_chains: Vec<String>, accounts: Vec<GemAccount>) -> HashMap<String, String> {
-        let chains: Vec<Chain> = caip2_chains
-            .into_iter()
-            .filter_map(|caip2| WalletConnectCAIP2::resolve_chain(Some(caip2)).ok())
-            .collect();
+        let chains: Vec<Chain> = caip2_chains.into_iter().filter_map(|caip2| WalletConnectCAIP2::resolve_chain(Some(caip2)).ok()).collect();
         let filtered: Vec<GemAccount> = accounts.into_iter().filter(|account| chains.contains(&account.chain)).collect();
         config_session_properties(properties, &chains, &filtered)
     }
@@ -456,7 +453,10 @@ mod tests {
 
         let ton = wc.config_session_properties(HashMap::new(), vec!["ton:-239".to_string()], accounts.clone());
         assert_eq!(ton.get("ton_getPublicKey").unwrap(), &ton_pk);
-        assert!(ton.get("ton_getStateInit").unwrap().starts_with("te6cc"));
+        assert_eq!(
+            ton.get("ton_getStateInit").unwrap(),
+            "te6cckECFgEAAwQAAgE0AQIBFP8A9KQT9LzyyAsDAFEAAAAAKamjF9NpRSGXwqVkgeXi0+i/A94jSfZ6YxUZVoIiCMIzSt7iQAIBIAQFAgFIBgcE+PKDCNcYINMf0x/THwL4I7vyZO1E0NMf0x/T//QE0VFDuvKhUVG68qIF+QFUEGT5EPKj+AAkpMjLH1JAyx9SMMv/UhD0AMntVPgPAdMHIcAAn2xRkyDXSpbTB9QC+wDoMOAhwAHjACHAAuMAAcADkTDjDQOkyMsfEssfy/8ICQoLAubQAdDTAyFxsJJfBOAi10nBIJJfBOAC0x8hghBwbHVnvSKCEGRzdHK9sJJfBeAD+kAwIPpEAcjKB8v/ydDtRNCBAUDXIfQEMFyBAQj0Cm+hMbOSXwfgBdM/yCWCEHBsdWe6kjgw4w0DghBkc3RyupJfBuMNDA0CASAODwBu0gf6ANTUIvkABcjKBxXL/8nQd3SAGMjLBcsCIs8WUAX6AhTLaxLMzMlz+wDIQBSBAQj0UfKnAgBwgQEI1xj6ANM/yFQgR4EBCPRR8qeCEG5vdGVwdIAYyMsFywJQBs8WUAT6AhTLahLLH8s/yXP7AAIAbIEBCNcY+gDTPzBSJIEBCPRZ8qeCEGRzdHJwdIAYyMsFywJQBc8WUAP6AhPLassfEss/yXP7AAAK9ADJ7VQAeAH6APQEMPgnbyIwUAqhIb7y4FCCEHBsdWeDHrFwgBhQBMsFJs8WWPoCGfQAy2kXyx9SYMs/IMmAQPsABgCKUASBAQj0WTDtRNCBAUDXIMgBzxb0AMntVAFysI4jghBkc3Rygx6xcIAYUAXLBVADzxYj+gITy2rLH8s/yYBA+wCSXwPiAgEgEBEAWb0kK29qJoQICga5D6AhhHDUCAhHpJN9KZEM5pA+n/mDeBKAG3gQFImHFZ8xhAIBWBITABG4yX7UTQ1wsfgAPbKd+1E0IEBQNch9AQwAsjKB8v/ydABgQEI9ApvoTGACASAUFQAZrc52omhAIGuQ64X/wAAZrx32omhAEGuQ64WPwK1MpH0="
+        );
 
         let tron = wc.config_session_properties(HashMap::new(), vec!["tron:728126428".to_string()], accounts);
         assert_eq!(tron.get("tron_method_version").unwrap(), "v1");

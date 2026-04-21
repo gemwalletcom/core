@@ -63,11 +63,8 @@ impl BagOfCells {
         }
     }
 
-    pub fn parse_base64_root(value: &str) -> Result<Option<CellArc>, SignerError> {
-        if value.is_empty() {
-            return Ok(None);
-        }
-        Ok(Some(Self::parse_base64(value)?.get_single_root()?.clone()))
+    pub fn parse_base64_root(value: &str) -> Result<CellArc, SignerError> {
+        Ok(Self::parse_base64(value)?.get_single_root()?.clone())
     }
 
     pub fn to_base64(&self, with_crc32c: bool) -> Result<String, SignerError> {

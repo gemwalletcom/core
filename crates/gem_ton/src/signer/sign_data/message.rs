@@ -1,51 +1,15 @@
 use crc::Crc;
-use gem_encoding::decode_base64;
 use gem_hash::sha2::sha256;
 use primitives::SignerError;
 use serde::{Deserialize, Serialize};
 
-use super::cells::{BagOfCells, CellBuilder};
+use super::payload::TonSignDataPayload;
 use crate::address::Address;
+use crate::signer::cells::{BagOfCells, CellBuilder};
 
 const SIGN_DATA_PREFIX: &[u8] = b"\xff\xffton-connect/sign-data/";
 const CELL_SIGN_PREFIX: u32 = 0x75569022;
 const SCHEMA_CRC32: Crc<u32> = Crc::<u32>::new(&crc::CRC_32_ISO_HDLC);
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "lowercase")]
-pub enum TonSignDataPayload {
-    Text { text: String },
-    Binary { bytes: String },
-    Cell { schema: String, cell: String },
-}
-
-impl TonSignDataPayload {
-    pub fn data(&self) -> &str {
-        match self {
-            Self::Text { text } => text,
-            Self::Binary { bytes } => bytes,
-            Self::Cell { cell, .. } => cell,
-        }
-    }
-
-    pub fn encode(&self) -> Result<(&str, Vec<u8>), SignerError> {
-        match self {
-            Self::Text { text } => Ok(("txt", text.as_bytes().to_vec())),
-            Self::Binary { bytes } => Ok(("bin", decode_base64(bytes).map_err(|_| SignerError::invalid_input("invalid base64"))?)),
-            Self::Cell { .. } => Err(SignerError::InvalidInput("Cell payload not supported for sign-data".to_string())),
-        }
-    }
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TonSignDataResponse {
-    signature: String,
-    address: String,
-    timestamp: u64,
-    domain: String,
-    payload: TonSignDataPayload,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TonSignMessageData {
@@ -120,7 +84,7 @@ impl TonSignMessageData {
     }
 
     fn cell_payload_hash(&self, schema: &str, cell: &str, address: &Address, timestamp: u64) -> Result<Vec<u8>, SignerError> {
-        let payload = BagOfCells::parse_base64(cell)?.get_single_root()?.clone();
+        let payload = BagOfCells::parse_base64_root(cell)?;
         let domain = self.dns_wire_domain()?;
 
         let mut domain_builder = CellBuilder::new();
@@ -151,28 +115,6 @@ impl TonSignMessageData {
     }
 }
 
-pub struct TonSignResult {
-    pub signature: Vec<u8>,
-    pub public_key: Vec<u8>,
-    pub timestamp: u64,
-}
-
-impl TonSignDataResponse {
-    pub fn new(signature: String, address: String, timestamp: u64, domain: String, payload: TonSignDataPayload) -> Self {
-        Self {
-            signature,
-            address,
-            timestamp,
-            domain,
-            payload,
-        }
-    }
-
-    pub fn to_json(&self) -> Result<String, SignerError> {
-        serde_json::to_string(self).map_err(SignerError::from)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -182,59 +124,6 @@ mod tests {
         let mut builder = CellBuilder::new();
         builder.store_u32(32, 0).unwrap();
         BagOfCells::from_root(builder.build().unwrap()).to_base64(true).unwrap()
-    }
-
-    #[test]
-    fn test_parse_payload_text() {
-        let json = r#"{"type":"text","text":"Hello TON"}"#;
-        let parsed: TonSignDataPayload = serde_json::from_str(json).unwrap();
-
-        assert_eq!(parsed, TonSignDataPayload::Text { text: "Hello TON".to_string() });
-    }
-
-    #[test]
-    fn test_parse_payload_binary() {
-        let json = r#"{"type":"binary","bytes":"SGVsbG8="}"#;
-        let parsed: TonSignDataPayload = serde_json::from_str(json).unwrap();
-
-        assert_eq!(parsed, TonSignDataPayload::Binary { bytes: "SGVsbG8=".to_string() });
-    }
-
-    #[test]
-    fn test_parse_payload_cell() {
-        let json = include_str!("../../testdata/wc_sign_data_payload_cell.json");
-        let parsed: TonSignDataPayload = serde_json::from_str(json).unwrap();
-
-        assert_eq!(
-            parsed,
-            TonSignDataPayload::Cell {
-                schema: "comment#00000000 text:SnakeData = InMsgBody;".to_string(),
-                cell: "te6c".to_string(),
-            }
-        );
-    }
-
-    #[test]
-    fn test_response_to_json() {
-        let payload = TonSignDataPayload::Text { text: "Hello TON".to_string() };
-
-        let response = TonSignDataResponse::new(
-            "c2lnbmF0dXJl".to_string(),
-            "0:58d5c54fbb8488af7eaad0cdc759ca8f6ff79fc9555106c1339b037ec0a40347".to_string(),
-            1234567890,
-            "example.com".to_string(),
-            payload,
-        );
-
-        let json = response.to_json().unwrap();
-        let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
-
-        assert_eq!(parsed["signature"], "c2lnbmF0dXJl");
-        assert_eq!(parsed["address"], "0:58d5c54fbb8488af7eaad0cdc759ca8f6ff79fc9555106c1339b037ec0a40347");
-        assert_eq!(parsed["timestamp"], 1234567890);
-        assert_eq!(parsed["domain"], "example.com");
-        assert_eq!(parsed["payload"]["type"], "text");
-        assert_eq!(parsed["payload"]["text"], "Hello TON");
     }
 
     #[test]

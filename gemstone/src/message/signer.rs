@@ -6,7 +6,7 @@ use bs58;
 use gem_evm::message::eip191_hash_message;
 use gem_sui::signer as sui_signer;
 use gem_ton::address::base64_to_hex_address;
-use gem_ton::signer::{TonSignDataResponse, TonSignMessageData, TonSignResult, WalletV4R2, sign_personal as ton_sign_personal};
+use gem_ton::signer::{TonSignDataResponse, TonSignMessageData, TonSignResult, TonSigner, WalletV4R2};
 use primitives::Address as _;
 use primitives::hex::encode_with_0x;
 use signer::{SIGNATURE_LENGTH, SignatureScheme, Signer, apply_eth_recovery_id, hash_eip712};
@@ -182,7 +182,7 @@ impl MessageSigner {
             }
             SignDigestType::TonPersonal => {
                 let timestamp = current_timestamp()?;
-                let result = ton_sign_personal(&self.message.data, &private_key, timestamp)?;
+                let result = TonSigner::new(&private_key)?.sign_personal(&self.message.data, timestamp)?;
                 self.get_ton_result(&result)
             }
             SignDigestType::Eip191 | SignDigestType::Eip712 | SignDigestType::Siwe | SignDigestType::TronPersonal => {

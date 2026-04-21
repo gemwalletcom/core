@@ -3,93 +3,92 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use num_bigint::BigUint;
 use primitives::{FeeOption, SignerError, SignerInput, WCTonSendTransaction};
-use signer::Ed25519KeyPair;
 
 use super::{
     message::{InternalMessage, build_internal_message},
     request::{JettonTransferRequest, TransferRequest},
-    wallet::WalletV4R2,
 };
 use crate::address::Address;
 use crate::signer::cells::{BagOfCells, CellBuilder};
+use crate::signer::signer::TonSigner;
 
 const STATE_INIT_EXPIRE_AT: u32 = u32::MAX;
 const EXTERNAL_EXPIRE_WINDOW_SECS: u64 = 600;
 
-pub(crate) fn sign_transfer(input: &SignerInput, private_key: &[u8], expire_at: Option<u32>) -> Result<String, SignerError> {
-    let request = TransferRequest::new_transfer(&input.destination_address, &input.value, input.is_max_value, input.memo.clone())?;
-    sign_requests(vec![request], input.metadata.get_sequence()?, private_key, expire_at)
-}
+impl TonSigner {
+    pub fn sign_transfer(&self, input: &SignerInput, expire_at: Option<u32>) -> Result<String, SignerError> {
+        let request = TransferRequest::new_transfer(&input.destination_address, &input.value, input.is_max_value, input.memo.clone())?;
+        self.sign_requests(vec![request], input.metadata.get_sequence()?, expire_at)
+    }
 
-pub(crate) fn sign_token_transfer(input: &SignerInput, private_key: &[u8], expire_at: Option<u32>) -> Result<String, SignerError> {
-    let sender_token_address = input
-        .metadata
-        .get_sender_token_address()?
-        .ok_or_else(|| SignerError::invalid_input("missing sender token address"))?;
+    pub fn sign_token_transfer(&self, input: &SignerInput, expire_at: Option<u32>) -> Result<String, SignerError> {
+        let sender_token_address = input
+            .metadata
+            .get_sender_token_address()?
+            .ok_or_else(|| SignerError::invalid_input("missing sender token address"))?;
 
-    let jetton = JettonTransferRequest {
-        query_id: 0,
-        value: BigUint::from_str(&input.value)?,
-        destination: Address::parse(&input.destination_address)?,
-        response_address: Address::parse(&input.sender_address)?,
-        custom_payload: None,
-        forward_ton_amount: BigUint::from(1u8),
-        comment: input.memo.clone(),
-    };
-    let request = TransferRequest::new_jetton_transfer(&sender_token_address, token_account_creation_fee(input)?, jetton)?;
-    sign_requests(vec![request], input.metadata.get_sequence()?, private_key, expire_at)
-}
+        let jetton = JettonTransferRequest {
+            query_id: 0,
+            value: BigUint::from_str(&input.value)?,
+            destination: Address::parse(&input.destination_address)?,
+            response_address: Address::parse(&input.sender_address)?,
+            custom_payload: None,
+            forward_ton_amount: BigUint::from(1u8),
+            comment: input.memo.clone(),
+        };
+        let request = TransferRequest::new_jetton_transfer(&sender_token_address, token_account_creation_fee(input)?, jetton)?;
+        self.sign_requests(vec![request], input.metadata.get_sequence()?, expire_at)
+    }
 
-pub(crate) fn sign_swap(input: &SignerInput, private_key: &[u8], expire_at: Option<u32>) -> Result<Vec<String>, SignerError> {
-    let swap_data = input.input_type.get_swap_data()?;
-    let request = TransferRequest::new_with_payload(
-        &swap_data.data.to,
-        &swap_data.data.value,
-        input.memo.clone(),
-        BagOfCells::parse_base64_root(&swap_data.data.data)?,
-        true,
-        None,
-    )?;
-    Ok(vec![sign_requests(vec![request], input.metadata.get_sequence()?, private_key, expire_at)?])
-}
+    pub fn sign_swap(&self, input: &SignerInput, expire_at: Option<u32>) -> Result<Vec<String>, SignerError> {
+        let swap_data = input.input_type.get_swap_data()?;
+        let request = TransferRequest::new_with_payload(
+            &swap_data.data.to,
+            &swap_data.data.value,
+            input.memo.clone(),
+            Some(BagOfCells::parse_base64_root(&swap_data.data.data)?),
+            true,
+            None,
+        )?;
+        Ok(vec![self.sign_requests(vec![request], input.metadata.get_sequence()?, expire_at)?])
+    }
 
-pub(crate) fn sign_data(input: &SignerInput, private_key: &[u8], expire_at: Option<u32>) -> Result<String, SignerError> {
-    let extra = input.input_type.get_generic_data()?;
-    let data = extra.data.as_ref().ok_or_else(|| SignerError::invalid_input("missing TON messages"))?;
-    let request = WCTonSendTransaction::from_bytes(data)?;
-    Address::ensure_matches(request.r#from.as_deref(), &input.sender_address)?;
+    pub fn sign_data(&self, input: &SignerInput, expire_at: Option<u32>) -> Result<String, SignerError> {
+        let extra = input.input_type.get_generic_data()?;
+        let data = extra.data.as_ref().ok_or_else(|| SignerError::invalid_input("missing TON messages"))?;
+        let request = WCTonSendTransaction::from_bytes(data)?;
+        Address::ensure_matches(request.r#from.as_deref(), &input.sender_address)?;
 
-    let requests = request
-        .messages
-        .into_iter()
-        .map(|message| {
-            TransferRequest::new_with_payload(
-                &message.address,
-                &message.amount,
-                None,
-                BagOfCells::parse_base64_root(message.payload.as_deref().unwrap_or(""))?,
-                true,
-                BagOfCells::parse_base64_root(message.state_init.as_deref().unwrap_or(""))?,
-            )
-        })
-        .collect::<Result<Vec<_>, _>>()?;
-    sign_requests(requests, input.metadata.get_sequence()?, private_key, expire_at.or(request.valid_until))
-}
+        let requests = request
+            .messages
+            .into_iter()
+            .map(|message| {
+                TransferRequest::new_with_payload(
+                    &message.address,
+                    &message.amount,
+                    None,
+                    message.payload.as_deref().filter(|s| !s.is_empty()).map(BagOfCells::parse_base64_root).transpose()?,
+                    true,
+                    message.state_init.as_deref().filter(|s| !s.is_empty()).map(BagOfCells::parse_base64_root).transpose()?,
+                )
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        self.sign_requests(requests, input.metadata.get_sequence()?, expire_at.or(request.valid_until))
+    }
 
-pub(crate) fn sign_requests(requests: Vec<TransferRequest>, sequence: u64, private_key: &[u8], expire_at: Option<u32>) -> Result<String, SignerError> {
-    let sequence = u32::try_from(sequence).map_err(|_| SignerError::invalid_input("TON sequence does not fit in u32"))?;
-    let key_pair = Ed25519KeyPair::from_private_key(private_key)?;
-    let wallet = WalletV4R2::new(key_pair.public_key_bytes)?;
-    let expire_at = resolve_expire_at(sequence, expire_at)?;
+    pub(crate) fn sign_requests(&self, requests: Vec<TransferRequest>, sequence: u64, expire_at: Option<u32>) -> Result<String, SignerError> {
+        let sequence = u32::try_from(sequence).map_err(|_| SignerError::invalid_input("TON sequence does not fit in u32"))?;
+        let expire_at = resolve_expire_at(sequence, expire_at)?;
 
-    let internal_messages: Vec<InternalMessage> = requests.iter().map(build_internal_message).collect::<Result<_, _>>()?;
-    let external_body = wallet.build_external_body(expire_at, sequence, &internal_messages)?;
-    let signature = key_pair.sign(&external_body.hash);
-    let mut body_builder = CellBuilder::new();
-    body_builder.store_slice(&signature)?.store_cell(&external_body)?;
-    let signed_transaction = wallet.build_transaction(sequence == 0, body_builder.build()?)?;
+        let internal_messages: Vec<InternalMessage> = requests.iter().map(build_internal_message).collect::<Result<_, _>>()?;
+        let external_body = self.wallet().build_external_body(expire_at, sequence, &internal_messages)?;
+        let signature = self.sign(&external_body.hash);
+        let mut body_builder = CellBuilder::new();
+        body_builder.store_slice(&signature)?.store_cell(&external_body)?;
+        let signed_transaction = self.wallet().build_transaction(sequence == 0, body_builder.build()?)?;
 
-    BagOfCells::from_root(signed_transaction).to_base64(true)
+        BagOfCells::from_root(signed_transaction).to_base64(true)
+    }
 }
 
 fn token_account_creation_fee(input: &SignerInput) -> Result<BigUint, SignerError> {
@@ -114,18 +113,17 @@ fn resolve_expire_at(sequence: u32, expire_at: Option<u32>) -> Result<u32, Signe
 mod tests {
     use num_bigint::BigUint;
     use primitives::{
-        Address as AddressTrait, Asset, AssetId, AssetType, Chain, SignerInput, TransactionInputType, TransactionLoadMetadata, TransferDataExtra, WCTonMessage, WCTonSendTransaction,
-        WalletConnectionSessionAppMetadata, swap::SwapData,
+        Address as AddressTrait, Asset, AssetId, AssetType, Chain, SignerInput, TransactionInputType, TransactionLoadMetadata, TransferDataExtra, WCTonMessage,
+        WCTonSendTransaction, WalletConnectionSessionAppMetadata, swap::SwapData,
     };
-    use signer::Ed25519KeyPair;
 
     use super::super::{
         message::{DEFAULT_SEND_MODE, build_internal_message},
         request::{JettonTransferRequest, TransferPayload, TransferRequest},
         wallet::WalletV4R2,
     };
-    use super::{sign_data, sign_requests, sign_swap, sign_token_transfer, sign_transfer};
     use crate::address::Address;
+    use crate::signer::TonSigner;
     use crate::signer::cells::{BagOfCells, BitReader, CellBuilder};
 
     const TEST_TON_PRIVATE_KEY: &str = "c7702dadcd00d470df27dee0ddd97fbcf9deba52b60f7dd2b296ff42bb1fcad6";
@@ -134,10 +132,9 @@ mod tests {
     const JETTON_ASSET_ADDRESS: &str = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs";
     const WC_TON_MESSAGE_FIXTURE: &str = include_str!("../../../testdata/wc_ton_message.json");
 
-    fn test_wallet_address() -> String {
+    fn test_signer() -> TonSigner {
         let private_key = hex::decode(TEST_TON_PRIVATE_KEY).unwrap();
-        let key_pair = Ed25519KeyPair::from_private_key(&private_key).unwrap();
-        WalletV4R2::new(key_pair.public_key_bytes).unwrap().address().encode()
+        TonSigner::new(&private_key).unwrap()
     }
 
     fn sample_boc() -> String {
@@ -173,8 +170,8 @@ mod tests {
 
     #[test]
     fn test_sign_matches_vectors() {
-        let private_key = hex::decode(TEST_TON_PRIVATE_KEY).unwrap();
-        let address = test_wallet_address();
+        let signer = test_signer();
+        let address = signer.address().encode();
 
         // Native transfer — Android parity vector.
         let native_input = SignerInput::mock_with_input_type(
@@ -185,7 +182,7 @@ mod tests {
             TransactionLoadMetadata::mock_ton(1),
         );
         assert_eq!(
-            sign_transfer(&native_input, &private_key, Some(1_000_000_000)).unwrap(),
+            signer.sign_transfer(&native_input, Some(1_000_000_000)).unwrap(),
             "te6cckEBBAEArgABRYgBkF1w67cBLG0e0D7j0y2ShzflCe2JrlAjS4pC8UHg85AMAQGcOZ5W/jkCqNSj9wrP3isRN8k2PsJvAS1Rc7K+ABk/VgsvD4MSlcEFpS56SGhkmC7pSYwJM1Ocd7iIVUCY1DeFAimpoxc7msoAAAAAAQADAgFkQgBkF1w67cBLG0e0D7j0y2ShzflCe2JrlAjS4pC8UHg85BE4gAAAAAAAAAAAAAAAAAEDAABvNxKJ"
         );
 
@@ -199,13 +196,14 @@ mod tests {
             TransactionLoadMetadata::mock_ton_jetton(1, SENDER_TOKEN_ADDRESS),
         );
         assert_eq!(
-            sign_token_transfer(&jetton_input, &private_key, Some(1_000_000_000)).unwrap(),
+            signer.sign_token_transfer(&jetton_input, Some(1_000_000_000)).unwrap(),
             "te6cckEBBAEA/wABRYgBkF1w67cBLG0e0D7j0y2ShzflCe2JrlAjS4pC8UHg85AMAQGcbaO6bjRLkbewbUrj8cYUocJI7vJDeXH4uoZqtTZzf5CRVBRw8rjMKMNg4MEafTwywe6wo2+BhefXkhOtdEakCympoxc7msoAAAAAAQADAgFgYgASwA6bnRklOr1y4MxDEh82TpZnlC7Kl8tiVkz/uVEgGgAAAAAAAAAAAAAAAAABAwCmD4p+pQAAAAAAAAAAInEIAZBdcOu3ASxtHtA+49Mtkoc35Qntia5QI0uKQvFB4PORADILrh124CWNo9oH3HplslDm/KE9sTXKBGlxSF4oPB5yAgKLD74O"
         );
 
         // Deploy — TrustWallet wallet-core parity vector:
         // https://github.com/trustwallet/wallet-core/blob/master/rust/tw_tests/tests/chains/ton/ton_sign.rs
         let deploy_private_key = hex::decode(TRUST_WALLET_PRIVATE_KEY).unwrap();
+        let deploy_signer = TonSigner::new(&deploy_private_key).unwrap();
         let deploy_request = TransferRequest {
             destination: Address::parse("EQDYW_1eScJVxtitoBRksvoV9cCYo4uKGWLVNIHB1JqRR3n0").unwrap(),
             value: BigUint::from(10u8),
@@ -216,15 +214,15 @@ mod tests {
             state_init: None,
         };
         assert_eq!(
-            sign_requests(vec![deploy_request], 0, &deploy_private_key, Some(1_671_135_440)).unwrap(),
+            deploy_signer.sign_requests(vec![deploy_request], 0, Some(1_671_135_440)).unwrap(),
             "te6cckECGgEAA7IAAkWIAM33x4uAd+uQTyXyCZPxflESlNVHpCeoOECtNsqVW9tmHgECAgE0AwQBnOfG8YGGhFeE+iDE1jxCYeWKElbGDm3oqm2pwAhmVWSzWv5n6vVq8JY0J6p4sL+hqJU3iYPH8TX5mGLfcbbmtwgpqaMX/////wAAAAAAAwUBFP8A9KQT9LzyyAsGAFEAAAAAKamjF/Qsd/kxvqIOxdAVBzEna7suKGCUdmEkWyMZ74Ez7o1BQAFiYgBsLf6vJOEq42xW0AoyWX0K+uBMUcXFDLFqmkDg6k1Io4hQAAAAAAAAAAAAAAAAAQcCASAICQAAAgFICgsE+PKDCNcYINMf0x/THwL4I7vyZO1E0NMf0x/T//QE0VFDuvKhUVG68qIF+QFUEGT5EPKj+AAkpMjLH1JAyx9SMMv/UhD0AMntVPgPAdMHIcAAn2xRkyDXSpbTB9QC+wDoMOAhwAHjACHAAuMAAcADkTDjDQOkyMsfEssfy/8MDQ4PAubQAdDTAyFxsJJfBOAi10nBIJJfBOAC0x8hghBwbHVnvSKCEGRzdHK9sJJfBeAD+kAwIPpEAcjKB8v/ydDtRNCBAUDXIfQEMFyBAQj0Cm+hMbOSXwfgBdM/yCWCEHBsdWe6kjgw4w0DghBkc3RyupJfBuMNEBECASASEwBu0gf6ANTUIvkABcjKBxXL/8nQd3SAGMjLBcsCIs8WUAX6AhTLaxLMzMlz+wDIQBSBAQj0UfKnAgBwgQEI1xj6ANM/yFQgR4EBCPRR8qeCEG5vdGVwdIAYyMsFywJQBs8WUAT6AhTLahLLH8s/yXP7AAIAbIEBCNcY+gDTPzBSJIEBCPRZ8qeCEGRzdHJwdIAYyMsFywJQBc8WUAP6AhPLassfEss/yXP7AAAK9ADJ7VQAeAH6APQEMPgnbyIwUAqhIb7y4FCCEHBsdWeDHrFwgBhQBMsFJs8WWPoCGfQAy2kXyx9SYMs/IMmAQPsABgCKUASBAQj0WTDtRNCBAUDXIMgBzxb0AMntVAFysI4jghBkc3Rygx6xcIAYUAXLBVADzxYj+gITy2rLH8s/yYBA+wCSXwPiAgEgFBUAWb0kK29qJoQICga5D6AhhHDUCAhHpJN9KZEM5pA+n/mDeBKAG3gQFImHFZ8xhAIBWBYXABG4yX7UTQ1wsfgAPbKd+1E0IEBQNch9AQwAsjKB8v/ydABgQEI9ApvoTGACASAYGQAZrc52omhAIGuQ64X/wAAZrx32omhAEGuQ64WPwJiaP4Q="
         );
     }
 
     #[test]
     fn test_sign_data_supports_request_envelopes() {
-        let private_key = hex::decode(TEST_TON_PRIVATE_KEY).unwrap();
-        let address = test_wallet_address();
+        let signer = test_signer();
+        let address = signer.address().encode();
         let extra = TransferDataExtra::mock_encoded_transaction(wc_ton_request(&sample_boc(), Some(1_000_000_000), Some(&address)));
         let input = SignerInput::mock_with_input_type(
             TransactionInputType::Generic(Asset::from_chain(Chain::Ton), WalletConnectionSessionAppMetadata::mock(), extra),
@@ -234,7 +232,7 @@ mod tests {
             TransactionLoadMetadata::mock_ton(1),
         );
 
-        let signed = sign_data(&input, &private_key, None).unwrap();
+        let signed = signer.sign_data(&input, None).unwrap();
         assert!(signed.starts_with("te6cc"));
         assert_eq!(signed_expire_at(&signed), 1_000_000_000);
 
@@ -250,7 +248,7 @@ mod tests {
             TransactionLoadMetadata::mock_ton(1),
         );
 
-        let signed_legacy = sign_data(&legacy, &private_key, Some(1_000_000_000)).unwrap();
+        let signed_legacy = signer.sign_data(&legacy, Some(1_000_000_000)).unwrap();
         assert!(signed_legacy.starts_with("te6cc"));
 
         let mismatched = SignerInput::mock_with_input_type(
@@ -266,14 +264,14 @@ mod tests {
         );
 
         assert_eq!(
-            sign_data(&mismatched, &private_key, None).unwrap_err().to_string(),
+            signer.sign_data(&mismatched, None).unwrap_err().to_string(),
             "Invalid input: TON from does not match signer address"
         );
     }
 
     #[test]
     fn test_sign_swap_uses_custom_payload_transfer() {
-        let private_key = hex::decode(TEST_TON_PRIVATE_KEY).unwrap();
+        let signer = test_signer();
         let mut swap_data = SwapData::mock_with_provider(primitives::SwapProvider::StonfiV2);
         swap_data.data.to = SENDER_TOKEN_ADDRESS.to_string();
         swap_data.data.value = "241000000".to_string();
@@ -287,7 +285,7 @@ mod tests {
             TransactionLoadMetadata::mock_ton(1),
         );
 
-        let signed = sign_swap(&input, &private_key, Some(1_000_000_000)).unwrap();
+        let signed = signer.sign_swap(&input, Some(1_000_000_000)).unwrap();
         assert_eq!(signed.len(), 1);
         assert!(signed[0].starts_with("te6cc"));
     }

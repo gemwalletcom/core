@@ -33,12 +33,8 @@ impl Cell {
         repr.push(references.len() as u8);
         repr.push(Self::bits_descriptor(bit_len)?);
         repr.extend_from_slice(&Self::serialized_bits(&data, bit_len));
-        for reference in &references {
-            repr.extend_from_slice(&reference.depth.to_be_bytes());
-        }
-        for reference in &references {
-            repr.extend_from_slice(&reference.hash);
-        }
+        repr.extend(references.iter().flat_map(|r| r.depth.to_be_bytes()));
+        repr.extend(references.iter().flat_map(|r| r.hash));
 
         Some(Self {
             data,
@@ -80,4 +76,3 @@ impl Cell {
         serialized
     }
 }
-

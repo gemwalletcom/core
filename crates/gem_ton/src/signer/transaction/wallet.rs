@@ -92,4 +92,3 @@ impl WalletV4R2 {
         })
     }
 }
-

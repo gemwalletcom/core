@@ -29,16 +29,20 @@ pub fn parse_chains(chains: &[String]) -> Vec<Chain> {
 }
 
 fn ton_session_properties(mut properties: HashMap<String, String>, accounts: &[Account]) -> HashMap<String, String> {
-    if !properties.contains_key(TON_PUBLIC_KEY_KEY)
-        && let Some(public_key) = accounts
-            .iter()
-            .find(|account| account.chain == Chain::Ton)
-            .and_then(|account| account.public_key.as_ref().filter(|value| decode_public_key(value).is_some()).cloned())
-    {
-        properties.insert(TON_PUBLIC_KEY_KEY.to_string(), public_key);
-    }
+    let Some(public_key_hex) = properties
+        .get(TON_PUBLIC_KEY_KEY)
+        .cloned()
+        .or_else(|| accounts.iter().find(|account| account.chain == Chain::Ton).and_then(|account| account.public_key.clone()))
+    else {
+        return properties;
+    };
+    let Some(public_key) = decode_public_key(&public_key_hex) else {
+        return properties;
+    };
+
+    properties.entry(TON_PUBLIC_KEY_KEY.to_string()).or_insert(public_key_hex);
+
     if !properties.contains_key(TON_STATE_INIT_KEY)
-        && let Some(public_key) = properties.get(TON_PUBLIC_KEY_KEY).and_then(|value| decode_public_key(value))
         && let Ok(wallet) = WalletV4R2::new(public_key)
         && let Ok(state_init) = wallet.state_init_base64()
     {
