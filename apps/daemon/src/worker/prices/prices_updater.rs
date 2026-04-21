@@ -115,10 +115,7 @@ impl PricesUpdater {
                 .collect();
             self.database.prices()?.set_prices_assets(asset_rows)?;
 
-            let supply_updates: Vec<_> = unique
-                .values()
-                .filter_map(|asset| asset_supply_update(asset, existing.get(&asset.mapping.asset_id.to_string())?))
-                .collect();
+            let supply_updates: Vec<_> = unique.iter().filter_map(|(id, asset)| asset_supply_update(asset, existing.get(id)?)).collect();
             self.store_asset_updates(supply_updates)?;
             saved += unique.len();
         }
