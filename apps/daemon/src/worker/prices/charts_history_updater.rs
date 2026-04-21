@@ -54,7 +54,7 @@ impl ChartsHistoryUpdater {
             if !chart_rows.is_empty() {
                 self.database.charts()?.add_charts_daily(chart_rows)?;
             }
-            self.cacher.add_to_set_cached(CacheKey::ChartsHistory(provider_id), &[price.id.clone()]).await?;
+            self.cacher.add_to_set_cached(CacheKey::ChartsHistory(provider_id), std::slice::from_ref(&price.id)).await?;
             info_with_fields!("charts history fetch finished", price_id = price.id.clone(), rows = rows);
         }
 
