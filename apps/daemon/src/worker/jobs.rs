@@ -1,5 +1,5 @@
 use crate::model::WorkerService;
-use primitives::{Chain, ConfigKey, FiatProviderName, PlatformStore};
+use primitives::{Chain, ConfigKey, FiatProviderName, PlatformStore, PriceProvider};
 use std::error::Error;
 use std::time::Duration;
 use storage::ConfigCacher;
@@ -84,6 +84,12 @@ impl JobLabel for primitives::SwapProvider {
     }
 }
 
+impl JobLabel for PriceProvider {
+    fn job_label(&self) -> String {
+        self.id().to_string()
+    }
+}
+
 fn compose_job_name(base: &str, label: Option<&str>) -> String {
     match label.map(str::trim).filter(|value| !value.is_empty()) {
         Some(suffix) => format!("{base}.{suffix}"),
@@ -105,6 +111,7 @@ pub enum WorkerJob {
     UpdatePerpetuals,
     UpdateUsageRanks,
     UpdateAssetsImages,
+    UpdateAssetsHasPrice,
     CleanupStaleDeviceSubscriptions,
     ObserveInactiveDevices,
     UpdateFiatAssets,
@@ -123,18 +130,18 @@ pub enum WorkerJob {
     CheckRewardsEligibility,
     CleanupOutdatedAssets,
     UpdateFiatRates,
-    UpdatePricesTopMarketCap,
-    UpdatePricesHighMarketCap,
-    UpdatePricesLowMarketCap,
-    UpdatePricesVeryLowMarketCap,
+    UpdatePricesTop,
+    UpdatePricesHigh,
+    UpdatePricesLow,
+    UpdatePricesAll,
     AggregateHourlyCharts,
     AggregateDailyCharts,
     CleanupChartsHourly,
     CleanupChartsDaily,
     UpdateMarkets,
     UpdateObservedPrices,
-    UpdateDexFeeds,
-    UpdateDexPrices,
+    UpdatePricesAssets,
+    UpdatePricesAssetsNew,
     UpdateInTransitTransactions,
     UpdatePendingTransactions,
     UpdateSwapVaultAddresses,
@@ -160,6 +167,7 @@ impl WorkerJob {
             UpdatePerpetuals => JobSpec::new(WorkerService::Assets, JobInterval::Config(ConfigKey::AssetsTimerUpdatePerpetuals)),
             UpdateUsageRanks => JobSpec::new(WorkerService::Assets, JobInterval::Config(ConfigKey::AssetsTimerUpdateUsageRank)),
             UpdateAssetsImages => JobSpec::new(WorkerService::Assets, JobInterval::Config(ConfigKey::AssetsTimerUpdateImages)),
+            UpdateAssetsHasPrice => JobSpec::new(WorkerService::Assets, JobInterval::Config(ConfigKey::AssetsTimerUpdateHasPrice)),
             CleanupStaleDeviceSubscriptions => JobSpec::new(WorkerService::System, JobInterval::Config(ConfigKey::DeviceTimerUpdater)),
             ObserveInactiveDevices => JobSpec::new(WorkerService::System, JobInterval::Config(ConfigKey::DeviceTimerInactiveObserver)),
             UpdateFiatAssets => JobSpec::new(WorkerService::Fiat, JobInterval::Config(ConfigKey::FiatTimerUpdateAssets)),
@@ -177,19 +185,19 @@ impl WorkerJob {
             CheckRewardsAbuse => JobSpec::new(WorkerService::Rewards, JobInterval::Config(ConfigKey::RewardsTimerAbuseChecker)),
             CheckRewardsEligibility => JobSpec::new(WorkerService::Rewards, JobInterval::Config(ConfigKey::RewardsTimerEligibilityChecker)),
             CleanupOutdatedAssets => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerCleanOutdated)),
-            UpdateFiatRates => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerFiatRates)),
-            UpdatePricesTopMarketCap => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerTopMarketCap)),
-            UpdatePricesHighMarketCap => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerHighMarketCap)),
-            UpdatePricesLowMarketCap => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerLowMarketCap)),
-            UpdatePricesVeryLowMarketCap => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerVeryLowMarketCap)),
+            UpdateFiatRates => JobSpec::new(WorkerService::Fiat, JobInterval::Config(ConfigKey::PriceTimerFiatRates)),
+            UpdatePricesTop => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerTopMarketCap)),
+            UpdatePricesHigh => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerHighMarketCap)),
+            UpdatePricesLow => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerLowMarketCap)),
+            UpdatePricesAll => JobSpec::new(WorkerService::Prices, JobInterval::Duration(Duration::from_secs(60))),
             AggregateHourlyCharts => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerChartsHourly)),
             AggregateDailyCharts => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerChartsDaily)),
             CleanupChartsHourly => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerCleanupChartsHourly)),
             CleanupChartsDaily => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerCleanupChartsDaily)),
             UpdateMarkets => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerMarkets)),
             UpdateObservedPrices => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceObservedFetchInterval)),
-            UpdateDexFeeds => JobSpec::new(WorkerService::Prices, JobInterval::Duration(Duration::from_secs(3600))),
-            UpdateDexPrices => JobSpec::new(WorkerService::Prices, JobInterval::Duration(Duration::from_secs(1800))),
+            UpdatePricesAssets => JobSpec::new(WorkerService::Prices, JobInterval::Duration(Duration::from_secs(60 * 60 * 24))),
+            UpdatePricesAssetsNew => JobSpec::new(WorkerService::Prices, JobInterval::Duration(Duration::from_secs(15 * 60))),
             UpdateInTransitTransactions => JobSpec::new(WorkerService::Transactions, JobInterval::Config(ConfigKey::TransactionTimerInTransitUpdate)),
             UpdatePendingTransactions => JobSpec::new(WorkerService::Transactions, JobInterval::Config(ConfigKey::TransactionTimerPendingUpdate)),
             UpdateSwapVaultAddresses => JobSpec::new(WorkerService::Transactions, JobInterval::Duration(Duration::from_secs(300))),

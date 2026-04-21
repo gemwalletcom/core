@@ -159,7 +159,7 @@ impl PriceAlertClient {
         }
 
         // Dynamic threshold based on rank
-        let threshold = rules.calculate_threshold(price_data.market_cap_rank);
+        let threshold = rules.calculate_threshold(price_data.market_cap_rank.unwrap_or(0));
         if price_data.price_change_percentage_24h > threshold {
             return Some(AlertResult::new(PriceAlertType::PriceChangesUp));
         }
@@ -182,7 +182,7 @@ impl PriceAlertClient {
         let base_rate = self.database.fiat()?.get_fiat_rate(DEFAULT_FIAT_CURRENCY)?;
         let rate = self.database.fiat()?.get_fiat_rate(&device.currency)?;
 
-        let price = Price::new(price_data.price, price_data.price_change_percentage_24h, price_data.last_updated_at);
+        let price = Price::new(price_data.price, price_data.price_change_percentage_24h, price_data.last_updated_at, price_data.provider);
         let price = price.new_with_rate(base_rate.rate, rate.rate);
 
         Ok(PriceAlertNotification {

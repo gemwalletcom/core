@@ -42,17 +42,17 @@ pub mod price;
 pub use self::price::Price;
 pub mod price_data;
 pub use self::price_data::PriceData;
-pub mod chart_data;
-pub use self::chart_data::ChartData;
-pub mod price_feed;
-pub use self::price_feed::{PriceFeedId, PriceFeedProvider};
+pub mod price_provider;
+pub use self::price_provider::PriceProvider;
+pub mod asset_price_key;
+pub use self::asset_price_key::AssetPriceKey;
 pub mod asset;
 pub mod config;
 pub use self::config::{ConfigResponse, ConfigVersions, Release, SwapConfig};
 pub mod config_key;
 pub use self::config_key::ConfigKey;
-pub mod param_config_key;
-pub use self::param_config_key::ParamConfigKey;
+pub mod config_param_key;
+pub use self::config_param_key::ConfigParamKey;
 pub mod duration;
 pub use self::duration::parse_duration;
 pub mod currency;
@@ -232,8 +232,8 @@ pub mod perpetual_position;
 pub use self::perpetual_position::{PerpetualMarginType, PerpetualOrderType, PerpetualPosition, PerpetualTriggerOrder};
 pub mod portfolio;
 pub use self::portfolio::{
-    ChartValuePercentage, PerpetualAccountSummary, PerpetualPortfolio, PerpetualPortfolioTimeframeData, PortfolioAllocation, PortfolioAsset,
-    PortfolioAssets, PortfolioAssetsRequest, PortfolioChartData, PortfolioChartType, PortfolioData, PortfolioMarginUsage, PortfolioStatistic, PortfolioType,
+    ChartValuePercentage, PerpetualAccountSummary, PerpetualPortfolio, PerpetualPortfolioTimeframeData, PortfolioAllocation, PortfolioAsset, PortfolioAssets,
+    PortfolioAssetsRequest, PortfolioChartData, PortfolioChartType, PortfolioData, PortfolioMarginUsage, PortfolioStatistic, PortfolioType,
 };
 pub use chrono;
 pub mod tpsl_type;

@@ -2,14 +2,19 @@ use crate::model::WorkerService;
 use crate::worker::context::WorkerContext;
 use crate::worker::jobs::WorkerJob;
 use crate::worker::plan::JobPlanBuilder;
+use cacher::CacherClient;
+use coingecko::CoinGeckoClient;
 use fiat::FiatProviderFactory;
 use fiat_assets_updater::FiatAssetsUpdater;
+use fiat_rates_updater::FiatRatesUpdater;
 use job_runner::{JobHandle, ShutdownReceiver};
+use pricer::PriceClient;
 use primitives::FiatProviderName;
 use std::error::Error;
 use storage::ConfigCacher;
 
 mod fiat_assets_updater;
+mod fiat_rates_updater;
 
 pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
     let runtime = ctx.runtime();
@@ -17,7 +22,24 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
     let settings = ctx.settings();
     let config = ConfigCacher::new(database.clone());
 
+    let cacher_client = CacherClient::new(&settings.redis.url).await;
+
     JobPlanBuilder::with_config(WorkerService::Fiat, runtime.plan(shutdown_rx), &config)
+        .job(WorkerJob::UpdateFiatRates, {
+            let settings = settings.clone();
+            let database = database.clone();
+            let cacher_client = cacher_client.clone();
+            move |_| {
+                let settings = settings.clone();
+                let database = database.clone();
+                let cacher_client = cacher_client.clone();
+                async move {
+                    let client = CoinGeckoClient::new(&settings.coingecko.key.secret);
+                    let price_client = PriceClient::new(database, cacher_client);
+                    FiatRatesUpdater::new(client, price_client).update().await
+                }
+            }
+        })
         .jobs(WorkerJob::UpdateFiatAssets, FiatProviderName::all(), |provider, _| {
             let settings = settings.clone();
             let database = database.clone();

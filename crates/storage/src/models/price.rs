@@ -1,19 +1,20 @@
-use chrono::{DateTime, NaiveDateTime};
+use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::{AssetId as PrimitiveAssetId, AssetMarket, AssetPriceInfo, ChartValuePercentage, FiatRate, Price, PriceData};
+use primitives::{AssetId as PrimitiveAssetId, AssetMarket, AssetPriceInfo, ChartValuePercentage, FiatRate, Price, PriceData, PriceProvider};
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 
-use crate::models::ChartRow;
-use crate::sql_types::AssetId;
+use crate::sql_types::{AssetId, PriceProviderRow};
 
 use super::AssetRow;
 
-#[derive(Debug, Default, Queryable, Selectable, Identifiable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
+#[derive(Debug, Queryable, Selectable, Identifiable, Serialize, Deserialize, Insertable, AsChangeset, Clone)]
 #[diesel(table_name = crate::schema::prices)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct PriceRow {
     pub id: String,
+    pub provider: PriceProviderRow,
+    pub provider_price_id: String,
     pub price: f64,
     pub price_change_percentage_24h: f64,
     pub all_time_high: f64,
@@ -22,7 +23,7 @@ pub struct PriceRow {
     pub all_time_low_date: Option<NaiveDateTime>,
     pub market_cap: f64,
     pub market_cap_fdv: f64,
-    pub market_cap_rank: i32,
+    pub market_cap_rank: Option<i32>,
     pub total_volume: f64,
     pub circulating_supply: f64,
     pub total_supply: f64,
@@ -35,11 +36,18 @@ pub struct PriceRow {
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct NewPriceRow {
     pub id: String,
+    pub provider: PriceProviderRow,
+    pub provider_price_id: String,
 }
 
 impl NewPriceRow {
-    pub fn new(id: String) -> Self {
-        NewPriceRow { id }
+    pub fn new(provider: PriceProvider, provider_price_id: String) -> Self {
+        let id = provider.price_id(&provider_price_id);
+        Self {
+            id,
+            provider: provider.into(),
+            provider_price_id,
+        }
     }
 }
 
@@ -49,13 +57,15 @@ impl NewPriceRow {
 pub struct PriceAssetRow {
     pub asset_id: AssetId,
     pub price_id: String,
+    pub provider: PriceProviderRow,
 }
 
 impl PriceAssetRow {
-    pub fn new(asset_id: PrimitiveAssetId, price_id: String) -> Self {
+    pub fn new(asset_id: PrimitiveAssetId, provider: PriceProvider, provider_price_id: &str) -> Self {
         PriceAssetRow {
             asset_id: asset_id.into(),
-            price_id,
+            price_id: provider.price_id(provider_price_id),
+            provider: provider.into(),
         }
     }
 }
@@ -86,12 +96,31 @@ impl Hash for PriceRow {
 }
 
 impl PriceRow {
-    pub fn with_price(id: String, price: f64) -> Self {
-        PriceRow { id, price, ..Default::default() }
+    pub fn with_price(provider: PriceProvider, provider_price_id: String, price: f64) -> Self {
+        Self::new(
+            provider,
+            provider_price_id,
+            price,
+            0.0,
+            0.0,
+            None,
+            0.0,
+            None,
+            0.0,
+            0.0,
+            None,
+            0.0,
+            0.0,
+            0.0,
+            0.0,
+            chrono::Utc::now().naive_utc(),
+        )
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
-        id: String,
+        provider: PriceProvider,
+        provider_price_id: String,
         price: f64,
         price_change_percentage_24h: f64,
         all_time_high: f64,
@@ -100,15 +129,18 @@ impl PriceRow {
         all_time_low_date: Option<NaiveDateTime>,
         market_cap: f64,
         market_cap_fdv: f64,
-        market_cap_rank: i32,
+        market_cap_rank: Option<i32>,
         total_volume: f64,
         circulating_supply: f64,
         total_supply: f64,
         max_supply: f64,
         last_updated_at: NaiveDateTime,
     ) -> Self {
+        let id = provider.price_id(&provider_price_id);
         PriceRow {
             id,
+            provider: provider.into(),
+            provider_price_id,
             price,
             price_change_percentage_24h,
             last_updated_at,
@@ -135,11 +167,15 @@ impl PriceRow {
         new_price.total_volume = price.total_volume * rate_multiplier;
         new_price
     }
+
+    pub fn provider_value(&self) -> PriceProvider {
+        self.provider.0
+    }
 }
 
 impl PriceRow {
     pub fn as_primitive(&self) -> Price {
-        Price::new(self.price, self.price_change_percentage_24h, self.last_updated_at.and_utc())
+        Price::new(self.price, self.price_change_percentage_24h, self.last_updated_at.and_utc(), self.provider_value())
     }
 
     pub fn as_market_primitive(&self) -> AssetMarket {
@@ -148,7 +184,7 @@ impl PriceRow {
         AssetMarket {
             market_cap: Some(self.market_cap),
             market_cap_fdv: Some(self.market_cap_fdv),
-            market_cap_rank: Some(self.market_cap_rank),
+            market_cap_rank: self.market_cap_rank,
             total_volume: self.total_volume.into(),
             circulating_supply: Some(self.circulating_supply),
             total_supply: Some(self.total_supply),
@@ -172,14 +208,6 @@ impl PriceRow {
         }
     }
 
-    pub fn as_chart(&self) -> ChartRow {
-        ChartRow {
-            coin_id: self.id.clone(),
-            price: self.price,
-            created_at: DateTime::from_timestamp(self.last_updated_at.and_utc().timestamp(), 0).unwrap().naive_utc(),
-        }
-    }
-
     pub fn as_price_asset_info(&self, asset_id: PrimitiveAssetId) -> AssetPriceInfo {
         AssetPriceInfo {
             asset_id,
@@ -191,6 +219,8 @@ impl PriceRow {
     pub fn as_price_data(&self) -> PriceData {
         PriceData {
             id: self.id.clone(),
+            provider: self.provider_value(),
+            provider_price_id: self.provider_price_id.clone(),
             price: self.price,
             price_change_percentage_24h: self.price_change_percentage_24h,
             all_time_high: self.all_time_high,
@@ -211,6 +241,8 @@ impl PriceRow {
     pub fn from_price_data(data: PriceData) -> Self {
         PriceRow {
             id: data.id,
+            provider: data.provider.into(),
+            provider_price_id: data.provider_price_id,
             price: data.price,
             price_change_percentage_24h: data.price_change_percentage_24h,
             all_time_high: data.all_time_high,

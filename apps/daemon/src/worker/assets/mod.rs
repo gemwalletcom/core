@@ -1,5 +1,6 @@
 mod asset_rank_updater;
 pub mod asset_updater;
+mod assets_has_price_updater;
 mod assets_images_updater;
 mod perpetual_updater;
 mod staking_apy_updater;
@@ -12,6 +13,7 @@ use std::sync::Arc;
 use api_connector::StaticAssetsClient;
 use asset_rank_updater::AssetRankUpdater;
 use asset_updater::{AssetUpdater, AssetUpdaterConfig};
+use assets_has_price_updater::AssetsHasPriceUpdater;
 use assets_images_updater::AssetsImagesUpdater;
 use cacher::CacherClient;
 use coingecko::CoinGeckoClient;
@@ -125,43 +127,48 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
                 async move { updater.update_chain(chain).await }
             }
         })
-        .jobs(WorkerJob::UpdateStakeApy, Chain::stakeable(), |chain, _| {
-            let settings = settings.clone();
+        .job(WorkerJob::UpdateAssetsHasPrice, {
             let database = database.clone();
             move |_| {
-                let settings = settings.clone();
+                let updater = AssetsHasPriceUpdater::new(database.clone());
+                async move { updater.update().await }
+            }
+        })
+        .jobs(WorkerJob::UpdateStakeApy, Chain::stakeable(), {
+            let settings = settings.clone();
+            let database = database.clone();
+            move |chain, _| {
+                let providers = Arc::new(ChainProviders::for_chain(chain, &settings, &service_user_agent("daemon", Some("staking_apy"))));
                 let database = database.clone();
-                async move {
-                    let providers = ChainProviders::from_settings(&settings, &service_user_agent("daemon", Some("staking_apy")));
-                    let updater = StakeApyUpdater::new(providers, database.clone());
-                    updater.update_chain(chain).await
+                move |_| {
+                    let updater = StakeApyUpdater::new(providers.clone(), database.clone());
+                    async move { updater.update_chain(chain).await }
                 }
             }
         })
-        .jobs(WorkerJob::UpdateChainValidators, Chain::stakeable(), |chain, _| {
+        .jobs(WorkerJob::UpdateChainValidators, Chain::stakeable(), {
             let settings = settings.clone();
             let database = database.clone();
-            move |_| {
-                let settings = settings.clone();
+            move |chain, _| {
+                let providers = Arc::new(ChainProviders::for_chain(chain, &settings, &service_user_agent("daemon", Some("scan_validators"))));
                 let database = database.clone();
-                async move {
-                    let providers = Arc::new(ChainProviders::from_settings(&settings, &service_user_agent("daemon", Some("scan_validators"))));
-                    let scanner = ValidatorScanner::new(providers, database);
-                    scanner.update_validators_for_chain(chain).await
+                move |_| {
+                    let scanner = ValidatorScanner::new(providers.clone(), database.clone());
+                    async move { scanner.update_validators_for_chain(chain).await }
                 }
             }
         })
-        .jobs(WorkerJob::UpdateValidatorsFromStaticAssets, [Chain::Tron, Chain::SmartChain], |chain, _| {
+        .jobs(WorkerJob::UpdateValidatorsFromStaticAssets, [Chain::Tron, Chain::SmartChain], {
             let settings = settings.clone();
             let database = database.clone();
-            move |_| {
-                let settings = settings.clone();
+            move |chain, _| {
+                let providers = Arc::new(ChainProviders::for_chain(chain, &settings, &service_user_agent("daemon", Some("scan_static_assets"))));
+                let assets_url = settings.assets.url.clone();
                 let database = database.clone();
-                async move {
-                    let providers = Arc::new(ChainProviders::from_settings(&settings, &service_user_agent("daemon", Some("scan_static_assets"))));
-                    let assets_url = settings.assets.url.clone();
-                    let scanner = ValidatorScanner::new(providers, database);
-                    scanner.update_validators_from_static_assets_for_chain(chain, &assets_url).await
+                move |_| {
+                    let scanner = ValidatorScanner::new(providers.clone(), database.clone());
+                    let assets_url = assets_url.clone();
+                    async move { scanner.update_validators_from_static_assets_for_chain(chain, &assets_url).await }
                 }
             }
         })

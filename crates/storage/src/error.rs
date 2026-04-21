@@ -250,6 +250,37 @@ impl From<diesel::result::Error> for ReferralValidationError {
     }
 }
 
+#[derive(Debug, Clone)]
+pub enum UsernameValidationError {
+    Invalid(String),
+    AlreadyTaken,
+    Database(DatabaseError),
+}
+
+impl fmt::Display for UsernameValidationError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            UsernameValidationError::Invalid(msg) => write!(f, "{}", msg),
+            UsernameValidationError::AlreadyTaken => write!(f, "Username already taken"),
+            UsernameValidationError::Database(e) => write!(f, "{}", e),
+        }
+    }
+}
+
+impl Error for UsernameValidationError {}
+
+impl From<DatabaseError> for UsernameValidationError {
+    fn from(error: DatabaseError) -> Self {
+        UsernameValidationError::Database(error)
+    }
+}
+
+impl From<diesel::result::Error> for UsernameValidationError {
+    fn from(error: diesel::result::Error) -> Self {
+        UsernameValidationError::Database(error.into())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{DatabaseError, DieselResultExt, NotFoundLookup};

@@ -67,7 +67,6 @@ impl RewardStatus {
 }
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, EnumIter, EnumString, AsRefStr, PartialEq)]
-#[typeshare(swift = "Equatable, Hashable, Sendable, CaseIterable")]
 #[serde(rename_all = "camelCase")]
 #[strum(serialize_all = "camelCase")]
 pub enum RewardEventType {
@@ -75,6 +74,7 @@ pub enum RewardEventType {
     InvitePending,
     InviteNew,
     Joined,
+    Enabled,
     Disabled,
     Redeemed,
 }
@@ -90,6 +90,7 @@ impl RewardEventType {
             Self::InvitePending => 0,
             Self::InviteNew => 100,
             Self::Joined => 10,
+            Self::Enabled => 50,
             Self::Disabled => 0,
             Self::Redeemed => 0,
         }
@@ -163,6 +164,7 @@ pub struct RewardEvent {
     #[typeshare(skip)]
     #[serde(skip)]
     pub username: String,
+    #[typeshare(skip)]
     pub event: RewardEventType,
     pub points: i32,
     pub created_at: DateTime<Utc>,

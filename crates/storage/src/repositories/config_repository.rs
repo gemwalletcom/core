@@ -13,8 +13,10 @@ pub trait ConfigRepository {
     fn get_config_bool(&mut self, key: ConfigKey) -> Result<bool, DatabaseError>;
     fn get_config_duration(&mut self, key: ConfigKey) -> Result<Duration, DatabaseError>;
     fn get_config_vec_string(&mut self, key: ConfigKey) -> Result<Vec<String>, DatabaseError>;
+    fn get_config_keys(&mut self) -> Result<Vec<String>, DatabaseError>;
     fn add_config(&mut self, configs: Vec<ConfigRow>) -> Result<usize, DatabaseError>;
     fn set_config(&mut self, key: ConfigKey, value: &str) -> Result<usize, DatabaseError>;
+    fn delete_keys(&mut self, keys: Vec<String>) -> Result<usize, DatabaseError>;
 }
 
 impl ConfigRepository for DatabaseClient {
@@ -51,5 +53,13 @@ impl ConfigRepository for DatabaseClient {
 
     fn set_config(&mut self, key: ConfigKey, value: &str) -> Result<usize, DatabaseError> {
         Ok(ConfigStore::set_config(self, key.as_ref(), value)?)
+    }
+
+    fn get_config_keys(&mut self) -> Result<Vec<String>, DatabaseError> {
+        Ok(ConfigStore::get_config_keys(self)?)
+    }
+
+    fn delete_keys(&mut self, keys: Vec<String>) -> Result<usize, DatabaseError> {
+        Ok(ConfigStore::delete_keys(self, keys)?)
     }
 }

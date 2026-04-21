@@ -46,7 +46,7 @@ members = [
     "crates/in_app_notifications",
     "crates/serde_serializers",
     "crates/number_formatter",
-    "crates/prices_dex",
+    "crates/prices",
     "crates/portfolio",
     "crates/streamer",
     "crates/swapper",

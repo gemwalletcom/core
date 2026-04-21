@@ -3,7 +3,7 @@ use std::fmt;
 
 use localizer::LanguageLocalizer;
 use primitives::{ConfigKey, Localize};
-use storage::{DatabaseError, ReferralValidationError};
+use storage::{DatabaseError, ReferralValidationError, UsernameValidationError};
 
 #[derive(Debug)]
 pub enum RewardsError {
@@ -123,12 +123,14 @@ impl Error for RewardsRedemptionError {}
 #[derive(Debug)]
 pub enum UsernameError {
     LimitReached(ConfigKey),
+    Validation(UsernameValidationError),
 }
 
 impl fmt::Display for UsernameError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             UsernameError::LimitReached(key) => write!(f, "Username creation limit reached: {}", key.as_ref()),
+            UsernameError::Validation(e) => write!(f, "{}", e),
         }
     }
 }
@@ -140,6 +142,13 @@ impl Localize for UsernameError {
         let localizer = LanguageLocalizer::new_with_language(locale);
         match self {
             Self::LimitReached(_) => localizer.rewards_error_username_daily_limit_reached(),
+            Self::Validation(e) => e.to_string(),
         }
+    }
+}
+
+impl From<UsernameValidationError> for UsernameError {
+    fn from(error: UsernameValidationError) -> Self {
+        UsernameError::Validation(error)
     }
 }

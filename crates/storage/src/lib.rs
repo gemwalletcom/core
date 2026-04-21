@@ -26,7 +26,7 @@ pub use self::database::{
     rewards_redemptions::RedemptionUpdate,
     transactions::{TransactionFilter, TransactionUpdate},
 };
-pub use self::error::{DatabaseError, DieselResultExt, ReferralValidationError};
+pub use self::error::{DatabaseError, DieselResultExt, ReferralValidationError, UsernameValidationError};
 pub use self::models::{AssetUsageRankRow, FiatAssetRowsExt, NewNotificationRow, NewWalletRow, RewardRedemptionOptionRow};
 pub use self::repositories::{
     assets_addresses_repository::AssetsAddressesRepository,
@@ -44,7 +44,7 @@ pub use self::repositories::{
     parser_state_repository::ParserStateRepository,
     perpetuals_repository::PerpetualsRepository,
     price_alerts_repository::PriceAlertsRepository,
-    prices_dex_repository::PricesDexRepository,
+    prices_providers_repository::PricesProvidersRepository,
     prices_repository::PricesRepository,
     releases_repository::ReleasesRepository,
     rewards_redemptions_repository::RewardsRedemptionsRepository,
@@ -133,7 +133,7 @@ impl Database {
         self.client()
     }
 
-    pub fn prices_dex(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
+    pub fn prices_providers(&self) -> Result<DatabaseClient, Box<dyn Error + Send + Sync>> {
         self.client()
     }
 

@@ -1,22 +1,29 @@
+use std::collections::HashMap;
 use std::error::Error;
 
 use cacher::{CacheKey, CacherClient};
-use pricer::PriceClient;
-use streamer::{FetchPricesPayload, StreamProducer, StreamProducerQueue};
+use prices::AssetPriceMapping;
+use primitives::PriceProvider;
+use storage::{Database, PricesRepository};
+use streamer::StreamProducer;
+
+use crate::worker::prices::{Providers, prices_updater::PricesUpdater};
 
 pub struct ObservedPricesUpdater {
     cacher_client: CacherClient,
-    price_client: PriceClient,
+    database: Database,
+    providers: Providers,
     stream_producer: StreamProducer,
     max_assets: usize,
     min_observers: usize,
 }
 
 impl ObservedPricesUpdater {
-    pub fn new(cacher_client: CacherClient, price_client: PriceClient, stream_producer: StreamProducer, max_assets: usize, min_observers: usize) -> Self {
+    pub fn new(cacher_client: CacherClient, database: Database, providers: Providers, stream_producer: StreamProducer, max_assets: usize, min_observers: usize) -> Self {
         Self {
             cacher_client,
-            price_client,
+            database,
+            providers,
             stream_producer,
             max_assets,
             min_observers,
@@ -29,15 +36,21 @@ impl ObservedPricesUpdater {
             return Ok(0);
         }
 
-        let price_ids = self.price_client.get_price_ids_for_asset_ids(&asset_ids)?;
-        if price_ids.is_empty() {
-            return Ok(0);
+        let mut by_provider: HashMap<PriceProvider, Vec<AssetPriceMapping>> = HashMap::new();
+        for (asset_id, row) in self.database.prices()?.get_primary_prices(&asset_ids)? {
+            by_provider.entry(row.provider.0).or_default().push(AssetPriceMapping::new(asset_id, row.provider_price_id));
         }
 
-        let count = price_ids.len();
-        let payload = FetchPricesPayload::new(price_ids);
-        self.stream_producer.publish_fetch_prices(payload).await?;
-        Ok(count)
+        let mut total = 0;
+        for (provider, mappings) in by_provider {
+            let Some(instance) = self.providers.get(&provider).cloned() else {
+                continue;
+            };
+            total += PricesUpdater::new(instance, self.database.clone(), self.stream_producer.clone())
+                .update_prices(mappings)
+                .await?;
+        }
+        Ok(total)
     }
 
     async fn get_observed_assets(&self) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {

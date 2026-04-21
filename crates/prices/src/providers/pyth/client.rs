@@ -39,9 +39,4 @@ impl PythClient {
 
         Ok(all_prices)
     }
-
-    pub async fn get_price(&self, price_id: &str) -> Result<Price, Box<dyn Error + Send + Sync>> {
-        let prices = self.get_asset_prices(vec![price_id.to_string()]).await?;
-        prices.into_iter().next().ok_or_else(|| "No price found".into())
-    }
 }

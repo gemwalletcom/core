@@ -1,5 +1,5 @@
 use diesel::prelude::*;
-use primitives::{ConfigKey, ParamConfigKey};
+use primitives::{ConfigKey, ConfigParamKey};
 use std::str::FromStr;
 
 #[derive(Debug, Clone, Queryable, Selectable, Insertable)]
@@ -20,7 +20,7 @@ impl ConfigRow {
         }
     }
 
-    pub fn from_param(key: ParamConfigKey) -> Self {
+    pub fn from_param(key: ConfigParamKey) -> Self {
         Self {
             key: key.key(),
             value: key.default_value().to_string(),

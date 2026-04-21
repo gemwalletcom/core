@@ -13,7 +13,7 @@ mod worker;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 
-use crate::model::{ConsumerService, DaemonService, WorkerService};
+use crate::model::{ConsumerOptions, ConsumerService, DaemonService, WorkerOptions, WorkerService};
 use crate::reporters::consumer::ConsumerReporter;
 use crate::reporters::job::JobReporter;
 use crate::shutdown::ShutdownReceiver;
@@ -32,10 +32,7 @@ pub async fn main() {
     let service_arg = args.iter().skip(1).map(|s| s.as_str()).collect::<Vec<_>>().join(" ");
 
     let service = DaemonService::from_str(&service_arg).unwrap_or_else(|e| {
-        panic!(
-            "{}\nUsage examples: \n daemon parser \n daemon parser ethereum \n daemon worker alerter \n daemon consumer fetch_transactions",
-            e
-        );
+        panic!("{e}\nUsage examples:\n daemon parser\n daemon parser ethereum\n daemon worker alerter\n daemon worker prices jupiter\n daemon consumer fetch_transactions");
     });
 
     let settings = settings::Settings::new().unwrap();
@@ -49,29 +46,29 @@ pub async fn main() {
         DaemonService::SetupDev => {
             let _ = setup::run_setup_dev(settings).await;
         }
-        DaemonService::Worker(service) => {
-            let services = match service {
+        DaemonService::Worker(opts) => {
+            let services = match opts.service {
                 Some(worker) => vec![worker],
                 None => WorkerService::all(),
             };
-            run_worker_services(settings, &services).await;
+            run_worker_services(settings, &services, opts).await;
         }
         DaemonService::Parser(chain) => {
             let parser_metrics = Arc::new(metrics::parser::ParserMetrics::new());
             let health_state = health::spawn_server(parser_metrics.clone());
             parser::run(settings, chain, health_state, parser_metrics).await.expect("Parser failed");
         }
-        DaemonService::Consumer(service) => {
-            let services = match service {
+        DaemonService::Consumer(opts) => {
+            let services = match opts.service.clone() {
                 Some(consumer) => vec![consumer],
                 None => ConsumerService::all(),
             };
-            run_consumer_services(settings, &services).await.expect("Consumer failed");
+            run_consumer_services(settings, &services, opts).await.expect("Consumer failed");
         }
     }
 }
 
-async fn run_worker_services(settings: settings::Settings, services: &[WorkerService]) {
+async fn run_worker_services(settings: settings::Settings, services: &[WorkerService], options: WorkerOptions) {
     if services.is_empty() {
         info_with_fields!("no worker services requested", status = "ok");
         return;
@@ -86,8 +83,7 @@ async fn run_worker_services(settings: settings::Settings, services: &[WorkerSer
 
     let service_name = services.first().map(|s| s.as_ref()).unwrap_or("worker");
     let job_metrics = Arc::new(metrics::job::JobMetrics::new(service_name));
-    let price_metrics = Arc::new(metrics::price::PriceMetrics::new());
-    let composite = Arc::new(metrics::Metrics::new(vec![job_metrics.clone(), price_metrics.clone()]));
+    let composite = Arc::new(metrics::Metrics::new(vec![job_metrics.clone()]));
     let health_state = health::spawn_server(composite);
 
     let signal_handle = shutdown::spawn_signal_handler(shutdown_tx);
@@ -100,9 +96,9 @@ async fn run_worker_services(settings: settings::Settings, services: &[WorkerSer
         let runtime = WorkerRuntime::new(reporter, schedule);
         let context = WorkerContext::new(settings.clone(), database.clone(), runtime);
         let shutdown_rx = shutdown_rx.clone();
-        let price_metrics = price_metrics.clone();
+        let options = options.clone();
         async move {
-            match svc.run_jobs(context, shutdown_rx, price_metrics).await {
+            match svc.run_jobs(context, shutdown_rx, options).await {
                 Ok(handles) => Some((svc, handles)),
                 Err(err) => {
                     error_with_fields!("worker init failed", &*err, worker = svc.as_ref());
@@ -169,7 +165,7 @@ fn log_pending_workers(tracks: &[WorkerStatusTrack], message: &str) {
     }
 }
 
-async fn run_consumer_services(settings: settings::Settings, services: &[ConsumerService]) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn run_consumer_services(settings: settings::Settings, services: &[ConsumerService], options: ConsumerOptions) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     if services.is_empty() {
         info_with_fields!("no consumer services requested", status = "ok");
         return Ok(());
@@ -180,8 +176,7 @@ async fn run_consumer_services(settings: settings::Settings, services: &[Consume
     let signal_handle = shutdown::spawn_signal_handler(shutdown_tx);
 
     let consumer_metrics = Arc::new(metrics::consumer::ConsumerMetrics::new());
-    let price_metrics = Arc::new(metrics::price::PriceMetrics::new());
-    let composite = Arc::new(metrics::Metrics::new(vec![consumer_metrics.clone(), price_metrics.clone()]));
+    let composite = Arc::new(metrics::Metrics::new(vec![consumer_metrics.clone()]));
     let health_state = health::spawn_server(composite);
     let reporter: Arc<dyn ConsumerStatusReporter> = Arc::new(ConsumerReporter::new(consumer_metrics));
     let failures = Arc::new(Mutex::new(Vec::new()));
@@ -195,9 +190,9 @@ async fn run_consumer_services(settings: settings::Settings, services: &[Consume
             let reporter = reporter.clone();
             let shutdown_rx = shutdown_rx.clone();
             let failures = failures.clone();
-            let price_metrics = price_metrics.clone();
+            let options = options.clone();
             tokio::spawn(async move {
-                match run_consumer((*settings.as_ref()).clone(), svc, shutdown_rx, reporter, price_metrics).await {
+                match run_consumer((*settings.as_ref()).clone(), svc, shutdown_rx, reporter, options).await {
                     Ok(_) => info_with_fields!("consumer stopped", consumer = svc_name.as_str(), status = "ok"),
                     Err(err) => {
                         let message = err.to_string();
@@ -231,16 +226,15 @@ async fn run_consumer(
     service: ConsumerService,
     shutdown_rx: ShutdownReceiver,
     reporter: Arc<dyn ConsumerStatusReporter>,
-    price_metrics: Arc<metrics::price::PriceMetrics>,
+    options: ConsumerOptions,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     match service {
         ConsumerService::Store => consumers::run_consumer_store(settings, shutdown_rx, reporter).await,
-        ConsumerService::Indexer => consumers::run_consumer_indexer(settings, shutdown_rx, reporter).await,
+        ConsumerService::Indexer => consumers::run_consumer_indexer(settings, shutdown_rx, reporter, options.indexer).await,
         ConsumerService::Notifications => consumers::notifications::run(settings, shutdown_rx, reporter).await,
         ConsumerService::Rewards => consumers::run_consumer_rewards(settings, shutdown_rx, reporter).await,
         ConsumerService::Support => consumers::run_consumer_support(settings, shutdown_rx, reporter).await,
         ConsumerService::Fiat => consumers::run_consumer_fiat(settings, shutdown_rx, reporter).await,
-        ConsumerService::Prices => consumers::run_consumer_prices(settings, shutdown_rx, reporter, price_metrics).await,
         ConsumerService::Assets => consumers::run_consumer_assets(settings, shutdown_rx, reporter).await,
     }
 }

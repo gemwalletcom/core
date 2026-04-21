@@ -1,11 +1,7 @@
 use cacher::{CacheError, CacheKey, CacherClient};
-use chrono::NaiveDateTime;
 use primitives::{AssetMarketPrice, AssetPriceInfo, AssetPrices, ChartTimeframe, FiatRate};
 use std::error::Error;
-use storage::{
-    ChartsRepository, Database, PricesRepository,
-    models::{ChartRow, PriceAssetRow, PriceRow},
-};
+use storage::{ChartsRepository, Database, PricesRepository};
 
 #[derive(Clone)]
 pub struct PriceClient {
@@ -13,43 +9,9 @@ pub struct PriceClient {
     cacher_client: CacherClient,
 }
 
-const PRICES_INSERT_BATCH_LIMIT: usize = 1000;
-
 impl PriceClient {
     pub fn new(database: Database, cacher_client: CacherClient) -> Self {
         Self { database, cacher_client }
-    }
-
-    pub fn get_price_ids_for_asset_ids(&self, asset_ids: &[String]) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
-        let prices_assets = self.database.prices()?.get_prices_assets()?;
-        let requested: std::collections::HashSet<_> = asset_ids.iter().cloned().collect();
-        let price_ids: Vec<String> = prices_assets
-            .into_iter()
-            .filter(|x| requested.contains(&x.asset_id.to_string()))
-            .map(|pa| pa.price_id)
-            .collect::<std::collections::HashSet<_>>()
-            .into_iter()
-            .collect();
-        Ok(price_ids)
-    }
-
-    pub fn set_prices(&self, prices: Vec<PriceRow>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        for chunk in prices.chunks(PRICES_INSERT_BATCH_LIMIT) {
-            self.database.prices()?.set_prices(chunk.to_vec())?;
-        }
-        Ok(prices.len())
-    }
-
-    pub fn get_prices(&self) -> Result<Vec<PriceRow>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.prices()?.get_prices()?)
-    }
-
-    pub fn get_prices_ids(&self) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.prices()?.get_prices()?.into_iter().map(|x| x.id).collect())
-    }
-
-    pub fn get_prices_assets(&self) -> Result<Vec<PriceAssetRow>, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.prices()?.get_prices_assets()?)
     }
 
     pub async fn set_fiat_rates(&self, rates: Vec<FiatRate>) -> Result<usize, Box<dyn Error + Send + Sync>> {
@@ -74,10 +36,17 @@ impl PriceClient {
     pub async fn get_asset_price(&self, asset_id: &str, currency: &str) -> Result<AssetMarketPrice, Box<dyn Error + Send + Sync>> {
         let rate = self.get_fiat_rate(currency)?.rate;
         let price = self.get_cache_price(asset_id).await?;
-
+        let prices = self
+            .database
+            .prices()?
+            .get_prices_for_asset(asset_id)?
+            .into_iter()
+            .map(|row| row.as_primitive().with_rate(rate))
+            .collect();
         Ok(AssetMarketPrice {
             price: Some(price.as_price_primitive_with_rate(rate)),
             market: Some(price.as_market_with_rate(rate)),
+            prices: Some(prices),
         })
     }
 
@@ -127,14 +96,6 @@ impl PriceClient {
             currency: currency.to_string(),
             prices,
         })
-    }
-
-    pub async fn add_charts(&self, charts: Vec<ChartRow>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.charts()?.add_charts(charts)?)
-    }
-
-    pub fn delete_prices_updated_at_before(&self, time: NaiveDateTime) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.prices()?.delete_prices_updated_at_before(time)?)
     }
 
     pub async fn aggregate_charts(&self, timeframe: ChartTimeframe) -> Result<usize, Box<dyn Error + Send + Sync>> {

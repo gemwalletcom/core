@@ -75,6 +75,9 @@ impl AssetPriceMetadata {
 pub struct AssetMarketPrice {
     pub price: Option<Price>,
     pub market: Option<AssetMarket>,
+    #[typeshare(skip)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prices: Option<Vec<Price>>,
 }
 
 #[typeshare(swift = "Sendable")]
@@ -92,6 +95,8 @@ pub struct AssetProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub earn_apr: Option<f64>,
     pub has_image: bool,
+    #[typeshare(skip)]
+    pub has_price: bool,
 }
 
 impl AssetProperties {
@@ -107,6 +112,7 @@ impl AssetProperties {
             is_earnable: false,
             earn_apr: None,
             has_image: false,
+            has_price: false,
         }
     }
 }
@@ -133,12 +139,12 @@ mod tests {
     use chrono::Utc;
 
     use super::*;
-    use crate::{Asset, Chain};
+    use crate::{Asset, Chain, PriceProvider};
 
     #[test]
     fn test_asset_basic_with_rate() {
         let asset = Asset::from_chain(Chain::Bitcoin);
-        let price = Price::new(100.0, 5.0, Utc::now());
+        let price = Price::new(100.0, 5.0, Utc::now(), PriceProvider::Coingecko);
 
         let base = AssetPriceMetadata {
             asset: AssetBasic::new(asset.clone(), AssetProperties::default(asset.id.clone()), AssetScore::default()),

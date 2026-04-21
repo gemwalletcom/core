@@ -6,8 +6,8 @@ CREATE TABLE assets (
     chain VARCHAR(32) NOT NULL REFERENCES chains (id) ON DELETE CASCADE,
     token_id VARCHAR(128),
     asset_type asset_type NOT NULL,
-    name VARCHAR(64) NOT NULL,
-    symbol VARCHAR(16) NOT NULL,
+    name VARCHAR(128) NOT NULL,
+    symbol VARCHAR(32) NOT NULL,
     decimals INTEGER NOT NULL,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp,
@@ -22,6 +22,7 @@ CREATE TABLE assets (
     is_earnable boolean NOT NULL default false,
     earn_apr float,
     has_image boolean NOT NULL default false,
+    has_price boolean NOT NULL default false,
 
     UNIQUE(id)
 );

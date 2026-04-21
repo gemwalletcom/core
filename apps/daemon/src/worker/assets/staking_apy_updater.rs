@@ -1,16 +1,17 @@
 use std::error::Error;
+use std::sync::Arc;
 
 use primitives::Chain;
 use settings_chain::ChainProviders;
 use storage::{AssetUpdate, AssetsRepository, Database};
 
 pub struct StakeApyUpdater {
-    chain_providers: ChainProviders,
+    chain_providers: Arc<ChainProviders>,
     database: Database,
 }
 
 impl StakeApyUpdater {
-    pub fn new(chain_providers: ChainProviders, database: Database) -> Self {
+    pub fn new(chain_providers: Arc<ChainProviders>, database: Database) -> Self {
         Self { chain_providers, database }
     }
 

@@ -3,7 +3,7 @@ use std::sync::RwLock;
 use std::time::{Duration, Instant};
 
 use chrono::{DateTime, NaiveDateTime};
-use primitives::{ConfigKey, ParamConfigKey};
+use primitives::{ConfigKey, ConfigParamKey};
 use serde::de::DeserializeOwned;
 
 use crate::database::config::ConfigStore;
@@ -87,7 +87,7 @@ impl ConfigCacher {
         parse_duration(&self.get(key)?)
     }
 
-    pub fn get_param_duration(&self, param: &ParamConfigKey) -> Result<Duration, DatabaseError> {
+    pub fn get_param_duration(&self, param: &ConfigParamKey) -> Result<Duration, DatabaseError> {
         let value = self
             .database
             .client()

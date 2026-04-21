@@ -83,7 +83,7 @@ mod tests {
     fn test_all_time_change_percentage() {
         let info = AssetPriceInfo {
             asset_id: AssetId::from(Chain::Bitcoin, None),
-            price: Price::new(80.0, 5.0, Utc::now()),
+            price: Price::new(80.0, 5.0, Utc::now(), crate::PriceProvider::Coingecko),
             market: AssetMarket {
                 market_cap: None,
                 market_cap_fdv: None,

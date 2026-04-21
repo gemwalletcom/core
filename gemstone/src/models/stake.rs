@@ -1,6 +1,6 @@
 use crate::models::custom_types::{DateTimeUtc, GemBigUint};
 use primitives::stake_type::Resource;
-use primitives::{AssetId, Chain, Delegation, DelegationBase, DelegationState, DelegationValidator, Price, StakeChain, StakeProviderType};
+use primitives::{AssetId, Chain, Delegation, DelegationBase, DelegationState, DelegationValidator, Price, PriceProvider, StakeChain, StakeProviderType};
 
 pub type GemResource = Resource;
 pub type GemDelegation = Delegation;
@@ -9,6 +9,7 @@ pub type GemDelegationValidator = DelegationValidator;
 pub type GemDelegationState = DelegationState;
 pub type GemStakeProviderType = StakeProviderType;
 pub type GemPrice = Price;
+pub type GemPriceProvider = PriceProvider;
 pub type GemStakeChain = StakeChain;
 
 #[uniffi::remote(Enum)]
@@ -73,11 +74,19 @@ pub struct GemDelegationBase {
     pub validator_id: String,
 }
 
+#[uniffi::remote(Enum)]
+pub enum GemPriceProvider {
+    Coingecko,
+    Pyth,
+    Jupiter,
+}
+
 #[uniffi::remote(Record)]
 pub struct GemPrice {
     pub price: f64,
     pub price_change_percentage_24h: f64,
     pub updated_at: DateTimeUtc,
+    pub provider: PriceProvider,
 }
 
 #[uniffi::remote(Record)]

@@ -102,8 +102,8 @@ mod tests {
         let token_asset = Asset::mock_erc20();
         let native_asset = Asset::mock_btc();
 
-        let price_high = Some(Price::new(1.0, 0.0, Utc::now()));
-        let price_low = Some(Price::new(0.005, 0.0, Utc::now()));
+        let price_high = Some(Price::new(1.0, 0.0, Utc::now(), primitives::PriceProvider::Coingecko));
+        let price_low = Some(Price::new(0.005, 0.0, Utc::now(), primitives::PriceProvider::Coingecko));
 
         let transaction_transfer = Transaction::mock_with_params(
             AssetId::from(Chain::Ethereum, Some("0xA0b86a33E6441066d64bb38954e41F6b4b925c59".to_string())),

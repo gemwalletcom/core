@@ -41,15 +41,12 @@ pub enum QueueName {
     StorePendingTransactions,
     // Store prices to database
     StorePrices,
-    // Store charts to database
-    StoreCharts,
     // Rewards events (create username, invite, etc.)
     RewardsEvents,
     // Rewards redemptions
     RewardsRedemptions,
     NotificationsFiatPurchase,
     NotificationsInApp,
-    FetchPrices,
     UpdateCoinInfo,
     WalletStreamEvents,
 }
@@ -95,10 +92,8 @@ impl fmt::Display for QueueName {
             QueueName::RewardsRedemptions => write!(f, "rewards_redemptions"),
             QueueName::NotificationsFailed => write!(f, "notifications_failed"),
             QueueName::StorePrices => write!(f, "store_prices"),
-            QueueName::StoreCharts => write!(f, "store_charts"),
             QueueName::NotificationsFiatPurchase => write!(f, "notifications_fiat_purchase"),
             QueueName::NotificationsInApp => write!(f, "notifications_in_app"),
-            QueueName::FetchPrices => write!(f, "fetch_prices"),
             QueueName::UpdateCoinInfo => write!(f, "update_coin_info"),
             QueueName::WalletStreamEvents => write!(f, "wallet_stream_events"),
         }

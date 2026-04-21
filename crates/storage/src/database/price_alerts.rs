@@ -4,7 +4,7 @@ use crate::{DatabaseClient, models::*};
 use diesel::prelude::*;
 
 pub(crate) trait PriceAlertsStore {
-    fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime) -> Result<Vec<(PriceAlertRow, PriceRow, crate::models::DeviceRow)>, diesel::result::Error>;
+    fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime) -> Result<Vec<(PriceAlertRow, crate::models::DeviceRow)>, diesel::result::Error>;
     fn get_price_alerts_for_device_id(&mut self, device_id: &str, asset_id: Option<&str>) -> Result<Vec<(PriceAlertRow, crate::models::DeviceRow)>, diesel::result::Error>;
     fn add_price_alerts(&mut self, values: Vec<NewPriceAlertRow>) -> Result<usize, diesel::result::Error>;
     fn delete_price_alerts(&mut self, device_id: i32, ids: Vec<String>) -> Result<usize, diesel::result::Error>;
@@ -12,22 +12,17 @@ pub(crate) trait PriceAlertsStore {
 }
 
 impl PriceAlertsStore for DatabaseClient {
-    fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime) -> Result<Vec<(PriceAlertRow, PriceRow, crate::models::DeviceRow)>, diesel::result::Error> {
+    fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime) -> Result<Vec<(PriceAlertRow, crate::models::DeviceRow)>, diesel::result::Error> {
         use crate::schema::devices;
         use crate::schema::price_alerts::dsl::*;
-        use crate::schema::prices;
-        use crate::schema::prices_assets;
 
         price_alerts
             .filter(
                 (price_direction.is_not_null().and(last_notified_at.is_null()))
                     .or(price_direction.is_null().and(last_notified_at.lt(after_notified_at).or(last_notified_at.is_null()))),
             )
-            .inner_join(prices_assets::table.on(asset_id.eq(prices_assets::asset_id)))
-            .inner_join(prices::table.on(prices_assets::price_id.eq(prices::id)))
             .inner_join(devices::table.on(device_id.eq(devices::id)))
-            .select((PriceAlertRow::as_select(), PriceRow::as_select(), crate::models::DeviceRow::as_select()))
-            .distinct()
+            .select((PriceAlertRow::as_select(), crate::models::DeviceRow::as_select()))
             .load(&mut self.connection)
     }
 

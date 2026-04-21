@@ -1,8 +1,8 @@
 use crate::database::assets::AssetsStore;
 use crate::database::assets::{AssetFilter, AssetUpdate};
-use crate::models::{AssetRow, NewAssetRow};
+use crate::models::{AssetRow, NewAssetRow, PriceRow};
+use crate::repositories::prices_repository::PricesRepository;
 use crate::{DatabaseClient, DatabaseError, DieselResultExt};
-use diesel::OptionalExtension;
 use primitives::{Asset, AssetBasic, AssetFull, AssetPriceMetadata};
 
 pub trait AssetsRepository {
@@ -51,19 +51,22 @@ impl AssetsRepository for DatabaseClient {
 
     fn get_asset_full(&mut self, asset_id: &str) -> Result<AssetFull, DatabaseError> {
         use crate::database::assets_links::AssetsLinksStore;
-        use crate::database::prices::PricesStore;
         use crate::database::tag::TagStore;
 
         let asset = AssetsStore::get_asset(self, asset_id).or_not_found(asset_id.to_string())?;
-        let price = PricesStore::get_price(self, asset_id).optional()?;
-        let market = price.as_ref().map(|x| x.as_market_primitive());
+        let price_row: Option<PriceRow> = PricesRepository::get_assets_with_prices(self, vec![asset_id.to_string()])?
+            .into_iter()
+            .next()
+            .and_then(|d| d.price);
+        let market = price_row.as_ref().map(|x| x.as_market_primitive());
+        let price = price_row.as_ref().map(|x| x.as_primitive());
         let links = AssetsLinksStore::get_asset_links(self, asset_id)?.into_iter().map(|x| x.as_primitive()).collect();
         let tags = TagStore::get_assets_tags_for_asset(self, asset_id)?.into_iter().map(|x| x.tag_id).collect();
         let perpetuals = self.perpetuals().get_perpetuals_for_asset(asset.id.as_str())?;
         let perpetuals = perpetuals.into_iter().map(|x| x.as_basic()).collect();
 
         Ok(AssetFull {
-            price: price.map(|x| x.as_primitive()),
+            price,
             market,
             asset: asset.as_primitive(),
             properties: asset.as_property_primitive(),
@@ -87,11 +90,11 @@ impl AssetsRepository for DatabaseClient {
     }
 
     fn get_assets_with_prices(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetPriceMetadata>, DatabaseError> {
-        Ok(AssetsStore::get_assets_with_prices(self, asset_ids)?
+        Ok(PricesRepository::get_assets_with_prices(self, asset_ids)?
             .into_iter()
-            .map(|(asset, price)| AssetPriceMetadata {
-                asset: asset.as_basic_primitive(),
-                price: price.map(|p| p.as_primitive()),
+            .map(|row| AssetPriceMetadata {
+                asset: row.asset.as_basic_primitive(),
+                price: row.price.map(|p| p.as_primitive()),
             })
             .collect())
     }

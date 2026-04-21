@@ -15,7 +15,7 @@ pub mod parser_state;
 pub mod perpetual;
 pub mod price;
 pub mod price_alert;
-pub mod price_dex;
+pub mod price_provider;
 pub mod release;
 pub mod reward;
 pub mod scan_addresses;
@@ -44,7 +44,7 @@ pub use self::parser_state::ParserStateRow;
 pub use self::perpetual::{NewPerpetualAssetRow, NewPerpetualRow, PerpetualRow};
 pub use self::price::{NewPriceRow, PriceAssetDataRow, PriceAssetRow, PriceRow};
 pub use self::price_alert::{NewPriceAlertRow, PriceAlertRow};
-pub use self::price_dex::{PriceDexAssetRow, PriceDexProviderRow, PriceDexRow};
+pub use self::price_provider::PriceProviderConfigRow;
 pub use self::release::ReleaseRow;
 pub use self::reward::{
     NewRewardEventRow, NewRewardRedemptionRow, NewRewardReferralRow, NewRewardsRow, NewRiskSignalRow, RedemptionOptionFull, ReferralAttemptRow, RewardEventRow,

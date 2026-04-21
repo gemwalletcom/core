@@ -2,7 +2,7 @@ use std::{error::Error, vec};
 
 use coingecko::{CoinGeckoClient, model::Global};
 use pricer::MarketsClient;
-use primitives::{AssetTag, Chain, MarketDominance, Markets};
+use primitives::{AssetTag, Chain, MarketDominance, Markets, PriceProvider};
 
 pub struct MarketsUpdater {
     markets_client: MarketsClient,
@@ -22,9 +22,16 @@ impl MarketsUpdater {
         let trending = self.coin_gecko_client.get_search_trending().await?;
         let top_gainers_losers = self.coin_gecko_client.get_top_gainers_losers().await?;
 
-        let trending = self.markets_client.get_asset_ids_for_prices_ids(trending.get_coins_ids()).await?;
-        let gainers = self.markets_client.get_asset_ids_for_prices_ids(top_gainers_losers.get_gainers_ids()).await?;
-        let losers = self.markets_client.get_asset_ids_for_prices_ids(top_gainers_losers.get_losers_ids()).await?;
+        let provider = PriceProvider::Coingecko;
+        let trending = self.markets_client.get_asset_ids_for_provider_price_ids(provider, trending.get_coins_ids()).await?;
+        let gainers = self
+            .markets_client
+            .get_asset_ids_for_provider_price_ids(provider, top_gainers_losers.get_gainers_ids())
+            .await?;
+        let losers = self
+            .markets_client
+            .get_asset_ids_for_provider_price_ids(provider, top_gainers_losers.get_losers_ids())
+            .await?;
         let dominance = self.dominance(global.clone());
 
         let _ = self.markets_client.set_asset_ids_for_tag(AssetTag::Trending, trending);

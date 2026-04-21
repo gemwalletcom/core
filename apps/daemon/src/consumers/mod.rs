@@ -2,7 +2,6 @@ pub mod assets;
 pub mod fiat;
 pub mod indexer;
 pub mod notifications;
-pub mod prices;
 pub mod rewards;
 pub mod runner;
 pub mod store;
@@ -17,13 +16,16 @@ use streamer::{ConsumerConfig, QueueName, ShutdownReceiver, StreamProducer, Stre
 pub use assets::run_consumer_assets;
 pub use fiat::run_consumer_fiat;
 pub use indexer::run_consumer_indexer;
-pub use prices::run_consumer_prices;
 pub use rewards::run_consumer_rewards;
 pub use store::run_consumer_store;
 pub use support::run_consumer_support;
 
 pub fn chain_providers(settings: &Settings, name: &str) -> ChainProviders {
     ChainProviders::from_settings(settings, &settings::service_user_agent("consumer", Some(name)))
+}
+
+pub fn chain_providers_for(chain: primitives::Chain, settings: &Settings, name: &str) -> ChainProviders {
+    ChainProviders::for_chain(chain, settings, &settings::service_user_agent("consumer", Some(name)))
 }
 
 pub(crate) fn consumer_config(consumer: &settings::Consumer) -> ConsumerConfig {

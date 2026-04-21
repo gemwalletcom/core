@@ -19,6 +19,10 @@ impl ChainProviders {
         Self::new(ProviderFactory::new_providers_with_user_agent(settings, service_name))
     }
 
+    pub fn for_chain(chain: Chain, settings: &Settings, service_name: &str) -> Self {
+        Self::new(vec![ProviderFactory::new_from_settings_with_user_agent(chain, settings, service_name)])
+    }
+
     fn get_provider(&self, chain: Chain) -> Result<&dyn ChainTraits, Box<dyn Error + Send + Sync>> {
         self.providers
             .iter()

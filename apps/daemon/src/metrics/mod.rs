@@ -1,7 +1,6 @@
 pub mod consumer;
 pub mod job;
 pub mod parser;
-pub mod price;
 
 use std::sync::Arc;
 use std::time::SystemTime;

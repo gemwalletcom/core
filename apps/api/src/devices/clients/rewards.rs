@@ -104,7 +104,11 @@ impl RewardsClient {
             .await
             .map_err(|e| self.map_username_error(e, locale))?;
 
-        let (rewards, event_id) = self.db.rewards()?.create_reward(wallet.id, code)?;
+        let (rewards, event_id) = self
+            .db
+            .rewards()?
+            .create_reward(wallet.id, code)
+            .map_err(|e| RewardsError::Username(UsernameError::Validation(e).localize(locale)))?;
         self.ip_security_client.record_username_creation(&ip_result.country_code, ip_address, device_id).await?;
         self.publish_events(vec![event_id]).await?;
         Ok(rewards)
@@ -136,10 +140,7 @@ impl RewardsClient {
         if client.rewards().is_pending_referral(&referrer_username, wallet.id, device.id)? {
             let referrer_info = client.rewards().get_referrer_info(&referrer_username)?;
             if !referrer_info.status.is_verified() {
-                return Err(RewardsError::Referral(
-                    ReferralError::from(ReferralValidationError::RewardsNotEnabled(referrer_username.clone())).localize(locale),
-                )
-                .into());
+                return Err(RewardsError::Referral(ReferralError::from(ReferralValidationError::RewardsNotEnabled(referrer_username.clone())).localize(locale)).into());
             }
             let events = client
                 .rewards()

@@ -6,7 +6,12 @@ use primitives::{AssetAddress as PrimitiveAssetAddress, AssetId, ChainAddress};
 
 pub trait AssetsAddressesRepository {
     fn add_assets_addresses(&mut self, values: Vec<PrimitiveAssetAddress>) -> Result<usize, DatabaseError>;
-    fn get_assets_by_addresses(&mut self, values: Vec<ChainAddress>, from_datetime: Option<NaiveDateTime>, include_with_prices: bool) -> Result<Vec<AssetId>, DatabaseError>;
+    fn get_assets_by_addresses(
+        &mut self,
+        values: Vec<ChainAddress>,
+        from_datetime: Option<NaiveDateTime>,
+        prices_min_updated_at: Option<NaiveDateTime>,
+    ) -> Result<Vec<AssetId>, DatabaseError>;
     fn get_asset_addresses(&mut self, value: ChainAddress) -> Result<Vec<PrimitiveAssetAddress>, DatabaseError>;
     fn get_asset_address(&mut self, value: ChainAddress, asset_id: AssetId) -> Result<Option<PrimitiveAssetAddress>, DatabaseError>;
     fn delete_assets_addresses(&mut self, values: Vec<PrimitiveAssetAddress>) -> Result<usize, DatabaseError>;
@@ -20,8 +25,13 @@ impl AssetsAddressesRepository for DatabaseClient {
         )?)
     }
 
-    fn get_assets_by_addresses(&mut self, values: Vec<ChainAddress>, from_datetime: Option<NaiveDateTime>, include_with_prices: bool) -> Result<Vec<AssetId>, DatabaseError> {
-        Ok(AssetsAddressesStore::get_assets_by_addresses(self, values, from_datetime, include_with_prices)?.asset_ids())
+    fn get_assets_by_addresses(
+        &mut self,
+        values: Vec<ChainAddress>,
+        from_datetime: Option<NaiveDateTime>,
+        prices_min_updated_at: Option<NaiveDateTime>,
+    ) -> Result<Vec<AssetId>, DatabaseError> {
+        Ok(AssetsAddressesStore::get_assets_by_addresses(self, values, from_datetime, prices_min_updated_at)?.asset_ids())
     }
 
     fn get_asset_addresses(&mut self, value: ChainAddress) -> Result<Vec<PrimitiveAssetAddress>, DatabaseError> {

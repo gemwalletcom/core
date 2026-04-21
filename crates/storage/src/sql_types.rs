@@ -13,8 +13,8 @@ use primitives::{
     AssetType as PrimitiveAssetType, Chain, FiatProviderName as PrimitiveFiatProviderName, FiatQuoteType as PrimitiveFiatQuoteType,
     FiatTransactionStatus as PrimitiveFiatTransactionStatus, IpUsageType as PrimitiveIpUsageType, LinkType as PrimitiveLinkType, NotificationType as PrimitiveNotificationType,
     PerpetualProvider as PrimitivePerpetualProvider, Platform as PrimitivePlatform, PlatformStore as PrimitivePlatformStore, PriceAlertDirection as PrimitivePriceAlertDirection,
-    PriceFeedProvider as PrimitivePriceFeedProvider, TransactionState as PrimitiveTransactionState, TransactionType as PrimitiveTransactionType,
-    UsernameStatus as PrimitiveUsernameStatus, WalletSource as PrimitiveWalletSource, WalletType as PrimitiveWalletType, WebhookKind as PrimitiveWebhookKind,
+    PriceProvider as PrimitivePriceProvider, TransactionState as PrimitiveTransactionState, TransactionType as PrimitiveTransactionType, UsernameStatus as PrimitiveUsernameStatus,
+    WalletSource as PrimitiveWalletSource, WalletType as PrimitiveWalletType, WebhookKind as PrimitiveWebhookKind,
 };
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -147,7 +147,7 @@ diesel_enum!(
     RewardEventType,
     PrimitiveRewardEventType,
     RewardEventTypeSql,
-    [CreateUsername, InvitePending, InviteNew, Joined, Disabled]
+    [CreateUsername, InvitePending, InviteNew, Joined, Enabled, Disabled]
 );
 
 diesel_enum!(
@@ -232,7 +232,7 @@ macro_rules! diesel_varchar {
 diesel_varchar!(ChainRow, Chain);
 diesel_varchar!(PriceAlertDirectionRow, PrimitivePriceAlertDirection);
 diesel_varchar!(PerpetualProviderRow, PrimitivePerpetualProvider);
-diesel_varchar!(PriceFeedProviderRow, PrimitivePriceFeedProvider);
+diesel_varchar!(PriceProviderRow, PrimitivePriceProvider);
 diesel_varchar!(FiatProviderNameRow, PrimitiveFiatProviderName);
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, AsExpression, FromSqlRow)]

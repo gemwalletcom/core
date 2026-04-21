@@ -1,5 +1,5 @@
 [package]
-name = "prices_dex"
+name = "prices"
 version = { workspace = true }
 edition = { workspace = true }
 
@@ -9,6 +9,7 @@ chrono = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 
+coingecko = { path = "../coingecko" }
 gem_client = { path = "../gem_client", features = ["reqwest"] }
 primitives = { path = "../primitives" }
 serde_serializers = { path = "../serde_serializers" }

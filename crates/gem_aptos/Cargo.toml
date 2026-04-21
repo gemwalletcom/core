@@ -17,7 +17,7 @@ reqwest = ["gem_client/reqwest"]
 chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 
 [dependencies]
-primitives = { path = "../primitives", features = ["testkit"] }
+primitives = { path = "../primitives" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_serializers = { path = "../serde_serializers", features = ["bigint"] }
@@ -37,6 +37,7 @@ gem_client = { path = "../gem_client", optional = true }
 futures = { workspace = true, optional = true }
 
 [dev-dependencies]
+primitives = { path = "../primitives", features = ["testkit"] }
 tokio = { workspace = true, features = ["macros", "rt"] }
 reqwest = { workspace = true }
 settings = { path = "../settings", features = ["testkit"] }

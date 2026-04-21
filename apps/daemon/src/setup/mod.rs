@@ -3,13 +3,13 @@ mod scan_addresses;
 use self::scan_addresses::setup_scan_addresses;
 use chrono::Utc;
 use gem_tracing::info_with_fields;
-use prices_dex::PriceFeedProvider;
 use primitives::{
-    Asset, AssetId, AssetTag, Chain, ConfigKey, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus, NFTChain, NotificationType, ParamConfigKey,
-    PlatformStore as PrimitivePlatformStore, PriceAlert, PriceAlertDirection, WebhookKind,
+    Asset, AssetId, AssetTag, Chain, ConfigKey, ConfigParamKey, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus, NFTChain, NotificationType,
+    PlatformStore as PrimitivePlatformStore, PriceAlert, PriceAlertDirection, PriceProvider, WebhookKind,
 };
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
+use std::collections::HashSet;
 use storage::Database;
 use storage::models::{
     ChartRow, ConfigRow, FiatAssetRow, FiatProviderCountryRow, FiatRateRow, NewFiatTransactionRow, NewWebhookEndpointRow, PriceAssetRow, PriceRow, UpdateDeviceRow,
@@ -17,7 +17,7 @@ use storage::models::{
 use storage::sql_types::{Platform, PlatformStore};
 use storage::{
     AssetsRepository, ChainsRepository, ChartsRepository, ConfigRepository, DevicesRepository, MigrationsRepository, NewNotificationRow, NewWalletRow, NotificationsRepository,
-    PriceAlertsRepository, PricesDexRepository, PricesRepository, ReleasesRepository, RewardsRepository, TagRepository, WalletSource, WalletType, WalletsRepository,
+    PriceAlertsRepository, PricesProvidersRepository, PricesRepository, ReleasesRepository, RewardsRepository, TagRepository, WalletSource, WalletType, WalletsRepository,
     WebhooksRepository,
 };
 use streamer::{ExchangeKind, ExchangeName, QueueName, StreamProducer, StreamProducerConfig};
@@ -81,21 +81,32 @@ fn setup_database(database: &Database) -> Result<(), Box<dyn std::error::Error +
     let assets_tags = AssetTag::all().into_iter().map(storage::models::TagRow::from_primitive).collect::<Vec<_>>();
     let _ = database.tag()?.add_tags(assets_tags);
 
-    info_with_fields!("setup", step = "prices dex providers");
-    let providers = PriceFeedProvider::all()
+    info_with_fields!("setup", step = "prices providers");
+    let providers = PriceProvider::all()
         .into_iter()
-        .enumerate()
-        .map(|(index, p)| storage::models::PriceDexProviderRow::new(p, index as i32))
+        .map(|p| storage::models::PriceProviderConfigRow::new(p, p == PriceProvider::primary()))
         .collect::<Vec<_>>();
-    let _ = database.prices_dex()?.add_prices_dex_providers(providers);
+    let _ = database.prices_providers()?.add_prices_providers(providers);
 
     info_with_fields!("setup", step = "config");
     let configs: Vec<ConfigRow> = ConfigKey::all().into_iter().map(ConfigRow::from_primitive).collect();
     let _ = database.client()?.add_config(configs);
 
     info_with_fields!("setup", step = "param config");
-    let param_configs: Vec<ConfigRow> = ParamConfigKey::all().into_iter().map(ConfigRow::from_param).collect();
+    let param_configs: Vec<ConfigRow> = ConfigParamKey::all().into_iter().map(ConfigRow::from_param).collect();
     let _ = database.client()?.add_config(param_configs);
+
+    info_with_fields!("setup", step = "cleanup stale config keys");
+    let valid: HashSet<String> = ConfigKey::all()
+        .into_iter()
+        .map(|k| k.as_ref().to_string())
+        .chain(ConfigParamKey::all().into_iter().map(|k| k.key()))
+        .collect();
+    let stale: Vec<String> = database.client()?.get_config_keys()?.into_iter().filter(|k| !valid.contains(k)).collect();
+    if !stale.is_empty() {
+        info_with_fields!("setup", step = "delete stale config keys", count = stale.len(), keys = format!("{:?}", stale));
+        let _ = database.client()?.delete_keys(stale);
+    }
 
     Ok(())
 }
@@ -482,12 +493,12 @@ fn setup_dev_assets(database: &Database) -> Result<(), Box<dyn std::error::Error
 
     let prices: Vec<PriceRow> = coins
         .iter()
-        .map(|(coin_id, _, base_price)| PriceRow::with_price(coin_id.to_string(), *base_price))
+        .map(|(coin_id, _, base_price)| PriceRow::with_price(PriceProvider::primary(), coin_id.to_string(), *base_price))
         .collect();
 
     let price_assets: Vec<PriceAssetRow> = coins
         .iter()
-        .map(|(coin_id, asset_id, _)| PriceAssetRow::new((*asset_id).clone(), coin_id.to_string()))
+        .map(|(coin_id, asset_id, _)| PriceAssetRow::new((*asset_id).clone(), PriceProvider::primary(), coin_id))
         .collect();
 
     let result = database.prices()?.set_prices(prices)?;
@@ -499,13 +510,14 @@ fn setup_dev_assets(database: &Database) -> Result<(), Box<dyn std::error::Error
     for (idx, (coin_id, _, base_price)) in coins.iter().enumerate() {
         let seed = (idx + 1) as f64;
         let gen_price = |i: f64, scale: f64| (base_price + ((i * 0.3 + seed * 7.0).sin() + (i * 0.07).cos()) * base_price * scale).max(base_price * 0.1);
+        let price_id = PriceProvider::primary().price_id(coin_id);
 
         let hourly: Vec<ChartRow> = (0i64..720)
-            .map(|h| ChartRow::new(coin_id.to_string(), gen_price(h as f64, 0.1), now - chrono::Duration::hours(h)))
+            .map(|h| ChartRow::new(price_id.clone(), gen_price(h as f64, 0.1), now - chrono::Duration::hours(h)))
             .collect();
 
         let daily: Vec<ChartRow> = (30i64..1825)
-            .map(|d| ChartRow::new(coin_id.to_string(), gen_price(d as f64, 0.15), now - chrono::Duration::days(d)))
+            .map(|d| ChartRow::new(price_id.clone(), gen_price(d as f64, 0.15), now - chrono::Duration::days(d)))
             .collect();
 
         database.charts()?.add_charts_hourly(hourly)?;

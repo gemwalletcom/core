@@ -15,7 +15,7 @@ use storage::Database;
 use streamer::{ChainAddressPayload, ConsumerStatusReporter, FetchAssetsPayload, FetchBlocksPayload, QueueName, ShutdownReceiver, StreamConnection, StreamReader, run_consumer};
 
 use crate::consumers::runner::ChainConsumerRunner;
-use crate::consumers::{chain_providers, consumer_config, reader_config};
+use crate::consumers::{chain_providers, chain_providers_for, consumer_config, reader_config};
 
 use fetch_address_transactions_consumer::FetchAddressTransactionsConsumer;
 use fetch_assets_consumer::FetchAssetsConsumer;
@@ -24,25 +24,52 @@ use fetch_coin_addresses_consumer::FetchCoinAddressesConsumer;
 use fetch_nft_assets_addresses_consumer::FetchNftAssetsAddressesConsumer;
 use fetch_token_addresses_consumer::FetchTokenAddressesConsumer;
 
-pub async fn run_consumer_indexer(settings: Settings, shutdown_rx: ShutdownReceiver, reporter: Arc<dyn ConsumerStatusReporter>) -> Result<(), Box<dyn Error + Send + Sync>> {
+pub async fn run_consumer_indexer(
+    settings: Settings,
+    shutdown_rx: ShutdownReceiver,
+    reporter: Arc<dyn ConsumerStatusReporter>,
+    only: Option<crate::model::IndexerConsumer>,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
+    use crate::model::IndexerConsumer::*;
+
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let settings = Arc::new(settings);
 
-    futures::future::try_join_all(vec![
-        tokio::spawn(run_fetch_blocks(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
-        tokio::spawn(run_fetch_assets(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
-        tokio::spawn(run_fetch_token_associations(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
-        tokio::spawn(run_fetch_coin_associations(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
-        tokio::spawn(run_fetch_nft_associations(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
-        tokio::spawn(run_fetch_transaction_associations(
-            settings.clone(),
-            database.clone(),
-            shutdown_rx.clone(),
-            reporter.clone(),
-        )),
-    ])
-    .await?;
+    let selected: Vec<crate::model::IndexerConsumer> = match only {
+        Some(one) => vec![one],
+        None => vec![
+            FetchBlocks,
+            FetchAssets,
+            FetchTokenAssociations,
+            FetchCoinAssociations,
+            FetchNftAssociations,
+            FetchAddressTransactions,
+        ],
+    };
 
+    let handles: Vec<_> = selected
+        .into_iter()
+        .map(|kind| {
+            let settings = settings.clone();
+            let database = database.clone();
+            let shutdown_rx = shutdown_rx.clone();
+            let reporter = reporter.clone();
+            tokio::spawn(async move {
+                match kind {
+                    FetchBlocks => run_fetch_blocks(settings, database, shutdown_rx, reporter).await,
+                    FetchAssets => run_fetch_assets(settings, database, shutdown_rx, reporter).await,
+                    FetchTokenAssociations => run_fetch_token_associations(settings, database, shutdown_rx, reporter).await,
+                    FetchCoinAssociations => run_fetch_coin_associations(settings, database, shutdown_rx, reporter).await,
+                    FetchNftAssociations => run_fetch_nft_associations(settings, database, shutdown_rx, reporter).await,
+                    FetchAddressTransactions => run_fetch_transaction_associations(settings, database, shutdown_rx, reporter).await,
+                }
+            })
+        })
+        .collect();
+
+    for handle in futures::future::join_all(handles).await {
+        handle??;
+    }
     Ok(())
 }
 
@@ -59,7 +86,7 @@ async fn run_fetch_blocks(
             let name = format!("{}.{}", queue, chain.as_ref());
             let stream_reader = runner.stream_reader().await?;
             let stream_producer = runner.stream_producer().await?;
-            let consumer = FetchBlocksConsumer::new(chain_providers(&runner.settings, &name), stream_producer);
+            let consumer = FetchBlocksConsumer::new(chain_providers_for(chain, &runner.settings, &name), stream_producer);
             run_consumer::<FetchBlocksPayload, FetchBlocksConsumer, usize>(
                 &name,
                 stream_reader,
@@ -108,7 +135,7 @@ async fn run_fetch_token_associations(
             let name = format!("{}.{}", queue, chain.as_ref());
             let stream_reader = runner.stream_reader().await?;
             let stream_producer = runner.stream_producer().await?;
-            let consumer = FetchTokenAddressesConsumer::new(chain_providers(&runner.settings, &name), runner.database, stream_producer, runner.cacher);
+            let consumer = FetchTokenAddressesConsumer::new(chain_providers_for(chain, &runner.settings, &name), runner.database, stream_producer, runner.cacher);
             run_consumer::<ChainAddressPayload, FetchTokenAddressesConsumer, usize>(
                 &name,
                 stream_reader,
@@ -136,7 +163,7 @@ async fn run_fetch_coin_associations(
             let queue = QueueName::FetchCoinAssociations;
             let name = format!("{}.{}", queue, chain.as_ref());
             let stream_reader = runner.stream_reader().await?;
-            let consumer = FetchCoinAddressesConsumer::new(chain_providers(&runner.settings, &name), runner.database, runner.cacher);
+            let consumer = FetchCoinAddressesConsumer::new(chain_providers_for(chain, &runner.settings, &name), runner.database, runner.cacher);
             run_consumer::<ChainAddressPayload, FetchCoinAddressesConsumer, String>(
                 &name,
                 stream_reader,
@@ -190,7 +217,7 @@ async fn run_fetch_transaction_associations(
             let name = format!("{}.{}", queue, chain.as_ref());
             let stream_reader = runner.stream_reader().await?;
             let stream_producer = runner.stream_producer().await?;
-            let consumer = FetchAddressTransactionsConsumer::new(runner.database, chain_providers(&runner.settings, &name), stream_producer, runner.cacher);
+            let consumer = FetchAddressTransactionsConsumer::new(runner.database, chain_providers_for(chain, &runner.settings, &name), stream_producer, runner.cacher);
             run_consumer::<ChainAddressPayload, FetchAddressTransactionsConsumer, usize>(
                 &name,
                 stream_reader,

@@ -13,7 +13,7 @@ pub struct PortfolioClient {
 struct ResolvedAsset {
     asset: PortfolioAsset,
     balance: f64,
-    coin_id: String,
+    price_id: String,
     current_value: f64,
 }
 
@@ -35,7 +35,7 @@ impl PortfolioClient {
                 self.database
                     .charts()
                     .ok()
-                    .and_then(|mut db| db.get_charts(r.coin_id.clone(), period).ok())
+                    .and_then(|mut db| db.get_charts(&r.price_id, period).ok())
                     .unwrap_or_default()
                     .into_iter()
                     .map(|(ts, price)| (ts.and_utc().timestamp(), r.balance * price))
@@ -94,13 +94,14 @@ impl PortfolioClient {
         let asset_id = input.asset_id.to_string();
         let asset = self.database.assets().ok()?.get_asset(&asset_id).ok()?;
         let balance = BigNumberFormatter::value_as_f64(&input.value, asset.decimals as u32).ok()?;
-        let coin_id = self.database.prices().ok()?.get_coin_id(&asset_id).ok()?;
-        let price = self.database.prices().ok()?.get_price(&asset_id).map(|p| p.price).unwrap_or_default();
+        let key = self.database.prices().ok()?.get_primary_price_key(&asset_id).ok()?;
+        let price_id = key.id();
+        let price = self.database.prices().ok()?.get_price_by_id(&price_id).map(|p| p.price).unwrap_or_default();
 
         Some(ResolvedAsset {
             asset: input,
             balance,
-            coin_id,
+            price_id,
             current_value: balance * price,
         })
     }

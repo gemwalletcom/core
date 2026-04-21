@@ -94,9 +94,9 @@ diesel::table! {
         #[max_length = 128]
         token_id -> Nullable<Varchar>,
         asset_type -> AssetType,
-        #[max_length = 64]
+        #[max_length = 128]
         name -> Varchar,
-        #[max_length = 16]
+        #[max_length = 32]
         symbol -> Varchar,
         decimals -> Int4,
         updated_at -> Timestamp,
@@ -111,6 +111,7 @@ diesel::table! {
         is_earnable -> Bool,
         earn_apr -> Nullable<Float8>,
         has_image -> Bool,
+        has_price -> Bool,
     }
 }
 
@@ -536,11 +537,15 @@ diesel::table! {
     prices (id) {
         #[max_length = 256]
         id -> Varchar,
+        #[max_length = 32]
+        provider -> Varchar,
+        #[max_length = 256]
+        provider_price_id -> Varchar,
         price -> Float8,
         price_change_percentage_24h -> Float8,
         market_cap -> Float8,
         market_cap_fdv -> Float8,
-        market_cap_rank -> Int4,
+        market_cap_rank -> Nullable<Int4>,
         total_volume -> Float8,
         circulating_supply -> Float8,
         total_supply -> Float8,
@@ -556,42 +561,20 @@ diesel::table! {
 }
 
 diesel::table! {
-    prices_assets (asset_id) {
+    prices_assets (asset_id, provider) {
         #[max_length = 256]
         asset_id -> Varchar,
         #[max_length = 256]
         price_id -> Varchar,
-        updated_at -> Timestamp,
-        created_at -> Timestamp,
-    }
-}
-
-diesel::table! {
-    prices_dex (id) {
-        #[max_length = 256]
-        id -> Varchar,
         #[max_length = 32]
         provider -> Varchar,
-        price -> Float8,
-        last_updated_at -> Timestamp,
         updated_at -> Timestamp,
         created_at -> Timestamp,
     }
 }
 
 diesel::table! {
-    prices_dex_assets (asset_id, price_feed_id) {
-        #[max_length = 256]
-        asset_id -> Varchar,
-        #[max_length = 256]
-        price_feed_id -> Varchar,
-        updated_at -> Timestamp,
-        created_at -> Timestamp,
-    }
-}
-
-diesel::table! {
-    prices_dex_providers (id) {
+    prices_providers (id) {
         #[max_length = 32]
         id -> Varchar,
         enabled -> Bool,
@@ -950,11 +933,10 @@ diesel::joinable!(perpetuals_assets -> perpetuals (perpetual_id));
 diesel::joinable!(price_alerts -> assets (asset_id));
 diesel::joinable!(price_alerts -> devices (device_id));
 diesel::joinable!(price_alerts -> fiat_rates (currency));
+diesel::joinable!(prices -> prices_providers (provider));
 diesel::joinable!(prices_assets -> assets (asset_id));
 diesel::joinable!(prices_assets -> prices (price_id));
-diesel::joinable!(prices_dex -> prices_dex_providers (provider));
-diesel::joinable!(prices_dex_assets -> assets (asset_id));
-diesel::joinable!(prices_dex_assets -> prices_dex (price_feed_id));
+diesel::joinable!(prices_assets -> prices_providers (provider));
 diesel::joinable!(rewards -> devices (device_id));
 diesel::joinable!(rewards -> usernames (username));
 diesel::joinable!(rewards_events -> usernames (username));
@@ -1010,9 +992,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     price_alerts,
     prices,
     prices_assets,
-    prices_dex,
-    prices_dex_assets,
-    prices_dex_providers,
+    prices_providers,
     releases,
     rewards,
     rewards_events,

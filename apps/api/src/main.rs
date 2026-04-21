@@ -7,7 +7,6 @@ mod config;
 mod devices;
 mod fiat;
 mod markets;
-mod metrics;
 mod model;
 mod nft;
 mod params;
@@ -40,7 +39,6 @@ use devices::{
 };
 use gem_auth::AuthClient;
 use gem_rewards::{AbuseIPDBClient, IpApiClient, IpCheckProvider, IpSecurityClient};
-use metrics::fiat::FiatMetrics;
 use model::APIService;
 use name_resolver::NameProviderFactory;
 use name_resolver::client::{Client as NameClient, NameConfig};
@@ -57,7 +55,7 @@ use swapper::swapper::GemSwapper;
 use webhooks::WebhooksClient;
 use websocket_prices::PriceObserverConfig;
 
-fn mount_routes(rocket: Rocket<Build>, metrics_path: &str, admin_enabled: bool) -> Rocket<Build> {
+fn mount_routes(rocket: Rocket<Build>, admin_enabled: bool) -> Rocket<Build> {
     let rocket = rocket
         .mount("/", routes![status::get_status, status::get_health])
         .mount(
@@ -139,7 +137,6 @@ fn mount_routes(rocket: Rocket<Build>, metrics_path: &str, admin_enabled: bool) 
                 devices::get_device_portfolio_assets_v2,
             ],
         )
-        .mount(metrics_path, routes![metrics::get_metrics])
         .register("/", catchers![catchers::default_catcher]);
 
     if admin_enabled {
@@ -180,7 +177,6 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let address_names_client = AddressNamesClient::new(database.clone());
     let stream_producer = StreamProducer::new(&rabbitmq_config, "api", streamer::no_shutdown()).await.unwrap();
     let wallets_client = WalletsClient::new(database.clone(), stream_producer.clone());
-    let fiat_metrics = Arc::new(FiatMetrics::new());
 
     let security_providers = ScanProviderFactory::create_providers(&settings_clone);
     let scan_client = ScanClient::new(database.clone(), security_providers);
@@ -230,7 +226,6 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(search_client))
         .manage(Mutex::new(transactions_client))
         .manage(Mutex::new(address_names_client))
-        .manage(fiat_metrics)
         .manage(Mutex::new(scan_client))
         .manage(Mutex::new(swap_client))
         .manage(Mutex::new(nft_client))
@@ -254,7 +249,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         });
     }
 
-    mount_routes(rocket, &settings.metrics.path, settings.api.admin.enabled)
+    mount_routes(rocket, settings.api.admin.enabled)
 }
 
 async fn rocket_ws_prices(settings: Settings) -> Rocket<Build> {
@@ -324,7 +319,7 @@ mod tests {
 
     #[rocket::async_test]
     async fn test_no_route_collisions() {
-        let rocket = mount_routes(rocket::build(), "/metrics", true);
+        let rocket = mount_routes(rocket::build(), true);
         if let Err(e) = rocket.ignite().await {
             let error = format!("{:?}", e);
             assert!(!error.contains("Collisions"), "Route collisions detected: {error}");

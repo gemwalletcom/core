@@ -1,6 +1,5 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::ChartData;
 use serde::{Deserialize, Serialize};
 
 use crate::models::PriceRow;
@@ -24,22 +23,6 @@ impl ChartRow {
             coin_id: price.id,
             price: price.price,
             created_at: price.last_updated_at,
-        }
-    }
-
-    pub fn as_chart_data(&self) -> ChartData {
-        ChartData {
-            coin_id: self.coin_id.clone(),
-            price: self.price,
-            created_at: self.created_at.and_utc(),
-        }
-    }
-
-    pub fn from_chart_data(data: ChartData) -> Self {
-        ChartRow {
-            coin_id: data.coin_id,
-            price: data.price,
-            created_at: data.created_at.naive_utc(),
         }
     }
 }
