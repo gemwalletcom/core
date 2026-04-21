@@ -14,13 +14,7 @@ CREATE TABLE prices (
     provider_price_id VARCHAR(256) NOT NULL,
     price float NOT NULL DEFAULT 0,
     price_change_percentage_24h float NOT NULL DEFAULT 0,
-    market_cap float NOT NULL DEFAULT 0,
-    market_cap_fdv float NOT NULL DEFAULT 0,
     market_cap_rank INTEGER,
-    total_volume float NOT NULL DEFAULT 0,
-    circulating_supply float NOT NULL DEFAULT 0,
-    total_supply float NOT NULL DEFAULT 0,
-    max_supply float NOT NULL DEFAULT 0,
     last_updated_at timestamp NOT NULL default current_timestamp,
     updated_at timestamp NOT NULL default current_timestamp,
     created_at timestamp NOT NULL default current_timestamp,
@@ -34,7 +28,6 @@ CREATE TABLE prices (
 SELECT diesel_manage_updated_at('prices');
 
 CREATE INDEX prices_provider_idx ON prices (provider);
-CREATE INDEX prices_market_cap_idx ON prices (market_cap DESC);
 CREATE INDEX prices_last_updated_at_idx ON prices (last_updated_at);
 
 CREATE TABLE prices_assets (

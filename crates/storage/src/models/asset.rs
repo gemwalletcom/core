@@ -30,6 +30,9 @@ pub struct AssetRow {
     pub earn_apr: Option<f64>,
     pub has_image: bool,
     pub has_price: bool,
+    pub circulating_supply: Option<f64>,
+    pub total_supply: Option<f64>,
+    pub max_supply: Option<f64>,
 
     pub updated_at: NaiveDateTime,
 }
@@ -57,6 +60,9 @@ pub struct NewAssetRow {
     pub earn_apr: Option<f64>,
     pub has_image: bool,
     pub has_price: bool,
+    pub circulating_supply: Option<f64>,
+    pub total_supply: Option<f64>,
+    pub max_supply: Option<f64>,
 }
 
 impl NewAssetRow {
@@ -84,22 +90,23 @@ impl NewAssetRow {
             earn_apr: properties.earn_apr,
             has_image: properties.has_image,
             has_price: properties.has_price,
+            circulating_supply: None,
+            total_supply: None,
+            max_supply: None,
         }
     }
 }
 
 impl AssetRow {
+    pub fn as_asset_id(&self) -> PrimitiveAssetId {
+        PrimitiveAssetId {
+            chain: self.chain.0,
+            token_id: self.token_id.clone(),
+        }
+    }
+
     pub fn as_primitive(&self) -> Asset {
-        Asset::new(
-            PrimitiveAssetId {
-                chain: self.chain.0,
-                token_id: self.token_id.clone(),
-            },
-            self.name.clone(),
-            self.symbol.clone(),
-            self.decimals,
-            self.asset_type.0.clone(),
-        )
+        Asset::new(self.as_asset_id(), self.name.clone(), self.symbol.clone(), self.decimals, self.asset_type.0.clone())
     }
 
     pub fn as_basic_primitive(&self) -> AssetBasic {

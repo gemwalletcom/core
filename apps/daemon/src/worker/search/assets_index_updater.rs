@@ -58,7 +58,7 @@ impl AssetsIndexUpdater {
                     properties: x.asset.clone().as_property_primitive(),
                     score: x.asset.clone().as_score_primitive(),
                     usage_rank,
-                    market: x.price.as_ref().map(|price| price.as_market_primitive()),
+                    market: x.price.as_ref().map(|price| price.as_market_primitive(&x.asset)),
                     tags: assets_tags_map.get(asset_id).cloned(),
                 }
             })

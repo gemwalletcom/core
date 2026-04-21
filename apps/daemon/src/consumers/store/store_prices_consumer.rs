@@ -1,9 +1,10 @@
 use async_trait::async_trait;
 use pricer::PriceClient;
-use std::collections::HashSet;
+use primitives::AssetIdVecExt;
+use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use storage::models::{ChartRow, PriceRow};
-use storage::{ChartsRepository, Database, PricesRepository};
+use storage::{AssetsRepository, ChartsRepository, Database, PricesRepository};
 use streamer::{PricesPayload, consumer::MessageConsumer};
 
 pub struct StorePricesConsumer {
@@ -51,7 +52,18 @@ impl MessageConsumer<PricesPayload, usize> for StorePricesConsumer {
         self.database.charts()?.add_charts(charts)?;
 
         let count = primary_prices.len();
-        let cache_entries = primary_prices.into_iter().map(|(asset_id, price)| price.as_price_asset_info(asset_id)).collect();
+        let primary_asset_ids: Vec<_> = primary_prices.iter().map(|(id, _)| id.clone()).collect();
+        let assets_by_id: HashMap<String, _> = self
+            .database
+            .assets()?
+            .get_assets_rows(primary_asset_ids.ids())?
+            .into_iter()
+            .map(|a| (a.id.clone(), a))
+            .collect();
+        let cache_entries = primary_prices
+            .into_iter()
+            .filter_map(|(asset_id, price)| assets_by_id.get(&asset_id.to_string()).map(|asset| price.as_price_asset_info(asset)))
+            .collect();
         self.price_client.set_cache_prices(cache_entries, self.ttl_seconds).await?;
 
         Ok(count)

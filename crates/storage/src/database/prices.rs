@@ -51,13 +51,7 @@ impl PricesStore for DatabaseClient {
                 all_time_high_date.eq(excluded(all_time_high_date)),
                 all_time_low.eq(excluded(all_time_low)),
                 all_time_low_date.eq(excluded(all_time_low_date)),
-                market_cap.eq(excluded(market_cap)),
-                market_cap_fdv.eq(excluded(market_cap_fdv)),
                 market_cap_rank.eq(excluded(market_cap_rank)),
-                total_volume.eq(excluded(total_volume)),
-                circulating_supply.eq(excluded(circulating_supply)),
-                total_supply.eq(excluded(total_supply)),
-                max_supply.eq(excluded(max_supply)),
                 last_updated_at.eq(excluded(last_updated_at)),
             ))
             .execute(&mut self.connection)
@@ -80,7 +74,7 @@ impl PricesStore for DatabaseClient {
             PriceFilter::UpdatedBefore(time) => q.filter(last_updated_at.lt(time).or(last_updated_at.is_null())),
             PriceFilter::UpdatedAfter(time) => q.filter(last_updated_at.ge(time)),
         });
-        query.order(market_cap.desc()).select(PriceRow::as_select()).load(&mut self.connection)
+        query.order(market_cap_rank.asc().nulls_last()).select(PriceRow::as_select()).load(&mut self.connection)
     }
 
     fn get_prices_assets(&mut self) -> Result<Vec<PriceAssetRow>, diesel::result::Error> {

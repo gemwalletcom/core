@@ -3,7 +3,7 @@ use std::error::Error;
 use gem_client::ReqwestClient;
 use primitives::Chain;
 
-use crate::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider, PriceProvider};
+use crate::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider, PriceProvider, PriceProviderAsset};
 use async_trait::async_trait;
 
 use super::{
@@ -29,11 +29,12 @@ impl PriceAssetsProvider for PythProvider {
         PriceProvider::Pyth
     }
 
-    async fn get_assets(&self) -> Result<Vec<AssetPriceMapping>, Box<dyn Error + Send + Sync>> {
+    async fn get_assets(&self) -> Result<Vec<PriceProviderAsset>, Box<dyn Error + Send + Sync>> {
         let feeds = self.pyth_client.get_price_feeds().await?;
         Ok(feeds
             .into_iter()
             .filter_map(|feed| asset_id_for_feed_id(&feed.id).map(|asset_id| AssetPriceMapping::new(asset_id, feed.id)))
+            .map(|m| PriceProviderAsset::new(m, None))
             .collect())
     }
 
@@ -86,8 +87,8 @@ mod tests {
 
         let supported = provider.get_assets().await.unwrap();
         assert!(!supported.is_empty());
-        for mapping in &supported {
-            assert!(!mapping.provider_price_id.is_empty());
+        for asset in &supported {
+            assert!(!asset.mapping.provider_price_id.is_empty());
         }
 
         let mappings: Vec<AssetPriceMapping> = Chain::all()

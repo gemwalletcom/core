@@ -15,13 +15,7 @@ impl PriceRow {
             all_time_high_date: None,
             all_time_low: 0.0,
             all_time_low_date: None,
-            market_cap: 0.0,
-            market_cap_fdv: 0.0,
             market_cap_rank: None,
-            total_volume: 0.0,
-            circulating_supply: 0.0,
-            total_supply: 0.0,
-            max_supply: 0.0,
             last_updated_at: Utc::now().naive_utc(),
         }
     }

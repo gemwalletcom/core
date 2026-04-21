@@ -112,6 +112,9 @@ diesel::table! {
         earn_apr -> Nullable<Float8>,
         has_image -> Bool,
         has_price -> Bool,
+        circulating_supply -> Nullable<Float8>,
+        total_supply -> Nullable<Float8>,
+        max_supply -> Nullable<Float8>,
     }
 }
 
@@ -543,13 +546,7 @@ diesel::table! {
         provider_price_id -> Varchar,
         price -> Float8,
         price_change_percentage_24h -> Float8,
-        market_cap -> Float8,
-        market_cap_fdv -> Float8,
         market_cap_rank -> Nullable<Int4>,
-        total_volume -> Float8,
-        circulating_supply -> Float8,
-        total_supply -> Float8,
-        max_supply -> Float8,
         last_updated_at -> Timestamp,
         updated_at -> Timestamp,
         created_at -> Timestamp,
