@@ -106,12 +106,25 @@ pub enum SwapStatus {
 }
 
 impl SwapStatus {
-    pub fn transaction_state(&self) -> Option<TransactionState> {
+    pub fn transaction_state(&self) -> TransactionState {
         match self {
-            SwapStatus::Completed => Some(TransactionState::Confirmed),
-            SwapStatus::Failed => Some(TransactionState::Failed),
-            SwapStatus::InTransit => Some(TransactionState::InTransit),
-            SwapStatus::Pending => None,
+            SwapStatus::Pending => TransactionState::Pending,
+            SwapStatus::InTransit => TransactionState::InTransit,
+            SwapStatus::Completed => TransactionState::Confirmed,
+            SwapStatus::Failed => TransactionState::Failed,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_swap_status_transaction_state() {
+        assert_eq!(SwapStatus::Pending.transaction_state(), TransactionState::Pending);
+        assert_eq!(SwapStatus::InTransit.transaction_state(), TransactionState::InTransit);
+        assert_eq!(SwapStatus::Completed.transaction_state(), TransactionState::Confirmed);
+        assert_eq!(SwapStatus::Failed.transaction_state(), TransactionState::Failed);
     }
 }
