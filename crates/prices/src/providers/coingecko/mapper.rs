@@ -45,7 +45,7 @@ pub fn map_coin_market(market: CoinMarket, mapping: AssetPriceMapping) -> AssetP
     let market_data = AssetMarket {
         market_cap: market.market_cap,
         market_cap_fdv: market.fully_diluted_valuation,
-        market_cap_rank: market.market_cap_rank,
+        market_cap_rank: market.market_cap_rank.filter(|&r| r > 0),
         total_volume: market.total_volume,
         circulating_supply: market.circulating_supply,
         total_supply: market.total_supply,
