@@ -29,31 +29,30 @@ impl MessageConsumer<PricesPayload, usize> for StorePricesConsumer {
     }
 
     async fn process(&self, payload: PricesPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let rows: Vec<PriceRow> = payload.prices.into_iter().map(PriceRow::from_price_data).collect();
-        let price_ids: Vec<String> = rows.iter().map(|r| r.id.clone()).collect();
-        self.database.prices()?.set_prices(rows)?;
+        let received_prices: Vec<PriceRow> = payload.prices.into_iter().map(PriceRow::from_price_data).collect();
+        let received_price_ids: Vec<String> = received_prices.iter().map(|p| p.id.clone()).collect();
 
-        let asset_ids: Vec<String> = self
-            .database
-            .prices()?
-            .get_prices_assets_for_price_ids(price_ids)?
-            .into_iter()
-            .map(|x| x.asset_id.to_string())
-            .collect::<HashSet<_>>()
-            .into_iter()
-            .collect();
+        let asset_mappings = self.database.prices()?.get_prices_assets_for_price_ids(received_price_ids)?;
+        let mapped_price_ids: HashSet<String> = asset_mappings.iter().map(|m| m.price_id.clone()).collect();
+        let prices_to_store: Vec<PriceRow> = received_prices.into_iter().filter(|p| mapped_price_ids.contains(&p.id)).collect();
+        if prices_to_store.is_empty() {
+            return Ok(0);
+        }
+        self.database.prices()?.set_prices(prices_to_store)?;
 
-        let primary = self.database.prices()?.get_primary_prices(&asset_ids)?;
-        if primary.is_empty() {
+        let asset_ids: Vec<String> = asset_mappings.into_iter().map(|m| m.asset_id.to_string()).collect::<HashSet<_>>().into_iter().collect();
+
+        let primary_prices = self.database.prices()?.get_primary_prices(&asset_ids)?;
+        if primary_prices.is_empty() {
             return Ok(0);
         }
 
-        let charts: Vec<ChartRow> = primary.iter().map(|(_, row)| ChartRow::from_price(row.clone())).collect();
+        let charts: Vec<ChartRow> = primary_prices.iter().map(|(_, price)| ChartRow::from_price(price.clone())).collect();
         self.database.charts()?.add_charts(charts)?;
 
-        let count = primary.len();
-        let infos = primary.into_iter().map(|(id, row)| row.as_price_asset_info(id)).collect();
-        self.price_client.set_cache_prices(infos, self.ttl_seconds).await?;
+        let count = primary_prices.len();
+        let cache_entries = primary_prices.into_iter().map(|(asset_id, price)| price.as_price_asset_info(asset_id)).collect();
+        self.price_client.set_cache_prices(cache_entries, self.ttl_seconds).await?;
 
         Ok(count)
     }

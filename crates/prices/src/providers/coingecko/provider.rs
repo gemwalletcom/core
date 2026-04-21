@@ -3,10 +3,11 @@ use std::error::Error;
 
 use async_trait::async_trait;
 use coingecko::CoinGeckoClient;
+use primitives::ChartValue;
 
 use crate::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider, PriceProvider};
 
-use super::mapper::{map_coin_markets, map_coins_to_mappings};
+use super::mapper::{map_coin_markets, map_coins_to_mappings, map_market_chart_daily};
 
 const MAX_MARKETS_PER_PAGE: usize = 250;
 const MAX_RANKED_PAGES: usize = 20;
@@ -60,5 +61,10 @@ impl PriceAssetsProvider for CoinGeckoPricesProvider {
             out.extend(map_coin_markets(coin_markets, &by_id));
         }
         Ok(out)
+    }
+
+    async fn get_charts_daily(&self, provider_price_id: &str) -> Result<Vec<ChartValue>, Box<dyn Error + Send + Sync>> {
+        let chart = self.client.get_market_chart(provider_price_id, "daily", "max").await?;
+        Ok(map_market_chart_daily(chart))
     }
 }

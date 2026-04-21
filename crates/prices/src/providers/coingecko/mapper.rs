@@ -1,10 +1,26 @@
 use std::collections::HashMap;
 
-use chrono::Utc;
-use coingecko::{COINGECKO_CHAIN_MAP, Coin, CoinMarket, get_chain_for_coingecko_platform_id};
-use primitives::{AssetId, AssetMarket, ChartValuePercentage, Price, PriceProvider};
+use chrono::{DateTime, Utc};
+use coingecko::{COINGECKO_CHAIN_MAP, Coin, CoinMarket, get_chain_for_coingecko_platform_id, model::MarketChart};
+use primitives::{AssetId, AssetMarket, ChartValue, ChartValuePercentage, Price, PriceProvider};
 
 use crate::{AssetPriceFull, AssetPriceMapping};
+
+pub fn map_market_chart_daily(chart: MarketChart) -> Vec<ChartValue> {
+    chart
+        .prices
+        .into_iter()
+        .filter_map(|p| {
+            let ts_ms = *p.first()?;
+            let value = *p.get(1)?;
+            let ts = DateTime::<Utc>::from_timestamp_millis(ts_ms as i64)?.timestamp() as i32;
+            Some(ChartValue {
+                timestamp: ts,
+                value: value as f32,
+            })
+        })
+        .collect()
+}
 
 pub fn map_coin_to_mappings(coin: &Coin) -> Vec<AssetPriceMapping> {
     let mut mappings = Vec::new();
