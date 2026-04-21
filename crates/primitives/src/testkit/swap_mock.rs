@@ -1,6 +1,6 @@
 use super::signer_mock::TEST_EVM_RECIPIENT;
 use crate::{
-    SwapProvider,
+    AssetId, Chain, SwapProvider, TransactionSwapMetadata,
     asset_constants::ETHEREUM_USDT_TOKEN_ID,
     swap::{ApprovalData, SwapData, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteDataType},
 };
@@ -86,6 +86,18 @@ impl SwapQuoteData {
 
     pub fn mock_with_gas_limit(gas_limit: Option<String>) -> Self {
         SwapQuoteData { gas_limit, ..Self::mock() }
+    }
+}
+
+impl TransactionSwapMetadata {
+    pub fn mock() -> Self {
+        TransactionSwapMetadata {
+            from_asset: AssetId::from_chain(Chain::Bitcoin),
+            from_value: "100000".to_string(),
+            to_asset: AssetId::from_chain(Chain::Ethereum),
+            to_value: "2500".to_string(),
+            provider: Some("thorchain".to_string()),
+        }
     }
 }
 

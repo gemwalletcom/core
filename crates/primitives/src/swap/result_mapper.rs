@@ -22,63 +22,42 @@ mod tests {
     use crate::swap::SwapStatus;
     use crate::transaction_state::TransactionState;
 
-    fn metadata() -> TransactionSwapMetadata {
-        TransactionSwapMetadata {
-            from_asset: crate::Asset::mock_eth().id,
-            from_value: "50000".to_string(),
-            to_asset: crate::Asset::mock_eth().id,
-            to_value: "2500".to_string(),
-            provider: Some("thorchain".to_string()),
-        }
-    }
-
     #[test]
-    fn test_map_completed_no_metadata() {
-        let update = map_swap_result(&SwapResult {
+    fn test_map_swap_result() {
+        let meta = TransactionSwapMetadata::mock();
+
+        let completed = map_swap_result(&SwapResult {
             status: SwapStatus::Completed,
             metadata: None,
         });
-        assert_eq!(update.state, TransactionState::Confirmed);
-        assert!(update.changes.is_empty());
-    }
+        assert_eq!(completed.state, TransactionState::Confirmed);
+        assert!(completed.changes.is_empty());
 
-    #[test]
-    fn test_map_completed_with_metadata() {
-        let meta = metadata();
-        let update = map_swap_result(&SwapResult {
+        let completed_with_meta = map_swap_result(&SwapResult {
             status: SwapStatus::Completed,
             metadata: Some(meta.clone()),
         });
-        assert_eq!(update.state, TransactionState::Confirmed);
-        assert!(matches!(&update.changes[0], TransactionChange::Metadata(TransactionMetadata::Swap(m)) if *m == meta));
-    }
+        assert_eq!(completed_with_meta.state, TransactionState::Confirmed);
+        assert!(matches!(&completed_with_meta.changes[0], TransactionChange::Metadata(TransactionMetadata::Swap(m)) if *m == meta));
 
-    #[test]
-    fn test_map_failed() {
-        let update = map_swap_result(&SwapResult {
+        let failed = map_swap_result(&SwapResult {
             status: SwapStatus::Failed,
             metadata: None,
         });
-        assert_eq!(update.state, TransactionState::Failed);
-    }
+        assert_eq!(failed.state, TransactionState::Failed);
 
-    #[test]
-    fn test_map_in_transit_no_metadata_embed() {
-        let update = map_swap_result(&SwapResult {
+        let in_transit = map_swap_result(&SwapResult {
             status: SwapStatus::InTransit,
-            metadata: Some(metadata()),
+            metadata: Some(meta.clone()),
         });
-        assert_eq!(update.state, TransactionState::InTransit);
-        assert!(update.changes.is_empty());
-    }
+        assert_eq!(in_transit.state, TransactionState::InTransit);
+        assert!(in_transit.changes.is_empty());
 
-    #[test]
-    fn test_map_pending() {
-        let update = map_swap_result(&SwapResult {
+        let pending = map_swap_result(&SwapResult {
             status: SwapStatus::Pending,
             metadata: None,
         });
-        assert_eq!(update.state, TransactionState::Pending);
-        assert!(update.changes.is_empty());
+        assert_eq!(pending.state, TransactionState::Pending);
+        assert!(pending.changes.is_empty());
     }
 }
