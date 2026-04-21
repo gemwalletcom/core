@@ -14,5 +14,8 @@ pub use providers::pyth::provider::PythProvider;
 pub trait PriceAssetsProvider: Send + Sync {
     fn provider(&self) -> PriceProvider;
     async fn get_assets(&self) -> Result<Vec<AssetPriceMapping>, Box<dyn Error + Send + Sync>>;
+    async fn get_assets_new(&self) -> Result<Vec<AssetPriceMapping>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
+    }
     async fn get_prices(&self, mappings: Vec<AssetPriceMapping>) -> Result<Vec<AssetPriceFull>, Box<dyn Error + Send + Sync>>;
 }

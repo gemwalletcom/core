@@ -22,7 +22,12 @@ impl PriceAlertsRepository for DatabaseClient {
         if alerts.is_empty() {
             return Ok(vec![]);
         }
-        let asset_ids: Vec<String> = alerts.iter().map(|(a, _)| a.asset_id.to_string()).collect::<std::collections::HashSet<_>>().into_iter().collect();
+        let asset_ids: Vec<String> = alerts
+            .iter()
+            .map(|(a, _)| a.asset_id.to_string())
+            .collect::<std::collections::HashSet<_>>()
+            .into_iter()
+            .collect();
         let primary: HashMap<String, PriceData> = self
             .get_primary_prices(&asset_ids)?
             .into_iter()
@@ -30,7 +35,11 @@ impl PriceAlertsRepository for DatabaseClient {
             .collect();
         Ok(alerts
             .into_iter()
-            .filter_map(|(alert, device)| primary.get(&alert.asset_id.to_string()).map(|price| (alert.as_primitive(), price.clone(), device.as_primitive())))
+            .filter_map(|(alert, device)| {
+                primary
+                    .get(&alert.asset_id.to_string())
+                    .map(|price| (alert.as_primitive(), price.clone(), device.as_primitive()))
+            })
             .collect())
     }
 

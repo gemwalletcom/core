@@ -133,8 +133,6 @@ pub enum ConfigKey {
     PriceTimerCleanOutdated,
     PriceTimerCleanupChartsHourly,
     PriceTimerCleanupChartsDaily,
-    PriceTimerProviderAssets,
-    PriceTimerProviderPrices,
     PriceOutdated,
 
     // Assets
@@ -335,8 +333,6 @@ impl ConfigKey {
             Self::PriceTimerCleanOutdated => "1d",
             Self::PriceTimerCleanupChartsHourly => "1d",
             Self::PriceTimerCleanupChartsDaily => "1d",
-            Self::PriceTimerProviderAssets => "1h",
-            Self::PriceTimerProviderPrices => "60s",
             Self::PriceOutdated => "7d",
             Self::AssetsTimerUpdateExisting => "1d",
             Self::AssetsTimerUpdateAll => "1d",

@@ -50,8 +50,8 @@ test-integration:
     cargo test --lib --all --features chain_integration_tests -- chain_integration_tests --test-threads=1
     cargo test --lib -p gemstone --features swap_integration_tests -- swap_integration_tests --test-threads=1
     cargo test --lib -p fiat --features fiat_integration_tests -- fiat_integration_tests --test-threads=1 
-    cargo test --lib -p nft --features nft_integration_tests -- nft_integration_tests --test-threads=1 
-    cargo test --lib -p prices_dex -- price_integration_tests --test-threads=1
+    cargo test --lib -p nft --features nft_integration_tests -- nft_integration_tests --test-threads=1
+    cargo test --lib -p prices --features price_integration_tests -- price_integration_tests --test-threads=1
 
 build-integration-tests:
     @echo "Building all integration tests..."
@@ -59,7 +59,7 @@ build-integration-tests:
     cargo test --no-run --lib -p gemstone --features swap_integration_tests
     cargo test --no-run --lib -p fiat --features fiat_integration_tests
     cargo test --no-run --lib -p nft --features nft_integration_tests
-    cargo test --no-run --lib -p prices_dex
+    cargo test --no-run --lib -p prices --features price_integration_tests
 
 format:
     cargo fmt -q --all

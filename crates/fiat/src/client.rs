@@ -229,14 +229,7 @@ impl FiatClient {
         Ok(self.fiat_cacher.get_quote(quote_id).await?.quote)
     }
 
-    pub async fn get_quote_url(
-        &self,
-        quote_id: &str,
-        wallet_id: i32,
-        device_id: i32,
-        ip_address: &str,
-        locale: &str,
-    ) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {
+    pub async fn get_quote_url(&self, quote_id: &str, wallet_id: i32, device_id: i32, ip_address: &str, locale: &str) -> Result<FiatQuoteUrl, Box<dyn Error + Send + Sync>> {
         let crate::CachedFiatQuoteData {
             quote,
             asset_symbol,

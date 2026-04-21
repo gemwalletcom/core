@@ -3,8 +3,8 @@ use std::error::Error;
 use primitives::{AssetId, Chain};
 
 use crate::{
-    ChainAddressPayload, ExchangeName, FetchAssetsPayload, FetchBlocksPayload, InAppNotificationPayload, NotificationsFailedPayload, NotificationsPayload, PricesPayload, QueueName,
-    RewardsNotificationPayload, RewardsRedemptionPayload, StreamProducer, TransactionsPayload, UpdateCoinInfoPayload, WalletStreamPayload,
+    ChainAddressPayload, ExchangeName, FetchAssetsPayload, FetchBlocksPayload, InAppNotificationPayload, NotificationsFailedPayload, NotificationsPayload, PricesPayload,
+    QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, StreamProducer, TransactionsPayload, UpdateCoinInfoPayload, WalletStreamPayload,
 };
 
 #[async_trait::async_trait]

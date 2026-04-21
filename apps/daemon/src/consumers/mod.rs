@@ -24,6 +24,10 @@ pub fn chain_providers(settings: &Settings, name: &str) -> ChainProviders {
     ChainProviders::from_settings(settings, &settings::service_user_agent("consumer", Some(name)))
 }
 
+pub fn chain_providers_for(chain: primitives::Chain, settings: &Settings, name: &str) -> ChainProviders {
+    ChainProviders::for_chain(chain, settings, &settings::service_user_agent("consumer", Some(name)))
+}
+
 pub(crate) fn consumer_config(consumer: &settings::Consumer) -> ConsumerConfig {
     ConsumerConfig {
         timeout_on_error: consumer.error.timeout,

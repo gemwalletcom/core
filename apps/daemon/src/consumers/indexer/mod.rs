@@ -15,7 +15,7 @@ use storage::Database;
 use streamer::{ChainAddressPayload, ConsumerStatusReporter, FetchAssetsPayload, FetchBlocksPayload, QueueName, ShutdownReceiver, StreamConnection, StreamReader, run_consumer};
 
 use crate::consumers::runner::ChainConsumerRunner;
-use crate::consumers::{chain_providers, consumer_config, reader_config};
+use crate::consumers::{chain_providers, chain_providers_for, consumer_config, reader_config};
 
 use fetch_address_transactions_consumer::FetchAddressTransactionsConsumer;
 use fetch_assets_consumer::FetchAssetsConsumer;
@@ -86,7 +86,7 @@ async fn run_fetch_blocks(
             let name = format!("{}.{}", queue, chain.as_ref());
             let stream_reader = runner.stream_reader().await?;
             let stream_producer = runner.stream_producer().await?;
-            let consumer = FetchBlocksConsumer::new(chain_providers(&runner.settings, &name), stream_producer);
+            let consumer = FetchBlocksConsumer::new(chain_providers_for(chain, &runner.settings, &name), stream_producer);
             run_consumer::<FetchBlocksPayload, FetchBlocksConsumer, usize>(
                 &name,
                 stream_reader,
@@ -135,7 +135,7 @@ async fn run_fetch_token_associations(
             let name = format!("{}.{}", queue, chain.as_ref());
             let stream_reader = runner.stream_reader().await?;
             let stream_producer = runner.stream_producer().await?;
-            let consumer = FetchTokenAddressesConsumer::new(chain_providers(&runner.settings, &name), runner.database, stream_producer, runner.cacher);
+            let consumer = FetchTokenAddressesConsumer::new(chain_providers_for(chain, &runner.settings, &name), runner.database, stream_producer, runner.cacher);
             run_consumer::<ChainAddressPayload, FetchTokenAddressesConsumer, usize>(
                 &name,
                 stream_reader,
@@ -163,7 +163,7 @@ async fn run_fetch_coin_associations(
             let queue = QueueName::FetchCoinAssociations;
             let name = format!("{}.{}", queue, chain.as_ref());
             let stream_reader = runner.stream_reader().await?;
-            let consumer = FetchCoinAddressesConsumer::new(chain_providers(&runner.settings, &name), runner.database, runner.cacher);
+            let consumer = FetchCoinAddressesConsumer::new(chain_providers_for(chain, &runner.settings, &name), runner.database, runner.cacher);
             run_consumer::<ChainAddressPayload, FetchCoinAddressesConsumer, String>(
                 &name,
                 stream_reader,
@@ -217,7 +217,7 @@ async fn run_fetch_transaction_associations(
             let name = format!("{}.{}", queue, chain.as_ref());
             let stream_reader = runner.stream_reader().await?;
             let stream_producer = runner.stream_producer().await?;
-            let consumer = FetchAddressTransactionsConsumer::new(runner.database, chain_providers(&runner.settings, &name), stream_producer, runner.cacher);
+            let consumer = FetchAddressTransactionsConsumer::new(runner.database, chain_providers_for(chain, &runner.settings, &name), stream_producer, runner.cacher);
             run_consumer::<ChainAddressPayload, FetchAddressTransactionsConsumer, usize>(
                 &name,
                 stream_reader,

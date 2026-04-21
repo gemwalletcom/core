@@ -28,6 +28,10 @@ impl PricesUpdater {
         self.save_mappings(self.provider.get_assets().await?).await
     }
 
+    pub async fn update_assets_new(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
+        self.save_mappings(self.provider.get_assets_new().await?).await
+    }
+
     pub async fn update_prices_all(&self) -> Result<usize, Box<dyn std::error::Error + Send + Sync>> {
         let provider = self.provider.provider();
         let prefix = format!("{}_", provider.id());

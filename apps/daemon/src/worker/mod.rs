@@ -22,12 +22,7 @@ use crate::shutdown::ShutdownReceiver;
 use crate::worker::context::WorkerContext;
 
 impl WorkerService {
-    pub async fn run_jobs(
-        self,
-        ctx: WorkerContext,
-        shutdown_rx: ShutdownReceiver,
-        options: WorkerOptions,
-    ) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
+    pub async fn run_jobs(self, ctx: WorkerContext, shutdown_rx: ShutdownReceiver, options: WorkerOptions) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
         match self {
             WorkerService::Alerter => alerter::jobs(ctx, shutdown_rx).await,
             WorkerService::Prices => prices::jobs(ctx, shutdown_rx, options.price_provider).await,

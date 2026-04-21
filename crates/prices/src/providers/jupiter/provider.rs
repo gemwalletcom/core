@@ -26,7 +26,13 @@ impl JupiterProvider {
     }
 
     async fn verified_tokens(&self) -> Result<Vec<VerifiedToken>, Box<dyn Error + Send + Sync>> {
-        Ok(self.jupiter_client.get_verified_tokens().await?.into_iter().filter(|t| t.organic_score >= MIN_ORGANIC_SCORE).collect())
+        Ok(self
+            .jupiter_client
+            .get_verified_tokens()
+            .await?
+            .into_iter()
+            .filter(|t| t.organic_score >= MIN_ORGANIC_SCORE)
+            .collect())
     }
 }
 
@@ -64,7 +70,11 @@ fn to_asset_price_full(mapping: AssetPriceMapping, token: &VerifiedToken) -> Ass
         total_supply: token.total_supply,
         ..AssetMarket::default()
     };
-    AssetPriceFull::new(mapping, Price::new(token.usd_price, token.stats24h.price_change, Utc::now(), PriceProvider::Jupiter), Some(market))
+    AssetPriceFull::new(
+        mapping,
+        Price::new(token.usd_price, token.stats24h.price_change, Utc::now(), PriceProvider::Jupiter),
+        Some(market),
+    )
 }
 
 #[cfg(all(test, feature = "price_integration_tests"))]

@@ -10,7 +10,7 @@ use crate::repositories::config_repository::ConfigRepository;
 use crate::repositories::rewards_redemptions_repository::RewardsRedemptionsRepository;
 use crate::sql_types::ChainRow;
 use crate::sql_types::{RewardEventType, RewardRedemptionType, RewardStatus, TransactionState, UsernameStatus};
-use crate::{DatabaseClient, DatabaseError, DieselResultExt, ReferralValidationError};
+use crate::{DatabaseClient, DatabaseError, DieselResultExt, ReferralValidationError, UsernameValidationError};
 use chrono::NaiveDateTime;
 use primitives::rewards::RewardStatus as PrimitiveRewardStatus;
 use primitives::{Chain, ConfigKey, Device, NaiveDateTimeExt, ReferralLeader, ReferralLeaderboard, RewardEvent, Rewards, WalletId, now};
@@ -27,16 +27,16 @@ fn create_username_and_rewards(client: &mut DatabaseClient, wallet_id: i32, addr
     Ok(RewardsStore::create_rewards(client, NewRewardsRow::new(address.to_string(), device_id))?)
 }
 
-fn validate_username(username: &str) -> Result<(), DatabaseError> {
+fn validate_username(username: &str) -> Result<(), UsernameValidationError> {
     let len = username.len();
     if len < 4 {
-        return Err(DatabaseError::Error("Username must be at least 4 characters".into()));
+        return Err(UsernameValidationError::Invalid("Username must be at least 4 characters".into()));
     }
     if len > 16 {
-        return Err(DatabaseError::Error("Username must be at most 16 characters".into()));
+        return Err(UsernameValidationError::Invalid("Username must be at most 16 characters".into()));
     }
     if !username.chars().all(|c| c.is_ascii_alphanumeric()) {
-        return Err(DatabaseError::Error("Username must contain only letters and digits".into()));
+        return Err(UsernameValidationError::Invalid("Username must contain only letters and digits".into()));
     }
     Ok(())
 }
@@ -245,8 +245,7 @@ pub trait RewardsRepository {
     fn get_reward_events_by_wallet_id(&mut self, wallet_id: i32) -> Result<Vec<RewardEvent>, DatabaseError>;
     fn get_reward_event(&mut self, event_id: i32) -> Result<RewardEvent, DatabaseError>;
     fn get_reward_event_devices(&mut self, event_id: i32) -> Result<Vec<Device>, DatabaseError>;
-    fn create_reward(&mut self, wallet_id: i32, username: &str) -> Result<(Rewards, i32), DatabaseError>;
-    fn change_username(&mut self, wallet_id: i32, new_username: &str) -> Result<Rewards, DatabaseError>;
+    fn create_reward(&mut self, wallet_id: i32, username: &str) -> Result<(Rewards, i32), UsernameValidationError>;
     fn get_referral_code(&mut self, code: &str) -> Result<Option<String>, DatabaseError>;
     fn get_referrer_info(&mut self, username: &str) -> Result<ReferrerInfo, DatabaseError>;
     fn is_pending_referral(&mut self, referrer_username: &str, wallet_id: i32, device_id: i32) -> Result<bool, DatabaseError>;
@@ -330,21 +329,16 @@ impl RewardsRepository for DatabaseClient {
         Ok(devices.into_iter().map(|d| d.as_primitive()).collect())
     }
 
-    fn create_reward(&mut self, wallet_id: i32, username: &str) -> Result<(Rewards, i32), DatabaseError> {
+    fn create_reward(&mut self, wallet_id: i32, username: &str) -> Result<(Rewards, i32), UsernameValidationError> {
         validate_username(username)?;
 
         if find_username(self, UsernameLookup::Username(username))?.is_some() {
-            return Err(DatabaseError::Error("Username already taken".into()));
+            return Err(UsernameValidationError::AlreadyTaken);
         }
 
         let existing = ensure_wallet_reward_identity(self, wallet_id)?;
         if existing.has_custom_username() {
-            return Err(DatabaseError::Error("Wallet already has a username".into()));
-        }
-
-        let existing_rewards = require_rewards(self, &existing.username)?;
-        if existing_rewards.status.is_disabled() {
-            return Err(DatabaseError::Error("Rewards are not enabled for this user".into()));
+            return Err(UsernameValidationError::Invalid("Wallet already has a username".into()));
         }
 
         UsernamesStore::update_username(self, wallet_id, username).or_not_found_internal(wallet_id.to_string())?;
@@ -360,33 +354,6 @@ impl RewardsRepository for DatabaseClient {
 
         let rewards = self.get_reward_by_wallet_id(wallet_id)?;
         Ok((rewards, event.id))
-    }
-
-    fn change_username(&mut self, wallet_id: i32, new_username: &str) -> Result<Rewards, DatabaseError> {
-        validate_username(new_username)?;
-
-        let existing = require_username(self, UsernameLookup::WalletId(wallet_id))?;
-
-        if !existing.has_custom_username() {
-            return Err(DatabaseError::Error("No custom username to change".into()));
-        }
-
-        if existing.username.eq_ignore_ascii_case(new_username) {
-            return Err(DatabaseError::Error("New username is the same as current".into()));
-        }
-
-        if find_username(self, UsernameLookup::Username(new_username))?.is_some() {
-            return Err(DatabaseError::Error("Username already taken".into()));
-        }
-
-        let rewards = require_rewards(self, &existing.username)?;
-        if rewards.status.is_disabled() {
-            return Err(DatabaseError::Error("Rewards are not enabled for this user".into()));
-        }
-
-        UsernamesStore::change_username(self, &existing.username, new_username)?;
-
-        self.get_reward_by_wallet_id(wallet_id)
     }
 
     fn get_referral_code(&mut self, code: &str) -> Result<Option<String>, DatabaseError> {

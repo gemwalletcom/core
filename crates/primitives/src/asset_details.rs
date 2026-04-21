@@ -75,6 +75,9 @@ impl AssetPriceMetadata {
 pub struct AssetMarketPrice {
     pub price: Option<Price>,
     pub market: Option<AssetMarket>,
+    #[typeshare(skip)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prices: Option<Vec<Price>>,
 }
 
 #[typeshare(swift = "Sendable")]
@@ -92,6 +95,7 @@ pub struct AssetProperties {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub earn_apr: Option<f64>,
     pub has_image: bool,
+    #[typeshare(skip)]
     pub has_price: bool,
 }
 

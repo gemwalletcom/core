@@ -23,7 +23,7 @@ use observed_prices_updater::ObservedPricesUpdater;
 use pricer::{MarketsClient, PriceClient};
 use prices::{CoinGeckoPricesProvider, JupiterProvider, PriceAssetsProvider, PriceProvider, PythProvider};
 use prices_updater::PricesUpdater;
-use primitives::{ChartTimeframe, ConfigKey};
+use primitives::{ChartTimeframe, ConfigKey, ConfigParamKey};
 use settings::Settings;
 use storage::database::prices::PriceFilter;
 use storage::repositories::prices_providers_repository::PricesProvidersRepository;
@@ -32,11 +32,7 @@ use streamer::{StreamProducer, StreamProducerConfig};
 
 type Providers = Arc<HashMap<PriceProvider, Arc<dyn PriceAssetsProvider>>>;
 
-pub async fn jobs(
-    ctx: WorkerContext,
-    shutdown_rx: ShutdownReceiver,
-    only: Option<PriceProvider>,
-) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
+pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver, only: Option<PriceProvider>) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
     let runtime = ctx.runtime();
     let database = ctx.database();
     let settings = ctx.settings();
@@ -63,7 +59,17 @@ pub async fn jobs(
         .into_iter()
         .filter(|p| only.is_none_or(|o| o == *p))
         .fold(builder, |builder, provider| {
-            add_provider_jobs(builder, &database, &cacher_client, &settings, provider, providers[&provider].clone(), &producer_assets, &producer_prices)
+            add_provider_jobs(
+                builder,
+                &database,
+                &cacher_client,
+                &settings,
+                &config,
+                provider,
+                providers[&provider].clone(),
+                &producer_assets,
+                &producer_prices,
+            )
         })
         .finish()
 }
@@ -85,7 +91,12 @@ fn add_platform_jobs<'a>(
                 let config = config.clone();
                 async move {
                     let cutoff = Utc::now() - Duration::seconds(config.get_duration(ConfigKey::PriceOutdated)?.as_secs() as i64);
-                    let ids = database.prices()?.get_prices_by_filter(vec![PriceFilter::UpdatedBefore(cutoff.naive_utc())])?.into_iter().map(|p| p.id).collect();
+                    let ids = database
+                        .prices()?
+                        .get_prices_by_filter(vec![PriceFilter::UpdatedBefore(cutoff.naive_utc())])?
+                        .into_iter()
+                        .map(|p| p.id)
+                        .collect();
                     Ok::<usize, Box<dyn std::error::Error + Send + Sync>>(database.prices()?.delete_prices(ids)?)
                 }
             }
@@ -121,7 +132,9 @@ fn add_platform_jobs<'a>(
                 async move {
                     let max_observed_assets = config.get_usize(ConfigKey::PriceObservedMaxAssets)?;
                     let min_observers = config.get_usize(ConfigKey::PriceObservedMinObservers)?;
-                    ObservedPricesUpdater::new(cacher_client, database, providers, producer, max_observed_assets, min_observers).update().await
+                    ObservedPricesUpdater::new(cacher_client, database, providers, producer, max_observed_assets, min_observers)
+                        .update()
+                        .await
                 }
             }
         })
@@ -132,16 +145,30 @@ fn add_provider_jobs<'a>(
     database: &Database,
     cacher_client: &CacherClient,
     settings: &Settings,
+    config: &ConfigCacher,
     provider: PriceProvider,
     provider_instance: Arc<dyn PriceAssetsProvider>,
     producer_assets: &StreamProducer,
     producer_prices: &StreamProducer,
 ) -> JobPlanBuilder<'a> {
     let slug = provider.id().to_string();
-    let builder = builder.job(
-        JobVariant::labeled(WorkerJob::UpdatePricesAssets, slug.clone()),
-        provider_job(database, provider_instance.clone(), producer_assets.clone(), |u| async move { u.update_assets().await }),
-    );
+    let assets_variant = match config.get_param_duration(&ConfigParamKey::PriceProviderAssetsDuration(provider)) {
+        Ok(duration) => JobVariant::labeled(WorkerJob::UpdatePricesAssets, slug.clone()).every(duration),
+        Err(_) => JobVariant::labeled(WorkerJob::UpdatePricesAssets, slug.clone()),
+    };
+    let assets_new_variant = match config.get_param_duration(&ConfigParamKey::PriceProviderAssetsNewDuration(provider)) {
+        Ok(duration) => JobVariant::labeled(WorkerJob::UpdatePricesAssetsNew, slug.clone()).every(duration),
+        Err(_) => JobVariant::labeled(WorkerJob::UpdatePricesAssetsNew, slug.clone()),
+    };
+    let builder = builder
+        .job(
+            assets_variant,
+            provider_job(database, provider_instance.clone(), producer_assets.clone(), |u| async move { u.update_assets().await }),
+        )
+        .job(
+            assets_new_variant,
+            provider_job(database, provider_instance.clone(), producer_assets.clone(), |u| async move { u.update_assets_new().await }),
+        );
     match provider {
         PriceProvider::Coingecko => builder
             .job(
@@ -170,10 +197,16 @@ fn add_provider_jobs<'a>(
                     Box::pin(async move { updater.update_markets().await })
                 }
             }),
-        PriceProvider::Pyth | PriceProvider::Jupiter => builder.job(
-            JobVariant::labeled(WorkerJob::UpdatePricesAll, slug),
-            provider_job(database, provider_instance, producer_prices.clone(), |u| async move { u.update_prices_all().await }),
-        ),
+        PriceProvider::Pyth | PriceProvider::Jupiter => {
+            let prices_variant = match config.get_param_duration(&ConfigParamKey::PriceProviderPricesDuration(provider)) {
+                Ok(duration) => JobVariant::labeled(WorkerJob::UpdatePricesAll, slug).every(duration),
+                Err(_) => JobVariant::labeled(WorkerJob::UpdatePricesAll, slug),
+            };
+            builder.job(
+                prices_variant,
+                provider_job(database, provider_instance, producer_prices.clone(), |u| async move { u.update_prices_all().await }),
+            )
+        }
     }
 }
 

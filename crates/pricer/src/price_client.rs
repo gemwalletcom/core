@@ -1,7 +1,7 @@
 use cacher::{CacheError, CacheKey, CacherClient};
 use primitives::{AssetMarketPrice, AssetPriceInfo, AssetPrices, ChartTimeframe, FiatRate};
 use std::error::Error;
-use storage::{ChartsRepository, Database};
+use storage::{ChartsRepository, Database, PricesRepository};
 
 #[derive(Clone)]
 pub struct PriceClient {
@@ -36,10 +36,17 @@ impl PriceClient {
     pub async fn get_asset_price(&self, asset_id: &str, currency: &str) -> Result<AssetMarketPrice, Box<dyn Error + Send + Sync>> {
         let rate = self.get_fiat_rate(currency)?.rate;
         let price = self.get_cache_price(asset_id).await?;
-
+        let prices = self
+            .database
+            .prices()?
+            .get_prices_for_asset(asset_id)?
+            .into_iter()
+            .map(|row| row.as_primitive().with_rate(rate))
+            .collect();
         Ok(AssetMarketPrice {
             price: Some(price.as_price_primitive_with_rate(rate)),
             market: Some(price.as_market_with_rate(rate)),
+            prices: Some(prices),
         })
     }
 

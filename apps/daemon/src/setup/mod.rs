@@ -4,11 +4,12 @@ use self::scan_addresses::setup_scan_addresses;
 use chrono::Utc;
 use gem_tracing::info_with_fields;
 use primitives::{
-    Asset, AssetId, AssetTag, Chain, ConfigKey, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus, NFTChain, NotificationType, ParamConfigKey,
+    Asset, AssetId, AssetTag, Chain, ConfigKey, ConfigParamKey, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus, NFTChain, NotificationType,
     PlatformStore as PrimitivePlatformStore, PriceAlert, PriceAlertDirection, PriceProvider, WebhookKind,
 };
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
+use std::collections::HashSet;
 use storage::Database;
 use storage::models::{
     ChartRow, ConfigRow, FiatAssetRow, FiatProviderCountryRow, FiatRateRow, NewFiatTransactionRow, NewWebhookEndpointRow, PriceAssetRow, PriceRow, UpdateDeviceRow,
@@ -92,8 +93,20 @@ fn setup_database(database: &Database) -> Result<(), Box<dyn std::error::Error +
     let _ = database.client()?.add_config(configs);
 
     info_with_fields!("setup", step = "param config");
-    let param_configs: Vec<ConfigRow> = ParamConfigKey::all().into_iter().map(ConfigRow::from_param).collect();
+    let param_configs: Vec<ConfigRow> = ConfigParamKey::all().into_iter().map(ConfigRow::from_param).collect();
     let _ = database.client()?.add_config(param_configs);
+
+    info_with_fields!("setup", step = "cleanup stale config keys");
+    let valid: HashSet<String> = ConfigKey::all()
+        .into_iter()
+        .map(|k| k.as_ref().to_string())
+        .chain(ConfigParamKey::all().into_iter().map(|k| k.key()))
+        .collect();
+    let stale: Vec<String> = database.client()?.get_config_keys()?.into_iter().filter(|k| !valid.contains(k)).collect();
+    if !stale.is_empty() {
+        info_with_fields!("setup", step = "delete stale config keys", count = stale.len(), keys = format!("{:?}", stale));
+        let _ = database.client()?.delete_keys(stale);
+    }
 
     Ok(())
 }
