@@ -30,11 +30,12 @@ BEGIN
     INSERT INTO charts_hourly (coin_id, created_at, price)
     SELECT
         charts.coin_id,
-        DATE_TRUNC('hour', charts.created_at),
+        DATE_TRUNC('hour', charts.created_at) AS bucket,
         AVG(charts.price)
     FROM charts
     WHERE charts.created_at >= DATE_TRUNC('hour', NOW()) - INTERVAL '1 hour'
     GROUP BY charts.coin_id, DATE_TRUNC('hour', charts.created_at)
+    ORDER BY charts.coin_id, bucket
     ON CONFLICT (coin_id, created_at) DO UPDATE SET price = EXCLUDED.price
     WHERE charts_hourly.price <> EXCLUDED.price;
 END;
@@ -45,11 +46,12 @@ BEGIN
     INSERT INTO charts_daily (coin_id, created_at, price)
     SELECT
         charts_hourly.coin_id,
-        DATE_TRUNC('day', charts_hourly.created_at),
+        DATE_TRUNC('day', charts_hourly.created_at) AS bucket,
         AVG(charts_hourly.price)
     FROM charts_hourly
     WHERE charts_hourly.created_at >= DATE_TRUNC('day', NOW()) - INTERVAL '1 day'
     GROUP BY charts_hourly.coin_id, DATE_TRUNC('day', charts_hourly.created_at)
+    ORDER BY charts_hourly.coin_id, bucket
     ON CONFLICT (coin_id, created_at) DO UPDATE SET price = EXCLUDED.price
     WHERE charts_daily.price <> EXCLUDED.price;
 END;
