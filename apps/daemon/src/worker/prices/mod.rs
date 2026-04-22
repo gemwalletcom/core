@@ -158,6 +158,10 @@ fn add_provider_jobs<'a>(
         Ok(duration) => JobVariant::labeled(WorkerJob::UpdatePricesAssetsNew, slug.clone()).every(duration),
         Err(_) => JobVariant::labeled(WorkerJob::UpdatePricesAssetsNew, slug.clone()),
     };
+    let assets_metadata_variant = match config.get_param_duration(&ConfigParamKey::PriceProviderAssetsMetadataDuration(provider)) {
+        Ok(duration) => JobVariant::labeled(WorkerJob::UpdatePricesAssetsMetadata, slug.clone()).every(duration),
+        Err(_) => JobVariant::labeled(WorkerJob::UpdatePricesAssetsMetadata, slug.clone()),
+    };
     let builder = builder
         .job(
             assets_variant,
@@ -166,6 +170,15 @@ fn add_provider_jobs<'a>(
         .job(
             assets_new_variant,
             provider_job(database, provider_instance.clone(), producer_assets.clone(), |u| async move { u.update_assets_new().await }),
+        )
+        .job(
+            assets_metadata_variant,
+            provider_job(
+                database,
+                provider_instance.clone(),
+                producer_assets.clone(),
+                |u| async move { u.update_assets_metadata().await },
+            ),
         );
     match provider {
         PriceProvider::Coingecko => builder

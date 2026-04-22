@@ -1,4 +1,3 @@
-pub mod assets;
 pub mod fiat;
 pub mod indexer;
 pub mod notifications;
@@ -13,7 +12,6 @@ use settings::Settings;
 use settings_chain::ChainProviders;
 use streamer::{ConsumerConfig, QueueName, ShutdownReceiver, StreamProducer, StreamProducerConfig, StreamReader, StreamReaderConfig};
 
-pub use assets::run_consumer_assets;
 pub use fiat::run_consumer_fiat;
 pub use indexer::run_consumer_indexer;
 pub use rewards::run_consumer_rewards;

@@ -235,6 +235,5 @@ async fn run_consumer(
         ConsumerService::Rewards => consumers::run_consumer_rewards(settings, shutdown_rx, reporter).await,
         ConsumerService::Support => consumers::run_consumer_support(settings, shutdown_rx, reporter).await,
         ConsumerService::Fiat => consumers::run_consumer_fiat(settings, shutdown_rx, reporter).await,
-        ConsumerService::Assets => consumers::run_consumer_assets(settings, shutdown_rx, reporter).await,
     }
 }

@@ -101,11 +101,6 @@ fn compose_job_name(base: &str, label: Option<&str>) -> String {
 #[strum(serialize_all = "snake_case")]
 pub enum WorkerJob {
     AlertPriceAlerts,
-    UpdateExistingPricesAssets,
-    UpdateAllPricesAssets,
-    UpdateNativePricesAssets,
-    UpdateCoingeckoTrendingAssets,
-    UpdateCoingeckoRecentlyAddedAssets,
     UpdateSuspiciousAssetRanks,
     UpdateStakeApy,
     UpdatePerpetuals,
@@ -142,6 +137,7 @@ pub enum WorkerJob {
     UpdateObservedPrices,
     UpdatePricesAssets,
     UpdatePricesAssetsNew,
+    UpdatePricesAssetsMetadata,
     UpdateInTransitTransactions,
     UpdatePendingTransactions,
     UpdateSwapVaultAddresses,
@@ -157,11 +153,6 @@ impl WorkerJob {
         use WorkerJob::*;
         match self {
             AlertPriceAlerts => JobSpec::new(WorkerService::Alerter, JobInterval::Config(ConfigKey::AlerterPriceAlertsTimer)),
-            UpdateExistingPricesAssets => JobSpec::new(WorkerService::Assets, JobInterval::Config(ConfigKey::AssetsTimerUpdateExisting)),
-            UpdateAllPricesAssets => JobSpec::new(WorkerService::Assets, JobInterval::Config(ConfigKey::AssetsTimerUpdateAll)),
-            UpdateNativePricesAssets => JobSpec::new(WorkerService::Assets, JobInterval::Config(ConfigKey::AssetsTimerUpdateNative)),
-            UpdateCoingeckoTrendingAssets => JobSpec::new(WorkerService::Assets, JobInterval::Config(ConfigKey::AssetsTimerUpdateTrending)),
-            UpdateCoingeckoRecentlyAddedAssets => JobSpec::new(WorkerService::Assets, JobInterval::Config(ConfigKey::AssetsTimerUpdateRecentlyAdded)),
             UpdateSuspiciousAssetRanks => JobSpec::new(WorkerService::Assets, JobInterval::Config(ConfigKey::AssetsTimerUpdateSuspicious)),
             UpdateStakeApy => JobSpec::new(WorkerService::Assets, JobInterval::Config(ConfigKey::AssetsTimerUpdateStakeApy)),
             UpdatePerpetuals => JobSpec::new(WorkerService::Assets, JobInterval::Config(ConfigKey::AssetsTimerUpdatePerpetuals)),
@@ -198,6 +189,7 @@ impl WorkerJob {
             UpdateObservedPrices => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceObservedFetchInterval)),
             UpdatePricesAssets => JobSpec::new(WorkerService::Prices, JobInterval::Duration(primitives::DAY)),
             UpdatePricesAssetsNew => JobSpec::new(WorkerService::Prices, JobInterval::Duration(Duration::from_secs(15 * 60))),
+            UpdatePricesAssetsMetadata => JobSpec::new(WorkerService::Prices, JobInterval::Duration(Duration::from_secs(30 * 24 * 60 * 60))),
             UpdateInTransitTransactions => JobSpec::new(WorkerService::Transactions, JobInterval::Config(ConfigKey::TransactionTimerInTransitUpdate)),
             UpdatePendingTransactions => JobSpec::new(WorkerService::Transactions, JobInterval::Config(ConfigKey::TransactionTimerPendingUpdate)),
             UpdateSwapVaultAddresses => JobSpec::new(WorkerService::Transactions, JobInterval::Duration(Duration::from_secs(300))),

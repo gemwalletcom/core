@@ -1,5 +1,5 @@
 use chrono::Utc;
-use primitives::{AssetId, AssetMarket, Price, PriceData, PriceProvider};
+use primitives::{AssetId, AssetLink, AssetMarket, AssetPriceKey, Price, PriceData, PriceProvider};
 
 #[derive(Debug, Clone)]
 pub struct AssetPriceMapping {
@@ -26,6 +26,19 @@ impl PriceProviderAsset {
 }
 
 #[derive(Debug, Clone)]
+pub struct PriceProviderAssetMetadata {
+    pub asset_id: AssetId,
+    pub rank: i32,
+    pub links: Vec<AssetLink>,
+}
+
+impl PriceProviderAssetMetadata {
+    pub fn new(asset_id: AssetId, rank: i32, links: Vec<AssetLink>) -> Self {
+        Self { asset_id, rank, links }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct AssetPriceFull {
     pub mapping: AssetPriceMapping,
     pub price: Price,
@@ -44,7 +57,7 @@ impl AssetPriceFull {
     pub fn as_price_data(&self) -> PriceData {
         let market = self.market.clone().unwrap_or_default();
         PriceData {
-            id: self.price.provider.price_id(&self.mapping.provider_price_id),
+            id: AssetPriceKey::id_for(self.price.provider, &self.mapping.provider_price_id),
             provider: self.price.provider,
             provider_price_id: self.mapping.provider_price_id.clone(),
             price: self.price.price,

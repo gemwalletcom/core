@@ -31,10 +31,6 @@ impl PriceProvider {
             Self::Jupiter => 2,
         }
     }
-
-    pub fn price_id(&self, provider_price_id: &str) -> String {
-        format!("{}_{}", self.as_ref(), provider_price_id)
-    }
 }
 
 impl fmt::Display for PriceProvider {
