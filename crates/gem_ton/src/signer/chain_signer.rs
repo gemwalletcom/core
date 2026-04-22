@@ -2,7 +2,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use primitives::{ChainSigner, SignerError, SignerInput};
 
-use super::signature::sign_personal;
+use super::{signature::sign_personal, ton_signer::TonSigner};
 
 #[derive(Default)]
 pub struct TonChainSigner;
@@ -18,16 +18,14 @@ impl ChainSigner for TonChainSigner {
     }
 
     fn sign_transfer(&self, input: &SignerInput, private_key: &[u8]) -> Result<String, SignerError> {
-        self.sign_from_metadata(input, private_key)
+        TonSigner::new(private_key)?.sign_transfer(input, None)
     }
 
     fn sign_token_transfer(&self, input: &SignerInput, private_key: &[u8]) -> Result<String, SignerError> {
-        self.sign_from_metadata(input, private_key)
+        TonSigner::new(private_key)?.sign_token_transfer(input, None)
     }
-}
 
-impl TonChainSigner {
-    fn sign_from_metadata(&self, _input: &SignerInput, _private_key: &[u8]) -> Result<String, SignerError> {
-        Err(SignerError::signing_error("TON transaction signing not yet implemented in chain signer"))
+    fn sign_swap(&self, input: &SignerInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
+        TonSigner::new(private_key)?.sign_swap(input, None)
     }
 }

@@ -7,14 +7,21 @@ const TRON_METHOD_VERSION_KEY: &str = "tron_method_version";
 const TRON_METHOD_VERSION_VALUE: &str = "v1";
 
 pub fn config_session_properties(mut properties: HashMap<String, String>, chains: &[Chain]) -> HashMap<String, String> {
-    if chains.contains(&Chain::Tron) && !properties.contains_key(TRON_METHOD_VERSION_KEY) {
-        properties.insert(TRON_METHOD_VERSION_KEY.to_string(), TRON_METHOD_VERSION_VALUE.to_string());
+    if chains.contains(&Chain::Tron) {
+        properties = tron_session_properties(properties);
     }
     properties
 }
 
 pub fn parse_chains(chains: &[String]) -> Vec<Chain> {
     chains.iter().filter_map(|c| Chain::from_str(c).ok()).collect()
+}
+
+fn tron_session_properties(mut properties: HashMap<String, String>) -> HashMap<String, String> {
+    if !properties.contains_key(TRON_METHOD_VERSION_KEY) {
+        properties.insert(TRON_METHOD_VERSION_KEY.to_string(), TRON_METHOD_VERSION_VALUE.to_string());
+    }
+    properties
 }
 
 #[cfg(test)]

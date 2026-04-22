@@ -8,6 +8,7 @@ use gem_near::NearChainSigner;
 use gem_solana::signer::SolanaChainSigner;
 use gem_stellar::StellarChainSigner;
 use gem_sui::signer::SuiChainSigner;
+use gem_ton::signer::TonChainSigner;
 use gem_tron::TronChainSigner;
 use primitives::{Chain, ChainSigner, ChainType, EVMChain, SignerError, SignerInput};
 
@@ -27,6 +28,7 @@ impl GemChainSigner {
             ChainType::HyperCore => Box::new(HyperCoreSigner),
             ChainType::Sui => Box::new(SuiChainSigner),
             ChainType::Solana => Box::new(SolanaChainSigner),
+            ChainType::Ton => Box::new(TonChainSigner),
             ChainType::Tron => Box::new(TronChainSigner),
             ChainType::Cosmos => Box::new(CosmosChainSigner),
             ChainType::Near => Box::new(NearChainSigner),
