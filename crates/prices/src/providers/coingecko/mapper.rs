@@ -1,10 +1,26 @@
 use std::collections::HashMap;
 
-use chrono::Utc;
-use coingecko::{COINGECKO_CHAIN_MAP, Coin, CoinMarket, get_chain_for_coingecko_platform_id};
-use primitives::{AssetId, AssetMarket, ChartValuePercentage, Price, PriceProvider};
+use chrono::{DateTime, Utc};
+use coingecko::{COINGECKO_CHAIN_MAP, Coin, CoinMarket, get_chain_for_coingecko_platform_id, model::MarketChart};
+use primitives::{AssetId, AssetMarket, ChartValue, ChartValuePercentage, Price, PriceProvider};
 
-use crate::{AssetPriceFull, AssetPriceMapping};
+use crate::{AssetPriceFull, AssetPriceMapping, PriceProviderAsset};
+
+pub fn map_market_chart_daily(chart: MarketChart) -> Vec<ChartValue> {
+    chart
+        .prices
+        .into_iter()
+        .filter_map(|p| {
+            let ts_ms = *p.first()?;
+            let value = *p.get(1)?;
+            let ts = DateTime::<Utc>::from_timestamp_millis(ts_ms as i64)?.timestamp() as i32;
+            Some(ChartValue {
+                timestamp: ts,
+                value: value as f32,
+            })
+        })
+        .collect()
+}
 
 pub fn map_coin_to_mappings(coin: &Coin) -> Vec<AssetPriceMapping> {
     let mut mappings = Vec::new();
@@ -27,6 +43,16 @@ pub fn map_coins_to_mappings(coins: Vec<Coin>) -> Vec<AssetPriceMapping> {
     coins.iter().flat_map(map_coin_to_mappings).collect()
 }
 
+pub fn map_coins_to_assets(coins: Vec<Coin>, markets_by_id: HashMap<String, CoinMarket>) -> Vec<PriceProviderAsset> {
+    coins
+        .iter()
+        .flat_map(|coin| {
+            let market = markets_by_id.get(&coin.id).map(coin_market_to_asset_market);
+            map_coin_to_mappings(coin).into_iter().map(move |mapping| PriceProviderAsset::new(mapping, market.clone()))
+        })
+        .collect()
+}
+
 pub fn map_coin_markets(markets: Vec<CoinMarket>, by_id: &HashMap<String, AssetPriceMapping>) -> Vec<AssetPriceFull> {
     markets
         .into_iter()
@@ -37,12 +63,22 @@ pub fn map_coin_markets(markets: Vec<CoinMarket>, by_id: &HashMap<String, AssetP
 pub fn map_coin_market(market: CoinMarket, mapping: AssetPriceMapping) -> AssetPriceFull {
     let updated_at = market.last_updated.unwrap_or_else(Utc::now);
     let price = market.current_price.unwrap_or_default();
+    let market_data = coin_market_to_asset_market(&market);
+    AssetPriceFull::new(
+        mapping,
+        Price::new(price, market.price_change_percentage_24h.unwrap_or_default(), updated_at, PriceProvider::Coingecko),
+        Some(market_data),
+    )
+}
+
+pub fn coin_market_to_asset_market(market: &CoinMarket) -> AssetMarket {
+    let price = market.current_price.unwrap_or_default();
     let ath = market.ath.unwrap_or_default();
     let atl = market.atl.unwrap_or_default();
     let ath_percentage = (ath != 0.0).then(|| (price - ath) / ath * 100.0);
     let atl_percentage = (atl != 0.0).then(|| (price - atl) / atl * 100.0);
 
-    let market_data = AssetMarket {
+    AssetMarket {
         market_cap: market.market_cap,
         market_cap_fdv: market.fully_diluted_valuation,
         market_cap_rank: market.market_cap_rank.filter(|&r| r > 0),
@@ -66,11 +102,5 @@ pub fn map_coin_market(market: CoinMarket, mapping: AssetPriceMapping) -> AssetP
             value: atl as f32,
             percentage: atl_percentage.unwrap_or_default() as f32,
         }),
-    };
-
-    AssetPriceFull::new(
-        mapping,
-        Price::new(price, market.price_change_percentage_24h.unwrap_or_default(), updated_at, PriceProvider::Coingecko),
-        Some(market_data),
-    )
+    }
 }

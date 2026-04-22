@@ -30,8 +30,8 @@ impl AssetProcessor {
         let assets = Self::map_assets(&coin_info);
         let links = Self::map_links(&coin_info);
 
-        self.store_prices(coin_id, &assets)?;
         self.store_assets(&assets, &links, coin_id)?;
+        self.store_prices(coin_id, &assets)?;
 
         Ok(1)
     }
@@ -51,10 +51,17 @@ impl AssetProcessor {
 
     fn store_prices(&self, coin_id: &str, assets: &[(Asset, AssetScore)]) -> Result<(), Box<dyn Error + Send + Sync>> {
         let provider = PriceProvider::Coingecko;
+
+        let price_assets: Vec<PriceAssetRow> = assets
+            .iter()
+            .map(|(asset, _)| PriceAssetRow::new(asset.id.clone(), provider, coin_id))
+            .chain(COINGECKO_CHAIN_MAP.get(coin_id).map(|chain| PriceAssetRow::new(chain.as_asset_id(), provider, coin_id)))
+            .collect();
+        if price_assets.is_empty() {
+            return Ok(());
+        }
+
         self.database.prices()?.add_prices(vec![NewPriceRow::new(provider, coin_id.to_string())])?;
-
-        let price_assets = assets.iter().map(|(asset, _)| PriceAssetRow::new(asset.id.clone(), provider, coin_id)).collect::<Vec<_>>();
-
         self.database.prices()?.set_prices_assets(price_assets)?;
         Ok(())
     }

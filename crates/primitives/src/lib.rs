@@ -54,7 +54,7 @@ pub use self::config_key::ConfigKey;
 pub mod config_param_key;
 pub use self::config_param_key::ConfigParamKey;
 pub mod duration;
-pub use self::duration::parse_duration;
+pub use self::duration::{DAY, HOUR, MINUTE, SECONDS_PER_DAY, SECONDS_PER_HOUR, SECONDS_PER_MINUTE, parse_duration};
 pub mod currency;
 pub use self::asset::{Asset, AssetVecExt};
 pub mod asset_id;

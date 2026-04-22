@@ -238,7 +238,7 @@ mod fiat_integration_tests {
         assert_eq!(
             transaction,
             FiatTransactionUpdate {
-                transaction_id: "3b388a91-d1fa-456e-b94a".to_string(),
+                transaction_id: "a4a211ad-3bcf-47d9-b4ae-073e841e3e7a".to_string(),
                 provider_transaction_id: Some("PB21095868675TX1".to_string()),
                 status: FiatTransactionStatus::Pending,
                 transaction_hash: None,

@@ -1,3 +1,4 @@
+mod charts_history_updater;
 mod charts_updater;
 mod markets_updater;
 mod observed_prices_updater;
@@ -14,6 +15,7 @@ use std::future::Future;
 use std::sync::Arc;
 
 use cacher::CacherClient;
+use charts_history_updater::ChartsHistoryUpdater;
 use charts_updater::ChartsUpdater;
 use coingecko::CoinGeckoClient;
 use gem_client::ReqwestClient;
@@ -113,10 +115,6 @@ fn add_platform_jobs<'a>(
             WorkerJob::CleanupChartsHourly,
             charts_job(database, cacher_client, ChartsAction::Cleanup(ChartTimeframe::Hourly)),
         )
-        .job(
-            WorkerJob::CleanupChartsDaily,
-            charts_job(database, cacher_client, ChartsAction::Cleanup(ChartTimeframe::Daily)),
-        )
         .job(WorkerJob::UpdateObservedPrices, {
             let cacher_client = cacher_client.clone();
             let database = database.clone();
@@ -185,7 +183,7 @@ fn add_provider_jobs<'a>(
             )
             .job(
                 JobVariant::labeled(WorkerJob::UpdatePricesLow, slug),
-                provider_job(database, provider_instance, producer_prices.clone(), |u| async move {
+                provider_job(database, provider_instance.clone(), producer_prices.clone(), |u| async move {
                     u.update_prices_window(3000, usize::MAX).await
                 }),
             )
@@ -195,6 +193,15 @@ fn add_provider_jobs<'a>(
                 move |_| {
                     let updater = MarketsUpdater::new(markets_client.clone(), coingecko.clone());
                     Box::pin(async move { updater.update_markets().await })
+                }
+            })
+            .job(WorkerJob::UpdateChartsHistory, {
+                let database = database.clone();
+                let cacher = cacher_client.clone();
+                let provider = provider_instance.clone();
+                move |_| {
+                    let updater = ChartsHistoryUpdater::new(provider.clone(), database.clone(), cacher.clone());
+                    Box::pin(async move { updater.update().await })
                 }
             }),
         PriceProvider::Pyth | PriceProvider::Jupiter => {

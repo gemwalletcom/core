@@ -1,5 +1,13 @@
 use std::time::Duration;
 
+pub const SECONDS_PER_MINUTE: u64 = 60;
+pub const SECONDS_PER_HOUR: u64 = 60 * SECONDS_PER_MINUTE;
+pub const SECONDS_PER_DAY: u64 = 24 * SECONDS_PER_HOUR;
+
+pub const MINUTE: Duration = Duration::from_secs(SECONDS_PER_MINUTE);
+pub const HOUR: Duration = Duration::from_secs(SECONDS_PER_HOUR);
+pub const DAY: Duration = Duration::from_secs(SECONDS_PER_DAY);
+
 pub fn parse_duration(raw: &str) -> Option<Duration> {
     let value = raw.trim();
     if value.is_empty() {
