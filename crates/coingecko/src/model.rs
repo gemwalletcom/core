@@ -36,6 +36,7 @@ pub struct CoinInfo {
     pub asset_platform_id: Option<String>,
     pub preview_listing: bool,
     pub market_cap_rank: Option<i32>,
+    pub market_cap_rank_with_rehypothecated: Option<i32>,
     pub watchlist_portfolio_users: Option<f32>,
     pub platforms: HashMap<String, Option<String>>,
     pub detail_platforms: HashMap<String, Option<DetailPlatform>>,
@@ -82,6 +83,7 @@ pub struct CoinMarket {
     pub market_cap: Option<f64>,
     pub fully_diluted_valuation: Option<f64>,
     pub market_cap_rank: Option<i32>,
+    pub market_cap_rank_with_rehypothecated: Option<i32>,
     pub total_volume: Option<f64>,
     pub circulating_supply: Option<f64>,
     pub total_supply: Option<f64>,
@@ -105,6 +107,20 @@ pub struct CoinQuery {
     pub tickers: bool,
     pub localization: bool,
     pub developer_data: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CoinMarketsQuery {
+    pub vs_currency: &'static str,
+    pub order: &'static str,
+    pub per_page: usize,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub page: Option<usize>,
+    pub sparkline: bool,
+    pub locale: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ids: Option<String>,
+    pub include_rehypothecated: bool,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -189,4 +205,16 @@ pub struct CoinGeckoErrorResponse {
 pub enum CoinGeckoResponse<T> {
     Success(T),
     Error(CoinGeckoErrorResponse),
+}
+
+impl CoinInfo {
+    pub fn effective_market_cap_rank(&self) -> Option<i32> {
+        self.market_cap_rank.or(self.market_cap_rank_with_rehypothecated)
+    }
+}
+
+impl CoinMarket {
+    pub fn effective_market_cap_rank(&self) -> Option<i32> {
+        self.market_cap_rank.or(self.market_cap_rank_with_rehypothecated)
+    }
 }

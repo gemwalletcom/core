@@ -122,7 +122,7 @@ impl AssetProcessor {
         }
 
         let mut rank = 12;
-        rank += Self::market_cap_rank_score(coin_info.market_cap_rank.unwrap_or_default());
+        rank += Self::market_cap_rank_score(coin_info.effective_market_cap_rank().unwrap_or_default());
         rank += Self::platform_diversity_score(coin_info.platforms.len());
         rank += Self::social_score(coin_info);
         rank += asset.chain().rank() / 20;

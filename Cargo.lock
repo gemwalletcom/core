@@ -5504,6 +5504,7 @@ name = "prices"
 version = "1.0.0"
 dependencies = [
  "async-trait",
+ "chain_primitives",
  "chrono",
  "coingecko",
  "gem_client",

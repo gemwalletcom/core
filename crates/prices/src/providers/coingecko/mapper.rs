@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use chain_primitives::format_token_id;
 use chrono::{DateTime, Utc};
 use coingecko::{COINGECKO_CHAIN_MAP, Coin, CoinMarket, get_chain_for_coingecko_platform_id, model::MarketChart};
 use primitives::{AssetId, AssetMarket, ChartValue, ChartValuePercentage, Price, PriceProvider};
@@ -31,10 +32,13 @@ pub fn map_coin_to_mappings(coin: &Coin) -> Vec<AssetPriceMapping> {
         let Some(chain) = get_chain_for_coingecko_platform_id(platform_id) else {
             continue;
         };
-        let Some(token_id) = contract.as_ref().filter(|s| !s.is_empty()) else {
+        let Some(contract_address) = contract.as_ref().filter(|a| !a.is_empty()) else {
             continue;
         };
-        mappings.push(AssetPriceMapping::new(AssetId::from(chain, Some(token_id.clone())), coin.id.clone()));
+        let Some(token_id) = format_token_id(chain, contract_address.clone()) else {
+            continue;
+        };
+        mappings.push(AssetPriceMapping::new(AssetId::from(chain, Some(token_id)), coin.id.clone()));
     }
     mappings
 }
@@ -81,7 +85,7 @@ pub fn coin_market_to_asset_market(market: &CoinMarket) -> AssetMarket {
     AssetMarket {
         market_cap: market.market_cap,
         market_cap_fdv: market.fully_diluted_valuation,
-        market_cap_rank: market.market_cap_rank.filter(|&r| r > 0),
+        market_cap_rank: market.effective_market_cap_rank().filter(|&r| r > 0),
         total_volume: market.total_volume,
         circulating_supply: market.circulating_supply,
         total_supply: market.total_supply,
