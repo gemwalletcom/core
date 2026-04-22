@@ -88,13 +88,11 @@ impl ConfigCacher {
     }
 
     pub fn get_param_duration(&self, param: &ConfigParamKey) -> Result<Duration, DatabaseError> {
-        let value = self
-            .database
-            .client()
-            .ok()
-            .and_then(|mut c| ConfigStore::get_config_key(&mut c, &param.key()).ok())
-            .map_or_else(|| param.default_value().to_string(), |row| row.value);
-        parse_duration(&value)
+        parse_duration(&self.get_param_value(param))
+    }
+
+    pub fn get_param_f64(&self, param: &ConfigParamKey) -> Result<f64, DatabaseError> {
+        Ok(self.get_param_value(param).parse()?)
     }
 
     pub fn get_datetime(&self, key: ConfigKey) -> Result<NaiveDateTime, DatabaseError> {
@@ -126,5 +124,13 @@ impl ConfigCacher {
         if let Ok(mut cache) = self.cache.write() {
             cache.remove(key);
         }
+    }
+
+    fn get_param_value(&self, param: &ConfigParamKey) -> String {
+        self.database
+            .client()
+            .ok()
+            .and_then(|mut c| ConfigStore::get_config_key(&mut c, &param.key()).ok())
+            .map_or_else(|| param.default_value().to_string(), |row| row.value)
     }
 }
