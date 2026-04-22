@@ -129,9 +129,9 @@ impl<C: Client + Clone> EthereumClient<C> {
 
         Ok(blocks
             .into_iter()
-            .zip(transactions.into_iter())
-            .zip(reciepts.into_iter())
-            .zip(traces.into_iter())
+            .zip(transactions)
+            .zip(reciepts)
+            .zip(traces)
             .map(|(((block, tx), receipt), trace)| (block, tx, receipt, trace))
             .collect())
     }

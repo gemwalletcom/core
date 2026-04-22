@@ -62,8 +62,8 @@ impl<C: Client> CosmosClient<C> {
 
         let inbound = self.get_transactions_by_query(query_name, &format!("message.sender='{address}'"), limit).await?;
         let outbound = self.get_transactions_by_query(query_name, &format!("message.recipient='{address}'"), limit).await?;
-        let responses = inbound.tx_responses.into_iter().chain(outbound.tx_responses.into_iter()).collect::<Vec<_>>();
-        let txs = inbound.txs.into_iter().chain(outbound.txs.into_iter()).collect::<Vec<_>>();
+        let responses = inbound.tx_responses.into_iter().chain(outbound.tx_responses).collect::<Vec<_>>();
+        let txs = inbound.txs.into_iter().chain(outbound.txs).collect::<Vec<_>>();
         Ok(responses
             .into_iter()
             .zip(txs)

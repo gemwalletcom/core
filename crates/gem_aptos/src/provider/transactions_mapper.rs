@@ -40,7 +40,7 @@ pub fn map_transaction_broadcast(response: &TransactionResponse) -> Result<Strin
 pub fn map_transactions(transactions: Vec<Transaction>) -> Vec<PrimitivesTransaction> {
     let mut transactions = transactions.into_iter().flat_map(map_transaction).collect::<Vec<_>>();
 
-    transactions.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+    transactions.sort_by_key(|b| std::cmp::Reverse(b.created_at));
     transactions
 }
 
