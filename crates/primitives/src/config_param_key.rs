@@ -9,6 +9,7 @@ pub enum ConfigParamKey {
     PriceProviderAssetsNewDuration(PriceProvider),
     PriceProviderAssetsMetadataDuration(PriceProvider),
     PriceProviderPricesDuration(PriceProvider),
+    PriceProviderChartsHourlyDuration(PriceProvider),
 }
 
 impl ConfigParamKey {
@@ -18,7 +19,8 @@ impl ConfigParamKey {
         let assets_new = PriceProvider::all().into_iter().map(Self::PriceProviderAssetsNewDuration);
         let assets_metadata = PriceProvider::all().into_iter().map(Self::PriceProviderAssetsMetadataDuration);
         let prices = PriceProvider::all().into_iter().map(Self::PriceProviderPricesDuration);
-        swapper.chain(assets).chain(assets_new).chain(assets_metadata).chain(prices).collect()
+        let charts_hourly = PriceProvider::all().into_iter().map(Self::PriceProviderChartsHourlyDuration);
+        swapper.chain(assets).chain(assets_new).chain(assets_metadata).chain(prices).chain(charts_hourly).collect()
     }
 
     pub fn key(&self) -> String {
@@ -28,6 +30,7 @@ impl ConfigParamKey {
             Self::PriceProviderAssetsNewDuration(provider) => format!("{}.{}", self.as_ref(), provider.as_ref()),
             Self::PriceProviderAssetsMetadataDuration(provider) => format!("{}.{}", self.as_ref(), provider.as_ref()),
             Self::PriceProviderPricesDuration(provider) => format!("{}.{}", self.as_ref(), provider.as_ref()),
+            Self::PriceProviderChartsHourlyDuration(provider) => format!("{}.{}", self.as_ref(), provider.as_ref()),
         }
     }
 
@@ -38,6 +41,7 @@ impl ConfigParamKey {
             Self::PriceProviderAssetsNewDuration(_) => "15m",
             Self::PriceProviderAssetsMetadataDuration(_) => "30d",
             Self::PriceProviderPricesDuration(_) => "60s",
+            Self::PriceProviderChartsHourlyDuration(_) => "7d",
         }
     }
 }

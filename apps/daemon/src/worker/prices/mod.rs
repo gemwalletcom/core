@@ -143,7 +143,7 @@ fn add_provider_jobs<'a>(
     database: &Database,
     cacher_client: &CacherClient,
     settings: &Settings,
-    config: &ConfigCacher,
+    config: &Arc<ConfigCacher>,
     provider: PriceProvider,
     provider_instance: Arc<dyn PriceAssetsProvider>,
     producer_assets: &StreamProducer,
@@ -213,8 +213,10 @@ fn add_provider_jobs<'a>(
                 let cacher = cacher_client.clone();
                 let provider = provider_instance.clone();
                 move |_| {
-                    let updater = ChartsHistoryUpdater::new(provider.clone(), database.clone(), cacher.clone());
-                    Box::pin(async move { updater.update().await })
+                    let provider = provider.clone();
+                    let database = database.clone();
+                    let cacher = cacher.clone();
+                    Box::pin(async move { ChartsHistoryUpdater::new(provider, database, cacher).update().await })
                 }
             }),
         PriceProvider::Pyth | PriceProvider::Jupiter => {

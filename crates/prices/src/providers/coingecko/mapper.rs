@@ -7,7 +7,7 @@ use primitives::{AssetId, AssetLink, AssetMarket, ChartValue, ChartValuePercenta
 
 use crate::{AssetPriceFull, AssetPriceMapping, PriceProviderAsset, PriceProviderAssetMetadata};
 
-pub fn map_market_chart_daily(chart: MarketChart) -> Vec<ChartValue> {
+pub fn map_market_chart(chart: MarketChart) -> Vec<ChartValue> {
     chart
         .prices
         .into_iter()

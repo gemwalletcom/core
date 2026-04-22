@@ -1,33 +1,37 @@
 use std::collections::{HashMap, HashSet};
 use std::error::Error;
+use std::time::Duration;
 
 use async_trait::async_trait;
-use coingecko::{CoinGeckoClient, get_coingecko_market_id_for_chain};
-use primitives::{Chain, ChartValue};
+use coingecko::{client::CoinGeckoClient, get_coingecko_market_id_for_chain};
+use gem_client::{Client, ReqwestClient};
+use primitives::{Chain, ChartValue, DurationExt};
 
 use crate::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider, PriceProvider, PriceProviderAsset, PriceProviderAssetMetadata};
 
-use super::mapper::{map_coin_info_metadata, map_coin_markets, map_coins_to_assets, map_coins_to_mappings, map_market_chart_daily};
+use super::mapper::{map_coin_info_metadata, map_coin_markets, map_coins_to_assets, map_coins_to_mappings, map_market_chart};
 
 const MAX_MARKETS_PER_PAGE: usize = 250;
 const MAX_RANKED_PAGES: usize = 20;
 
-pub struct CoinGeckoPricesProvider {
-    client: CoinGeckoClient,
+pub struct CoinGeckoPricesProvider<C: Client = ReqwestClient> {
+    client: CoinGeckoClient<C>,
 }
 
-impl CoinGeckoPricesProvider {
+impl CoinGeckoPricesProvider<ReqwestClient> {
     pub fn new(api_key: &str) -> Self {
         Self::from_client(CoinGeckoClient::new(api_key))
     }
+}
 
-    pub fn from_client(client: CoinGeckoClient) -> Self {
+impl<C: Client> CoinGeckoPricesProvider<C> {
+    pub fn from_client(client: CoinGeckoClient<C>) -> Self {
         Self { client }
     }
 }
 
 #[async_trait]
-impl PriceAssetsProvider for CoinGeckoPricesProvider {
+impl<C: Client> PriceAssetsProvider for CoinGeckoPricesProvider<C> {
     fn provider(&self) -> PriceProvider {
         PriceProvider::Coingecko
     }
@@ -104,6 +108,76 @@ impl PriceAssetsProvider for CoinGeckoPricesProvider {
 
     async fn get_charts_daily(&self, provider_price_id: &str) -> Result<Vec<ChartValue>, Box<dyn Error + Send + Sync>> {
         let chart = self.client.get_market_chart(provider_price_id, "daily", "max").await?;
-        Ok(map_market_chart_daily(chart))
+        Ok(map_market_chart(chart))
+    }
+
+    async fn get_charts_hourly(&self, provider_price_id: &str, duration: Duration) -> Result<Vec<ChartValue>, Box<dyn Error + Send + Sync>> {
+        let days = duration.as_days_ceil().max(1).to_string();
+        let chart = self.client.get_market_chart(provider_price_id, "hourly", &days).await?;
+        Ok(map_market_chart(chart))
+    }
+
+    async fn get_charts_raw(&self, provider_price_id: &str, duration: Duration) -> Result<Vec<ChartValue>, Box<dyn Error + Send + Sync>> {
+        let days = duration.as_days_ceil().max(1).to_string();
+        let chart = self.client.get_market_chart_auto(provider_price_id, &days).await?;
+        Ok(map_market_chart(chart))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::{Arc, Mutex};
+
+    use gem_client::testkit::MockClient;
+
+    #[tokio::test]
+    async fn test_get_charts_hourly() {
+        let paths = Arc::new(Mutex::new(Vec::new()));
+        let captured_paths = paths.clone();
+        let client = MockClient::new().with_get(move |path| {
+            captured_paths.lock().unwrap().push(path.to_string());
+            Ok(br#"{"prices":[[1713744000000,123.45]]}"#.to_vec())
+        });
+        let provider = CoinGeckoPricesProvider::from_client(CoinGeckoClient::new_with_client(client));
+
+        let values = provider.get_charts_hourly("bitcoin", Duration::from_secs(primitives::DAY.as_secs() * 7)).await.unwrap();
+
+        assert_eq!(
+            values,
+            vec![ChartValue {
+                timestamp: 1_713_744_000,
+                value: 123.45,
+            }]
+        );
+        assert_eq!(
+            paths.lock().unwrap().clone(),
+            vec!["/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=7&interval=hourly&precision=full".to_string()]
+        );
+    }
+
+    #[tokio::test]
+    async fn test_get_charts_raw() {
+        let paths = Arc::new(Mutex::new(Vec::new()));
+        let captured_paths = paths.clone();
+        let client = MockClient::new().with_get(move |path| {
+            captured_paths.lock().unwrap().push(path.to_string());
+            Ok(br#"{"prices":[[1713744000000,123.45]]}"#.to_vec())
+        });
+        let provider = CoinGeckoPricesProvider::from_client(CoinGeckoClient::new_with_client(client));
+
+        let values = provider.get_charts_raw("bitcoin", primitives::DAY).await.unwrap();
+
+        assert_eq!(
+            values,
+            vec![ChartValue {
+                timestamp: 1_713_744_000,
+                value: 123.45,
+            }]
+        );
+        assert_eq!(
+            paths.lock().unwrap().clone(),
+            vec!["/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1&precision=full".to_string()]
+        );
     }
 }

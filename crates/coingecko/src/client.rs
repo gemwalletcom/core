@@ -180,4 +180,9 @@ impl<C: Client> CoinGeckoClient<C> {
         let path = format!("/api/v3/coins/{}/market_chart?vs_currency=usd&days={}&interval={}&precision=full", coin_id, days, interval);
         self._get(&path).await
     }
+
+    pub async fn get_market_chart_auto(&self, coin_id: &str, days: &str) -> Result<MarketChart, Box<dyn Error + Send + Sync>> {
+        let path = format!("/api/v3/coins/{}/market_chart?vs_currency=usd&days={}&precision=full", coin_id, days);
+        self._get(&path).await
+    }
 }
