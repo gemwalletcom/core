@@ -6,6 +6,7 @@ use std::time::SystemTime;
 
 use async_trait::async_trait;
 use gem_tracing::{error_with_fields, human_duration, info_with_fields};
+pub mod pool;
 pub mod schedule;
 pub use schedule::{JobContext, JobSchedule, RunDecision};
 use tokio::sync::watch;
