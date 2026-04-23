@@ -13,3 +13,26 @@ pub enum TransactionState {
     Failed,
     Reverted,
 }
+
+impl TransactionState {
+    pub fn is_completed(&self) -> bool {
+        match self {
+            Self::Pending | Self::InTransit => false,
+            Self::Confirmed | Self::Failed | Self::Reverted => true,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_completed() {
+        assert!(!TransactionState::Pending.is_completed());
+        assert!(!TransactionState::InTransit.is_completed());
+        assert!(TransactionState::Confirmed.is_completed());
+        assert!(TransactionState::Failed.is_completed());
+        assert!(TransactionState::Reverted.is_completed());
+    }
+}
