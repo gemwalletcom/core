@@ -47,7 +47,6 @@ pub enum QueueName {
     RewardsRedemptions,
     NotificationsFiatPurchase,
     NotificationsInApp,
-    UpdateCoinInfo,
     WalletStreamEvents,
 }
 
@@ -94,7 +93,6 @@ impl fmt::Display for QueueName {
             QueueName::StorePrices => write!(f, "store_prices"),
             QueueName::NotificationsFiatPurchase => write!(f, "notifications_fiat_purchase"),
             QueueName::NotificationsInApp => write!(f, "notifications_in_app"),
-            QueueName::UpdateCoinInfo => write!(f, "update_coin_info"),
             QueueName::WalletStreamEvents => write!(f, "wallet_stream_events"),
         }
     }

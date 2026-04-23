@@ -11,7 +11,6 @@ pub enum ConsumerService {
     Rewards,
     Support,
     Fiat,
-    Assets,
 }
 
 impl ConsumerService {

@@ -16,6 +16,10 @@ impl AssetPriceKey {
     }
 
     pub fn id(&self) -> String {
-        self.provider.price_id(&self.provider_price_id)
+        Self::id_for(self.provider, &self.provider_price_id)
+    }
+
+    pub fn id_for(provider: PriceProvider, provider_price_id: &str) -> String {
+        format!("{}_{}", provider, provider_price_id)
     }
 }

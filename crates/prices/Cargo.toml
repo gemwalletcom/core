@@ -17,6 +17,7 @@ serde_serializers = { path = "../serde_serializers" }
 settings = { path = "../settings", features = ["testkit"], optional = true }
 
 [dev-dependencies]
+gem_client = { path = "../gem_client", features = ["reqwest", "testkit"] }
 tokio.workspace = true
 
 [features]

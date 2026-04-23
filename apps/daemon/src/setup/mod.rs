@@ -4,7 +4,7 @@ use self::scan_addresses::setup_scan_addresses;
 use chrono::Utc;
 use gem_tracing::info_with_fields;
 use primitives::{
-    Asset, AssetId, AssetTag, Chain, ConfigKey, ConfigParamKey, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus, NFTChain, NotificationType,
+    Asset, AssetId, AssetPriceKey, AssetTag, Chain, ConfigKey, ConfigParamKey, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus, NFTChain, NotificationType,
     PlatformStore as PrimitivePlatformStore, PriceAlert, PriceAlertDirection, PriceProvider, WebhookKind,
 };
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
@@ -510,7 +510,7 @@ fn setup_dev_assets(database: &Database) -> Result<(), Box<dyn std::error::Error
     for (idx, (coin_id, _, base_price)) in coins.iter().enumerate() {
         let seed = (idx + 1) as f64;
         let gen_price = |i: f64, scale: f64| (base_price + ((i * 0.3 + seed * 7.0).sin() + (i * 0.07).cos()) * base_price * scale).max(base_price * 0.1);
-        let price_id = PriceProvider::primary().price_id(coin_id);
+        let price_id = AssetPriceKey::id_for(PriceProvider::primary(), coin_id);
 
         let hourly: Vec<ChartRow> = (0i64..720)
             .map(|h| ChartRow::new(price_id.clone(), gen_price(h as f64, 0.1), now - chrono::Duration::hours(h)))

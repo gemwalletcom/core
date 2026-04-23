@@ -3,7 +3,7 @@ use std::error::Error;
 use gem_client::ReqwestClient;
 use primitives::Chain;
 
-use crate::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider, PriceProvider, PriceProviderAsset};
+use crate::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider, PriceProvider, PriceProviderAsset, PriceProviderConfig};
 use async_trait::async_trait;
 
 use super::{
@@ -16,7 +16,7 @@ pub struct PythProvider {
 }
 
 impl PythProvider {
-    pub fn new(client: ReqwestClient) -> Self {
+    pub fn new(client: ReqwestClient, _config: PriceProviderConfig) -> Self {
         Self {
             pyth_client: PythClient::new(client),
         }

@@ -7,7 +7,10 @@ pub enum ConfigParamKey {
     SwapperVaultAddresses(SwapProvider),
     PriceProviderAssetsDuration(PriceProvider),
     PriceProviderAssetsNewDuration(PriceProvider),
+    PriceProviderAssetsMetadataDuration(PriceProvider),
     PriceProviderPricesDuration(PriceProvider),
+    PriceProviderChartsHourlyDuration(PriceProvider),
+    PriceProviderAssetsMinScore(PriceProvider),
 }
 
 impl ConfigParamKey {
@@ -15,8 +18,18 @@ impl ConfigParamKey {
         let swapper = SwapProvider::cross_chain_providers().into_iter().map(Self::SwapperVaultAddresses);
         let assets = PriceProvider::all().into_iter().map(Self::PriceProviderAssetsDuration);
         let assets_new = PriceProvider::all().into_iter().map(Self::PriceProviderAssetsNewDuration);
+        let assets_metadata = PriceProvider::all().into_iter().map(Self::PriceProviderAssetsMetadataDuration);
         let prices = PriceProvider::all().into_iter().map(Self::PriceProviderPricesDuration);
-        swapper.chain(assets).chain(assets_new).chain(prices).collect()
+        let charts_hourly = PriceProvider::all().into_iter().map(Self::PriceProviderChartsHourlyDuration);
+        let min_score = PriceProvider::all().into_iter().map(Self::PriceProviderAssetsMinScore);
+        swapper
+            .chain(assets)
+            .chain(assets_new)
+            .chain(assets_metadata)
+            .chain(prices)
+            .chain(charts_hourly)
+            .chain(min_score)
+            .collect()
     }
 
     pub fn key(&self) -> String {
@@ -24,7 +37,10 @@ impl ConfigParamKey {
             Self::SwapperVaultAddresses(provider) => format!("{}.{}", self.as_ref(), provider.as_ref()),
             Self::PriceProviderAssetsDuration(provider) => format!("{}.{}", self.as_ref(), provider.as_ref()),
             Self::PriceProviderAssetsNewDuration(provider) => format!("{}.{}", self.as_ref(), provider.as_ref()),
+            Self::PriceProviderAssetsMetadataDuration(provider) => format!("{}.{}", self.as_ref(), provider.as_ref()),
             Self::PriceProviderPricesDuration(provider) => format!("{}.{}", self.as_ref(), provider.as_ref()),
+            Self::PriceProviderChartsHourlyDuration(provider) => format!("{}.{}", self.as_ref(), provider.as_ref()),
+            Self::PriceProviderAssetsMinScore(provider) => format!("{}.{}", self.as_ref(), provider.as_ref()),
         }
     }
 
@@ -33,7 +49,11 @@ impl ConfigParamKey {
             Self::SwapperVaultAddresses(_) => "5m",
             Self::PriceProviderAssetsDuration(_) => "1d",
             Self::PriceProviderAssetsNewDuration(_) => "15m",
+            Self::PriceProviderAssetsMetadataDuration(_) => "30d",
             Self::PriceProviderPricesDuration(_) => "60s",
+            Self::PriceProviderChartsHourlyDuration(_) => "7d",
+            Self::PriceProviderAssetsMinScore(PriceProvider::Jupiter) => "50",
+            Self::PriceProviderAssetsMinScore(_) => "0",
         }
     }
 }

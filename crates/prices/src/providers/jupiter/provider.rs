@@ -4,22 +4,22 @@ use std::error::Error;
 use async_trait::async_trait;
 use gem_client::ReqwestClient;
 
-use crate::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider, PriceProvider, PriceProviderAsset};
+use crate::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider, PriceProvider, PriceProviderAsset, PriceProviderConfig};
 
 use super::client::JupiterClient;
 use super::mapper::{to_asset_price_mapping, to_jupiter_token_id};
 use super::model::VerifiedToken;
 
-const MIN_ORGANIC_SCORE: f64 = 50.0;
-
 pub struct JupiterProvider {
     jupiter_client: JupiterClient,
+    config: PriceProviderConfig,
 }
 
 impl JupiterProvider {
-    pub fn new(client: ReqwestClient) -> Self {
+    pub fn new(client: ReqwestClient, config: PriceProviderConfig) -> Self {
         Self {
             jupiter_client: JupiterClient::new(client),
+            config,
         }
     }
 
@@ -29,7 +29,7 @@ impl JupiterProvider {
             .get_verified_tokens()
             .await?
             .into_iter()
-            .filter(|t| t.organic_score >= MIN_ORGANIC_SCORE)
+            .filter(|t| t.organic_score >= self.config.min_score)
             .collect())
     }
 }
