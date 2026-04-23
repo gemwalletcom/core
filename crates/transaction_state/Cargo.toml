@@ -1,0 +1,16 @@
+[package]
+name = "transaction_state"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+primitives = { path = "../primitives" }
+gem_tracing = { path = "../tracing" }
+job_runner = { path = "../job_runner" }
+tokio = { workspace = true, features = ["sync", "time", "rt", "macros"] }
+async-trait = { workspace = true }
+chrono = { workspace = true }
+futures = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["sync", "time", "rt", "macros", "test-util"] }

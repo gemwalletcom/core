@@ -3582,6 +3582,7 @@ dependencies = [
  "sui-sdk-types",
  "swapper",
  "tokio",
+ "transaction_state",
  "uniffi",
  "url",
  "yielder",
@@ -8047,6 +8048,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "transaction_state"
+version = "1.0.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "futures",
+ "gem_tracing",
+ "job_runner",
+ "primitives",
+ "tokio",
+]
+
+[[package]]
 name = "try-lock"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8268,6 +8282,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "77baf5d539fe2e1ad6805e942dbc5dbdeb2b83eb5f2b3a6535d422ca4b02a12f"
 dependencies = [
  "anyhow",
+ "async-compat",
  "bytes",
  "once_cell",
  "static_assertions",

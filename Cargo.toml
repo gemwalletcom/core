@@ -40,6 +40,7 @@ members = [
 
     "crates/localizer",
     "crates/job_runner",
+    "crates/transaction_state",
     "crates/metrics",
     "crates/search_index",
     "crates/nft",
