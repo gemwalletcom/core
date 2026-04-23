@@ -2,10 +2,10 @@ use crate::models::*;
 use num_bigint::BigInt;
 use primitives::contract_call_data::ContractCallData;
 use primitives::{
-    AccountDataType, Asset, EarnType, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualMarginType, PerpetualProvider, PerpetualType,
-    Resource, SignerInput, StakeType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata,
-    TransactionPerpetualMetadata, TransactionState, TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction,
-    TransferDataOutputType, TronStakeData, TronUnfreeze, TronVote, UInt64, WalletConnectionSessionAppMetadata,
+    AccountDataType, Asset, Chain, EarnType, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualMarginType, PerpetualProvider,
+    PerpetualType, Resource, SignerInput, StakeType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata,
+    TransactionPerpetualMetadata, TransactionState, TransactionStateInput, TransactionStateRequest, TransactionSwapMetadata, TransactionType, TransactionUpdate, TransferDataExtra,
+    TransferDataOutputAction, TransferDataOutputType, TronStakeData, TronUnfreeze, TronVote, UInt64, WalletConnectionSessionAppMetadata,
     perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualReduceData, TPSLOrderData},
 };
 use std::collections::HashMap;
@@ -109,6 +109,16 @@ pub enum TransactionChange {
 pub struct TransactionUpdate {
     pub state: TransactionState,
     pub changes: Vec<TransactionChange>,
+}
+
+#[uniffi::remote(Record)]
+pub struct TransactionStateInput {
+    pub chain: Chain,
+    pub hash: String,
+    pub from: String,
+    pub created_at_secs: i64,
+    pub block_number: i64,
+    pub swap_metadata: Option<TransactionSwapMetadata>,
 }
 
 #[uniffi::remote(Enum)]

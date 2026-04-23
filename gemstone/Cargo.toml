@@ -45,13 +45,14 @@ chain_traits = { path = "../crates/chain_traits" }
 signer = { path = "../crates/signer" }
 number_formatter = { path = "../crates/number_formatter" }
 yielder = { path = "../crates/yielder" }
+transaction_state = { path = "../crates/transaction_state" }
 
 reqwest = { workspace = true, optional = true }
 sui-types = { workspace = true }
 base64 = { workspace = true }
 
 # uniffi
-uniffi.workspace = true
+uniffi = { workspace = true, features = ["tokio"] }
 
 chrono = { workspace = true }
 

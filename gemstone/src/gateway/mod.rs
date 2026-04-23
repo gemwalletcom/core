@@ -5,9 +5,7 @@ mod preferences;
 pub use chain_factory::ChainClientFactory;
 pub use error::GatewayError;
 use error::map_network_error;
-#[cfg(test)]
-pub use preferences::EmptyPreferences;
-pub use preferences::GemPreferences;
+pub use preferences::{EmptyPreferences, GemPreferences};
 
 use crate::alien::{AlienProvider, AlienProviderWrapper};
 use crate::api_client::GemApiClient;
