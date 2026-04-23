@@ -102,8 +102,8 @@ impl PriceClient {
         Ok(self.database.charts()?.aggregate_charts(timeframe)?)
     }
 
-    pub async fn cleanup_charts(&self, timeframe: ChartTimeframe) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.charts()?.cleanup_charts(timeframe)?)
+    pub async fn delete_charts(&self, timeframe: ChartTimeframe, before: chrono::NaiveDateTime) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.charts()?.delete_charts(timeframe, before)?)
     }
 
     pub async fn track_observed_assets(&self, asset_ids: &[String]) -> Result<(), Box<dyn Error + Send + Sync>> {

@@ -130,6 +130,7 @@ pub enum ChartPeriod {
 
 #[derive(Debug, Clone, Copy)]
 pub enum ChartTimeframe {
+    Raw,
     Hourly,
     Daily,
 }

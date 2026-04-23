@@ -101,11 +101,11 @@ impl PriceAlertClient {
         Ok(self.database.price_alerts()?.delete_price_alerts(device_id, ids)?)
     }
 
-    pub async fn get_devices_to_alert(&self, rules: PriceAlertRules) -> Result<Vec<PriceAlertNotification>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_devices_to_alert(&self, rules: PriceAlertRules, max_age: StdDuration) -> Result<Vec<PriceAlertNotification>, Box<dyn Error + Send + Sync>> {
         let now = Utc::now();
         let cooldown = Duration::seconds(rules.notification_cooldown.as_secs() as i64);
         let after_notified_at = now - cooldown;
-        let price_alerts = self.database.price_alerts()?.get_price_alerts(after_notified_at.naive_utc())?;
+        let price_alerts = self.database.price_alerts()?.get_price_alerts(after_notified_at.naive_utc(), max_age)?;
 
         let mut results: Vec<PriceAlertNotification> = Vec::new();
         let mut price_alert_ids: HashSet<String> = HashSet::new();

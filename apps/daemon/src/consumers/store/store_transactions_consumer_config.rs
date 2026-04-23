@@ -10,6 +10,7 @@ pub struct StoreTransactionsConsumerConfig {
     pub outdated_block_count: u64,
     pub outdated_min_timeout: Duration,
     pub min_amount_usd: f64,
+    pub primary_price_max_age: Duration,
 }
 
 impl StoreTransactionsConsumerConfig {
@@ -56,6 +57,7 @@ mod tests {
                 outdated_block_count: 12,
                 outdated_min_timeout: Duration::from_secs(900),
                 min_amount_usd: 0.01,
+                primary_price_max_age: Duration::from_secs(24 * 60 * 60),
             }
         }
     }

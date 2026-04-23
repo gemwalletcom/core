@@ -45,7 +45,7 @@ impl PriceAssetsProvider for JupiterProvider {
             .verified_tokens()
             .await?
             .into_iter()
-            .map(|t| PriceProviderAsset::new(to_asset_price_mapping(&t.id), None))
+            .map(|t| PriceProviderAsset::with_price(to_asset_price_mapping(&t.id), None, Some(t.usd_price), Some(t.stats24h.price_change)))
             .collect())
     }
 

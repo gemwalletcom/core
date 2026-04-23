@@ -17,10 +17,11 @@ diesel::allow_columns_to_appear_in_same_group_by_clause!(schema::transactions_ad
 pub use self::database::{
     DatabaseClient,
     assets::{AssetFilter, AssetUpdate},
+    charts::ChartFilter,
     fiat::FiatAssetFilter,
     nft::NftCollectionFilter,
     perpetuals::PerpetualFilter,
-    prices::AssetsWithPricesFilter,
+    prices::{AssetsWithPricesFilter, PriceUpdate},
     referrals::{AbusePatterns, ReferralUpdate},
     rewards::{RewardsFilter, RewardsUpdate},
     rewards_redemptions::RedemptionUpdate,

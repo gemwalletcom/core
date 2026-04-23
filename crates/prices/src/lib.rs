@@ -35,7 +35,4 @@ pub trait PriceAssetsProvider: Send + Sync {
     async fn get_charts_hourly(&self, _provider_price_id: &str, _duration: Duration) -> Result<Vec<ChartValue>, Box<dyn Error + Send + Sync>> {
         Ok(vec![])
     }
-    async fn get_charts_raw(&self, _provider_price_id: &str, _duration: Duration) -> Result<Vec<ChartValue>, Box<dyn Error + Send + Sync>> {
-        Ok(vec![])
-    }
 }

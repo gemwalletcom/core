@@ -4,6 +4,7 @@ use crate::models::{AssetRow, NewAssetRow, PriceRow};
 use crate::repositories::prices_repository::PricesRepository;
 use crate::{DatabaseClient, DatabaseError, DieselResultExt};
 use primitives::{Asset, AssetBasic, AssetFull, AssetPriceMetadata};
+use std::time::Duration;
 
 pub trait AssetsRepository {
     fn get_assets_all(&mut self) -> Result<Vec<AssetBasic>, DatabaseError>;
@@ -12,11 +13,11 @@ pub trait AssetsRepository {
     fn upsert_assets(&mut self, values: Vec<Asset>) -> Result<usize, DatabaseError>;
     fn get_assets_by_filter(&mut self, filters: Vec<AssetFilter>) -> Result<Vec<AssetBasic>, DatabaseError>;
     fn get_asset(&mut self, asset_id: &str) -> Result<Asset, DatabaseError>;
-    fn get_asset_full(&mut self, asset_id: &str) -> Result<AssetFull, DatabaseError>;
+    fn get_asset_full(&mut self, asset_id: &str, max_age: Duration) -> Result<AssetFull, DatabaseError>;
     fn get_assets(&mut self, asset_ids: Vec<String>) -> Result<Vec<Asset>, DatabaseError>;
     fn get_assets_rows(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetRow>, DatabaseError>;
     fn get_assets_basic(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetBasic>, DatabaseError>;
-    fn get_assets_with_prices(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetPriceMetadata>, DatabaseError>;
+    fn get_assets_with_prices(&mut self, asset_ids: Vec<String>, max_age: Duration) -> Result<Vec<AssetPriceMetadata>, DatabaseError>;
     fn get_swap_assets(&mut self) -> Result<Vec<String>, DatabaseError>;
     fn get_swap_assets_version(&mut self) -> Result<i32, DatabaseError>;
 }
@@ -49,12 +50,12 @@ impl AssetsRepository for DatabaseClient {
         Ok(AssetsStore::get_asset(self, asset_id).or_not_found(asset_id.to_string())?.as_primitive())
     }
 
-    fn get_asset_full(&mut self, asset_id: &str) -> Result<AssetFull, DatabaseError> {
+    fn get_asset_full(&mut self, asset_id: &str, max_age: Duration) -> Result<AssetFull, DatabaseError> {
         use crate::database::assets_links::AssetsLinksStore;
         use crate::database::tag::TagStore;
 
         let asset = AssetsStore::get_asset(self, asset_id).or_not_found(asset_id.to_string())?;
-        let price_row: Option<PriceRow> = PricesRepository::get_assets_with_prices(self, vec![asset_id.to_string()])?
+        let price_row: Option<PriceRow> = PricesRepository::get_assets_with_prices(self, vec![asset_id.to_string()], max_age)?
             .into_iter()
             .next()
             .and_then(|d| d.price);
@@ -89,8 +90,8 @@ impl AssetsRepository for DatabaseClient {
         Ok(AssetsStore::get_assets(self, asset_ids)?.into_iter().map(|x| x.as_basic_primitive()).collect())
     }
 
-    fn get_assets_with_prices(&mut self, asset_ids: Vec<String>) -> Result<Vec<AssetPriceMetadata>, DatabaseError> {
-        Ok(PricesRepository::get_assets_with_prices(self, asset_ids)?
+    fn get_assets_with_prices(&mut self, asset_ids: Vec<String>, max_age: Duration) -> Result<Vec<AssetPriceMetadata>, DatabaseError> {
+        Ok(PricesRepository::get_assets_with_prices(self, asset_ids, max_age)?
             .into_iter()
             .map(|row| AssetPriceMetadata {
                 asset: row.asset.as_basic_primitive(),

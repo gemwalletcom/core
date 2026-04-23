@@ -4,6 +4,7 @@ pub mod asset_usage_rank;
 pub mod chain;
 pub mod chart;
 pub mod config;
+pub(crate) mod min_max;
 pub mod device;
 pub mod fiat;
 pub mod nft_asset;

@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::time::Duration;
 
 use super::sync::{SearchSyncClient, SearchSyncResult};
 use primitives::ConfigKey;
@@ -9,20 +10,22 @@ use storage::{AssetsUsageRanksRepository, AssetsWithPricesFilter, Database, Pric
 pub struct AssetsIndexUpdater {
     database: Database,
     sync_client: SearchSyncClient,
+    primary_price_max_age: Duration,
 }
 
 impl AssetsIndexUpdater {
-    pub fn new(database: Database, search_index: &SearchIndexClient) -> Self {
+    pub fn new(database: Database, search_index: &SearchIndexClient, primary_price_max_age: Duration) -> Self {
         Self {
             sync_client: SearchSyncClient::new(database.clone(), search_index),
             database,
+            primary_price_max_age,
         }
     }
 
     pub async fn update(&self) -> Result<SearchSyncResult, Box<dyn std::error::Error + Send + Sync>> {
         let sync = self.sync_client.for_key(ConfigKey::SearchAssetsLastUpdatedAt)?;
         let filters = sync.since().map(AssetsWithPricesFilter::UpdatedSince).into_iter().collect();
-        let prices = self.database.prices()?.get_assets_with_prices_by_filter(filters)?;
+        let prices = self.database.prices()?.get_assets_with_prices_by_filter(filters, self.primary_price_max_age)?;
 
         if prices.is_empty() {
             return sync.write(ASSETS_INDEX_NAME, Vec::<AssetDocument>::new()).await;

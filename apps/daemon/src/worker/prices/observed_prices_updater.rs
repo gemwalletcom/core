@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::error::Error;
+use std::time::Duration;
 
 use cacher::{CacheKey, CacherClient};
 use prices::AssetPriceMapping;
@@ -7,26 +8,31 @@ use primitives::PriceProvider;
 use storage::{Database, PricesRepository};
 use streamer::StreamProducer;
 
-use crate::worker::prices::{Providers, prices_updater::PricesUpdater};
+use crate::worker::prices::{AssetsProviders, prices_updater::PricesUpdater};
+
+#[derive(Clone, Copy)]
+pub struct ObservedPricesConfig {
+    pub max_assets: usize,
+    pub min_observers: usize,
+    pub primary_price_max_age: Duration,
+}
 
 pub struct ObservedPricesUpdater {
     cacher_client: CacherClient,
     database: Database,
-    providers: Providers,
+    providers: AssetsProviders,
     stream_producer: StreamProducer,
-    max_assets: usize,
-    min_observers: usize,
+    config: ObservedPricesConfig,
 }
 
 impl ObservedPricesUpdater {
-    pub fn new(cacher_client: CacherClient, database: Database, providers: Providers, stream_producer: StreamProducer, max_assets: usize, min_observers: usize) -> Self {
+    pub fn new(cacher_client: CacherClient, database: Database, providers: AssetsProviders, stream_producer: StreamProducer, config: ObservedPricesConfig) -> Self {
         Self {
             cacher_client,
             database,
             providers,
             stream_producer,
-            max_assets,
-            min_observers,
+            config,
         }
     }
 
@@ -37,7 +43,7 @@ impl ObservedPricesUpdater {
         }
 
         let mut by_provider: HashMap<PriceProvider, Vec<AssetPriceMapping>> = HashMap::new();
-        for (asset_id, row) in self.database.prices()?.get_primary_prices(&asset_ids)? {
+        for (asset_id, row) in self.database.prices()?.get_primary_prices(&asset_ids, self.config.primary_price_max_age)? {
             by_provider.entry(row.provider.0).or_default().push(AssetPriceMapping::new(asset_id, row.provider_price_id));
         }
 
@@ -56,7 +62,7 @@ impl ObservedPricesUpdater {
     async fn get_observed_assets(&self) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
         let key = CacheKey::ObservedAssets;
         self.cacher_client
-            .sorted_set_range_by_score(&key.key(), self.min_observers as f64, f64::INFINITY, self.max_assets)
+            .sorted_set_range_by_score(&key.key(), self.config.min_observers as f64, f64::INFINITY, self.config.max_assets)
             .await
     }
 }

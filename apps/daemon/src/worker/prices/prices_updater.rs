@@ -3,10 +3,9 @@ use prices::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider, PriceProvid
 use primitives::{AssetId, PriceData};
 use std::collections::HashMap;
 use std::sync::Arc;
-use storage::AssetUpdate;
 use storage::database::prices::PriceFilter;
 use storage::models::{AssetRow, NewPriceRow, PriceAssetRow, PriceRow};
-use storage::{AssetsLinksRepository, AssetsRepository, Database, PricesRepository};
+use storage::{AssetUpdate, AssetsLinksRepository, AssetsRepository, Database, PricesRepository};
 use streamer::{PricesPayload, StreamProducer, StreamProducerQueue};
 
 const BATCH_SIZE: usize = 1000;
@@ -128,7 +127,12 @@ impl PricesUpdater {
 
             let new_prices: Vec<NewPriceRow> = assets_by_id
                 .values()
-                .map(|a| (a.mapping.provider_price_id.clone(), NewPriceRow::new(provider, a.mapping.provider_price_id.clone())))
+                .map(|a| {
+                    (
+                        a.mapping.provider_price_id.clone(),
+                        NewPriceRow::with_market_data(provider, a.mapping.provider_price_id.clone(), a.market.as_ref(), a.price, a.price_change_percentage_24h),
+                    )
+                })
                 .collect::<HashMap<_, _>>()
                 .into_values()
                 .collect();

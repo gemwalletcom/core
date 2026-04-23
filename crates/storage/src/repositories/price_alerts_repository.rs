@@ -2,6 +2,7 @@ use crate::{DatabaseError, DieselResultExt};
 use chrono::NaiveDateTime;
 use primitives::{Device, DevicePriceAlert, PriceAlert, PriceAlerts, PriceData};
 use std::collections::HashMap;
+use std::time::Duration;
 
 use crate::DatabaseClient;
 use crate::database::devices::DevicesStore;
@@ -9,7 +10,7 @@ use crate::database::price_alerts::PriceAlertsStore;
 use crate::repositories::prices_repository::PricesRepository;
 
 pub trait PriceAlertsRepository {
-    fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime) -> Result<Vec<(PriceAlert, PriceData, Device)>, DatabaseError>;
+    fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime, max_age: Duration) -> Result<Vec<(PriceAlert, PriceData, Device)>, DatabaseError>;
     fn get_price_alerts_for_device_id(&mut self, device_id: &str, asset_id: Option<&str>) -> Result<Vec<DevicePriceAlert>, DatabaseError>;
     fn add_price_alerts(&mut self, device_id: &str, price_alerts: PriceAlerts) -> Result<usize, DatabaseError>;
     fn delete_price_alerts(&mut self, device_id: &str, ids: Vec<String>) -> Result<usize, DatabaseError>;
@@ -17,7 +18,7 @@ pub trait PriceAlertsRepository {
 }
 
 impl PriceAlertsRepository for DatabaseClient {
-    fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime) -> Result<Vec<(PriceAlert, PriceData, Device)>, DatabaseError> {
+    fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime, max_age: Duration) -> Result<Vec<(PriceAlert, PriceData, Device)>, DatabaseError> {
         let alerts = PriceAlertsStore::get_price_alerts(self, after_notified_at)?;
         if alerts.is_empty() {
             return Ok(vec![]);
@@ -29,7 +30,7 @@ impl PriceAlertsRepository for DatabaseClient {
             .into_iter()
             .collect();
         let primary: HashMap<String, PriceData> = self
-            .get_primary_prices(&asset_ids)?
+            .get_primary_prices(&asset_ids, max_age)?
             .into_iter()
             .map(|(id, row)| (id.to_string(), row.as_price_data()))
             .collect();

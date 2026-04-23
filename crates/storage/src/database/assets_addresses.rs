@@ -11,12 +11,7 @@ use primitives::{AssetId as PrimitiveAssetId, ChainAddress};
 
 pub(crate) trait AssetsAddressesStore {
     fn add_assets_addresses(&mut self, values: Vec<AssetAddressRow>) -> Result<usize, diesel::result::Error>;
-    fn get_assets_by_addresses(
-        &mut self,
-        values: Vec<ChainAddress>,
-        from_datetime: Option<NaiveDateTime>,
-        prices_min_updated_at: Option<NaiveDateTime>,
-    ) -> Result<Vec<AssetAddressRow>, diesel::result::Error>;
+    fn get_assets_by_addresses(&mut self, values: Vec<ChainAddress>, from_datetime: Option<NaiveDateTime>) -> Result<Vec<AssetAddressRow>, diesel::result::Error>;
     fn get_asset_addresses(&mut self, chain_address: ChainAddress) -> Result<Vec<AssetAddressRow>, diesel::result::Error>;
     fn get_asset_address(&mut self, chain_address: ChainAddress, target_asset_id: PrimitiveAssetId) -> Result<Option<AssetAddressRow>, diesel::result::Error>;
     fn delete_assets_addresses(&mut self, values: Vec<AssetAddressRow>) -> Result<usize, diesel::result::Error>;
@@ -35,36 +30,21 @@ impl AssetsAddressesStore for DatabaseClient {
             .execute(&mut self.connection)
     }
 
-    fn get_assets_by_addresses(
-        &mut self,
-        values: Vec<ChainAddress>,
-        from_datetime: Option<NaiveDateTime>,
-        prices_min_updated_at: Option<NaiveDateTime>,
-    ) -> Result<Vec<AssetAddressRow>, diesel::result::Error> {
+    fn get_assets_by_addresses(&mut self, values: Vec<ChainAddress>, from_datetime: Option<NaiveDateTime>) -> Result<Vec<AssetAddressRow>, diesel::result::Error> {
         let chains = values.iter().map(|x| x.chain.as_ref()).collect::<Vec<&str>>();
         let addresses = values.iter().map(|x| x.address.clone()).collect::<Vec<String>>();
-        use crate::schema::{assets_addresses::dsl as a, prices, prices_assets, prices_providers};
+        use crate::schema::{assets, assets_addresses::dsl as a};
 
         let mut query = a::assets_addresses
             .filter(a::chain.eq_any(chains))
             .filter(a::address.eq_any(addresses))
             .filter(a::value.is_null().or(a::value.ne("0")))
+            .filter(diesel::dsl::exists(assets::table.filter(assets::id.eq(a::asset_id)).filter(assets::has_price.eq(true))))
             .select(AssetAddressRow::as_select())
             .into_boxed();
 
         if let Some(datetime) = from_datetime {
             query = query.filter(a::created_at.gt(datetime));
-        }
-
-        if let Some(cutoff) = prices_min_updated_at {
-            query = query.filter(diesel::dsl::exists(
-                prices_assets::table
-                    .inner_join(prices::table.on(prices_assets::price_id.eq(prices::id)))
-                    .inner_join(prices_providers::table.on(prices_assets::provider.eq(prices_providers::id)))
-                    .filter(prices_assets::asset_id.eq(a::asset_id))
-                    .filter(prices_providers::enabled.eq(true))
-                    .filter(prices::last_updated_at.ge(cutoff)),
-            ));
         }
 
         query.load(&mut self.connection)

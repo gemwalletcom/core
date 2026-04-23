@@ -31,6 +31,13 @@ impl PriceProvider {
             Self::Jupiter => 2,
         }
     }
+
+    pub fn supports_price_change_24h(&self) -> bool {
+        match self {
+            Self::Coingecko | Self::Jupiter => true,
+            Self::Pyth => false,
+        }
+    }
 }
 
 impl fmt::Display for PriceProvider {

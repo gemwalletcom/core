@@ -1,15 +1,16 @@
-use primitives::{ChartPeriod, ChartValue, DEFAULT_FIAT_CURRENCY};
+use primitives::{ChartPeriod, ChartValue, DEFAULT_FIAT_CURRENCY, PriceConfig};
 use std::error::Error;
 use storage::{ChartsRepository, Database, PricesRepository};
 
 #[derive(Clone)]
 pub struct ChartClient {
     database: Database,
+    config: PriceConfig,
 }
 
 impl ChartClient {
-    pub fn new(database: Database) -> Self {
-        Self { database }
+    pub fn new(database: Database, config: PriceConfig) -> Self {
+        Self { database, config }
     }
 
     pub async fn get_charts_prices(&self, asset_id: &str, period: ChartPeriod, currency: &str) -> Result<Vec<ChartValue>, Box<dyn Error + Send + Sync>> {
@@ -17,7 +18,7 @@ impl ChartClient {
         let rate = self.database.fiat()?.get_fiat_rate(currency)?.as_primitive();
         let rate_multiplier = rate.multiplier(base_rate.rate);
 
-        let key = self.database.prices()?.get_primary_price_key(asset_id)?;
+        let key = self.database.prices()?.get_primary_price_key(asset_id, self.config.primary_price_max_age)?;
         Ok(self
             .database
             .charts()?
