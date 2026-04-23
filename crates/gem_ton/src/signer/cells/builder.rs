@@ -68,7 +68,7 @@ impl CellBuilder {
     }
 
     pub fn store_uint(&mut self, bit_len: usize, value: &BigUint) -> Result<&mut Self, SignerError> {
-        let used_bits = biguint_bit_len(value);
+        let used_bits = value.bits() as usize;
         if used_bits > bit_len {
             return Err(SignerError::invalid_input(format!("value does not fit in {bit_len} bits")));
         }
@@ -162,13 +162,5 @@ impl CellBuilder {
         let bit_len = self.writer.bit_len();
         let bytes = self.writer.finish_bytes();
         Cell::new(bytes, bit_len, self.references)
-    }
-}
-
-fn biguint_bit_len(value: &BigUint) -> usize {
-    let bytes = value.to_bytes_be();
-    match bytes.first() {
-        Some(first) => (bytes.len() - 1) * 8 + (8 - first.leading_zeros() as usize),
-        None => 0,
     }
 }

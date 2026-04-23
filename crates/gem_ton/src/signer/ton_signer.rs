@@ -2,6 +2,7 @@ use primitives::SignerError;
 use signer::Ed25519KeyPair;
 
 use super::transaction::WalletV4R2;
+use crate::address::Address;
 
 pub(crate) struct TonSigner {
     key_pair: Ed25519KeyPair,
@@ -19,9 +20,9 @@ impl TonSigner {
         &self.wallet
     }
 
-    #[cfg(test)]
-    pub(crate) fn address(&self) -> &crate::address::Address {
-        self.wallet.address()
+    #[allow(unused)]
+    pub fn address(&self) -> &Address {
+        &self.wallet.address
     }
 
     pub(crate) fn sign(&self, digest: &[u8]) -> [u8; 64] {

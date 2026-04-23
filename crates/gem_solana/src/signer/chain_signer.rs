@@ -83,6 +83,7 @@ impl SolanaChainSigner {
 mod tests {
     use super::*;
     use crate::signer::testkit::*;
+    use primitives::testkit::signer_mock::TEST_PRIVATE_KEY;
     use primitives::{Chain, SignerInput, TransactionLoadInput, TransferDataOutputType};
 
     #[test]

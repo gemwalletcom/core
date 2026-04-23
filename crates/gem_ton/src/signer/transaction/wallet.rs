@@ -1,3 +1,5 @@
+use std::sync::LazyLock;
+
 use num_bigint::BigUint;
 use primitives::SignerError;
 
@@ -8,6 +10,8 @@ use crate::signer::cells::{BagOfCells, Cell, CellArc, CellBuilder};
 const BASE_WORKCHAIN: i32 = 0;
 const DEFAULT_WALLET_ID: i32 = 0x29a9a317;
 const WALLET_V4R2_CODE_BOC: &str = include_str!("wallet_v4r2_code.boc.b64");
+
+static WALLET_V4R2_CODE: LazyLock<CellArc> = LazyLock::new(|| BagOfCells::parse_base64(WALLET_V4R2_CODE_BOC.trim()).unwrap().get_single_root().unwrap().clone());
 
 #[derive(Clone)]
 struct StateInit {
@@ -32,7 +36,7 @@ impl StateInit {
 
 pub struct WalletV4R2 {
     public_key: [u8; 32],
-    address: Address,
+    pub address: Address,
 }
 
 impl WalletV4R2 {
@@ -79,7 +83,7 @@ impl WalletV4R2 {
         data.store_u32(32, 0)?.store_i32(32, DEFAULT_WALLET_ID)?.store_slice(public_key)?.store_bit(false)?;
 
         Ok(StateInit {
-            code: BagOfCells::parse_base64(WALLET_V4R2_CODE_BOC.trim())?.get_single_root()?.clone(),
+            code: WALLET_V4R2_CODE.clone(),
             data: data.build()?.into_arc(),
         })
     }

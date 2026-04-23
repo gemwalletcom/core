@@ -23,13 +23,6 @@ use gem_tron::signer::tron_hash_message;
 use primitives::SimulationPayloadField;
 use zeroize::Zeroizing;
 
-fn current_timestamp() -> Result<u64, GemstoneError> {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs())
-        .map_err(|e| GemstoneError::from(e.to_string()))
-}
-
 fn siwe_or_text_preview(chain: primitives::Chain, data: &[u8]) -> MessagePreview {
     match String::from_utf8(data.to_vec()) {
         Ok(string) => match SiweMessage::try_parse(&string) {
@@ -50,13 +43,15 @@ pub enum MessagePreview {
 #[derive(Debug, uniffi::Object)]
 pub struct MessageSigner {
     pub message: SignMessage,
+    timestamp: u64,
 }
 
 #[uniffi::export]
 impl MessageSigner {
     #[uniffi::constructor]
     pub fn new(message: SignMessage) -> Self {
-        Self { message }
+        let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0);
+        Self { message, timestamp }
     }
 
     pub fn preview(&self) -> Result<MessagePreview, GemstoneError> {
@@ -138,8 +133,7 @@ impl MessageSigner {
             SignDigestType::TonPersonal => {
                 let string = String::from_utf8(self.message.data.clone())?;
                 let ton_data = TonSignMessageData::from_bytes(string.as_bytes())?;
-                let timestamp = current_timestamp()?;
-                Ok(ton_data.hash(timestamp)?)
+                Ok(ton_data.hash(self.timestamp)?)
             }
             SignDigestType::TronPersonal => Ok(tron_hash_message(&self.message.data).to_vec()),
             SignDigestType::Eip191 | SignDigestType::Siwe => Ok(eip191_hash_message(&self.message.data).to_vec()),
@@ -178,8 +172,7 @@ impl MessageSigner {
         match &self.message.sign_type {
             SignDigestType::SuiPersonal => sui_signer::sign_digest(&hash, &private_key).map_err(GemstoneError::from),
             SignDigestType::TonPersonal => {
-                let timestamp = current_timestamp()?;
-                let result = ton_sign_personal(&self.message.data, &private_key, timestamp)?;
+                let result = ton_sign_personal(&self.message.data, &private_key, self.timestamp)?;
                 self.get_ton_result(&result)
             }
             SignDigestType::Eip191 | SignDigestType::Eip712 | SignDigestType::Siwe | SignDigestType::TronPersonal => {
@@ -229,6 +222,7 @@ mod tests {
     };
     use gem_evm::EIP712Domain;
     use primitives::Chain;
+    use primitives::testkit::signer_mock::TEST_PRIVATE_KEY;
 
     #[test]
     fn test_eip191() {
@@ -665,5 +659,27 @@ Issued At: 2026-03-09T15:48:34.458Z"#;
         }
 
         assert_eq!(decoder.plain_preview(), "Hello TON");
+    }
+
+    #[test]
+    fn test_ton_hash_and_sign_share_timestamp() {
+        let ton_data = TonSignMessageData::from_value(
+            serde_json::json!({"type": "text", "text": "timestamp consistency"}),
+            "example.com".to_string(),
+            "UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg".to_string(),
+        )
+        .unwrap();
+        let data = ton_data.to_bytes();
+        let signer = MessageSigner::new(SignMessage {
+            chain: Chain::Ton,
+            sign_type: SignDigestType::TonPersonal,
+            data: data.clone(),
+        });
+        let previewed = signer.hash().unwrap();
+        let response: serde_json::Value = serde_json::from_str(&signer.sign(TEST_PRIVATE_KEY.to_vec()).unwrap()).unwrap();
+        let signed_timestamp = response["timestamp"].as_u64().unwrap();
+
+        let re_hashed = TonSignMessageData::from_bytes(&data).unwrap().hash(signed_timestamp).unwrap();
+        assert_eq!(previewed, re_hashed);
     }
 }
