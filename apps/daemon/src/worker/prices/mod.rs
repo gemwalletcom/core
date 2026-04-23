@@ -137,9 +137,39 @@ fn add_provider_jobs<'a>(
     producer_prices: &StreamProducer,
 ) -> Result<JobPlanBuilder<'a>, Box<dyn Error + Send + Sync>> {
     let mut builder = builder;
-    builder = add_updater_job(builder, database, &provider, producer_assets, config, kind, WorkerJob::UpdatePricesAssets, ConfigParamKey::PriceProviderAssetsDuration(kind), |u| async move { u.update_assets().await })?;
-    builder = add_updater_job(builder, database, &provider, producer_assets, config, kind, WorkerJob::UpdatePricesAssetsNew, ConfigParamKey::PriceProviderAssetsNewDuration(kind), |u| async move { u.update_assets_new().await })?;
-    builder = add_updater_job(builder, database, &provider, producer_assets, config, kind, WorkerJob::UpdatePricesAssetsMetadata, ConfigParamKey::PriceProviderAssetsMetadataDuration(kind), |u| async move { u.update_assets_metadata().await })?;
+    builder = add_updater_job(
+        builder,
+        database,
+        &provider,
+        producer_assets,
+        config,
+        kind,
+        WorkerJob::UpdatePricesAssets,
+        ConfigParamKey::PriceProviderAssetsDuration(kind),
+        |u| async move { u.update_assets().await },
+    )?;
+    builder = add_updater_job(
+        builder,
+        database,
+        &provider,
+        producer_assets,
+        config,
+        kind,
+        WorkerJob::UpdatePricesAssetsNew,
+        ConfigParamKey::PriceProviderAssetsNewDuration(kind),
+        |u| async move { u.update_assets_new().await },
+    )?;
+    builder = add_updater_job(
+        builder,
+        database,
+        &provider,
+        producer_assets,
+        config,
+        kind,
+        WorkerJob::UpdatePricesAssetsMetadata,
+        ConfigParamKey::PriceProviderAssetsMetadataDuration(kind),
+        |u| async move { u.update_assets_metadata().await },
+    )?;
 
     let cleanup_variant = JobVariant::labeled(WorkerJob::CleanupOutdatedAssets, kind).with_param_duration(config, &ConfigParamKey::PriceProviderCleanOutdatedDuration(kind))?;
     builder = builder.job(cleanup_variant, {
@@ -181,9 +211,12 @@ fn add_provider_jobs<'a>(
             )
             .job(
                 JobVariant::labeled(WorkerJob::UpdatePricesHigh, kind),
-                provider_job(database, provider.clone(), producer_prices.clone(), |u| async move {
-                    u.update_prices_window(500, 2500).await
-                }),
+                provider_job(
+                    database,
+                    provider.clone(),
+                    producer_prices.clone(),
+                    |u| async move { u.update_prices_window(500, 2500).await },
+                ),
             )
             .job(
                 JobVariant::labeled(WorkerJob::UpdatePricesLow, kind),
@@ -199,9 +232,17 @@ fn add_provider_jobs<'a>(
                     Box::pin(async move { updater.update_markets().await })
                 }
             }),
-        PriceProvider::Pyth | PriceProvider::Jupiter => {
-            add_updater_job(builder, database, &provider, producer_prices, config, kind, WorkerJob::UpdatePrices, ConfigParamKey::PriceProviderPricesDuration(kind), |u| async move { u.update_prices_all().await })?
-        }
+        PriceProvider::Pyth | PriceProvider::Jupiter => add_updater_job(
+            builder,
+            database,
+            &provider,
+            producer_prices,
+            config,
+            kind,
+            WorkerJob::UpdatePrices,
+            ConfigParamKey::PriceProviderPricesDuration(kind),
+            |u| async move { u.update_prices_all().await },
+        )?,
     };
     Ok(builder)
 }
@@ -328,8 +369,6 @@ fn charts_retention_key(timeframe: ChartTimeframe) -> ConfigKey {
         ChartTimeframe::Daily => ConfigKey::PriceChartsRetentionDaily,
     }
 }
-
-
 
 async fn stream_producer(settings: &Settings, name: &str) -> Result<StreamProducer, Box<dyn Error + Send + Sync>> {
     let retry = streamer::Retry::new(settings.rabbitmq.retry.delay, settings.rabbitmq.retry.timeout);

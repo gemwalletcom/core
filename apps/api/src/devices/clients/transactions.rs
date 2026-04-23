@@ -29,7 +29,7 @@ impl TransactionsClient {
         let transactions = self
             .database
             .transactions()?
-            .get_transactions_by_device_id(device_id, addresses.clone(), chains, asset_id.map(|x| x.to_string()), from_datetime)?
+            .get_transactions_by_device_id(device_id, addresses.clone(), chains, asset_id, from_datetime)?
             .into_iter()
             .map(|x| x.as_primitive(addresses.clone()).finalize(addresses.clone()))
             .collect::<Vec<_>>();

@@ -1,6 +1,5 @@
 use async_trait::async_trait;
 use pricer::PriceClient;
-use primitives::AssetIdVecExt;
 use std::collections::HashMap;
 use std::error::Error;
 use std::time::Duration;
@@ -46,13 +45,7 @@ impl MessageConsumer<PricesPayload, usize> for StorePricesConsumer {
 
         let count = primary_prices.len();
         let primary_asset_ids: Vec<_> = primary_prices.iter().map(|(id, _)| id.clone()).collect();
-        let assets_by_id: HashMap<String, _> = self
-            .database
-            .assets()?
-            .get_assets_rows(primary_asset_ids.ids())?
-            .into_iter()
-            .map(|a| (a.id.clone(), a))
-            .collect();
+        let assets_by_id: HashMap<String, _> = self.database.assets()?.get_assets_rows(primary_asset_ids)?.into_iter().map(|a| (a.id.clone(), a)).collect();
         let cache_entries = primary_prices
             .into_iter()
             .filter_map(|(asset_id, price)| assets_by_id.get(&asset_id.to_string()).map(|asset| price.as_price_asset_info(asset)))

@@ -26,11 +26,11 @@ impl AssetsClient {
     }
 
     #[allow(unused)]
-    pub fn get_asset(&self, asset_id: &str) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+    pub fn get_asset(&self, asset_id: &AssetId) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         Ok(self.database.assets()?.get_asset(asset_id)?)
     }
 
-    pub fn get_assets(&self, asset_ids: Vec<String>, rate: f64) -> Result<Vec<AssetBasic>, Box<dyn Error + Send + Sync>> {
+    pub fn get_assets(&self, asset_ids: Vec<AssetId>, rate: f64) -> Result<Vec<AssetBasic>, Box<dyn Error + Send + Sync>> {
         Ok(self
             .database
             .assets()?
@@ -40,7 +40,7 @@ impl AssetsClient {
             .collect())
     }
 
-    pub fn get_asset_full(&self, asset_id: &str) -> Result<AssetFull, Box<dyn Error + Send + Sync>> {
+    pub fn get_asset_full(&self, asset_id: &AssetId) -> Result<AssetFull, Box<dyn Error + Send + Sync>> {
         Ok(self.database.assets()?.get_asset_full(asset_id, self.config.primary_price_max_age)?)
     }
 
@@ -78,19 +78,19 @@ impl SearchClient {
             return Ok(vec![]);
         }
 
-        let asset_ids: Vec<String> = assets.iter().map(|x| x.asset.id.to_string()).collect();
-        let prices: HashMap<String, _> = self
+        let asset_ids: Vec<AssetId> = assets.iter().map(|x| x.asset.id.clone()).collect();
+        let prices: HashMap<AssetId, _> = self
             .price_client
             .get_cache_prices(asset_ids)
             .await?
             .into_iter()
-            .map(|p| (p.asset_id.to_string(), p.as_price_primitive()))
+            .map(|p| (p.asset_id.clone(), p.as_price_primitive()))
             .collect();
 
         Ok(assets
             .into_iter()
             .map(|x| {
-                let price = prices.get(&x.asset.id.to_string()).cloned();
+                let price = prices.get(&x.asset.id).cloned();
                 AssetBasic {
                     asset: x.asset,
                     properties: x.properties,

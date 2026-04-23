@@ -20,7 +20,7 @@ impl StakeApyUpdater {
         let rounded = (apy * 100.0).round() / 100.0;
         self.database
             .assets()?
-            .update_assets(vec![chain.as_asset_id().to_string()], vec![AssetUpdate::StakingApr(Some(rounded))])?;
+            .update_assets(vec![chain.as_asset_id()], vec![AssetUpdate::StakingApr(Some(rounded))])?;
         Ok(rounded)
     }
 }

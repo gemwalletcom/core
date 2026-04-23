@@ -279,10 +279,15 @@ pub async fn get_device_token_v2(device: AuthenticatedDevice, config: &State<Aut
 #[get("/devices/price_alerts?<asset_id>")]
 pub async fn get_device_price_alerts_v2(
     device: AuthenticatedDevice,
-    asset_id: Option<&str>,
+    asset_id: Option<AssetIdParam>,
     client: &State<Mutex<pricer::PriceAlertClient>>,
 ) -> Result<ApiResponse<PriceAlerts>, ApiError> {
-    Ok(client.lock().await.get_price_alerts(&device.device_row.device_id, asset_id).await?.into())
+    Ok(client
+        .lock()
+        .await
+        .get_price_alerts(&device.device_row.device_id, asset_id.as_ref().map(|x| &x.0))
+        .await?
+        .into())
 }
 
 #[post("/devices/price_alerts", format = "json", data = "<price_alerts>")]

@@ -1,6 +1,6 @@
 use crate::{DatabaseError, DieselResultExt};
 use chrono::NaiveDateTime;
-use primitives::{Device, DevicePriceAlert, PriceAlert, PriceAlerts, PriceData};
+use primitives::{AssetId, Device, DevicePriceAlert, PriceAlert, PriceAlerts, PriceData};
 use std::collections::HashMap;
 use std::time::Duration;
 
@@ -11,7 +11,7 @@ use crate::repositories::prices_repository::PricesRepository;
 
 pub trait PriceAlertsRepository {
     fn get_price_alerts(&mut self, after_notified_at: NaiveDateTime, max_age: Duration) -> Result<Vec<(PriceAlert, PriceData, Device)>, DatabaseError>;
-    fn get_price_alerts_for_device_id(&mut self, device_id: &str, asset_id: Option<&str>) -> Result<Vec<DevicePriceAlert>, DatabaseError>;
+    fn get_price_alerts_for_device_id(&mut self, device_id: &str, asset_id: Option<&AssetId>) -> Result<Vec<DevicePriceAlert>, DatabaseError>;
     fn add_price_alerts(&mut self, device_id: &str, price_alerts: PriceAlerts) -> Result<usize, DatabaseError>;
     fn delete_price_alerts(&mut self, device_id: &str, ids: Vec<String>) -> Result<usize, DatabaseError>;
     fn update_price_alerts_set_notified_at(&mut self, ids: Vec<String>, last_notified_at: NaiveDateTime) -> Result<usize, DatabaseError>;
@@ -23,9 +23,9 @@ impl PriceAlertsRepository for DatabaseClient {
         if alerts.is_empty() {
             return Ok(vec![]);
         }
-        let asset_ids: Vec<String> = alerts
+        let asset_ids: Vec<AssetId> = alerts
             .iter()
-            .map(|(a, _)| a.asset_id.to_string())
+            .map(|(a, _)| a.asset_id.0.clone())
             .collect::<std::collections::HashSet<_>>()
             .into_iter()
             .collect();
@@ -44,8 +44,9 @@ impl PriceAlertsRepository for DatabaseClient {
             .collect())
     }
 
-    fn get_price_alerts_for_device_id(&mut self, device_id: &str, asset_id: Option<&str>) -> Result<Vec<DevicePriceAlert>, DatabaseError> {
-        let results = PriceAlertsStore::get_price_alerts_for_device_id(self, device_id, asset_id)?;
+    fn get_price_alerts_for_device_id(&mut self, device_id: &str, asset_id: Option<&AssetId>) -> Result<Vec<DevicePriceAlert>, DatabaseError> {
+        let asset_id = asset_id.map(|id| id.to_string());
+        let results = PriceAlertsStore::get_price_alerts_for_device_id(self, device_id, asset_id.as_deref())?;
         Ok(results
             .into_iter()
             .map(|(alert, device)| DevicePriceAlert {

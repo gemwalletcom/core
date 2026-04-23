@@ -19,7 +19,7 @@ pub async fn get_asset(
     client: &State<Mutex<AssetsClient>>,
     price_client: &State<Mutex<PriceClient>>,
 ) -> Result<ApiResponse<AssetFull>, ApiError> {
-    let asset = client.lock().await.get_asset_full(&asset_id.0.to_string())?;
+    let asset = client.lock().await.get_asset_full(&asset_id.0)?;
     let currency = currency.unwrap_or(DEFAULT_FIAT_CURRENCY);
     let rate = price_client.lock().await.get_fiat_rate(currency)?.rate;
     Ok(asset.with_rate(rate).into())
@@ -27,7 +27,7 @@ pub async fn get_asset(
 
 #[post("/assets?<currency>", format = "json", data = "<asset_ids>")]
 pub async fn get_assets(
-    asset_ids: Json<Vec<String>>,
+    asset_ids: Json<Vec<AssetId>>,
     currency: Option<&str>,
     client: &State<Mutex<AssetsClient>>,
     price_client: &State<Mutex<PriceClient>>,

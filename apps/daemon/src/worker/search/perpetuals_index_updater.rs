@@ -28,7 +28,7 @@ impl PerpetualsIndexUpdater {
             return sync.write(PERPETUALS_INDEX_NAME, Vec::<PerpetualDocument>::new()).await;
         }
 
-        let asset_ids = perpetuals.iter().map(|p| p.asset_id.to_string()).collect::<Vec<_>>();
+        let asset_ids = perpetuals.iter().map(|p| p.asset_id.0.clone()).collect::<Vec<_>>();
         let assets = self.database.assets()?.get_assets_rows(asset_ids)?;
 
         let assets_map: HashMap<String, AssetRow> = assets.into_iter().map(|a| (a.id.to_string(), a)).collect();

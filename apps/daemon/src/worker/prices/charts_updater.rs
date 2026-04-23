@@ -74,7 +74,15 @@ impl ChartsHistoryUpdater {
 
         for price in &prices {
             info_with_fields!("charts history sync started", price_id = price.id.clone());
-            let daily = self.sync(price, "daily", ChartTimeframe::Daily, SECONDS_PER_DAY as i64, self.provider.get_charts_daily(&price.provider_price_id)).await?;
+            let daily = self
+                .sync(
+                    price,
+                    "daily",
+                    ChartTimeframe::Daily,
+                    SECONDS_PER_DAY as i64,
+                    self.provider.get_charts_daily(&price.provider_price_id),
+                )
+                .await?;
             let hourly = self
                 .sync(
                     price,
@@ -85,7 +93,11 @@ impl ChartsHistoryUpdater {
                 )
                 .await?;
             let has_history = daily.received + hourly.received > 0;
-            let extremes_updates = if has_history { self.database.prices()?.update_extremes_for_price(&price.id)? } else { 0 };
+            let extremes_updates = if has_history {
+                self.database.prices()?.update_extremes_for_price(&price.id)?
+            } else {
+                0
+            };
             if has_history {
                 self.cacher.add_to_set_cached(CacheKey::ChartsHistory(provider_id), std::slice::from_ref(&price.id)).await?;
             }

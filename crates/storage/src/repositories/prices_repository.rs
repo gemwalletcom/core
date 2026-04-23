@@ -1,6 +1,6 @@
 use crate::{DatabaseError, DieselResultExt};
 use chrono::Utc;
-use primitives::{AssetId, AssetPriceKey, Price, PriceProvider};
+use primitives::{AssetId, AssetIdVecExt, AssetPriceKey, Price, PriceProvider};
 use std::collections::{HashMap, HashSet};
 use std::time::Duration;
 
@@ -15,19 +15,19 @@ use crate::models::{ChartRow, PriceAssetRow, PriceProviderConfigRow, PriceRow, p
 
 pub trait PricesRepository {
     fn add_prices(&mut self, values: Vec<NewPriceRow>) -> Result<usize, DatabaseError>;
-    fn set_prices(&mut self, prices: Vec<PriceRow>) -> Result<Vec<String>, DatabaseError>;
+    fn set_prices(&mut self, prices: Vec<PriceRow>) -> Result<Vec<AssetId>, DatabaseError>;
     fn set_prices_assets(&mut self, values: Vec<PriceAssetRow>) -> Result<usize, DatabaseError>;
     fn get_prices_by_filter(&mut self, filters: Vec<PriceFilter>) -> Result<Vec<PriceRow>, DatabaseError>;
     fn get_prices_assets(&mut self) -> Result<Vec<PriceAssetRow>, DatabaseError>;
     fn get_prices_assets_by_provider(&mut self, provider: PriceProvider) -> Result<Vec<PriceAssetRow>, DatabaseError>;
-    fn get_primary_price_key(&mut self, asset_id: &str, max_age: Duration) -> Result<AssetPriceKey, DatabaseError>;
-    fn get_primary_prices(&mut self, asset_ids: &[String], max_age: Duration) -> Result<Vec<(AssetId, PriceRow)>, DatabaseError>;
+    fn get_primary_price_key(&mut self, asset_id: &AssetId, max_age: Duration) -> Result<AssetPriceKey, DatabaseError>;
+    fn get_primary_prices(&mut self, asset_ids: &[AssetId], max_age: Duration) -> Result<Vec<(AssetId, PriceRow)>, DatabaseError>;
     fn get_price_by_id(&mut self, price_id: &str) -> Result<Price, DatabaseError>;
-    fn get_prices_for_asset(&mut self, asset_id: &str) -> Result<Vec<PriceRow>, DatabaseError>;
+    fn get_prices_for_asset(&mut self, asset_id: &AssetId) -> Result<Vec<PriceRow>, DatabaseError>;
     fn get_prices_assets_for_price_ids(&mut self, ids: Vec<String>) -> Result<Vec<PriceAssetRow>, DatabaseError>;
     fn delete_prices(&mut self, ids: Vec<String>) -> Result<usize, DatabaseError>;
     fn get_assets_with_prices_by_filter(&mut self, filters: Vec<AssetsWithPricesFilter>, max_age: Duration) -> Result<Vec<PriceAssetDataRow>, DatabaseError>;
-    fn get_assets_with_prices(&mut self, asset_ids: Vec<String>, max_age: Duration) -> Result<Vec<PriceAssetDataRow>, DatabaseError>;
+    fn get_assets_with_prices(&mut self, asset_ids: Vec<AssetId>, max_age: Duration) -> Result<Vec<PriceAssetDataRow>, DatabaseError>;
     fn update_prices(&mut self, price_ids: Vec<String>, updates: Vec<PriceUpdate>) -> Result<usize, DatabaseError>;
     fn update_extremes_for_price(&mut self, price_id: &str) -> Result<usize, DatabaseError>;
 }
@@ -53,7 +53,7 @@ impl PricesRepository for DatabaseClient {
         Ok(PricesStore::get_prices_assets_by_provider(self, provider)?)
     }
 
-    fn get_primary_price_key(&mut self, asset_id: &str, max_age: Duration) -> Result<AssetPriceKey, DatabaseError> {
+    fn get_primary_price_key(&mut self, asset_id: &AssetId, max_age: Duration) -> Result<AssetPriceKey, DatabaseError> {
         let providers = PricesProvidersStore::get_prices_providers(self)?;
         let rows = PricesStore::get_prices_for_asset_ids(self, &[asset_id.to_string()])?
             .into_iter()
@@ -64,12 +64,13 @@ impl PricesRepository for DatabaseClient {
             .ok_or_else(|| DatabaseError::not_found(PriceRow::RESOURCE_NAME, asset_id.to_string()))
     }
 
-    fn get_primary_prices(&mut self, asset_ids: &[String], max_age: Duration) -> Result<Vec<(AssetId, PriceRow)>, DatabaseError> {
+    fn get_primary_prices(&mut self, asset_ids: &[AssetId], max_age: Duration) -> Result<Vec<(AssetId, PriceRow)>, DatabaseError> {
         if asset_ids.is_empty() {
             return Ok(vec![]);
         }
         let providers = PricesProvidersStore::get_prices_providers(self)?;
-        let mut rows_by_asset: HashMap<String, Vec<PriceRow>> = PricesStore::get_prices_for_asset_ids(self, asset_ids)?
+        let string_ids: Vec<String> = asset_ids.iter().map(|id| id.to_string()).collect();
+        let mut rows_by_asset: HashMap<String, Vec<PriceRow>> = PricesStore::get_prices_for_asset_ids(self, &string_ids)?
             .into_iter()
             .fold(HashMap::new(), |mut acc, (id, row)| {
                 acc.entry(id).or_default().push(row);
@@ -78,10 +79,9 @@ impl PricesRepository for DatabaseClient {
         Ok(asset_ids
             .iter()
             .filter_map(|asset_id| {
-                let rows = rows_by_asset.remove(asset_id)?;
+                let rows = rows_by_asset.remove(&asset_id.to_string())?;
                 let row = resolve_primary(&providers, &rows, max_age)?.clone();
-                let id = AssetId::new(asset_id)?;
-                Some((id, row))
+                Some((asset_id.clone(), row))
             })
             .collect())
     }
@@ -90,7 +90,7 @@ impl PricesRepository for DatabaseClient {
         Ok(PricesStore::get_price_by_id(self, price_id).or_not_found(price_id.to_string())?.as_primitive())
     }
 
-    fn get_prices_for_asset(&mut self, asset_id: &str) -> Result<Vec<PriceRow>, DatabaseError> {
+    fn get_prices_for_asset(&mut self, asset_id: &AssetId) -> Result<Vec<PriceRow>, DatabaseError> {
         Ok(PricesStore::get_prices_for_asset_ids(self, &[asset_id.to_string()])?
             .into_iter()
             .map(|(_, row)| row)
@@ -107,7 +107,7 @@ impl PricesRepository for DatabaseClient {
 
     fn get_assets_with_prices_by_filter(&mut self, filters: Vec<AssetsWithPricesFilter>, max_age: Duration) -> Result<Vec<PriceAssetDataRow>, DatabaseError> {
         let since = filters.iter().map(|AssetsWithPricesFilter::UpdatedSince(value)| *value).next();
-        let asset_ids = match since {
+        let asset_ids: Vec<String> = match since {
             Some(value) => {
                 let mut asset_ids = AssetsStore::get_asset_ids_updated_since(self, value)?;
                 asset_ids.extend(PricesStore::get_asset_ids_updated_since(self, value)?);
@@ -117,6 +117,7 @@ impl PricesRepository for DatabaseClient {
             }
             None => AssetsStore::get_all_asset_ids(self)?,
         };
+        let asset_ids = asset_ids.into_iter().filter_map(|id| AssetId::new(&id)).collect();
         self.get_assets_with_prices(asset_ids, max_age)
     }
 
@@ -144,7 +145,7 @@ impl PricesRepository for DatabaseClient {
         PricesRepository::update_prices(self, vec![price_id.to_string()], updates)
     }
 
-    fn set_prices(&mut self, prices: Vec<PriceRow>) -> Result<Vec<String>, DatabaseError> {
+    fn set_prices(&mut self, prices: Vec<PriceRow>) -> Result<Vec<AssetId>, DatabaseError> {
         if prices.is_empty() {
             return Ok(vec![]);
         }
@@ -174,16 +175,16 @@ impl PricesRepository for DatabaseClient {
         let charts: Vec<ChartRow> = current_prices.iter().cloned().map(ChartRow::from_price).collect();
         ChartsStore::add_charts(self, primitives::ChartTimeframe::Raw, charts)?;
 
-        Ok(mappings.into_iter().map(|m| m.asset_id.to_string()).collect::<HashSet<_>>().into_iter().collect())
+        Ok(mappings.into_iter().map(|m| m.asset_id.0).collect::<HashSet<_>>().into_iter().collect())
     }
 
-    fn get_assets_with_prices(&mut self, asset_ids: Vec<String>, max_age: Duration) -> Result<Vec<PriceAssetDataRow>, DatabaseError> {
+    fn get_assets_with_prices(&mut self, asset_ids: Vec<AssetId>, max_age: Duration) -> Result<Vec<PriceAssetDataRow>, DatabaseError> {
         if asset_ids.is_empty() {
             return Ok(vec![]);
         }
 
         let providers = PricesProvidersStore::get_prices_providers(self)?;
-        let assets = AssetsStore::get_assets(self, asset_ids)?;
+        let assets = AssetsStore::get_assets(self, asset_ids.ids())?;
         let mut prices_by_asset: HashMap<String, Vec<PriceRow>> = PricesStore::get_prices_for_asset_ids(self, &assets.iter().map(|a| a.id.clone()).collect::<Vec<_>>())?
             .into_iter()
             .fold(HashMap::new(), |mut acc, (asset_id, row)| {

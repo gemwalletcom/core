@@ -1,5 +1,5 @@
 use num_bigint::BigUint;
-use primitives::{AssetAddress, AssetBalance, AssetIdVecExt, AssetVecExt, ChainAddress};
+use primitives::{AssetAddress, AssetBalance, AssetVecExt, ChainAddress};
 use std::collections::HashSet;
 use std::error::Error;
 
@@ -43,7 +43,7 @@ impl MessageConsumer<ChainAddressPayload, usize> for FetchTokenAddressesConsumer
         let changes = TokenAddressChanges::from_balances(&chain_address, existing_addresses, all_assets);
 
         let asset_ids: Vec<_> = changes.latest_addresses.iter().map(|address| address.asset_id.clone()).collect();
-        let existing_ids: HashSet<_> = self.database.assets()?.get_assets(asset_ids.ids())?.ids().into_iter().collect();
+        let existing_ids: HashSet<_> = self.database.assets()?.get_assets(asset_ids)?.ids().into_iter().collect();
         let mut latest_addresses = Vec::new();
         let mut missing_ids = Vec::new();
 

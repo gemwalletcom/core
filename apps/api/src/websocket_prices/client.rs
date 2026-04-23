@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use cacher::CacheKey;
 use pricer::PriceClient;
-use primitives::{AssetId, AssetPrice, AssetPriceInfo, WebSocketPriceAction, WebSocketPriceActionType, WebSocketPricePayload, asset::AssetHashSetExt};
+use primitives::{AssetId, AssetPrice, AssetPriceInfo, WebSocketPriceAction, WebSocketPriceActionType, WebSocketPricePayload};
 use redis::PushInfo;
 use redis::aio::MultiplexedConnection;
 use rocket::futures::SinkExt;
@@ -51,7 +51,7 @@ impl PriceObserverClient {
     async fn price_payload(&self, include_rates: bool) -> Result<WebSocketPricePayload, Box<dyn Error + Send + Sync>> {
         let client = self.price_client.lock().await;
         let prices = client
-            .get_cache_prices(self.assets.ids())
+            .get_cache_prices(self.assets.iter().cloned().collect())
             .await?
             .into_iter()
             .map(|x| x.as_asset_price_primitive())
@@ -98,7 +98,8 @@ impl PriceObserverClient {
             }
         };
 
-        let _ = self.price_client.lock().await.track_observed_assets(&self.assets.ids()).await;
+        let observed: Vec<AssetId> = self.assets.iter().cloned().collect();
+        let _ = self.price_client.lock().await.track_observed_assets(&observed).await;
 
         let payload = self.price_payload(needs_rates).await?;
         self.send_payload(stream, payload).await?;

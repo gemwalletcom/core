@@ -109,7 +109,7 @@ impl PricesUpdater {
         let mut queued = 0;
 
         for chunk in assets.chunks(BATCH_SIZE) {
-            let asset_ids: Vec<String> = chunk.iter().map(|a| a.mapping.asset_id.to_string()).collect();
+            let asset_ids: Vec<AssetId> = chunk.iter().map(|a| a.mapping.asset_id.clone()).collect();
             let existing: HashMap<String, AssetRow> = self.database.assets()?.get_assets_rows(asset_ids)?.into_iter().map(|a| (a.id.clone(), a)).collect();
             let (known, missing): (Vec<&PriceProviderAsset>, Vec<&PriceProviderAsset>) = chunk.iter().partition(|a| existing.contains_key(&a.mapping.asset_id.to_string()));
 
@@ -181,7 +181,7 @@ impl PricesUpdater {
         for asset_metadata in metadata_by_asset_id.values() {
             self.database
                 .assets()?
-                .update_assets(vec![asset_metadata.asset_id.to_string()], vec![AssetUpdate::Rank(asset_metadata.rank)])?;
+                .update_assets(vec![asset_metadata.asset_id.clone()], vec![AssetUpdate::Rank(asset_metadata.rank)])?;
             self.database.assets_links()?.add_assets_links(&asset_metadata.asset_id, asset_metadata.links.clone())?;
         }
         Ok(metadata_by_asset_id.len())
@@ -189,7 +189,7 @@ impl PricesUpdater {
 
     fn store_asset_updates(&self, updates: Vec<(AssetId, AssetUpdate)>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         for (asset_id, update) in updates {
-            self.database.assets()?.update_assets(vec![asset_id.to_string()], vec![update])?;
+            self.database.assets()?.update_assets(vec![asset_id], vec![update])?;
         }
         Ok(())
     }

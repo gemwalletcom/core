@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use cacher::{CacheKey, CacherClient};
 use prices::AssetPriceMapping;
-use primitives::PriceProvider;
+use primitives::{AssetId, PriceProvider};
 use storage::{Database, PricesRepository};
 use streamer::StreamProducer;
 
@@ -37,7 +37,7 @@ impl ObservedPricesUpdater {
     }
 
     pub async fn update(&self) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let asset_ids = self.get_observed_assets().await?;
+        let asset_ids: Vec<AssetId> = self.get_observed_assets().await?.into_iter().filter_map(|id| AssetId::new(&id)).collect();
         if asset_ids.is_empty() {
             return Ok(0);
         }

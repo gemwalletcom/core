@@ -109,9 +109,19 @@ impl NodeService {
         let mut last_error_data: Option<Value> = None;
         let max_attempts = if retry_enabled { self.retry_config.effective_max_attempts(urls.len()) } else { 1 };
 
-        for url in urls.iter().take(max_attempts) {
+        for (index, url) in urls.iter().take(max_attempts).enumerate() {
             let node_domain = NodeDomain::new(url.clone(), chain_config.clone());
             let remote_host = url.host();
+            if index > 0 {
+                info_with_fields!(
+                    "Retry attempt",
+                    id = request.id.as_str(),
+                    chain = request.chain.as_ref(),
+                    attempt = index + 1,
+                    remote_host = remote_host.as_str(),
+                    reason = last_error.as_deref().unwrap_or(""),
+                );
+            }
             match self.proxy_builder.handle_request(request.clone(), &node_domain).await {
                 Ok(response) => {
                     let retry_error = self.matches_response_error_signal(&request, &response, &self.retry_config.errors);

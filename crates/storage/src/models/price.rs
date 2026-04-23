@@ -186,14 +186,20 @@ impl PriceRow {
             && point.value >= self.all_time_high
             && (point.value, Some(point.date)) != (self.all_time_high, self.all_time_high_date)
         {
-            updates.push(PriceUpdate::AllTimeHigh { value: point.value, date: Some(point.date) });
+            updates.push(PriceUpdate::AllTimeHigh {
+                value: point.value,
+                date: Some(point.date),
+            });
         }
         if let Some(point) = extremes.min
             && point.value > 0.0
             && (self.all_time_low == 0.0 || point.value <= self.all_time_low)
             && (point.value, Some(point.date)) != (self.all_time_low, self.all_time_low_date)
         {
-            updates.push(PriceUpdate::AllTimeLow { value: point.value, date: Some(point.date) });
+            updates.push(PriceUpdate::AllTimeLow {
+                value: point.value,
+                date: Some(point.date),
+            });
         }
         updates
     }

@@ -11,8 +11,8 @@ use assets_index_updater::AssetsIndexUpdater;
 use job_runner::{JobHandle, ShutdownReceiver};
 use nfts_index_updater::NftsIndexUpdater;
 use perpetuals_index_updater::PerpetualsIndexUpdater;
-use search_index::SearchIndexClient;
 use primitives::ConfigKey;
+use search_index::SearchIndexClient;
 use std::error::Error;
 use storage::ConfigCacher;
 

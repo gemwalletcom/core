@@ -1,5 +1,5 @@
 use cacher::{CacheError, CacheKey, CacherClient};
-use primitives::{AssetMarketPrice, AssetPriceInfo, AssetPrices, ChartTimeframe, FiatRate};
+use primitives::{AssetId, AssetMarketPrice, AssetPriceInfo, AssetPrices, ChartTimeframe, FiatRate};
 use std::error::Error;
 use storage::{ChartsRepository, Database, PricesRepository};
 
@@ -33,7 +33,7 @@ impl PriceClient {
         Ok(self.database.fiat()?.get_fiat_rate(symbol)?.as_primitive())
     }
 
-    pub async fn get_asset_price(&self, asset_id: &str, currency: &str) -> Result<AssetMarketPrice, Box<dyn Error + Send + Sync>> {
+    pub async fn get_asset_price(&self, asset_id: &AssetId, currency: &str) -> Result<AssetMarketPrice, Box<dyn Error + Send + Sync>> {
         let rate = self.get_fiat_rate(currency)?.rate;
         let price = self.get_cache_price(asset_id).await?;
         let prices = self
@@ -70,19 +70,20 @@ impl PriceClient {
         self.cacher_client.set_values_with_publish(values, ttl_seconds).await
     }
 
-    pub async fn get_cache_prices(&self, asset_ids: Vec<String>) -> Result<Vec<AssetPriceInfo>, Box<dyn Error + Send + Sync>> {
-        let keys: Vec<String> = asset_ids.iter().map(|x| CacheKey::Price(x).key()).collect();
+    pub async fn get_cache_prices(&self, asset_ids: Vec<AssetId>) -> Result<Vec<AssetPriceInfo>, Box<dyn Error + Send + Sync>> {
+        let keys: Vec<String> = asset_ids.iter().map(|x| CacheKey::Price(&x.to_string()).key()).collect();
         self.cacher_client.get_values(keys).await
     }
 
-    pub async fn get_cache_price(&self, asset_id: &str) -> Result<AssetPriceInfo, Box<dyn Error + Send + Sync>> {
-        match self.cacher_client.get_cached_optional::<AssetPriceInfo>(CacheKey::Price(asset_id)).await? {
+    pub async fn get_cache_price(&self, asset_id: &AssetId) -> Result<AssetPriceInfo, Box<dyn Error + Send + Sync>> {
+        let id = asset_id.to_string();
+        match self.cacher_client.get_cached_optional::<AssetPriceInfo>(CacheKey::Price(&id)).await? {
             Some(price) => Ok(price),
-            None => Err(Box::new(CacheError::not_found("Price", asset_id.to_string()))),
+            None => Err(Box::new(CacheError::not_found("Price", id))),
         }
     }
 
-    pub async fn get_asset_prices(&self, currency: &str, asset_ids: Vec<String>) -> Result<AssetPrices, Box<dyn Error + Send + Sync>> {
+    pub async fn get_asset_prices(&self, currency: &str, asset_ids: Vec<AssetId>) -> Result<AssetPrices, Box<dyn Error + Send + Sync>> {
         let rate = self.get_fiat_rate(currency)?.rate;
         let prices = self
             .get_cache_prices(asset_ids)
@@ -106,8 +107,9 @@ impl PriceClient {
         Ok(self.database.charts()?.delete_charts(timeframe, before)?)
     }
 
-    pub async fn track_observed_assets(&self, asset_ids: &[String]) -> Result<(), Box<dyn Error + Send + Sync>> {
+    pub async fn track_observed_assets(&self, asset_ids: &[AssetId]) -> Result<(), Box<dyn Error + Send + Sync>> {
         let key = CacheKey::ObservedAssets;
-        self.cacher_client.sorted_set_incr_with_expire(&key.key(), asset_ids, key.ttl() as i64).await
+        let ids: Vec<String> = asset_ids.iter().map(|id| id.to_string()).collect();
+        self.cacher_client.sorted_set_incr_with_expire(&key.key(), &ids, key.ttl() as i64).await
     }
 }
