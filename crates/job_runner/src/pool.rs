@@ -23,7 +23,7 @@ pub struct AdaptiveConfig {
 
 impl AdaptiveConfig {
     pub fn new(initial: Duration, max: Duration, step: f64) -> Self {
-        Self { initial: initial.min(max), max, step }
+        Self { initial: initial.max(Duration::from_millis(1)).min(max), max, step }
     }
 
     pub fn next_interval(&self, current: Duration) -> Duration {
@@ -135,7 +135,7 @@ impl JobRunner {
 
 impl Drop for JobRunner {
     fn drop(&mut self) {
-        if let Ok(mut tasks) = self.tasks.try_lock() {
+        if let Ok(mut tasks) = self.tasks.lock() {
             tasks.drain().for_each(|(_, entry)| entry.abort());
         }
     }
