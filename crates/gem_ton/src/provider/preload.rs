@@ -62,7 +62,7 @@ impl<C: Client> ChainTransactionLoad for TonClient<C> {
         return match &asset.id.token_subtype() {
             AssetSubtype::TOKEN => {
                 let token_id = asset.id.token_id.as_ref().ok_or("Missing token ID for jetton transaction")?;
-                let jetton_token_id = base64_to_hex_address(token_id.clone())?.to_uppercase();
+                let jetton_token_id = base64_to_hex_address(token_id).ok_or("Invalid jetton token ID")?.to_uppercase();
 
                 let (sender_jetton_wallets, recipient_jetton_wallets) = futures::try_join!(
                     self.get_jetton_wallets(input.sender_address.clone()),

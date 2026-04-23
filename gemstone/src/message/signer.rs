@@ -6,7 +6,7 @@ use bs58;
 use gem_evm::message::eip191_hash_message;
 use gem_sui::signer as sui_signer;
 use gem_ton::address::base64_to_hex_address;
-use gem_ton::signer::{TonSignDataResponse, TonSignMessageData, TonSignResult, sign_personal as ton_sign_personal};
+use gem_ton::signer::{TonSignDataResponse, TonSignMessageData, TonSignResult, TonSigner};
 use primitives::hex::encode_with_0x;
 use signer::{SIGNATURE_LENGTH, SignatureScheme, Signer, apply_eth_recovery_id, hash_eip712};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -168,18 +168,22 @@ impl MessageSigner {
 
     pub fn sign(&self, private_key: Vec<u8>) -> Result<String, GemstoneError> {
         let private_key = Zeroizing::new(private_key);
-        let hash = self.hash()?;
         match &self.message.sign_type {
-            SignDigestType::SuiPersonal => sui_signer::sign_digest(&hash, &private_key).map_err(GemstoneError::from),
+            SignDigestType::SuiPersonal => {
+                let hash = self.hash()?;
+                sui_signer::sign_digest(&hash, &private_key).map_err(GemstoneError::from)
+            }
             SignDigestType::TonPersonal => {
-                let result = ton_sign_personal(&self.message.data, &private_key, self.timestamp)?;
+                let result = TonSigner::new(&private_key)?.sign_personal(&self.message.data, self.timestamp)?;
                 self.get_ton_result(&result)
             }
             SignDigestType::Eip191 | SignDigestType::Eip712 | SignDigestType::Siwe | SignDigestType::TronPersonal => {
+                let hash = self.hash()?;
                 let signature = Signer::sign_eth_digest(&hash, &private_key)?;
                 Ok(encode_with_0x(&signature))
             }
             SignDigestType::Base58 => {
+                let hash = self.hash()?;
                 let signed = Signer::sign_digest(SignatureScheme::Ed25519, hash, private_key.to_vec())?;
                 Ok(self.get_result(&signed))
             }
@@ -198,16 +202,9 @@ impl MessageSigner {
     fn get_ton_result(&self, result: &TonSignResult) -> Result<String, GemstoneError> {
         let string = String::from_utf8(self.message.data.clone())?;
         let data = TonSignMessageData::from_bytes(string.as_bytes())?;
-        let raw_address = base64_to_hex_address(data.address.clone())?;
+        let raw_address = base64_to_hex_address(&data.address).ok_or_else(|| GemstoneError::from("Invalid TON address"))?;
 
-        let response = TonSignDataResponse::new(
-            BASE64.encode(&result.signature),
-            hex::encode(&result.public_key),
-            raw_address,
-            result.timestamp,
-            data.domain,
-            data.payload,
-        );
+        let response = TonSignDataResponse::new(BASE64.encode(&result.signature), raw_address, result.timestamp, data.domain, data.payload);
 
         Ok(response.to_json()?)
     }
@@ -221,8 +218,9 @@ mod tests {
         sign_type::SignDigestType,
     };
     use gem_evm::EIP712Domain;
-    use primitives::Chain;
+    use gem_ton::signer::{TonSignDataPayload, TonSigner};
     use primitives::testkit::signer_mock::TEST_PRIVATE_KEY;
+    use primitives::{Address, Chain};
 
     #[test]
     fn test_eip191() {
@@ -663,10 +661,11 @@ Issued At: 2026-03-09T15:48:34.458Z"#;
 
     #[test]
     fn test_ton_hash_and_sign_share_timestamp() {
+        let sender_address = TonSigner::new(&TEST_PRIVATE_KEY).unwrap().address().encode();
         let ton_data = TonSignMessageData::from_value(
             serde_json::json!({"type": "text", "text": "timestamp consistency"}),
             "example.com".to_string(),
-            "UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg".to_string(),
+            sender_address,
         )
         .unwrap();
         let data = ton_data.to_bytes();
@@ -675,6 +674,7 @@ Issued At: 2026-03-09T15:48:34.458Z"#;
             sign_type: SignDigestType::TonPersonal,
             data: data.clone(),
         });
+
         let previewed = signer.hash().unwrap();
         let response: serde_json::Value = serde_json::from_str(&signer.sign(TEST_PRIVATE_KEY.to_vec()).unwrap()).unwrap();
         let signed_timestamp = response["timestamp"].as_u64().unwrap();

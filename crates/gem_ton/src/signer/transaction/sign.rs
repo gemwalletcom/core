@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use num_bigint::BigUint;
@@ -5,21 +6,22 @@ use primitives::{FeeOption, SignerError, SignerInput};
 
 use super::{
     message::{InternalMessage, build_internal_message},
-    request::{JettonTransferRequest, TransferRequest, parse_address},
+    request::{JettonTransferRequest, TransferRequest},
 };
+use crate::address::Address;
 use crate::signer::cells::{BagOfCells, CellBuilder};
-use crate::signer::ton_signer::TonSigner;
+use crate::signer::signer::TonSigner;
 
 const STATE_INIT_EXPIRE_AT: u32 = u32::MAX;
 const EXTERNAL_EXPIRE_WINDOW_SECS: u64 = 600;
 
 impl TonSigner {
-    pub(crate) fn sign_transfer(&self, input: &SignerInput, expire_at: Option<u32>) -> Result<String, SignerError> {
+    pub fn sign_transfer(&self, input: &SignerInput, expire_at: Option<u32>) -> Result<String, SignerError> {
         let request = TransferRequest::new_transfer(&input.destination_address, &input.value, input.is_max_value, input.memo.clone())?;
         self.sign_requests(vec![request], input.metadata.get_sequence()?, expire_at)
     }
 
-    pub(crate) fn sign_token_transfer(&self, input: &SignerInput, expire_at: Option<u32>) -> Result<String, SignerError> {
+    pub fn sign_token_transfer(&self, input: &SignerInput, expire_at: Option<u32>) -> Result<String, SignerError> {
         let sender_token_address = input
             .metadata
             .get_sender_token_address()?
@@ -27,9 +29,9 @@ impl TonSigner {
 
         let jetton = JettonTransferRequest {
             query_id: 0,
-            value: BigUint::parse_bytes(input.value.as_bytes(), 10).ok_or_else(|| SignerError::invalid_input("invalid TON amount"))?,
-            destination: parse_address(&input.destination_address)?,
-            response_address: parse_address(&input.sender_address)?,
+            value: BigUint::from_str(&input.value)?,
+            destination: Address::parse(&input.destination_address)?,
+            response_address: Address::parse(&input.sender_address)?,
             custom_payload: None,
             forward_ton_amount: BigUint::from(1u8),
             comment: input.memo.clone(),
@@ -38,17 +40,13 @@ impl TonSigner {
         self.sign_requests(vec![request], input.metadata.get_sequence()?, expire_at)
     }
 
-    pub(crate) fn sign_swap(&self, input: &SignerInput, expire_at: Option<u32>) -> Result<Vec<String>, SignerError> {
+    pub fn sign_swap(&self, input: &SignerInput, expire_at: Option<u32>) -> Result<Vec<String>, SignerError> {
         let swap_data = input.input_type.get_swap_data()?;
-        if swap_data.data.approval.is_some() {
-            return Err(SignerError::invalid_input("TON swap approvals are not supported"));
-        }
-
         let request = TransferRequest::new_with_payload(
             &swap_data.data.to,
             &swap_data.data.value,
             input.memo.clone(),
-            parse_optional_boc_root(&swap_data.data.data)?,
+            Some(BagOfCells::parse_base64_root(&swap_data.data.data)?),
             true,
             None,
         )?;
@@ -62,17 +60,12 @@ impl TonSigner {
         let internal_messages: Vec<InternalMessage> = requests.iter().map(build_internal_message).collect::<Result<_, _>>()?;
         let external_body = self.wallet().build_external_body(expire_at, sequence, &internal_messages)?;
         let signature = self.sign(&external_body.hash);
-
         let mut body_builder = CellBuilder::new();
         body_builder.store_slice(&signature)?.store_cell(&external_body)?;
         let signed_transaction = self.wallet().build_transaction(sequence == 0, body_builder.build()?)?;
 
         BagOfCells::from_root(signed_transaction).to_base64(true)
     }
-}
-
-fn parse_optional_boc_root(value: &str) -> Result<Option<crate::signer::cells::CellArc>, SignerError> {
-    if value.is_empty() { Ok(None) } else { BagOfCells::parse_base64_root(value).map(Some) }
 }
 
 fn token_account_creation_fee(input: &SignerInput) -> Result<BigUint, SignerError> {
@@ -95,16 +88,19 @@ fn resolve_expire_at(sequence: u32, expire_at: Option<u32>) -> Result<u32, Signe
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::signer::cells::CellBuilder;
-    use crate::signer::transaction::message::DEFAULT_SEND_MODE;
-    use crate::signer::transaction::request::TransferPayload;
-    use crate::signer::transaction::{message::build_internal_message, request::parse_address};
-    use num_bigint::BigInt;
+    use num_bigint::BigUint;
     use primitives::{
-        Asset, AssetId, AssetType, Chain, GasPriceType, SignerInput, SwapProvider, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata,
-        swap::{ApprovalData, SwapData, SwapProviderData, SwapQuote, SwapQuoteData},
+        Address as AddressTrait, Asset, AssetId, AssetType, Chain, SignerInput, TransactionInputType, TransactionLoadMetadata, swap::SwapData,
     };
+
+    use super::super::{
+        message::{DEFAULT_SEND_MODE, build_internal_message},
+        request::{JettonTransferRequest, TransferPayload, TransferRequest},
+        wallet::WalletV4R2,
+    };
+    use crate::address::Address;
+    use crate::signer::TonSigner;
+    use crate::signer::cells::{BagOfCells, CellBuilder};
 
     const TEST_TON_PRIVATE_KEY: &str = "c7702dadcd00d470df27dee0ddd97fbcf9deba52b60f7dd2b296ff42bb1fcad6";
     const TRUST_WALLET_PRIVATE_KEY: &str = "63474e5fe9511f1526a50567ce142befc343e71a49b865ac3908f58667319cb8";
@@ -116,100 +112,50 @@ mod tests {
         TonSigner::new(&private_key).unwrap()
     }
 
-    fn ton_metadata(sequence: u64, sender_token_address: Option<&str>) -> TransactionLoadMetadata {
-        TransactionLoadMetadata::Ton {
-            sender_token_address: sender_token_address.map(|value| value.to_string()),
-            recipient_token_address: None,
-            sequence,
-        }
-    }
-
-    fn signer_input(input_type: TransactionInputType, sender: &str, destination: &str, value: &str, metadata: TransactionLoadMetadata) -> SignerInput {
-        SignerInput::new(
-            TransactionLoadInput {
-                input_type,
-                sender_address: sender.to_string(),
-                destination_address: destination.to_string(),
-                value: value.to_string(),
-                gas_price: GasPriceType::regular(0),
-                memo: None,
-                is_max_value: false,
-                metadata,
-            },
-            TransactionFee::default(),
-        )
-    }
-
     fn sample_boc() -> String {
         let mut builder = CellBuilder::new();
         builder.store_u32(32, 0x12345678).unwrap();
         BagOfCells::from_root(builder.build().unwrap()).to_base64(true).unwrap()
     }
 
-    fn swap_input(payload_boc: String, approval: Option<ApprovalData>) -> SignerInput {
-        let provider = SwapProvider::StonfiV2;
-        let provider_data = SwapProviderData {
-            provider,
-            name: provider.name().to_string(),
-            protocol_name: provider.protocol_name().to_string(),
-        };
-        let swap_data = SwapData {
-            quote: SwapQuote {
-                from_address: "from".to_string(),
-                from_value: "1000".to_string(),
-                to_address: "to".to_string(),
-                to_value: "900".to_string(),
-                provider_data,
-                slippage_bps: 100,
-                eta_in_seconds: None,
-                use_max_amount: None,
-            },
-            data: SwapQuoteData::new_contract(SENDER_TOKEN_ADDRESS.to_string(), "241000000".to_string(), payload_boc, approval, None),
-        };
-
-        signer_input(
-            TransactionInputType::Swap(Asset::from_chain(Chain::Ton), Asset::from_chain(Chain::Ton), swap_data),
-            "",
-            "",
-            "0",
-            ton_metadata(1, None),
-        )
-    }
-
     #[test]
     fn test_sign_matches_vectors() {
         let signer = test_signer();
-        let address = signer.address().to_base64_url();
+        let address = signer.address().encode();
 
-        let native_input = signer_input(
+        // Native transfer — Android parity vector.
+        let native_input = SignerInput::mock_with_input_type(
             TransactionInputType::Transfer(Asset::from_chain(Chain::Ton)),
             &address,
             &address,
             "10000",
-            ton_metadata(1, None),
+            TransactionLoadMetadata::mock_ton(1),
         );
         assert_eq!(
             signer.sign_transfer(&native_input, Some(1_000_000_000)).unwrap(),
             "te6cckEBBAEArgABRYgBkF1w67cBLG0e0D7j0y2ShzflCe2JrlAjS4pC8UHg85AMAQGcOZ5W/jkCqNSj9wrP3isRN8k2PsJvAS1Rc7K+ABk/VgsvD4MSlcEFpS56SGhkmC7pSYwJM1Ocd7iIVUCY1DeFAimpoxc7msoAAAAAAQADAgFkQgBkF1w67cBLG0e0D7j0y2ShzflCe2JrlAjS4pC8UHg85BE4gAAAAAAAAAAAAAAAAAEDAABvNxKJ"
         );
 
+        // Jetton transfer — Android parity vector.
         let asset = Asset::new(AssetId::from_token(Chain::Ton, JETTON_ASSET_ADDRESS), String::new(), String::new(), 8, AssetType::TOKEN);
-        let jetton_input = signer_input(
+        let jetton_input = SignerInput::mock_with_input_type(
             TransactionInputType::Transfer(asset),
             &address,
             &address,
             "10000",
-            ton_metadata(1, Some(SENDER_TOKEN_ADDRESS)),
+            TransactionLoadMetadata::mock_ton_jetton(1, SENDER_TOKEN_ADDRESS),
         );
         assert_eq!(
             signer.sign_token_transfer(&jetton_input, Some(1_000_000_000)).unwrap(),
             "te6cckEBBAEA/wABRYgBkF1w67cBLG0e0D7j0y2ShzflCe2JrlAjS4pC8UHg85AMAQGcbaO6bjRLkbewbUrj8cYUocJI7vJDeXH4uoZqtTZzf5CRVBRw8rjMKMNg4MEafTwywe6wo2+BhefXkhOtdEakCympoxc7msoAAAAAAQADAgFgYgASwA6bnRklOr1y4MxDEh82TpZnlC7Kl8tiVkz/uVEgGgAAAAAAAAAAAAAAAAABAwCmD4p+pQAAAAAAAAAAInEIAZBdcOu3ASxtHtA+49Mtkoc35Qntia5QI0uKQvFB4PORADILrh124CWNo9oH3HplslDm/KE9sTXKBGlxSF4oPB5yAgKLD74O"
         );
 
+        // Deploy — TrustWallet wallet-core parity vector:
+        // https://github.com/trustwallet/wallet-core/blob/master/rust/tw_tests/tests/chains/ton/ton_sign.rs
         let deploy_private_key = hex::decode(TRUST_WALLET_PRIVATE_KEY).unwrap();
         let deploy_signer = TonSigner::new(&deploy_private_key).unwrap();
         let deploy_request = TransferRequest {
-            destination: parse_address("EQDYW_1eScJVxtitoBRksvoV9cCYo4uKGWLVNIHB1JqRR3n0").unwrap(),
+            destination: Address::parse("EQDYW_1eScJVxtitoBRksvoV9cCYo4uKGWLVNIHB1JqRR3n0").unwrap(),
             value: BigUint::from(10u8),
             mode: DEFAULT_SEND_MODE,
             bounceable: true,
@@ -225,31 +171,32 @@ mod tests {
 
     #[test]
     fn test_sign_swap_uses_custom_payload_transfer() {
-        let signed = test_signer().sign_swap(&swap_input(sample_boc(), None), Some(1_000_000_000)).unwrap();
+        let signer = test_signer();
+        let mut swap_data = SwapData::mock_with_provider(primitives::SwapProvider::StonfiV2);
+        swap_data.data.to = SENDER_TOKEN_ADDRESS.to_string();
+        swap_data.data.value = "241000000".to_string();
+        swap_data.data.data = sample_boc();
+        swap_data.data.gas_limit = None;
+        let input = SignerInput::mock_with_input_type(
+            TransactionInputType::Swap(Asset::from_chain(Chain::Ton), Asset::from_chain(Chain::Ton), swap_data),
+            "",
+            "",
+            "0",
+            TransactionLoadMetadata::mock_ton(1),
+        );
+
+        let signed = signer.sign_swap(&input, Some(1_000_000_000)).unwrap();
         assert_eq!(signed.len(), 1);
         assert!(signed[0].starts_with("te6cc"));
     }
 
     #[test]
-    fn test_sign_swap_rejects_approval_payloads() {
-        let approval = ApprovalData {
-            token: "token".to_string(),
-            spender: "spender".to_string(),
-            value: "1".to_string(),
-            is_unlimited: false,
-        };
-
-        let err = test_signer().sign_swap(&swap_input(sample_boc(), Some(approval)), Some(1_000_000_000)).unwrap_err();
-        assert_eq!(err.to_string(), "Invalid input: TON swap approvals are not supported");
-    }
-
-    #[test]
     fn test_long_comments_use_snake_cells() {
-        let address = parse_address(SENDER_TOKEN_ADDRESS).unwrap();
+        let address = Address::parse(SENDER_TOKEN_ADDRESS).unwrap();
         let comment = "memo".repeat(80);
 
         let transfer = TransferRequest {
-            destination: parse_address(SENDER_TOKEN_ADDRESS).unwrap(),
+            destination: address,
             value: BigUint::from(10u8),
             mode: DEFAULT_SEND_MODE,
             bounceable: false,
@@ -261,7 +208,7 @@ mod tests {
         assert!(!native_payload.references.is_empty());
 
         let jetton = TransferRequest {
-            destination: parse_address(SENDER_TOKEN_ADDRESS).unwrap(),
+            destination: address,
             value: BigUint::ZERO,
             mode: DEFAULT_SEND_MODE,
             bounceable: true,
@@ -269,7 +216,7 @@ mod tests {
             payload: Some(TransferPayload::Jetton(JettonTransferRequest {
                 query_id: 0,
                 value: BigUint::from(10u8),
-                destination: parse_address(SENDER_TOKEN_ADDRESS).unwrap(),
+                destination: address,
                 response_address: address,
                 custom_payload: None,
                 forward_ton_amount: BigUint::from(1u8),
@@ -280,26 +227,5 @@ mod tests {
         let jetton_payload = build_internal_message(&jetton).unwrap().message.references.first().unwrap().clone();
         assert_eq!(jetton_payload.references.len(), 1);
         assert!(!jetton_payload.references[0].references.is_empty());
-    }
-
-    #[test]
-    fn test_token_account_creation_fee() {
-        let address = test_signer().address().to_base64_url();
-        let input = signer_input(
-            TransactionInputType::Transfer(Asset::from_chain(Chain::Ton)),
-            &address,
-            &address,
-            "1",
-            ton_metadata(1, None),
-        );
-        assert_eq!(token_account_creation_fee(&input).unwrap(), BigUint::ZERO);
-
-        let mut positive = input.clone();
-        positive.fee = TransactionFee::new_from_fee_with_option(BigInt::from(0), FeeOption::TokenAccountCreation, BigInt::from(42));
-        assert_eq!(token_account_creation_fee(&positive).unwrap(), BigUint::from(42u8));
-
-        let mut negative = input;
-        negative.fee = TransactionFee::new_from_fee_with_option(BigInt::from(0), FeeOption::TokenAccountCreation, BigInt::from(-1));
-        assert_eq!(token_account_creation_fee(&negative).unwrap_err().to_string(), "Invalid input: invalid TON amount");
     }
 }

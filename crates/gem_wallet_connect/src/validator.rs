@@ -208,7 +208,10 @@ mod tests {
 
         // Valid: cell payload
         let ton_data = TonSignMessageData::new(
-            TonSignDataPayload::Cell { cell: "te6c".to_string() },
+            TonSignDataPayload::Cell {
+                schema: "comment#00000000 text:SnakeData = InMsgBody;".to_string(),
+                cell: "te6c".to_string(),
+            },
             "example.com".to_string(),
             "UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg".to_string(),
         );

@@ -16,6 +16,13 @@ impl<'a> BitReader<'a> {
         }
     }
 
+    pub fn from_bits(bytes: &'a [u8], bit_len: usize) -> Result<Self, SignerError> {
+        if bit_len > bytes.len() * 8 {
+            return Err(SignerError::invalid_input("bit length exceeds input bytes"));
+        }
+        Ok(Self { bytes, bit_len, bit_position: 0 })
+    }
+
     pub fn position(&self) -> usize {
         self.bit_position / 8
     }

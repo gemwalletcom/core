@@ -19,12 +19,15 @@ pub(super) fn build_internal_message(request: &TransferRequest) -> Result<Intern
 
     let mut builder = CellBuilder::new();
     builder
+        // int_msg_info$0 ihr_disabled:Bool bounce:Bool bounced:Bool
         .store_bit(false)?
         .store_bit(true)?
         .store_bit(request.bounceable)?
         .store_bit(false)?
+        // src (addr_none) + dest
         .store_null_address()?
         .store_address(&request.destination)?
+        // value, currency_collection (empty extra), ihr_fee, fwd_fee, created_lt, created_at
         .store_coins(&request.value)?
         .store_bit(false)?
         .store_coins(&zero)?
@@ -88,6 +91,5 @@ fn build_jetton_payload(request: &JettonTransferRequest) -> Result<CellArc, Sign
     } else {
         builder.store_coins(&request.forward_ton_amount)?.store_bit(false)?;
     }
-
     Ok(builder.build()?.into_arc())
 }

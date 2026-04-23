@@ -8,7 +8,7 @@ pub fn map_coin_balance(balance: String) -> AssetBalance {
 
 fn jetton_wallets_to_balances(wallets: JettonWalletsResponse) -> impl Iterator<Item = AssetBalance> {
     wallets.jetton_wallets.into_iter().filter_map(|wallet| {
-        let jetton_token_id = crate::address::hex_to_base64_address(wallet.jetton).ok()?;
+        let jetton_token_id = crate::address::hex_to_base64_address(&wallet.jetton)?;
         Some(AssetBalance::new(AssetId::from_token(Chain::Ton, &jetton_token_id), wallet.balance))
     })
 }

@@ -11,7 +11,9 @@ pub(super) struct RawCell {
 
 impl RawCell {
     pub(super) fn try_parse(reader: &mut BitReader<'_>, ref_size: usize) -> Option<Self> {
+        // d1 (refs descriptor): bits[0..3] ref count | bit 3 is_exotic | bit 4 has_hashes | bits[5..7] level mask
         let refs_descriptor = reader.read_u8().ok()?;
+        // d2 (bits descriptor): encodes data length; LSB=0 means full bytes, LSB=1 means last byte has padding
         let bits_descriptor = reader.read_u8().ok()?;
 
         let ref_count = (refs_descriptor & 0b111) as usize;
@@ -82,14 +84,14 @@ impl RawCell {
             return Some((data, 0));
         }
         if full_bytes {
-            return Some((data.clone(), data.len() * 8));
+            let bit_len = data.len() * 8;
+            return Some((data, bit_len));
         }
 
         let trailing_zeros = data.last().copied().unwrap_or_default().trailing_zeros();
         if trailing_zeros >= 8 {
             return None;
         }
-
         let last = data.last_mut()?;
         *last &= !(1 << trailing_zeros);
         let bit_len = data.len() * 8 - (trailing_zeros as usize + 1);

@@ -53,7 +53,6 @@ impl BagOfCells {
             .iter()
             .map(|index| resolve_reverse_index(*index, cells.len(), &cells, "BoC root out of bounds"))
             .collect::<Result<Vec<_>, _>>()?;
-
         Ok(Self { roots })
     }
 

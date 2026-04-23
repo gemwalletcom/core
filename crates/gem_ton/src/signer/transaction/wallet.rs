@@ -36,7 +36,7 @@ impl StateInit {
 
 pub struct WalletV4R2 {
     public_key: [u8; 32],
-    pub address: Address,
+    address: Address,
 }
 
 impl WalletV4R2 {
@@ -46,6 +46,14 @@ impl WalletV4R2 {
             public_key,
             address: Address::new(BASE_WORKCHAIN, state_init.to_cell()?.hash),
         })
+    }
+
+    pub fn address(&self) -> &Address {
+        &self.address
+    }
+
+    pub fn state_init_base64(&self) -> Result<String, SignerError> {
+        BagOfCells::from_root(Self::state_init(&self.public_key)?.to_cell()?).to_base64(true)
     }
 
     pub(super) fn build_external_body(&self, expire_at: u32, sequence: u32, messages: &[InternalMessage]) -> Result<Cell, SignerError> {

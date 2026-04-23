@@ -2,7 +2,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use primitives::{ChainSigner, SignerError, SignerInput};
 
-use super::{signature::sign_personal, ton_signer::TonSigner};
+use super::signer::TonSigner;
 
 #[derive(Default)]
 pub struct TonChainSigner;
@@ -13,7 +13,7 @@ impl ChainSigner for TonChainSigner {
             .duration_since(UNIX_EPOCH)
             .map_err(|e| SignerError::InvalidInput(e.to_string()))?
             .as_secs();
-        let result = sign_personal(message, private_key, timestamp)?;
+        let result = TonSigner::new(private_key)?.sign_personal(message, timestamp)?;
         Ok(gem_encoding::encode_base64(&result.signature))
     }
 

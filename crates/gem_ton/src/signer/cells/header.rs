@@ -4,6 +4,8 @@ use super::{invalid, raw_cell::RawCell, reader::BitReader};
 
 pub(super) const BOC_MAGIC: u32 = 0xb5ee9c72;
 const MAX_CELLS: usize = 4096;
+
+// Header flag byte layout: has_idx:1 | has_crc32c:1 | _:1 | _:1 | _:1 | ref_size:3
 const REF_SIZE_MASK: u8 = 0b0000_0111;
 const HAS_IDX_FLAG: u8 = 0b1000_0000;
 const HAS_CRC32C_FLAG: u8 = 0b0100_0000;
@@ -74,7 +76,6 @@ impl BocHeader {
         if reader.position().saturating_sub(start) != self.total_cells_size {
             return Err(invalid("BoC cell size does not match header"));
         }
-
         Ok(raw_cells)
     }
 }

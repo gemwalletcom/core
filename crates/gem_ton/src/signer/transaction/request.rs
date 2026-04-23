@@ -7,12 +7,6 @@ use super::message::{DEFAULT_SEND_MODE, TRANSFER_ALL_TON_MODE};
 use crate::address::Address;
 use crate::signer::cells::CellArc;
 
-pub(crate) fn parse_address(value: &str) -> Result<Address, SignerError> {
-    Address::from_base64_url(value)
-        .or_else(|_| Address::from_hex_str(value))
-        .map_err(|error| SignerError::invalid_input(error.to_string()))
-}
-
 pub(crate) struct TransferRequest {
     pub destination: Address,
     pub value: BigUint,
@@ -26,7 +20,7 @@ pub(crate) struct TransferRequest {
 impl TransferRequest {
     pub(crate) fn new_transfer(destination: &str, value: &str, is_max: bool, comment: Option<String>) -> Result<Self, SignerError> {
         Ok(Self {
-            destination: parse_address(destination)?,
+            destination: Address::parse(destination)?,
             value: BigUint::from_str(value)?,
             mode: if is_max { TRANSFER_ALL_TON_MODE } else { DEFAULT_SEND_MODE },
             bounceable: false,
@@ -38,7 +32,7 @@ impl TransferRequest {
 
     pub(crate) fn new_jetton_transfer(jetton_wallet: &str, account_creation_fee: BigUint, jetton: JettonTransferRequest) -> Result<Self, SignerError> {
         Ok(Self {
-            destination: parse_address(jetton_wallet)?,
+            destination: Address::parse(jetton_wallet)?,
             value: account_creation_fee,
             mode: DEFAULT_SEND_MODE,
             bounceable: true,
@@ -57,7 +51,7 @@ impl TransferRequest {
         state_init: Option<CellArc>,
     ) -> Result<Self, SignerError> {
         Ok(Self {
-            destination: parse_address(destination)?,
+            destination: Address::parse(destination)?,
             value: BigUint::from_str(amount)?,
             mode: DEFAULT_SEND_MODE,
             bounceable,
