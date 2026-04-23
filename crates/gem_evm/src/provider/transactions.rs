@@ -30,8 +30,8 @@ async fn load_transactions_by_hashes<C: Client + Clone>(client: &EthereumClient<
     let chain = client.get_chain();
     Ok(transactions
         .into_iter()
-        .zip(receipts.into_iter())
-        .zip(blocks.into_iter())
+        .zip(receipts)
+        .zip(blocks)
         .enumerate()
         .filter_map(|(index, ((transactions, receipt), block))| {
             let trace = traces.as_ref().and_then(|entries| entries.get(index));
