@@ -4768,9 +4768,9 @@ dependencies = [
 
 [[package]]
 name = "meilisearch-index-setting-macro"
-version = "0.32.0"
+version = "0.33.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0795d177129fed792fc789cf07d4647bb9e3939409fbe01764805c060afcd0e"
+checksum = "93b5b21df781c820a9cc387b808d4128cbc164dd28d67ac6ed666a00996f8f15"
 dependencies = [
  "convert_case 0.8.0",
  "proc-macro2",
@@ -4781,9 +4781,9 @@ dependencies = [
 
 [[package]]
 name = "meilisearch-sdk"
-version = "0.32.0"
+version = "0.33.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e4a20b5a4215a39c66854d14cbba97f615e84c49925d68629c05c42a5a85dac1"
+checksum = "19e6e3646ba2a9a306296c1edf4a050508a408c1b59ca456d9ad4965ec6e91e9"
 dependencies = [
  "async-trait",
  "bytes",
@@ -5505,6 +5505,7 @@ name = "prices"
 version = "1.0.0"
 dependencies = [
  "async-trait",
+ "chain_primitives",
  "chrono",
  "coingecko",
  "gem_client",

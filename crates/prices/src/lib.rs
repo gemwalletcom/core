@@ -4,22 +4,38 @@ pub mod providers;
 use async_trait::async_trait;
 use primitives::ChartValue;
 use std::error::Error;
+use std::time::Duration;
 
-pub use model::{AssetPriceFull, AssetPriceMapping};
+pub use model::{AssetPriceFull, AssetPriceMapping, PriceProviderAsset, PriceProviderAssetMetadata};
 pub use primitives::PriceProvider;
 pub use providers::coingecko::provider::CoinGeckoPricesProvider;
-pub use providers::jupiter::provider::JupiterProvider;
 pub use providers::pyth::provider::PythProvider;
+
+#[derive(Clone, Copy, Debug, Default)]
+pub struct PriceProviderConfig {
+    pub min_score: f64,
+}
+
+pub use providers::jupiter::provider::JupiterProvider;
 
 #[async_trait]
 pub trait PriceAssetsProvider: Send + Sync {
     fn provider(&self) -> PriceProvider;
-    async fn get_assets(&self) -> Result<Vec<AssetPriceMapping>, Box<dyn Error + Send + Sync>>;
-    async fn get_assets_new(&self) -> Result<Vec<AssetPriceMapping>, Box<dyn Error + Send + Sync>> {
+    async fn get_assets(&self) -> Result<Vec<PriceProviderAsset>, Box<dyn Error + Send + Sync>>;
+    async fn get_assets_new(&self) -> Result<Vec<PriceProviderAsset>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
+    }
+    async fn get_assets_metadata(&self, _mappings: Vec<AssetPriceMapping>) -> Result<Vec<PriceProviderAssetMetadata>, Box<dyn Error + Send + Sync>> {
         Ok(vec![])
     }
     async fn get_prices(&self, mappings: Vec<AssetPriceMapping>) -> Result<Vec<AssetPriceFull>, Box<dyn Error + Send + Sync>>;
     async fn get_charts_daily(&self, _provider_price_id: &str) -> Result<Vec<ChartValue>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
+    }
+    async fn get_charts_hourly(&self, _provider_price_id: &str, _duration: Duration) -> Result<Vec<ChartValue>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![])
+    }
+    async fn get_charts_raw(&self, _provider_price_id: &str, _duration: Duration) -> Result<Vec<ChartValue>, Box<dyn Error + Send + Sync>> {
         Ok(vec![])
     }
 }

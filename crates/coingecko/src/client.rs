@@ -1,4 +1,6 @@
-use crate::model::{Coin, CoinGeckoResponse, CoinIds, CoinInfo, CoinMarket, CoinQuery, CointListQuery, Data, ExchangeRates, Global, MarketChart, SearchTrending, TopGainersLosers};
+use crate::model::{
+    Coin, CoinGeckoResponse, CoinIds, CoinInfo, CoinMarket, CoinMarketsQuery, CoinQuery, CointListQuery, Data, ExchangeRates, Global, MarketChart, SearchTrending, TopGainersLosers,
+};
 use gem_client::{Client, ClientExt, ReqwestClient, build_path_with_query, retry};
 use primitives::{DEFAULT_FIAT_CURRENCY, FiatRate};
 use reqwest::header::{HeaderMap, HeaderValue};
@@ -83,19 +85,36 @@ impl<C: Client> CoinGeckoClient<C> {
     }
 
     pub async fn get_coin_markets(&self, page: usize, per_page: usize) -> Result<Vec<CoinMarket>, Box<dyn Error + Send + Sync>> {
-        let path = format!(
-            "/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page={}&page={}&sparkline=false&locale=en",
-            per_page, page
-        );
+        let path = build_path_with_query(
+            "/api/v3/coins/markets",
+            &CoinMarketsQuery {
+                vs_currency: "usd",
+                order: "market_cap_desc",
+                per_page,
+                page: Some(page),
+                sparkline: false,
+                locale: "en",
+                ids: None,
+                include_rehypothecated: true,
+            },
+        )?;
         self._get(&path).await
     }
 
     pub async fn get_coin_markets_ids(&self, ids: Vec<String>, per_page: usize) -> Result<Vec<CoinMarket>, Box<dyn Error + Send + Sync>> {
-        let path = format!(
-            "/api/v3/coins/markets?vs_currency=usd&ids={}&order=market_cap_desc&sparkline=false&locale=en&per_page={}",
-            ids.join(","),
-            per_page
-        );
+        let path = build_path_with_query(
+            "/api/v3/coins/markets",
+            &CoinMarketsQuery {
+                vs_currency: "usd",
+                order: "market_cap_desc",
+                per_page,
+                page: None,
+                sparkline: false,
+                locale: "en",
+                ids: Some(ids.join(",")),
+                include_rehypothecated: true,
+            },
+        )?;
         self._get(&path).await
     }
 
@@ -159,6 +178,11 @@ impl<C: Client> CoinGeckoClient<C> {
 
     pub async fn get_market_chart(&self, coin_id: &str, interval: &str, days: &str) -> Result<MarketChart, Box<dyn Error + Send + Sync>> {
         let path = format!("/api/v3/coins/{}/market_chart?vs_currency=usd&days={}&interval={}&precision=full", coin_id, days, interval);
+        self._get(&path).await
+    }
+
+    pub async fn get_market_chart_auto(&self, coin_id: &str, days: &str) -> Result<MarketChart, Box<dyn Error + Send + Sync>> {
+        let path = format!("/api/v3/coins/{}/market_chart?vs_currency=usd&days={}&precision=full", coin_id, days);
         self._get(&path).await
     }
 }

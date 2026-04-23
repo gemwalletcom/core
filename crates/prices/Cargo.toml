@@ -9,6 +9,7 @@ chrono = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 
+chain_primitives = { path = "../chain_primitives" }
 coingecko = { path = "../coingecko" }
 gem_client = { path = "../gem_client", features = ["reqwest"] }
 primitives = { path = "../primitives" }
@@ -16,6 +17,7 @@ serde_serializers = { path = "../serde_serializers" }
 settings = { path = "../settings", features = ["testkit"], optional = true }
 
 [dev-dependencies]
+gem_client = { path = "../gem_client", features = ["reqwest", "testkit"] }
 tokio.workspace = true
 
 [features]

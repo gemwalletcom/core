@@ -58,7 +58,7 @@ impl AssetsRepository for DatabaseClient {
             .into_iter()
             .next()
             .and_then(|d| d.price);
-        let market = price_row.as_ref().map(|x| x.as_market_primitive());
+        let market = price_row.as_ref().map(|x| x.as_market_primitive(&asset));
         let price = price_row.as_ref().map(|x| x.as_primitive());
         let links = AssetsLinksStore::get_asset_links(self, asset_id)?.into_iter().map(|x| x.as_primitive()).collect();
         let tags = TagStore::get_assets_tags_for_asset(self, asset_id)?.into_iter().map(|x| x.tag_id).collect();

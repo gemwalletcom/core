@@ -2,26 +2,24 @@ use std::collections::HashMap;
 use std::error::Error;
 
 use async_trait::async_trait;
-use chrono::Utc;
 use gem_client::ReqwestClient;
-use primitives::{AssetMarket, Price};
 
-use crate::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider, PriceProvider};
+use crate::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider, PriceProvider, PriceProviderAsset, PriceProviderConfig};
 
 use super::client::JupiterClient;
 use super::mapper::{to_asset_price_mapping, to_jupiter_token_id};
 use super::model::VerifiedToken;
 
-const MIN_ORGANIC_SCORE: f64 = 50.0;
-
 pub struct JupiterProvider {
     jupiter_client: JupiterClient,
+    config: PriceProviderConfig,
 }
 
 impl JupiterProvider {
-    pub fn new(client: ReqwestClient) -> Self {
+    pub fn new(client: ReqwestClient, config: PriceProviderConfig) -> Self {
         Self {
             jupiter_client: JupiterClient::new(client),
+            config,
         }
     }
 
@@ -31,7 +29,7 @@ impl JupiterProvider {
             .get_verified_tokens()
             .await?
             .into_iter()
-            .filter(|t| t.organic_score >= MIN_ORGANIC_SCORE)
+            .filter(|t| t.organic_score >= self.config.min_score)
             .collect())
     }
 }
@@ -42,8 +40,13 @@ impl PriceAssetsProvider for JupiterProvider {
         PriceProvider::Jupiter
     }
 
-    async fn get_assets(&self) -> Result<Vec<AssetPriceMapping>, Box<dyn Error + Send + Sync>> {
-        Ok(self.verified_tokens().await?.into_iter().map(|t| to_asset_price_mapping(&t.id)).collect())
+    async fn get_assets(&self) -> Result<Vec<PriceProviderAsset>, Box<dyn Error + Send + Sync>> {
+        Ok(self
+            .verified_tokens()
+            .await?
+            .into_iter()
+            .map(|t| PriceProviderAsset::new(to_asset_price_mapping(&t.id), None))
+            .collect())
     }
 
     async fn get_prices(&self, mappings: Vec<AssetPriceMapping>) -> Result<Vec<AssetPriceFull>, Box<dyn Error + Send + Sync>> {
@@ -63,18 +66,7 @@ impl PriceAssetsProvider for JupiterProvider {
 }
 
 fn to_asset_price_full(mapping: AssetPriceMapping, token: &VerifiedToken) -> AssetPriceFull {
-    let market = AssetMarket {
-        market_cap: token.mcap,
-        market_cap_fdv: token.fdv,
-        circulating_supply: token.circ_supply,
-        total_supply: token.total_supply,
-        ..AssetMarket::default()
-    };
-    AssetPriceFull::new(
-        mapping,
-        Price::new(token.usd_price, token.stats24h.price_change, Utc::now(), PriceProvider::Jupiter),
-        Some(market),
-    )
+    AssetPriceFull::simple(mapping, token.usd_price, token.stats24h.price_change, PriceProvider::Jupiter)
 }
 
 #[cfg(all(test, feature = "price_integration_tests"))]
@@ -89,8 +81,8 @@ mod tests {
 
         let supported = provider.get_assets().await.unwrap();
         assert!(!supported.is_empty());
-        for mapping in &supported {
-            assert!(!mapping.provider_price_id.is_empty());
+        for asset in &supported {
+            assert!(!asset.mapping.provider_price_id.is_empty());
         }
     }
 }

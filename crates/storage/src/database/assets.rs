@@ -15,6 +15,21 @@ pub enum AssetUpdate {
     StakingApr(Option<f64>),
     HasImage(bool),
     HasPrice(bool),
+    Supply {
+        circulating_supply: Option<f64>,
+        total_supply: Option<f64>,
+        max_supply: Option<f64>,
+    },
+}
+
+impl AssetUpdate {
+    pub fn supply(circulating: Option<f64>, total: Option<f64>, max: Option<f64>) -> Option<Self> {
+        (circulating.is_some() || total.is_some() || max.is_some()).then_some(Self::Supply {
+            circulating_supply: circulating,
+            total_supply: total,
+            max_supply: max,
+        })
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -68,6 +83,13 @@ impl AssetsStore for DatabaseClient {
                 AssetUpdate::StakingApr(value) => diesel::update(target).set(staking_apr.eq(value)).execute(&mut self.connection)?,
                 AssetUpdate::HasImage(value) => diesel::update(target).set(has_image.eq(value)).execute(&mut self.connection)?,
                 AssetUpdate::HasPrice(value) => diesel::update(target).set(has_price.eq(value)).execute(&mut self.connection)?,
+                AssetUpdate::Supply {
+                    circulating_supply: c,
+                    total_supply: t,
+                    max_supply: m,
+                } => diesel::update(target)
+                    .set((circulating_supply.eq(c), total_supply.eq(t), max_supply.eq(m)))
+                    .execute(&mut self.connection)?,
             };
             Ok(total + updated)
         })
