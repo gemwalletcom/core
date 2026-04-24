@@ -9,6 +9,7 @@ use std::time::Duration;
 pub use model::{AssetPriceFull, AssetPriceMapping, PriceProviderAsset, PriceProviderAssetMetadata};
 pub use primitives::PriceProvider;
 pub use providers::coingecko::provider::CoinGeckoPricesProvider;
+pub use providers::defillama::provider::DefiLlamaProvider;
 pub use providers::pyth::provider::PythProvider;
 
 #[derive(Clone, Copy, Debug, Default)]

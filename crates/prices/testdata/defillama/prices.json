@@ -1,0 +1,17 @@
+{
+    "coins": {
+        "coingecko:bitcoin": {
+            "price": 67000.0,
+            "symbol": "BTC",
+            "timestamp": 1712345678,
+            "confidence": 0.99
+        },
+        "ethereum:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48": {
+            "price": 1.0,
+            "symbol": "USDC",
+            "timestamp": 1712345678,
+            "confidence": 0.99,
+            "decimals": 6
+        }
+    }
+}
