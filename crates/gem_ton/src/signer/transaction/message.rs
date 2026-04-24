@@ -5,7 +5,7 @@ use super::request::{JettonTransferRequest, TransferPayload, TransferRequest};
 use crate::constants::JETTON_TRANSFER_OPCODE;
 use crate::signer::cells::{Cell, CellArc, CellBuilder};
 
-pub(super) const DEFAULT_SEND_MODE: u8 = 0b11;
+pub(crate) const DEFAULT_SEND_MODE: u8 = 0b11;
 pub(super) const TRANSFER_ALL_TON_MODE: u8 = DEFAULT_SEND_MODE | 0b1000_0000;
 
 pub(super) struct InternalMessage {

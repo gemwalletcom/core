@@ -21,7 +21,7 @@ impl TonSigner {
     }
 
     pub fn address(&self) -> &Address {
-        self.wallet.address()
+        &self.wallet.address
     }
 
     pub fn public_key(&self) -> [u8; 32] {

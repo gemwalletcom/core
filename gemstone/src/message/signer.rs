@@ -204,9 +204,15 @@ impl MessageSigner {
         let data = TonSignMessageData::from_bytes(string.as_bytes())?;
         let raw_address = base64_to_hex_address(&data.address).ok_or_else(|| GemstoneError::from("Invalid TON address"))?;
 
-        let response = TonSignDataResponse::new(BASE64.encode(&result.signature), raw_address, result.timestamp, data.domain, data.payload);
+        let response = TonSignDataResponse {
+            signature: BASE64.encode(&result.signature),
+            address: raw_address,
+            timestamp: result.timestamp,
+            domain: data.domain,
+            payload: data.payload,
+        };
 
-        Ok(response.to_json()?)
+        serde_json::to_string(&response).map_err(|e| GemstoneError::from(e.to_string()))
     }
 }
 

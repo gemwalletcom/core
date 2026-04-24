@@ -1,5 +1,5 @@
-mod message;
-mod request;
+pub(super) mod message;
+pub(super) mod request;
 mod sign;
 mod wallet;
 

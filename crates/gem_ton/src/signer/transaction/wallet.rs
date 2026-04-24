@@ -36,7 +36,7 @@ impl StateInit {
 
 pub struct WalletV4R2 {
     public_key: [u8; 32],
-    address: Address,
+    pub address: Address,
 }
 
 impl WalletV4R2 {
@@ -46,10 +46,6 @@ impl WalletV4R2 {
             public_key,
             address: Address::new(BASE_WORKCHAIN, state_init.to_cell()?.hash),
         })
-    }
-
-    pub fn address(&self) -> &Address {
-        &self.address
     }
 
     pub fn state_init_base64(&self) -> Result<String, SignerError> {

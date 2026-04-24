@@ -94,7 +94,7 @@ mod tests {
     };
 
     use super::super::{
-        message::{DEFAULT_SEND_MODE, build_internal_message},
+        message::build_internal_message,
         request::{JettonTransferRequest, TransferPayload, TransferRequest},
         wallet::WalletV4R2,
     };
@@ -113,12 +113,11 @@ mod tests {
     }
 
     #[test]
-    fn test_sign_matches_vectors() {
+    fn test_sign_transfer() {
         let signer = test_signer();
         let address = signer.address().encode();
 
-        // Native transfer — Android parity vector.
-        let native_input = SignerInput::mock_with_input_type(
+        let input = SignerInput::mock_with_input_type(
             TransactionInputType::Transfer(Asset::from_chain(Chain::Ton)),
             &address,
             &address,
@@ -126,13 +125,18 @@ mod tests {
             TransactionLoadMetadata::mock_ton(1),
         );
         assert_eq!(
-            signer.sign_transfer(&native_input, Some(1_000_000_000)).unwrap(),
+            signer.sign_transfer(&input, Some(1_000_000_000)).unwrap(),
             "te6cckEBBAEArgABRYgBkF1w67cBLG0e0D7j0y2ShzflCe2JrlAjS4pC8UHg85AMAQGcOZ5W/jkCqNSj9wrP3isRN8k2PsJvAS1Rc7K+ABk/VgsvD4MSlcEFpS56SGhkmC7pSYwJM1Ocd7iIVUCY1DeFAimpoxc7msoAAAAAAQADAgFkQgBkF1w67cBLG0e0D7j0y2ShzflCe2JrlAjS4pC8UHg85BE4gAAAAAAAAAAAAAAAAAEDAABvNxKJ"
         );
+    }
 
-        // Jetton transfer — Android parity vector.
+    #[test]
+    fn test_sign_token_transfer() {
+        let signer = test_signer();
+        let address = signer.address().encode();
+
         let asset = Asset::new(AssetId::from_token(Chain::Ton, JETTON_ASSET_ADDRESS), String::new(), String::new(), 8, AssetType::TOKEN);
-        let jetton_input = SignerInput::mock_with_input_type(
+        let input = SignerInput::mock_with_input_type(
             TransactionInputType::Transfer(asset),
             &address,
             &address,
@@ -140,25 +144,24 @@ mod tests {
             TransactionLoadMetadata::mock_ton_jetton(1, SENDER_TOKEN_ADDRESS),
         );
         assert_eq!(
-            signer.sign_token_transfer(&jetton_input, Some(1_000_000_000)).unwrap(),
+            signer.sign_token_transfer(&input, Some(1_000_000_000)).unwrap(),
             "te6cckEBBAEA/wABRYgBkF1w67cBLG0e0D7j0y2ShzflCe2JrlAjS4pC8UHg85AMAQGcbaO6bjRLkbewbUrj8cYUocJI7vJDeXH4uoZqtTZzf5CRVBRw8rjMKMNg4MEafTwywe6wo2+BhefXkhOtdEakCympoxc7msoAAAAAAQADAgFgYgASwA6bnRklOr1y4MxDEh82TpZnlC7Kl8tiVkz/uVEgGgAAAAAAAAAAAAAAAAABAwCmD4p+pQAAAAAAAAAAInEIAZBdcOu3ASxtHtA+49Mtkoc35Qntia5QI0uKQvFB4PORADILrh124CWNo9oH3HplslDm/KE9sTXKBGlxSF4oPB5yAgKLD74O"
         );
+    }
 
-        // Deploy — TrustWallet wallet-core parity vector:
-        // https://github.com/trustwallet/wallet-core/blob/master/rust/tw_tests/tests/chains/ton/ton_sign.rs
-        let deploy_private_key = hex::decode(TRUST_WALLET_PRIVATE_KEY).unwrap();
-        let deploy_signer = TonSigner::new(&deploy_private_key).unwrap();
-        let deploy_request = TransferRequest {
-            destination: Address::parse("EQDYW_1eScJVxtitoBRksvoV9cCYo4uKGWLVNIHB1JqRR3n0").unwrap(),
-            value: BigUint::from(10u8),
-            mode: DEFAULT_SEND_MODE,
+    /// Deploy parity vector from TrustWallet wallet-core:
+    /// https://github.com/trustwallet/wallet-core/blob/master/rust/tw_tests/tests/chains/ton/ton_sign.rs
+    #[test]
+    fn test_sign_wallet_deploy() {
+        let private_key = hex::decode(TRUST_WALLET_PRIVATE_KEY).unwrap();
+        let signer = TonSigner::new(&private_key).unwrap();
+        let destination = Address::parse("EQDYW_1eScJVxtitoBRksvoV9cCYo4uKGWLVNIHB1JqRR3n0").unwrap();
+        let request = TransferRequest {
             bounceable: true,
-            comment: None,
-            payload: None,
-            state_init: None,
+            ..TransferRequest::mock(destination)
         };
         assert_eq!(
-            deploy_signer.sign_requests(vec![deploy_request], 0, Some(1_671_135_440)).unwrap(),
+            signer.sign_requests(vec![request], 0, Some(1_671_135_440)).unwrap(),
             "te6cckECGgEAA7IAAkWIAM33x4uAd+uQTyXyCZPxflESlNVHpCeoOECtNsqVW9tmHgECAgE0AwQBnOfG8YGGhFeE+iDE1jxCYeWKElbGDm3oqm2pwAhmVWSzWv5n6vVq8JY0J6p4sL+hqJU3iYPH8TX5mGLfcbbmtwgpqaMX/////wAAAAAAAwUBFP8A9KQT9LzyyAsGAFEAAAAAKamjF/Qsd/kxvqIOxdAVBzEna7suKGCUdmEkWyMZ74Ez7o1BQAFiYgBsLf6vJOEq42xW0AoyWX0K+uBMUcXFDLFqmkDg6k1Io4hQAAAAAAAAAAAAAAAAAQcCASAICQAAAgFICgsE+PKDCNcYINMf0x/THwL4I7vyZO1E0NMf0x/T//QE0VFDuvKhUVG68qIF+QFUEGT5EPKj+AAkpMjLH1JAyx9SMMv/UhD0AMntVPgPAdMHIcAAn2xRkyDXSpbTB9QC+wDoMOAhwAHjACHAAuMAAcADkTDjDQOkyMsfEssfy/8MDQ4PAubQAdDTAyFxsJJfBOAi10nBIJJfBOAC0x8hghBwbHVnvSKCEGRzdHK9sJJfBeAD+kAwIPpEAcjKB8v/ydDtRNCBAUDXIfQEMFyBAQj0Cm+hMbOSXwfgBdM/yCWCEHBsdWe6kjgw4w0DghBkc3RyupJfBuMNEBECASASEwBu0gf6ANTUIvkABcjKBxXL/8nQd3SAGMjLBcsCIs8WUAX6AhTLaxLMzMlz+wDIQBSBAQj0UfKnAgBwgQEI1xj6ANM/yFQgR4EBCPRR8qeCEG5vdGVwdIAYyMsFywJQBs8WUAT6AhTLahLLH8s/yXP7AAIAbIEBCNcY+gDTPzBSJIEBCPRZ8qeCEGRzdHJwdIAYyMsFywJQBc8WUAP6AhPLassfEss/yXP7AAAK9ADJ7VQAeAH6APQEMPgnbyIwUAqhIb7y4FCCEHBsdWeDHrFwgBhQBMsFJs8WWPoCGfQAy2kXyx9SYMs/IMmAQPsABgCKUASBAQj0WTDtRNCBAUDXIMgBzxb0AMntVAFysI4jghBkc3Rygx6xcIAYUAXLBVADzxYj+gITy2rLH8s/yYBA+wCSXwPiAgEgFBUAWb0kK29qJoQICga5D6AhhHDUCAhHpJN9KZEM5pA+n/mDeBKAG3gQFImHFZ8xhAIBWBYXABG4yX7UTQ1wsfgAPbKd+1E0IEBQNch9AQwAsjKB8v/ydABgQEI9ApvoTGACASAYGQAZrc52omhAIGuQ64X/wAAZrx32omhAEGuQ64WPwJiaP4Q="
         );
     }
@@ -190,33 +193,20 @@ mod tests {
         let comment = "memo".repeat(80);
 
         let transfer = TransferRequest {
-            destination: address,
-            value: BigUint::from(10u8),
-            mode: DEFAULT_SEND_MODE,
-            bounceable: false,
             comment: Some(comment.clone()),
-            payload: None,
-            state_init: None,
+            ..TransferRequest::mock(address)
         };
         let native_payload = build_internal_message(&transfer).unwrap().message.references.first().unwrap().clone();
         assert!(!native_payload.references.is_empty());
 
         let jetton = TransferRequest {
-            destination: address,
             value: BigUint::ZERO,
-            mode: DEFAULT_SEND_MODE,
             bounceable: true,
-            comment: None,
             payload: Some(TransferPayload::Jetton(JettonTransferRequest {
-                query_id: 0,
-                value: BigUint::from(10u8),
-                destination: address,
-                response_address: address,
-                custom_payload: None,
-                forward_ton_amount: BigUint::from(1u8),
                 comment: Some(comment),
+                ..JettonTransferRequest::mock(address)
             })),
-            state_init: None,
+            ..TransferRequest::mock(address)
         };
         let jetton_payload = build_internal_message(&jetton).unwrap().message.references.first().unwrap().clone();
         assert_eq!(jetton_payload.references.len(), 1);
