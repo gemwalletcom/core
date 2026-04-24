@@ -185,7 +185,7 @@ mod tests {
 
         assert_ne!(everstake, stakin_withdraw);
         assert_ne!(stakin_withdraw, stakin_active);
-        assert_eq!(everstake, "0x514bcb1f9aabb904e6106bd1052b66d2706dbbb7:9:awaitingwithdrawal:1");
+        assert_eq!(everstake, format!("{TEST_MONAD_ADDRESS}:9:awaitingwithdrawal:1"));
     }
 
     #[test]
