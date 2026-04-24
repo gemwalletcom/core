@@ -27,12 +27,8 @@ impl NFTProviderClient {
         self.providers.get_collection(collection_id).await.ok_or_else(|| "Collection not found".into())
     }
 
-    pub async fn get_nft_data(&self, chain: Chain, address: &str) -> Vec<NFTData> {
+    pub async fn get_nft_data(&self, chain: Chain, address: &str) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {
         self.providers.get_nft_data(chain, address).await
-    }
-
-    pub async fn get_asset_ids(&self, chain: Chain, address: &str) -> Vec<NFTAssetId> {
-        self.providers.get_asset_ids(chain, address).await
     }
 
     pub async fn get_asset_ids_for_addresses(&self, addresses: HashMap<Chain, String>) -> Vec<NFTAssetId> {

@@ -7,8 +7,8 @@ use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainStakin
 use gem_client::{Client, ClientExt};
 
 use crate::models::{
-    ApiResult, BroadcastTransaction, Chainhead, JettonInfo, JettonOffchainMetadata, JettonWalletsResponse, MessageTransactions, NftCollection, NftCollectionsResponse, NftItem,
-    NftItemsResponse, SimpleJettonBalance, WalletInfo,
+    ApiResult, BroadcastTransaction, Chainhead, JettonInfo, JettonOffchainMetadata, JettonWalletsResponse, MessageTransactions, NftCollectionsResponse, NftItemsResponse,
+    SimpleJettonBalance, WalletInfo,
 };
 
 pub struct TonClient<C: Client> {
@@ -70,19 +70,16 @@ impl<C: Client> TonClient<C> {
         Ok(self.client.get(&format!("/api/v3/jetton/wallets?owner_address={}&limit=100&offset=0", address)).await?)
     }
 
-    pub async fn get_nft_items_by_owner(&self, owner_address: &str) -> Result<Vec<NftItem>, Box<dyn Error + Send + Sync>> {
-        let response: NftItemsResponse = self.client.get(&format!("/api/v3/nft/items?owner_address={}&limit=1000&offset=0", owner_address)).await?;
-        Ok(response.nft_items)
+    pub async fn get_nft_items_by_owner(&self, owner_address: &str) -> Result<NftItemsResponse, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.get(&format!("/api/v3/nft/items?owner_address={}&limit=1000&offset=0", owner_address)).await?)
     }
 
-    pub async fn get_nft_item(&self, address: &str) -> Result<NftItem, Box<dyn Error + Send + Sync>> {
-        let response: NftItemsResponse = self.client.get(&format!("/api/v3/nft/items?address={}", address)).await?;
-        response.nft_items.into_iter().next().ok_or_else(|| "NFT item not found".into())
+    pub async fn get_nft_item(&self, address: &str) -> Result<NftItemsResponse, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.get(&format!("/api/v3/nft/items?address={}", address)).await?)
     }
 
-    pub async fn get_nft_collection(&self, collection_address: &str) -> Result<NftCollection, Box<dyn Error + Send + Sync>> {
-        let response: NftCollectionsResponse = self.client.get(&format!("/api/v3/nft/collections?collection_address={}", collection_address)).await?;
-        response.nft_collections.into_iter().next().ok_or_else(|| "NFT collection not found".into())
+    pub async fn get_nft_collection(&self, collection_address: &str) -> Result<NftCollectionsResponse, Box<dyn Error + Send + Sync>> {
+        Ok(self.client.get(&format!("/api/v3/nft/collections?collection_address={}", collection_address)).await?)
     }
 
     pub async fn get_token_data(&self, token_id: String) -> Result<Asset, Box<dyn Error + Send + Sync>> {

@@ -40,7 +40,13 @@ impl NFTClient {
     pub async fn get_nft_assets_by_wallet_id(&self, device_id: i32, wallet_id: i32) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {
         let subscriptions = self.database.wallets()?.get_subscriptions_by_wallet_id(device_id, wallet_id)?;
         let addresses: HashMap<Chain, String> = subscriptions.into_iter().map(|(sub, addr)| (sub.chain.0, addr.address)).collect();
-        self.fetch_assets_for_addresses(addresses).await
+        let mut result = Vec::new();
+        for (chain, address) in addresses {
+            if let Ok(data) = self.provider_client.get_nft_data(chain, &address).await {
+                result.extend(data);
+            }
+        }
+        Ok(result)
     }
 
     pub async fn preload(&self, assets: Vec<NFTAssetId>) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {

@@ -22,6 +22,23 @@ pub trait NFTProvider: Send + Sync {
         }
         Ok(assets)
     }
+    async fn get_nft_data(&self, chain: Chain, address: String) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {
+        let assets = self.get_nft_assets(chain, address).await?;
+        let mut by_collection: HashMap<String, Vec<NFTAsset>> = HashMap::new();
+        for asset in assets {
+            by_collection.entry(asset.collection_id.clone()).or_default().push(asset);
+        }
+        let mut result = Vec::with_capacity(by_collection.len());
+        for (collection_id_str, assets) in by_collection {
+            let Some(collection_id) = NFTCollectionId::from_id(&collection_id_str) else {
+                continue;
+            };
+            if let Ok(collection) = self.get_collection(collection_id).await {
+                result.push(NFTData { collection, assets });
+            }
+        }
+        Ok(result)
+    }
 }
 
 pub struct NFTProviders {
@@ -57,11 +74,6 @@ impl NFTProviders {
         futures::future::join_all(futures).await.into_iter().flatten().collect()
     }
 
-    pub async fn get_asset_ids(&self, chain: Chain, address: &str) -> Vec<NFTAssetId> {
-        let providers = self.providers_for_chain(chain);
-        Self::fetch_assets(chain, address.to_string(), providers).await
-    }
-
     pub async fn get_collection(&self, collection_id: NFTCollectionId) -> Option<NFTCollection> {
         for provider in self.providers_for_chain(collection_id.chain) {
             if let Ok(collection) = provider.get_collection(collection_id.clone()).await {
@@ -80,40 +92,11 @@ impl NFTProviders {
         None
     }
 
-    pub async fn get_nft_assets(&self, chain: Chain, address: &str) -> Vec<NFTAsset> {
-        for provider in self.providers_for_chain(chain) {
-            if let Ok(assets) = provider.get_nft_assets(chain, address.to_string()).await {
-                return assets;
-            }
-        }
-        vec![]
-    }
-
-    pub async fn get_nft_data(&self, chain: Chain, address: &str) -> Vec<NFTData> {
-        let assets = self.get_nft_assets(chain, address).await;
-        let mut by_collection: HashMap<String, Vec<NFTAsset>> = HashMap::new();
-        for asset in assets {
-            by_collection.entry(asset.collection_id.clone()).or_default().push(asset);
-        }
-
-        let mut result = Vec::with_capacity(by_collection.len());
-        for (collection_id_str, assets) in by_collection {
-            let Some(collection_id) = NFTCollectionId::from_id(&collection_id_str) else {
-                continue;
-            };
-            if let Some(collection) = self.get_collection(collection_id).await {
-                result.push(NFTData { collection, assets });
-            }
-        }
-        result
-    }
-}
-
-pub async fn get_image_mime_type(url: &str) -> Result<String, Box<dyn Error + Send + Sync>> {
-    let response = reqwest::Client::new().head(url).send().await?;
-    if let Some(mime_type) = response.headers().get(reqwest::header::CONTENT_TYPE) {
-        Ok(mime_type.to_str()?.to_string())
-    } else {
-        Err("Failed to determine MIME type".into())
+    pub async fn get_nft_data(&self, chain: Chain, address: &str) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {
+        let provider = self
+            .providers_for_chain(chain)
+            .next()
+            .ok_or_else(|| format!("no NFT provider for chain {}", chain.as_ref()))?;
+        provider.get_nft_data(chain, address.to_string()).await
     }
 }

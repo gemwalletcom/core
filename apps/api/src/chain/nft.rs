@@ -19,5 +19,5 @@ pub async fn get_nft_collection(collection_id: NftCollectionIdParam, client: &St
 
 #[get("/chain/address/<chain>/<address>/nfts")]
 pub async fn get_nfts(chain: ChainParam, address: AddressParam, client: &State<Arc<NFTProviderClient>>) -> Result<ApiResponse<Vec<NFTData>>, ApiError> {
-    Ok(client.get_nft_data(chain.0, &address.0).await.into())
+    Ok(client.get_nft_data(chain.0, &address.0).await?.into())
 }
