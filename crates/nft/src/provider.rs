@@ -3,7 +3,7 @@ use std::error::Error;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use primitives::{Chain, NFTAsset, NFTAssetId, NFTChain, NFTCollection, NFTCollectionId};
+use primitives::{Chain, NFTAsset, NFTAssetId, NFTChain, NFTCollection, NFTCollectionId, NFTData};
 
 #[async_trait]
 pub trait NFTProvider: Send + Sync {
@@ -12,6 +12,16 @@ pub trait NFTProvider: Send + Sync {
     async fn get_assets(&self, chain: Chain, address: String) -> Result<Vec<NFTAssetId>, Box<dyn Error + Send + Sync>>;
     async fn get_collection(&self, collection: NFTCollectionId) -> Result<NFTCollection, Box<dyn Error + Send + Sync>>;
     async fn get_asset(&self, asset_id: NFTAssetId) -> Result<NFTAsset, Box<dyn Error + Send + Sync>>;
+    async fn get_nft_assets(&self, chain: Chain, address: String) -> Result<Vec<NFTAsset>, Box<dyn Error + Send + Sync>> {
+        let ids = self.get_assets(chain, address).await?;
+        let mut assets = Vec::with_capacity(ids.len());
+        for id in ids {
+            if let Ok(asset) = self.get_asset(id).await {
+                assets.push(asset);
+            }
+        }
+        Ok(assets)
+    }
 }
 
 pub struct NFTProviders {
@@ -68,6 +78,34 @@ impl NFTProviders {
             }
         }
         None
+    }
+
+    pub async fn get_nft_assets(&self, chain: Chain, address: &str) -> Vec<NFTAsset> {
+        for provider in self.providers_for_chain(chain) {
+            if let Ok(assets) = provider.get_nft_assets(chain, address.to_string()).await {
+                return assets;
+            }
+        }
+        vec![]
+    }
+
+    pub async fn get_nft_data(&self, chain: Chain, address: &str) -> Vec<NFTData> {
+        let assets = self.get_nft_assets(chain, address).await;
+        let mut by_collection: HashMap<String, Vec<NFTAsset>> = HashMap::new();
+        for asset in assets {
+            by_collection.entry(asset.collection_id.clone()).or_default().push(asset);
+        }
+
+        let mut result = Vec::with_capacity(by_collection.len());
+        for (collection_id_str, assets) in by_collection {
+            let Some(collection_id) = NFTCollectionId::from_id(&collection_id_str) else {
+                continue;
+            };
+            if let Some(collection) = self.get_collection(collection_id).await {
+                result.push(NFTData { collection, assets });
+            }
+        }
+        result
     }
 }
 

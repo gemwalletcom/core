@@ -211,7 +211,7 @@ pub struct NFTAttribute {
     pub percentage: Option<f64>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone, EnumIter, AsRefStr, EnumString)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, EnumIter, AsRefStr, EnumString)]
 #[typeshare(swift = "Sendable, Hashable, Equatable")]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]

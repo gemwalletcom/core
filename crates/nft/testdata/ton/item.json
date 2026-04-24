@@ -1,0 +1,21 @@
+{
+    "address": "0:AFC49CB8786F21C87045B19EDE78FC6B46C5104845133F8E9A6D440601C198EA",
+    "collection_address": "0:1DC6211C5F90A1C08F185E8EE369C1DF712EAC74C24ECEEFD68C90DC51A94717",
+    "owner_address": "0:33A14A5A9406979D59B93288985916AFB5D9AFBA69C65D4AC0C41D2CCF1D0F2F",
+    "index": "42",
+    "content": {
+        "name": "DOGS #42",
+        "description": "A DOGS NFT on TON",
+        "image": "https://example.com/dogs/42.png",
+        "attributes": [
+            {
+                "trait_type": "Background",
+                "value": "Blue"
+            },
+            {
+                "trait_type": "Rarity",
+                "value": 5
+            }
+        ]
+    }
+}

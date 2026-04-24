@@ -26,7 +26,7 @@ use strum::IntoEnumIterator;
 
 use ::fiat::FiatClient;
 use ::fiat::FiatProviderFactory;
-use ::nft::{NFTClient, NFTProviderConfig};
+use ::nft::{NFTClient, NFTProviderClient, NFTProviderConfig};
 use admin::AdminConfig;
 use api_connector::PusherClient;
 use assets::{AssetsClient, SearchClient};
@@ -80,9 +80,6 @@ fn mount_routes(rocket: Rocket<Build>, admin_enabled: bool) -> Rocket<Build> {
                 chain::swap::get_swap_result,
                 chain::swap::get_vault_addresses,
                 swap::get_swap_assets,
-                nft::get_nft_assets_by_chain,
-                nft::get_nft_collection,
-                nft::get_nft_asset,
                 nft::get_nft_asset_image_preview,
                 nft::update_nft_collection,
                 nft::update_nft_asset,
@@ -93,6 +90,9 @@ fn mount_routes(rocket: Rocket<Build>, admin_enabled: bool) -> Rocket<Build> {
                 chain::address::get_balances,
                 chain::address::get_assets,
                 chain::address::get_transactions,
+                chain::nft::get_nfts,
+                chain::nft::get_nft_asset,
+                chain::nft::get_nft_collection,
                 chain::transaction::get_transaction,
                 referral::get_rewards_leaderboard,
                 swap::post_near_intents_quote,
@@ -199,8 +199,13 @@ async fn rocket_api(settings: Settings) -> Result<Rocket<Build>, Box<dyn std::er
         stream_producer.clone(),
     );
     let fiat_quotes_client = FiatQuotesClient::new(database.clone(), fiat_client);
-    let nft_config = NFTProviderConfig::new(settings.nft.opensea.key.secret.clone(), settings.nft.magiceden.key.secret.clone());
-    let nft_client = NFTClient::new(database.clone(), nft_config);
+    let nft_config = NFTProviderConfig::new(
+        settings.nft.opensea.key.secret.clone(),
+        settings.nft.magiceden.key.secret.clone(),
+        settings.chains.ton.url.clone(),
+    );
+    let nft_provider_client = Arc::new(NFTProviderClient::new(nft_config));
+    let nft_client = NFTClient::new(database.clone(), nft_provider_client.clone());
     let auth_client = Arc::new(AuthClient::new(cacher_client.clone()));
     let markets_client = MarketsClient::new(database.clone(), cacher_client.clone());
     let webhooks_client = WebhooksClient::new(stream_producer.clone());
@@ -234,6 +239,7 @@ async fn rocket_api(settings: Settings) -> Result<Rocket<Build>, Box<dyn std::er
         .manage(Mutex::new(scan_client))
         .manage(Mutex::new(swap_client))
         .manage(Mutex::new(nft_client))
+        .manage(nft_provider_client)
         .manage(Mutex::new(price_alert_client))
         .manage(Mutex::new(chain_client))
         .manage(swapper)

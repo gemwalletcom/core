@@ -1,7 +1,6 @@
-use crate::params::{AddressParam, ChainParam, NftAssetIdParam, NftCollectionIdParam};
+use crate::params::{NftAssetIdParam, NftCollectionIdParam};
 use crate::responders::{ApiError, ApiResponse};
 use ::nft::NFTClient;
-use primitives::{NFTAsset, NFTData};
 use rocket::Request;
 use rocket::http::ContentType;
 use rocket::response::{self, Responder};
@@ -9,37 +8,14 @@ use rocket::{State, get, put, tokio::sync::Mutex};
 use std::collections::HashMap;
 use std::io::Cursor;
 
-// by address. mostly for testing purposes
-
-#[get("/nft/assets/chain/<chain>?<address>")]
-pub async fn get_nft_assets_by_chain(chain: ChainParam, address: AddressParam, client: &State<Mutex<NFTClient>>) -> Result<ApiResponse<Vec<NFTData>>, ApiError> {
-    Ok(client.lock().await.get_nft_assets_by_chain(chain.0, &address.0).await?.into())
-}
-
-// collections
-
 #[put("/nft/collections/update/<collection_id>")]
 pub async fn update_nft_collection(collection_id: NftCollectionIdParam, client: &State<Mutex<NFTClient>>) -> Result<ApiResponse<bool>, ApiError> {
     Ok(client.lock().await.update_collection(&collection_id.0.id()).await?.into())
 }
 
-// assets
-
 #[put("/nft/assets/update/<asset_id>")]
 pub async fn update_nft_asset(asset_id: NftAssetIdParam, client: &State<Mutex<NFTClient>>) -> Result<ApiResponse<bool>, ApiError> {
     Ok(client.lock().await.update_asset(asset_id.0.as_ref()).await?.into())
-}
-
-#[get("/nft/assets/<asset_id>")]
-pub async fn get_nft_asset(asset_id: NftAssetIdParam, client: &State<Mutex<NFTClient>>) -> Result<ApiResponse<NFTAsset>, ApiError> {
-    Ok(client.lock().await.get_nft_asset(asset_id.0.as_ref())?.into())
-}
-
-// from db
-
-#[get("/nft/collections/<collection_id>")]
-pub async fn get_nft_collection(collection_id: NftCollectionIdParam, client: &State<Mutex<NFTClient>>) -> Result<ApiResponse<NFTData>, ApiError> {
-    Ok(client.lock().await.get_nft_collection_data(&collection_id.0.id())?.into())
 }
 
 #[get("/nft/assets/<asset_id>/image_preview")]
