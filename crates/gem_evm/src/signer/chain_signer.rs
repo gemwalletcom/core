@@ -132,6 +132,19 @@ impl ChainSigner for EvmChainSigner {
         )
     }
 
+    fn sign_withdrawal(&self, input: &SignerInput, private_key: &[u8]) -> Result<String, SignerError> {
+        let contract_call = input.metadata.get_contract_call()?;
+        let params = TransactionParams::from_input(input)?;
+        let gas_limit = input.fee.gas_limit()?;
+        let transaction = build_eip1559_transaction(
+            &TransactionParams { gas_limit, ..params },
+            &contract_call.contract_address,
+            U256::ZERO,
+            Bytes::from(decode_hex(&contract_call.call_data)?),
+        )?;
+        sign_and_encode(&transaction, private_key)
+    }
+
     fn sign_data(&self, input: &SignerInput, private_key: &[u8]) -> Result<String, SignerError> {
         let extra = input.input_type.get_generic_data()?;
         let base = TransactionParams::from_input(input)?;
