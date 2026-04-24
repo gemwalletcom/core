@@ -98,13 +98,7 @@ impl TonSignMessageData {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::signer::{BagOfCells, CellBuilder, testkit::TEST_ADDRESS};
-
-    fn sample_cell() -> String {
-        let mut builder = CellBuilder::new();
-        builder.store_u32(32, 0).unwrap();
-        BagOfCells::from_root(builder.build().unwrap()).to_base64(true).unwrap()
-    }
+    use crate::signer::testkit::{TEST_ADDRESS, mock_cell};
 
     #[test]
     fn test_ton_sign_message_data() {
@@ -133,7 +127,7 @@ mod tests {
     fn test_build_sign_data_hash_cell() {
         let payload = TonSignDataPayload::Cell {
             schema: "comment#00000000 text:SnakeData = InMsgBody;".to_string(),
-            cell: sample_cell(),
+            cell: mock_cell(),
         };
         let data = TonSignMessageData::new(payload, "example.com".to_string(), TEST_ADDRESS.to_string());
         let hash = data.hash(1234567890).unwrap();

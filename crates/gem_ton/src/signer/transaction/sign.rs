@@ -100,7 +100,7 @@ mod tests {
     };
     use crate::address::Address;
     use crate::signer::TonSigner;
-    use crate::signer::cells::{BagOfCells, CellBuilder};
+    use crate::signer::testkit::mock_cell;
 
     const TEST_TON_PRIVATE_KEY: &str = "c7702dadcd00d470df27dee0ddd97fbcf9deba52b60f7dd2b296ff42bb1fcad6";
     const TRUST_WALLET_PRIVATE_KEY: &str = "63474e5fe9511f1526a50567ce142befc343e71a49b865ac3908f58667319cb8";
@@ -110,12 +110,6 @@ mod tests {
     fn test_signer() -> TonSigner {
         let private_key = hex::decode(TEST_TON_PRIVATE_KEY).unwrap();
         TonSigner::new(&private_key).unwrap()
-    }
-
-    fn sample_boc() -> String {
-        let mut builder = CellBuilder::new();
-        builder.store_u32(32, 0x12345678).unwrap();
-        BagOfCells::from_root(builder.build().unwrap()).to_base64(true).unwrap()
     }
 
     #[test]
@@ -175,7 +169,7 @@ mod tests {
         let mut swap_data = SwapData::mock_with_provider(primitives::SwapProvider::StonfiV2);
         swap_data.data.to = SENDER_TOKEN_ADDRESS.to_string();
         swap_data.data.value = "241000000".to_string();
-        swap_data.data.data = sample_boc();
+        swap_data.data.data = mock_cell();
         swap_data.data.gas_limit = None;
         let input = SignerInput::mock_with_input_type(
             TransactionInputType::Swap(Asset::from_chain(Chain::Ton), Asset::from_chain(Chain::Ton), swap_data),

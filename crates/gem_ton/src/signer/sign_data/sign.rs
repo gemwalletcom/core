@@ -20,38 +20,18 @@ impl TonSigner {
 
 #[cfg(test)]
 mod tests {
-    use primitives::Address as AddressTrait;
-
     use crate::address::base64_to_hex_address;
+    use crate::signer::TonSigner;
     use crate::signer::sign_data::{TonSignDataPayload, TonSignMessageData};
-    use crate::signer::{BagOfCells, CellBuilder, TonSigner, transaction::WalletV4R2};
-
-    const TEST_PRIVATE_KEY: &str = "1e9d38b5274152a78dff1a86fa464ceadc1f4238ca2c17060c3c507349424a34";
-    const TEST_PUBLIC_KEY: &str = "d369452197c2a56481e5e2d3e8bf03de2349f67a63151956822208c2334adee2";
-
-    fn test_signer() -> TonSigner {
-        let private_key = hex::decode(TEST_PRIVATE_KEY).unwrap();
-        TonSigner::new(&private_key).unwrap()
-    }
-
-    fn signer_address() -> String {
-        let public_key = <[u8; 32]>::try_from(hex::decode(TEST_PUBLIC_KEY).unwrap()).unwrap();
-        WalletV4R2::new(public_key).unwrap().address().encode()
-    }
-
-    fn sample_cell() -> String {
-        let mut builder = CellBuilder::new();
-        builder.store_u32(32, 0).unwrap();
-        BagOfCells::from_root(builder.build().unwrap()).to_base64(true).unwrap()
-    }
+    use crate::signer::testkit::{TEST_PUBLIC_KEY, mock_cell, mock_signer, mock_signer_address};
 
     #[test]
     fn test_sign_ton_personal() {
         let payload = TonSignDataPayload::Text { text: "Hello TON".to_string() };
-        let message_data = TonSignMessageData::new(payload, "example.com".to_string(), signer_address());
+        let message_data = TonSignMessageData::new(payload, "example.com".to_string(), mock_signer_address());
         let data = message_data.to_bytes();
 
-        let result = test_signer().sign_personal(&data, 1234567890).unwrap();
+        let result = mock_signer().sign_personal(&data, 1234567890).unwrap();
 
         assert_eq!(
             hex::encode(&result.signature),
@@ -64,11 +44,11 @@ mod tests {
     #[test]
     fn test_sign_ton_personal_accepts_raw_address() {
         let payload = TonSignDataPayload::Text { text: "Hello TON".to_string() };
-        let address = base64_to_hex_address(&signer_address()).unwrap();
+        let address = base64_to_hex_address(&mock_signer_address()).unwrap();
         let message_data = TonSignMessageData::new(payload, "example.com".to_string(), address);
         let data = message_data.to_bytes();
 
-        let result = test_signer().sign_personal(&data, 1234567890).unwrap();
+        let result = mock_signer().sign_personal(&data, 1234567890).unwrap();
 
         assert_eq!(
             hex::encode(&result.signature),
@@ -85,12 +65,12 @@ mod tests {
     fn test_sign_ton_personal_cell() {
         let payload = TonSignDataPayload::Cell {
             schema: "comment#00000000 text:SnakeData = InMsgBody;".to_string(),
-            cell: sample_cell(),
+            cell: mock_cell(),
         };
-        let message_data = TonSignMessageData::new(payload, "example.com".to_string(), signer_address());
+        let message_data = TonSignMessageData::new(payload, "example.com".to_string(), mock_signer_address());
         let data = message_data.to_bytes();
 
-        let result = test_signer().sign_personal(&data, 1234567890).unwrap();
+        let result = mock_signer().sign_personal(&data, 1234567890).unwrap();
 
         assert_eq!(
             hex::encode(&result.signature),
@@ -109,7 +89,7 @@ mod tests {
         );
         let data = message_data.to_bytes();
 
-        let result = test_signer().sign_personal(&data, 1234567890);
+        let result = mock_signer().sign_personal(&data, 1234567890);
 
         assert_eq!(result.err().unwrap().to_string(), "Invalid input: TON from does not match signer address");
     }

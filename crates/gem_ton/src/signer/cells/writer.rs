@@ -4,8 +4,8 @@ use super::cell::MAX_CELL_BITS;
 
 #[derive(Default)]
 pub struct BitWriter {
-    bytes: Vec<u8>,
-    bit_len: usize,
+    pub bytes: Vec<u8>,
+    pub bit_len: usize,
 }
 
 impl BitWriter {
@@ -58,11 +58,4 @@ impl BitWriter {
         Ok(())
     }
 
-    pub fn bit_len(&self) -> usize {
-        self.bit_len
-    }
-
-    pub fn finish_bytes(self) -> Vec<u8> {
-        self.bytes
-    }
 }

@@ -159,12 +159,10 @@ impl CellBuilder {
     }
 
     pub fn remaining_bits(&self) -> usize {
-        MAX_CELL_BITS.saturating_sub(self.writer.bit_len())
+        MAX_CELL_BITS.saturating_sub(self.writer.bit_len)
     }
 
     pub fn build(self) -> Result<Cell, SignerError> {
-        let bit_len = self.writer.bit_len();
-        let bytes = self.writer.finish_bytes();
-        Cell::new(bytes, bit_len, self.references)
+        Cell::new(self.writer.bytes, self.writer.bit_len, self.references)
     }
 }
