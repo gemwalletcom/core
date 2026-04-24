@@ -12,6 +12,7 @@ pub mod staking_monad;
 pub mod staking_smartchain;
 pub mod state;
 pub mod state_mapper;
+#[cfg(any(test, feature = "testkit"))]
 pub mod testkit;
 pub mod token;
 pub mod token_mapper;

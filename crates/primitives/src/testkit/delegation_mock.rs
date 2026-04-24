@@ -10,6 +10,14 @@ impl Delegation {
         }
     }
 
+    pub fn mock_base(base: DelegationBase) -> Self {
+        Delegation {
+            base,
+            validator: DelegationValidator::mock(),
+            price: None,
+        }
+    }
+
     pub fn mock_tron(validator_id: &str) -> Self {
         let validator_id = validator_id.to_string();
         Delegation {
@@ -29,11 +37,7 @@ impl Delegation {
     }
 
     pub fn mock_with_id(delegation_id: String) -> Self {
-        Delegation {
-            base: DelegationBase::mock_with_id(delegation_id),
-            validator: DelegationValidator::mock(),
-            price: None,
-        }
+        Delegation::mock_base(DelegationBase::mock_with_id(delegation_id))
     }
 }
 

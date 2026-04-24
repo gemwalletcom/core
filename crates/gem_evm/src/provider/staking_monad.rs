@@ -11,7 +11,7 @@ use primitives::{AssetBalance, AssetId, Chain, DelegationBase, DelegationState, 
 use crate::jsonrpc::BlockParameter;
 use crate::monad::{
     IMonadStakingLens, MONAD_SCALE, MonadLensBalance, MonadLensDelegation, MonadLensValidatorInfo, STAKING_LENS_CONTRACT, decode_get_lens_apys, decode_get_lens_balance,
-    decode_get_lens_delegations, decode_get_lens_validators, encode_get_lens_apys, encode_get_lens_balance, encode_get_lens_delegations, encode_get_lens_validators,
+    decode_get_lens_delegations, decode_get_lens_validators, delegation_id, encode_get_lens_apys, encode_get_lens_balance, encode_get_lens_delegations, encode_get_lens_validators,
 };
 use crate::rpc::client::EthereumClient;
 
@@ -82,7 +82,6 @@ impl<C: Client + Clone> EthereumClient<C> {
             return Ok(Vec::new());
         }
 
-        let base_delegation_id = address.to_lowercase();
         let mut delegations = Vec::new();
 
         for position in positions {
@@ -104,7 +103,7 @@ impl<C: Client + Clone> EthereumClient<C> {
                 shares: BigUint::zero(),
                 rewards: position.rewards,
                 completion_date,
-                delegation_id: format!("{}:{}", base_delegation_id, position.withdraw_id),
+                delegation_id: delegation_id(address, position.validator_id, state, position.withdraw_id),
                 validator_id: position.validator_id.to_string(),
             });
         }
