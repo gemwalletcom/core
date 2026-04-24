@@ -39,7 +39,7 @@ pub struct MonadLensBalance {
 }
 
 pub(crate) fn delegation_id(address: &str, validator_id: u64, state: DelegationState, withdraw_id: u8) -> String {
-    format!("{}:{}:{}:{}", address.to_lowercase(), validator_id, state.as_ref(), withdraw_id)
+    format!("{}:{}:{}:{}", address, validator_id, state.as_ref(), withdraw_id)
 }
 
 pub(crate) fn get_withdraw_id(delegation_id: &str) -> Option<u8> {
