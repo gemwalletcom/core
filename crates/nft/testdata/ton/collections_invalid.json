@@ -1,0 +1,19 @@
+{
+    "nft_collections": [
+        {
+            "address": "0:4186117A3BE8DF8B54C4175AECEA911ACA7123845ADC8D4082D837D4C33278A5",
+            "collection_content": {
+                "uri": "https://curvesocial.link/collection-fragment3.json"
+            }
+        }
+    ],
+    "metadata": {
+        "0:4186117A3BE8DF8B54C4175AECEA911ACA7123845ADC8D4082D837D4C33278A5": {
+            "token_info": [
+                {
+                    "valid": false
+                }
+            ]
+        }
+    }
+}

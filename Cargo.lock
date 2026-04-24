@@ -4944,7 +4944,9 @@ version = "1.0.0"
 dependencies = [
  "async-trait",
  "futures",
+ "gem_client",
  "gem_evm",
+ "gem_ton",
  "primitives",
  "reqwest 0.13.2",
  "serde",

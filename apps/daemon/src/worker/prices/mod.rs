@@ -293,10 +293,7 @@ fn build_provider(provider: PriceProvider, settings: &Settings, config: &ConfigC
             ReqwestClient::new(settings.prices.jupiter.url.clone(), reqwest::Client::new()),
             provider_config,
         )),
-        PriceProvider::DefiLlama => Arc::new(DefiLlamaProvider::new(ReqwestClient::new(
-            settings.prices.defillama.url.clone(),
-            reqwest::Client::new(),
-        ))),
+        PriceProvider::DefiLlama => Arc::new(DefiLlamaProvider::new(ReqwestClient::new(settings.prices.defillama.url.clone(), reqwest::Client::new()))),
     })
 }
 
