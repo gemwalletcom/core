@@ -5,7 +5,7 @@ use alloy_primitives::{Address, U256};
 use alloy_sol_types::SolCall;
 use num_bigint::{BigInt, BigUint, Sign};
 use num_traits::Zero;
-use primitives::StakeType;
+use primitives::{DelegationState, StakeType};
 
 use crate::monad::constants::DEFAULT_WITHDRAW_ID;
 use crate::monad::contracts::{IMonadStaking, IMonadStakingLens};
@@ -36,6 +36,14 @@ pub struct MonadLensBalance {
     pub staked: BigUint,
     pub pending: BigUint,
     pub rewards: BigUint,
+}
+
+pub(crate) fn delegation_id(address: &str, validator_id: u64, state: DelegationState, withdraw_id: u8) -> String {
+    format!("{}:{}:{}:{}", address, validator_id, state.as_ref(), withdraw_id)
+}
+
+pub(crate) fn get_withdraw_id(delegation_id: &str) -> Option<u8> {
+    delegation_id.rsplit(':').next()?.parse::<u8>().ok()
 }
 
 pub fn encode_get_lens_balance(delegator: &str) -> Result<Vec<u8>, Box<dyn Error + Sync + Send>> {
@@ -122,13 +130,7 @@ pub fn encode_monad_staking(stake_type: &StakeType, amount: &BigInt) -> Result<(
         }
         StakeType::Unstake(delegation) => {
             let validator_id = delegation.base.validator_id.parse::<u64>().map_err(|_| "Invalid validator id for Monad")?;
-            let current_withdraw_id = delegation
-                .base
-                .delegation_id
-                .split(':')
-                .nth(1)
-                .and_then(|id| id.parse::<u8>().ok())
-                .unwrap_or(DEFAULT_WITHDRAW_ID);
+            let current_withdraw_id = get_withdraw_id(&delegation.base.delegation_id).unwrap_or(DEFAULT_WITHDRAW_ID);
             let next_withdraw_id = current_withdraw_id.saturating_add(1);
             if amount.sign() == Sign::Minus {
                 return Err("Negative values are not supported".into());
@@ -147,13 +149,7 @@ pub fn encode_monad_staking(stake_type: &StakeType, amount: &BigInt) -> Result<(
         }
         StakeType::Withdraw(delegation) => {
             let validator_id = delegation.base.validator_id.parse::<u64>().map_err(|_| "Invalid validator id for Monad")?;
-            let withdraw_id = delegation
-                .base
-                .delegation_id
-                .split(':')
-                .nth(1)
-                .and_then(|id| id.parse::<u8>().ok())
-                .ok_or("Invalid withdraw id for Monad")?;
+            let withdraw_id = get_withdraw_id(&delegation.base.delegation_id).ok_or("Invalid withdraw id for Monad")?;
 
             Ok((
                 IMonadStaking::withdrawCall {
@@ -170,5 +166,68 @@ pub fn encode_monad_staking(stake_type: &StakeType, amount: &BigInt) -> Result<(
             Ok((IMonadStaking::claimRewardsCall { validatorId: validator_id }.abi_encode(), BigInt::zero()))
         }
         StakeType::Redelegate(_) | StakeType::Freeze(_) | StakeType::Unfreeze(_) => Err("Unsupported stake type for Monad".into()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::testkit::TEST_MONAD_ADDRESS;
+    use primitives::{Delegation, DelegationBase, StakeType};
+
+    #[test]
+    fn test_delegation_id_is_unique_per_validator_and_state() {
+        let address = TEST_MONAD_ADDRESS;
+
+        let everstake = delegation_id(address, 9, DelegationState::AwaitingWithdrawal, 1);
+        let stakin_withdraw = delegation_id(address, 10, DelegationState::Deactivating, 1);
+        let stakin_active = delegation_id(address, 10, DelegationState::Active, 1);
+
+        assert_ne!(everstake, stakin_withdraw);
+        assert_ne!(stakin_withdraw, stakin_active);
+        assert_eq!(everstake, "0x514bcb1f9aabb904e6106bd1052b66d2706dbbb7:9:awaitingwithdrawal:1");
+    }
+
+    #[test]
+    fn test_get_withdraw_id_supports_legacy_and_extended_ids() {
+        assert_eq!(get_withdraw_id(&format!("{TEST_MONAD_ADDRESS}:1")), Some(1));
+        assert_eq!(get_withdraw_id(&format!("{TEST_MONAD_ADDRESS}:10:active:7")), Some(7));
+        assert_eq!(get_withdraw_id("invalid"), None);
+    }
+
+    #[test]
+    fn test_encode_monad_staking_reads_last_id_segment() {
+        let cases = [
+            (
+                StakeType::Unstake(Delegation::mock_base(DelegationBase {
+                    validator_id: "10".to_string(),
+                    delegation_id: format!("{TEST_MONAD_ADDRESS}:10:active:1"),
+                    ..DelegationBase::mock()
+                })),
+                BigInt::from(5u32),
+                IMonadStaking::undelegateCall {
+                    validatorId: 10,
+                    amount: U256::from(5u32),
+                    withdrawId: 2,
+                }
+                .abi_encode(),
+            ),
+            (
+                StakeType::Withdraw(Delegation::mock_base(DelegationBase {
+                    validator_id: "9".to_string(),
+                    delegation_id: format!("{TEST_MONAD_ADDRESS}:9:awaitingwithdrawal:1"),
+                    ..DelegationBase::mock()
+                })),
+                BigInt::zero(),
+                IMonadStaking::withdrawCall { validatorId: 9, withdrawId: 1 }.abi_encode(),
+            ),
+        ];
+
+        for (stake_type, amount, expected_data) in cases {
+            let (data, value) = encode_monad_staking(&stake_type, &amount).unwrap();
+
+            assert_eq!(value, BigInt::zero());
+            assert_eq!(data, expected_data);
+        }
     }
 }
