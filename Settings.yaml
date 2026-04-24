@@ -53,6 +53,9 @@ prices:
   jupiter:
     url: "https://lite-api.jup.ag"
     timer: 60
+  defillama:
+    url: "https://coins.llama.fi"
+    timer: 60
 charter:
   timer: 60
 name:

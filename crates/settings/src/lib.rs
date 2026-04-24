@@ -140,6 +140,7 @@ pub struct UrlKeySettings {
 pub struct Prices {
     pub pyth: PriceProviderEndpoint,
     pub jupiter: PriceProviderEndpoint,
+    pub defillama: PriceProviderEndpoint,
 }
 
 #[derive(Debug, Deserialize, Clone)]

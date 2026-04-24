@@ -22,7 +22,7 @@ use job_runner::{JobHandle, ShutdownReceiver};
 use markets_updater::MarketsUpdater;
 use observed_prices_updater::{ObservedPricesConfig, ObservedPricesUpdater};
 use pricer::{MarketsClient, PriceClient};
-use prices::{CoinGeckoPricesProvider, JupiterProvider, PriceAssetsProvider, PriceProvider, PriceProviderConfig, PythProvider};
+use prices::{CoinGeckoPricesProvider, DefiLlamaProvider, JupiterProvider, PriceAssetsProvider, PriceProvider, PriceProviderConfig, PythProvider};
 use prices_cleanup_updater::PricesCleanupUpdater;
 use prices_metrics_updater::PricesMetricsUpdater;
 use prices_updater::PricesUpdater;
@@ -232,7 +232,7 @@ fn add_provider_jobs<'a>(
                     Box::pin(async move { updater.update_markets().await })
                 }
             }),
-        PriceProvider::Pyth | PriceProvider::Jupiter => add_updater_job(
+        PriceProvider::Pyth | PriceProvider::Jupiter | PriceProvider::DefiLlama => add_updater_job(
             builder,
             database,
             &provider,
@@ -293,6 +293,10 @@ fn build_provider(provider: PriceProvider, settings: &Settings, config: &ConfigC
             ReqwestClient::new(settings.prices.jupiter.url.clone(), reqwest::Client::new()),
             provider_config,
         )),
+        PriceProvider::DefiLlama => Arc::new(DefiLlamaProvider::new(ReqwestClient::new(
+            settings.prices.defillama.url.clone(),
+            reqwest::Client::new(),
+        ))),
     })
 }
 

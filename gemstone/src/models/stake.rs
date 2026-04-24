@@ -79,6 +79,7 @@ pub enum GemPriceProvider {
     Coingecko,
     Pyth,
     Jupiter,
+    DefiLlama,
 }
 
 #[uniffi::remote(Record)]
