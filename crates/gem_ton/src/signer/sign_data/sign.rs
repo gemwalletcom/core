@@ -1,8 +1,10 @@
 use primitives::{Address as AddressTrait, SignerError};
 
 use super::message::TonSignMessageData;
-use crate::address::Address;
-use crate::signer::signer::{TonSignResult, TonSigner};
+use crate::{
+    address::Address,
+    signer::signer::{TonSignResult, TonSigner},
+};
 
 impl TonSigner {
     pub fn sign_personal(&self, data: &[u8], timestamp: u64) -> Result<TonSignResult, SignerError> {
@@ -20,10 +22,14 @@ impl TonSigner {
 
 #[cfg(test)]
 mod tests {
-    use crate::address::base64_to_hex_address;
-    use crate::signer::TonSigner;
-    use crate::signer::sign_data::{TonSignDataPayload, TonSignMessageData};
-    use crate::signer::testkit::{TEST_PUBLIC_KEY, mock_cell, mock_signer, mock_signer_address};
+    use crate::{
+        address::base64_to_hex_address,
+        signer::{
+            TonSigner,
+            sign_data::{TonSignDataPayload, TonSignMessageData},
+            testkit::{TEST_PUBLIC_KEY, mock_cell, mock_signer, mock_signer_address},
+        },
+    };
 
     #[test]
     fn test_sign_ton_personal() {

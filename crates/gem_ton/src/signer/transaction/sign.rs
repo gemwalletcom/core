@@ -8,9 +8,13 @@ use super::{
     message::{InternalMessage, build_internal_message},
     request::{JettonTransferRequest, TransferRequest},
 };
-use crate::address::Address;
-use crate::signer::cells::{BagOfCells, CellBuilder};
-use crate::signer::signer::TonSigner;
+use crate::{
+    address::Address,
+    signer::{
+        cells::{BagOfCells, CellBuilder},
+        signer::TonSigner,
+    },
+};
 
 const STATE_INIT_EXPIRE_AT: u32 = u32::MAX;
 const EXTERNAL_EXPIRE_WINDOW_SECS: u64 = 600;
@@ -89,18 +93,17 @@ fn resolve_expire_at(sequence: u32, expire_at: Option<u32>) -> Result<u32, Signe
 #[cfg(test)]
 mod tests {
     use num_bigint::BigUint;
-    use primitives::{
-        Address as AddressTrait, Asset, AssetId, AssetType, Chain, SignerInput, TransactionInputType, TransactionLoadMetadata, swap::SwapData,
-    };
+    use primitives::{Address as AddressTrait, Asset, AssetId, AssetType, Chain, SignerInput, TransactionInputType, TransactionLoadMetadata, swap::SwapData};
 
     use super::super::{
         message::build_internal_message,
         request::{JettonTransferRequest, TransferPayload, TransferRequest},
         wallet::WalletV4R2,
     };
-    use crate::address::Address;
-    use crate::signer::TonSigner;
-    use crate::signer::testkit::mock_cell;
+    use crate::{
+        address::Address,
+        signer::{TonSigner, testkit::mock_cell},
+    };
 
     const TEST_TON_PRIVATE_KEY: &str = "c7702dadcd00d470df27dee0ddd97fbcf9deba52b60f7dd2b296ff42bb1fcad6";
     const TRUST_WALLET_PRIVATE_KEY: &str = "63474e5fe9511f1526a50567ce142befc343e71a49b865ac3908f58667319cb8";

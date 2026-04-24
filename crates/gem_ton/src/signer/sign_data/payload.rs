@@ -47,5 +47,4 @@ mod tests {
 
         assert_eq!(parsed, TonSignDataPayload::Binary { bytes: "SGVsbG8=".to_string() });
     }
-
 }

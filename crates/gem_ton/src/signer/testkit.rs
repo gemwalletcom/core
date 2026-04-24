@@ -1,9 +1,13 @@
 use num_bigint::BigUint;
 use primitives::Address as _;
 
-use super::transaction::message::DEFAULT_SEND_MODE;
-use super::transaction::request::{JettonTransferRequest, TransferRequest};
-use super::{BagOfCells, CellBuilder, TonSigner};
+use super::{
+    BagOfCells, CellBuilder, TonSigner,
+    transaction::{
+        message::DEFAULT_SEND_MODE,
+        request::{JettonTransferRequest, TransferRequest},
+    },
+};
 use crate::address::Address;
 
 pub const TEST_ADDRESS: &str = "UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg";

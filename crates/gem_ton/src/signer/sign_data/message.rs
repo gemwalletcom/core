@@ -4,8 +4,10 @@ use primitives::SignerError;
 use serde::{Deserialize, Serialize};
 
 use super::payload::TonSignDataPayload;
-use crate::address::Address;
-use crate::signer::cells::{BagOfCells, CellBuilder};
+use crate::{
+    address::Address,
+    signer::cells::{BagOfCells, CellBuilder},
+};
 
 const SIGN_DATA_PREFIX: &[u8] = b"\xff\xffton-connect/sign-data/";
 const CELL_SIGN_PREFIX: u32 = 0x75569022;

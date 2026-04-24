@@ -8,7 +8,7 @@ mod tron;
 use crate::actions::{WCSolanaTransactionData, WCSuiTransactionData, WalletConnectAction, WalletConnectChainOperation, WalletConnectTransaction, WalletConnectTransactionType};
 use bitcoin::BitcoinRequestHandler;
 use ethereum::EthereumRequestHandler;
-use primitives::{Chain, ValueAccess, WCEthereumTransaction, WalletConnectRequest, WalletConnectionMethods, hex};
+use primitives::{Chain, ValueAccess, WCEthereumTransaction, WalletConnectCAIP2, WalletConnectRequest, WalletConnectionMethods, hex};
 use serde_json::Value;
 use solana::SolanaRequestHandler;
 use sui::SuiRequestHandler;
@@ -120,7 +120,7 @@ impl WalletConnectRequestHandler {
     }
 
     fn resolve_chain(chain_id: Option<String>) -> Result<Chain, String> {
-        primitives::WalletConnectCAIP2::resolve_chain(chain_id)
+        WalletConnectCAIP2::resolve_chain(chain_id)
     }
 
     fn parse_switch_chain_id(params: &Value) -> Result<Chain, String> {

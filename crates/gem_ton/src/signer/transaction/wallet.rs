@@ -4,8 +4,10 @@ use num_bigint::BigUint;
 use primitives::SignerError;
 
 use super::message::InternalMessage;
-use crate::address::Address;
-use crate::signer::cells::{BagOfCells, Cell, CellArc, CellBuilder};
+use crate::{
+    address::Address,
+    signer::cells::{BagOfCells, Cell, CellArc, CellBuilder},
+};
 
 const BASE_WORKCHAIN: i32 = 0;
 const DEFAULT_WALLET_ID: i32 = 0x29a9a317;

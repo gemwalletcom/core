@@ -57,5 +57,4 @@ impl BitWriter {
         }
         Ok(())
     }
-
 }
