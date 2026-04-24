@@ -1,10 +1,13 @@
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{HashMap, HashSet};
 
 use crate::DatabaseError;
 use crate::sql_types::{AssetId, FiatProviderNameRow, FiatTransactionStatusRow, FiatTransactionType};
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::{FiatAsset, FiatProvider, FiatProviderCountry, FiatProviderName, FiatRate, FiatTransaction, FiatTransactionUpdate, PaymentType, fiat_assets::FiatAssetLimits};
+use primitives::{
+    AssetId as PrimitiveAssetId, FiatAsset, FiatProvider, FiatProviderCountry, FiatProviderName, FiatRate, FiatTransaction, FiatTransactionUpdate, PaymentType,
+    fiat_assets::FiatAssetLimits,
+};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
@@ -105,14 +108,14 @@ impl FiatAssetRow {
 }
 
 pub trait FiatAssetRowsExt {
-    fn asset_ids(self) -> Vec<String>;
+    fn asset_ids(self) -> Vec<PrimitiveAssetId>;
 }
 
 impl FiatAssetRowsExt for Vec<FiatAssetRow> {
-    fn asset_ids(self) -> Vec<String> {
+    fn asset_ids(self) -> Vec<PrimitiveAssetId> {
         self.into_iter()
-            .filter_map(|x| x.asset_id.map(|asset_id| asset_id.0.to_string()))
-            .collect::<BTreeSet<_>>()
+            .filter_map(|x| x.asset_id.map(|asset_id| asset_id.0))
+            .collect::<HashSet<_>>()
             .into_iter()
             .collect()
     }

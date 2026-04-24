@@ -12,7 +12,7 @@ pub trait TagRepository {
     fn get_assets_tags_for_tag(&mut self, _tag_id: &str) -> Result<Vec<AssetTagRow>, DatabaseError>;
     fn delete_assets_tags(&mut self, _tag_id: &str) -> Result<usize, DatabaseError>;
     fn set_assets_tags_for_tag(&mut self, _tag_id: &str, asset_ids: Vec<AssetId>) -> Result<usize, DatabaseError>;
-    fn get_assets_tags_for_asset(&mut self, _asset_id: &str) -> Result<Vec<AssetTagRow>, DatabaseError>;
+    fn get_assets_tags_for_asset(&mut self, _asset_id: &AssetId) -> Result<Vec<AssetTagRow>, DatabaseError>;
 }
 
 impl TagRepository for DatabaseClient {
@@ -40,7 +40,7 @@ impl TagRepository for DatabaseClient {
         Ok(TagStore::set_assets_tags_for_tag(self, _tag_id, asset_ids)?)
     }
 
-    fn get_assets_tags_for_asset(&mut self, _asset_id: &str) -> Result<Vec<AssetTagRow>, DatabaseError> {
-        Ok(TagStore::get_assets_tags_for_asset(self, _asset_id)?)
+    fn get_assets_tags_for_asset(&mut self, _asset_id: &AssetId) -> Result<Vec<AssetTagRow>, DatabaseError> {
+        Ok(TagStore::get_assets_tags_for_asset(self, &_asset_id.to_string())?)
     }
 }

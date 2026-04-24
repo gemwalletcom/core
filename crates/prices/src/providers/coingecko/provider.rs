@@ -116,12 +116,6 @@ impl<C: Client> PriceAssetsProvider for CoinGeckoPricesProvider<C> {
         let chart = self.client.get_market_chart(provider_price_id, "hourly", &days).await?;
         Ok(map_market_chart(chart))
     }
-
-    async fn get_charts_raw(&self, provider_price_id: &str, duration: Duration) -> Result<Vec<ChartValue>, Box<dyn Error + Send + Sync>> {
-        let days = duration.as_days_ceil().max(1).to_string();
-        let chart = self.client.get_market_chart_auto(provider_price_id, &days).await?;
-        Ok(map_market_chart(chart))
-    }
 }
 
 #[cfg(test)]
@@ -153,31 +147,6 @@ mod tests {
         assert_eq!(
             paths.lock().unwrap().clone(),
             vec!["/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=7&interval=hourly&precision=full".to_string()]
-        );
-    }
-
-    #[tokio::test]
-    async fn test_get_charts_raw() {
-        let paths = Arc::new(Mutex::new(Vec::new()));
-        let captured_paths = paths.clone();
-        let client = MockClient::new().with_get(move |path| {
-            captured_paths.lock().unwrap().push(path.to_string());
-            Ok(br#"{"prices":[[1713744000000,123.45]]}"#.to_vec())
-        });
-        let provider = CoinGeckoPricesProvider::from_client(CoinGeckoClient::new_with_client(client));
-
-        let values = provider.get_charts_raw("bitcoin", primitives::DAY).await.unwrap();
-
-        assert_eq!(
-            values,
-            vec![ChartValue {
-                timestamp: 1_713_744_000,
-                value: 123.45,
-            }]
-        );
-        assert_eq!(
-            paths.lock().unwrap().clone(),
-            vec!["/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=1&precision=full".to_string()]
         );
     }
 }

@@ -3,10 +3,9 @@ use prices::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider, PriceProvid
 use primitives::{AssetId, PriceData};
 use std::collections::HashMap;
 use std::sync::Arc;
-use storage::AssetUpdate;
 use storage::database::prices::PriceFilter;
 use storage::models::{AssetRow, NewPriceRow, PriceAssetRow, PriceRow};
-use storage::{AssetsLinksRepository, AssetsRepository, Database, PricesRepository};
+use storage::{AssetUpdate, AssetsLinksRepository, AssetsRepository, Database, PricesRepository};
 use streamer::{PricesPayload, StreamProducer, StreamProducerQueue};
 
 const BATCH_SIZE: usize = 1000;
@@ -110,7 +109,7 @@ impl PricesUpdater {
         let mut queued = 0;
 
         for chunk in assets.chunks(BATCH_SIZE) {
-            let asset_ids: Vec<String> = chunk.iter().map(|a| a.mapping.asset_id.to_string()).collect();
+            let asset_ids: Vec<AssetId> = chunk.iter().map(|a| a.mapping.asset_id.clone()).collect();
             let existing: HashMap<String, AssetRow> = self.database.assets()?.get_assets_rows(asset_ids)?.into_iter().map(|a| (a.id.clone(), a)).collect();
             let (known, missing): (Vec<&PriceProviderAsset>, Vec<&PriceProviderAsset>) = chunk.iter().partition(|a| existing.contains_key(&a.mapping.asset_id.to_string()));
 
@@ -128,7 +127,12 @@ impl PricesUpdater {
 
             let new_prices: Vec<NewPriceRow> = assets_by_id
                 .values()
-                .map(|a| (a.mapping.provider_price_id.clone(), NewPriceRow::new(provider, a.mapping.provider_price_id.clone())))
+                .map(|a| {
+                    (
+                        a.mapping.provider_price_id.clone(),
+                        NewPriceRow::with_market_data(provider, a.mapping.provider_price_id.clone(), a.market.as_ref(), a.price, a.price_change_percentage_24h),
+                    )
+                })
                 .collect::<HashMap<_, _>>()
                 .into_values()
                 .collect();
@@ -177,7 +181,7 @@ impl PricesUpdater {
         for asset_metadata in metadata_by_asset_id.values() {
             self.database
                 .assets()?
-                .update_assets(vec![asset_metadata.asset_id.to_string()], vec![AssetUpdate::Rank(asset_metadata.rank)])?;
+                .update_assets(vec![asset_metadata.asset_id.clone()], vec![AssetUpdate::Rank(asset_metadata.rank)])?;
             self.database.assets_links()?.add_assets_links(&asset_metadata.asset_id, asset_metadata.links.clone())?;
         }
         Ok(metadata_by_asset_id.len())
@@ -185,7 +189,7 @@ impl PricesUpdater {
 
     fn store_asset_updates(&self, updates: Vec<(AssetId, AssetUpdate)>) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         for (asset_id, update) in updates {
-            self.database.assets()?.update_assets(vec![asset_id.to_string()], vec![update])?;
+            self.database.assets()?.update_assets(vec![asset_id], vec![update])?;
         }
         Ok(())
     }

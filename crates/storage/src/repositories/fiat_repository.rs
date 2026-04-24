@@ -13,7 +13,7 @@ pub trait FiatRepository {
     fn get_fiat_transactions_by_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<FiatTransaction>, DatabaseError>;
     fn get_fiat_assets_by_filter(&mut self, filters: Vec<FiatAssetFilter>) -> Result<Vec<crate::models::FiatAssetRow>, DatabaseError>;
     fn get_fiat_assets_popular(&mut self, from: NaiveDateTime, limit: i64) -> Result<Vec<AssetId>, DatabaseError>;
-    fn get_fiat_assets_for_asset_id(&mut self, asset_id: &str) -> Result<Vec<crate::models::FiatAssetRow>, DatabaseError>;
+    fn get_fiat_assets_for_asset_id(&mut self, asset_id: &AssetId) -> Result<Vec<crate::models::FiatAssetRow>, DatabaseError>;
     fn set_fiat_rates(&mut self, rates: Vec<crate::models::FiatRateRow>) -> Result<usize, DatabaseError>;
     fn get_fiat_rates(&mut self) -> Result<Vec<FiatRate>, DatabaseError>;
     fn get_fiat_rate(&mut self, currency: &str) -> Result<FiatRate, DatabaseError>;
@@ -52,8 +52,8 @@ impl FiatRepository for DatabaseClient {
         Ok(FiatStore::get_fiat_assets_popular(self, from, limit)?.into_iter().map(Into::into).collect())
     }
 
-    fn get_fiat_assets_for_asset_id(&mut self, asset_id: &str) -> Result<Vec<crate::models::FiatAssetRow>, DatabaseError> {
-        Ok(FiatStore::get_fiat_assets_for_asset_id(self, asset_id)?)
+    fn get_fiat_assets_for_asset_id(&mut self, asset_id: &AssetId) -> Result<Vec<crate::models::FiatAssetRow>, DatabaseError> {
+        Ok(FiatStore::get_fiat_assets_for_asset_id(self, &asset_id.to_string())?)
     }
 
     fn set_fiat_rates(&mut self, rates: Vec<crate::models::FiatRateRow>) -> Result<usize, DatabaseError> {

@@ -5,19 +5,19 @@ use super::filter::{build_assets_filters, build_filter};
 use super::model::SearchRequest;
 use chrono::{DateTime, Utc};
 use pricer::PriceClient;
-use primitives::{Asset, AssetBasic, AssetFull, AssetId, ChainAddress, NFTCollection, PerpetualSearchData};
+use primitives::{Asset, AssetBasic, AssetFull, AssetId, ChainAddress, NFTCollection, PerpetualSearchData, PriceConfig};
 use search_index::{ASSETS_INDEX_NAME, AssetDocument, NFTDocument, NFTS_INDEX_NAME, PERPETUALS_INDEX_NAME, PerpetualDocument, SearchIndexClient};
-use storage::repositories::prices_repository::PRIMARY_PRICE_MAX_AGE;
 use storage::{AssetsAddressesRepository, AssetsRepository, Database, WalletsRepository};
 
 #[derive(Clone)]
 pub struct AssetsClient {
     database: Database,
+    config: PriceConfig,
 }
 
 impl AssetsClient {
-    pub fn new(database: Database) -> Self {
-        Self { database }
+    pub fn new(database: Database, config: PriceConfig) -> Self {
+        Self { database, config }
     }
 
     pub fn add_assets(&self, assets: Vec<Asset>) -> Result<usize, Box<dyn Error + Send + Sync>> {
@@ -26,22 +26,22 @@ impl AssetsClient {
     }
 
     #[allow(unused)]
-    pub fn get_asset(&self, asset_id: &str) -> Result<Asset, Box<dyn Error + Send + Sync>> {
+    pub fn get_asset(&self, asset_id: &AssetId) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         Ok(self.database.assets()?.get_asset(asset_id)?)
     }
 
-    pub fn get_assets(&self, asset_ids: Vec<String>, rate: f64) -> Result<Vec<AssetBasic>, Box<dyn Error + Send + Sync>> {
+    pub fn get_assets(&self, asset_ids: Vec<AssetId>, rate: f64) -> Result<Vec<AssetBasic>, Box<dyn Error + Send + Sync>> {
         Ok(self
             .database
             .assets()?
-            .get_assets_with_prices(asset_ids)?
+            .get_assets_with_prices(asset_ids, self.config.primary_price_max_age)?
             .into_iter()
             .map(|asset| asset.asset_basic_with_rate(rate))
             .collect())
     }
 
-    pub fn get_asset_full(&self, asset_id: &str) -> Result<AssetFull, Box<dyn Error + Send + Sync>> {
-        Ok(self.database.assets()?.get_asset_full(asset_id)?)
+    pub fn get_asset_full(&self, asset_id: &AssetId) -> Result<AssetFull, Box<dyn Error + Send + Sync>> {
+        Ok(self.database.assets()?.get_asset_full(asset_id, self.config.primary_price_max_age)?)
     }
 
     pub fn get_assets_by_wallet_id(&self, device_id: i32, wallet_id: i32, from_timestamp: Option<u64>) -> Result<Vec<AssetId>, Box<dyn Error + Send + Sync>> {
@@ -49,11 +49,7 @@ impl AssetsClient {
         let chain_addresses: Vec<ChainAddress> = subscriptions.into_iter().map(|(sub, addr)| ChainAddress::new(sub.chain.0, addr.address)).collect();
         let from_datetime = from_timestamp.and_then(|ts| DateTime::<Utc>::from_timestamp(ts as i64, 0).map(|dt| dt.naive_utc()));
 
-        let prices_cutoff = (Utc::now() - chrono::Duration::from_std(PRIMARY_PRICE_MAX_AGE)?).naive_utc();
-        Ok(self
-            .database
-            .assets_addresses()?
-            .get_assets_by_addresses(chain_addresses, from_datetime, Some(prices_cutoff))?)
+        Ok(self.database.assets_addresses()?.get_assets_by_addresses(chain_addresses, from_datetime)?)
     }
 }
 
@@ -82,19 +78,19 @@ impl SearchClient {
             return Ok(vec![]);
         }
 
-        let asset_ids: Vec<String> = assets.iter().map(|x| x.asset.id.to_string()).collect();
-        let prices: HashMap<String, _> = self
+        let asset_ids: Vec<AssetId> = assets.iter().map(|x| x.asset.id.clone()).collect();
+        let prices: HashMap<AssetId, _> = self
             .price_client
             .get_cache_prices(asset_ids)
             .await?
             .into_iter()
-            .map(|p| (p.asset_id.to_string(), p.as_price_primitive()))
+            .map(|p| (p.asset_id.clone(), p.as_price_primitive()))
             .collect();
 
         Ok(assets
             .into_iter()
             .map(|x| {
-                let price = prices.get(&x.asset.id.to_string()).cloned();
+                let price = prices.get(&x.asset.id).cloned();
                 AssetBasic {
                     asset: x.asset,
                     properties: x.properties,

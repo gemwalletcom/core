@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::{collections::HashMap, error::Error};
 
 use async_trait::async_trait;
-use primitives::{AssetAddress, AssetIdVecExt, DeviceSubscription, Transaction, TransactionId, TransactionState, TransactionType};
+use primitives::{AssetAddress, DeviceSubscription, Transaction, TransactionId, TransactionState, TransactionType};
 use storage::{AssetsAddressesRepository, AssetsRepository, Database, TransactionsRepository, WalletsRepository};
 use streamer::{AssetId, NotificationsPayload, StreamProducer, StreamProducerQueue, TransactionsPayload, WalletStreamEvent, WalletStreamPayload, consumer::MessageConsumer};
 use swapper::cross_chain::{self, DepositAddressMap, SendAddressMap};
@@ -215,7 +215,7 @@ impl StoreTransactionsConsumer {
     }
 
     async fn get_existing_and_missing_assets(&self, assets_ids: Vec<AssetId>) -> Result<(Vec<primitives::AssetPriceMetadata>, Vec<AssetId>), Box<dyn Error + Send + Sync>> {
-        let assets_with_prices = self.database.assets()?.get_assets_with_prices(assets_ids.ids().clone())?;
+        let assets_with_prices = self.database.assets()?.get_assets_with_prices(assets_ids.clone(), self.config.primary_price_max_age)?;
 
         let missing_assets_ids = assets_ids
             .into_iter()

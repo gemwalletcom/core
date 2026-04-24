@@ -12,7 +12,9 @@ async-trait = { workspace = true }
 
 primitives = { path = "../primitives" }
 storage = { path = "../storage" }
+gem_client = { path = "../gem_client", features = ["reqwest"] }
 gem_evm = { path = "../gem_evm" }
+gem_ton = { path = "../gem_ton", features = ["rpc"] }
 
 settings = { path = "../settings", optional = true }
 

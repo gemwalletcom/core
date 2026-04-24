@@ -1,5 +1,5 @@
 use crate::model::WorkerService;
-use primitives::{Chain, ConfigKey, FiatProviderName, PlatformStore, PriceProvider};
+use primitives::{Chain, ConfigKey, ConfigParamKey, FiatProviderName, PlatformStore, PriceProvider};
 use std::error::Error;
 use std::time::Duration;
 use storage::ConfigCacher;
@@ -8,13 +8,11 @@ use strum::AsRefStr;
 #[derive(Clone, Debug)]
 enum JobInterval {
     Config(ConfigKey),
-    Duration(Duration),
 }
 
 impl JobInterval {
     fn resolve(self, config: Option<&ConfigCacher>) -> Result<Duration, Box<dyn Error + Send + Sync>> {
         match self {
-            JobInterval::Duration(duration) => Ok(duration),
             JobInterval::Config(key) => {
                 let cfg = config.ok_or_else(|| format!("ConfigCacher required for {:?}", key))?;
                 Ok(cfg.get_duration(key)?)
@@ -128,11 +126,13 @@ pub enum WorkerJob {
     UpdatePricesTop,
     UpdatePricesHigh,
     UpdatePricesLow,
-    UpdatePricesAll,
+    UpdatePrices,
     AggregateHourlyCharts,
     AggregateDailyCharts,
+    CleanupChartsRaw,
     CleanupChartsHourly,
     UpdateMarkets,
+    UpdatePricesMetrics,
     UpdateChartsHistory,
     UpdateObservedPrices,
     UpdatePricesAssets,
@@ -180,19 +180,21 @@ impl WorkerJob {
             UpdatePricesTop => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerTopMarketCap)),
             UpdatePricesHigh => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerHighMarketCap)),
             UpdatePricesLow => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerLowMarketCap)),
-            UpdatePricesAll => JobSpec::new(WorkerService::Prices, JobInterval::Duration(Duration::from_secs(60))),
+            UpdatePrices => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerPrices)),
             AggregateHourlyCharts => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerChartsHourly)),
             AggregateDailyCharts => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerChartsDaily)),
+            CleanupChartsRaw => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerCleanupChartsRaw)),
             CleanupChartsHourly => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerCleanupChartsHourly)),
             UpdateMarkets => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerMarkets)),
-            UpdateChartsHistory => JobSpec::new(WorkerService::Prices, JobInterval::Duration(primitives::DAY)),
+            UpdatePricesMetrics => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerMetrics)),
+            UpdateChartsHistory => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerChartsHistory)),
             UpdateObservedPrices => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceObservedFetchInterval)),
-            UpdatePricesAssets => JobSpec::new(WorkerService::Prices, JobInterval::Duration(primitives::DAY)),
-            UpdatePricesAssetsNew => JobSpec::new(WorkerService::Prices, JobInterval::Duration(Duration::from_secs(15 * 60))),
-            UpdatePricesAssetsMetadata => JobSpec::new(WorkerService::Prices, JobInterval::Duration(Duration::from_secs(30 * 24 * 60 * 60))),
+            UpdatePricesAssets => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerAssets)),
+            UpdatePricesAssetsNew => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerAssetsNew)),
+            UpdatePricesAssetsMetadata => JobSpec::new(WorkerService::Prices, JobInterval::Config(ConfigKey::PriceTimerAssetsMetadata)),
             UpdateInTransitTransactions => JobSpec::new(WorkerService::Transactions, JobInterval::Config(ConfigKey::TransactionTimerInTransitUpdate)),
             UpdatePendingTransactions => JobSpec::new(WorkerService::Transactions, JobInterval::Config(ConfigKey::TransactionTimerPendingUpdate)),
-            UpdateSwapVaultAddresses => JobSpec::new(WorkerService::Transactions, JobInterval::Duration(Duration::from_secs(300))),
+            UpdateSwapVaultAddresses => JobSpec::new(WorkerService::Transactions, JobInterval::Config(ConfigKey::TransactionTimerSwapVaultAddresses)),
             AlertStakeRewards => JobSpec::new(WorkerService::Alerter, JobInterval::Config(ConfigKey::AlerterStakeRewardsTimer)),
             ClassifyPerpetualAddresses => JobSpec::new(WorkerService::Perpetuals, JobInterval::Config(ConfigKey::PerpetualClassifierInterval)),
             ObservePerpetualActiveAddresses => JobSpec::new(WorkerService::Perpetuals, JobInterval::Config(ConfigKey::PerpetualObserverInterval)),
@@ -226,10 +228,10 @@ impl JobVariant {
         }
     }
 
-    pub fn labeled(job: WorkerJob, label: impl Into<String>) -> Self {
+    pub fn labeled(job: WorkerJob, label: impl JobLabel) -> Self {
         Self {
             job,
-            label: Some(label.into()),
+            label: Some(label.job_label()),
             override_interval: None,
         }
     }
@@ -237,6 +239,10 @@ impl JobVariant {
     pub fn every(mut self, interval: Duration) -> Self {
         self.override_interval = Some(interval);
         self
+    }
+
+    pub fn with_param_duration(self, config: &ConfigCacher, key: &ConfigParamKey) -> Result<Self, storage::DatabaseError> {
+        Ok(self.every(config.get_param_duration(key)?))
     }
 
     pub fn name(&self) -> String {

@@ -1,0 +1,22 @@
+{
+    "nft_collections": [
+        {
+            "address": "0:0E41DC1DC3C9067ED24248580E12B3359818D83DEE0304FABCF80845EAFAFDB2",
+            "collection_content": {
+                "uri": "https://nft.fragment.com/numbers.json"
+            }
+        }
+    ],
+    "metadata": {
+        "0:0E41DC1DC3C9067ED24248580E12B3359818D83DEE0304FABCF80845EAFAFDB2": {
+            "token_info": [
+                {
+                    "valid": true,
+                    "name": "Anonymous Telegram Numbers",
+                    "description": "These anonymous numbers can be used to create Telegram accounts that are not tied to SIM cards.",
+                    "image": "https://nft.fragment.com/numbers.svg"
+                }
+            ]
+        }
+    }
+}

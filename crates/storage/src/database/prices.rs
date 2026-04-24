@@ -1,4 +1,4 @@
-use crate::models::price::NewPriceRow;
+use crate::models::price::{NewPriceRow, PricesChangeset};
 use crate::sql_types::PriceProviderRow;
 use crate::{DatabaseClient, models::*};
 use chrono::NaiveDateTime;
@@ -16,6 +16,14 @@ pub enum PriceFilter {
     Provider(PriceProvider),
     UpdatedBefore(NaiveDateTime),
     UpdatedAfter(NaiveDateTime),
+    Ids(Vec<String>),
+}
+
+#[derive(Debug, Clone)]
+pub enum PriceUpdate {
+    AllTimeHigh { value: f64, date: Option<NaiveDateTime> },
+    AllTimeLow { value: f64, date: Option<NaiveDateTime> },
+    PriceChangePercentage24h(f64),
 }
 
 pub(crate) trait PricesStore {
@@ -30,6 +38,7 @@ pub(crate) trait PricesStore {
     fn get_prices_assets_for_price_ids(&mut self, ids: Vec<String>) -> Result<Vec<PriceAssetRow>, diesel::result::Error>;
     fn delete_prices(&mut self, ids: Vec<String>) -> Result<usize, diesel::result::Error>;
     fn get_asset_ids_updated_since(&mut self, since: NaiveDateTime) -> Result<Vec<String>, diesel::result::Error>;
+    fn update_prices(&mut self, price_ids: &[String], changeset: &PricesChangeset) -> Result<usize, diesel::result::Error>;
 }
 
 impl PricesStore for DatabaseClient {
@@ -47,10 +56,6 @@ impl PricesStore for DatabaseClient {
             .set((
                 price.eq(excluded(price)),
                 price_change_percentage_24h.eq(excluded(price_change_percentage_24h)),
-                all_time_high.eq(excluded(all_time_high)),
-                all_time_high_date.eq(excluded(all_time_high_date)),
-                all_time_low.eq(excluded(all_time_low)),
-                all_time_low_date.eq(excluded(all_time_low_date)),
                 market_cap_rank.eq(excluded(market_cap_rank)),
                 last_updated_at.eq(excluded(last_updated_at)),
             ))
@@ -73,6 +78,7 @@ impl PricesStore for DatabaseClient {
             PriceFilter::Provider(p) => q.filter(provider.eq(PriceProviderRow::from(p))),
             PriceFilter::UpdatedBefore(time) => q.filter(last_updated_at.lt(time).or(last_updated_at.is_null())),
             PriceFilter::UpdatedAfter(time) => q.filter(last_updated_at.ge(time)),
+            PriceFilter::Ids(ids) => q.filter(id.eq_any(ids)),
         });
         query.order(market_cap_rank.asc().nulls_last()).select(PriceRow::as_select()).load(&mut self.connection)
     }
@@ -128,5 +134,13 @@ impl PricesStore for DatabaseClient {
             .select(prices_assets::asset_id)
             .load::<crate::sql_types::AssetId>(&mut self.connection)
             .map(|ids| ids.into_iter().map(|id| id.0.to_string()).collect())
+    }
+
+    fn update_prices(&mut self, price_ids: &[String], changeset: &PricesChangeset) -> Result<usize, diesel::result::Error> {
+        use crate::schema::prices::dsl::*;
+        if price_ids.is_empty() {
+            return Ok(0);
+        }
+        diesel::update(prices.filter(id.eq_any(price_ids))).set(changeset).execute(&mut self.connection)
     }
 }

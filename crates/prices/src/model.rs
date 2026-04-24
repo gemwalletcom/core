@@ -17,11 +17,27 @@ impl AssetPriceMapping {
 pub struct PriceProviderAsset {
     pub mapping: AssetPriceMapping,
     pub market: Option<AssetMarket>,
+    pub price: Option<f64>,
+    pub price_change_percentage_24h: Option<f64>,
 }
 
 impl PriceProviderAsset {
     pub fn new(mapping: AssetPriceMapping, market: Option<AssetMarket>) -> Self {
-        Self { mapping, market }
+        Self {
+            mapping,
+            market,
+            price: None,
+            price_change_percentage_24h: None,
+        }
+    }
+
+    pub fn with_price(mapping: AssetPriceMapping, market: Option<AssetMarket>, price: Option<f64>, price_change_percentage_24h: Option<f64>) -> Self {
+        Self {
+            mapping,
+            market,
+            price,
+            price_change_percentage_24h,
+        }
     }
 }
 

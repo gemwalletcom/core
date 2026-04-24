@@ -14,7 +14,7 @@ pub trait TransactionsRepository {
         _device_id: &str,
         addresses: Vec<String>,
         chains: Vec<String>,
-        asset_id: Option<String>,
+        asset_id: Option<AssetId>,
         from_datetime: Option<NaiveDateTime>,
     ) -> Result<Vec<TransactionRow>, DatabaseError>;
     fn get_transactions_addresses(&mut self, min_count: i64, limit: i64, since: NaiveDateTime) -> Result<Vec<AddressChainIdResultRow>, DatabaseError>;
@@ -44,7 +44,7 @@ impl TransactionsRepository for DatabaseClient {
         _device_id: &str,
         addresses: Vec<String>,
         chains: Vec<String>,
-        asset_id: Option<String>,
+        asset_id: Option<AssetId>,
         from_datetime: Option<NaiveDateTime>,
     ) -> Result<Vec<TransactionRow>, DatabaseError> {
         Ok(TransactionsStore::get_transactions_by_device_id(
@@ -52,7 +52,7 @@ impl TransactionsRepository for DatabaseClient {
             _device_id,
             addresses,
             chains,
-            asset_id,
+            asset_id.map(|id| id.to_string()),
             from_datetime,
         )?)
     }

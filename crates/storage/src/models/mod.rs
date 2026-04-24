@@ -6,6 +6,7 @@ pub mod chart;
 pub mod config;
 pub mod device;
 pub mod fiat;
+pub(crate) mod min_max;
 pub mod nft_asset;
 pub mod nft_collection;
 pub mod nft_link;

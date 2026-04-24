@@ -47,7 +47,7 @@ impl MessageConsumer<InAppNotificationPayload, usize> for InAppNotificationsCons
         let redeem: Option<NotificationRewardsRedeemMetadata> = payload.metadata.decode();
         let reward_value = redeem.as_ref().and_then(|m| {
             let asset_id = payload.asset_id.as_ref()?;
-            let asset = self.database.assets().ok()?.get_asset(&asset_id.to_string()).ok()?;
+            let asset = self.database.assets().ok()?.get_asset(asset_id).ok()?;
             ValueFormatter::format_with_symbol(ValueStyle::Auto, &m.value, asset.decimals, &asset.symbol).ok()
         });
         let points = redeem.as_ref().map(|m| m.points).unwrap_or(0);

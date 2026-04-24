@@ -3,7 +3,7 @@ use gem_tracing::info_with_fields;
 use localizer::{LanguageLocalizer, LanguageNotification};
 use number_formatter::NumberFormatter;
 use primitives::{
-    Asset, DEFAULT_FIAT_CURRENCY, Device, GorushNotification, Price, PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts, PriceData, PushNotification,
+    Asset, AssetId, DEFAULT_FIAT_CURRENCY, Device, GorushNotification, Price, PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts, PriceData, PushNotification,
     PushNotificationAsset, PushNotificationTypes,
 };
 use std::collections::HashSet;
@@ -82,7 +82,7 @@ impl PriceAlertClient {
         Self { database }
     }
 
-    pub async fn get_price_alerts(&self, device_id: &str, asset_id: Option<&str>) -> Result<PriceAlerts, Box<dyn Error + Send + Sync>> {
+    pub async fn get_price_alerts(&self, device_id: &str, asset_id: Option<&AssetId>) -> Result<PriceAlerts, Box<dyn Error + Send + Sync>> {
         Ok(self
             .database
             .price_alerts()?
@@ -101,11 +101,11 @@ impl PriceAlertClient {
         Ok(self.database.price_alerts()?.delete_price_alerts(device_id, ids)?)
     }
 
-    pub async fn get_devices_to_alert(&self, rules: PriceAlertRules) -> Result<Vec<PriceAlertNotification>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_devices_to_alert(&self, rules: PriceAlertRules, max_age: StdDuration) -> Result<Vec<PriceAlertNotification>, Box<dyn Error + Send + Sync>> {
         let now = Utc::now();
         let cooldown = Duration::seconds(rules.notification_cooldown.as_secs() as i64);
         let after_notified_at = now - cooldown;
-        let price_alerts = self.database.price_alerts()?.get_price_alerts(after_notified_at.naive_utc())?;
+        let price_alerts = self.database.price_alerts()?.get_price_alerts(after_notified_at.naive_utc(), max_age)?;
 
         let mut results: Vec<PriceAlertNotification> = Vec::new();
         let mut price_alert_ids: HashSet<String> = HashSet::new();
@@ -178,7 +178,7 @@ impl PriceAlertClient {
         alert_type: PriceAlertType,
         milestone: Option<f64>,
     ) -> Result<PriceAlertNotification, Box<dyn Error + Send + Sync>> {
-        let asset = self.database.assets()?.get_asset(&price_alert.asset_id.to_string())?;
+        let asset = self.database.assets()?.get_asset(&price_alert.asset_id)?;
         let base_rate = self.database.fiat()?.get_fiat_rate(DEFAULT_FIAT_CURRENCY)?;
         let rate = self.database.fiat()?.get_fiat_rate(&device.currency)?;
 

@@ -1,7 +1,7 @@
 use chrono::{Duration, Utc};
 use fiat::{FiatProvider, model::FiatProviderAsset};
 use gem_tracing::info_with_fields;
-use primitives::{AssetTag, Diff, FiatProviderName, currency::Currency};
+use primitives::{AssetId, AssetTag, Diff, FiatProviderName, currency::Currency};
 use storage::{AssetFilter, AssetUpdate, FiatAssetFilter, FiatAssetRowsExt};
 use storage::{AssetsRepository, Database, TagRepository};
 
@@ -28,8 +28,8 @@ impl FiatAssetsUpdater {
             .assets()?
             .get_assets_by_filter(vec![AssetFilter::IsBuyable(true)])?
             .into_iter()
-            .map(|x| x.asset.id.to_string())
-            .collect::<Vec<String>>();
+            .map(|x| x.asset.id)
+            .collect::<Vec<AssetId>>();
         let result = Diff::compare(buyable_assets_ids, enabled_asset_ids);
 
         self.database.assets()?.update_assets(result.missing.clone(), vec![AssetUpdate::IsBuyable(true)])?;
@@ -46,8 +46,8 @@ impl FiatAssetsUpdater {
             .get_assets_by_filter(vec![AssetFilter::IsSellable(true)])?
             .into_iter()
             .filter(|x| x.score.rank > 25)
-            .map(|x| x.asset.id.to_string())
-            .collect::<Vec<String>>();
+            .map(|x| x.asset.id)
+            .collect::<Vec<AssetId>>();
 
         let result = Diff::compare(sellable_assets_ids, enabled_asset_ids);
         self.database.assets()?.update_assets(result.missing.clone(), vec![AssetUpdate::IsSellable(true)])?;
@@ -56,7 +56,7 @@ impl FiatAssetsUpdater {
         Ok(result.missing.len() + result.different.len())
     }
 
-    fn enabled_fiat_asset_ids(&self, direction: FiatAssetDirection) -> Result<Vec<String>, Box<dyn std::error::Error + Send + Sync>> {
+    fn enabled_fiat_asset_ids(&self, direction: FiatAssetDirection) -> Result<Vec<AssetId>, Box<dyn std::error::Error + Send + Sync>> {
         Ok(self.database.fiat()?.get_fiat_assets_by_filter(Self::fiat_asset_filters(direction))?.asset_ids())
     }
 
@@ -100,14 +100,14 @@ impl FiatAssetsUpdater {
         let assets = provider.get_assets().await?;
         let asset_count = assets.len();
 
-        let validated_assets: Vec<(FiatProviderAsset, Option<primitives::AssetId>)> = assets
+        let validated_assets: Vec<(FiatProviderAsset, Option<AssetId>)> = assets
             .into_iter()
             .map(|fiat_asset| {
                 (
                     fiat_asset.clone(),
                     fiat_asset
                         .asset_id()
-                        .filter(|id| self.database.assets().ok().and_then(|mut c| c.get_asset(&id.to_string()).ok()).is_some()),
+                        .filter(|id| self.database.assets().ok().and_then(|mut c| c.get_asset(id).ok()).is_some()),
                 )
             })
             .collect();
@@ -141,7 +141,7 @@ impl FiatAssetsUpdater {
         Ok(country_count)
     }
 
-    fn map_fiat_asset(&self, fiat_asset: FiatProviderAsset, asset_id: Option<primitives::AssetId>) -> primitives::FiatAsset {
+    fn map_fiat_asset(&self, fiat_asset: FiatProviderAsset, asset_id: Option<AssetId>) -> primitives::FiatAsset {
         primitives::FiatAsset {
             id: fiat_asset.id,
             asset_id,

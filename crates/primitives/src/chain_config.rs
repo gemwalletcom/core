@@ -328,7 +328,7 @@ static CHAIN_CONFIGS: LazyLock<Vec<ChainConfig>> = LazyLock::new(|| {
             block_time: 5_000,
             rank: 50,
             is_swap_supported: true,
-            is_nft_supported: false,
+            is_nft_supported: true,
             is_utxo: false,
             evm: None,
             stake: None,

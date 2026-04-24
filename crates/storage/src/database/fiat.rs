@@ -332,10 +332,6 @@ impl DatabaseClient {
         FiatStore::get_fiat_assets_popular(self, from, limit)
     }
 
-    pub fn get_fiat_assets_for_asset_id(&mut self, asset_id: &str) -> Result<Vec<FiatAssetRow>, diesel::result::Error> {
-        FiatStore::get_fiat_assets_for_asset_id(self, asset_id)
-    }
-
     pub fn set_fiat_rates(&mut self, rates: Vec<FiatRateRow>) -> Result<usize, diesel::result::Error> {
         FiatStore::set_fiat_rates(self, rates)
     }

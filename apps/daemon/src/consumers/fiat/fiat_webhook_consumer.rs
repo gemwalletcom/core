@@ -32,7 +32,7 @@ impl FiatWebhookConsumer {
     }
 
     async fn send_fiat_notification(&self, updated: &FiatTransactionRow) -> Result<(), Box<dyn Error + Send + Sync>> {
-        let asset = self.database.assets()?.get_asset(&updated.asset_id.0.to_string())?;
+        let asset = self.database.assets()?.get_asset(&updated.asset_id.0)?;
         let devices: Vec<Device> = self
             .database
             .wallets()?

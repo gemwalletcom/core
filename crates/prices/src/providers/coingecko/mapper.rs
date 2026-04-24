@@ -51,8 +51,13 @@ pub fn map_coins_to_assets(coins: Vec<Coin>, markets_by_id: HashMap<String, Coin
     coins
         .iter()
         .flat_map(|coin| {
-            let market = markets_by_id.get(&coin.id).map(coin_market_to_asset_market);
-            map_coin_to_mappings(coin).into_iter().map(move |mapping| PriceProviderAsset::new(mapping, market.clone()))
+            let raw = markets_by_id.get(&coin.id);
+            let market = raw.map(coin_market_to_asset_market);
+            let price = raw.and_then(|m| m.current_price);
+            let price_change_24h = raw.and_then(|m| m.price_change_percentage_24h);
+            map_coin_to_mappings(coin)
+                .into_iter()
+                .map(move |mapping| PriceProviderAsset::with_price(mapping, market.clone(), price, price_change_24h))
         })
         .collect()
 }

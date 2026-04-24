@@ -1,38 +1,38 @@
-mod charts_history_updater;
 mod charts_updater;
 mod markets_updater;
 mod observed_prices_updater;
+mod prices_cleanup_updater;
+mod prices_metrics_updater;
 pub mod prices_updater;
 
 use crate::model::WorkerService;
 use crate::worker::context::WorkerContext;
 use crate::worker::jobs::{JobVariant, WorkerJob};
 use crate::worker::plan::JobPlanBuilder;
-use chrono::{Duration, Utc};
 use std::collections::HashMap;
 use std::error::Error;
 use std::future::Future;
 use std::sync::Arc;
 
 use cacher::CacherClient;
-use charts_history_updater::ChartsHistoryUpdater;
-use charts_updater::ChartsUpdater;
+use charts_updater::{ChartsHistoryConfig, ChartsHistoryUpdater, ChartsUpdater};
 use coingecko::CoinGeckoClient;
 use gem_client::ReqwestClient;
 use job_runner::{JobHandle, ShutdownReceiver};
 use markets_updater::MarketsUpdater;
-use observed_prices_updater::ObservedPricesUpdater;
+use observed_prices_updater::{ObservedPricesConfig, ObservedPricesUpdater};
 use pricer::{MarketsClient, PriceClient};
-use prices::{CoinGeckoPricesProvider, JupiterProvider, PriceAssetsProvider, PriceProvider, PriceProviderConfig, PythProvider};
+use prices::{CoinGeckoPricesProvider, DefiLlamaProvider, JupiterProvider, PriceAssetsProvider, PriceProvider, PriceProviderConfig, PythProvider};
+use prices_cleanup_updater::PricesCleanupUpdater;
+use prices_metrics_updater::PricesMetricsUpdater;
 use prices_updater::PricesUpdater;
 use primitives::{ChartTimeframe, ConfigKey, ConfigParamKey};
 use settings::Settings;
-use storage::database::prices::PriceFilter;
 use storage::repositories::prices_providers_repository::PricesProvidersRepository;
-use storage::{ConfigCacher, Database, PricesRepository};
+use storage::{ConfigCacher, Database};
 use streamer::{StreamProducer, StreamProducerConfig};
 
-type Providers = Arc<HashMap<PriceProvider, Arc<dyn PriceAssetsProvider>>>;
+pub type AssetsProviders = Arc<HashMap<PriceProvider, Arc<dyn PriceAssetsProvider>>>;
 
 pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver, only: Option<PriceProvider>) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
     let runtime = ctx.runtime();
@@ -49,18 +49,18 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver, only: Optio
         .filter(|p| p.enabled)
         .map(|p| p.id.0)
         .collect();
-    let providers: Providers = Arc::new(build_providers(&enabled_providers, &settings, config.as_ref())?);
+    let assets_providers: AssetsProviders = Arc::new(build_providers(&enabled_providers, &settings, config.as_ref())?);
 
     let builder = JobPlanBuilder::with_config(WorkerService::Prices, runtime.plan(shutdown_rx), config.as_ref());
     let builder = if only.is_none() {
-        add_platform_jobs(builder, &database, &cacher_client, &config, &providers, producer_prices.clone())
+        add_platform_jobs(builder, &database, &cacher_client, &config, &assets_providers, producer_prices.clone())?
     } else {
         builder
     };
     enabled_providers
         .into_iter()
         .filter(|p| only.is_none_or(|o| o == *p))
-        .fold(builder, |builder, provider| {
+        .try_fold(builder, |builder, provider| {
             add_provider_jobs(
                 builder,
                 &database,
@@ -68,11 +68,11 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver, only: Optio
                 &settings,
                 &config,
                 provider,
-                providers[&provider].clone(),
+                assets_providers[&provider].clone(),
                 &producer_assets,
                 &producer_prices,
             )
-        })
+        })?
         .finish()
 }
 
@@ -81,39 +81,25 @@ fn add_platform_jobs<'a>(
     database: &Database,
     cacher_client: &CacherClient,
     config: &Arc<ConfigCacher>,
-    providers: &Providers,
+    providers: &AssetsProviders,
     producer: StreamProducer,
-) -> JobPlanBuilder<'a> {
-    builder
-        .job(WorkerJob::CleanupOutdatedAssets, {
-            let database = database.clone();
-            let config = config.clone();
-            move |_| {
-                let database = database.clone();
-                let config = config.clone();
-                async move {
-                    let cutoff = Utc::now() - Duration::seconds(config.get_duration(ConfigKey::PriceOutdated)?.as_secs() as i64);
-                    let ids = database
-                        .prices()?
-                        .get_prices_by_filter(vec![PriceFilter::UpdatedBefore(cutoff.naive_utc())])?
-                        .into_iter()
-                        .map(|p| p.id)
-                        .collect();
-                    Ok::<usize, Box<dyn std::error::Error + Send + Sync>>(database.prices()?.delete_prices(ids)?)
-                }
-            }
-        })
+) -> Result<JobPlanBuilder<'a>, Box<dyn Error + Send + Sync>> {
+    Ok(builder
         .job(
             WorkerJob::AggregateHourlyCharts,
-            charts_job(database, cacher_client, ChartsAction::Aggregate(ChartTimeframe::Hourly)),
+            charts_job(database, cacher_client, config, ChartsAction::Aggregate(ChartTimeframe::Hourly)),
         )
         .job(
             WorkerJob::AggregateDailyCharts,
-            charts_job(database, cacher_client, ChartsAction::Aggregate(ChartTimeframe::Daily)),
+            charts_job(database, cacher_client, config, ChartsAction::Aggregate(ChartTimeframe::Daily)),
+        )
+        .job(
+            WorkerJob::CleanupChartsRaw,
+            charts_job(database, cacher_client, config, ChartsAction::Delete(ChartTimeframe::Raw)),
         )
         .job(
             WorkerJob::CleanupChartsHourly,
-            charts_job(database, cacher_client, ChartsAction::Cleanup(ChartTimeframe::Hourly)),
+            charts_job(database, cacher_client, config, ChartsAction::Delete(ChartTimeframe::Hourly)),
         )
         .job(WorkerJob::UpdateObservedPrices, {
             let cacher_client = cacher_client.clone();
@@ -128,14 +114,15 @@ fn add_platform_jobs<'a>(
                 let providers = providers.clone();
                 let producer = producer.clone();
                 async move {
-                    let max_observed_assets = config.get_usize(ConfigKey::PriceObservedMaxAssets)?;
-                    let min_observers = config.get_usize(ConfigKey::PriceObservedMinObservers)?;
-                    ObservedPricesUpdater::new(cacher_client, database, providers, producer, max_observed_assets, min_observers)
-                        .update()
-                        .await
+                    let observed_config = ObservedPricesConfig {
+                        max_assets: config.get_usize(ConfigKey::PriceObservedMaxAssets)?,
+                        min_observers: config.get_usize(ConfigKey::PriceObservedMinObservers)?,
+                        primary_price_max_age: config.get_duration(ConfigKey::PricePrimaryMaxAge)?,
+                    };
+                    ObservedPricesUpdater::new(cacher_client, database, providers, producer, observed_config).update().await
                 }
             }
-        })
+        }))
 }
 
 fn add_provider_jobs<'a>(
@@ -144,59 +131,96 @@ fn add_provider_jobs<'a>(
     cacher_client: &CacherClient,
     settings: &Settings,
     config: &Arc<ConfigCacher>,
-    provider: PriceProvider,
-    provider_instance: Arc<dyn PriceAssetsProvider>,
+    kind: PriceProvider,
+    provider: Arc<dyn PriceAssetsProvider>,
     producer_assets: &StreamProducer,
     producer_prices: &StreamProducer,
-) -> JobPlanBuilder<'a> {
-    let slug = provider.id().to_string();
-    let assets_variant = match config.get_param_duration(&ConfigParamKey::PriceProviderAssetsDuration(provider)) {
-        Ok(duration) => JobVariant::labeled(WorkerJob::UpdatePricesAssets, slug.clone()).every(duration),
-        Err(_) => JobVariant::labeled(WorkerJob::UpdatePricesAssets, slug.clone()),
-    };
-    let assets_new_variant = match config.get_param_duration(&ConfigParamKey::PriceProviderAssetsNewDuration(provider)) {
-        Ok(duration) => JobVariant::labeled(WorkerJob::UpdatePricesAssetsNew, slug.clone()).every(duration),
-        Err(_) => JobVariant::labeled(WorkerJob::UpdatePricesAssetsNew, slug.clone()),
-    };
-    let assets_metadata_variant = match config.get_param_duration(&ConfigParamKey::PriceProviderAssetsMetadataDuration(provider)) {
-        Ok(duration) => JobVariant::labeled(WorkerJob::UpdatePricesAssetsMetadata, slug.clone()).every(duration),
-        Err(_) => JobVariant::labeled(WorkerJob::UpdatePricesAssetsMetadata, slug.clone()),
-    };
-    let builder = builder
-        .job(
-            assets_variant,
-            provider_job(database, provider_instance.clone(), producer_assets.clone(), |u| async move { u.update_assets().await }),
-        )
-        .job(
-            assets_new_variant,
-            provider_job(database, provider_instance.clone(), producer_assets.clone(), |u| async move { u.update_assets_new().await }),
-        )
-        .job(
-            assets_metadata_variant,
-            provider_job(
-                database,
-                provider_instance.clone(),
-                producer_assets.clone(),
-                |u| async move { u.update_assets_metadata().await },
-            ),
-        );
-    match provider {
+) -> Result<JobPlanBuilder<'a>, Box<dyn Error + Send + Sync>> {
+    let mut builder = builder;
+    builder = add_updater_job(
+        builder,
+        database,
+        &provider,
+        producer_assets,
+        config,
+        kind,
+        WorkerJob::UpdatePricesAssets,
+        ConfigParamKey::PriceProviderAssetsDuration(kind),
+        |u| async move { u.update_assets().await },
+    )?;
+    builder = add_updater_job(
+        builder,
+        database,
+        &provider,
+        producer_assets,
+        config,
+        kind,
+        WorkerJob::UpdatePricesAssetsNew,
+        ConfigParamKey::PriceProviderAssetsNewDuration(kind),
+        |u| async move { u.update_assets_new().await },
+    )?;
+    builder = add_updater_job(
+        builder,
+        database,
+        &provider,
+        producer_assets,
+        config,
+        kind,
+        WorkerJob::UpdatePricesAssetsMetadata,
+        ConfigParamKey::PriceProviderAssetsMetadataDuration(kind),
+        |u| async move { u.update_assets_metadata().await },
+    )?;
+
+    let cleanup_variant = JobVariant::labeled(WorkerJob::CleanupOutdatedAssets, kind).with_param_duration(config, &ConfigParamKey::PriceProviderCleanOutdatedDuration(kind))?;
+    builder = builder.job(cleanup_variant, {
+        let database = database.clone();
+        let cacher_client = cacher_client.clone();
+        let config = config.clone();
+        move |_| {
+            let updater = PricesCleanupUpdater::new(database.clone(), cacher_client.clone(), config.clone(), kind);
+            async move { updater.update().await }
+        }
+    });
+
+    let metrics_variant = JobVariant::labeled(WorkerJob::UpdatePricesMetrics, kind).with_param_duration(config, &ConfigParamKey::PriceProviderMetricsDuration(kind))?;
+    builder = builder.job(metrics_variant, {
+        let database = database.clone();
+        move |_| {
+            let updater = PricesMetricsUpdater::new(database.clone(), kind);
+            async move { updater.update().await }
+        }
+    });
+
+    builder = builder.job(
+        JobVariant::labeled(WorkerJob::UpdateChartsHistory, kind),
+        charts_history_job(
+            database,
+            cacher_client,
+            provider.clone(),
+            ChartsHistoryConfig {
+                hourly_duration: config.get_param_duration(&ConfigParamKey::PriceProviderChartsHourlyDuration(kind))?,
+            },
+        ),
+    );
+
+    builder = match kind {
         PriceProvider::Coingecko => builder
             .job(
-                JobVariant::labeled(WorkerJob::UpdatePricesTop, slug.clone()),
-                provider_job(database, provider_instance.clone(), producer_prices.clone(), |u| async move {
-                    u.update_prices_window(0, 500).await
-                }),
+                JobVariant::labeled(WorkerJob::UpdatePricesTop, kind),
+                provider_job(database, provider.clone(), producer_prices.clone(), |u| async move { u.update_prices_window(0, 500).await }),
             )
             .job(
-                JobVariant::labeled(WorkerJob::UpdatePricesHigh, slug.clone()),
-                provider_job(database, provider_instance.clone(), producer_prices.clone(), |u| async move {
-                    u.update_prices_window(500, 2500).await
-                }),
+                JobVariant::labeled(WorkerJob::UpdatePricesHigh, kind),
+                provider_job(
+                    database,
+                    provider.clone(),
+                    producer_prices.clone(),
+                    |u| async move { u.update_prices_window(500, 2500).await },
+                ),
             )
             .job(
-                JobVariant::labeled(WorkerJob::UpdatePricesLow, slug),
-                provider_job(database, provider_instance.clone(), producer_prices.clone(), |u| async move {
+                JobVariant::labeled(WorkerJob::UpdatePricesLow, kind),
+                provider_job(database, provider.clone(), producer_prices.clone(), |u| async move {
                     u.update_prices_window(3000, usize::MAX).await
                 }),
             )
@@ -207,29 +231,40 @@ fn add_provider_jobs<'a>(
                     let updater = MarketsUpdater::new(markets_client.clone(), coingecko.clone());
                     Box::pin(async move { updater.update_markets().await })
                 }
-            })
-            .job(WorkerJob::UpdateChartsHistory, {
-                let database = database.clone();
-                let cacher = cacher_client.clone();
-                let provider = provider_instance.clone();
-                move |_| {
-                    let provider = provider.clone();
-                    let database = database.clone();
-                    let cacher = cacher.clone();
-                    Box::pin(async move { ChartsHistoryUpdater::new(provider, database, cacher).update().await })
-                }
             }),
-        PriceProvider::Pyth | PriceProvider::Jupiter => {
-            let prices_variant = match config.get_param_duration(&ConfigParamKey::PriceProviderPricesDuration(provider)) {
-                Ok(duration) => JobVariant::labeled(WorkerJob::UpdatePricesAll, slug).every(duration),
-                Err(_) => JobVariant::labeled(WorkerJob::UpdatePricesAll, slug),
-            };
-            builder.job(
-                prices_variant,
-                provider_job(database, provider_instance, producer_prices.clone(), |u| async move { u.update_prices_all().await }),
-            )
-        }
-    }
+        PriceProvider::Pyth | PriceProvider::Jupiter | PriceProvider::DefiLlama => add_updater_job(
+            builder,
+            database,
+            &provider,
+            producer_prices,
+            config,
+            kind,
+            WorkerJob::UpdatePrices,
+            ConfigParamKey::PriceProviderPricesDuration(kind),
+            |u| async move { u.update_prices_all().await },
+        )?,
+    };
+    Ok(builder)
+}
+
+#[allow(clippy::too_many_arguments)]
+fn add_updater_job<'a, F, Fut>(
+    builder: JobPlanBuilder<'a>,
+    database: &Database,
+    provider: &Arc<dyn PriceAssetsProvider>,
+    producer: &StreamProducer,
+    config: &ConfigCacher,
+    kind: PriceProvider,
+    job: WorkerJob,
+    interval: ConfigParamKey,
+    run: F,
+) -> Result<JobPlanBuilder<'a>, Box<dyn Error + Send + Sync>>
+where
+    F: Fn(PricesUpdater) -> Fut + Clone + Send + Sync + 'static,
+    Fut: Future<Output = Result<usize, Box<dyn Error + Send + Sync>>> + Send + 'static,
+{
+    let variant = JobVariant::labeled(job, kind).with_param_duration(config, &interval)?;
+    Ok(builder.job(variant, provider_job(database, provider.clone(), producer.clone(), run)))
 }
 
 fn build_providers(
@@ -258,7 +293,24 @@ fn build_provider(provider: PriceProvider, settings: &Settings, config: &ConfigC
             ReqwestClient::new(settings.prices.jupiter.url.clone(), reqwest::Client::new()),
             provider_config,
         )),
+        PriceProvider::DefiLlama => Arc::new(DefiLlamaProvider::new(ReqwestClient::new(settings.prices.defillama.url.clone(), reqwest::Client::new()))),
     })
+}
+
+fn charts_history_job(
+    database: &Database,
+    cacher: &CacherClient,
+    provider: Arc<dyn PriceAssetsProvider>,
+    config: ChartsHistoryConfig,
+) -> impl Fn(job_runner::JobContext) -> futures::future::BoxFuture<'static, Result<usize, Box<dyn std::error::Error + Send + Sync>>> + Clone + Send + Sync + 'static {
+    let database = database.clone();
+    let cacher = cacher.clone();
+    move |_| {
+        let provider = provider.clone();
+        let database = database.clone();
+        let cacher = cacher.clone();
+        Box::pin(async move { ChartsHistoryUpdater::new(provider, database, cacher, config).update().await })
+    }
 }
 
 fn provider_job<F, Fut>(
@@ -284,23 +336,38 @@ where
 #[derive(Clone, Copy)]
 enum ChartsAction {
     Aggregate(ChartTimeframe),
-    Cleanup(ChartTimeframe),
+    Delete(ChartTimeframe),
 }
 
 fn charts_job(
     database: &Database,
     cacher: &CacherClient,
+    config: &Arc<ConfigCacher>,
     action: ChartsAction,
 ) -> impl Fn(job_runner::JobContext) -> futures::future::BoxFuture<'static, Result<usize, Box<dyn std::error::Error + Send + Sync>>> + Clone + Send + Sync + 'static {
     let updater = ChartsUpdater::new(PriceClient::new(database.clone(), cacher.clone()));
+    let config = config.clone();
     move |_| {
         let updater = updater.clone();
+        let config = config.clone();
         Box::pin(async move {
             match action {
                 ChartsAction::Aggregate(tf) => updater.aggregate_charts(tf).await,
-                ChartsAction::Cleanup(tf) => updater.cleanup_charts(tf).await,
+                ChartsAction::Delete(tf) => {
+                    let retention = config.get_duration(charts_retention_key(tf))?;
+                    let before = (chrono::Utc::now() - chrono::Duration::from_std(retention)?).naive_utc();
+                    updater.delete_charts(tf, before).await
+                }
             }
         })
+    }
+}
+
+fn charts_retention_key(timeframe: ChartTimeframe) -> ConfigKey {
+    match timeframe {
+        ChartTimeframe::Raw => ConfigKey::PriceChartsRetentionRaw,
+        ChartTimeframe::Hourly => ConfigKey::PriceChartsRetentionHourly,
+        ChartTimeframe::Daily => ConfigKey::PriceChartsRetentionDaily,
     }
 }
 

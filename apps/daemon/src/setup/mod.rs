@@ -4,15 +4,15 @@ use self::scan_addresses::setup_scan_addresses;
 use chrono::Utc;
 use gem_tracing::info_with_fields;
 use primitives::{
-    Asset, AssetId, AssetPriceKey, AssetTag, Chain, ConfigKey, ConfigParamKey, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus, NFTChain, NotificationType,
-    PlatformStore as PrimitivePlatformStore, PriceAlert, PriceAlertDirection, PriceProvider, WebhookKind,
+    Asset, AssetId, AssetPriceKey, AssetTag, Chain, ChartTimeframe, ConfigKey, ConfigParamKey, FiatProviderName, FiatQuoteType, FiatTransaction, FiatTransactionStatus, NFTChain,
+    NotificationType, PlatformStore as PrimitivePlatformStore, PriceAlert, PriceAlertDirection, PriceProvider, WebhookKind,
 };
 use search_index::{INDEX_CONFIGS, INDEX_PRIMARY_KEY, SearchIndexClient};
 use settings::Settings;
 use std::collections::HashSet;
 use storage::Database;
 use storage::models::{
-    ChartRow, ConfigRow, FiatAssetRow, FiatProviderCountryRow, FiatRateRow, NewFiatTransactionRow, NewWebhookEndpointRow, PriceAssetRow, PriceRow, UpdateDeviceRow,
+    ChartRow, ConfigRow, FiatAssetRow, FiatProviderCountryRow, FiatRateRow, NewFiatTransactionRow, NewWebhookEndpointRow, PriceAssetRow, UpdateDeviceRow, price::NewPriceRow,
 };
 use storage::sql_types::{Platform, PlatformStore};
 use storage::{
@@ -491,9 +491,9 @@ fn setup_dev_assets(database: &Database) -> Result<(), Box<dyn std::error::Error
         (Chain::Ethereum.as_ref(), &ethereum_asset_id, 2000.0),
     ];
 
-    let prices: Vec<PriceRow> = coins
+    let prices: Vec<NewPriceRow> = coins
         .iter()
-        .map(|(coin_id, _, base_price)| PriceRow::with_price(PriceProvider::primary(), coin_id.to_string(), *base_price))
+        .map(|(coin_id, _, base_price)| NewPriceRow::with_market_data(PriceProvider::primary(), coin_id.to_string(), None, Some(*base_price), None))
         .collect();
 
     let price_assets: Vec<PriceAssetRow> = coins
@@ -501,7 +501,7 @@ fn setup_dev_assets(database: &Database) -> Result<(), Box<dyn std::error::Error
         .map(|(coin_id, asset_id, _)| PriceAssetRow::new((*asset_id).clone(), PriceProvider::primary(), coin_id))
         .collect();
 
-    let result = database.prices()?.set_prices(prices)?;
+    let result = database.prices()?.add_prices(prices)?;
     info_with_fields!("setup_dev", step = "prices added", count = result);
 
     let result = database.prices()?.set_prices_assets(price_assets)?;
@@ -520,8 +520,8 @@ fn setup_dev_assets(database: &Database) -> Result<(), Box<dyn std::error::Error
             .map(|d| ChartRow::new(price_id.clone(), gen_price(d as f64, 0.15), now - chrono::Duration::days(d)))
             .collect();
 
-        database.charts()?.add_charts_hourly(hourly)?;
-        database.charts()?.add_charts_daily(daily)?;
+        database.charts()?.add_charts(ChartTimeframe::Hourly, hourly)?;
+        database.charts()?.add_charts(ChartTimeframe::Daily, daily)?;
     }
     info_with_fields!("setup_dev", step = "charts added");
 

@@ -31,7 +31,7 @@ impl AddressNamesClient {
             .collect::<HashMap<_, _>>();
         let asset_ids = requests
             .iter()
-            .map(|request| AssetId::from(request.chain, Some(request.address.clone())).to_string())
+            .map(|request| AssetId::from(request.chain, Some(request.address.clone())))
             .collect::<Vec<_>>();
         let asset_names = self
             .database

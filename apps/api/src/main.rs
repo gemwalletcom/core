@@ -26,7 +26,7 @@ use strum::IntoEnumIterator;
 
 use ::fiat::FiatClient;
 use ::fiat::FiatProviderFactory;
-use ::nft::{NFTClient, NFTProviderConfig};
+use ::nft::{NFTClient, NFTProviderClient, NFTProviderConfig};
 use admin::AdminConfig;
 use api_connector::PusherClient;
 use assets::{AssetsClient, SearchClient};
@@ -43,6 +43,7 @@ use model::APIService;
 use name_resolver::NameProviderFactory;
 use name_resolver::client::{Client as NameClient, NameConfig};
 use pricer::{ChartClient, MarketsClient, PriceAlertClient, PriceClient};
+use primitives::PriceConfig;
 use rocket::tokio::sync::Mutex;
 use rocket::{Build, Rocket, catchers, routes};
 use search_index::SearchIndexClient;
@@ -79,9 +80,6 @@ fn mount_routes(rocket: Rocket<Build>, admin_enabled: bool) -> Rocket<Build> {
                 chain::swap::get_swap_result,
                 chain::swap::get_vault_addresses,
                 swap::get_swap_assets,
-                nft::get_nft_assets_by_chain,
-                nft::get_nft_collection,
-                nft::get_nft_asset,
                 nft::get_nft_asset_image_preview,
                 nft::update_nft_collection,
                 nft::update_nft_asset,
@@ -92,6 +90,9 @@ fn mount_routes(rocket: Rocket<Build>, admin_enabled: bool) -> Rocket<Build> {
                 chain::address::get_balances,
                 chain::address::get_assets,
                 chain::address::get_transactions,
+                chain::nft::get_nfts,
+                chain::nft::get_nft_asset,
+                chain::nft::get_nft_collection,
                 chain::transaction::get_transaction,
                 referral::get_rewards_leaderboard,
                 swap::post_near_intents_quote,
@@ -146,16 +147,20 @@ fn mount_routes(rocket: Rocket<Build>, admin_enabled: bool) -> Rocket<Build> {
     }
 }
 
-async fn rocket_api(settings: Settings) -> Rocket<Build> {
+async fn rocket_api(settings: Settings) -> Result<Rocket<Build>, Box<dyn std::error::Error + Send + Sync>> {
     let redis_url = settings.redis.url.as_str();
     let postgres_url = settings.postgres.url.as_str();
     let settings_clone = settings.clone();
 
     let database = Database::new(postgres_url, settings.postgres.pool);
     let cacher_client = CacherClient::new(redis_url).await;
+    let config_cacher = storage::ConfigCacher::new(database.clone());
+    let price_config = PriceConfig {
+        primary_price_max_age: config_cacher.get_duration(primitives::ConfigKey::PricePrimaryMaxAge)?,
+    };
 
     let price_client = PriceClient::new(database.clone(), cacher_client.clone());
-    let charts_client = ChartClient::new(database.clone());
+    let charts_client = ChartClient::new(database.clone(), price_config);
     let config_client = ConfigClient::new(database.clone());
     let price_alert_client = PriceAlertClient::new(database.clone());
     let name_config = NameConfig {
@@ -165,7 +170,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
     let name_client = NameClient::new(providers, name_config);
 
     let chain_client = chain::ChainClient::new(ChainProviders::new(ProviderFactory::new_providers(&settings)));
-    let portfolio_client = PortfolioClient::new(database.clone());
+    let portfolio_client = PortfolioClient::new(database.clone(), price_config);
     let endpoints = ProviderFactory::get_chain_endpoints(&settings);
     let swapper = Arc::new(GemSwapper::new(Arc::new(swapper::NativeProvider::new_with_endpoints(endpoints))));
 
@@ -180,7 +185,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
 
     let security_providers = ScanProviderFactory::create_providers(&settings_clone);
     let scan_client = ScanClient::new(database.clone(), security_providers);
-    let assets_client = AssetsClient::new(database.clone());
+    let assets_client = AssetsClient::new(database.clone(), price_config);
     let search_index_client = SearchIndexClient::new(&settings_clone.meilisearch.url.clone(), &settings_clone.meilisearch.key.clone());
     let search_client = SearchClient::new(&search_index_client, price_client.clone());
     let swap_client = SwapClient::new(database.clone());
@@ -194,8 +199,13 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         stream_producer.clone(),
     );
     let fiat_quotes_client = FiatQuotesClient::new(database.clone(), fiat_client);
-    let nft_config = NFTProviderConfig::new(settings.nft.opensea.key.secret.clone(), settings.nft.magiceden.key.secret.clone());
-    let nft_client = NFTClient::new(database.clone(), nft_config);
+    let nft_config = NFTProviderConfig::new(
+        settings.nft.opensea.key.secret.clone(),
+        settings.nft.magiceden.key.secret.clone(),
+        settings.chains.ton.url.clone(),
+    );
+    let nft_provider_client = Arc::new(NFTProviderClient::new(nft_config));
+    let nft_client = NFTClient::new(database.clone(), nft_provider_client.clone());
     let auth_client = Arc::new(AuthClient::new(cacher_client.clone()));
     let markets_client = MarketsClient::new(database.clone(), cacher_client.clone());
     let webhooks_client = WebhooksClient::new(stream_producer.clone());
@@ -229,6 +239,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         .manage(Mutex::new(scan_client))
         .manage(Mutex::new(swap_client))
         .manage(Mutex::new(nft_client))
+        .manage(nft_provider_client)
         .manage(Mutex::new(price_alert_client))
         .manage(Mutex::new(chain_client))
         .manage(swapper)
@@ -249,7 +260,7 @@ async fn rocket_api(settings: Settings) -> Rocket<Build> {
         });
     }
 
-    mount_routes(rocket, settings.api.admin.enabled)
+    Ok(mount_routes(rocket, settings.api.admin.enabled))
 }
 
 async fn rocket_ws_prices(settings: Settings) -> Rocket<Build> {
@@ -292,8 +303,8 @@ async fn rocket_ws_stream(settings: Settings) -> Rocket<Build> {
 }
 
 #[tokio::main]
-async fn main() {
-    let settings = Settings::new().unwrap();
+async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let settings = Settings::new()?;
 
     let service = match std::env::args().nth(1) {
         Some(arg) => APIService::from_str(&arg).unwrap_or_else(|_| {
@@ -306,11 +317,12 @@ async fn main() {
     info_with_fields!("api start service", service = service.as_ref());
 
     let rocket = match service {
-        APIService::Api => rocket_api(settings).await,
+        APIService::Api => rocket_api(settings).await?,
         APIService::WebsocketPrices => rocket_ws_prices(settings).await,
         APIService::WebsocketStream => rocket_ws_stream(settings).await,
     };
-    rocket.launch().await.expect("Failed to launch Rocket");
+    rocket.launch().await?;
+    Ok(())
 }
 
 #[cfg(test)]

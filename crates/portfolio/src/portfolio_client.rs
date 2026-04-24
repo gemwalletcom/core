@@ -3,11 +3,12 @@ use std::collections::BTreeMap;
 use std::error::Error;
 
 use number_formatter::BigNumberFormatter;
-use primitives::{ChartPeriod, ChartValue, ChartValuePercentage, PortfolioAllocation, PortfolioAsset, PortfolioAssets};
+use primitives::{ChartPeriod, ChartValue, ChartValuePercentage, PortfolioAllocation, PortfolioAsset, PortfolioAssets, PriceConfig};
 use storage::{AssetsRepository, ChartsRepository, Database, PricesRepository};
 
 pub struct PortfolioClient {
     database: Database,
+    config: PriceConfig,
 }
 
 struct ResolvedAsset {
@@ -18,8 +19,8 @@ struct ResolvedAsset {
 }
 
 impl PortfolioClient {
-    pub fn new(database: Database) -> Self {
-        Self { database }
+    pub fn new(database: Database, config: PriceConfig) -> Self {
+        Self { database, config }
     }
 
     pub fn get_portfolio_charts(&self, assets: Vec<PortfolioAsset>, period: ChartPeriod) -> Result<PortfolioAssets, Box<dyn Error + Send + Sync>> {
@@ -91,10 +92,10 @@ impl PortfolioClient {
     }
 
     fn resolve_asset(&self, input: PortfolioAsset) -> Option<ResolvedAsset> {
-        let asset_id = input.asset_id.to_string();
-        let asset = self.database.assets().ok()?.get_asset(&asset_id).ok()?;
+        let asset_id = &input.asset_id;
+        let asset = self.database.assets().ok()?.get_asset(asset_id).ok()?;
         let balance = BigNumberFormatter::value_as_f64(&input.value, asset.decimals as u32).ok()?;
-        let key = self.database.prices().ok()?.get_primary_price_key(&asset_id).ok()?;
+        let key = self.database.prices().ok()?.get_primary_price_key(asset_id, self.config.primary_price_max_age).ok()?;
         let price_id = key.id();
         let price = self.database.prices().ok()?.get_price_by_id(&price_id).map(|p| p.price).unwrap_or_default();
 

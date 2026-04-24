@@ -123,7 +123,7 @@ impl FiatClient {
     }
 
     fn get_fiat_mapping(&self, asset: &Asset, quote_type: &FiatQuoteType) -> Result<(FiatMappingMap, Vec<PrimitiveFiatProvider>), Box<dyn Error + Send + Sync>> {
-        let fiat_assets = self.database.fiat()?.get_fiat_assets_for_asset_id(&asset.id.to_string())?;
+        let fiat_assets = self.database.fiat()?.get_fiat_assets_for_asset_id(&asset.id)?;
         let providers = self.database.fiat()?.get_fiat_providers()?.into_iter().map(|p| p.as_primitive()).collect();
 
         let map: FiatMappingMap = fiat_assets
@@ -161,8 +161,7 @@ impl FiatClient {
     }
 
     pub async fn get_quotes(&self, request: FiatQuoteRequest) -> Result<FiatQuotes, Box<dyn Error + Send + Sync>> {
-        let asset_id = request.asset_id.to_string();
-        let asset = self.database.assets()?.get_asset(&asset_id)?;
+        let asset = self.database.assets()?.get_asset(&request.asset_id)?;
 
         let fiat_providers_countries = self.get_fiat_providers_countries().await?;
         let ip_address_info = match self.get_ip_address(&request.ip_address).await {
