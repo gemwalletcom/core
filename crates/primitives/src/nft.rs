@@ -146,13 +146,10 @@ impl NFTCollectionId {
     }
 
     pub fn from_id(id: &str) -> Option<Self> {
-        let parts: Vec<&str> = id.split('_').collect();
-        if parts.len() != 2 {
-            return None;
-        }
+        let (chain, contract_address) = id.split_once('_')?;
         Some(Self {
-            chain: Chain::from_str(parts[0]).ok()?,
-            contract_address: parts[1].to_string(),
+            chain: Chain::from_str(chain).ok()?,
+            contract_address: contract_address.to_string(),
         })
     }
 
@@ -171,14 +168,23 @@ impl NFTAssetId {
     }
 
     pub fn from_id(id: &str) -> Option<Self> {
-        let parts: Vec<&str> = id.split('_').collect();
-        if parts.len() != 3 {
-            return None;
-        }
+        let (chain_str, rest) = id.split_once('_')?;
+        let chain = Chain::from_str(chain_str).ok()?;
+        // TON friendly base64 addresses are always 48 chars and may contain `_`.
+        // For other chains, addresses don't contain `_`, so split_once is unambiguous.
+        let (contract_address, token_id) = if chain == Chain::Ton {
+            const TON_ADDR_LEN: usize = 48;
+            if rest.len() <= TON_ADDR_LEN || rest.as_bytes().get(TON_ADDR_LEN) != Some(&b'_') {
+                return None;
+            }
+            (&rest[..TON_ADDR_LEN], &rest[TON_ADDR_LEN + 1..])
+        } else {
+            rest.split_once('_')?
+        };
         Some(Self {
-            chain: Chain::from_str(parts[0]).ok()?,
-            contract_address: parts[1].to_string(),
-            token_id: parts[2].to_string(),
+            chain,
+            contract_address: contract_address.to_string(),
+            token_id: token_id.to_string(),
         })
     }
 
@@ -284,4 +290,42 @@ pub struct ReportNft {
     pub collection_id: String,
     pub asset_id: Option<String>,
     pub reason: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const TON_COLLECTION: &str = "EQC3dNlesgVD8YbAazcauIrXBPfiVhMMr5YYk2in0Mtsz0Bz";
+    const TON_TOKEN: &str = "EQAqmedq_nTBz7rX6TvASY_kwXxbKexQap_qnsfS4E-qF0dI";
+
+    #[test]
+    fn test_collection_id() {
+        let eth = NFTCollectionId::new(Chain::Ethereum, "0xabc");
+        assert_eq!(eth.id(), "ethereum_0xabc");
+        assert_eq!(NFTCollectionId::from_id(&eth.id()), Some(eth));
+
+        let ton = NFTCollectionId::new(Chain::Ton, TON_COLLECTION);
+        assert_eq!(ton.id(), format!("ton_{TON_COLLECTION}"));
+        assert_eq!(NFTCollectionId::from_id(&ton.id()), Some(ton));
+
+        assert_eq!(NFTCollectionId::from_id("just-chain"), None);
+        assert_eq!(NFTCollectionId::from_id("not_a_real_chain"), None);
+    }
+
+    #[test]
+    fn test_asset_id() {
+        let eth = NFTAssetId::new(Chain::Ethereum, "0xabc", "42");
+        assert_eq!(eth.as_ref(), "ethereum_0xabc_42");
+        assert_eq!(NFTAssetId::from_id("ethereum_0xabc_42"), Some(eth));
+
+        let ton = NFTAssetId::new(Chain::Ton, TON_COLLECTION, TON_TOKEN);
+        assert_eq!(ton.as_ref(), format!("ton_{TON_COLLECTION}_{TON_TOKEN}"));
+        assert_eq!(NFTAssetId::from_id(ton.as_ref()), Some(ton.clone()));
+        assert_eq!(ton.get_collection_id(), NFTCollectionId::new(Chain::Ton, TON_COLLECTION));
+
+        assert_eq!(NFTAssetId::from_id("ethereum_0xabc"), None);
+        assert_eq!(NFTAssetId::from_id("nonsense"), None);
+        assert_eq!(NFTAssetId::from_id("ton_short"), None);
+    }
 }
