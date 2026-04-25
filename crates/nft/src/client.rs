@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 use std::error::Error;
 use std::sync::Arc;
 
-use primitives::{AssetId, Chain, NFTAsset, NFTAssetId, NFTCollection, NFTCollectionId, NFTData};
+use primitives::{AssetId, Chain, ImageFormatter, NFTAsset, NFTAssetId, NFTCollection, NFTCollectionId, NFTData};
 use storage::database::devices::DevicesStore;
 use storage::{Database, NftRepository, WalletsRepository};
 
@@ -67,13 +67,13 @@ impl NFTClient {
     }
 
     fn with_urls_asset(&self, asset: NFTAsset) -> NFTAsset {
-        let preview_url = format!("{}/asset/{}/preview", self.assets_url, asset.id);
-        let resource_url = format!("{}/asset/{}/resource", self.assets_url, asset.id);
+        let preview_url = ImageFormatter::get_nft_asset_url(&self.assets_url, &asset.id);
+        let resource_url = ImageFormatter::get_nft_asset_resource_url(&self.assets_url, &asset.id);
         asset.with_urls(preview_url, resource_url)
     }
 
     fn with_urls_collection(&self, collection: NFTCollection) -> NFTCollection {
-        let preview_url = format!("{}/collection/{}/preview", self.assets_url, collection.id);
+        let preview_url = ImageFormatter::get_nft_collection_url(&self.assets_url, &collection.id);
         collection.with_preview_url(preview_url)
     }
 
