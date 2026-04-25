@@ -19,7 +19,7 @@ impl ImageFormatter {
     }
 
     pub fn get_nft_asset_url(url: &str, id: &str) -> String {
-        format!("{url}/v1/nft/assets/{id}/image_preview")
+        format!("{url}/nft/asset/{id}/preview")
     }
 }
 #[cfg(test)]
@@ -48,6 +48,14 @@ mod tests {
         assert_eq!(
             ImageFormatter::get_validator_url(URL, Chain::Ethereum.as_ref(), "1"),
             "https://example.com/blockchains/ethereum/validators/1/logo.png"
+        );
+    }
+
+    #[test]
+    fn test_get_nft_asset_url() {
+        assert_eq!(
+            ImageFormatter::get_nft_asset_url(URL, "ethereum_0xabc_1"),
+            "https://example.com/nft/asset/ethereum_0xabc_1/preview"
         );
     }
 }

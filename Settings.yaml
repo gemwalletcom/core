@@ -279,6 +279,7 @@ assets:
   url: "https://raw.githubusercontent.com/gemwalletcom/assets/refs/heads/master"
 
 nft:
+  url: "https://nft-assets.gemwallet.com"
   nftscan:
     key:
       secret: ""

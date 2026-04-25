@@ -44,7 +44,7 @@ impl FetchNftAssetsAddressesConsumer {
             settings.nft.magiceden.key.secret.clone(),
             settings.chains.ton.url.clone(),
         );
-        let nft_client = NFTClient::from_config(database.clone(), nft_config);
+        let nft_client = NFTClient::from_config(database.clone(), nft_config, settings.nft.url.clone());
         let nft_client = Arc::new(Mutex::new(nft_client));
         let consumer = Self {
             database,

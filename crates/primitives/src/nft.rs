@@ -59,6 +59,15 @@ impl NFTCollection {
             preview: NFTResource::from_url(&image),
         }
     }
+
+    pub fn with_preview_url(self, url: String) -> Self {
+        Self {
+            images: NFTImages {
+                preview: NFTResource { url, ..self.images.preview },
+            },
+            ..self
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -81,6 +90,22 @@ pub struct NFTAsset {
 impl NFTAsset {
     pub fn get_contract_address(&self) -> Result<&str, &'static str> {
         self.contract_address.as_deref().ok_or("missing NFT contract address")
+    }
+
+    pub fn with_urls(self, preview_url: String, resource_url: String) -> Self {
+        Self {
+            images: NFTImages {
+                preview: NFTResource {
+                    url: preview_url,
+                    ..self.images.preview
+                },
+            },
+            resource: NFTResource {
+                url: resource_url,
+                ..self.resource
+            },
+            ..self
+        }
     }
 }
 

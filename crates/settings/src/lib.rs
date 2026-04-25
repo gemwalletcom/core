@@ -348,6 +348,7 @@ impl Settings {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct NFT {
+    pub url: String,
     pub nftscan: NFTScan,
     pub opensea: OpenSea,
     pub magiceden: MagicEden,

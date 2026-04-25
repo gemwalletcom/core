@@ -80,7 +80,9 @@ fn mount_routes(rocket: Rocket<Build>, admin_enabled: bool) -> Rocket<Build> {
                 chain::swap::get_swap_result,
                 chain::swap::get_vault_addresses,
                 swap::get_swap_assets,
-                nft::get_nft_asset_image_preview,
+                nft::get_nft_asset_preview,
+                nft::get_nft_asset_resource,
+                nft::get_nft_collection_preview,
                 nft::update_nft_collection,
                 nft::update_nft_asset,
                 markets::get_markets,
@@ -204,8 +206,7 @@ async fn rocket_api(settings: Settings) -> Result<Rocket<Build>, Box<dyn std::er
         settings.nft.magiceden.key.secret.clone(),
         settings.chains.ton.url.clone(),
     );
-    let nft_provider_client = Arc::new(NFTProviderClient::new(nft_config));
-    let nft_client = NFTClient::new(database.clone(), nft_provider_client.clone());
+    let nft_client = NFTClient::new(database.clone(), Arc::new(NFTProviderClient::new(nft_config)), settings.nft.url.clone());
     let auth_client = Arc::new(AuthClient::new(cacher_client.clone()));
     let markets_client = MarketsClient::new(database.clone(), cacher_client.clone());
     let webhooks_client = WebhooksClient::new(stream_producer.clone());
@@ -238,8 +239,7 @@ async fn rocket_api(settings: Settings) -> Result<Rocket<Build>, Box<dyn std::er
         .manage(Mutex::new(address_names_client))
         .manage(Mutex::new(scan_client))
         .manage(Mutex::new(swap_client))
-        .manage(Mutex::new(nft_client))
-        .manage(nft_provider_client)
+        .manage(nft_client)
         .manage(Mutex::new(price_alert_client))
         .manage(Mutex::new(chain_client))
         .manage(swapper)
