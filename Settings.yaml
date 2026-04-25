@@ -279,7 +279,7 @@ assets:
   url: "https://raw.githubusercontent.com/gemwalletcom/assets/refs/heads/master"
 
 nft:
-  url: "https://nft-assets.gemwallet.com"
+  url: "https://assets.gemwallet.com/nft"
   nftscan:
     key:
       secret: ""
@@ -288,14 +288,6 @@ nft:
       secret: ""
   magiceden:
     key:
-      secret: ""
-  bucket:
-    endpoint: ""
-    region: auto
-    name: "nft-assets"
-    url: "https://nft-assets.gemwallet.com"
-    key:
-      public: ""
       secret: ""
 
 rewards:
