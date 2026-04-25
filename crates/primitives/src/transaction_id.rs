@@ -1,3 +1,4 @@
+use crate::CHAIN_SEPARATOR;
 use crate::chain::Chain;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::str::FromStr;
@@ -16,7 +17,7 @@ impl TransactionId {
 
 impl std::fmt::Display for TransactionId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}_{}", self.chain.as_ref(), self.hash)
+        write!(f, "{}{CHAIN_SEPARATOR}{}", self.chain.as_ref(), self.hash)
     }
 }
 
@@ -52,16 +53,10 @@ impl FromStr for TransactionId {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts: Vec<&str> = s.splitn(2, '_').collect();
-        if parts.len() != 2 {
-            return Err(format!("Invalid TransactionId format: expected chain_hash, got {s}"));
-        }
-
-        let chain_str = parts[0];
-        let hash_str = parts[1];
-
+        let (chain_str, hash_str) = s
+            .split_once(CHAIN_SEPARATOR)
+            .ok_or_else(|| format!("Invalid TransactionId format: expected chain{CHAIN_SEPARATOR}hash, got {s}"))?;
         let chain = Chain::from_str(chain_str).map_err(|e| format!("Invalid chain identifier '{chain_str}': {e}"))?;
-
         Ok(TransactionId::new(chain, hash_str.to_string()))
     }
 }

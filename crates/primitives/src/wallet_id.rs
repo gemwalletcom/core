@@ -2,6 +2,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::fmt;
 use std::str::FromStr;
 
+use crate::CHAIN_SEPARATOR;
 use crate::chain::Chain;
 use crate::wallet_type::WalletType;
 
@@ -67,9 +68,9 @@ impl WalletId {
 impl fmt::Display for WalletId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            WalletId::Multicoin(address) => write!(f, "{}_{}", WalletType::Multicoin.as_ref(), address),
+            WalletId::Multicoin(address) => write!(f, "{}{CHAIN_SEPARATOR}{}", WalletType::Multicoin.as_ref(), address),
             WalletId::Single(chain, address) | WalletId::PrivateKey(chain, address) | WalletId::View(chain, address) => {
-                write!(f, "{}_{}_{}", self.wallet_type().as_ref(), chain.as_ref(), address)
+                write!(f, "{}{CHAIN_SEPARATOR}{}{CHAIN_SEPARATOR}{}", self.wallet_type().as_ref(), chain.as_ref(), address)
             }
         }
     }
@@ -79,22 +80,19 @@ impl FromStr for WalletId {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts: Vec<&str> = s.splitn(2, '_').collect();
-        if parts.len() != 2 {
-            return Err(format!("invalid wallet identifier format: expected at least 2 parts separated by '_', got: {}", s));
-        }
-        let wallet_type: WalletType = parts[0].parse().map_err(|_| format!("invalid wallet type: {}", parts[0]))?;
-        let rest = parts[1];
+        let (wallet_type_str, rest) = s
+            .split_once(CHAIN_SEPARATOR)
+            .ok_or_else(|| format!("invalid wallet identifier format: expected at least 2 parts separated by '{CHAIN_SEPARATOR}', got: {s}"))?;
+        let wallet_type: WalletType = wallet_type_str.parse().map_err(|_| format!("invalid wallet type: {wallet_type_str}"))?;
 
         match wallet_type {
             WalletType::Multicoin => Ok(WalletId::Multicoin(rest.to_string())),
             WalletType::Single | WalletType::PrivateKey | WalletType::View => {
-                let chain_parts: Vec<&str> = rest.splitn(2, '_').collect();
-                if chain_parts.len() != 2 {
-                    return Err(format!("invalid wallet identifier format for {}: expected 3 parts, got: {}", wallet_type.as_ref(), s));
-                }
-                let chain: Chain = chain_parts[0].parse().map_err(|_| format!("invalid chain: {}", chain_parts[0]))?;
-                let address = chain_parts[1].to_string();
+                let (chain_str, address) = rest
+                    .split_once(CHAIN_SEPARATOR)
+                    .ok_or_else(|| format!("invalid wallet identifier format for {}: expected 3 parts, got: {s}", wallet_type.as_ref()))?;
+                let chain: Chain = chain_str.parse().map_err(|_| format!("invalid chain: {chain_str}"))?;
+                let address = address.to_string();
                 match wallet_type {
                     WalletType::Single => Ok(WalletId::Single(chain, address)),
                     WalletType::PrivateKey => Ok(WalletId::PrivateKey(chain, address)),

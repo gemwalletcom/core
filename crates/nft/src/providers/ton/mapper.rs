@@ -152,7 +152,7 @@ mod tests {
         assert_eq!(first.chain, Chain::Ton);
         assert_eq!(first.contract_address, VERIFIED_COLLECTION);
         assert_eq!(first.token_id, ITEM);
-        assert_eq!(first.to_string(), format!("ton_{VERIFIED_COLLECTION}_{ITEM}"));
+        assert_eq!(first.to_string(), format!("ton_{VERIFIED_COLLECTION}::{ITEM}"));
     }
 
     #[test]
@@ -161,7 +161,7 @@ mod tests {
         let asset_id = NFTAssetId::new(Chain::Ton, VERIFIED_COLLECTION, ITEM);
         let asset = map_asset(response, asset_id).expect("Failed to map asset");
 
-        assert_eq!(asset.id, format!("ton_{VERIFIED_COLLECTION}_{ITEM}"));
+        assert_eq!(asset.id, format!("ton_{VERIFIED_COLLECTION}::{ITEM}"));
         assert_eq!(asset.collection_id, format!("ton_{VERIFIED_COLLECTION}"));
         assert_eq!(asset.chain, Chain::Ton);
         assert_eq!(asset.token_id, ITEM);

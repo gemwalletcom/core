@@ -54,8 +54,8 @@ mod tests {
     #[test]
     fn test_get_nft_asset_url() {
         assert_eq!(
-            ImageFormatter::get_nft_asset_url(URL, "ethereum_0xabc_1"),
-            "https://example.com/asset/ethereum_0xabc_1/preview"
+            ImageFormatter::get_nft_asset_url(URL, "ethereum_0xabc::1"),
+            "https://example.com/asset/ethereum_0xabc::1/preview"
         );
     }
 }

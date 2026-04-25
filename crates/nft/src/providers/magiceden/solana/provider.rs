@@ -79,7 +79,7 @@ mod nft_integration_tests {
         let asset = client.get_asset(asset_id).await?;
         println!("MagicEden asset: {:?}", asset);
 
-        assert_eq!(asset.id, format!("solana_{}_{}", TEST_SOLANA_COLLECTION_POOKS, TEST_SOLANA_TOKEN_ID));
+        assert_eq!(asset.id, format!("solana_{TEST_SOLANA_COLLECTION_POOKS}::{TEST_SOLANA_TOKEN_ID}"));
         assert_eq!(asset.chain, Chain::Solana);
         assert!(!asset.name.is_empty());
         assert!(!asset.attributes.is_empty());

@@ -60,7 +60,7 @@ pub use self::duration::{DAY, HOUR, MINUTE, SECONDS_PER_DAY, SECONDS_PER_HOUR, S
 pub mod currency;
 pub use self::asset::{Asset, AssetVecExt};
 pub mod asset_id;
-pub use self::asset_id::{AssetId, AssetIdVecExt};
+pub use self::asset_id::{AssetId, AssetIdVecExt, CHAIN_SEPARATOR, TOKEN_ID_SEPARATOR};
 pub use crate::asset::AssetHashSetExt;
 pub mod asset_score;
 pub use self::asset_score::AssetScore;
