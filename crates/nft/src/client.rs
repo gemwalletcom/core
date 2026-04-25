@@ -67,13 +67,13 @@ impl NFTClient {
     }
 
     fn with_urls_asset(&self, asset: NFTAsset) -> NFTAsset {
-        let preview_url = format!("{}/nft/asset/{}/preview", self.assets_url, asset.id);
-        let resource_url = format!("{}/nft/asset/{}/resource", self.assets_url, asset.id);
+        let preview_url = format!("{}/asset/{}/preview", self.assets_url, asset.id);
+        let resource_url = format!("{}/asset/{}/resource", self.assets_url, asset.id);
         asset.with_urls(preview_url, resource_url)
     }
 
     fn with_urls_collection(&self, collection: NFTCollection) -> NFTCollection {
-        let preview_url = format!("{}/nft/collection/{}/preview", self.assets_url, collection.id);
+        let preview_url = format!("{}/collection/{}/preview", self.assets_url, collection.id);
         collection.with_preview_url(preview_url)
     }
 
