@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use gem_ton::address::Address;
 use gem_ton::models::{NftCollectionsResponse, NftItem, NftItemsResponse, TokenInfo, TokenMetadata};
-use primitives::{Chain, NFTAsset, NFTAssetId, NFTCollection, NFTCollectionId, NFTData, NFTImages, NFTResource, NFTType, VerificationStatus};
+use primitives::{Address as _, Chain, NFTAsset, NFTAssetId, NFTCollection, NFTCollectionId, NFTData, NFTImages, NFTResource, NFTType, VerificationStatus};
 
 use super::verified::is_verified;
 
@@ -11,7 +11,7 @@ pub fn map_asset_ids(response: &NftItemsResponse) -> Vec<NFTAssetId> {
 }
 
 pub fn map_asset(response: NftItemsResponse, asset_id: NFTAssetId) -> Option<NFTAsset> {
-    let collection = Address::from_base64_url(&asset_id.contract_address).ok()?;
+    let collection = Address::try_parse_base64(&asset_id.contract_address)?;
     if !is_verified(&collection) {
         return None;
     }
@@ -26,7 +26,7 @@ pub fn map_asset(response: NftItemsResponse, asset_id: NFTAssetId) -> Option<NFT
 }
 
 pub fn map_collection(response: NftCollectionsResponse, collection_id: NFTCollectionId) -> Option<NFTCollection> {
-    let address = Address::from_base64_url(&collection_id.contract_address).ok()?;
+    let address = Address::try_parse_base64(&collection_id.contract_address)?;
     if !is_verified(&address) {
         return None;
     }
@@ -42,12 +42,12 @@ pub fn map_nft_data(response: NftItemsResponse) -> Vec<NFTData> {
         .iter()
         .filter_map(|item| {
             let hex = item.collection_address.as_deref()?;
-            let address = Address::from_hex_str(hex).ok()?;
+            let address = Address::try_parse_hex(hex)?;
             if !is_verified(&address) {
                 return None;
             }
             let info = valid_named_token_info(metadata.get(hex))?;
-            let collection_id = NFTCollectionId::new(Chain::Ton, &address.to_base64_url());
+            let collection_id = NFTCollectionId::new(Chain::Ton, &address.encode());
             Some((collection_id.clone(), build_collection(&collection_id, info)))
         })
         .collect();
@@ -124,13 +124,13 @@ fn token_info_name(info: &TokenInfo) -> Option<&str> {
 
 fn asset_id_from_item(item: &NftItem, metadata: &HashMap<String, TokenMetadata>) -> Option<NFTAssetId> {
     let collection_hex = item.collection_address.as_deref()?;
-    let collection = Address::from_hex_str(collection_hex).ok()?;
+    let collection = Address::try_parse_hex(collection_hex)?;
     if !is_verified(&collection) {
         return None;
     }
     valid_named_token_info(metadata.get(&item.address))?;
-    let token = Address::from_hex_str(&item.address).ok()?;
-    Some(NFTAssetId::new(Chain::Ton, &collection.to_base64_url(), &token.to_base64_url()))
+    let token = Address::try_parse_hex(&item.address)?;
+    Some(NFTAssetId::new(Chain::Ton, &collection.encode(), &token.encode()))
 }
 
 #[cfg(test)]
