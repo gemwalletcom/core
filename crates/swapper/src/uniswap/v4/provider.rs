@@ -10,7 +10,7 @@ use crate::{
     fees::apply_slippage_in_bp,
     uniswap::{
         deadline::get_sig_deadline,
-        fee_token::get_fee_token,
+        fee_token::{FeeToken, get_fee_token},
         is_native_erc20,
         quote_result::get_best_quote,
         requires_native_wrapping,
@@ -112,7 +112,9 @@ impl Swapper for UniswapV4 {
         let (evm_chain, token_in, token_out, from_value) = Self::parse_request(request)?;
         let fee_tiers = self.get_tiers();
         let base_pair = get_base_pair(&evm_chain, is_native_erc20(from_chain)).ok_or(SwapperError::ComputeQuoteError("base pair not found".into()))?;
-        let fee_preference = get_fee_token(&request.mode, Some(&base_pair), &token_in, &token_out);
+        let fee_token_in = FeeToken::new(token_in, request.from_asset.symbol.as_str());
+        let fee_token_out = FeeToken::new(token_out, request.to_asset.symbol.as_str());
+        let fee_preference = get_fee_token(&request.mode, Some(&base_pair), &fee_token_in, &fee_token_out);
         let fee_bps = request.options.clone().fee.unwrap_or_default().evm.bps;
         let quote_amount_in = if fee_preference.is_input_token && fee_bps > 0 {
             apply_slippage_in_bp(&from_value, fee_bps)
@@ -243,7 +245,9 @@ impl Swapper for UniswapV4 {
         let sig_deadline = get_sig_deadline();
         let evm_chain = EVMChain::from_chain(from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let base_pair = get_base_pair(&evm_chain, is_native_erc20(from_asset.chain));
-        let fee_preference = get_fee_token(&request.mode, base_pair.as_ref(), &token_in, &token_out);
+        let fee_token_in = FeeToken::new(token_in, request.from_asset.symbol.as_str());
+        let fee_token_out = FeeToken::new(token_out, request.to_asset.symbol.as_str());
+        let fee_preference = get_fee_token(&request.mode, base_pair.as_ref(), &fee_token_in, &fee_token_out);
 
         let commands = build_commands(
             request,
