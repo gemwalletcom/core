@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 use typeshare::typeshare;
 
-use crate::{AssetLink, Chain, VerificationStatus};
+use crate::{AssetLink, CHAIN_SEPARATOR, Chain, TOKEN_ID_SEPARATOR, VerificationStatus};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -50,13 +50,22 @@ impl Hash for NFTCollection {
 
 impl NFTCollection {
     pub fn id(chain: Chain, contract_address: &str) -> String {
-        format!("{}_{}", chain.as_ref(), contract_address)
+        format!("{}{CHAIN_SEPARATOR}{}", chain.as_ref(), contract_address)
     }
 
     pub fn images(&self) -> NFTImages {
         let image = format!("{}/{}/collection_original.png", self.chain.as_ref(), self.contract_address);
         NFTImages {
             preview: NFTResource::from_url(&image),
+        }
+    }
+
+    pub fn with_preview_url(self, url: String) -> Self {
+        Self {
+            images: NFTImages {
+                preview: NFTResource { url, ..self.images.preview },
+            },
+            ..self
         }
     }
 }
@@ -81,6 +90,22 @@ pub struct NFTAsset {
 impl NFTAsset {
     pub fn get_contract_address(&self) -> Result<&str, &'static str> {
         self.contract_address.as_deref().ok_or("missing NFT contract address")
+    }
+
+    pub fn with_urls(self, preview_url: String, resource_url: String) -> Self {
+        Self {
+            images: NFTImages {
+                preview: NFTResource {
+                    url: preview_url,
+                    ..self.images.preview
+                },
+            },
+            resource: NFTResource {
+                url: resource_url,
+                ..self.resource
+            },
+            ..self
+        }
     }
 }
 
@@ -121,18 +146,15 @@ impl NFTCollectionId {
     }
 
     pub fn from_id(id: &str) -> Option<Self> {
-        let parts: Vec<&str> = id.split('_').collect();
-        if parts.len() != 2 {
-            return None;
-        }
+        let (chain, contract_address) = id.split_once(CHAIN_SEPARATOR)?;
         Some(Self {
-            chain: Chain::from_str(parts[0]).ok()?,
-            contract_address: parts[1].to_string(),
+            chain: Chain::from_str(chain).ok()?,
+            contract_address: contract_address.to_string(),
         })
     }
 
     pub fn id(&self) -> String {
-        format!("{}_{}", self.chain.as_ref(), self.contract_address)
+        format!("{}{CHAIN_SEPARATOR}{}", self.chain.as_ref(), self.contract_address)
     }
 }
 
@@ -146,14 +168,12 @@ impl NFTAssetId {
     }
 
     pub fn from_id(id: &str) -> Option<Self> {
-        let parts: Vec<&str> = id.split('_').collect();
-        if parts.len() != 3 {
-            return None;
-        }
+        let (chain, rest) = id.split_once(CHAIN_SEPARATOR)?;
+        let (contract_address, token_id) = rest.split_once(TOKEN_ID_SEPARATOR)?;
         Some(Self {
-            chain: Chain::from_str(parts[0]).ok()?,
-            contract_address: parts[1].to_string(),
-            token_id: parts[2].to_string(),
+            chain: Chain::from_str(chain).ok()?,
+            contract_address: contract_address.to_string(),
+            token_id: token_id.to_string(),
         })
     }
 
@@ -164,7 +184,7 @@ impl NFTAssetId {
 
 impl AsRef<str> for NFTAssetId {
     fn as_ref(&self) -> &str {
-        Box::leak(format!("{}_{}_{}", self.chain.as_ref(), self.contract_address, self.token_id).into_boxed_str())
+        Box::leak(format!("{}{CHAIN_SEPARATOR}{}{TOKEN_ID_SEPARATOR}{}", self.chain.as_ref(), self.contract_address, self.token_id).into_boxed_str())
     }
 }
 
@@ -259,4 +279,42 @@ pub struct ReportNft {
     pub collection_id: String,
     pub asset_id: Option<String>,
     pub reason: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const TON_COLLECTION: &str = "EQC3dNlesgVD8YbAazcauIrXBPfiVhMMr5YYk2in0Mtsz0Bz";
+    const TON_TOKEN: &str = "EQAqmedq_nTBz7rX6TvASY_kwXxbKexQap_qnsfS4E-qF0dI";
+
+    #[test]
+    fn test_collection_id() {
+        let eth = NFTCollectionId::new(Chain::Ethereum, "0xabc");
+        assert_eq!(eth.id(), "ethereum_0xabc");
+        assert_eq!(NFTCollectionId::from_id(&eth.id()), Some(eth));
+
+        let ton = NFTCollectionId::new(Chain::Ton, TON_COLLECTION);
+        assert_eq!(ton.id(), format!("ton_{TON_COLLECTION}"));
+        assert_eq!(NFTCollectionId::from_id(&ton.id()), Some(ton));
+
+        assert_eq!(NFTCollectionId::from_id("just-chain"), None);
+        assert_eq!(NFTCollectionId::from_id("not_a_real_chain"), None);
+    }
+
+    #[test]
+    fn test_asset_id() {
+        let eth = NFTAssetId::new(Chain::Ethereum, "0xabc", "42");
+        assert_eq!(eth.as_ref(), "ethereum_0xabc::42");
+        assert_eq!(NFTAssetId::from_id("ethereum_0xabc::42"), Some(eth));
+
+        let ton = NFTAssetId::new(Chain::Ton, TON_COLLECTION, TON_TOKEN);
+        assert_eq!(ton.as_ref(), format!("ton_{TON_COLLECTION}::{TON_TOKEN}"));
+        assert_eq!(NFTAssetId::from_id(ton.as_ref()), Some(ton.clone()));
+        assert_eq!(ton.get_collection_id(), NFTCollectionId::new(Chain::Ton, TON_COLLECTION));
+
+        assert_eq!(NFTAssetId::from_id("ethereum_0xabc"), None);
+        assert_eq!(NFTAssetId::from_id("nonsense"), None);
+        assert_eq!(NFTAssetId::from_id("ton_short"), None);
+    }
 }

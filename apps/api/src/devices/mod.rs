@@ -94,8 +94,8 @@ pub async fn get_device_address_names_v2(
 }
 
 #[get("/devices/nft_assets")]
-pub async fn get_device_nft_assets_v2(device: AuthenticatedDeviceWallet, client: &State<Mutex<NFTClient>>) -> Result<ApiResponse<Vec<NFTData>>, ApiError> {
-    Ok(client.lock().await.get_nft_assets_by_wallet_id(device.device_row.id, device.wallet_id).await?.into())
+pub async fn get_device_nft_assets_v2(device: AuthenticatedDeviceWallet, client: &State<NFTClient>) -> Result<ApiResponse<Vec<NFTData>>, ApiError> {
+    Ok(client.get_nft_assets_by_wallet_id(device.device_row.id, device.wallet_id).await?.into())
 }
 
 #[get("/devices/rewards")]
@@ -191,7 +191,7 @@ pub async fn send_push_notification_device_v2(device: AuthenticatedDevice, clien
 }
 
 #[post("/devices/nft/report", format = "json", data = "<request>")]
-pub async fn report_device_nft_v2(device: AuthenticatedDevice, request: Json<ReportNft>, client: &State<Mutex<NFTClient>>) -> Result<ApiResponse<bool>, ApiError> {
+pub async fn report_device_nft_v2(device: AuthenticatedDevice, request: Json<ReportNft>, client: &State<NFTClient>) -> Result<ApiResponse<bool>, ApiError> {
     let asset_id = request
         .asset_id
         .as_deref()
@@ -199,8 +199,6 @@ pub async fn report_device_nft_v2(device: AuthenticatedDevice, request: Json<Rep
         .transpose()?;
 
     Ok(client
-        .lock()
-        .await
         .report_nft(&device.device_row.device_id, request.collection_id.clone(), asset_id, request.reason.clone())?
         .into())
 }

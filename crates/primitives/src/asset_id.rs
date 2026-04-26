@@ -4,6 +4,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 
 use crate::{AssetSubtype, chain::Chain};
 
+pub const CHAIN_SEPARATOR: &str = "_";
 pub const TOKEN_ID_SEPARATOR: &str = "::";
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -54,7 +55,7 @@ impl fmt::Display for AssetId {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let str = match &self.token_id {
             Some(token_id) => {
-                format!("{}_{}", self.chain.as_ref(), token_id)
+                format!("{}{CHAIN_SEPARATOR}{}", self.chain.as_ref(), token_id)
             }
             None => self.chain.as_ref().to_owned(),
         };
@@ -70,20 +71,16 @@ impl From<AssetId> for String {
 
 impl AssetId {
     pub fn new(asset_id: &str) -> Option<Self> {
-        let split: Vec<&str> = asset_id.split('_').collect();
-        if split.len() == 1 {
-            if let Ok(chain) = asset_id.parse::<Chain>() {
-                return Some(AssetId { chain, token_id: None });
-            }
-        } else if split.len() >= 2
-            && let Ok(chain) = split[0].parse::<Chain>()
-        {
-            return Some(AssetId {
-                chain,
-                token_id: Some(split[1..split.len()].join("_")),
-            });
+        match asset_id.split_once(CHAIN_SEPARATOR) {
+            Some((chain, token_id)) => Some(AssetId {
+                chain: chain.parse().ok()?,
+                token_id: Some(token_id.to_string()),
+            }),
+            None => Some(AssetId {
+                chain: asset_id.parse().ok()?,
+                token_id: None,
+            }),
         }
-        None
     }
 
     pub fn from(chain: Chain, token_id: Option<String>) -> AssetId {

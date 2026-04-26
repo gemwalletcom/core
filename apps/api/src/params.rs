@@ -11,6 +11,7 @@ use unic_langid::LanguageIdentifier;
 
 const MAX_ADDRESS_LENGTH: usize = 256;
 const MAX_ASSET_ID_LENGTH: usize = 256;
+const MAX_NFT_ID_LENGTH: usize = 256;
 const MAX_SEARCH_QUERY_LENGTH: usize = 128;
 
 pub struct ChainParam(pub Chain);
@@ -93,6 +94,9 @@ impl<'r> FromParam<'r> for NftCollectionIdParam {
     type Error = &'r str;
 
     fn from_param(param: &'r str) -> Result<Self, Self::Error> {
+        if param.len() > MAX_NFT_ID_LENGTH {
+            return Err(param);
+        }
         NFTCollectionId::from_id(param).map(NftCollectionIdParam).ok_or(param)
     }
 }
@@ -103,6 +107,9 @@ impl<'r> FromParam<'r> for NftAssetIdParam {
     type Error = &'r str;
 
     fn from_param(param: &'r str) -> Result<Self, Self::Error> {
+        if param.len() > MAX_NFT_ID_LENGTH {
+            return Err(param);
+        }
         NFTAssetId::from_id(param).map(NftAssetIdParam).ok_or(param)
     }
 }

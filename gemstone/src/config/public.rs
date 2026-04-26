@@ -15,7 +15,7 @@ pub enum PublicUrl {
 }
 
 pub const ASSETS_URL: &str = "https://assets.gemwallet.com";
-pub const NFT_ASSETS_URL: &str = "https://nft-assets.gemwallet.com";
+pub const NFT_ASSETS_URL: &str = "https://assets.gemwallet.com/nft";
 
 pub fn get_public_url(item: PublicUrl) -> String {
     match item {

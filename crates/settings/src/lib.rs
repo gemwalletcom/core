@@ -348,25 +348,16 @@ impl Settings {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct NFT {
+    pub url: String,
     pub nftscan: NFTScan,
     pub opensea: OpenSea,
     pub magiceden: MagicEden,
-    pub bucket: BucketConfiguration,
 }
 pub type Ankr = SecretKeySettings;
 pub type Trongrid = SecretKeySettings;
 pub type NFTScan = SecretKeySettings;
 pub type OpenSea = SecretKeySettings;
 pub type MagicEden = SecretKeySettings;
-
-#[derive(Debug, Deserialize, Clone)]
-pub struct BucketConfiguration {
-    pub endpoint: String,
-    pub region: String,
-    pub key: Key,
-    pub name: String,
-    pub url: String,
-}
 
 pub type Assets = URL;
 
