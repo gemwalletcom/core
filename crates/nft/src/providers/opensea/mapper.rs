@@ -105,22 +105,16 @@ impl Collection {
     }
 
     pub fn as_links(&self) -> Vec<AssetLink> {
-        let mut links = Vec::new();
-
-        if let Some(opensea_url) = &self.opensea_url {
-            links.push(AssetLink::new(opensea_url.as_str(), LinkType::OpenSea));
-        }
-        if let Some(project_url) = &self.project_url {
-            links.push(AssetLink::new(project_url.as_str(), LinkType::Website));
-        }
-        if let Some(discord_url) = &self.discord_url {
-            links.push(AssetLink::new(discord_url.as_str(), LinkType::Discord));
-        }
-        if let Some(telegram_url) = &self.telegram_url {
-            links.push(AssetLink::new(telegram_url.as_str(), LinkType::Telegram));
-        }
-
-        links
+        [
+            self.opensea_url.as_deref().map(|u| AssetLink::new(u, LinkType::OpenSea)),
+            self.project_url.as_deref().map(|u| AssetLink::new(u, LinkType::Website)),
+            self.discord_url.as_deref().map(|u| AssetLink::new(u, LinkType::Discord)),
+            self.telegram_url.as_deref().map(|u| AssetLink::new(u, LinkType::Telegram)),
+        ]
+        .into_iter()
+        .flatten()
+        .filter(|link| !link.url.is_empty())
+        .collect()
     }
 }
 

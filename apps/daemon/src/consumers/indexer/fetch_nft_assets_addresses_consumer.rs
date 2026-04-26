@@ -66,7 +66,7 @@ impl MessageConsumer<ChainAddressPayload, usize> for FetchNftAssetsAddressesCons
 
     async fn process(&self, payload: ChainAddressPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
         let map = HashMap::from([(payload.value.chain, payload.value.address.clone())]);
-        let assets = self.nft_client.lock().await.fetch_assets_for_addresses(map).await?;
+        let assets = self.nft_client.lock().await.update_assets_for_addresses(map).await?;
         Ok(assets.len())
     }
 }

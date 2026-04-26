@@ -359,10 +359,10 @@ diesel::table! {
     use super::sql_types::NftType;
 
     nft_assets (id) {
+        id -> Int4,
         #[max_length = 512]
-        id -> Varchar,
-        #[max_length = 512]
-        collection_id -> Varchar,
+        identifier -> Varchar,
+        collection_id -> Int4,
         #[max_length = 64]
         chain -> Varchar,
         #[max_length = 1024]
@@ -389,9 +389,20 @@ diesel::table! {
 }
 
 diesel::table! {
+    nft_assets_associations (id) {
+        id -> Int4,
+        address_id -> Int4,
+        asset_id -> Int4,
+        updated_at -> Timestamp,
+        created_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     nft_collections (id) {
+        id -> Int4,
         #[max_length = 512]
-        id -> Varchar,
+        identifier -> Varchar,
         #[max_length = 64]
         chain -> Varchar,
         #[max_length = 1024]
@@ -421,8 +432,7 @@ diesel::table! {
 
     nft_collections_links (id) {
         id -> Int4,
-        #[max_length = 128]
-        collection_id -> Varchar,
+        collection_id -> Int4,
         link_type -> LinkType,
         #[max_length = 256]
         url -> Varchar,
@@ -434,10 +444,8 @@ diesel::table! {
 diesel::table! {
     nft_reports (id) {
         id -> Int4,
-        #[max_length = 512]
-        asset_id -> Nullable<Varchar>,
-        #[max_length = 512]
-        collection_id -> Varchar,
+        asset_id -> Nullable<Int4>,
+        collection_id -> Int4,
         device_id -> Int4,
         #[max_length = 1024]
         reason -> Nullable<Varchar>,
@@ -916,6 +924,8 @@ diesel::joinable!(fiat_transactions -> wallets (wallet_id));
 diesel::joinable!(fiat_transactions -> wallets_addresses (address_id));
 diesel::joinable!(nft_assets -> chains (chain));
 diesel::joinable!(nft_assets -> nft_collections (collection_id));
+diesel::joinable!(nft_assets_associations -> nft_assets (asset_id));
+diesel::joinable!(nft_assets_associations -> wallets_addresses (address_id));
 diesel::joinable!(nft_collections -> chains (chain));
 diesel::joinable!(nft_collections_links -> nft_collections (collection_id));
 diesel::joinable!(nft_reports -> devices (device_id));
@@ -979,6 +989,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     fiat_rates,
     fiat_transactions,
     nft_assets,
+    nft_assets_associations,
     nft_collections,
     nft_collections_links,
     nft_reports,

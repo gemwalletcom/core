@@ -4,13 +4,13 @@ use serde::{Deserialize, Serialize};
 
 use crate::sql_types::{ChainRow, NftType};
 
-#[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
+#[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::nft_assets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct NftAssetRow {
-    pub id: String,
-    pub collection_id: String,
-    pub contract_address: String,
+    pub id: i32,
+    pub identifier: String,
+    pub collection_id: i32,
     pub chain: ChainRow,
     pub name: String,
     pub description: String,
@@ -20,23 +20,34 @@ pub struct NftAssetRow {
     pub image_preview_mime_type: Option<String>,
     pub resource_url: Option<String>,
     pub resource_mime_type: Option<String>,
+    pub contract_address: String,
     pub attributes: serde_json::Value,
 }
 
-#[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
+#[derive(Debug, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::nft_assets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct UpdateNftAssetImageUrlRow {
-    pub id: String,
+pub struct NewNftAssetRow {
+    pub identifier: String,
+    pub collection_id: i32,
+    pub chain: ChainRow,
+    pub name: String,
+    pub description: String,
+    pub token_id: String,
+    pub token_type: NftType,
     pub image_preview_url: Option<String>,
     pub image_preview_mime_type: Option<String>,
+    pub resource_url: Option<String>,
+    pub resource_mime_type: Option<String>,
+    pub contract_address: String,
+    pub attributes: serde_json::Value,
 }
 
 impl NftAssetRow {
-    pub fn as_primitive(&self) -> NFTAsset {
+    pub fn as_primitive(&self, collection_identifier: String) -> NFTAsset {
         NFTAsset {
-            id: self.id.clone(),
-            collection_id: self.collection_id.clone(),
+            id: self.identifier.clone(),
+            collection_id: collection_identifier,
             name: self.name.clone(),
             description: Some(self.description.clone()),
             chain: self.chain.0,
@@ -56,11 +67,13 @@ impl NftAssetRow {
             attributes: serde_json::from_value(self.attributes.clone()).unwrap_or_default(),
         }
     }
+}
 
-    pub fn from_primitive(primitive: NFTAsset) -> Self {
+impl NewNftAssetRow {
+    pub fn from_primitive(primitive: NFTAsset, collection_id: i32) -> Self {
         Self {
-            id: primitive.id.clone(),
-            collection_id: primitive.collection_id.clone(),
+            identifier: primitive.id.clone(),
+            collection_id,
             chain: ChainRow::from(primitive.chain),
             name: primitive.name.clone(),
             description: primitive.description.unwrap_or_default(),

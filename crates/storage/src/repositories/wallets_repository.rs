@@ -24,6 +24,7 @@ pub trait WalletsRepository {
     fn get_subscription_address_exists(&mut self, chain: Chain, address: &str) -> Result<bool, DatabaseError>;
     fn add_subscriptions_exclude_addresses(&mut self, values: Vec<SubscriptionAddressExcludeRow>) -> Result<usize, DatabaseError>;
     fn get_subscriptions_exclude_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<String>, DatabaseError>;
+    fn get_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<WalletAddressRow>, DatabaseError>;
 }
 
 impl WalletsRepository for DatabaseClient {
@@ -172,5 +173,9 @@ impl WalletsRepository for DatabaseClient {
 
     fn get_subscriptions_exclude_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<String>, DatabaseError> {
         Ok(WalletsStore::get_subscriptions_exclude_addresses(self, addresses)?)
+    }
+
+    fn get_addresses(&mut self, addresses: Vec<String>) -> Result<Vec<WalletAddressRow>, DatabaseError> {
+        Ok(WalletsStore::get_addresses(self, addresses)?)
     }
 }

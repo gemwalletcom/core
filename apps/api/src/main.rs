@@ -206,7 +206,8 @@ async fn rocket_api(settings: Settings) -> Result<Rocket<Build>, Box<dyn std::er
         settings.nft.magiceden.key.secret.clone(),
         settings.chains.ton.url.clone(),
     );
-    let nft_client = NFTClient::new(database.clone(), Arc::new(NFTProviderClient::new(nft_config)), settings.nft.url.clone());
+    let nft_client = NFTClient::from_config(database.clone(), nft_config.clone(), settings.nft.url.clone());
+    let nft_provider_client = NFTProviderClient::new(nft_config);
     let auth_client = Arc::new(AuthClient::new(cacher_client.clone()));
     let markets_client = MarketsClient::new(database.clone(), cacher_client.clone());
     let webhooks_client = WebhooksClient::new(stream_producer.clone());
@@ -240,6 +241,7 @@ async fn rocket_api(settings: Settings) -> Result<Rocket<Build>, Box<dyn std::er
         .manage(Mutex::new(scan_client))
         .manage(Mutex::new(swap_client))
         .manage(nft_client)
+        .manage(nft_provider_client)
         .manage(Mutex::new(price_alert_client))
         .manage(Mutex::new(chain_client))
         .manage(swapper)

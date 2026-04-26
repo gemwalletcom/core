@@ -9,7 +9,8 @@ use crate::sql_types::ChainRow;
 #[diesel(table_name = crate::schema::nft_collections)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct NftCollectionRow {
-    pub id: String,
+    pub id: i32,
+    pub identifier: String,
     pub chain: ChainRow,
     pub name: String,
     pub description: String,
@@ -27,7 +28,7 @@ pub struct NftCollectionRow {
 #[diesel(table_name = crate::schema::nft_collections)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct NewNftCollectionRow {
-    pub id: String,
+    pub identifier: String,
     pub chain: ChainRow,
     pub name: String,
     pub description: String,
@@ -40,19 +41,10 @@ pub struct NewNftCollectionRow {
     pub is_enabled: bool,
 }
 
-#[derive(Debug, Queryable, Selectable, Insertable, AsChangeset, Serialize, Deserialize, Clone)]
-#[diesel(table_name = crate::schema::nft_collections)]
-#[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct UpdateNftCollectionImageUrlRow {
-    pub id: String,
-    pub image_preview_url: Option<String>,
-    pub image_preview_mime_type: Option<String>,
-}
-
 impl NewNftCollectionRow {
     pub fn from_primitive(collection: NFTCollection) -> Self {
         NewNftCollectionRow {
-            id: collection.id.clone(),
+            identifier: collection.id.clone(),
             name: collection.name.clone(),
             description: collection.description.unwrap_or_default(),
             chain: ChainRow::from(collection.chain),
@@ -70,7 +62,7 @@ impl NewNftCollectionRow {
 impl NftCollectionRow {
     pub fn as_primitive(&self, links: Vec<AssetLink>) -> NFTCollection {
         NFTCollection {
-            id: self.id.clone(),
+            id: self.identifier.clone(),
             name: self.name.clone(),
             symbol: self.symbol.clone(),
             description: Some(self.description.clone()),

@@ -1,7 +1,8 @@
 CREATE TYPE nft_type AS ENUM ('erc721', 'erc1155', 'spl', 'jetton');
 
 CREATE TABLE nft_collections (
-    id VARCHAR(512) PRIMARY KEY NOT NULL,
+    id SERIAL PRIMARY KEY,
+    identifier VARCHAR(512) UNIQUE NOT NULL,
 
     chain VARCHAR(64) NOT NULL REFERENCES chains (id) ON DELETE CASCADE,
 
@@ -28,7 +29,7 @@ CREATE INDEX nft_collections_updated_at_idx ON nft_collections (updated_at);
 CREATE TABLE nft_collections_links (
     id SERIAL PRIMARY KEY,
 
-    collection_id VARCHAR(128) NOT NULL REFERENCES nft_collections (id) ON DELETE CASCADE,
+    collection_id INTEGER NOT NULL REFERENCES nft_collections (id) ON DELETE CASCADE,
 
     link_type link_type NOT NULL,
 
@@ -43,9 +44,10 @@ CREATE TABLE nft_collections_links (
 SELECT diesel_manage_updated_at('nft_collections_links');
 
 CREATE TABLE nft_assets (
-    id VARCHAR(512) PRIMARY KEY NOT NULL,
+    id SERIAL PRIMARY KEY,
+    identifier VARCHAR(512) UNIQUE NOT NULL,
 
-    collection_id VARCHAR(512) NOT NULL REFERENCES nft_collections (id) ON DELETE CASCADE,
+    collection_id INTEGER NOT NULL REFERENCES nft_collections (id) ON DELETE CASCADE,
     chain VARCHAR(64) NOT NULL REFERENCES chains (id) ON DELETE CASCADE,
 
     name VARCHAR(1024) NOT NULL,
@@ -68,12 +70,29 @@ CREATE TABLE nft_assets (
 );
 
 SELECT diesel_manage_updated_at('nft_assets');
+CREATE INDEX nft_assets_collection_id_idx ON nft_assets (collection_id);
+
+CREATE TABLE nft_assets_associations (
+    id SERIAL PRIMARY KEY,
+
+    address_id INTEGER NOT NULL REFERENCES wallets_addresses (id) ON DELETE CASCADE,
+    asset_id INTEGER NOT NULL REFERENCES nft_assets (id) ON DELETE CASCADE,
+
+    updated_at timestamp NOT NULL default current_timestamp,
+    created_at timestamp NOT NULL default current_timestamp,
+
+    UNIQUE(address_id, asset_id)
+);
+
+SELECT diesel_manage_updated_at('nft_assets_associations');
+CREATE INDEX nft_assets_associations_address_id_idx ON nft_assets_associations (address_id);
+CREATE INDEX nft_assets_associations_asset_id_idx ON nft_assets_associations (asset_id);
 
 CREATE TABLE nft_reports (
     id SERIAL PRIMARY KEY,
 
-    asset_id VARCHAR(512) REFERENCES nft_assets (id) ON DELETE CASCADE,
-    collection_id VARCHAR(512) NOT NULL REFERENCES nft_collections (id) ON DELETE CASCADE,
+    asset_id INTEGER REFERENCES nft_assets (id) ON DELETE CASCADE,
+    collection_id INTEGER NOT NULL REFERENCES nft_collections (id) ON DELETE CASCADE,
 
     device_id INTEGER NOT NULL REFERENCES devices (id) ON DELETE CASCADE,
     reason VARCHAR(1024),

@@ -1,5 +1,6 @@
-DROP TABLE IF EXISTS nft_reports;
-DROP TABLE IF EXISTS nft_assets;
-DROP TABLE IF EXISTS nft_collections_links;
-DROP TABLE IF EXISTS nft_collections;
-DROP TYPE IF EXISTS nft_type;
+DROP TABLE IF EXISTS nft_reports CASCADE;
+DROP TABLE IF EXISTS nft_assets_associations CASCADE;
+DROP TABLE IF EXISTS nft_assets CASCADE;
+DROP TABLE IF EXISTS nft_collections_links CASCADE;
+DROP TABLE IF EXISTS nft_collections CASCADE;
+DROP TYPE IF EXISTS nft_type CASCADE;

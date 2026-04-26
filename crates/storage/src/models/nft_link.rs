@@ -10,7 +10,7 @@ use crate::sql_types::LinkType;
 #[diesel(table_name = crate::schema::nft_collections_links)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct NftLinkRow {
-    pub collection_id: String,
+    pub collection_id: i32,
     pub link_type: LinkType,
     pub url: String,
 }
@@ -23,9 +23,9 @@ impl NftLinkRow {
         }
     }
 
-    pub fn from_primitive(collection_id: &str, link: AssetLink) -> Self {
+    pub fn from_primitive(collection_id: i32, link: AssetLink) -> Self {
         Self {
-            collection_id: collection_id.to_string(),
+            collection_id,
             link_type: primitives::LinkType::from_str(&link.name).unwrap().into(),
             url: link.url.clone(),
         }
