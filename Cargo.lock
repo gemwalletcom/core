@@ -3449,7 +3449,6 @@ name = "gem_ton"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "base64",
  "chain_traits",
  "chrono",
  "crc",

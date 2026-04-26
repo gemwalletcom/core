@@ -1,9 +1,14 @@
+pub mod cells;
 mod chain_signer;
-mod signature;
+mod sign_data;
+#[allow(clippy::module_inception)]
+mod signer;
 #[cfg(test)]
 pub(crate) mod testkit;
-mod types;
+mod transaction;
 
+pub use cells::{BagOfCells, BitReader, Cell, CellArc, CellBuilder};
 pub use chain_signer::TonChainSigner;
-pub use signature::sign_personal;
-pub use types::{TonSignDataPayload, TonSignDataResponse, TonSignMessageData, TonSignResult};
+pub use sign_data::{TonSignDataPayload, TonSignDataResponse, TonSignMessageData};
+pub use signer::{TonSignResult, TonSigner};
+pub use transaction::WalletV4R2;

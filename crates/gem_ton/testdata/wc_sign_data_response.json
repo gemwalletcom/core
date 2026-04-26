@@ -1,0 +1,10 @@
+{
+    "signature": "c2lnbmF0dXJl",
+    "address": "0:58d5c54fbb8488af7eaad0cdc759ca8f6ff79fc9555106c1339b037ec0a40347",
+    "timestamp": 1234567890,
+    "domain": "example.com",
+    "payload": {
+        "type": "text",
+        "text": "Hello TON"
+    }
+}

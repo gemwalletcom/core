@@ -81,6 +81,22 @@ impl SignerInput {
             TransactionFee::mock_eip1559(gas_limit),
         )
     }
+
+    pub fn mock_with_input_type(input_type: TransactionInputType, sender: &str, destination: &str, value: &str, metadata: TransactionLoadMetadata) -> Self {
+        SignerInput::new(
+            TransactionLoadInput {
+                input_type,
+                sender_address: sender.to_string(),
+                destination_address: destination.to_string(),
+                value: value.to_string(),
+                gas_price: GasPriceType::regular(0),
+                memo: None,
+                is_max_value: false,
+                metadata,
+            },
+            TransactionFee::default(),
+        )
+    }
 }
 
 impl TransactionLoadInput {

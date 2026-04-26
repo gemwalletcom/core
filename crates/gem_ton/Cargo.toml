@@ -11,12 +11,11 @@ rpc = [
     "dep:chain_traits",
     "dep:futures",
 ]
-signer = ["dep:signer", "dep:gem_hash", "dep:gem_encoding"]
+signer = ["dep:signer", "dep:gem_hash"]
 reqwest = ["gem_client/reqwest"]
 chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 
 [dependencies]
-base64 = { workspace = true }
 hex = { workspace = true }
 crc = { workspace = true }
 serde = { workspace = true }
@@ -24,6 +23,7 @@ serde_json = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
 primitives = { path = "../primitives" }
 num-bigint = { workspace = true }
+gem_encoding = { path = "../gem_encoding" }
 
 serde_serializers = { path = "../serde_serializers", features = ["bigint"] }
 
@@ -36,9 +36,9 @@ futures = { workspace = true, optional = true }
 # Optional signer dependencies
 signer = { path = "../signer", optional = true }
 gem_hash = { path = "../gem_hash", optional = true }
-gem_encoding = { path = "../gem_encoding", optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }
 reqwest = { workspace = true }
 settings = { path = "../settings", features = ["testkit"] }
+primitives = { path = "../primitives", features = ["testkit"] }

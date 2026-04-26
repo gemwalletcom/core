@@ -1,11 +1,10 @@
-use gem_wallet_connect::session::parse_chains;
 use gem_wallet_connect::{
     SignDigestType as WcSignDigestType, WCEthereumTransactionData as WcEthereumTransactionData, WalletConnectAction as WcWalletConnectAction,
     WalletConnectChainOperation as WcWalletConnectChainOperation, WalletConnectRequestHandler, WalletConnectResponseHandler,
     WalletConnectResponseType as WcWalletConnectResponseType, WalletConnectTransaction as WcWalletConnectTransaction,
     WalletConnectTransactionType as WcWalletConnectTransactionType, WalletConnectVerifier, config_session_properties,
 };
-use primitives::{Chain, TransferDataOutputType, WCEthereumTransaction, WalletConnectRequest, WalletConnectionVerificationStatus};
+use primitives::{Chain, TransferDataOutputType, WCEthereumTransaction, WalletConnectCAIP2, WalletConnectRequest, WalletConnectionVerificationStatus};
 use std::collections::HashMap;
 use std::str::FromStr;
 
@@ -374,8 +373,8 @@ impl WalletConnect {
         simulation::decode_message(chain, sign_type, data)
     }
 
-    pub fn config_session_properties(&self, properties: HashMap<String, String>, chains: Vec<String>) -> HashMap<String, String> {
-        let chains = parse_chains(&chains);
+    pub fn config_session_properties(&self, properties: HashMap<String, String>, caip2_chains: Vec<String>) -> HashMap<String, String> {
+        let chains: Vec<Chain> = caip2_chains.into_iter().filter_map(|caip2| WalletConnectCAIP2::resolve_chain(Some(caip2)).ok()).collect();
         config_session_properties(properties, &chains)
     }
 

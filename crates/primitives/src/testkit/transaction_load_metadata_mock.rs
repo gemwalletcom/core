@@ -24,4 +24,20 @@ impl TransactionLoadMetadata {
             stake_data: TronStakeData::Votes(vec![]),
         }
     }
+
+    pub fn mock_ton(sequence: u64) -> Self {
+        TransactionLoadMetadata::Ton {
+            sender_token_address: None,
+            recipient_token_address: None,
+            sequence,
+        }
+    }
+
+    pub fn mock_ton_jetton(sequence: u64, sender_token_address: &str) -> Self {
+        TransactionLoadMetadata::Ton {
+            sender_token_address: Some(sender_token_address.to_string()),
+            recipient_token_address: None,
+            sequence,
+        }
+    }
 }

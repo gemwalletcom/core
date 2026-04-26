@@ -12,3 +12,4 @@ pub mod constants;
 pub mod models;
 
 pub use address::Address;
+pub use primitives::AddressError;

@@ -56,7 +56,7 @@ fn calculate_usage_ranks(counts_1h: &[(AssetId, i64)], counts_24h: &[(AssetId, i
     }
 
     let mut scores: Vec<(AssetId, i64)> = raw_scores.into_iter().collect();
-    scores.sort_by(|a, b| a.1.cmp(&b.1));
+    scores.sort_by_key(|a| a.1);
 
     let total = scores.len() as f64;
     scores
