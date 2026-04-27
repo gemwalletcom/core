@@ -8,6 +8,7 @@ use crate::models::RunGetMethodResult;
 use crate::rpc::client::TonClient;
 
 // Stack offsets in the Tonstakers pool `get_pool_full_data` get-method tuple.
+// Layout source: ton-blockchain/liquid-staking-contract `compose_pool_full_data_internal`.
 const POOL_FULL_DATA_TOTAL_BALANCE_INDEX: usize = 2;
 const POOL_FULL_DATA_SUPPLY_INDEX: usize = 13;
 
@@ -47,18 +48,19 @@ mod tests {
 
     use super::*;
 
-    const UNUSED_SIGNED_NUM_INDEX: usize = 10;
+    const MAX_LOAN_PER_VALIDATOR_INDEX: usize = 10;
 
-    fn stack_num(value: &str) -> Value {
-        json!({ "type": "num", "value": value })
+    fn num_stack_item(value: i64) -> Value {
+        let hex = if value < 0 { format!("-0x{:x}", value.unsigned_abs()) } else { format!("0x{value:x}") };
+        json!({ "type": "num", "value": hex })
     }
 
     #[test]
     fn test_pool_full_data_from_stack() {
-        let mut stack = vec![stack_num("0x0"); POOL_FULL_DATA_SUPPLY_INDEX + 1];
-        stack[POOL_FULL_DATA_TOTAL_BALANCE_INDEX] = stack_num("0xc387ceec28e89a");
-        stack[UNUSED_SIGNED_NUM_INDEX] = stack_num("-0x1");
-        stack[POOL_FULL_DATA_SUPPLY_INDEX] = stack_num("0xb2c9f05e933a60");
+        let mut stack = vec![num_stack_item(0); POOL_FULL_DATA_SUPPLY_INDEX + 1];
+        stack[POOL_FULL_DATA_TOTAL_BALANCE_INDEX] = num_stack_item(55_036_943_253_694_618);
+        stack[MAX_LOAN_PER_VALIDATOR_INDEX] = num_stack_item(-1);
+        stack[POOL_FULL_DATA_SUPPLY_INDEX] = num_stack_item(50_324_580_070_537_824);
 
         let value = json!({ "stack": stack });
         let result: RunGetMethodResult = serde_json::from_value(value).unwrap();
