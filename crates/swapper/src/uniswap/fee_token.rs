@@ -1,4 +1,4 @@
-use crate::{SwapperMode, fees::is_stable_symbol};
+use crate::{SwapperMode, fees::is_stablecoin_symbol};
 use alloy_primitives::Address;
 use gem_evm::uniswap::path::BasePair;
 use std::collections::HashSet;
@@ -21,7 +21,7 @@ impl<'a> FeeToken<'a> {
 }
 
 fn is_preferred_fee_token(base_pair: Option<&BasePair>, token: &FeeToken) -> bool {
-    if is_stable_symbol(token.symbol) {
+    if is_stablecoin_symbol(token.symbol) {
         return true;
     }
 

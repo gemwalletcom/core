@@ -1,6 +1,6 @@
 use crate::{
     AssetList, FetchQuoteData, Permit2ApprovalData, ProviderType, Quote, QuoteRequest, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderMode,
-    SwapperQuoteData, across, alien::RpcProvider, chainflip, cross_chain::VaultAddresses, fees::DEFAULT_STABLE_SWAP_REFERRAL_BPS, fees::is_stable_symbol, hyperliquid, jupiter,
+    SwapperQuoteData, across, alien::RpcProvider, chainflip, cross_chain::VaultAddresses, fees::DEFAULT_STABLE_SWAP_REFERRAL_BPS, fees::is_stablecoin_symbol, hyperliquid, jupiter,
     near_intents, proxy::provider_factory, relay, squid, thorchain, uniswap,
 };
 use num_bigint::BigInt;
@@ -80,7 +80,7 @@ impl GemSwapper {
     }
 
     fn is_stable_swap(request: &QuoteRequest) -> bool {
-        is_stable_symbol(&request.from_asset.symbol) && is_stable_symbol(&request.to_asset.symbol)
+        is_stablecoin_symbol(&request.from_asset.symbol) && is_stablecoin_symbol(&request.to_asset.symbol)
     }
 
     fn prioritized_error(errors: &[SwapperError]) -> Option<SwapperError> {
