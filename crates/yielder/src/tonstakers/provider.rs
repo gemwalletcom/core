@@ -41,7 +41,7 @@ impl TonstakersProvider {
     }
 
     fn find_tonstaker_wallet(wallets: Vec<JettonWallet>) -> Option<JettonWallet> {
-        wallets.into_iter().find(|wallet| wallet.jetton.eq_ignore_ascii_case(TS_TON_MASTER))
+        wallets.into_iter().find(|wallet| wallet.jetton == TS_TON_MASTER)
     }
 }
 
