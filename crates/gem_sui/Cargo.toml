@@ -20,7 +20,7 @@ primitives = { path = "../primitives" }
 chain_primitives = { path = "../chain_primitives" }
 sui-types = { workspace = true }
 sui-transaction-builder = { package = "sui-transaction-builder", version = "0.3.0" }
-bcs = { version = "0.1.6" }
+bcs = { version = "0.2.1" }
 hex = { workspace = true }
 gem_encoding = { path = "../gem_encoding" }
 serde = { workspace = true, features = ["derive"] }

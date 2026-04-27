@@ -1189,6 +1189,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "bcs"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "350f2b5fa7b76b498158ec1079dc0ea842c5b622b6b3f675005fddd889f2c9a7"
+dependencies = [
+ "serde_core",
+]
+
+[[package]]
 name = "bech32"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3080,7 +3089,7 @@ name = "gem_aptos"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "bcs",
+ "bcs 0.2.1",
  "chain_primitives",
  "chain_traits",
  "chrono",
@@ -3421,7 +3430,7 @@ name = "gem_sui"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "bcs",
+ "bcs 0.2.1",
  "chain_primitives",
  "chain_traits",
  "chrono",
@@ -7331,7 +7340,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c1de70a3262b561b3ff0848e43b4feff41c3083e2744e0442c79cb2204e5fd2"
 dependencies = [
  "base64",
- "bcs",
+ "bcs 0.1.6",
  "bytes",
  "futures",
  "http 1.4.0",
@@ -7353,7 +7362,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23f800c4c3539246ba94a825f6afe7faab0bc8fc4dda56c6cfa493ea2a32ecbd"
 dependencies = [
  "base64ct",
- "bcs",
+ "bcs 0.1.6",
  "blake2",
  "bnum",
  "bs58",
@@ -7375,7 +7384,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5061ad0ad2585dc29558e6f65d9206a3342b8f1d2693b934530e22c958671c2d"
 dependencies = [
  "async-trait",
- "bcs",
+ "bcs 0.1.6",
  "futures",
  "serde",
  "sui-rpc",
