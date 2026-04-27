@@ -79,6 +79,13 @@ impl TransactionInputType {
         }
     }
 
+    pub fn get_earn_type(&self) -> Result<&EarnType, &'static str> {
+        match self {
+            TransactionInputType::Earn(_, earn_type, _) => Ok(earn_type),
+            _ => Err("expected earn transaction"),
+        }
+    }
+
     pub fn get_stake_type(&self) -> Result<&StakeType, &'static str> {
         match self {
             TransactionInputType::Stake(_, stake_type) => Ok(stake_type),

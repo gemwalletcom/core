@@ -5,6 +5,7 @@ use num_bigint::BigUint;
 use primitives::{FeeOption, SignerError, SignerInput};
 
 use super::{
+    earn,
     message::{InternalMessage, build_internal_message},
     request::{JettonTransferRequest, TransferRequest},
 };
@@ -57,6 +58,11 @@ impl TonSigner {
         Ok(vec![self.sign_requests(vec![request], input.metadata.get_sequence()?, expire_at)?])
     }
 
+    pub fn sign_earn(&self, input: &SignerInput, expire_at: Option<u32>) -> Result<Vec<String>, SignerError> {
+        let request = earn::build_request(input)?;
+        Ok(vec![self.sign_requests(vec![request], input.metadata.get_sequence()?, expire_at)?])
+    }
+
     pub(crate) fn sign_requests(&self, requests: Vec<TransferRequest>, sequence: u64, expire_at: Option<u32>) -> Result<String, SignerError> {
         let sequence = u32::try_from(sequence).map_err(|_| SignerError::invalid_input("TON sequence does not fit in u32"))?;
         let expire_at = resolve_expire_at(sequence, expire_at)?;
@@ -98,7 +104,6 @@ mod tests {
     use super::super::{
         message::build_internal_message,
         request::{JettonTransferRequest, TransferPayload, TransferRequest},
-        wallet::WalletV4R2,
     };
     use crate::{
         address::Address,

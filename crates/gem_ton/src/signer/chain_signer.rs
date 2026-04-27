@@ -28,4 +28,8 @@ impl ChainSigner for TonChainSigner {
     fn sign_swap(&self, input: &SignerInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
         TonSigner::new(private_key)?.sign_swap(input, None)
     }
+
+    fn sign_earn(&self, input: &SignerInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
+        TonSigner::new(private_key)?.sign_earn(input, None)
+    }
 }

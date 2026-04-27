@@ -6,6 +6,11 @@ use std::sync::Arc;
 
 use crate::YielderError;
 
+pub fn create_chain_client(provider: Arc<dyn RpcProvider>, chain: Chain) -> Result<RpcClient, YielderError> {
+    let endpoint = provider.get_endpoint(chain).map_err(|_| YielderError::NotSupportedChain)?;
+    Ok(RpcClient::new(endpoint, provider))
+}
+
 pub fn create_client(provider: Arc<dyn RpcProvider>, chain: Chain) -> Result<JsonRpcClient<RpcClient>, YielderError> {
     alien::create_client(provider, chain).map_err(|_| YielderError::NotSupportedChain)
 }

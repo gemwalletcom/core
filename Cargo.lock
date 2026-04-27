@@ -9208,9 +9208,11 @@ dependencies = [
  "gem_client",
  "gem_evm",
  "gem_jsonrpc",
+ "gem_ton",
  "num-bigint",
  "primitives",
- "reqwest 0.13.2",
+ "settings",
+ "swapper",
  "tokio",
 ]
 
