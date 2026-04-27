@@ -11,6 +11,7 @@ use crate::{
 pub trait StreamProducerQueue {
     async fn publish_fetch_assets(&self, asset_ids: Vec<AssetId>) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_fetch_prices(&self, payload: FetchPricesPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
+    async fn publish_fetch_prices_assets(&self, asset_ids: Vec<AssetId>) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_transactions(&self, payload: TransactionsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_notifications_transactions(&self, payload: Vec<NotificationsPayload>) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_notifications_price_alerts(&self, payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
@@ -40,6 +41,14 @@ impl StreamProducerQueue for StreamProducer {
 
     async fn publish_fetch_prices(&self, payload: FetchPricesPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
         self.publish(QueueName::FetchPrices, &payload).await
+    }
+
+    async fn publish_fetch_prices_assets(&self, asset_ids: Vec<AssetId>) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        for asset_id in asset_ids {
+            let payload = FetchPricesPayload::AssetId(asset_id);
+            self.publish(QueueName::FetchPrices, &payload).await?;
+        }
+        Ok(true)
     }
 
     async fn publish_transactions(&self, payload: TransactionsPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {

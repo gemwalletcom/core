@@ -1,7 +1,6 @@
 use crate::model::WorkerService;
 use crate::worker::context::WorkerContext;
 use crate::worker::jobs::WorkerJob;
-use crate::worker::plan::JobPlanBuilder;
 use cacher::CacherClient;
 use coingecko::CoinGeckoClient;
 use fiat::FiatProviderFactory;
@@ -17,14 +16,13 @@ mod fiat_assets_updater;
 mod fiat_rates_updater;
 
 pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
-    let runtime = ctx.runtime();
     let database = ctx.database();
     let settings = ctx.settings();
     let config = ConfigCacher::new(database.clone());
 
     let cacher_client = CacherClient::new(&settings.redis.url).await;
 
-    JobPlanBuilder::with_config(WorkerService::Fiat, runtime.plan(shutdown_rx), &config)
+    ctx.plan_builder(WorkerService::Fiat, &config, shutdown_rx)
         .job(WorkerJob::UpdateFiatRates, {
             let settings = settings.clone();
             let database = database.clone();

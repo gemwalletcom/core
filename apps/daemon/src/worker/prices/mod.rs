@@ -1,5 +1,6 @@
 mod charts_updater;
 mod markets_updater;
+mod missing_prices_publisher;
 mod observed_prices_updater;
 mod prices_cleanup_updater;
 mod prices_metrics_updater;
@@ -18,6 +19,7 @@ use charts_updater::{ChartsHistoryConfig, ChartsHistoryUpdater, ChartsUpdater};
 use coingecko::CoinGeckoClient;
 use job_runner::{JobHandle, ShutdownReceiver};
 use markets_updater::MarketsUpdater;
+use missing_prices_publisher::MissingPricesPublisher;
 use observed_prices_updater::{ObservedPricesConfig, ObservedPricesUpdater};
 use pricer::{MarketsClient, PriceClient, PriceProviders, build_price_providers};
 use prices::{PriceAssetsProvider, PriceProvider, PriceProviderEndpoints};
@@ -32,8 +34,7 @@ use streamer::{StreamProducer, StreamProducerConfig};
 
 pub type AssetsProviders = Arc<PriceProviders>;
 
-pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver, only: Option<PriceProvider>) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
-    let runtime = ctx.runtime();
+pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
     let database = ctx.database();
     let settings = ctx.settings();
     let cacher_client = CacherClient::new(&settings.redis.url).await;
@@ -51,15 +52,10 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver, only: Optio
     let assets_providers: AssetsProviders = Arc::new(build_price_providers(&endpoints, enabled_providers.iter().copied(), config.as_ref())?);
     let price_client = PriceClient::new(database.clone(), cacher_client.clone());
 
-    let builder = JobPlanBuilder::with_config(WorkerService::Prices, runtime.plan(shutdown_rx), config.as_ref());
-    let builder = if only.is_none() {
-        add_platform_jobs(builder, &database, &cacher_client, &price_client, &config, &assets_providers, producer_prices.clone())?
-    } else {
-        builder
-    };
+    let builder = ctx.plan_builder(WorkerService::Prices, config.as_ref(), shutdown_rx);
+    let builder = add_platform_jobs(builder, &database, &cacher_client, &price_client, &config, &assets_providers, producer_prices.clone())?;
     enabled_providers
         .into_iter()
-        .filter(|p| only.is_none_or(|o| o == *p))
         .try_fold(builder, |builder, provider| {
             add_provider_jobs(
                 builder,
@@ -128,6 +124,15 @@ fn add_platform_jobs<'a>(
                         .update()
                         .await
                 }
+            }
+        })
+        .job(WorkerJob::PublishMissingPrices, {
+            let database = database.clone();
+            let producer = producer.clone();
+            move |_| {
+                let database = database.clone();
+                let producer = producer.clone();
+                async move { MissingPricesPublisher::new(database, producer).update().await }
             }
         }))
 }

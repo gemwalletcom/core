@@ -21,10 +21,8 @@ use crate::client::SwapVaultAddressClient;
 use crate::model::WorkerService;
 use crate::worker::context::WorkerContext;
 use crate::worker::jobs::WorkerJob;
-use crate::worker::plan::JobPlanBuilder;
 
 pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
-    let runtime = ctx.runtime();
     let database = ctx.database();
     let settings = ctx.settings();
     let config = ConfigCacher::new(database.clone());
@@ -49,7 +47,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
         database.clone(),
     ));
 
-    JobPlanBuilder::with_config(WorkerService::Transactions, runtime.plan(shutdown_rx), &config)
+    ctx.plan_builder(WorkerService::Transactions, &config, shutdown_rx)
         .job(WorkerJob::UpdateInTransitTransactions, {
             let database = database.clone();
             let swapper = swapper.clone();

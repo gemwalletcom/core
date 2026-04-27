@@ -17,10 +17,8 @@ use streamer::{StreamProducer, StreamProducerConfig};
 use crate::model::WorkerService;
 use crate::worker::context::WorkerContext;
 use crate::worker::jobs::WorkerJob;
-use crate::worker::plan::JobPlanBuilder;
 
 pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
-    let runtime = ctx.runtime();
     let database = ctx.database();
     let settings = ctx.settings();
     let config = ConfigCacher::new(database.clone());
@@ -40,7 +38,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
     };
     let refresher = Arc::new(PerpetualAddressRefresher::new(providers.clone(), database.clone(), cacher.clone()));
 
-    JobPlanBuilder::with_config(WorkerService::Perpetuals, runtime.plan(shutdown_rx), &config)
+    ctx.plan_builder(WorkerService::Perpetuals, &config, shutdown_rx)
         .jobs(WorkerJob::ClassifyPerpetualAddresses, Chain::perpetual_chains(), |chain, _| {
             let classifier = Arc::new(PerpetualPositionClassifier::new(chain, providers.clone(), cacher.clone(), priority_config));
             move |_| {
