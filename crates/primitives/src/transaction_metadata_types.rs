@@ -31,6 +31,7 @@ pub struct TransactionSwapMetadata {
 #[serde(rename_all = "camelCase")]
 pub struct TransactionNFTTransferMetadata {
     pub asset_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
 
@@ -65,4 +66,26 @@ impl TransactionResourceTypeMetadata {
 #[serde(rename_all = "camelCase")]
 pub struct TransactionSmartContractMetadata {
     pub method_name: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_nft_transfer_metadata_serialization() {
+        assert_eq!(
+            serde_json::to_value(TransactionNFTTransferMetadata::new("ethereum_0xabc::1".to_string(), None)).unwrap(),
+            serde_json::json!({
+                "assetId": "ethereum_0xabc::1"
+            })
+        );
+        assert_eq!(
+            serde_json::to_value(TransactionNFTTransferMetadata::new("ethereum_0xabc::1".to_string(), Some("NFT".to_string()))).unwrap(),
+            serde_json::json!({
+                "assetId": "ethereum_0xabc::1",
+                "name": "NFT"
+            })
+        );
+    }
 }

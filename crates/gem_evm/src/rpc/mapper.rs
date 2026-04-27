@@ -314,10 +314,9 @@ mod tests {
         assert_eq!(transaction.value, "0");
         assert_eq!(
             transaction.metadata,
-            Some(serde_json::json!(TransactionNFTTransferMetadata::new(
-                "ethereum_0x47A00fC8590C11bE4c419D9Ae50DEc267B6E24ee::9143".to_string(),
-                None,
-            )))
+            Some(serde_json::json!({
+                "assetId": "ethereum_0x47A00fC8590C11bE4c419D9Ae50DEc267B6E24ee::9143"
+            }))
         );
     }
 
@@ -340,10 +339,9 @@ mod tests {
         assert_eq!(transaction.value, "0");
         assert_eq!(
             transaction.metadata,
-            Some(serde_json::json!(TransactionNFTTransferMetadata::new(
-                "ethereum_0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401::78312089388574796712357673212383836573632856632295981350303734331484536429721".to_string(),
-                None,
-            )))
+            Some(serde_json::json!({
+                "assetId": "ethereum_0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401::78312089388574796712357673212383836573632856632295981350303734331484536429721"
+            }))
         );
     }
 
