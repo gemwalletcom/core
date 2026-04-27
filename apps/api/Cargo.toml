@@ -24,6 +24,7 @@ reqwest = { workspace = true }
 gem_tracing = { path = "../../crates/tracing" }
 storage = { path = "../../crates/storage" }
 pricer = { path = "../../crates/pricer" }
+prices = { path = "../../crates/prices" }
 fiat = { path = "../../crates/fiat" }
 settings = { path = "../../crates/settings" }
 settings_chain = { path = "../../crates/settings_chain" }
@@ -45,3 +46,6 @@ gem_rewards = { path = "../../crates/gem_rewards" }
 security_provider = { path = "../../crates/security_provider" }
 gem_auth = { path = "../../crates/gem_auth", features = ["client"] }
 unic-langid = "0.9.6"
+
+[dev-dependencies]
+primitives = { path = "../../crates/primitives", features = ["testkit"] }

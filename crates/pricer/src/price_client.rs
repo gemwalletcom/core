@@ -1,7 +1,12 @@
+use crate::PriceProviders;
 use cacher::{CacheError, CacheKey, CacherClient};
-use primitives::{AssetId, AssetMarketPrice, AssetPriceInfo, AssetPrices, ChartTimeframe, FiatRate};
+use gem_tracing::error_with_fields;
+use prices::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider};
+use primitives::{AssetId, AssetMarketPrice, AssetPriceInfo, AssetPrices, ChartTimeframe, FiatRate, PriceData, PriceId, PriceProvider};
+use std::collections::HashSet;
 use std::error::Error;
-use storage::{ChartsRepository, Database, PricesRepository};
+use storage::models::{NewPriceRow, PriceAssetRow};
+use storage::{AssetsRepository, ChartsRepository, Database, PricesRepository};
 
 #[derive(Clone)]
 pub struct PriceClient {
@@ -111,5 +116,90 @@ impl PriceClient {
         let key = CacheKey::ObservedAssets;
         let ids: Vec<String> = asset_ids.iter().map(|id| id.to_string()).collect();
         self.cacher_client.sorted_set_incr_with_expire(&key.key(), &ids, key.ttl() as i64).await
+    }
+
+    pub async fn add_prices(&self, provider: &dyn PriceAssetsProvider, mappings: Vec<AssetPriceMapping>) -> Result<Vec<PriceData>, Box<dyn Error + Send + Sync>> {
+        let mappings = self.filter_existing_assets(mappings)?;
+        if mappings.is_empty() {
+            return Ok(vec![]);
+        }
+        let prices = provider.get_prices(mappings).await?;
+        if prices.is_empty() {
+            return Ok(vec![]);
+        }
+        self.save_prices(provider.provider(), &prices)?;
+        Ok(prices.iter().map(AssetPriceFull::as_price_data).collect())
+    }
+
+    pub async fn add_prices_for_asset_id(&self, providers: &PriceProviders, asset_id: &AssetId) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        let asset_id_str = asset_id.to_string();
+        let mut count = 0;
+        for provider in providers.values() {
+            match self.add_prices_with_mappings(provider.as_ref(), provider.get_mappings_for_asset_id(asset_id).await).await {
+                Ok(added) => count += added,
+                Err(err) => {
+                    let kind = provider.provider();
+                    error_with_fields!("fetch prices provider failed", &*err, provider = kind.id(), asset_id = asset_id_str.as_str());
+                }
+            }
+        }
+        Ok(count)
+    }
+
+    pub async fn add_prices_for_price_id(&self, providers: &PriceProviders, price_id: &PriceId) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        let Some(provider) = providers.get(&price_id.provider) else {
+            return Ok(0);
+        };
+        match self
+            .add_prices_with_mappings(provider.as_ref(), provider.get_mappings_for_price_id(&price_id.provider_price_id).await)
+            .await
+        {
+            Ok(added) => Ok(added),
+            Err(err) => {
+                let kind = provider.provider();
+                let price_id_str = price_id.to_string();
+                error_with_fields!("fetch prices provider failed", &*err, provider = kind.id(), price_id = price_id_str.as_str());
+                Ok(0)
+            }
+        }
+    }
+
+    async fn add_prices_with_mappings(
+        &self,
+        provider: &dyn PriceAssetsProvider,
+        mappings: Result<Vec<AssetPriceMapping>, Box<dyn Error + Send + Sync>>,
+    ) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        Ok(self.add_prices(provider, mappings?).await?.len())
+    }
+
+    pub fn filter_existing_assets(&self, mappings: Vec<AssetPriceMapping>) -> Result<Vec<AssetPriceMapping>, Box<dyn Error + Send + Sync>> {
+        if mappings.is_empty() {
+            return Ok(vec![]);
+        }
+        let asset_ids: Vec<AssetId> = mappings.iter().map(|m| m.asset_id.clone()).collect();
+        let existing: HashSet<AssetId> = self.database.assets()?.get_assets_rows(asset_ids)?.into_iter().map(|a| a.as_asset_id()).collect();
+        Ok(mappings.into_iter().filter(|m| existing.contains(&m.asset_id)).collect())
+    }
+
+    pub fn save_prices(&self, provider: PriceProvider, prices: &[AssetPriceFull]) -> Result<usize, Box<dyn Error + Send + Sync>> {
+        let new_prices: Vec<NewPriceRow> = prices
+            .iter()
+            .map(|p| {
+                NewPriceRow::with_market_data(
+                    provider,
+                    p.mapping.provider_price_id.clone(),
+                    p.market.as_ref(),
+                    Some(p.price.price),
+                    Some(p.price.price_change_percentage_24h),
+                )
+            })
+            .collect();
+        let asset_rows: Vec<PriceAssetRow> = prices
+            .iter()
+            .map(|p| PriceAssetRow::new(p.mapping.asset_id.clone(), provider, &p.mapping.provider_price_id))
+            .collect();
+        self.database.prices()?.add_prices(new_prices)?;
+        self.database.prices()?.set_prices_assets(asset_rows)?;
+        Ok(prices.len())
     }
 }

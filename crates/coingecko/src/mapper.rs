@@ -1,51 +1,58 @@
 use primitives::chain::Chain;
 
+const COINGECKO_CHAIN_PLATFORMS: &[(Chain, &str)] = &[
+    (Chain::Ethereum, "ethereum"),
+    (Chain::AvalancheC, "avalanche"),
+    (Chain::Abstract, "abstract"),
+    (Chain::Optimism, "optimistic-ethereum"),
+    (Chain::Base, "base"),
+    (Chain::Arbitrum, "arbitrum-one"),
+    (Chain::SmartChain, "binance-smart-chain"),
+    (Chain::Manta, "manta-pacific"),
+    (Chain::Tron, "tron"),
+    (Chain::Polygon, "polygon-pos"),
+    (Chain::Solana, "solana"),
+    (Chain::Blast, "blast"),
+    (Chain::Gnosis, "xdai"),
+    (Chain::Fantom, "fantom"),
+    (Chain::Osmosis, "osmosis"),
+    (Chain::Cosmos, "cosmos"),
+    (Chain::Aptos, "aptos"),
+    (Chain::Sui, "sui"),
+    (Chain::OpBNB, "opbnb"),
+    (Chain::Mantle, "mantle"),
+    (Chain::Celo, "celo"),
+    (Chain::ZkSync, "zksync"),
+    (Chain::Linea, "linea"),
+    (Chain::Near, "near"),
+    (Chain::Ton, "the-open-network"),
+    (Chain::Algorand, "algorand"),
+    (Chain::Berachain, "berachain-bera"),
+    (Chain::Ink, "ink"),
+    (Chain::Unichain, "unichain"),
+    (Chain::SeiEvm, "sei-network"),
+    (Chain::Xrp, "xrp"),
+    (Chain::Hyperliquid, "hyperevm"),
+    (Chain::Sonic, "sonic"),
+    (Chain::Stellar, "stellar"),
+    (Chain::Plasma, "plasma"),
+    (Chain::Monad, "monad"),
+    (Chain::Stable, "stable-2"),
+];
+
 pub fn get_chains_for_coingecko_market_id(id: &str) -> Vec<Chain> {
     Chain::all().into_iter().filter(|chain| get_coingecko_market_id_for_chain(*chain) == id).collect()
 }
 
 // Full list https://api.coingecko.com/api/v3/asset_platforms
 pub fn get_chain_for_coingecko_platform_id(id: &str) -> Option<Chain> {
-    match id {
-        "ethereum" => Some(Chain::Ethereum),
-        "avalanche" => Some(Chain::AvalancheC),
-        "abstract" => Some(Chain::Abstract),
-        "optimistic-ethereum" => Some(Chain::Optimism),
-        "base" => Some(Chain::Base),
-        "arbitrum-one" => Some(Chain::Arbitrum),
-        "binance-smart-chain" => Some(Chain::SmartChain),
-        "manta-pacific" => Some(Chain::Manta),
-        "tron" => Some(Chain::Tron),
-        "polygon-pos" => Some(Chain::Polygon),
-        "solana" => Some(Chain::Solana),
-        "blast" => Some(Chain::Blast),
-        "xdai" => Some(Chain::Gnosis),
-        "fantom" => Some(Chain::Fantom),
-        "osmosis" => Some(Chain::Osmosis),
-        "cosmos" => Some(Chain::Cosmos),
-        "aptos" => Some(Chain::Aptos),
-        "sui" => Some(Chain::Sui),
-        "opbnb" => Some(Chain::OpBNB),
-        "mantle" => Some(Chain::Mantle),
-        "celo" => Some(Chain::Celo),
-        "zksync" => Some(Chain::ZkSync),
-        "linea" => Some(Chain::Linea),
-        "near" => Some(Chain::Near),
-        "the-open-network" => Some(Chain::Ton),
-        "algorand" => Some(Chain::Algorand),
-        "berachain-bera" => Some(Chain::Berachain),
-        "ink" => Some(Chain::Ink),
-        "unichain" => Some(Chain::Unichain),
-        "sei-network" => Some(Chain::SeiEvm),
-        "xrp" => Some(Chain::Xrp),
-        "hyperevm" => Some(Chain::Hyperliquid),
-        "sonic" => Some(Chain::Sonic),
-        "stellar" => Some(Chain::Stellar),
-        "plasma" => Some(Chain::Plasma),
-        "monad" => Some(Chain::Monad),
-        "stable-2" => Some(Chain::Stable),
-        _ => None,
-    }
+    COINGECKO_CHAIN_PLATFORMS.iter().find_map(|(chain, platform_id)| (*platform_id == id).then_some(*chain))
+}
+
+pub fn get_coingecko_platform_id_for_chain(chain: Chain) -> Option<&'static str> {
+    COINGECKO_CHAIN_PLATFORMS
+        .iter()
+        .find_map(|(candidate, platform_id)| (*candidate == chain).then_some(*platform_id))
 }
 
 pub fn get_coingecko_market_id_for_chain(chain: Chain) -> &'static str {
@@ -101,5 +108,23 @@ pub fn get_coingecko_market_id_for_chain(chain: Chain) -> &'static str {
         Chain::Plasma => "plasma",
         Chain::XLayer => "okb",
         Chain::Stable => "tether", // gUSDT is the native gas token
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_coingecko_platform_mapping() {
+        assert_eq!(get_chain_for_coingecko_platform_id("binance-smart-chain"), Some(Chain::SmartChain));
+        assert_eq!(get_coingecko_platform_id_for_chain(Chain::SmartChain), Some("binance-smart-chain"));
+        assert_eq!(get_chain_for_coingecko_platform_id("unknown"), None);
+        assert_eq!(get_coingecko_platform_id_for_chain(Chain::Bitcoin), None);
+
+        for (chain, platform_id) in COINGECKO_CHAIN_PLATFORMS {
+            assert_eq!(get_chain_for_coingecko_platform_id(platform_id), Some(*chain));
+            assert_eq!(get_coingecko_platform_id_for_chain(*chain), Some(*platform_id));
+        }
     }
 }

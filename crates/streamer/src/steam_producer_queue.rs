@@ -3,13 +3,14 @@ use std::error::Error;
 use primitives::{AssetId, Chain};
 
 use crate::{
-    ChainAddressPayload, ExchangeName, FetchAssetsPayload, FetchBlocksPayload, InAppNotificationPayload, NotificationsFailedPayload, NotificationsPayload, PricesPayload,
-    QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, StreamProducer, TransactionsPayload, WalletStreamPayload,
+    ChainAddressPayload, ExchangeName, FetchAssetsPayload, FetchBlocksPayload, FetchPricesPayload, InAppNotificationPayload, NotificationsFailedPayload, NotificationsPayload,
+    PricesPayload, QueueName, RewardsNotificationPayload, RewardsRedemptionPayload, StreamProducer, TransactionsPayload, WalletStreamPayload,
 };
 
 #[async_trait::async_trait]
 pub trait StreamProducerQueue {
     async fn publish_fetch_assets(&self, asset_ids: Vec<AssetId>) -> Result<bool, Box<dyn Error + Send + Sync>>;
+    async fn publish_fetch_prices(&self, payload: FetchPricesPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_transactions(&self, payload: TransactionsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_notifications_transactions(&self, payload: Vec<NotificationsPayload>) -> Result<bool, Box<dyn Error + Send + Sync>>;
     async fn publish_notifications_price_alerts(&self, payload: NotificationsPayload) -> Result<bool, Box<dyn Error + Send + Sync>>;
@@ -35,6 +36,10 @@ impl StreamProducerQueue for StreamProducer {
             self.publish(QueueName::FetchAssets, &payload).await?;
         }
         Ok(true)
+    }
+
+    async fn publish_fetch_prices(&self, payload: FetchPricesPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {
+        self.publish(QueueName::FetchPrices, &payload).await
     }
 
     async fn publish_transactions(&self, payload: TransactionsPayload) -> Result<bool, Box<dyn Error + Send + Sync>> {

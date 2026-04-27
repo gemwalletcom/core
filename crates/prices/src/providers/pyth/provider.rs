@@ -1,15 +1,15 @@
+use std::collections::{HashMap, HashSet};
 use std::error::Error;
 
-use gem_client::ReqwestClient;
-use primitives::Chain;
-
-use crate::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider, PriceProvider, PriceProviderAsset, PriceProviderConfig};
 use async_trait::async_trait;
+use gem_client::ReqwestClient;
+use primitives::AssetId;
 
 use super::{
     client::PythClient,
-    mapper::{asset_id_for_feed_id, price_feed_id_for_chain},
+    mapper::{asset_ids_for_feed_id, price_feed_id_for_chain},
 };
+use crate::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider, PriceProvider, PriceProviderAsset, PriceProviderConfig};
 
 pub struct PythProvider {
     pyth_client: PythClient,
@@ -33,41 +33,50 @@ impl PriceAssetsProvider for PythProvider {
         let feeds = self.pyth_client.get_price_feeds().await?;
         Ok(feeds
             .into_iter()
-            .filter_map(|feed| asset_id_for_feed_id(&feed.id).map(|asset_id| AssetPriceMapping::new(asset_id, feed.id)))
+            .flat_map(|feed| {
+                asset_ids_for_feed_id(&feed.id)
+                    .into_iter()
+                    .map(move |asset_id| AssetPriceMapping::new(asset_id, feed.id.clone()))
+            })
             .map(|m| PriceProviderAsset::new(m, None))
             .collect())
     }
 
+    async fn get_mappings_for_asset_id(&self, asset_id: &AssetId) -> Result<Vec<AssetPriceMapping>, Box<dyn Error + Send + Sync>> {
+        Ok(asset_id
+            .is_native()
+            .then(|| AssetPriceMapping::new(asset_id.clone(), price_feed_id_for_chain(asset_id.chain).to_string()))
+            .into_iter()
+            .collect())
+    }
+
+    async fn get_mappings_for_price_id(&self, provider_price_id: &str) -> Result<Vec<AssetPriceMapping>, Box<dyn Error + Send + Sync>> {
+        Ok(asset_ids_for_feed_id(provider_price_id)
+            .into_iter()
+            .map(|asset_id| AssetPriceMapping::new(asset_id, provider_price_id.to_string()))
+            .collect())
+    }
+
     async fn get_prices(&self, mappings: Vec<AssetPriceMapping>) -> Result<Vec<AssetPriceFull>, Box<dyn Error + Send + Sync>> {
-        use std::collections::{HashMap, HashSet};
-
-        let feed_id_set: HashSet<String> = mappings.iter().map(|m| m.provider_price_id.clone()).collect();
-
-        let chains = Chain::all();
-        let chain_feed_map: HashMap<String, Vec<Chain>> = chains.into_iter().fold(HashMap::new(), |mut acc, chain| {
-            let feed_id = price_feed_id_for_chain(chain).to_string();
-            if feed_id_set.contains(&feed_id) {
-                acc.entry(feed_id).or_default().push(chain);
-            }
-            acc
-        });
-
-        let unique_ids: Vec<String> = chain_feed_map.keys().cloned().collect();
-        if unique_ids.is_empty() {
+        let feed_ids: Vec<String> = mappings
+            .iter()
+            .map(|mapping| mapping.provider_price_id.clone())
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect();
+        if feed_ids.is_empty() {
             return Ok(vec![]);
         }
 
-        let prices = self.pyth_client.get_asset_prices(unique_ids.clone()).await?;
-        let price_map: HashMap<String, f64> = unique_ids.into_iter().zip(prices).map(|(id, p)| (id, p.price)).collect();
+        let prices = self.pyth_client.get_asset_prices(feed_ids.clone()).await?;
+        let prices_by_feed_id: HashMap<String, f64> = feed_ids.into_iter().zip(prices).map(|(id, price)| (id, price.price)).collect();
 
-        Ok(chain_feed_map
+        Ok(mappings
             .into_iter()
-            .flat_map(|(feed_id, chains)| {
-                let price = price_map.get(&feed_id).copied().unwrap_or(0.0);
-                chains.into_iter().map(move |chain| {
-                    let mapping = AssetPriceMapping::new(chain.as_asset_id(), feed_id.clone());
-                    AssetPriceFull::simple(mapping, price, 0.0, PriceProvider::Pyth)
-                })
+            .filter_map(|mapping| {
+                prices_by_feed_id
+                    .get(&mapping.provider_price_id)
+                    .map(|price| AssetPriceFull::simple(mapping, *price, 0.0, PriceProvider::Pyth))
             })
             .collect())
     }

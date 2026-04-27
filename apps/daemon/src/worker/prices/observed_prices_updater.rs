@@ -3,6 +3,7 @@ use std::error::Error;
 use std::time::Duration;
 
 use cacher::{CacheKey, CacherClient};
+use pricer::PriceClient;
 use prices::AssetPriceMapping;
 use primitives::{AssetId, PriceProvider};
 use storage::{Database, PricesRepository};
@@ -20,16 +21,25 @@ pub struct ObservedPricesConfig {
 pub struct ObservedPricesUpdater {
     cacher_client: CacherClient,
     database: Database,
+    price_client: PriceClient,
     providers: AssetsProviders,
     stream_producer: StreamProducer,
     config: ObservedPricesConfig,
 }
 
 impl ObservedPricesUpdater {
-    pub fn new(cacher_client: CacherClient, database: Database, providers: AssetsProviders, stream_producer: StreamProducer, config: ObservedPricesConfig) -> Self {
+    pub fn new(
+        cacher_client: CacherClient,
+        database: Database,
+        price_client: PriceClient,
+        providers: AssetsProviders,
+        stream_producer: StreamProducer,
+        config: ObservedPricesConfig,
+    ) -> Self {
         Self {
             cacher_client,
             database,
+            price_client,
             providers,
             stream_producer,
             config,
@@ -52,7 +62,7 @@ impl ObservedPricesUpdater {
             let Some(instance) = self.providers.get(&provider).cloned() else {
                 continue;
             };
-            total += PricesUpdater::new(instance, self.database.clone(), self.stream_producer.clone())
+            total += PricesUpdater::new(instance, self.database.clone(), self.price_client.clone(), self.stream_producer.clone())
                 .update_prices(mappings)
                 .await?;
         }

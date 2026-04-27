@@ -143,7 +143,10 @@ fn mount_routes(rocket: Rocket<Build>, admin_enabled: bool) -> Rocket<Build> {
         .register("/", catchers![catchers::default_catcher]);
 
     if admin_enabled {
-        rocket.mount("/v1/admin", routes![assets::add_asset, chain::transaction::add_transaction])
+        rocket.mount(
+            "/v1/admin",
+            routes![admin::assets::add_asset, admin::transactions::add_transaction, admin::prices::add_price],
+        )
     } else {
         rocket
     }

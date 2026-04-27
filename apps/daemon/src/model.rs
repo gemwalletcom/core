@@ -24,6 +24,7 @@ impl ConsumerService {
 #[allow(clippy::enum_variant_names)]
 pub enum IndexerConsumer {
     FetchAssets,
+    FetchPrices,
     FetchBlocks,
     FetchTokenAssociations,
     FetchCoinAssociations,

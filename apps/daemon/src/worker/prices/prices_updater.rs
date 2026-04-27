@@ -1,10 +1,11 @@
 use gem_tracing::info_with_fields;
+use pricer::PriceClient;
 use prices::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider, PriceProviderAsset, PriceProviderAssetMetadata};
 use primitives::{AssetId, PriceData};
 use std::collections::HashMap;
 use std::sync::Arc;
 use storage::database::prices::PriceFilter;
-use storage::models::{AssetRow, NewPriceRow, PriceAssetRow, PriceRow};
+use storage::models::{AssetRow, PriceRow};
 use storage::{AssetUpdate, AssetsLinksRepository, AssetsRepository, Database, PricesRepository};
 use streamer::{PricesPayload, StreamProducer, StreamProducerQueue};
 
@@ -13,14 +14,16 @@ const BATCH_SIZE: usize = 1000;
 pub struct PricesUpdater {
     provider: Arc<dyn PriceAssetsProvider>,
     database: Database,
+    price_client: PriceClient,
     stream_producer: StreamProducer,
 }
 
 impl PricesUpdater {
-    pub fn new(provider: Arc<dyn PriceAssetsProvider>, database: Database, stream_producer: StreamProducer) -> Self {
+    pub fn new(provider: Arc<dyn PriceAssetsProvider>, database: Database, price_client: PriceClient, stream_producer: StreamProducer) -> Self {
         Self {
             provider,
             database,
+            price_client,
             stream_producer,
         }
     }
@@ -123,30 +126,12 @@ impl PricesUpdater {
                 continue;
             }
 
-            let assets_by_id: HashMap<String, &PriceProviderAsset> = known.iter().map(|a| (a.mapping.asset_id.to_string(), *a)).collect();
-
-            let new_prices: Vec<NewPriceRow> = assets_by_id
-                .values()
-                .map(|a| {
-                    (
-                        a.mapping.provider_price_id.clone(),
-                        NewPriceRow::with_market_data(provider, a.mapping.provider_price_id.clone(), a.market.as_ref(), a.price, a.price_change_percentage_24h),
-                    )
-                })
-                .collect::<HashMap<_, _>>()
-                .into_values()
-                .collect();
-            self.database.prices()?.add_prices(new_prices)?;
-
-            let asset_rows: Vec<PriceAssetRow> = assets_by_id
-                .values()
-                .map(|a| PriceAssetRow::new(a.mapping.asset_id.clone(), provider, &a.mapping.provider_price_id))
-                .collect();
-            self.database.prices()?.set_prices_assets(asset_rows)?;
+            let assets_by_id: HashMap<String, PriceProviderAsset> = known.iter().map(|a| (a.mapping.asset_id.to_string(), (*a).clone())).collect();
+            let prices: Vec<AssetPriceFull> = assets_by_id.values().cloned().map(|a| AssetPriceFull::from_provider_asset(a, provider)).collect();
+            saved += self.price_client.save_prices(provider, &prices)?;
 
             let supply_updates: Vec<_> = assets_by_id.iter().filter_map(|(id, asset)| asset_supply_update(asset, existing.get(id)?)).collect();
             self.store_asset_updates(supply_updates)?;
-            saved += assets_by_id.len();
         }
 
         info_with_fields!("update prices assets", provider = provider.id(), saved = saved, queued_for_fetch = queued);

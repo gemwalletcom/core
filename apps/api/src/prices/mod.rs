@@ -1,9 +1,9 @@
-use crate::params::{AssetIdParam, ChartPeriodParam};
-use crate::responders::{ApiError, ApiResponse};
-use pricer::ChartClient;
-use pricer::price_client::PriceClient;
+use pricer::{ChartClient, PriceClient};
 use primitives::{AssetMarketPrice, AssetPrices, AssetPricesRequest, ChartPeriod, Charts, DEFAULT_FIAT_CURRENCY, FiatRate};
 use rocket::{State, get, post, serde::json::Json, tokio::sync::Mutex};
+
+use crate::params::{AssetIdParam, ChartPeriodParam};
+use crate::responders::{ApiError, ApiResponse};
 
 #[get("/prices/<asset_id>?<currency>")]
 pub async fn get_price(asset_id: AssetIdParam, currency: Option<&str>, price_client: &State<Mutex<PriceClient>>) -> Result<ApiResponse<AssetMarketPrice>, ApiError> {
@@ -35,7 +35,6 @@ pub async fn get_charts(
 
     let asset_id = asset_id.0;
     let prices = charts_client.lock().await.get_charts_prices(&asset_id, period, currency_value).await?;
-
     let asset_price = price_client.lock().await.get_asset_price(&asset_id, currency_value).await?;
 
     let response = Charts {

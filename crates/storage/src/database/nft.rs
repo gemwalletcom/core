@@ -131,9 +131,7 @@ impl NftStore for DatabaseClient {
         for filter in filters {
             match filter {
                 NftAssetAssociationFilter::AddressId(value) => query = query.filter(address_id.eq(value)),
-                NftAssetAssociationFilter::Chains(values) => {
-                    query = query.filter(asset_chain.eq_any(values.into_iter().map(ChainRow::from).collect::<Vec<_>>()))
-                }
+                NftAssetAssociationFilter::Chains(values) => query = query.filter(asset_chain.eq_any(values.into_iter().map(ChainRow::from).collect::<Vec<_>>())),
             }
         }
         query.select(asset_id).load(&mut self.connection)

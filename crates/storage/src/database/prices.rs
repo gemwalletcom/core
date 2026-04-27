@@ -44,11 +44,17 @@ pub(crate) trait PricesStore {
 impl PricesStore for DatabaseClient {
     fn add_prices(&mut self, values: Vec<NewPriceRow>) -> Result<usize, diesel::result::Error> {
         use crate::schema::prices::dsl::*;
+        if values.is_empty() {
+            return Ok(0);
+        }
         diesel::insert_into(prices).values(&values).on_conflict_do_nothing().execute(&mut self.connection)
     }
 
     fn set_prices(&mut self, values: Vec<PriceRow>) -> Result<usize, diesel::result::Error> {
         use crate::schema::prices::dsl::*;
+        if values.is_empty() {
+            return Ok(0);
+        }
         diesel::insert_into(prices)
             .values(&values)
             .on_conflict(id)
@@ -64,6 +70,9 @@ impl PricesStore for DatabaseClient {
 
     fn set_prices_assets(&mut self, values: Vec<PriceAssetRow>) -> Result<usize, diesel::result::Error> {
         use crate::schema::prices_assets::dsl::*;
+        if values.is_empty() {
+            return Ok(0);
+        }
         diesel::insert_into(prices_assets)
             .values(&values)
             .on_conflict((asset_id, provider))

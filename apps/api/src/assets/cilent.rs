@@ -20,11 +20,6 @@ impl AssetsClient {
         Self { database, config }
     }
 
-    pub fn add_assets(&self, assets: Vec<Asset>) -> Result<usize, Box<dyn Error + Send + Sync>> {
-        let assets = assets.into_iter().map(|x| x.as_basic_primitive()).collect();
-        self.database.assets()?.add_assets(assets).map_err(|e| Box::new(e) as Box<dyn Error + Send + Sync>)
-    }
-
     #[allow(unused)]
     pub fn get_asset(&self, asset_id: &AssetId) -> Result<Asset, Box<dyn Error + Send + Sync>> {
         Ok(self.database.assets()?.get_asset(asset_id)?)

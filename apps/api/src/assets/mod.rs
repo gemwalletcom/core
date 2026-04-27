@@ -2,14 +2,12 @@ pub mod cilent;
 mod filter;
 mod model;
 
-use crate::admin::AdminAuthorized;
-use crate::chain::ChainClient;
 use crate::params::{AssetIdParam, SearchQueryParam};
 use crate::responders::{ApiError, ApiResponse};
 pub use cilent::{AssetsClient, SearchClient};
 pub use model::SearchRequest;
 use pricer::PriceClient;
-use primitives::{Asset, AssetBasic, AssetFull, AssetId, DEFAULT_FIAT_CURRENCY, SearchResponse};
+use primitives::{AssetBasic, AssetFull, AssetId, DEFAULT_FIAT_CURRENCY, SearchResponse};
 use rocket::{State, get, post, serde::json::Json, tokio::sync::Mutex};
 
 #[get("/assets/<asset_id>?<currency>")]
@@ -36,24 +34,6 @@ pub async fn get_assets(
     let rate = price_client.lock().await.get_fiat_rate(currency)?.rate;
 
     Ok(client.lock().await.get_assets(asset_ids.0, rate)?.into())
-}
-
-#[post("/assets/add", format = "json", data = "<asset_id>")]
-pub async fn add_asset(
-    _admin: AdminAuthorized,
-    asset_id: Json<AssetId>,
-    client: &State<Mutex<AssetsClient>>,
-    chain_client: &State<Mutex<ChainClient>>,
-) -> Result<ApiResponse<Asset>, ApiError> {
-    let asset_id = asset_id.0;
-    let asset = chain_client
-        .lock()
-        .await
-        .get_token_data(asset_id.chain, asset_id.token_id.clone().ok_or(ApiError::BadRequest("Missing token_id".to_string()))?)
-        .await?;
-    client.lock().await.add_assets(vec![asset.clone()])?;
-
-    Ok(asset.into())
 }
 
 #[get("/assets/search?<query>&<chains>&<tags>&<limit>&<offset>")]
