@@ -18,16 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Restore cargo cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: "ci-rust"
-
-      - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.9
-
-      - name: Install just
-        uses: extractions/setup-just@v4
+      - uses: ./.github/actions/setup-rust-ci
 
       - name: Run tests
         run: just test
@@ -38,16 +29,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Restore cargo cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          shared-key: "ci-rust"
-
-      - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.9
-
-      - name: Install just
-        uses: extractions/setup-just@v4
+      - uses: ./.github/actions/setup-rust-ci
 
       - name: Build all integration tests only
         run: just build-integration-tests
