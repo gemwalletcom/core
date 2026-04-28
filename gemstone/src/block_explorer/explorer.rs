@@ -64,7 +64,7 @@ impl Explorer {
 mod tests {
     use super::*;
     use gem_solana::USDT_TOKEN_MINT;
-    use primitives::block_explorer::get_block_explorers;
+    use primitives::{asset_constants::TON_USDT_TOKEN_ID, block_explorer::get_block_explorers};
 
     #[test]
     fn test_bitcoin_explorers() {
@@ -120,10 +120,10 @@ mod tests {
         assert_eq!(explorers[2].name(), "Blockchair");
 
         let explorer = Explorer::new(chain.as_ref());
-        let account_url = explorer.get_address_url(&explorers[0].name(), "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs");
-        let token_url = explorer.get_token_url(&explorers[0].name(), "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs").unwrap();
+        let account_url = explorer.get_address_url(&explorers[0].name(), TON_USDT_TOKEN_ID);
+        let token_url = explorer.get_token_url(&explorers[0].name(), TON_USDT_TOKEN_ID).unwrap();
 
-        assert_eq!(account_url, "https://tonviewer.com/EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs");
+        assert_eq!(account_url, format!("https://tonviewer.com/{TON_USDT_TOKEN_ID}"));
         assert_eq!(token_url, account_url);
 
         let tx_url = explorer.get_transaction_url(&explorers[0].name(), "cefe5c6d145976c434280648fae28dfdfee58002e8c4e36195550ed6cdb22aa0");
