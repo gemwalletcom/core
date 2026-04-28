@@ -28,7 +28,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: ./.github/actions/setup-rust-ci
+      - name: Setup Rust
+        uses: ./.github/actions/setup-rust-ci
 
       - name: Install iOS targets
         run: just install-ios-targets

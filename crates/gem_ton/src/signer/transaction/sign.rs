@@ -98,7 +98,6 @@ mod tests {
     use super::super::{
         message::build_internal_message,
         request::{JettonTransferRequest, TransferPayload, TransferRequest},
-        wallet::WalletV4R2,
     };
     use crate::{
         address::Address,
