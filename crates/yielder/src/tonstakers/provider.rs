@@ -28,10 +28,6 @@ impl TonstakersProvider {
         Self { rpc_provider }
     }
 
-    fn supports_asset(asset_id: &AssetId) -> bool {
-        asset_id.chain == Chain::Ton && asset_id.is_native()
-    }
-
     fn get_client(&self) -> Result<TonClient<RpcClient>, YielderError> {
         Ok(TonClient::new(create_chain_client(self.rpc_provider.clone(), Chain::Ton)?))
     }
@@ -48,7 +44,7 @@ impl TonstakersProvider {
 #[async_trait]
 impl EarnProvider for TonstakersProvider {
     fn get_provider(&self, asset_id: &AssetId) -> Option<DelegationValidator> {
-        Self::supports_asset(asset_id).then(|| YieldProvider::Tonstakers.delegation_validator(Chain::Ton))
+        (asset_id.chain == Chain::Ton && asset_id.is_native()).then(|| YieldProvider::Tonstakers.delegation_validator(Chain::Ton))
     }
 
     async fn get_position(&self, address: &str, _asset_id: &AssetId) -> Result<Option<DelegationBase>, YielderError> {

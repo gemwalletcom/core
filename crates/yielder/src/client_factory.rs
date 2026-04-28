@@ -1,5 +1,5 @@
 use gem_evm::rpc::EthereumClient;
-use gem_jsonrpc::alien::{self, RpcClient, RpcProvider};
+use gem_jsonrpc::alien::{RpcClient, RpcProvider};
 use gem_jsonrpc::client::JsonRpcClient;
 use primitives::{Chain, EVMChain};
 use std::sync::Arc;
@@ -12,7 +12,7 @@ pub fn create_chain_client(provider: Arc<dyn RpcProvider>, chain: Chain) -> Resu
 }
 
 pub fn create_client(provider: Arc<dyn RpcProvider>, chain: Chain) -> Result<JsonRpcClient<RpcClient>, YielderError> {
-    alien::create_client(provider, chain).map_err(|_| YielderError::NotSupportedChain)
+    Ok(JsonRpcClient::new(create_chain_client(provider, chain)?))
 }
 
 pub fn create_eth_client(provider: Arc<dyn RpcProvider>, chain: Chain) -> Result<EthereumClient<RpcClient>, YielderError> {

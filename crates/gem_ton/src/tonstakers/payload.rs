@@ -64,12 +64,7 @@ mod tests {
         let input_type = TransactionInputType::Earn(
             Asset::from_chain(Chain::Ton),
             earn_type,
-            ContractCallData {
-                contract_address: SENDER_TOKEN_ADDRESS.to_string(),
-                call_data,
-                approval: None,
-                gas_limit: None,
-            },
+            ContractCallData::new(SENDER_TOKEN_ADDRESS.to_string(), call_data),
         );
         SignerInput::mock_with_input_type(input_type, "", "", value, TransactionLoadMetadata::mock_ton(1))
     }
