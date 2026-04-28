@@ -155,7 +155,7 @@ pub static SOLANA_PYUSD_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::
 pub const TRON_USDT_TOKEN_ID: &str = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
 pub static TRON_USDT_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::Tron, TRON_USDT_TOKEN_ID));
 
-pub const TON_USDT_TOKEN_ID: &str = "EQcxE6MuTQJkfNGfAARoTKOVt1LZBADiix1KCixRv7NW2id_sDs";
+pub const TON_USDT_TOKEN_ID: &str = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs";
 pub static TON_USDT_ASSET_ID: LazyLock<AssetId> = LazyLock::new(|| AssetId::from_token(Chain::Ton, TON_USDT_TOKEN_ID));
 
 pub const NEAR_USDT_TOKEN_ID: &str = "usdt.tether-token.near";
