@@ -1,5 +1,5 @@
 #[cfg(feature = "rpc")]
-use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainProvider, ChainTraits};
+use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainProvider, ChainSimulation, ChainTraits};
 #[cfg(feature = "rpc")]
 use gem_client::Client;
 use primitives::Chain;
@@ -24,3 +24,6 @@ impl<C: Client + Clone> ChainPerpetual for SuiClient<C> {}
 
 #[cfg(feature = "rpc")]
 impl<C: Client + Clone> ChainAddressStatus for SuiClient<C> {}
+
+#[cfg(feature = "rpc")]
+impl<C: Client + Clone> ChainSimulation for SuiClient<C> {}

@@ -3,6 +3,7 @@ use crate::models::{
     balances::SolanaBalance,
     blockhash::SolanaBlockhashResult,
     prioritization_fee::SolanaPrioritizationFee,
+    simulation::SimulateTransactionValue,
     transaction::{BlockTransactions, SolanaTransaction},
 };
 use crate::{COMMITMENT_CONFIRMED, STAKE_PROGRAM_ID};
@@ -161,6 +162,21 @@ impl<C: Client + Clone> SolanaClient<C> {
         }
 
         self.rpc_call("sendTransaction", params).await
+    }
+
+    pub async fn simulate_encoded_transaction(&self, encoded_transaction: &str) -> Result<SimulateTransactionValue, JsonRpcError> {
+        let params = serde_json::json!([
+            encoded_transaction,
+            {
+                "commitment": COMMITMENT_CONFIRMED,
+                "encoding": "base64",
+                "sigVerify": false,
+                "replaceRecentBlockhash": true,
+                "innerInstructions": true
+            }
+        ]);
+        let response: ValueResult<SimulateTransactionValue> = self.rpc_call("simulateTransaction", params).await?;
+        Ok(response.value)
     }
 
     pub async fn get_recent_prioritization_fees(&self) -> Result<Vec<SolanaPrioritizationFee>, JsonRpcError> {

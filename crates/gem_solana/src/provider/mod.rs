@@ -8,6 +8,10 @@ pub mod preload_mapper;
 #[cfg(feature = "rpc")]
 pub mod request_classifier;
 #[cfg(feature = "rpc")]
+pub mod simulation;
+#[cfg(feature = "rpc")]
+pub mod simulation_mapper;
+#[cfg(feature = "rpc")]
 pub mod staking;
 #[cfg(feature = "rpc")]
 pub mod staking_mapper;

@@ -8,7 +8,7 @@ use crate::{
 use gem_client::{CONTENT_TYPE, ContentType};
 
 #[cfg(feature = "rpc")]
-use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainProvider, ChainStaking, ChainTraits};
+use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainProvider, ChainSimulation, ChainStaking, ChainTraits};
 #[cfg(feature = "rpc")]
 use gem_client::{Client, ClientExt};
 #[cfg(feature = "rpc")]
@@ -79,6 +79,9 @@ impl<C: Client> ChainPerpetual for AlgorandClient<C> {}
 
 #[cfg(feature = "rpc")]
 impl<C: Client> ChainAddressStatus for AlgorandClient<C> {}
+
+#[cfg(feature = "rpc")]
+impl<C: Client> ChainSimulation for AlgorandClient<C> {}
 
 #[cfg(feature = "rpc")]
 impl<C: Client> ChainTraits for AlgorandClient<C> {}

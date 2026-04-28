@@ -1,5 +1,5 @@
 #[cfg(feature = "rpc")]
-use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainProvider, ChainTraits};
+use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainProvider, ChainSimulation, ChainTraits};
 use gem_client::Client;
 use primitives::Chain;
 
@@ -23,3 +23,6 @@ impl<C: Client + Clone> ChainPerpetual for EthereumClient<C> {}
 
 #[cfg(feature = "rpc")]
 impl<C: Client + Clone> ChainAddressStatus for EthereumClient<C> {}
+
+#[cfg(feature = "rpc")]
+impl<C: Client + Clone> ChainSimulation for EthereumClient<C> {}

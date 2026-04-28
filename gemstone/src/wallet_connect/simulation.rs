@@ -49,11 +49,23 @@ fn decode_ethereum_transaction_data(data: &str) -> Result<WcEthereumTransactionD
     }
 }
 
+fn decode_solana_transaction_data(transaction_type: &WcWalletConnectTransactionType, data: &str) -> Result<String, String> {
+    let transaction = WalletConnectRequestHandler::decode_send_transaction(transaction_type.clone(), data.to_string())?;
+    match transaction {
+        WcWalletConnectTransaction::Solana { data, .. } => Ok(data.transaction),
+        _ => Err("Invalid Solana transaction".to_string()),
+    }
+}
+
 pub(super) fn decode_ethereum_calldata(data: &str) -> Option<(WcEthereumTransactionData, Vec<u8>)> {
     let transaction = decode_ethereum_transaction_data(data).ok()?;
     let calldata = transaction.data.as_deref()?;
     let bytes = hex::decode_hex(calldata).ok()?;
     Some((transaction, bytes))
+}
+
+pub(super) fn decode_solana_transaction(transaction_type: &WcWalletConnectTransactionType, data: &str) -> Option<String> {
+    decode_solana_transaction_data(transaction_type, data).ok()
 }
 
 pub(super) fn validation_warning(error: &str) -> SimulationWarning {

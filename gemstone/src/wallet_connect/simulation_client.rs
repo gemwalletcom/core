@@ -1,9 +1,11 @@
 use std::sync::Arc;
 
 use ::simulation::evm::SimulationClient;
+use chain_traits::ChainSimulation;
 use gem_evm::rpc::EthereumClient;
+use gem_solana::rpc::client::SolanaClient;
 use gem_wallet_connect::{SignDigestType as WcSignDigestType, WalletConnectTransactionType as WcWalletConnectTransactionType};
-use primitives::{Chain, EVMChain, SimulationResult};
+use primitives::{Chain, EVMChain, SimulationInput, SimulationResult};
 
 use crate::{
     GemstoneError,
@@ -45,8 +47,9 @@ impl WalletConnectSimulationClient {
         let transaction_type: WcWalletConnectTransactionType = transaction_type.into();
         let validation_warnings = simulation::send_transaction_validation_warnings(&transaction_type, &data);
 
-        let simulation = match transaction_type {
+        let simulation = match &transaction_type {
             WcWalletConnectTransactionType::Ethereum => self.simulate_ethereum_transaction(chain, &data).await?,
+            WcWalletConnectTransactionType::Solana { .. } => self.simulate_solana_transaction(&transaction_type, &data).await?,
             _ => SimulationResult::default(),
         };
 
@@ -66,10 +69,22 @@ impl WalletConnectSimulationClient {
         Ok(SimulationClient::new(&client).simulate_evm_calldata(chain, &bytes, &transaction.to).await?)
     }
 
+    async fn simulate_solana_transaction(&self, transaction_type: &WcWalletConnectTransactionType, data: &str) -> Result<SimulationResult, GemstoneError> {
+        let encoded_transaction = simulation::decode_solana_transaction(transaction_type, data).ok_or("Failed to decode transaction")?;
+        let client = self.solana_client().ok_or("No RPC client available")?;
+        Ok(client.simulate_transaction(SimulationInput { encoded_transaction }).await?)
+    }
+
     fn ethereum_client(&self, chain: Chain) -> Option<EthereumClient<AlienClient>> {
         let chain = EVMChain::from_chain(chain)?;
         let url = self.provider.get_endpoint(chain.to_chain()).ok()?;
         let client = new_alien_client(url, self.provider.clone());
         Some(EthereumClient::new(JsonRpcClient::new(client), chain))
+    }
+
+    fn solana_client(&self) -> Option<SolanaClient<AlienClient>> {
+        let url = self.provider.get_endpoint(Chain::Solana).ok()?;
+        let client = new_alien_client(url, self.provider.clone());
+        Some(SolanaClient::new(JsonRpcClient::new(client)))
     }
 }

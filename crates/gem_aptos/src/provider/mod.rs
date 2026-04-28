@@ -1,4 +1,4 @@
-use chain_traits::{ChainProvider, ChainTraits};
+use chain_traits::{ChainProvider, ChainSimulation, ChainTraits};
 use gem_client::Client;
 use primitives::Chain;
 
@@ -28,6 +28,8 @@ pub mod transactions_mapper;
 pub struct BroadcastProvider;
 
 impl<C: Client> ChainTraits for AptosClient<C> {}
+
+impl<C: Client> ChainSimulation for AptosClient<C> {}
 
 impl<C: Client> ChainProvider for AptosClient<C> {
     fn get_chain(&self) -> Chain {

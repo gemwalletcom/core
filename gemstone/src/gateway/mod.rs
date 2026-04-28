@@ -33,7 +33,9 @@ use std::future::Future;
 use std::sync::Arc;
 use yielder::Yielder;
 
-use primitives::{AssetId, BitcoinChain, Chain, ChartPeriod, EVMChain, ScanAddressTarget, ScanTransactionPayload, TransactionPreloadInput, chain_cosmos::CosmosChain};
+use primitives::{
+    AssetId, BitcoinChain, Chain, ChartPeriod, EVMChain, ScanAddressTarget, ScanTransactionPayload, SimulationInput, TransactionPreloadInput, chain_cosmos::CosmosChain,
+};
 
 #[uniffi::export(with_foreign)]
 #[async_trait::async_trait]
@@ -294,6 +296,14 @@ impl GemGateway {
 
     pub async fn get_perpetual_portfolio(&self, chain: Chain, address: String) -> Result<GemPerpetualPortfolio, GatewayError> {
         self.with_provider(chain, |provider| async move { provider.get_perpetual_portfolio(address).await }).await
+    }
+
+    pub async fn simulate_transaction(&self, chain: Chain, encoded_transaction: String) -> Result<GemSimulationResult, GatewayError> {
+        self.with_provider(
+            chain,
+            |provider| async move { provider.simulate_transaction(SimulationInput { encoded_transaction }).await },
+        )
+        .await
     }
 
     pub async fn get_token_data(&self, chain: Chain, token_id: String) -> Result<GemAsset, GatewayError> {

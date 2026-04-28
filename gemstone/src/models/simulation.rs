@@ -4,6 +4,8 @@ use primitives::{
     SimulationResult, SimulationSeverity, SimulationWarning, SimulationWarningApproval, SimulationWarningType,
 };
 
+pub type GemSimulationResult = SimulationResult;
+
 #[uniffi::remote(Enum)]
 pub enum SimulationSeverity {
     Low,
