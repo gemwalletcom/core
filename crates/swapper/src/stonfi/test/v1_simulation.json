@@ -1,0 +1,17 @@
+{
+  "offer_address": "EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c",
+  "ask_address": "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs",
+  "offer_jetton_wallet": "EQARULUYsmJq1RiZ-YiH-IJLcAZUVkVff-KBPwEmmaQGH6aC",
+  "ask_jetton_wallet": "EQBO7JIbnU1WoNlGdgFtScJrObHXkBp-FT5mAz8UagiG9KQR",
+  "router_address": "EQB3ncyBUTjZUA5EnFKR5_EnOMI9V1tTEAAPaiU71gc4TiUt",
+  "router": {
+    "address": "EQB3ncyBUTjZUA5EnFKR5_EnOMI9V1tTEAAPaiU71gc4TiUt",
+    "major_version": 1,
+    "minor_version": 0
+  },
+  "pool_address": "EQD8TJ8xEWB1SpnRE4d89YO3jl0W0EiBnNS4IBaHaUmdfizE",
+  "offer_units": "1000000000",
+  "ask_units": "1306866",
+  "slippage_tolerance": "0.01",
+  "min_ask_units": "1293797"
+}
