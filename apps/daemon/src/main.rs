@@ -94,11 +94,10 @@ async fn run_worker_services(settings: settings::Settings, services: &[WorkerSer
         let reporter = Arc::new(JobReporter::new(job_metrics.clone()));
         let schedule: Arc<dyn JobSchedule> = tracker;
         let runtime = WorkerRuntime::new(reporter, schedule);
-        let context = WorkerContext::new(settings.clone(), database.clone(), runtime);
+        let context = WorkerContext::new(settings.clone(), database.clone(), runtime, options.job.clone());
         let shutdown_rx = shutdown_rx.clone();
-        let options = options.clone();
         async move {
-            match svc.run_jobs(context, shutdown_rx, options).await {
+            match svc.run_jobs(context, shutdown_rx).await {
                 Ok(handles) => Some((svc, handles)),
                 Err(err) => {
                     error_with_fields!("worker init failed", &*err, worker = svc.as_ref());

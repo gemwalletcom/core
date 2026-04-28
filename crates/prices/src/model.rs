@@ -1,5 +1,5 @@
 use chrono::Utc;
-use primitives::{AssetId, AssetLink, AssetMarket, AssetPriceKey, Price, PriceData, PriceProvider};
+use primitives::{AssetId, AssetLink, AssetMarket, Price, PriceData, PriceId, PriceProvider};
 
 #[derive(Debug, Clone)]
 pub struct AssetPriceMapping {
@@ -70,10 +70,18 @@ impl AssetPriceFull {
         Self::new(mapping, Price::new(price, price_change_percentage_24h, Utc::now(), provider), None)
     }
 
+    pub fn from_provider_asset(asset: PriceProviderAsset, provider: PriceProvider) -> Self {
+        Self::new(
+            asset.mapping,
+            Price::new(asset.price.unwrap_or_default(), asset.price_change_percentage_24h.unwrap_or_default(), Utc::now(), provider),
+            asset.market,
+        )
+    }
+
     pub fn as_price_data(&self) -> PriceData {
         let market = self.market.clone().unwrap_or_default();
         PriceData {
-            id: AssetPriceKey::id_for(self.price.provider, &self.mapping.provider_price_id),
+            id: PriceId::id_for(self.price.provider, &self.mapping.provider_price_id),
             provider: self.price.provider,
             provider_price_id: self.mapping.provider_price_id.clone(),
             price: self.price.price,

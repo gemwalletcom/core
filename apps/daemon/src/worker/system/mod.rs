@@ -7,7 +7,6 @@ mod version_updater;
 use crate::model::WorkerService;
 use crate::worker::context::WorkerContext;
 use crate::worker::jobs::WorkerJob;
-use crate::worker::plan::JobPlanBuilder;
 use cacher::CacherClient;
 use device_updater::DeviceUpdater;
 use job_runner::{JobHandle, ShutdownReceiver};
@@ -20,7 +19,6 @@ use transaction_cleanup::{TransactionCleanup, TransactionCleanupConfig};
 use version_updater::VersionUpdater;
 
 pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
-    let runtime = ctx.runtime();
     let database = ctx.database();
     let settings = ctx.settings();
     let config = ConfigCacher::new(database.clone());
@@ -30,7 +28,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
     let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
     let stream_producer = StreamProducer::new(&rabbitmq_config, "observe_inactive_devices", shutdown_rx.clone()).await?;
 
-    JobPlanBuilder::with_config(WorkerService::System, runtime.plan(shutdown_rx), &config)
+    ctx.plan_builder(WorkerService::System, &config, shutdown_rx)
         .job(WorkerJob::CleanupProcessedTransactions, {
             let cleanup_config = TransactionCleanupConfig {
                 address_max_count: config.get_i64(ConfigKey::TransactionCleanupAddressMaxCount)?,

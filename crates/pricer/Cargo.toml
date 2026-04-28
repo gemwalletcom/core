@@ -8,6 +8,7 @@ serde_json = { workspace = true }
 chrono = { workspace = true }
 
 primitives = { path = "../primitives" }
+prices = { path = "../prices" }
 number_formatter = { path = "../number_formatter" }
 storage = { path = "../storage" }
 localizer = { path = "../../crates/localizer" }

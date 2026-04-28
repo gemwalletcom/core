@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use cacher::{CacheError, CacheKey, CacherClient};
-use primitives::{AssetId, AssetPriceKey, AssetTag, Markets, MarketsAssets, PriceProvider};
+use primitives::{AssetId, AssetTag, Markets, MarketsAssets, PriceId, PriceProvider};
 use storage::{Database, PricesRepository, TagRepository};
 
 #[derive(Clone)]
@@ -27,7 +27,7 @@ impl MarketsClient {
     }
 
     pub async fn get_asset_ids_for_provider_price_ids(&self, provider: PriceProvider, provider_price_ids: Vec<String>) -> Result<Vec<AssetId>, Box<dyn Error + Send + Sync>> {
-        let price_ids: Vec<String> = provider_price_ids.iter().map(|id| AssetPriceKey::id_for(provider, id)).collect();
+        let price_ids: Vec<String> = provider_price_ids.iter().map(|id| PriceId::id_for(provider, id)).collect();
         let assets = self.database.prices()?.get_prices_assets_for_price_ids(price_ids.clone())?;
         let asset_map: std::collections::HashMap<_, _> = assets.into_iter().map(|x| (x.price_id, x.asset_id)).collect();
         Ok(price_ids

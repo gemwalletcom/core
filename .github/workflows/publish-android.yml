@@ -58,14 +58,8 @@ jobs:
         with:
           packages: 'build-tools;36.0.0 platforms;android-36 ndk;28.1.13356709'
 
-      - name: Restore cargo cache
-        uses: Swatinem/rust-cache@v2
-
-      - name: Run sccache-cache
-        uses: mozilla-actions/sccache-action@v0.0.9
-
-      - name: Install just
-        uses: extractions/setup-just@v4
+      - name: Setup Rust
+        uses: ./.github/actions/setup-rust-ci
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6

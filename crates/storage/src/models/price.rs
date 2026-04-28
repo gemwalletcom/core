@@ -1,6 +1,6 @@
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
-use primitives::{AssetId as PrimitiveAssetId, AssetMarket, AssetPriceInfo, AssetPriceKey, ChartValuePercentage, Price, PriceData, PriceProvider};
+use primitives::{AssetId as PrimitiveAssetId, AssetMarket, AssetPriceInfo, ChartValuePercentage, Price, PriceData, PriceId, PriceProvider};
 use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 
@@ -87,7 +87,7 @@ impl NewPriceRow {
         price: Option<f64>,
         price_change_percentage_24h: Option<f64>,
     ) -> Self {
-        let id = AssetPriceKey::id_for(provider, &provider_price_id);
+        let id = PriceId::id_for(provider, &provider_price_id);
         Self {
             id,
             provider: provider.into(),
@@ -115,7 +115,7 @@ impl PriceAssetRow {
     pub fn new(asset_id: PrimitiveAssetId, provider: PriceProvider, provider_price_id: &str) -> Self {
         PriceAssetRow {
             asset_id: asset_id.into(),
-            price_id: AssetPriceKey::id_for(provider, provider_price_id),
+            price_id: PriceId::id_for(provider, provider_price_id),
             provider: provider.into(),
         }
     }
@@ -164,7 +164,7 @@ impl PriceRow {
         market_cap_rank: Option<i32>,
         last_updated_at: NaiveDateTime,
     ) -> Self {
-        let id = AssetPriceKey::id_for(provider, &provider_price_id);
+        let id = PriceId::id_for(provider, &provider_price_id);
         PriceRow {
             id,
             provider: provider.into(),

@@ -1,5 +1,5 @@
 use primitives::{
-    AssetAddress, AssetId, Chain, ChainAddress, FailedNotification, FiatProviderName, FiatTransactionUpdate, GorushNotification, NotificationType, PriceData, Transaction,
+    AssetAddress, AssetId, Chain, ChainAddress, FailedNotification, FiatProviderName, FiatTransactionUpdate, GorushNotification, NotificationType, PriceData, PriceId, Transaction,
     TransactionId,
 };
 use serde::{Deserialize, Serialize};
@@ -92,6 +92,22 @@ impl fmt::Display for FetchAssetsPayload {
 impl FetchAssetsPayload {
     pub fn new(asset_id: AssetId) -> Self {
         Self { asset_id }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum FetchPricesPayload {
+    AssetId(AssetId),
+    PriceId(PriceId),
+}
+
+impl fmt::Display for FetchPricesPayload {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::AssetId(v) => v.fmt(f),
+            Self::PriceId(v) => v.fmt(f),
+        }
     }
 }
 

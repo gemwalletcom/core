@@ -7,6 +7,7 @@ license = { workspace = true }
 [features]
 default = []
 reqwest_provider = ["dep:reqwest"]
+unit_tests = ["reqwest_provider"]
 swap_integration_tests = ["reqwest_provider"]
 
 [dependencies]

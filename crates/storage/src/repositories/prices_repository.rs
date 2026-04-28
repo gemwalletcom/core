@@ -1,6 +1,6 @@
 use crate::{DatabaseError, DieselResultExt};
 use chrono::Utc;
-use primitives::{AssetId, AssetIdVecExt, AssetPriceKey, Price, PriceProvider};
+use primitives::{AssetId, AssetIdVecExt, Price, PriceId, PriceProvider};
 use std::collections::{HashMap, HashSet};
 use std::time::Duration;
 
@@ -20,7 +20,7 @@ pub trait PricesRepository {
     fn get_prices_by_filter(&mut self, filters: Vec<PriceFilter>) -> Result<Vec<PriceRow>, DatabaseError>;
     fn get_prices_assets(&mut self) -> Result<Vec<PriceAssetRow>, DatabaseError>;
     fn get_prices_assets_by_provider(&mut self, provider: PriceProvider) -> Result<Vec<PriceAssetRow>, DatabaseError>;
-    fn get_primary_price_key(&mut self, asset_id: &AssetId, max_age: Duration) -> Result<AssetPriceKey, DatabaseError>;
+    fn get_primary_price_key(&mut self, asset_id: &AssetId, max_age: Duration) -> Result<PriceId, DatabaseError>;
     fn get_primary_prices(&mut self, asset_ids: &[AssetId], max_age: Duration) -> Result<Vec<(AssetId, PriceRow)>, DatabaseError>;
     fn get_price_by_id(&mut self, price_id: &str) -> Result<Price, DatabaseError>;
     fn get_prices_for_asset(&mut self, asset_id: &AssetId) -> Result<Vec<PriceRow>, DatabaseError>;
@@ -53,14 +53,14 @@ impl PricesRepository for DatabaseClient {
         Ok(PricesStore::get_prices_assets_by_provider(self, provider)?)
     }
 
-    fn get_primary_price_key(&mut self, asset_id: &AssetId, max_age: Duration) -> Result<AssetPriceKey, DatabaseError> {
+    fn get_primary_price_key(&mut self, asset_id: &AssetId, max_age: Duration) -> Result<PriceId, DatabaseError> {
         let providers = PricesProvidersStore::get_prices_providers(self)?;
         let rows = PricesStore::get_prices_for_asset_ids(self, &[asset_id.to_string()])?
             .into_iter()
             .map(|(_, row)| row)
             .collect::<Vec<_>>();
         resolve_primary(&providers, &rows, max_age)
-            .map(|row| AssetPriceKey::new(row.provider.0, row.provider_price_id.clone()))
+            .map(|row| PriceId::new(row.provider.0, row.provider_price_id.clone()))
             .ok_or_else(|| DatabaseError::not_found(PriceRow::RESOURCE_NAME, asset_id.to_string()))
     }
 

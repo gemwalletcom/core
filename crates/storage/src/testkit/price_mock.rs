@@ -1,12 +1,12 @@
 use crate::models::PriceRow;
 use crate::sql_types::PriceProviderRow;
 use chrono::Utc;
-use primitives::{AssetPriceKey, PriceProvider};
+use primitives::{PriceId, PriceProvider};
 
 impl PriceRow {
     pub fn mock(provider: PriceProvider, provider_price_id: &str) -> Self {
         Self {
-            id: AssetPriceKey::id_for(provider, provider_price_id),
+            id: PriceId::id_for(provider, provider_price_id),
             provider: PriceProviderRow(provider),
             provider_price_id: provider_price_id.to_string(),
             price: 1.0,

@@ -3,6 +3,7 @@ use std::error::Error;
 
 use async_trait::async_trait;
 use gem_client::ReqwestClient;
+use primitives::AssetId;
 
 use crate::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider, PriceProvider, PriceProviderAsset, PriceProviderConfig};
 
@@ -47,6 +48,19 @@ impl PriceAssetsProvider for JupiterProvider {
             .into_iter()
             .map(|t| PriceProviderAsset::with_price(to_asset_price_mapping(&t.id), None, Some(t.usd_price), Some(t.stats24h.price_change)))
             .collect())
+    }
+
+    async fn get_mappings_for_asset_id(&self, asset_id: &AssetId) -> Result<Vec<AssetPriceMapping>, Box<dyn Error + Send + Sync>> {
+        Ok(asset_id
+            .token_id
+            .clone()
+            .map(|token_id| AssetPriceMapping::new(asset_id.clone(), token_id))
+            .into_iter()
+            .collect())
+    }
+
+    async fn get_mappings_for_price_id(&self, provider_price_id: &str) -> Result<Vec<AssetPriceMapping>, Box<dyn Error + Send + Sync>> {
+        Ok(vec![to_asset_price_mapping(provider_price_id)])
     }
 
     async fn get_prices(&self, mappings: Vec<AssetPriceMapping>) -> Result<Vec<AssetPriceFull>, Box<dyn Error + Send + Sync>> {

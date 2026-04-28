@@ -18,10 +18,8 @@ use streamer::{StreamProducer, StreamProducerConfig};
 use crate::model::WorkerService;
 use crate::worker::context::WorkerContext;
 use crate::worker::jobs::WorkerJob;
-use crate::worker::plan::JobPlanBuilder;
 
 pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
-    let runtime = ctx.runtime();
     let database = ctx.database();
     let settings = ctx.settings();
     let config = ConfigCacher::new(database.clone());
@@ -35,7 +33,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
     };
     let chain_providers = Arc::new(ChainProviders::from_settings(&settings, &service_user_agent("daemon", Some("stake_rewards"))));
 
-    JobPlanBuilder::with_config(WorkerService::Alerter, runtime.plan(shutdown_rx), &config)
+    ctx.plan_builder(WorkerService::Alerter, &config, shutdown_rx)
         .job(WorkerJob::AlertPriceAlerts, {
             let database = database.clone();
             let stream_producer = stream_producer.clone();

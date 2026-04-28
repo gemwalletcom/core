@@ -18,7 +18,6 @@ use super::{
     sign_type::{SignDigestType, SignMessage},
 };
 use crate::{GemstoneError, siwe::SiweMessage};
-use gem_bitcoin::signer::{BitcoinSignMessageData, sign_personal as bitcoin_sign_personal};
 use gem_tron::signer::tron_hash_message;
 use primitives::SimulationPayloadField;
 use zeroize::Zeroizing;
@@ -60,10 +59,6 @@ impl MessageSigner {
             SignDigestType::SuiPersonal | SignDigestType::TronPersonal => Ok(MessagePreview::Text(
                 String::from_utf8(self.message.data.clone()).unwrap_or(encode_with_0x(&self.message.data)),
             )),
-            SignDigestType::BitcoinPersonal => {
-                let message = BitcoinSignMessageData::from_bytes(&self.message.data)?;
-                Ok(MessagePreview::Text(message.message))
-            }
             SignDigestType::TonPersonal => {
                 let string = String::from_utf8(self.message.data.clone())?;
                 let Ok(ton_data) = TonSignMessageData::from_bytes(string.as_bytes()) else {
@@ -112,10 +107,6 @@ impl MessageSigner {
                 Ok(MessagePreview::Text(preview)) => preview,
                 _ => String::from_utf8(self.message.data.clone()).unwrap_or_else(|_| encode_with_0x(&self.message.data)),
             },
-            SignDigestType::BitcoinPersonal => match self.preview() {
-                Ok(MessagePreview::Text(preview)) => preview,
-                _ => "".to_string(),
-            },
             SignDigestType::Siwe => String::from_utf8(self.message.data.clone()).unwrap_or_else(|_| encode_with_0x(&self.message.data)),
             SignDigestType::Eip712 => {
                 let value: serde_json::Value = serde_json::from_slice(&self.message.data).unwrap_or_default();
@@ -146,7 +137,6 @@ impl MessageSigner {
                 let decoded = bs58::decode(&self.message.data).into_vec().map_err(|e| GemstoneError::from(e.to_string()))?;
                 Ok(decoded)
             }
-            SignDigestType::BitcoinPersonal => Ok(BitcoinSignMessageData::from_bytes(&self.message.data)?.hash()),
         }
     }
 
@@ -162,7 +152,6 @@ impl MessageSigner {
             }
             SignDigestType::SuiPersonal | SignDigestType::TonPersonal => BASE64.encode(data),
             SignDigestType::Base58 => bs58::encode(data).into_string(),
-            SignDigestType::BitcoinPersonal => hex::encode(data),
         }
     }
 
@@ -187,7 +176,6 @@ impl MessageSigner {
                 let signed = Signer::sign_digest(SignatureScheme::Ed25519, hash, private_key.to_vec())?;
                 Ok(self.get_result(&signed))
             }
-            SignDigestType::BitcoinPersonal => Ok(bitcoin_sign_personal(&self.message.data, &private_key)?.to_json()?),
         }
     }
 }
@@ -224,7 +212,6 @@ mod tests {
         sign_type::SignDigestType,
     };
     use gem_evm::EIP712Domain;
-    use gem_ton::signer::{TonSignDataPayload, TonSigner};
     use primitives::testkit::signer_mock::TEST_PRIVATE_KEY;
     use primitives::{Address, Chain};
 

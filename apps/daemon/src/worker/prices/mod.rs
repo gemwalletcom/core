@@ -1,5 +1,6 @@
 mod charts_updater;
 mod markets_updater;
+mod missing_prices_publisher;
 mod observed_prices_updater;
 mod prices_cleanup_updater;
 mod prices_metrics_updater;
@@ -9,7 +10,6 @@ use crate::model::WorkerService;
 use crate::worker::context::WorkerContext;
 use crate::worker::jobs::{JobVariant, WorkerJob};
 use crate::worker::plan::JobPlanBuilder;
-use std::collections::HashMap;
 use std::error::Error;
 use std::future::Future;
 use std::sync::Arc;
@@ -17,12 +17,12 @@ use std::sync::Arc;
 use cacher::CacherClient;
 use charts_updater::{ChartsHistoryConfig, ChartsHistoryUpdater, ChartsUpdater};
 use coingecko::CoinGeckoClient;
-use gem_client::ReqwestClient;
 use job_runner::{JobHandle, ShutdownReceiver};
 use markets_updater::MarketsUpdater;
+use missing_prices_publisher::MissingPricesPublisher;
 use observed_prices_updater::{ObservedPricesConfig, ObservedPricesUpdater};
-use pricer::{MarketsClient, PriceClient};
-use prices::{CoinGeckoPricesProvider, DefiLlamaProvider, JupiterProvider, PriceAssetsProvider, PriceProvider, PriceProviderConfig, PythProvider};
+use pricer::{MarketsClient, PriceClient, PriceProviders, build_price_providers};
+use prices::{PriceAssetsProvider, PriceProvider, PriceProviderEndpoints};
 use prices_cleanup_updater::PricesCleanupUpdater;
 use prices_metrics_updater::PricesMetricsUpdater;
 use prices_updater::PricesUpdater;
@@ -32,10 +32,9 @@ use storage::repositories::prices_providers_repository::PricesProvidersRepositor
 use storage::{ConfigCacher, Database};
 use streamer::{StreamProducer, StreamProducerConfig};
 
-pub type AssetsProviders = Arc<HashMap<PriceProvider, Arc<dyn PriceAssetsProvider>>>;
+pub type AssetsProviders = Arc<PriceProviders>;
 
-pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver, only: Option<PriceProvider>) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
-    let runtime = ctx.runtime();
+pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
     let database = ctx.database();
     let settings = ctx.settings();
     let cacher_client = CacherClient::new(&settings.redis.url).await;
@@ -49,22 +48,20 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver, only: Optio
         .filter(|p| p.enabled)
         .map(|p| p.id.0)
         .collect();
-    let assets_providers: AssetsProviders = Arc::new(build_providers(&enabled_providers, &settings, config.as_ref())?);
+    let endpoints = price_provider_endpoints(&settings);
+    let assets_providers: AssetsProviders = Arc::new(build_price_providers(&endpoints, enabled_providers.iter().copied(), config.as_ref())?);
+    let price_client = PriceClient::new(database.clone(), cacher_client.clone());
 
-    let builder = JobPlanBuilder::with_config(WorkerService::Prices, runtime.plan(shutdown_rx), config.as_ref());
-    let builder = if only.is_none() {
-        add_platform_jobs(builder, &database, &cacher_client, &config, &assets_providers, producer_prices.clone())?
-    } else {
-        builder
-    };
+    let builder = ctx.plan_builder(WorkerService::Prices, config.as_ref(), shutdown_rx);
+    let builder = add_platform_jobs(builder, &database, &cacher_client, &price_client, &config, &assets_providers, producer_prices.clone())?;
     enabled_providers
         .into_iter()
-        .filter(|p| only.is_none_or(|o| o == *p))
         .try_fold(builder, |builder, provider| {
             add_provider_jobs(
                 builder,
                 &database,
                 &cacher_client,
+                &price_client,
                 &settings,
                 &config,
                 provider,
@@ -76,10 +73,12 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver, only: Optio
         .finish()
 }
 
+#[allow(clippy::too_many_arguments)]
 fn add_platform_jobs<'a>(
     builder: JobPlanBuilder<'a>,
     database: &Database,
     cacher_client: &CacherClient,
+    price_client: &PriceClient,
     config: &Arc<ConfigCacher>,
     providers: &AssetsProviders,
     producer: StreamProducer,
@@ -104,12 +103,14 @@ fn add_platform_jobs<'a>(
         .job(WorkerJob::UpdateObservedPrices, {
             let cacher_client = cacher_client.clone();
             let database = database.clone();
+            let price_client = price_client.clone();
             let config = config.clone();
             let providers = providers.clone();
             let producer = producer.clone();
             move |_| {
                 let cacher_client = cacher_client.clone();
                 let database = database.clone();
+                let price_client = price_client.clone();
                 let config = config.clone();
                 let providers = providers.clone();
                 let producer = producer.clone();
@@ -119,16 +120,29 @@ fn add_platform_jobs<'a>(
                         min_observers: config.get_usize(ConfigKey::PriceObservedMinObservers)?,
                         primary_price_max_age: config.get_duration(ConfigKey::PricePrimaryMaxAge)?,
                     };
-                    ObservedPricesUpdater::new(cacher_client, database, providers, producer, observed_config).update().await
+                    ObservedPricesUpdater::new(cacher_client, database, price_client, providers, producer, observed_config)
+                        .update()
+                        .await
                 }
+            }
+        })
+        .job(WorkerJob::PublishMissingPrices, {
+            let database = database.clone();
+            let producer = producer.clone();
+            move |_| {
+                let database = database.clone();
+                let producer = producer.clone();
+                async move { MissingPricesPublisher::new(database, producer).update().await }
             }
         }))
 }
 
+#[allow(clippy::too_many_arguments)]
 fn add_provider_jobs<'a>(
     builder: JobPlanBuilder<'a>,
     database: &Database,
     cacher_client: &CacherClient,
+    price_client: &PriceClient,
     settings: &Settings,
     config: &Arc<ConfigCacher>,
     kind: PriceProvider,
@@ -140,6 +154,7 @@ fn add_provider_jobs<'a>(
     builder = add_updater_job(
         builder,
         database,
+        price_client,
         &provider,
         producer_assets,
         config,
@@ -151,6 +166,7 @@ fn add_provider_jobs<'a>(
     builder = add_updater_job(
         builder,
         database,
+        price_client,
         &provider,
         producer_assets,
         config,
@@ -162,6 +178,7 @@ fn add_provider_jobs<'a>(
     builder = add_updater_job(
         builder,
         database,
+        price_client,
         &provider,
         producer_assets,
         config,
@@ -207,20 +224,19 @@ fn add_provider_jobs<'a>(
         PriceProvider::Coingecko => builder
             .job(
                 JobVariant::labeled(WorkerJob::UpdatePricesTop, kind),
-                provider_job(database, provider.clone(), producer_prices.clone(), |u| async move { u.update_prices_window(0, 500).await }),
+                provider_job(database, price_client, provider.clone(), producer_prices.clone(), |u| async move {
+                    u.update_prices_window(0, 500).await
+                }),
             )
             .job(
                 JobVariant::labeled(WorkerJob::UpdatePricesHigh, kind),
-                provider_job(
-                    database,
-                    provider.clone(),
-                    producer_prices.clone(),
-                    |u| async move { u.update_prices_window(500, 2500).await },
-                ),
+                provider_job(database, price_client, provider.clone(), producer_prices.clone(), |u| async move {
+                    u.update_prices_window(500, 2500).await
+                }),
             )
             .job(
                 JobVariant::labeled(WorkerJob::UpdatePricesLow, kind),
-                provider_job(database, provider.clone(), producer_prices.clone(), |u| async move {
+                provider_job(database, price_client, provider.clone(), producer_prices.clone(), |u| async move {
                     u.update_prices_window(3000, usize::MAX).await
                 }),
             )
@@ -235,6 +251,7 @@ fn add_provider_jobs<'a>(
         PriceProvider::Pyth | PriceProvider::Jupiter | PriceProvider::DefiLlama => add_updater_job(
             builder,
             database,
+            price_client,
             &provider,
             producer_prices,
             config,
@@ -251,6 +268,7 @@ fn add_provider_jobs<'a>(
 fn add_updater_job<'a, F, Fut>(
     builder: JobPlanBuilder<'a>,
     database: &Database,
+    price_client: &PriceClient,
     provider: &Arc<dyn PriceAssetsProvider>,
     producer: &StreamProducer,
     config: &ConfigCacher,
@@ -264,37 +282,20 @@ where
     Fut: Future<Output = Result<usize, Box<dyn Error + Send + Sync>>> + Send + 'static,
 {
     let variant = JobVariant::labeled(job, kind).with_param_duration(config, &interval)?;
-    Ok(builder.job(variant, provider_job(database, provider.clone(), producer.clone(), run)))
+    Ok(builder.job(variant, provider_job(database, price_client, provider.clone(), producer.clone(), run)))
 }
 
-fn build_providers(
-    enabled_providers: &[PriceProvider],
-    settings: &Settings,
-    config: &ConfigCacher,
-) -> Result<HashMap<PriceProvider, Arc<dyn PriceAssetsProvider>>, Box<dyn Error + Send + Sync>> {
-    enabled_providers
-        .iter()
-        .copied()
-        .map(|provider| build_provider(provider, settings, config).map(|provider_instance| (provider, provider_instance)))
-        .collect()
+fn price_provider_endpoints(settings: &Settings) -> PriceProviderEndpoints {
+    PriceProviderEndpoints {
+        coingecko_api_key: settings.coingecko.key.secret.clone(),
+        pyth_url: settings.prices.pyth.url.clone(),
+        jupiter_url: settings.prices.jupiter.url.clone(),
+        defillama_url: settings.prices.defillama.url.clone(),
+    }
 }
 
-fn build_provider(provider: PriceProvider, settings: &Settings, config: &ConfigCacher) -> Result<Arc<dyn PriceAssetsProvider>, Box<dyn Error + Send + Sync>> {
-    let provider_config = PriceProviderConfig {
-        min_score: config.get_param_f64(&ConfigParamKey::PriceProviderAssetsMinScore(provider))?,
-    };
-    Ok(match provider {
-        PriceProvider::Coingecko => Arc::new(CoinGeckoPricesProvider::new(&settings.coingecko.key.secret, provider_config)),
-        PriceProvider::Pyth => Arc::new(PythProvider::new(
-            ReqwestClient::new(settings.prices.pyth.url.clone(), reqwest::Client::new()),
-            provider_config,
-        )),
-        PriceProvider::Jupiter => Arc::new(JupiterProvider::new(
-            ReqwestClient::new(settings.prices.jupiter.url.clone(), reqwest::Client::new()),
-            provider_config,
-        )),
-        PriceProvider::DefiLlama => Arc::new(DefiLlamaProvider::new(ReqwestClient::new(settings.prices.defillama.url.clone(), reqwest::Client::new()))),
-    })
+pub fn price_providers(settings: &Settings, config: &ConfigCacher) -> Result<PriceProviders, Box<dyn Error + Send + Sync>> {
+    build_price_providers(&price_provider_endpoints(settings), PriceProvider::all(), config)
 }
 
 fn charts_history_job(
@@ -315,6 +316,7 @@ fn charts_history_job(
 
 fn provider_job<F, Fut>(
     database: &Database,
+    price_client: &PriceClient,
     provider: Arc<dyn PriceAssetsProvider>,
     producer: StreamProducer,
     run: F,
@@ -324,12 +326,14 @@ where
     Fut: Future<Output = Result<usize, Box<dyn std::error::Error + Send + Sync>>> + Send + 'static,
 {
     let database = database.clone();
+    let price_client = price_client.clone();
     move |_| {
         let database = database.clone();
+        let price_client = price_client.clone();
         let provider = provider.clone();
         let producer = producer.clone();
         let run = run.clone();
-        Box::pin(async move { run(PricesUpdater::new(provider, database, producer)).await })
+        Box::pin(async move { run(PricesUpdater::new(provider, database, price_client, producer)).await })
     }
 }
 

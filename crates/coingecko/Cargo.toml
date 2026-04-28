@@ -3,6 +3,9 @@ name = "coingecko"
 edition = { workspace = true }
 version = { workspace = true }
 
+[features]
+testkit = []
+
 [dependencies]
 serde = { workspace = true }
 primitives = { path = "../primitives" }

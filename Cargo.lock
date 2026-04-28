@@ -622,6 +622,7 @@ dependencies = [
  "nft",
  "portfolio",
  "pricer",
+ "prices",
  "primitives",
  "prometheus-client",
  "redis",
@@ -1186,6 +1187,15 @@ checksum = "85b6598a2f5d564fb7855dc6b06fd1c38cff5a72bd8b863a4d021938497b440a"
 dependencies = [
  "serde",
  "thiserror 1.0.69",
+]
+
+[[package]]
+name = "bcs"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "350f2b5fa7b76b498158ec1079dc0ea842c5b622b6b3f675005fddd889f2c9a7"
+dependencies = [
+ "serde_core",
 ]
 
 [[package]]
@@ -2185,9 +2195,9 @@ dependencies = [
 
 [[package]]
 name = "data-encoding"
-version = "2.10.0"
+version = "2.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d7a1e2f27636f116493b8b860f5546edb47c8d8f8ea73e1d2a20be88e28d1fea"
+checksum = "a4ae5f15dda3c708c0ade84bfee31ccab44a3da4f88015ed22f63732abe300c8"
 
 [[package]]
 name = "der"
@@ -3080,7 +3090,7 @@ name = "gem_aptos"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "bcs",
+ "bcs 0.2.1",
  "chain_primitives",
  "chain_traits",
  "chrono",
@@ -3421,7 +3431,7 @@ name = "gem_sui"
 version = "1.0.0"
 dependencies = [
  "async-trait",
- "bcs",
+ "bcs 0.2.1",
  "chain_primitives",
  "chain_traits",
  "chrono",
@@ -3507,7 +3517,6 @@ dependencies = [
 name = "gem_wallet_connect"
 version = "1.0.0"
 dependencies = [
- "gem_bitcoin",
  "gem_evm",
  "gem_ton",
  "hex",
@@ -5495,6 +5504,7 @@ dependencies = [
  "gem_tracing",
  "localizer",
  "number_formatter",
+ "prices",
  "primitives",
  "serde_json",
  "storage",
@@ -5510,6 +5520,7 @@ dependencies = [
  "coingecko",
  "gem_client",
  "primitives",
+ "reqwest 0.13.2",
  "serde",
  "serde_json",
  "serde_serializers",
@@ -7331,7 +7342,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6c1de70a3262b561b3ff0848e43b4feff41c3083e2744e0442c79cb2204e5fd2"
 dependencies = [
  "base64",
- "bcs",
+ "bcs 0.1.6",
  "bytes",
  "futures",
  "http 1.4.0",
@@ -7353,7 +7364,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23f800c4c3539246ba94a825f6afe7faab0bc8fc4dda56c6cfa493ea2a32ecbd"
 dependencies = [
  "base64ct",
- "bcs",
+ "bcs 0.1.6",
  "blake2",
  "bnum",
  "bs58",
@@ -7375,7 +7386,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5061ad0ad2585dc29558e6f65d9206a3342b8f1d2693b934530e22c958671c2d"
 dependencies = [
  "async-trait",
- "bcs",
+ "bcs 0.1.6",
  "futures",
  "serde",
  "sui-rpc",

@@ -26,14 +26,12 @@ use validator_scanner::ValidatorScanner;
 use crate::model::WorkerService;
 use crate::worker::context::WorkerContext;
 use crate::worker::jobs::WorkerJob;
-use crate::worker::plan::JobPlanBuilder;
 
 pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
-    let runtime = ctx.runtime();
     let database = ctx.database();
     let settings = ctx.settings();
     let config = ConfigCacher::new(database.clone());
-    JobPlanBuilder::with_config(WorkerService::Assets, runtime.plan(shutdown_rx), &config)
+    ctx.plan_builder(WorkerService::Assets, &config, shutdown_rx)
         .job(WorkerJob::UpdateSuspiciousAssetRanks, {
             let database = database.clone();
             move |_| {

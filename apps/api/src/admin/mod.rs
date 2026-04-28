@@ -1,3 +1,7 @@
+pub mod assets;
+pub mod prices;
+pub mod transactions;
+
 use rocket::Request;
 use rocket::http::Status;
 use rocket::outcome::Outcome::{Error, Success};

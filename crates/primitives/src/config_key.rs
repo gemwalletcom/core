@@ -144,6 +144,7 @@ pub enum ConfigKey {
     PriceChartsRetentionDaily,
     PriceOutdated,
     PricePrimaryMaxAge,
+    PriceMissingPublishInterval,
 
     // Assets
     AssetsTimerUpdateSuspicious,
@@ -348,6 +349,7 @@ impl ConfigKey {
             Self::PriceChartsRetentionDaily => "10000d",
             Self::PriceOutdated => "7d",
             Self::PricePrimaryMaxAge => "24h",
+            Self::PriceMissingPublishInterval => "1h",
             Self::AssetsTimerUpdateSuspicious => "1h",
             Self::AssetsTimerUpdateStakeApy => "1d",
             Self::AssetsTimerUpdatePerpetuals => "1h",

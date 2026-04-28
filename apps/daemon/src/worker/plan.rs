@@ -13,6 +13,7 @@ pub struct JobPlanBuilder<'a> {
     worker: WorkerService,
     plan: PlanResult,
     config: Option<&'a ConfigCacher>,
+    filter: Option<String>,
 }
 
 impl<'a> JobPlanBuilder<'a> {
@@ -21,7 +22,13 @@ impl<'a> JobPlanBuilder<'a> {
             worker,
             plan: Ok(plan),
             config: Some(config),
+            filter: None,
         }
+    }
+
+    pub fn filter(mut self, filter: Option<String>) -> Self {
+        self.filter = filter;
+        self
     }
 
     pub fn job<J, F, Fut, R>(self, job: J, job_fn: F) -> Self
@@ -32,10 +39,14 @@ impl<'a> JobPlanBuilder<'a> {
         R: Debug + Send + Sync + 'static,
     {
         let config = self.config;
+        let filter = self.filter.clone();
         let plan = self.plan.and_then(|plan| {
             let variant: JobVariant = job.into();
             if variant.worker() != self.worker {
                 return Err(format!("job {} belongs to {:?} worker but builder is {:?}", variant.name(), variant.worker(), self.worker).into());
+            }
+            if !should_include(&variant.name(), filter.as_deref()) {
+                return Ok(plan);
             }
             let interval = variant.resolve_interval(config)?;
             Ok(plan.job(variant.name(), interval, job_fn))
@@ -44,6 +55,7 @@ impl<'a> JobPlanBuilder<'a> {
             worker: self.worker,
             plan,
             config,
+            filter: self.filter,
         }
     }
 
@@ -93,6 +105,7 @@ impl<'a> JobPlanBuilder<'a> {
         R: Debug + Send + Sync + 'static,
     {
         let config = self.config;
+        let filter = self.filter.clone();
         let plan = self.plan.and_then(|plan| {
             if job.worker() != self.worker {
                 return Err(format!("job {} belongs to {:?} worker but builder is {:?}", job.as_ref(), job.worker(), self.worker).into());
@@ -103,6 +116,9 @@ impl<'a> JobPlanBuilder<'a> {
                     Some(duration) => variant.every(duration),
                     None => variant,
                 };
+                if !should_include(&variant.name(), filter.as_deref()) {
+                    return Ok(current);
+                }
                 let interval = variant.resolve_interval(config)?;
                 let job_fn = build_job(item, variant.clone());
                 Ok(current.job(variant.name(), interval, job_fn))
@@ -112,10 +128,30 @@ impl<'a> JobPlanBuilder<'a> {
             worker: self.worker,
             plan,
             config,
+            filter: self.filter,
         }
     }
 
     pub fn finish(self) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
         self.plan.map(JobPlan::finish)
+    }
+}
+
+fn should_include(name: &str, filter: Option<&str>) -> bool {
+    filter.is_none_or(|f| f.is_empty() || name.contains(f))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::should_include;
+
+    #[test]
+    fn test_should_include() {
+        assert!(should_include("publish_missing_prices", None));
+        assert!(should_include("publish_missing_prices", Some("")));
+        assert!(should_include("publish_missing_prices", Some("missing")));
+        assert!(should_include("update_prices_top.coingecko", Some("coingecko")));
+        assert!(!should_include("update_prices_top.coingecko", Some("pyth")));
+        assert!(!should_include("publish_missing_prices", Some("update_prices")));
     }
 }

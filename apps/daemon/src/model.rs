@@ -1,4 +1,4 @@
-use primitives::{Chain, PriceProvider};
+use primitives::Chain;
 use std::str::FromStr;
 use strum::{AsRefStr, EnumIter, EnumString, IntoEnumIterator};
 
@@ -24,6 +24,7 @@ impl ConsumerService {
 #[allow(clippy::enum_variant_names)]
 pub enum IndexerConsumer {
     FetchAssets,
+    FetchPrices,
     FetchBlocks,
     FetchTokenAssociations,
     FetchCoinAssociations,
@@ -60,7 +61,7 @@ impl WorkerService {
 #[derive(Debug, Clone)]
 pub struct WorkerOptions {
     pub service: Option<WorkerService>,
-    pub price_provider: Option<PriceProvider>,
+    pub job: Option<String>,
 }
 
 #[derive(Debug, Clone, AsRefStr)]
@@ -81,8 +82,8 @@ impl DaemonService {
         match self {
             DaemonService::Setup => "setup".to_owned(),
             DaemonService::SetupDev => "setup_dev".to_owned(),
-            DaemonService::Worker(opts) => match (opts.service, opts.price_provider) {
-                (Some(service), Some(provider)) => format!("worker {} {}", service.as_ref(), provider.id()),
+            DaemonService::Worker(opts) => match (opts.service, opts.job.as_deref()) {
+                (Some(service), Some(job)) => format!("worker {} {}", service.as_ref(), job),
                 (Some(service), None) => format!("worker {}", service.as_ref()),
                 (None, _) => "worker all".to_owned(),
             },
@@ -111,15 +112,8 @@ impl FromStr for DaemonService {
             "setup_dev" => Ok(DaemonService::SetupDev),
             "worker" => {
                 let service = parts.get(1).map(|s| WorkerService::from_str(s).map_err(|_| format!("Invalid worker: {s}"))).transpose()?;
-                let price_provider = if matches!(service, Some(WorkerService::Prices)) {
-                    parts
-                        .get(2)
-                        .map(|s| PriceProvider::from_str(s).map_err(|_| format!("Invalid price provider: {s}")))
-                        .transpose()?
-                } else {
-                    None
-                };
-                Ok(DaemonService::Worker(WorkerOptions { service, price_provider }))
+                let job = parts.get(2).map(|s| (*s).to_owned());
+                Ok(DaemonService::Worker(WorkerOptions { service, job }))
             }
             "parser" => {
                 let chain = parts.get(1).map(|s| Chain::from_str(s).map_err(|_| format!("Invalid chain: {s}"))).transpose()?;

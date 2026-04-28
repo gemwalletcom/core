@@ -6,7 +6,6 @@ mod sync;
 use crate::model::WorkerService;
 use crate::worker::context::WorkerContext;
 use crate::worker::jobs::WorkerJob;
-use crate::worker::plan::JobPlanBuilder;
 use assets_index_updater::AssetsIndexUpdater;
 use job_runner::{JobHandle, ShutdownReceiver};
 use nfts_index_updater::NftsIndexUpdater;
@@ -17,14 +16,13 @@ use std::error::Error;
 use storage::ConfigCacher;
 
 pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
-    let runtime = ctx.runtime();
     let database = ctx.database();
     let settings = ctx.settings();
     let search_index_client = SearchIndexClient::new(&settings.meilisearch.url, settings.meilisearch.key.as_str());
     let config = ConfigCacher::new(database.clone());
 
     let primary_price_max_age = config.get_duration(ConfigKey::PricePrimaryMaxAge)?;
-    JobPlanBuilder::with_config(WorkerService::Search, runtime.plan(shutdown_rx), &config)
+    ctx.plan_builder(WorkerService::Search, &config, shutdown_rx)
         .job(WorkerJob::UpdateAssetsIndex, {
             let database = database.clone();
             let search_index_client = search_index_client.clone();

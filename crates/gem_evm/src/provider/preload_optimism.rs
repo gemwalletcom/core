@@ -143,9 +143,10 @@ impl<C: Client + Clone> OptimismGasOracle<C> {
             | TransactionInputType::Deposit(asset)
             | TransactionInputType::TransferNft(asset, _)
             | TransactionInputType::Account(asset, _)
-                if asset.id.is_native() && encoded.len() > 3 => {
-                    encoded.remove(2);
-                }
+                if asset.id.is_native() && encoded.len() > 3 =>
+            {
+                encoded.remove(2);
+            }
             _ => {}
         }
 

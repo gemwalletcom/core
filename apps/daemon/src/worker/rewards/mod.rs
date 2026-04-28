@@ -12,10 +12,8 @@ use streamer::{StreamProducer, StreamProducerConfig};
 use crate::model::WorkerService;
 use crate::worker::context::WorkerContext;
 use crate::worker::jobs::WorkerJob;
-use crate::worker::plan::JobPlanBuilder;
 
 pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<Vec<JobHandle>, Box<dyn Error + Send + Sync>> {
-    let runtime = ctx.runtime();
     let database = ctx.database();
     let settings = ctx.settings();
     let config = ConfigCacher::new(database.clone());
@@ -23,7 +21,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
     let rabbitmq_config = StreamProducerConfig::new(settings.rabbitmq.url.clone(), retry);
     let stream_producer = StreamProducer::new(&rabbitmq_config, "rewards_worker", shutdown_rx.clone()).await?;
 
-    JobPlanBuilder::with_config(WorkerService::Rewards, runtime.plan(shutdown_rx), &config)
+    ctx.plan_builder(WorkerService::Rewards, &config, shutdown_rx)
         .job(WorkerJob::CheckRewardsAbuse, {
             let database = database.clone();
             let stream_producer = stream_producer.clone();

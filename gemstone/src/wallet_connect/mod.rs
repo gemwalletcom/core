@@ -90,7 +90,6 @@ pub enum WalletConnectTransactionType {
     Solana { output_type: TransferDataOutputType },
     Sui { output_type: TransferDataOutputType },
     Ton { output_type: TransferDataOutputType },
-    Bitcoin { output_type: TransferDataOutputType },
     Tron { output_type: TransferDataOutputType },
 }
 
@@ -117,10 +116,6 @@ pub enum WalletConnectTransaction {
     },
     Ton {
         messages: String,
-        output_type: TransferDataOutputType,
-    },
-    Bitcoin {
-        data: String,
         output_type: TransferDataOutputType,
     },
     Tron {
@@ -166,7 +161,6 @@ impl From<WcSignDigestType> for SignDigestType {
             WcSignDigestType::SuiPersonal => Self::SuiPersonal,
             WcSignDigestType::Siwe => Self::Siwe,
             WcSignDigestType::TonPersonal => Self::TonPersonal,
-            WcSignDigestType::BitcoinPersonal => Self::BitcoinPersonal,
             WcSignDigestType::TronPersonal => Self::TronPersonal,
         }
     }
@@ -181,7 +175,6 @@ impl From<SignDigestType> for WcSignDigestType {
             SignDigestType::SuiPersonal => Self::SuiPersonal,
             SignDigestType::Siwe => Self::Siwe,
             SignDigestType::TonPersonal => Self::TonPersonal,
-            SignDigestType::BitcoinPersonal => Self::BitcoinPersonal,
             SignDigestType::TronPersonal => Self::TronPersonal,
         }
     }
@@ -194,7 +187,6 @@ impl From<WcWalletConnectTransactionType> for WalletConnectTransactionType {
             WcWalletConnectTransactionType::Solana { output_type } => Self::Solana { output_type },
             WcWalletConnectTransactionType::Sui { output_type } => Self::Sui { output_type },
             WcWalletConnectTransactionType::Ton { output_type } => Self::Ton { output_type },
-            WcWalletConnectTransactionType::Bitcoin { output_type } => Self::Bitcoin { output_type },
             WcWalletConnectTransactionType::Tron { output_type } => Self::Tron { output_type },
         }
     }
@@ -207,7 +199,6 @@ impl From<WalletConnectTransactionType> for WcWalletConnectTransactionType {
             WalletConnectTransactionType::Solana { output_type } => Self::Solana { output_type },
             WalletConnectTransactionType::Sui { output_type } => Self::Sui { output_type },
             WalletConnectTransactionType::Ton { output_type } => Self::Ton { output_type },
-            WalletConnectTransactionType::Bitcoin { output_type } => Self::Bitcoin { output_type },
             WalletConnectTransactionType::Tron { output_type } => Self::Tron { output_type },
         }
     }
@@ -290,7 +281,6 @@ impl From<WcWalletConnectTransaction> for WalletConnectTransaction {
                 output_type,
             },
             WcWalletConnectTransaction::Ton { messages, output_type } => Self::Ton { messages, output_type },
-            WcWalletConnectTransaction::Bitcoin { data, output_type } => Self::Bitcoin { data, output_type },
             WcWalletConnectTransaction::Tron { data, output_type } => Self::Tron { data, output_type },
         }
     }

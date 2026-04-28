@@ -37,7 +37,6 @@ pub enum WalletConnectTransactionType {
     Solana { output_type: TransferDataOutputType },
     Sui { output_type: TransferDataOutputType },
     Ton { output_type: TransferDataOutputType },
-    Bitcoin { output_type: TransferDataOutputType },
     Tron { output_type: TransferDataOutputType },
 }
 
@@ -45,9 +44,7 @@ impl WalletConnectTransactionType {
     pub fn get_output_type(&self) -> Option<TransferDataOutputType> {
         match self {
             Self::Ethereum => None,
-            Self::Solana { output_type } | Self::Sui { output_type } | Self::Ton { output_type } | Self::Bitcoin { output_type } | Self::Tron { output_type } => {
-                Some(output_type.clone())
-            }
+            Self::Solana { output_type } | Self::Sui { output_type } | Self::Ton { output_type } | Self::Tron { output_type } => Some(output_type.clone()),
         }
     }
 }
@@ -101,10 +98,6 @@ pub enum WalletConnectTransaction {
     },
     Ton {
         messages: String,
-        output_type: TransferDataOutputType,
-    },
-    Bitcoin {
-        data: String,
         output_type: TransferDataOutputType,
     },
     Tron {

@@ -32,7 +32,7 @@ pub fn validate_sign_message(input: &SignMessageValidation) -> Result<(), String
             Ok(())
         }
         SignDigestType::Eip191 | SignDigestType::Siwe => validate_siwe(input),
-        SignDigestType::Base58 | SignDigestType::SuiPersonal | SignDigestType::BitcoinPersonal | SignDigestType::TronPersonal => Ok(()),
+        SignDigestType::Base58 | SignDigestType::SuiPersonal | SignDigestType::TronPersonal => Ok(()),
     }
 }
 

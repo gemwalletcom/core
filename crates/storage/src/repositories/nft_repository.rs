@@ -54,10 +54,7 @@ impl NftRepository for DatabaseClient {
     }
 
     fn set_nft_asset_associations(&mut self, address_id: i32, chains: Vec<Chain>, asset_ids: Vec<i32>) -> Result<(), DatabaseError> {
-        let existing = NftStore::get_nft_asset_association_ids_by_filter(
-            self,
-            vec![NftAssetAssociationFilter::AddressId(address_id), NftAssetAssociationFilter::Chains(chains)],
-        )?;
+        let existing = NftStore::get_nft_asset_association_ids_by_filter(self, vec![NftAssetAssociationFilter::AddressId(address_id), NftAssetAssociationFilter::Chains(chains)])?;
         let diff = Diff::compare(asset_ids, existing);
 
         let to_insert: Vec<NewNftAssetAssociationRow> = diff.different.into_iter().map(|asset_id| NewNftAssetAssociationRow { address_id, asset_id }).collect();

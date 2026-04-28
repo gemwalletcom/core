@@ -41,7 +41,7 @@ impl<C: Client> CoinGeckoClient<C> {
         Self { client }
     }
 
-    async fn _get<T>(&self, path: &str) -> Result<T, Box<dyn Error + Send + Sync>>
+    async fn get_json<T>(&self, path: &str) -> Result<T, Box<dyn Error + Send + Sync>>
     where
         T: serde::de::DeserializeOwned + Send,
     {
@@ -60,28 +60,28 @@ impl<C: Client> CoinGeckoClient<C> {
     }
 
     pub async fn get_global(&self) -> Result<Global, Box<dyn Error + Send + Sync>> {
-        Ok(self._get::<Data<Global>>("/api/v3/global").await?.data)
+        Ok(self.get_json::<Data<Global>>("/api/v3/global").await?.data)
     }
 
     pub async fn get_search_trending(&self) -> Result<SearchTrending, Box<dyn Error + Send + Sync>> {
         let path = "/api/v3/search/trending";
-        self._get(path).await
+        self.get_json(path).await
     }
 
     pub async fn get_top_gainers_losers(&self) -> Result<TopGainersLosers, Box<dyn Error + Send + Sync>> {
         let path = "/api/v3/coins/top_gainers_losers?vs_currency=usd";
-        self._get(path).await
+        self.get_json(path).await
     }
 
     pub async fn get_coin_list(&self) -> Result<Vec<Coin>, Box<dyn Error + Send + Sync>> {
         let query = CointListQuery { include_platform: true };
         let path = build_path_with_query("/api/v3/coins/list", &query)?;
-        self._get(&path).await
+        self.get_json(&path).await
     }
 
     pub async fn get_coin_list_new(&self) -> Result<CoinIds, Box<dyn Error + Send + Sync>> {
         let path = "/api/v3/coins/list/new";
-        self._get(path).await
+        self.get_json(path).await
     }
 
     pub async fn get_coin_markets(&self, page: usize, per_page: usize) -> Result<Vec<CoinMarket>, Box<dyn Error + Send + Sync>> {
@@ -98,7 +98,7 @@ impl<C: Client> CoinGeckoClient<C> {
                 include_rehypothecated: true,
             },
         )?;
-        self._get(&path).await
+        self.get_json(&path).await
     }
 
     pub async fn get_coin_markets_ids(&self, ids: Vec<String>, per_page: usize) -> Result<Vec<CoinMarket>, Box<dyn Error + Send + Sync>> {
@@ -115,7 +115,7 @@ impl<C: Client> CoinGeckoClient<C> {
                 include_rehypothecated: true,
             },
         )?;
-        self._get(&path).await
+        self.get_json(&path).await
     }
 
     pub async fn get_coin_markets_id(&self, id: &str) -> Result<CoinMarket, Box<dyn Error + Send + Sync>> {
@@ -133,12 +133,17 @@ impl<C: Client> CoinGeckoClient<C> {
         };
         let base_path = format!("/api/v3/coins/{}", id);
         let path = build_path_with_query(&base_path, &query)?;
-        self._get(&path).await
+        self.get_json(&path).await
+    }
+
+    pub async fn get_coin_by_contract(&self, platform_id: &str, contract_address: &str) -> Result<CoinInfo, Box<dyn Error + Send + Sync>> {
+        let path = format!("/api/v3/coins/{platform_id}/contract/{contract_address}");
+        self.get_json(&path).await
     }
 
     pub async fn get_fiat_rates(&self) -> Result<Vec<FiatRate>, Box<dyn Error + Send + Sync>> {
         let path = "/api/v3/exchange_rates";
-        let rates: ExchangeRates = self._get(path).await?;
+        let rates: ExchangeRates = self.get_json(path).await?;
         let usd_rate = rates
             .rates
             .get(DEFAULT_FIAT_CURRENCY.to_lowercase().as_str())
@@ -178,11 +183,11 @@ impl<C: Client> CoinGeckoClient<C> {
 
     pub async fn get_market_chart(&self, coin_id: &str, interval: &str, days: &str) -> Result<MarketChart, Box<dyn Error + Send + Sync>> {
         let path = format!("/api/v3/coins/{}/market_chart?vs_currency=usd&days={}&interval={}&precision=full", coin_id, days, interval);
-        self._get(&path).await
+        self.get_json(&path).await
     }
 
     pub async fn get_market_chart_auto(&self, coin_id: &str, days: &str) -> Result<MarketChart, Box<dyn Error + Send + Sync>> {
         let path = format!("/api/v3/coins/{}/market_chart?vs_currency=usd&days={}&precision=full", coin_id, days);
-        self._get(&path).await
+        self.get_json(&path).await
     }
 }

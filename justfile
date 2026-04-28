@@ -42,7 +42,7 @@ test CRATE="":
     @if [ -n "{{CRATE}}" ]; then \
         cargo test --package {{CRATE}} --lib --bins --all-features -- --skip integration_tests; \
     else \
-        cargo test --lib --bins --workspace --all-features --quiet -- --skip integration_tests; \
+        cargo test --lib --bins --workspace --features unit_tests --quiet; \
     fi
 
 test-integration:
