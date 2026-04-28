@@ -5,6 +5,7 @@ use num_bigint::BigUint;
 use primitives::{FeeOption, SignerError, SignerInput};
 
 use super::{
+    earn,
     message::{InternalMessage, build_internal_message},
     request::{JettonTransferRequest, TransferRequest},
 };
@@ -54,6 +55,11 @@ impl TonSigner {
             true,
             None,
         )?;
+        Ok(vec![self.sign_requests(vec![request], input.metadata.get_sequence()?, expire_at)?])
+    }
+
+    pub fn sign_earn(&self, input: &SignerInput, expire_at: Option<u32>) -> Result<Vec<String>, SignerError> {
+        let request = earn::build_request(input)?;
         Ok(vec![self.sign_requests(vec![request], input.metadata.get_sequence()?, expire_at)?])
     }
 

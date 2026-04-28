@@ -13,7 +13,7 @@ use crate::error::YielderError;
 use crate::provider::EarnProvider;
 
 use super::client::YoGatewayClient;
-use super::mapper::{map_to_asset_balance, map_to_contract_call_data, map_to_delegation, map_to_earn_provider};
+use super::mapper::{map_to_asset_balance, map_to_contract_call_data, map_to_delegation};
 use super::{YO_GATEWAY, YO_PARTNER_ID_GEM, YoAsset, supported_assets};
 
 const GAS_LIMIT: u64 = 300_000;
@@ -59,7 +59,7 @@ impl YoEarnProvider {
 #[async_trait]
 impl EarnProvider for YoEarnProvider {
     fn get_provider(&self, asset_id: &AssetId) -> Option<DelegationValidator> {
-        self.get_asset(asset_id).ok().map(|a| map_to_earn_provider(a.chain, YieldProvider::Yo))
+        self.get_asset(asset_id).ok().map(|a| YieldProvider::Yo.delegation_validator(a.chain))
     }
 
     async fn get_position(&self, address: &str, asset_id: &AssetId) -> Result<Option<DelegationBase>, YielderError> {
@@ -97,7 +97,7 @@ impl EarnProvider for YoEarnProvider {
                 (approval, transaction)
             }
             EarnType::Withdraw(delegation) => {
-                let total_shares = biguint_to_u256(&delegation.base.shares).ok_or_else(|| YielderError::NetworkError("Invalid shares".to_string()))?;
+                let total_shares = biguint_to_u256(&delegation.base.shares).ok_or_else(|| YielderError::invalid_input("invalid shares"))?;
                 let computed_shares = client.get_quote_shares(asset.yo_token, amount).await?;
                 let redeem_shares = if total_shares > computed_shares && total_shares - computed_shares <= U256::from(1) {
                     total_shares
