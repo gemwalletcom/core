@@ -34,7 +34,7 @@ impl<C: Client> ChainBalances for TonClient<C> {
 mod chain_integration_tests {
     use crate::provider::testkit::*;
     use chain_traits::ChainBalances;
-    use primitives::Chain;
+    use primitives::{Chain, asset_constants::TON_USDT_TOKEN_ID};
 
     #[tokio::test]
     async fn test_ton_get_balance_coin() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -49,9 +49,7 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_ton_get_balance_tokens() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_ton_test_client();
-        let token_ids = vec![
-            "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs".to_string(), // USDT
-        ];
+        let token_ids = vec![TON_USDT_TOKEN_ID.to_string()];
         let balances = client.get_balance_tokens(TEST_ADDRESS.to_string(), token_ids).await?;
 
         assert_eq!(balances.len(), 1);

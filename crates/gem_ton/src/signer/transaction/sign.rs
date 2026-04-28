@@ -93,12 +93,13 @@ fn resolve_expire_at(sequence: u32, expire_at: Option<u32>) -> Result<u32, Signe
 #[cfg(test)]
 mod tests {
     use num_bigint::BigUint;
-    use primitives::{Address as AddressTrait, Asset, AssetId, AssetType, Chain, SignerInput, TransactionInputType, TransactionLoadMetadata, swap::SwapData};
+    use primitives::{
+        Address as AddressTrait, Asset, AssetId, AssetType, Chain, SignerInput, TransactionInputType, TransactionLoadMetadata, asset_constants::TON_USDT_TOKEN_ID, swap::SwapData,
+    };
 
     use super::super::{
         message::build_internal_message,
         request::{JettonTransferRequest, TransferPayload, TransferRequest},
-        wallet::WalletV4R2,
     };
     use crate::{
         address::Address,
@@ -108,7 +109,6 @@ mod tests {
     const TEST_TON_PRIVATE_KEY: &str = "c7702dadcd00d470df27dee0ddd97fbcf9deba52b60f7dd2b296ff42bb1fcad6";
     const TRUST_WALLET_PRIVATE_KEY: &str = "63474e5fe9511f1526a50567ce142befc343e71a49b865ac3908f58667319cb8";
     const SENDER_TOKEN_ADDRESS: &str = "EQAlgB03OjJKdXrlwZiGJD5snSzPKF2VL5bErJn_cqJANGH9";
-    const JETTON_ASSET_ADDRESS: &str = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs";
 
     fn test_signer() -> TonSigner {
         let private_key = hex::decode(TEST_TON_PRIVATE_KEY).unwrap();
@@ -138,7 +138,7 @@ mod tests {
         let signer = test_signer();
         let address = signer.address().encode();
 
-        let asset = Asset::new(AssetId::from_token(Chain::Ton, JETTON_ASSET_ADDRESS), String::new(), String::new(), 8, AssetType::TOKEN);
+        let asset = Asset::new(AssetId::from_token(Chain::Ton, TON_USDT_TOKEN_ID), String::new(), String::new(), 8, AssetType::TOKEN);
         let input = SignerInput::mock_with_input_type(
             TransactionInputType::Transfer(asset),
             &address,
