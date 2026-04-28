@@ -14,7 +14,6 @@ pub enum WalletConnectCAIP2 {
     Sui,
     Ton,
     Tron,
-    Bip122,
 }
 
 impl WalletConnectCAIP2 {
@@ -27,8 +26,7 @@ impl WalletConnectCAIP2 {
             ChainType::Sui => Some(WalletConnectCAIP2::Sui.as_ref().to_string()),
             ChainType::Ton => Some(WalletConnectCAIP2::Ton.as_ref().to_string()),
             ChainType::Tron => Some(WalletConnectCAIP2::Tron.as_ref().to_string()),
-            ChainType::Bitcoin => Some(WalletConnectCAIP2::Bip122.as_ref().to_string()),
-            ChainType::Aptos | ChainType::Xrp | ChainType::Near | ChainType::Stellar | ChainType::Polkadot | ChainType::Cardano | ChainType::HyperCore => None,
+            ChainType::Bitcoin | ChainType::Aptos | ChainType::Xrp | ChainType::Near | ChainType::Stellar | ChainType::Polkadot | ChainType::Cardano | ChainType::HyperCore => None,
         }
     }
 
@@ -41,7 +39,6 @@ impl WalletConnectCAIP2 {
             WalletConnectCAIP2::Sui => Some(ChainType::Sui),
             WalletConnectCAIP2::Ton => Some(ChainType::Ton),
             WalletConnectCAIP2::Tron => Some(ChainType::Tron),
-            WalletConnectCAIP2::Bip122 => Some(ChainType::Bitcoin),
         }
     }
 
@@ -62,7 +59,6 @@ impl WalletConnectCAIP2 {
             WalletConnectCAIP2::Sui => Some(Chain::Sui),
             WalletConnectCAIP2::Ton => Some(Chain::Ton),
             WalletConnectCAIP2::Tron => Some(Chain::Tron),
-            WalletConnectCAIP2::Bip122 => Some(Chain::Bitcoin),
         }
     }
 
@@ -74,9 +70,8 @@ impl WalletConnectCAIP2 {
             ChainType::Algorand => Some("wGHE2Pwdvd7S12BL5FaOP20EGYesN73k".to_string()),
             ChainType::Sui => Some("mainnet".to_string()),
             ChainType::Ton => Some("-239".to_string()),
-            ChainType::Bitcoin => Some("000000000019d6689c085ae165831e93".to_string()),
             ChainType::Tron => Some(chain.network_id().to_string()),
-            ChainType::Aptos | ChainType::Xrp | ChainType::Near | ChainType::Stellar | ChainType::Polkadot | ChainType::Cardano | ChainType::HyperCore => None,
+            ChainType::Bitcoin | ChainType::Aptos | ChainType::Xrp | ChainType::Near | ChainType::Stellar | ChainType::Polkadot | ChainType::Cardano | ChainType::HyperCore => None,
         }
     }
 
@@ -108,7 +103,7 @@ mod tests {
         assert_eq!(WalletConnectCAIP2::get_chain_type("sui".to_string()), Some(ChainType::Sui));
         assert_eq!(WalletConnectCAIP2::get_chain_type("ton".to_string()), Some(ChainType::Ton));
         assert_eq!(WalletConnectCAIP2::get_chain_type("tron".to_string()), Some(ChainType::Tron));
-        assert_eq!(WalletConnectCAIP2::get_chain_type("bip122".to_string()), Some(ChainType::Bitcoin));
+        assert_eq!(WalletConnectCAIP2::get_chain_type("bip122".to_string()), None);
         assert_eq!(WalletConnectCAIP2::get_chain_type("unknown".to_string()), None);
     }
 
@@ -120,10 +115,7 @@ mod tests {
         assert_eq!(WalletConnectCAIP2::get_chain("sui".to_string(), "mainnet".to_string()), Some(Chain::Sui));
         assert_eq!(WalletConnectCAIP2::get_chain("ton".to_string(), "-239".to_string()), Some(Chain::Ton));
         assert_eq!(WalletConnectCAIP2::get_chain("tron".to_string(), "0x2b6653dc".to_string()), Some(Chain::Tron));
-        assert_eq!(
-            WalletConnectCAIP2::get_chain("bip122".to_string(), "000000000019d6689c085ae165831e93".to_string()),
-            Some(Chain::Bitcoin)
-        );
+        assert_eq!(WalletConnectCAIP2::get_chain("bip122".to_string(), "000000000019d6689c085ae165831e93".to_string()), None);
     }
 
     #[test]
@@ -136,10 +128,7 @@ mod tests {
         assert_eq!(WalletConnectCAIP2::resolve_chain(Some("sui:mainnet".to_string())), Ok(Chain::Sui));
         assert_eq!(WalletConnectCAIP2::resolve_chain(Some("ton:-239".to_string())), Ok(Chain::Ton));
         assert_eq!(WalletConnectCAIP2::resolve_chain(Some("tron:0x2b6653dc".to_string())), Ok(Chain::Tron));
-        assert_eq!(
-            WalletConnectCAIP2::resolve_chain(Some("bip122:000000000019d6689c085ae165831e93".to_string())),
-            Ok(Chain::Bitcoin)
-        );
+        assert!(WalletConnectCAIP2::resolve_chain(Some("bip122:000000000019d6689c085ae165831e93".to_string())).is_err());
         assert!(WalletConnectCAIP2::resolve_chain(Some("invalid".to_string())).is_err());
         assert!(WalletConnectCAIP2::resolve_chain(Some("eip155:1:extra".to_string())).is_err());
         assert!(WalletConnectCAIP2::resolve_chain(None).is_err());

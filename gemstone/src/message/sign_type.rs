@@ -8,7 +8,6 @@ pub enum SignDigestType {
     SuiPersonal,
     Siwe,
     TonPersonal,
-    BitcoinPersonal,
     TronPersonal,
 }
 

@@ -1,4 +1,3 @@
-mod bitcoin;
 mod ethereum;
 mod solana;
 mod sui;
@@ -6,7 +5,6 @@ mod ton;
 mod tron;
 
 use crate::actions::{WCSolanaTransactionData, WCSuiTransactionData, WalletConnectAction, WalletConnectChainOperation, WalletConnectTransaction, WalletConnectTransactionType};
-use bitcoin::BitcoinRequestHandler;
 use ethereum::EthereumRequestHandler;
 use primitives::{Chain, ValueAccess, WCEthereumTransaction, WalletConnectCAIP2, WalletConnectRequest, WalletConnectionMethods, hex};
 use serde_json::Value;
@@ -73,8 +71,6 @@ impl WalletConnectRequestHandler {
             WalletConnectionMethods::TronSignMessage => TronRequestHandler::parse_sign_message(Chain::Tron, params, domain),
             WalletConnectionMethods::TronSignTransaction => TronRequestHandler::parse_sign_transaction(Chain::Tron, params),
             WalletConnectionMethods::TronSendTransaction => TronRequestHandler::parse_send_transaction(Chain::Tron, params),
-            WalletConnectionMethods::BtcSignMessage => BitcoinRequestHandler::parse_sign_message(Chain::Bitcoin, params, domain),
-            WalletConnectionMethods::BtcSendTransfer => BitcoinRequestHandler::parse_send_transaction(Chain::Bitcoin, params),
         }
     }
 
@@ -114,7 +110,6 @@ impl WalletConnectRequestHandler {
                 let messages = json.get("messages").ok_or_else(|| "Missing messages field".to_string())?.to_string();
                 Ok(WalletConnectTransaction::Ton { messages, output_type })
             }
-            WalletConnectTransactionType::Bitcoin { output_type } => Ok(WalletConnectTransaction::Bitcoin { data, output_type }),
             WalletConnectTransactionType::Tron { output_type } => Ok(WalletConnectTransaction::Tron { data, output_type }),
         }
     }
@@ -145,6 +140,25 @@ mod tests {
             action,
             WalletConnectAction::Unsupported {
                 method: "unknown_method".to_string()
+            }
+        );
+    }
+
+    #[test]
+    fn test_bitcoin_methods_are_unsupported() {
+        let request = WalletConnectRequest::mock("signMessage", "{}", Some("bip122:000000000019d6689c085ae165831e93"));
+        assert_eq!(
+            WalletConnectRequestHandler::parse_request(request).unwrap(),
+            WalletConnectAction::Unsupported {
+                method: "signMessage".to_string()
+            }
+        );
+
+        let request = WalletConnectRequest::mock("sendTransfer", "{}", Some("bip122:000000000019d6689c085ae165831e93"));
+        assert_eq!(
+            WalletConnectRequestHandler::parse_request(request).unwrap(),
+            WalletConnectAction::Unsupported {
+                method: "sendTransfer".to_string()
             }
         );
     }

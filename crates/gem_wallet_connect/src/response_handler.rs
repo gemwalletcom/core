@@ -14,7 +14,7 @@ impl WalletConnectResponseHandler {
                     json: serde_json::to_string(&result).unwrap_or_default(),
                 }
             }
-            ChainType::Ton | ChainType::Bitcoin => WalletConnectResponseType::Object { json: signature },
+            ChainType::Ton => WalletConnectResponseType::Object { json: signature },
             _ => WalletConnectResponseType::String { value: signature },
         }
     }

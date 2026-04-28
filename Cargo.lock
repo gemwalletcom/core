@@ -3517,7 +3517,6 @@ dependencies = [
 name = "gem_wallet_connect"
 version = "1.0.0"
 dependencies = [
- "gem_bitcoin",
  "gem_evm",
  "gem_ton",
  "hex",
