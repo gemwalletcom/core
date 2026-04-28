@@ -132,6 +132,13 @@ impl CellBuilder {
         Ok(self)
     }
 
+    pub fn store_maybe_address(&mut self, address: Option<&Address>) -> Result<&mut Self, SignerError> {
+        match address {
+            Some(address) => self.store_address(address),
+            None => self.store_null_address(),
+        }
+    }
+
     pub fn store_reference(&mut self, cell: &CellArc) -> Result<&mut Self, SignerError> {
         let next_len = self.references.len() + 1;
         if next_len > MAX_CELL_REFERENCES {
@@ -139,6 +146,13 @@ impl CellBuilder {
         }
         self.references.push(cell.clone());
         Ok(self)
+    }
+
+    pub fn store_maybe_reference(&mut self, cell: Option<&CellArc>) -> Result<&mut Self, SignerError> {
+        match cell {
+            Some(cell) => self.store_bit(true)?.store_reference(cell),
+            None => self.store_bit(false),
+        }
     }
 
     pub fn store_child(&mut self, cell: Cell) -> Result<&mut Self, SignerError> {

@@ -79,11 +79,25 @@ impl From<ClientError> for SwapperError {
                         min_amount: thorchain_error.parse_min_amount(),
                     };
                 }
-                Self::ComputeQuoteError(format!("HTTP error: status {}", status))
+                let message = client_error_body_message(body);
+                if message.contains("Ask amount is zero") {
+                    return Self::InputAmountError { min_amount: None };
+                }
+                if message.is_empty() {
+                    return Self::ComputeQuoteError(format!("HTTP error: status {status}"));
+                }
+                Self::ComputeQuoteError(format!("HTTP error: status {status}: {message}"))
             }
             ClientError::Serialization(msg) => Self::ComputeQuoteError(msg),
         }
     }
+}
+
+fn client_error_body_message(body: &[u8]) -> String {
+    if body.is_empty() {
+        return String::new();
+    }
+    serde_json::from_slice::<String>(body).unwrap_or_else(|_| String::from_utf8_lossy(body).to_string())
 }
 
 impl From<alloy_primitives::AddressError> for SwapperError {
@@ -101,6 +115,12 @@ impl From<serde_json::Error> for SwapperError {
 impl From<serde_urlencoded::ser::Error> for SwapperError {
     fn from(err: serde_urlencoded::ser::Error) -> Self {
         Self::ComputeQuoteError(format!("Request query error: {err}"))
+    }
+}
+
+impl From<primitives::SignerError> for SwapperError {
+    fn from(err: primitives::SignerError) -> Self {
+        Self::ComputeQuoteError(format!("Signer error: {err}"))
     }
 }
 
@@ -131,5 +151,28 @@ impl From<num_bigint::ParseBigIntError> for SwapperError {
 impl From<number_formatter::NumberFormatterError> for SwapperError {
     fn from(err: number_formatter::NumberFormatterError) -> Self {
         Self::ComputeQuoteError(format!("{}: {err}", INVALID_AMOUNT))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_from_client_error_http_body() {
+        let err = SwapperError::from(ClientError::Http {
+            status: 400,
+            body: br#""1012: Ask amount is zero""#.to_vec(),
+        });
+        assert_eq!(err, SwapperError::InputAmountError { min_amount: None });
+
+        let err = SwapperError::from(ClientError::Http {
+            status: 400,
+            body: b"invalid jetton address".to_vec(),
+        });
+        assert_eq!(err, SwapperError::ComputeQuoteError("HTTP error: status 400: invalid jetton address".to_string()));
+
+        let err = SwapperError::from(ClientError::Http { status: 500, body: vec![] });
+        assert_eq!(err, SwapperError::ComputeQuoteError("HTTP error: status 500".to_string()));
     }
 }
