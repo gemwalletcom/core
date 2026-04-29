@@ -7,10 +7,6 @@ pub fn new_stonfi_v2(rpc_provider: Arc<dyn RpcProvider>) -> ProxyProvider<RpcCli
     ProxyProvider::new_stonfi_v2(rpc_provider)
 }
 
-pub fn new_orca(rpc_provider: Arc<dyn RpcProvider>) -> ProxyProvider<RpcClient> {
-    ProxyProvider::new_orca(rpc_provider)
-}
-
 pub fn new_okx(rpc_provider: Arc<dyn RpcProvider>) -> ProxyProvider<RpcClient> {
     ProxyProvider::new_okx(rpc_provider)
 }

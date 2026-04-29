@@ -141,7 +141,6 @@ impl GemSwapper {
             Box::new(chainflip::ChainflipProvider::new(rpc_provider.clone())),
             Box::new(provider_factory::new_cetus_aggregator(rpc_provider.clone())),
             Box::new(relay::Relay::new(rpc_provider.clone())),
-            Box::new(provider_factory::new_orca(rpc_provider.clone())),
             Box::new(squid::Squid::new(rpc_provider.clone())),
             uniswap::default::boxed_aerodrome(rpc_provider.clone()),
         ];

@@ -113,10 +113,6 @@ impl ProxyProvider<RpcClient> {
         Self::new_with_path(SwapperProvider::StonfiV2, "stonfi_v2", vec![SwapperChainAsset::All(Chain::Ton)], rpc_provider)
     }
 
-    pub fn new_orca(rpc_provider: Arc<dyn RpcProvider>) -> Self {
-        Self::new_with_path(SwapperProvider::Orca, "orca", vec![SwapperChainAsset::All(Chain::Solana)], rpc_provider)
-    }
-
     pub fn new_okx(rpc_provider: Arc<dyn RpcProvider>) -> Self {
         Self::new_with_path(
             SwapperProvider::Okx,
@@ -316,7 +312,6 @@ mod tests {
     fn test_referral_bps() {
         assert_eq!(mock_provider(SwapperProvider::Okx).referral_bps(), DEFAULT_AGGREGATOR_FEE_BPS);
         assert_eq!(mock_provider(SwapperProvider::Mayan).referral_bps(), DEFAULT_SWAP_FEE_BPS);
-        assert_eq!(mock_provider(SwapperProvider::Orca).referral_bps(), DEFAULT_SWAP_FEE_BPS);
     }
 
     #[tokio::test]
