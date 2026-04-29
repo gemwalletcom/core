@@ -155,12 +155,7 @@ mod tests {
         assert_eq!(
             vec![erc20_result, permit2_result],
             vec![
-                ApprovalType::Approve(ApprovalData {
-                    token: token.clone(),
-                    spender: permit2_contract.clone(),
-                    value: amount.to_string(),
-                    is_unlimited: true,
-                }),
+                ApprovalType::Approve(ApprovalData::make(&token, &permit2_contract, &amount.to_string(), true)),
                 ApprovalType::Permit2(Permit2ApprovalData {
                     token: token.clone(),
                     spender: spender.clone(),

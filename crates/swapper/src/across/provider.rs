@@ -8,7 +8,7 @@ use crate::{
     SwapResult, Swapper, SwapperError, SwapperProvider, SwapperQuoteData,
     across::{DEFAULT_DEPOSIT_GAS_LIMIT, DEFAULT_FILL_GAS_LIMIT},
     alien::RpcProvider,
-    approval::check_approval_erc20,
+    approval::{check_approval_erc20, get_swap_gas_limit_with_approval},
     chainlink::ChainlinkPriceFeed,
     client_factory::create_eth_client,
     cross_chain::VaultAddresses,
@@ -549,7 +549,7 @@ impl Swapper for Across {
         };
 
         let to: String = deployment.spoke_pool.into();
-        let mut gas_limit = if approval.is_some() { Some(DEFAULT_DEPOSIT_GAS_LIMIT.to_string()) } else { None };
+        let mut gas_limit = get_swap_gas_limit_with_approval(&approval, None, DEFAULT_DEPOSIT_GAS_LIMIT);
 
         if matches!(data, FetchQuoteData::EstimateGas) {
             let hex_value = format!("{:#x}", U256::from_str(value).unwrap());

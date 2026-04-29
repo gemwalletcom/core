@@ -1,5 +1,6 @@
 use crate::decode_transaction;
 use gem_encoding::encode_base64;
+use num_traits::ToPrimitive;
 use primitives::{ChainSigner, SignerError, SignerInput, TransactionFee, TransferDataOutputType};
 use solana_primitives::sign_message;
 
@@ -85,7 +86,7 @@ impl SolanaChainSigner {
         match quote_gas_limit.or(transaction_gas_limit) {
             Some(gas_limit) => Ok(Some(gas_limit)),
             None => {
-                let gas_limit = fee.gas_limit.to_string().parse::<u64>().map_err(|_| SignerError::invalid_input("invalid gas limit"))?;
+                let gas_limit = fee.gas_limit.to_u64().ok_or_else(|| SignerError::invalid_input("invalid gas limit"))?;
                 if gas_limit == 0 {
                     Ok(None)
                 } else {

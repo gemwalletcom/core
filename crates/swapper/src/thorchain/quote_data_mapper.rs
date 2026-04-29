@@ -10,7 +10,7 @@ use num_bigint::BigInt;
 use primitives::swap::ApprovalData;
 
 use super::{DEFAULT_DEPOSIT_GAS_LIMIT, asset::THORChainAsset, model::RouteData};
-use crate::SwapperQuoteData;
+use crate::{SwapperQuoteData, approval::get_swap_gas_limit_with_approval};
 
 pub fn map_quote_data(
     from_asset: &THORChainAsset,
@@ -20,7 +20,7 @@ pub fn map_quote_data(
     memo: String,
     approval: Option<ApprovalData>,
 ) -> SwapperQuoteData {
-    let gas_limit = if approval.is_some() { Some(DEFAULT_DEPOSIT_GAS_LIMIT.to_string()) } else { None };
+    let gas_limit = get_swap_gas_limit_with_approval(&approval, None, DEFAULT_DEPOSIT_GAS_LIMIT);
 
     if from_asset.use_evm_router() {
         let router_address = route_data.router_address.clone().unwrap_or_default();
@@ -120,12 +120,7 @@ mod tests {
     #[test]
     fn evm_router_with_approval() {
         let usdc_eth = ETHEREUM_USDC_TOKEN_ID.to_string();
-        let approval = Some(ApprovalData {
-            token: usdc_eth.clone(),
-            spender: "0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146".to_string(),
-            value: "2000".to_string(),
-            is_unlimited: false,
-        });
+        let approval = Some(ApprovalData::make(&usdc_eth, "0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146", "2000", false));
 
         let result = map_quote_data(
             &asset(Chain::Ethereum, Some(usdc_eth.clone())),

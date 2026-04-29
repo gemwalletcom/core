@@ -6,14 +6,14 @@ use super::{
     chain::RelayChain,
     model::{RelayQuoteResponse, RelayRequest, StepData},
 };
-use crate::{SwapResult, SwapperError, SwapperProvider, SwapperQuoteData};
+use crate::{SwapResult, SwapperError, SwapperProvider, SwapperQuoteData, approval::get_swap_gas_limit_with_approval};
 
 pub fn map_quote_data(quote_response: &RelayQuoteResponse, approval: Option<ApprovalData>) -> Result<SwapperQuoteData, SwapperError> {
     let step_data = quote_response.step_data().ok_or(SwapperError::InvalidRoute)?;
 
     match step_data {
         StepData::Evm(evm) => {
-            let gas_limit = approval.as_ref().map(|_| DEFAULT_SWAP_GAS_LIMIT.to_string());
+            let gas_limit = get_swap_gas_limit_with_approval(&approval, None, DEFAULT_SWAP_GAS_LIMIT);
             let call_data = evm.data.clone().unwrap_or_default();
             Ok(SwapperQuoteData::new_contract(evm.to.clone(), evm.value.clone(), call_data, approval, gas_limit))
         }
@@ -79,12 +79,7 @@ mod tests {
             },
             fees: None,
         };
-        let approval = ApprovalData {
-            token: "0xtoken".to_string(),
-            spender: "0xrouter".to_string(),
-            value: "1000".to_string(),
-            is_unlimited: false,
-        };
+        let approval = ApprovalData::make("0xtoken", "0xrouter", "1000", false);
 
         let result = map_quote_data(&quote_response, Some(approval.clone())).unwrap();
 

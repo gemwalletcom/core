@@ -88,16 +88,41 @@ impl<C: Client + Clone> EthereumClient<C> {
         if self.chain.is_opstack() {
             OptimismGasOracle::new(self.chain, self.clone()).calculate_fee(input, gas_limit).await
         } else {
-            let gas_limit = gas_limit + get_extra_fee_gas_limit(input)?;
-            let fee = input.gas_price.total_fee() * &gas_limit;
-
-            Ok(TransactionFee::new_gas_price_type(
-                GasPriceType::eip1559(input.gas_price.total_fee(), input.gas_price.priority_fee()),
-                fee,
-                gas_limit.clone(),
-                HashMap::new(),
-            ))
+            calculate_fee(input, gas_limit)
         }
+    }
+}
+
+#[cfg(feature = "rpc")]
+fn calculate_fee(input: &TransactionLoadInput, gas_limit: &BigInt) -> Result<TransactionFee, Box<dyn Error + Sync + Send>> {
+    let fee_gas_limit = gas_limit + get_extra_fee_gas_limit(input)?;
+    let fee = input.gas_price.total_fee() * fee_gas_limit;
+
+    Ok(TransactionFee::new_gas_price_type(
+        GasPriceType::eip1559(input.gas_price.total_fee(), input.gas_price.priority_fee()),
+        fee,
+        gas_limit.clone(),
+        HashMap::new(),
+    ))
+}
+
+#[cfg(all(test, feature = "rpc"))]
+mod tests {
+    use super::*;
+    use primitives::{Asset, Chain, TransactionInputType, swap::SwapData};
+
+    #[test]
+    fn test_calculate_fee_swap_approval_keeps_transaction_gas_limit() -> Result<(), Box<dyn std::error::Error + Sync + Send>> {
+        let swap_data = SwapData::mock_with_data_and_approval("0x", Some("200000"));
+        let input = TransactionLoadInput::mock_evm(TransactionInputType::Swap(Asset::mock_erc20(), Asset::from_chain(Chain::Ethereum), swap_data), "1000000");
+        let approval_gas_limit = BigInt::from(80_000u64);
+        let swap_gas_limit = BigInt::from(200_000u64);
+        let fee = calculate_fee(&input, &approval_gas_limit)?;
+
+        assert_eq!(fee.gas_limit, approval_gas_limit);
+        assert_eq!(fee.fee, input.gas_price.total_fee() * (&approval_gas_limit + swap_gas_limit));
+
+        Ok(())
     }
 }
 

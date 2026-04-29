@@ -15,4 +15,5 @@ chrono = { workspace = true }
 strum = { workspace = true }
 url = { workspace = true }
 num-bigint = { workspace = true }
+num-traits = { workspace = true }
 hex = { workspace = true }

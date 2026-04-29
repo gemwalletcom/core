@@ -7,11 +7,15 @@ use crate::{
 
 impl ApprovalData {
     pub fn mock() -> Self {
+        Self::make(ETHEREUM_USDT_TOKEN_ID, TEST_EVM_RECIPIENT, "0", false)
+    }
+
+    pub fn make(token: &str, spender: &str, value: &str, is_unlimited: bool) -> Self {
         ApprovalData {
-            token: ETHEREUM_USDT_TOKEN_ID.to_string(),
-            spender: TEST_EVM_RECIPIENT.to_string(),
-            value: "0".to_string(),
-            is_unlimited: false,
+            token: token.to_string(),
+            spender: spender.to_string(),
+            value: value.to_string(),
+            is_unlimited,
         }
     }
 }
@@ -36,6 +40,19 @@ impl SwapData {
         SwapData {
             data: SwapQuoteData {
                 data: data.to_string(),
+                gas_limit: gas_limit.map(String::from),
+                ..swap_data.data
+            },
+            ..swap_data
+        }
+    }
+
+    pub fn mock_with_data_and_approval(data: &str, gas_limit: Option<&str>) -> Self {
+        let swap_data = Self::mock();
+        SwapData {
+            data: SwapQuoteData {
+                data: data.to_string(),
+                approval: Some(ApprovalData::mock()),
                 gas_limit: gas_limit.map(String::from),
                 ..swap_data.data
             },
@@ -143,6 +160,14 @@ mod tests {
         let swap_data = SwapData::mock_with_provider_data(SwapProvider::Jupiter, "tx-data", Some("420000"));
         assert_eq!(swap_data.quote.provider_data.provider, SwapProvider::Jupiter);
         assert_eq!(swap_data.data.data, "tx-data");
+        assert_eq!(swap_data.data.gas_limit, Some("420000".to_string()));
+    }
+
+    #[test]
+    fn test_swap_data_mock_with_data_and_approval() {
+        let swap_data = SwapData::mock_with_data_and_approval("tx-data", Some("420000"));
+        assert_eq!(swap_data.data.data, "tx-data");
+        assert_eq!(swap_data.data.approval, Some(ApprovalData::mock()));
         assert_eq!(swap_data.data.gas_limit, Some("420000".to_string()));
     }
 }

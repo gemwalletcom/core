@@ -1,7 +1,7 @@
 use crate::{
     FetchQuoteData, Permit2ApprovalData, ProviderData, ProviderType, Quote, QuoteRequest, Swapper, SwapperError, SwapperQuoteData,
     alien::{RpcClient, RpcProvider},
-    approval::{check_approval_erc20_with_client, check_approval_permit2_with_client},
+    approval::{check_approval_erc20_with_client, check_approval_permit2_with_client, get_swap_gas_limit_with_approval},
     eth_address,
     fees::apply_slippage_in_bp,
     models::*,
@@ -220,7 +220,6 @@ impl Swapper for UniswapV3 {
         let permit = data.permit2_data().map(|data| data.into());
         let wrap_input_eth = requires_native_wrapping(&request.from_asset.asset_id());
 
-        let mut gas_limit: Option<String> = None;
         let approval: Option<ApprovalData> = if wrap_input_eth {
             None
         } else {
@@ -228,9 +227,7 @@ impl Swapper for UniswapV3 {
                 .await?
                 .approval_data()
         };
-        if approval.is_some() {
-            gas_limit = Some(DEFAULT_SWAP_GAS_LIMIT.to_string());
-        }
+        let gas_limit = get_swap_gas_limit_with_approval(&approval, None, DEFAULT_SWAP_GAS_LIMIT);
 
         let sig_deadline = get_sig_deadline();
 

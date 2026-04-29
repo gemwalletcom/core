@@ -9,11 +9,11 @@ use super::{
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperError, SwapperProvider, SwapperProviderMode, SwapperQuoteData,
     alien::{RpcClient, RpcProvider},
-    approval::evm::check_approval_erc20,
+    approval::{check_approval_erc20, get_swap_gas_limit_with_approval},
     config::get_swap_api_url,
     cross_chain::VaultAddresses,
     fees::{DEFAULT_AGGREGATOR_FEE_BPS, DEFAULT_SWAP_FEE_BPS},
-    models::{ApprovalType, SwapperChainAsset},
+    models::SwapperChainAsset,
 };
 use gem_client::Client;
 use primitives::{
@@ -50,7 +50,9 @@ where
 
     pub async fn check_approval_and_limit(&self, quote: &Quote, quote_data: &SwapQuoteData) -> Result<(Option<ApprovalData>, Option<String>), SwapperError> {
         if let Some(ref approval) = quote_data.approval {
-            return Ok((Some(approval.clone()), quote_data.gas_limit.clone()));
+            let approval = Some(approval.clone());
+            let gas_limit = get_swap_gas_limit_with_approval(&approval, quote_data.gas_limit.clone(), DEFAULT_GAS_LIMIT);
+            return Ok((approval, gas_limit));
         }
 
         let request = &quote.request;
@@ -68,6 +70,7 @@ where
                         quote_data.to.clone(),
                         U256::from_str(&quote.from_value).map_err(SwapperError::from)?,
                         &from_asset.chain,
+                        quote_data.gas_limit.clone(),
                     )
                     .await
                 }
@@ -83,14 +86,12 @@ where
         spender: String,
         amount: U256,
         chain: &Chain,
+        swap_gas_limit: Option<String>,
     ) -> Result<(Option<ApprovalData>, Option<String>), SwapperError> {
         let approval = check_approval_erc20(wallet_address, token, spender, amount, self.rpc_provider.clone(), chain).await?;
-        let gas_limit = if matches!(approval, ApprovalType::Approve(_)) {
-            Some(DEFAULT_GAS_LIMIT.to_string())
-        } else {
-            None
-        };
-        Ok((approval.approval_data(), gas_limit))
+        let approval = approval.approval_data();
+        let gas_limit = get_swap_gas_limit_with_approval(&approval, swap_gas_limit, DEFAULT_GAS_LIMIT);
+        Ok((approval, gas_limit))
     }
 
     fn referral_bps(&self) -> u32 {
@@ -304,7 +305,7 @@ mod tests {
         fees::{DEFAULT_AGGREGATOR_FEE_BPS, DEFAULT_SWAP_FEE_BPS},
     };
     use gem_client::testkit::MockClient;
-    use primitives::swap::SwapQuoteData;
+    use primitives::swap::{ApprovalData, SwapQuoteData};
 
     fn mock_provider(provider: SwapperProvider) -> ProxyProvider<MockClient> {
         let rpc_provider = Arc::new(ProviderMock::new("{}".to_string()));
@@ -347,6 +348,28 @@ mod tests {
 
         assert!(approval.is_none());
         assert!(gas_limit.is_none());
+    }
+
+    #[tokio::test]
+    async fn test_evm_provider_approval_uses_swap_gas_limit() {
+        let provider = mock_provider(SwapperProvider::Okx);
+        let quote = Quote::mock(Chain::Ethereum, None);
+
+        let data = SwapQuoteData {
+            approval: Some(ApprovalData::mock()),
+            ..SwapQuoteData::mock_with_gas_limit(Some("250000".to_string()))
+        };
+        let (approval, gas_limit) = provider.check_approval_and_limit(&quote, &data).await.unwrap();
+        assert!(approval.is_some());
+        assert_eq!(gas_limit, Some("250000".to_string()));
+
+        let data = SwapQuoteData {
+            approval: Some(ApprovalData::mock()),
+            ..SwapQuoteData::mock_with_gas_limit(None)
+        };
+        let (approval, gas_limit) = provider.check_approval_and_limit(&quote, &data).await.unwrap();
+        assert!(approval.is_some());
+        assert_eq!(gas_limit, Some(DEFAULT_GAS_LIMIT.to_string()));
     }
 }
 

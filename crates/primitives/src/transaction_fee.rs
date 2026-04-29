@@ -1,5 +1,6 @@
 use crate::{GasPriceType, SignerError};
 use num_bigint::BigInt;
+use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use strum::{AsRefStr, Display, EnumString};
@@ -79,7 +80,7 @@ impl TransactionFee {
     }
 
     pub fn gas_limit(&self) -> Result<u64, SignerError> {
-        let gas_limit = self.gas_limit.to_string().parse::<u64>().map_err(|_| SignerError::invalid_input("invalid gas limit"))?;
+        let gas_limit = self.gas_limit.to_u64().ok_or_else(|| SignerError::invalid_input("invalid gas limit"))?;
 
         if gas_limit == 0 {
             return SignerError::invalid_input_err("missing gas limit");
@@ -89,27 +90,18 @@ impl TransactionFee {
     }
 
     pub fn gas_price_u64(&self) -> Result<u64, SignerError> {
-        self.gas_price_type
-            .gas_price()
-            .to_string()
-            .parse::<u64>()
-            .map_err(|_| SignerError::invalid_input("invalid gas price"))
+        self.gas_price_type.gas_price().to_u64().ok_or_else(|| SignerError::invalid_input("invalid gas price"))
     }
 
     pub fn priority_fee_u64(&self) -> Result<u64, SignerError> {
         self.gas_price_type
             .priority_fee()
-            .to_string()
-            .parse::<u64>()
-            .map_err(|_| SignerError::invalid_input("invalid priority fee"))
+            .to_u64()
+            .ok_or_else(|| SignerError::invalid_input("invalid priority fee"))
     }
 
     pub fn unit_price_u64(&self) -> Result<u64, SignerError> {
-        self.gas_price_type
-            .unit_price()
-            .to_string()
-            .parse::<u64>()
-            .map_err(|_| SignerError::invalid_input("invalid unit price"))
+        self.gas_price_type.unit_price().to_u64().ok_or_else(|| SignerError::invalid_input("invalid unit price"))
     }
 }
 

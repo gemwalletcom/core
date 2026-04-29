@@ -5546,6 +5546,7 @@ dependencies = [
  "chrono",
  "hex",
  "num-bigint",
+ "num-traits",
  "serde",
  "serde_json",
  "strum",
