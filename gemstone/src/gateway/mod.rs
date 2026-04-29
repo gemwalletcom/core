@@ -1,39 +1,24 @@
+mod chain_factory;
 mod error;
 mod preferences;
 
+pub use chain_factory::ChainClientFactory;
 pub use error::GatewayError;
 use error::map_network_error;
 #[cfg(test)]
 pub use preferences::EmptyPreferences;
 pub use preferences::GemPreferences;
-use preferences::PreferencesWrapper;
+pub(crate) use preferences::PreferencesWrapper;
 
-use crate::alien::{AlienProvider, AlienProviderWrapper, new_alien_client};
+use crate::alien::{AlienProvider, AlienProviderWrapper};
 use crate::api_client::GemApiClient;
 use crate::models::*;
-use crate::network::JsonRpcClient;
 use chain_traits::ChainTraits;
-use gem_algorand::rpc::AlgorandClientIndexer;
-use gem_algorand::rpc::client::AlgorandClient;
-use gem_aptos::rpc::client::AptosClient;
-use gem_bitcoin::rpc::client::BitcoinClient;
-use gem_cardano::rpc::client::CardanoClient;
-use gem_cosmos::rpc::client::CosmosClient;
-use gem_evm::rpc::EthereumClient;
-use gem_hypercore::rpc::client::HyperCoreClient;
-use gem_near::rpc::client::NearClient;
-use gem_polkadot::rpc::client::PolkadotClient;
-use gem_solana::rpc::client::SolanaClient;
-use gem_stellar::rpc::client::StellarClient;
-use gem_sui::rpc::client::SuiClient;
-use gem_ton::rpc::client::TonClient;
-use gem_tron::rpc::{client::TronClient, trongrid::client::TronGridClient};
-use gem_xrp::rpc::client::XRPClient;
 use std::future::Future;
 use std::sync::Arc;
 use yielder::Yielder;
 
-use primitives::{AssetId, BitcoinChain, Chain, ChartPeriod, EVMChain, ScanAddressTarget, ScanTransactionPayload, TransactionPreloadInput, chain_cosmos::CosmosChain};
+use primitives::{AssetId, Chain, ChartPeriod, ScanAddressTarget, ScanTransactionPayload, TransactionPreloadInput};
 
 #[uniffi::export(with_foreign)]
 #[async_trait::async_trait]
@@ -44,21 +29,14 @@ pub trait GemGatewayEstimateFee: Send + Sync {
 
 #[derive(uniffi::Object)]
 pub struct GemGateway {
-    pub provider: Arc<dyn AlienProvider>,
-    pub preferences: Arc<dyn GemPreferences>,
-    pub secure_preferences: Arc<dyn GemPreferences>,
     pub api_client: GemApiClient,
+    chain_factory: Arc<ChainClientFactory>,
     yielder: Yielder,
 }
 
 impl std::fmt::Debug for GemGateway {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("GemGateway")
-            .field("provider", &"<AlienProvider>")
-            .field("preferences", &"<GemPreferences>")
-            .field("secure_preferences", &"<GemPreferences>")
-            .field("api_client", &self.api_client)
-            .finish()
+        f.debug_struct("GemGateway").field("api_client", &self.api_client).finish()
     }
 }
 
@@ -68,73 +46,8 @@ impl GemGateway {
         F: FnOnce(Arc<dyn ChainTraits>) -> Fut,
         Fut: Future<Output = Result<T, Box<dyn std::error::Error + Send + Sync>>>,
     {
-        let provider = self.provider(chain).await?;
+        let provider = self.chain_factory.create(chain).await?;
         call(provider).await.map_err(|e| GatewayError::NetworkError { msg: e.to_string() })
-    }
-
-    pub async fn provider(&self, chain: Chain) -> Result<Arc<dyn ChainTraits>, GatewayError> {
-        let url = self.provider.get_endpoint(chain).unwrap();
-        self.provider_with_url(chain, url).await
-    }
-
-    pub async fn provider_with_url(&self, chain: Chain, url: String) -> Result<Arc<dyn ChainTraits>, GatewayError> {
-        let alien_client = new_alien_client(url.clone(), self.provider.clone());
-        match chain {
-            Chain::HyperCore => {
-                let preferences = Arc::new(PreferencesWrapper {
-                    preferences: self.preferences.clone(),
-                });
-                let secure_preferences = Arc::new(PreferencesWrapper {
-                    preferences: self.secure_preferences.clone(),
-                });
-                Ok(Arc::new(HyperCoreClient::new_with_preferences(alien_client, preferences, secure_preferences)))
-            }
-            Chain::Bitcoin | Chain::BitcoinCash | Chain::Litecoin | Chain::Doge | Chain::Zcash => {
-                Ok(Arc::new(BitcoinClient::new(alien_client, BitcoinChain::from_chain(chain).unwrap())))
-            }
-            Chain::Cardano => Ok(Arc::new(CardanoClient::new(alien_client))),
-            Chain::Stellar => Ok(Arc::new(StellarClient::new(alien_client))),
-            Chain::Sui => Ok(Arc::new(SuiClient::new(JsonRpcClient::new(alien_client.clone())))),
-            Chain::Xrp => Ok(Arc::new(XRPClient::new(JsonRpcClient::new(alien_client.clone())))),
-            Chain::Algorand => Ok(Arc::new(AlgorandClient::new(alien_client.clone(), AlgorandClientIndexer::new(alien_client.clone())))),
-            Chain::Near => Ok(Arc::new(NearClient::new(JsonRpcClient::new(alien_client.clone())))),
-            Chain::Aptos => Ok(Arc::new(AptosClient::new(alien_client))),
-            Chain::Cosmos | Chain::Osmosis | Chain::Celestia | Chain::Thorchain | Chain::Injective | Chain::Sei | Chain::Noble => {
-                Ok(Arc::new(CosmosClient::new(CosmosChain::from_chain(chain).unwrap(), alien_client)))
-            }
-            Chain::Ton => Ok(Arc::new(TonClient::new(alien_client))),
-            Chain::Tron => Ok(Arc::new(TronClient::new(alien_client.clone(), TronGridClient::new(alien_client.clone(), String::new())))),
-            Chain::Polkadot => Ok(Arc::new(PolkadotClient::new(alien_client))),
-            Chain::Solana => Ok(Arc::new(SolanaClient::new(JsonRpcClient::new(alien_client.clone())))),
-            Chain::Ethereum
-            | Chain::Arbitrum
-            | Chain::SmartChain
-            | Chain::Polygon
-            | Chain::Optimism
-            | Chain::Base
-            | Chain::AvalancheC
-            | Chain::OpBNB
-            | Chain::Fantom
-            | Chain::Gnosis
-            | Chain::Manta
-            | Chain::Blast
-            | Chain::ZkSync
-            | Chain::Linea
-            | Chain::Mantle
-            | Chain::Celo
-            | Chain::World
-            | Chain::Sonic
-            | Chain::SeiEvm
-            | Chain::Abstract
-            | Chain::Berachain
-            | Chain::Ink
-            | Chain::Unichain
-            | Chain::Hyperliquid
-            | Chain::Plasma
-            | Chain::Monad
-            | Chain::XLayer
-            | Chain::Stable => Ok(Arc::new(EthereumClient::new(JsonRpcClient::new(alien_client), EVMChain::from_chain(chain).unwrap()))),
-        }
     }
 }
 
@@ -154,12 +67,11 @@ impl GemGateway {
     #[uniffi::constructor]
     pub fn new(provider: Arc<dyn AlienProvider>, preferences: Arc<dyn GemPreferences>, secure_preferences: Arc<dyn GemPreferences>, api_url: String) -> Self {
         let api_client = GemApiClient::new(api_url, provider.clone());
-        let yielder = Yielder::new(Arc::new(AlienProviderWrapper::new(provider.clone())));
+        let chain_factory = Arc::new(ChainClientFactory::new(provider.clone(), preferences, secure_preferences));
+        let yielder = Yielder::new(Arc::new(AlienProviderWrapper::new(provider)));
         Self {
-            provider,
-            preferences,
-            secure_preferences,
             api_client,
+            chain_factory,
             yielder,
         }
     }
@@ -301,7 +213,7 @@ impl GemGateway {
     }
 
     pub async fn get_is_token_address(&self, chain: Chain, token_id: String) -> Result<bool, GatewayError> {
-        Ok(self.provider(chain).await?.get_is_token_address(&token_id))
+        Ok(self.chain_factory.create(chain).await?.get_is_token_address(&token_id))
     }
 
     pub async fn get_balance_earn(&self, chain: Chain, address: String, token_ids: Vec<String>) -> Result<Vec<GemAssetBalance>, GatewayError> {
@@ -325,7 +237,7 @@ impl GemGateway {
 
     pub async fn get_node_status(&self, chain: Chain, url: &str) -> Result<GemNodeStatus, GatewayError> {
         let start_time = std::time::Instant::now();
-        let provider = self.provider_with_url(chain, url.to_string()).await?;
+        let provider = self.chain_factory.create_with_url(chain, url.to_string()).await?;
 
         let (chain_id, latest_block_number) = futures::try_join!(provider.get_chain_id(), provider.get_block_latest_number()).map_err(map_network_error)?;
 
