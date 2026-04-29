@@ -8,8 +8,7 @@ use crate::{
     tvm::{BagOfCells, CellBuilder},
 };
 
-// Placeholder id "GEM" + tagged timestamp; replace once Tonstakers issues an official partner_id.
-const PARTNER_CODE: u64 = 0x47454D0069EEF127;
+const PARTNER_CODE: u64 = 0x000000106765cd3b;
 const STAKE_OPCODE: u32 = 0x47D54391;
 const STAKE_FEE: u64 = 1_000_000_000;
 const UNSTAKE_OPCODE: u32 = 0x595F07BC;
@@ -59,7 +58,7 @@ mod tests {
 
     #[test]
     fn test_build_stake_payload_base64() {
-        assert_eq!(build_stake_payload_base64().unwrap(), "te6cckEBAQEAFgAAKEfVQ5EAAAAAAAAAAUdFTQBp7vEnOxjgfw==");
+        assert_eq!(build_stake_payload_base64().unwrap(), "te6cckEBAQEAFgAAKEfVQ5EAAAAAAAAAAQAAABBnZc07HgacMQ==");
     }
 
     #[test]
@@ -88,7 +87,7 @@ mod tests {
         assert_eq!(
             signed,
             vec![
-                "te6cckEBBAEAxAABRYgBkF1w67cBLG0e0D7j0y2ShzflCe2JrlAjS4pC8UHg85AMAQGc586+/tdveRSv7FpL3QNz4uEs7fsaNih6wD1u9UeqSjlwvKknRCpL4kxqMzR67FdLNQ3eeriBeKX7dJEgRPopDimpoxc7msoAAAAAAQADAgFoYgAsauKn3cJEV79VaGbjrOVHt/vP5Kqog2CZzYG/YFIBo6Hc14iAAAAAAAAAAAAAAAAAAQMAKEfVQ5EAAAAAAAAAAUdFTQBp7vEn4cjcXg==".to_string()
+                "te6cckEBBAEAxAABRYgBkF1w67cBLG0e0D7j0y2ShzflCe2JrlAjS4pC8UHg85AMAQGc7lIsHiR1BaRlPmDkfMkHAvxvlbsJ1391Wonok5rMuLPKeH40GeEHqwp0XOlcRUdPx+rZqgah1TLhJ3662SfeDimpoxc7msoAAAAAAQADAgFoYgAsauKn3cJEV79VaGbjrOVHt/vP5Kqog2CZzYG/YFIBo6Hc14iAAAAAAAAAAAAAAAAAAQMAKEfVQ5EAAAAAAAAAAQAAABBnZc07mOCPIw==".to_string()
             ]
         );
     }
