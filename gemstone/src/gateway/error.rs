@@ -1,4 +1,5 @@
 use crate::alien::AlienError;
+use crate::transaction_state::TransactionStatusError;
 use gem_jsonrpc::types::{ERROR_CLIENT_ERROR, JsonRpcError};
 use std::{error::Error, fmt::Display};
 
@@ -26,6 +27,15 @@ impl Error for GatewayError {}
 impl From<uniffi::UnexpectedUniFFICallbackError> for GatewayError {
     fn from(e: uniffi::UnexpectedUniFFICallbackError) -> Self {
         GatewayError::PlatformError { msg: e.reason }
+    }
+}
+
+impl From<TransactionStatusError> for GatewayError {
+    fn from(err: TransactionStatusError) -> Self {
+        match err {
+            TransactionStatusError::NetworkError(msg) => Self::NetworkError { msg },
+            TransactionStatusError::PlatformError(msg) => Self::PlatformError { msg },
+        }
     }
 }
 

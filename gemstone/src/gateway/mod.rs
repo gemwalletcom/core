@@ -13,6 +13,7 @@ pub(crate) use preferences::PreferencesWrapper;
 use crate::alien::{AlienProvider, AlienProviderWrapper};
 use crate::api_client::GemApiClient;
 use crate::models::*;
+use crate::transaction_state::TransactionStatusClient;
 use chain_traits::ChainTraits;
 use std::future::Future;
 use std::sync::Arc;
@@ -32,6 +33,7 @@ pub struct GemGateway {
     pub api_client: GemApiClient,
     chain_factory: Arc<ChainClientFactory>,
     yielder: Yielder,
+    status_client: TransactionStatusClient,
 }
 
 impl std::fmt::Debug for GemGateway {
@@ -69,10 +71,12 @@ impl GemGateway {
         let api_client = GemApiClient::new(api_url, provider.clone());
         let chain_factory = Arc::new(ChainClientFactory::new(provider.clone(), preferences, secure_preferences));
         let yielder = Yielder::new(Arc::new(AlienProviderWrapper::new(provider)));
+        let status_client = TransactionStatusClient::new(chain_factory.clone());
         Self {
             api_client,
             chain_factory,
             yielder,
+            status_client,
         }
     }
 
@@ -103,8 +107,7 @@ impl GemGateway {
     }
 
     pub async fn get_transaction_status(&self, chain: Chain, request: GemTransactionStateRequest) -> Result<GemTransactionUpdate, GatewayError> {
-        self.with_provider(chain, |provider| async move { provider.get_transaction_status(request.into()).await })
-            .await
+        Ok(self.status_client.status(chain, request.into()).await?)
     }
 
     pub async fn get_chain_id(&self, chain: Chain) -> Result<String, GatewayError> {
