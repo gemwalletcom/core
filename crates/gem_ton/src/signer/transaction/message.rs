@@ -4,7 +4,7 @@ use primitives::SignerError;
 use super::request::{JettonTransferRequest, TransferPayload, TransferRequest};
 use crate::{
     constants::JETTON_TRANSFER_OPCODE,
-    signer::cells::{Cell, CellArc, CellBuilder},
+    tvm::{Cell, CellArc, CellBuilder},
 };
 
 pub(crate) const DEFAULT_SEND_MODE: u8 = 0b11;

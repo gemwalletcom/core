@@ -10,10 +10,8 @@ use super::{
 };
 use crate::{
     address::Address,
-    signer::{
-        cells::{BagOfCells, CellBuilder},
-        signer::TonSigner,
-    },
+    signer::signer::TonSigner,
+    tvm::{BagOfCells, CellBuilder},
 };
 
 const STATE_INIT_EXPIRE_AT: u32 = u32::MAX;
@@ -68,7 +66,7 @@ impl TonSigner {
         body_builder.store_slice(&signature)?.store_cell(&external_body)?;
         let signed_transaction = self.wallet().build_transaction(sequence == 0, body_builder.build()?)?;
 
-        BagOfCells::from_root(signed_transaction).to_base64(true)
+        Ok(BagOfCells::from_root(signed_transaction).to_base64(true)?)
     }
 }
 

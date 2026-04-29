@@ -23,6 +23,7 @@ pub mod proxy;
 pub mod relay;
 mod solana;
 pub mod squid;
+pub mod stonfi;
 pub mod swapper;
 pub mod thorchain;
 pub mod uniswap;

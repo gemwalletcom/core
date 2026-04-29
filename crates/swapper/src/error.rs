@@ -104,6 +104,18 @@ impl From<serde_urlencoded::ser::Error> for SwapperError {
     }
 }
 
+impl From<gem_ton::tvm::TvmError> for SwapperError {
+    fn from(err: gem_ton::tvm::TvmError) -> Self {
+        Self::ComputeQuoteError(format!("TVM error: {err}"))
+    }
+}
+
+impl From<primitives::AddressError> for SwapperError {
+    fn from(err: primitives::AddressError) -> Self {
+        Self::ComputeQuoteError(format!("{INVALID_ADDRESS}: {err}"))
+    }
+}
+
 impl From<alloy_sol_types::Error> for SwapperError {
     fn from(err: alloy_sol_types::Error) -> Self {
         Self::ComputeQuoteError(format!("AlloyError: {err}"))

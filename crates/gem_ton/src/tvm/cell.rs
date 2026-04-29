@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
+use super::TvmError;
 use gem_hash::sha2::sha256;
-use primitives::SignerError;
 
 pub(super) const MAX_CELL_BITS: usize = 1023;
 pub(super) const MAX_CELL_REFERENCES: usize = 4;
@@ -45,8 +45,8 @@ impl Cell {
         })
     }
 
-    pub fn new(data: Vec<u8>, bit_len: usize, references: Vec<CellArc>) -> Result<Self, SignerError> {
-        Self::try_new(data, bit_len, references).ok_or_else(|| SignerError::invalid_input("invalid cell"))
+    pub fn new(data: Vec<u8>, bit_len: usize, references: Vec<CellArc>) -> Result<Self, TvmError> {
+        Self::try_new(data, bit_len, references).ok_or_else(|| TvmError::new("invalid cell"))
     }
 
     pub fn into_arc(self) -> CellArc {

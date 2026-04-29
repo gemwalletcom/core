@@ -1,6 +1,9 @@
 // Transaction opcodes
 pub const JETTON_TRANSFER_OPCODE: u32 = 0x0f8a7ea5;
 
+// TON proxy jetton used by STON.fi for native TON swaps.
+pub const TON_PROXY_JETTON_ADDRESS: &str = "EQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAM9c";
+
 // Failed operation opcodes - operations that may show blockchain success but represent failed application operations
 pub const JETTON_FAILED_OPERATION_OPCODE: &str = "0x93be2305";
 

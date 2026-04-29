@@ -1,4 +1,4 @@
-use primitives::SignerError;
+use super::TvmError;
 
 use super::cell::MAX_CELL_BITS;
 
@@ -13,9 +13,9 @@ impl BitWriter {
         Self::default()
     }
 
-    pub fn write_bit(&mut self, value: bool) -> Result<(), SignerError> {
+    pub fn write_bit(&mut self, value: bool) -> Result<(), TvmError> {
         if self.bit_len == MAX_CELL_BITS {
-            return Err(SignerError::invalid_input(format!("cell exceeds {MAX_CELL_BITS} bits")));
+            return Err(TvmError::new(format!("cell exceeds {MAX_CELL_BITS} bits")));
         }
         if self.bit_len.is_multiple_of(8) {
             self.bytes.push(0);
@@ -29,12 +29,12 @@ impl BitWriter {
         Ok(())
     }
 
-    pub fn write_uint(&mut self, bit_len: usize, value: u64) -> Result<(), SignerError> {
+    pub fn write_uint(&mut self, bit_len: usize, value: u64) -> Result<(), TvmError> {
         if bit_len > 64 {
-            return Err(SignerError::invalid_input("fixed-size integers above 64 bits are not supported"));
+            return Err(TvmError::new("fixed-size integers above 64 bits are not supported"));
         }
         if bit_len < 64 && value >> bit_len != 0 {
-            return Err(SignerError::invalid_input("integer does not fit requested bit length"));
+            return Err(TvmError::new("integer does not fit requested bit length"));
         }
         for shift in (0..bit_len).rev() {
             self.write_bit((value >> shift) & 1 == 1)?;
@@ -42,13 +42,13 @@ impl BitWriter {
         Ok(())
     }
 
-    pub fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), SignerError> {
+    pub fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), TvmError> {
         self.write_bits(bytes, bytes.len() * 8)
     }
 
-    pub fn write_bits(&mut self, bytes: &[u8], bit_len: usize) -> Result<(), SignerError> {
+    pub fn write_bits(&mut self, bytes: &[u8], bit_len: usize) -> Result<(), TvmError> {
         if bit_len > bytes.len() * 8 {
-            return Err(SignerError::invalid_input("bit length exceeds input bytes"));
+            return Err(TvmError::new("bit length exceeds input bytes"));
         }
         for index in 0..bit_len {
             let byte = bytes[index / 8];

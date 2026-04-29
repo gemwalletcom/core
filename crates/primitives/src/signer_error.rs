@@ -1,4 +1,4 @@
-use crate::HexError;
+use crate::{AddressError, HexError};
 
 #[derive(Debug, Clone)]
 pub enum SignerError {
@@ -43,6 +43,12 @@ impl From<serde_json::Error> for SignerError {
 
 impl From<HexError> for SignerError {
     fn from(error: HexError) -> Self {
+        SignerError::InvalidInput(error.to_string())
+    }
+}
+
+impl From<AddressError> for SignerError {
+    fn from(error: AddressError) -> Self {
         SignerError::InvalidInput(error.to_string())
     }
 }

@@ -1,6 +1,6 @@
+use super::TvmError;
 use crc::Crc;
 use gem_encoding::{decode_base64, encode_base64};
-use primitives::SignerError;
 
 use super::{
     cell::{Cell, CellArc},
@@ -23,12 +23,12 @@ impl BagOfCells {
         Self { roots: vec![root.into_arc()] }
     }
 
-    pub fn parse_base64(value: &str) -> Result<Self, SignerError> {
+    pub fn parse_base64(value: &str) -> Result<Self, TvmError> {
         let bytes = decode_base64(value).map_err(|_| invalid("invalid base64 BoC"))?;
         Self::parse(&bytes)
     }
 
-    pub fn parse(bytes: &[u8]) -> Result<Self, SignerError> {
+    pub fn parse(bytes: &[u8]) -> Result<Self, TvmError> {
         let mut reader = BitReader::new(bytes);
         let header = BocHeader::parse(&mut reader)?;
 
@@ -51,27 +51,27 @@ impl BagOfCells {
         let cells = build_cell_tree(&raw_cells)?;
         let roots = root_indexes
             .iter()
-            .map(|index| resolve_reverse_index(*index, cells.len(), &cells, "BoC root out of bounds"))
+            .map(|index| cells.get(*index).cloned().ok_or_else(|| invalid("BoC root out of bounds")))
             .collect::<Result<Vec<_>, _>>()?;
         Ok(Self { roots })
     }
 
-    pub fn get_single_root(&self) -> Result<&CellArc, SignerError> {
+    pub fn get_single_root(&self) -> Result<&CellArc, TvmError> {
         match self.roots.as_slice() {
             [root] => Ok(root),
             _ => Err(invalid("BoC must contain exactly one root")),
         }
     }
 
-    pub fn parse_base64_root(value: &str) -> Result<CellArc, SignerError> {
+    pub fn parse_base64_root(value: &str) -> Result<CellArc, TvmError> {
         Ok(Self::parse_base64(value)?.get_single_root()?.clone())
     }
 
-    pub fn to_base64(&self, with_crc32c: bool) -> Result<String, SignerError> {
+    pub fn to_base64(&self, with_crc32c: bool) -> Result<String, TvmError> {
         Ok(encode_base64(&self.serialize(with_crc32c)?))
     }
 
-    pub fn serialize(&self, with_crc32c: bool) -> Result<Vec<u8>, SignerError> {
+    pub fn serialize(&self, with_crc32c: bool) -> Result<Vec<u8>, TvmError> {
         let indexed_cells = build_index(&self.roots);
         let ordered_cells = ordered_indexed_cells(&indexed_cells);
 
@@ -118,7 +118,7 @@ impl BagOfCells {
     }
 }
 
-fn validate_crc32c(reader: &mut BitReader<'_>, bytes: &[u8]) -> Result<(), SignerError> {
+fn validate_crc32c(reader: &mut BitReader<'_>, bytes: &[u8]) -> Result<(), TvmError> {
     let expected = reader.read_u32_le()?;
     let payload_end = bytes.len().checked_sub(4).ok_or_else(|| invalid("invalid BoC length"))?;
     if expected != CRC32C.checksum(&bytes[..payload_end]) {
@@ -127,28 +127,26 @@ fn validate_crc32c(reader: &mut BitReader<'_>, bytes: &[u8]) -> Result<(), Signe
     Ok(())
 }
 
-fn build_cell_tree(raw_cells: &[RawCell]) -> Result<Vec<CellArc>, SignerError> {
-    let total = raw_cells.len();
-    let mut cells = Vec::with_capacity(total);
-    for (reverse_index, raw) in raw_cells.iter().enumerate().rev() {
+fn build_cell_tree(raw_cells: &[RawCell]) -> Result<Vec<CellArc>, TvmError> {
+    let mut cells = vec![None; raw_cells.len()];
+    for index in (0..raw_cells.len()).rev() {
+        let raw = &raw_cells[index];
         let references = raw
             .references
             .iter()
             .map(|reference| {
-                if *reference <= reverse_index {
+                if *reference <= index {
                     return Err(invalid("BoC references must point to later cells"));
                 }
-                resolve_reverse_index(*reference, total, &cells, "BoC reference out of bounds")
+                cells
+                    .get(*reference)
+                    .and_then(|cell| cell.as_ref().cloned())
+                    .ok_or_else(|| invalid("BoC reference out of bounds"))
             })
             .collect::<Result<Vec<_>, _>>()?;
-        cells.push(Cell::new(raw.data.clone(), raw.bit_len, references)?.into_arc());
+        cells[index] = Some(Cell::new(raw.data.clone(), raw.bit_len, references)?.into_arc());
     }
-    Ok(cells)
-}
-
-fn resolve_reverse_index(index: usize, total: usize, cells: &[CellArc], error: &'static str) -> Result<CellArc, SignerError> {
-    let built_index = total.checked_sub(1 + index).ok_or_else(|| invalid(error))?;
-    cells.get(built_index).cloned().ok_or_else(|| invalid(error))
+    cells.into_iter().map(|cell| cell.ok_or_else(|| invalid("BoC cell out of bounds"))).collect()
 }
 
 fn bytes_needed(value: usize) -> usize {

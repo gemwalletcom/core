@@ -1,4 +1,4 @@
-use primitives::SignerError;
+use super::TvmError;
 
 use super::{cell::Cell, indexed_cell::IndexedCells, invalid, reader::BitReader};
 
@@ -33,11 +33,11 @@ impl RawCell {
         Some(Self { data, bit_len, references })
     }
 
-    pub(super) fn parse(reader: &mut BitReader<'_>, ref_size: usize) -> Result<Self, SignerError> {
+    pub(super) fn parse(reader: &mut BitReader<'_>, ref_size: usize) -> Result<Self, TvmError> {
         Self::try_parse(reader, ref_size).ok_or_else(|| invalid("invalid BoC cell"))
     }
 
-    pub(super) fn from_cell(cell: &Cell, indexed_cells: &IndexedCells) -> Result<Self, SignerError> {
+    pub(super) fn from_cell(cell: &Cell, indexed_cells: &IndexedCells) -> Result<Self, TvmError> {
         let references = cell
             .references
             .iter()

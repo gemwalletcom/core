@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use super::payload::TonSignDataPayload;
 use crate::{
     address::Address,
-    signer::cells::{BagOfCells, CellBuilder},
+    tvm::{BagOfCells, CellBuilder},
 };
 
 const SIGN_DATA_PREFIX: &[u8] = b"\xff\xffton-connect/sign-data/";

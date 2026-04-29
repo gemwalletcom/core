@@ -11,7 +11,8 @@ rpc = [
     "dep:chain_traits",
     "dep:futures",
 ]
-signer = ["dep:signer", "dep:gem_hash"]
+tvm = ["dep:gem_hash"]
+signer = ["tvm", "dep:signer"]
 reqwest = ["gem_client/reqwest"]
 chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 

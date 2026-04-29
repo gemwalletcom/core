@@ -58,8 +58,8 @@ impl Address {
         Some(Self::new(workchain, hash_part))
     }
 
-    pub fn parse(value: &str) -> Result<Self, SignerError> {
-        <Self as AddressTrait>::try_parse(value).ok_or_else(|| SignerError::invalid_input("invalid TON address"))
+    pub fn parse(value: &str) -> Result<Self, AddressError> {
+        <Self as AddressTrait>::try_parse(value).ok_or_else(|| AddressError::new("invalid TON address"))
     }
 
     pub fn ensure_matches(claimed: Option<&str>, actual: &str) -> Result<(), SignerError> {

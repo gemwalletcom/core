@@ -6,7 +6,7 @@ use primitives::SignerError;
 use super::message::InternalMessage;
 use crate::{
     address::Address,
-    signer::cells::{BagOfCells, Cell, CellArc, CellBuilder},
+    tvm::{BagOfCells, Cell, CellArc, CellBuilder},
 };
 
 const BASE_WORKCHAIN: i32 = 0;
@@ -32,7 +32,7 @@ impl StateInit {
             .store_bit(false)?
             .store_reference(&self.code)?
             .store_reference(&self.data)?;
-        builder.build()
+        Ok(builder.build()?)
     }
 }
 
@@ -51,7 +51,7 @@ impl WalletV4R2 {
     }
 
     pub fn state_init_base64(&self) -> Result<String, SignerError> {
-        BagOfCells::from_root(Self::state_init(&self.public_key)?.to_cell()?).to_base64(true)
+        Ok(BagOfCells::from_root(Self::state_init(&self.public_key)?.to_cell()?).to_base64(true)?)
     }
 
     pub(super) fn build_external_body(&self, expire_at: u32, sequence: u32, messages: &[InternalMessage]) -> Result<Cell, SignerError> {
@@ -64,7 +64,7 @@ impl WalletV4R2 {
         for message in messages {
             builder.store_u8(8, message.mode)?.store_child(message.message.clone())?;
         }
-        builder.build()
+        Ok(builder.build()?)
     }
 
     pub(super) fn build_transaction(&self, include_state_init: bool, signed_body: Cell) -> Result<Cell, SignerError> {
@@ -81,7 +81,7 @@ impl WalletV4R2 {
             builder.store_bit(false)?;
         }
         builder.store_bit(true)?.store_child(signed_body)?;
-        builder.build()
+        Ok(builder.build()?)
     }
 
     fn state_init(public_key: &[u8; 32]) -> Result<StateInit, SignerError> {

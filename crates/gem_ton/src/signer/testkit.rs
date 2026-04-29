@@ -2,13 +2,16 @@ use num_bigint::BigUint;
 use primitives::Address as _;
 
 use super::{
-    BagOfCells, CellBuilder, TonSigner,
+    TonSigner,
     transaction::{
         message::DEFAULT_SEND_MODE,
         request::{JettonTransferRequest, TransferRequest},
     },
 };
-use crate::address::Address;
+use crate::{
+    address::Address,
+    tvm::{BagOfCells, CellBuilder},
+};
 
 pub const TEST_ADDRESS: &str = "UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg";
 pub const TEST_PRIVATE_KEY: &str = "1e9d38b5274152a78dff1a86fa464ceadc1f4238ca2c17060c3c507349424a34";

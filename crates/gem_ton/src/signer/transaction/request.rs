@@ -4,7 +4,7 @@ use num_bigint::BigUint;
 use primitives::SignerError;
 
 use super::message::{DEFAULT_SEND_MODE, TRANSFER_ALL_TON_MODE};
-use crate::{address::Address, signer::cells::CellArc};
+use crate::{address::Address, tvm::CellArc};
 
 pub(crate) struct TransferRequest {
     pub destination: Address,

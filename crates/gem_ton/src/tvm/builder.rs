@@ -1,5 +1,5 @@
+use super::TvmError;
 use num_bigint::BigUint;
-use primitives::SignerError;
 
 use super::{
     cell::{Cell, CellArc, MAX_CELL_BITS, MAX_CELL_REFERENCES},
@@ -18,41 +18,41 @@ impl CellBuilder {
         Self::default()
     }
 
-    pub fn store_bit(&mut self, value: bool) -> Result<&mut Self, SignerError> {
+    pub fn store_bit(&mut self, value: bool) -> Result<&mut Self, TvmError> {
         self.writer.write_bit(value)?;
         Ok(self)
     }
 
-    pub fn store_u8(&mut self, bit_len: usize, value: u8) -> Result<&mut Self, SignerError> {
+    pub fn store_u8(&mut self, bit_len: usize, value: u8) -> Result<&mut Self, TvmError> {
         self.writer.write_uint(bit_len, value as u64)?;
         Ok(self)
     }
 
-    pub fn store_u32(&mut self, bit_len: usize, value: u32) -> Result<&mut Self, SignerError> {
+    pub fn store_u32(&mut self, bit_len: usize, value: u32) -> Result<&mut Self, TvmError> {
         self.writer.write_uint(bit_len, value as u64)?;
         Ok(self)
     }
 
-    pub fn store_i32(&mut self, bit_len: usize, value: i32) -> Result<&mut Self, SignerError> {
+    pub fn store_i32(&mut self, bit_len: usize, value: i32) -> Result<&mut Self, TvmError> {
         self.writer.write_uint(bit_len, value as u32 as u64)?;
         Ok(self)
     }
 
-    pub fn store_u64(&mut self, bit_len: usize, value: u64) -> Result<&mut Self, SignerError> {
+    pub fn store_u64(&mut self, bit_len: usize, value: u64) -> Result<&mut Self, TvmError> {
         self.writer.write_uint(bit_len, value)?;
         Ok(self)
     }
 
-    pub fn store_slice(&mut self, slice: &[u8]) -> Result<&mut Self, SignerError> {
+    pub fn store_slice(&mut self, slice: &[u8]) -> Result<&mut Self, TvmError> {
         self.writer.write_bytes(slice)?;
         Ok(self)
     }
 
-    pub fn store_string(&mut self, value: &str) -> Result<&mut Self, SignerError> {
+    pub fn store_string(&mut self, value: &str) -> Result<&mut Self, TvmError> {
         self.store_slice(value.as_bytes())
     }
 
-    pub fn store_slice_snake(&mut self, slice: &[u8]) -> Result<&mut Self, SignerError> {
+    pub fn store_slice_snake(&mut self, slice: &[u8]) -> Result<&mut Self, TvmError> {
         let byte_capacity = self.remaining_bits() / 8;
         if slice.len() <= byte_capacity {
             return self.store_slice(slice);
@@ -67,14 +67,14 @@ impl CellBuilder {
         Ok(self)
     }
 
-    pub fn store_string_snake(&mut self, value: &str) -> Result<&mut Self, SignerError> {
+    pub fn store_string_snake(&mut self, value: &str) -> Result<&mut Self, TvmError> {
         self.store_slice_snake(value.as_bytes())
     }
 
-    pub fn store_uint(&mut self, bit_len: usize, value: &BigUint) -> Result<&mut Self, SignerError> {
+    pub fn store_uint(&mut self, bit_len: usize, value: &BigUint) -> Result<&mut Self, TvmError> {
         let used_bits = value.bits() as usize;
         if used_bits > bit_len {
-            return Err(SignerError::invalid_input(format!("value does not fit in {bit_len} bits")));
+            return Err(TvmError::new(format!("value does not fit in {bit_len} bits")));
         }
 
         let leading_zero_bits = bit_len.saturating_sub(used_bits);
@@ -109,7 +109,7 @@ impl CellBuilder {
         Ok(self)
     }
 
-    pub fn store_coins(&mut self, value: &BigUint) -> Result<&mut Self, SignerError> {
+    pub fn store_coins(&mut self, value: &BigUint) -> Result<&mut Self, TvmError> {
         if value == &BigUint::from(0u8) {
             self.store_u8(4, 0)?;
             return Ok(self);
@@ -120,11 +120,11 @@ impl CellBuilder {
         self.store_uint(bytes.len() * 8, value)
     }
 
-    pub fn store_null_address(&mut self) -> Result<&mut Self, SignerError> {
+    pub fn store_null_address(&mut self) -> Result<&mut Self, TvmError> {
         self.store_u8(2, 0)
     }
 
-    pub fn store_address(&mut self, address: &Address) -> Result<&mut Self, SignerError> {
+    pub fn store_address(&mut self, address: &Address) -> Result<&mut Self, TvmError> {
         self.store_u8(2, 0b10)?;
         self.store_bit(false)?;
         self.store_u8(8, address.workchain() as i8 as u8)?;
@@ -132,25 +132,39 @@ impl CellBuilder {
         Ok(self)
     }
 
-    pub fn store_reference(&mut self, cell: &CellArc) -> Result<&mut Self, SignerError> {
+    pub fn store_maybe_address(&mut self, address: Option<&Address>) -> Result<&mut Self, TvmError> {
+        match address {
+            Some(address) => self.store_address(address),
+            None => self.store_null_address(),
+        }
+    }
+
+    pub fn store_reference(&mut self, cell: &CellArc) -> Result<&mut Self, TvmError> {
         let next_len = self.references.len() + 1;
         if next_len > MAX_CELL_REFERENCES {
-            return Err(SignerError::invalid_input(format!("cell exceeds {MAX_CELL_REFERENCES} references")));
+            return Err(TvmError::new(format!("cell exceeds {MAX_CELL_REFERENCES} references")));
         }
         self.references.push(cell.clone());
         Ok(self)
     }
 
-    pub fn store_child(&mut self, cell: Cell) -> Result<&mut Self, SignerError> {
+    pub fn store_maybe_reference(&mut self, cell: Option<&CellArc>) -> Result<&mut Self, TvmError> {
+        match cell {
+            Some(cell) => self.store_bit(true)?.store_reference(cell),
+            None => self.store_bit(false),
+        }
+    }
+
+    pub fn store_child(&mut self, cell: Cell) -> Result<&mut Self, TvmError> {
         self.store_reference(&cell.into_arc())
     }
 
-    pub fn store_cell_data(&mut self, cell: &Cell) -> Result<&mut Self, SignerError> {
+    pub fn store_cell_data(&mut self, cell: &Cell) -> Result<&mut Self, TvmError> {
         self.writer.write_bits(&cell.data, cell.bit_len)?;
         Ok(self)
     }
 
-    pub fn store_cell(&mut self, cell: &Cell) -> Result<&mut Self, SignerError> {
+    pub fn store_cell(&mut self, cell: &Cell) -> Result<&mut Self, TvmError> {
         self.store_cell_data(cell)?;
         for reference in &cell.references {
             self.store_reference(reference)?;
@@ -162,7 +176,7 @@ impl CellBuilder {
         MAX_CELL_BITS.saturating_sub(self.writer.bit_len)
     }
 
-    pub fn build(self) -> Result<Cell, SignerError> {
+    pub fn build(self) -> Result<Cell, TvmError> {
         Cell::new(self.writer.bytes, self.writer.bit_len, self.references)
     }
 }
