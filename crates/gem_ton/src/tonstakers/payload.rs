@@ -50,20 +50,12 @@ mod tests {
     use primitives::{Asset, Chain, ContractCallData, EarnType, SignerInput, TransactionInputType, TransactionLoadMetadata, YieldProvider};
 
     use super::{build_stake_payload_base64, build_unstake_payload_base64};
-    use crate::{Address, signer::TonSigner};
+    use crate::{
+        Address,
+        signer::{TonSigner, testkit::TEST_ADDRESS as TON_TEST_WALLET_ADDRESS},
+    };
 
     const TEST_TON_PRIVATE_KEY: &str = "c7702dadcd00d470df27dee0ddd97fbcf9deba52b60f7dd2b296ff42bb1fcad6";
-    const SENDER_TOKEN_ADDRESS: &str = "EQAlgB03OjJKdXrlwZiGJD5snSzPKF2VL5bErJn_cqJANGH9";
-
-    fn test_signer() -> TonSigner {
-        let private_key = hex::decode(TEST_TON_PRIVATE_KEY).unwrap();
-        TonSigner::new(&private_key).unwrap()
-    }
-
-    fn signer_input(earn_type: EarnType, call_data: String, value: &str) -> SignerInput {
-        let input_type = TransactionInputType::Earn(Asset::from_chain(Chain::Ton), earn_type, ContractCallData::new(SENDER_TOKEN_ADDRESS.to_string(), call_data));
-        SignerInput::mock_with_input_type(input_type, "", "", value, TransactionLoadMetadata::mock_ton(1))
-    }
 
     #[test]
     fn test_build_stake_payload_base64() {
@@ -72,25 +64,31 @@ mod tests {
 
     #[test]
     fn test_build_unstake_payload_base64() {
-        let owner = Address::parse("EQCOh0t62bvrv8SIELiTnJj1BYAkbxmYIEDbyyU8TD2veND8").unwrap();
+        let owner = Address::parse(TON_TEST_WALLET_ADDRESS).unwrap();
         assert_eq!(
             build_unstake_payload_base64(&owner, &BigUint::from(5_000_000_000u64)).unwrap(),
-            "te6cckEBAgEAOQABZllfB7wAAAAAAAAAAFASoF8gCAEdDpb1s3fXf4kQIXEnOTHqCwBI3jMwQIG3lkp4mHte8QEAASDleV8G"
+            "te6cckEBAgEAOQABZllfB7wAAAAAAAAAAFASoF8gCACxq4qfdwkRXv1VoZuOs5Ue3+8/kqqiDYJnNgb9gUgGjwEAASDYnkB8"
         );
     }
 
     #[test]
     fn test_sign_earn() {
-        let signer = test_signer();
+        let private_key = hex::decode(TEST_TON_PRIVATE_KEY).unwrap();
+        let signer = TonSigner::new(&private_key).unwrap();
         let provider = YieldProvider::Tonstakers.delegation_validator(Chain::Ton);
-        let input = signer_input(EarnType::Deposit(provider), build_stake_payload_base64().unwrap(), "10000");
+        let input_type = TransactionInputType::Earn(
+            Asset::from_chain(Chain::Ton),
+            EarnType::Deposit(provider),
+            ContractCallData::new(TON_TEST_WALLET_ADDRESS.to_string(), build_stake_payload_base64().unwrap()),
+        );
+        let input = SignerInput::mock_with_input_type(input_type, "", "", "10000", TransactionLoadMetadata::mock_ton(1));
 
         let signed = signer.sign_earn(&input, Some(1_000_000_000)).unwrap();
 
         assert_eq!(
             signed,
             vec![
-                "te6cckEBBAEAxAABRYgBkF1w67cBLG0e0D7j0y2ShzflCe2JrlAjS4pC8UHg85AMAQGcyRclzA0Phkl4EMv6ba3GIp6Tx3f1PU9foE3I/W8msQmi8NMYR7h0v8L2OlXLMvqvJ+WWJMk/D/s+CyNQcpFQASmpoxc7msoAAAAAAQADAgFoYgASwA6bnRklOr1y4MxDEh82TpZnlC7Kl8tiVkz/uVEgGiHc14iAAAAAAAAAAAAAAAAAAQMAKEfVQ5EAAAAAAAAAAUdFTQBp7vEnTx0W9Q==".to_string()
+                "te6cckEBBAEAxAABRYgBkF1w67cBLG0e0D7j0y2ShzflCe2JrlAjS4pC8UHg85AMAQGc586+/tdveRSv7FpL3QNz4uEs7fsaNih6wD1u9UeqSjlwvKknRCpL4kxqMzR67FdLNQ3eeriBeKX7dJEgRPopDimpoxc7msoAAAAAAQADAgFoYgAsauKn3cJEV79VaGbjrOVHt/vP5Kqog2CZzYG/YFIBo6Hc14iAAAAAAAAAAAAAAAAAAQMAKEfVQ5EAAAAAAAAAAUdFTQBp7vEn4cjcXg==".to_string()
             ]
         );
     }
