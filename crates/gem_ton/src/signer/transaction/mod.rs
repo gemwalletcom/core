@@ -1,3 +1,4 @@
+mod earn;
 pub(super) mod message;
 pub(super) mod request;
 mod sign;

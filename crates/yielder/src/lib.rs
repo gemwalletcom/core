@@ -1,6 +1,7 @@
 mod client_factory;
 mod error;
 mod provider;
+mod tonstakers;
 mod yielder;
 mod yo;
 

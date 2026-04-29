@@ -13,6 +13,7 @@ pub mod tvm;
 pub mod address;
 pub mod constants;
 pub mod models;
+pub mod tonstakers;
 
 pub use address::{Address, validate_address};
 pub use primitives::AddressError;

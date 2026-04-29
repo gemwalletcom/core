@@ -1,7 +1,6 @@
 use std::error::Error;
 
 use primitives::{Asset, AssetId, AssetType, chain::Chain};
-use serde_json;
 
 use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainStaking, ChainTraits};
 use gem_client::{Client, ClientExt};

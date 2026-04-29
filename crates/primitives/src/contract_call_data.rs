@@ -11,3 +11,14 @@ pub struct ContractCallData {
     pub approval: Option<ApprovalData>,
     pub gas_limit: Option<String>,
 }
+
+impl ContractCallData {
+    pub fn new(contract_address: String, call_data: String) -> Self {
+        Self {
+            contract_address,
+            call_data,
+            approval: None,
+            gas_limit: None,
+        }
+    }
+}
