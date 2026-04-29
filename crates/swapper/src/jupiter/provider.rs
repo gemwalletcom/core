@@ -185,12 +185,13 @@ where
             return Err(SwapperError::TransactionError(simulation_error.error));
         }
 
+        let gas_limit = solana::gas_limit_from_transaction(&quote_data.swap_transaction)?;
         Ok(SwapperQuoteData::new_contract(
             PROGRAM_ADDRESS.to_string(),
             "".to_string(),
-            quote_data.swap_transaction.clone(),
+            quote_data.swap_transaction,
             None,
-            Some(solana::gas_limit_from_transaction(&quote_data.swap_transaction)?.to_string()),
+            Some(gas_limit.to_string()),
         ))
     }
 }
