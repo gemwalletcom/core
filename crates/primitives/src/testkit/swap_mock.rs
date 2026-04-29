@@ -31,6 +31,18 @@ impl SwapData {
         }
     }
 
+    pub fn mock_with_provider_data(provider: SwapProvider, data: &str, gas_limit: Option<&str>) -> Self {
+        let swap_data = Self::mock_with_provider(provider);
+        SwapData {
+            data: SwapQuoteData {
+                data: data.to_string(),
+                gas_limit: gas_limit.map(String::from),
+                ..swap_data.data
+            },
+            ..swap_data
+        }
+    }
+
     pub fn mock_with_values(provider: SwapProvider, from_value: &str, to_value: &str) -> Self {
         SwapData {
             quote: SwapQuote::mock_with_values(provider, from_value, to_value),
@@ -124,5 +136,13 @@ mod tests {
         let swap_data = SwapData::mock_with_provider(SwapProvider::Jupiter);
         assert_eq!(swap_data.quote.provider_data.provider, SwapProvider::Jupiter);
         assert_eq!(swap_data.quote.provider_data.name, "Jupiter");
+    }
+
+    #[test]
+    fn test_swap_data_mock_with_provider_data() {
+        let swap_data = SwapData::mock_with_provider_data(SwapProvider::Jupiter, "tx-data", Some("420000"));
+        assert_eq!(swap_data.quote.provider_data.provider, SwapProvider::Jupiter);
+        assert_eq!(swap_data.data.data, "tx-data");
+        assert_eq!(swap_data.data.gas_limit, Some("420000".to_string()));
     }
 }

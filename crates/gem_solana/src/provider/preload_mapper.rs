@@ -2,7 +2,7 @@ use num_bigint::BigInt;
 use primitives::{AssetSubtype, Chain, FeeOption, FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType};
 use std::collections::HashMap;
 
-use crate::{constants::STATIC_BASE_FEE, models::prioritization_fee::SolanaPrioritizationFee};
+use crate::{DEFAULT_SWAP_GAS_LIMIT, constants::STATIC_BASE_FEE, models::prioritization_fee::SolanaPrioritizationFee};
 
 pub fn calculate_transaction_fee(input_type: &TransactionInputType, gas_price_type: &GasPriceType, recipient_token_address: Option<String>) -> TransactionFee {
     let mut options = HashMap::new();
@@ -48,7 +48,7 @@ fn get_gas_limit(input_type: &TransactionInputType) -> BigInt {
             .as_ref()
             .and_then(|x| x.parse::<u64>().ok())
             .map(BigInt::from)
-            .unwrap_or(BigInt::from(420_000)),
+            .unwrap_or(BigInt::from(DEFAULT_SWAP_GAS_LIMIT)),
         TransactionInputType::Stake(_, _) => BigInt::from(100_000),
     }
 }
@@ -157,7 +157,7 @@ mod tests {
         let fee = calculate_transaction_fee(&input_type, &gas_price_type, Some("recipient_token_address".to_string()));
 
         assert_eq!(fee.fee, BigInt::from(35_000u64));
-        assert_eq!(fee.gas_limit, BigInt::from(420_000u64));
+        assert_eq!(fee.gas_limit, BigInt::from(DEFAULT_SWAP_GAS_LIMIT));
     }
 
     #[test]

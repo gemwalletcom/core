@@ -12,11 +12,13 @@ pub mod rpc;
 pub mod provider;
 
 pub mod models;
+pub mod transaction;
 
 #[cfg(feature = "signer")]
 pub mod signer;
 
 pub use jsonrpc::SolanaRpc;
+pub use transaction::{decode_transaction, try_decode_transaction};
 
 #[cfg(all(feature = "reqwest", not(feature = "rpc")))]
 pub use rpc::client::SolanaClient;
@@ -35,6 +37,7 @@ pub use primitives::contract_constants::{
 };
 pub const COMPUTE_UNIT_LIMIT_DISCRIMINANT: u8 = 2;
 pub const COMPUTE_UNIT_PRICE_DISCRIMINANT: u8 = 3;
+pub const DEFAULT_SWAP_GAS_LIMIT: u32 = 420_000;
 pub const SYSTEM_PROGRAMS: &[&str] = &[
     SYSTEM_PROGRAM_ID,
     COMPUTE_BUDGET_PROGRAM_ID,

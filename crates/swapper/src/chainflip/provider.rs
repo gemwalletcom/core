@@ -21,6 +21,7 @@ use crate::{
     approval::check_approval_erc20,
     cross_chain::VaultAddresses,
     fees::{DEFAULT_CHAINFLIP_FEE_BPS, apply_slippage_in_bp, resolve_max_quote_value},
+    solana::DEFAULT_SWAP_GAS_LIMIT,
 };
 use primitives::{ChainType, chain::Chain, swap::QuoteAsset};
 
@@ -315,7 +316,13 @@ where
                 let data = tx_builder::build_solana_tx(&quote.request.wallet_address, &response, self.rpc_provider.clone())
                     .await
                     .map_err(SwapperError::TransactionError)?;
-                Ok(SwapperQuoteData::new_contract(response.program_id, "".into(), data, None, None))
+                Ok(SwapperQuoteData::new_contract(
+                    response.program_id,
+                    "".into(),
+                    data,
+                    None,
+                    Some(DEFAULT_SWAP_GAS_LIMIT.to_string()),
+                ))
             }
         }
     }

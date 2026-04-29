@@ -1,11 +1,13 @@
 use super::broker::SolanaVaultSwapResponse;
-use crate::{alien::RpcProvider, client_factory::create_client_with_chain};
+#[cfg(test)]
+use crate::solana::gas_limit_from_transaction;
+use crate::{alien::RpcProvider, client_factory::create_client_with_chain, solana};
 
 use alloy_primitives::hex;
 use gem_encoding::encode_base64;
 use gem_solana::{jsonrpc::SolanaRpc, models::LatestBlockhash};
 use primitives::Chain;
-use solana_primitives::{AccountMeta, InstructionBuilder, Pubkey, TransactionBuilder};
+use solana_primitives::{AccountMeta, InstructionBuilder, Pubkey, TransactionBuilder, compute_budget::set_compute_unit_limit};
 use std::{str::FromStr, sync::Arc};
 
 pub async fn build_solana_tx(fee_payer: &str, response: &SolanaVaultSwapResponse, provider: Arc<dyn RpcProvider>) -> Result<String, String> {
@@ -30,6 +32,7 @@ pub async fn build_solana_tx(fee_payer: &str, response: &SolanaVaultSwapResponse
     });
 
     let mut transaction_builder = TransactionBuilder::new(fee_payer, blockhash_array);
+    transaction_builder.add_instruction(set_compute_unit_limit(solana::DEFAULT_SWAP_GAS_LIMIT));
     transaction_builder.add_instruction(instruction);
 
     let transaction = transaction_builder.build().map_err(|e| e.to_string())?;
@@ -74,9 +77,10 @@ mod tests {
 
         let tx_b64 = build_solana_tx(wallet_address, &response.result, provider).await?;
 
+        assert_eq!(gas_limit_from_transaction(&tx_b64).map_err(|e| e.to_string())?, u64::from(solana::DEFAULT_SWAP_GAS_LIMIT));
         assert_eq!(
             tx_b64,
-            "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAMHhfupPuKcYE+oWKNRaIwBKQhB6vsZxjpwpHXTx7w7758q21EdC4D4NruUv9F26xeVqhYm0WXVWkSIjeQIxD3II9tUC6aOjrGBy017zEItREWS3QDEQI/vMhwSVTo/1e2664X/uFi6gx6sRwFnSAPu1ODmcAsu2sf8IuwYArWOf4gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIigdk5jnaVQcjb3Nozv0qlnESZ8J6eouD4cHFznUdrH/mnbBDL8THYGfUWCdASi1avvhnxRbvqBSGASZBJCzCac8CA/vjlRh67l6xlM0hAuQsp8uvbznxa/E9H2wqvhzgEGBgUBAAMCBLYBoyZc4vNpjcSAHSwEAAAAAAQAAAAUAAAAUUvLH5qruQTmEGvRBStm0nBtu7cHAAAAAGwAAAAACgAAAIX7qT7inGBPqFijUWiMASkIQer7GcY6cKR108e8O++fyqFFtvP91HjpJvpzAtB1MQAAAAAAAAAAAAAAAAAAAAAAAB6D0pctPco6Mw1gwnd+5bjSVoPGP6NZEWmFYJgw9CBUBQAEAC0RAAAAOJJMwzRWGJDjqBlAc1NxDgk="
+            "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAQIhfupPuKcYE+oWKNRaIwBKQhB6vsZxjpwpHXTx7w7758q21EdC4D4NruUv9F26xeVqhYm0WXVWkSIjeQIxD3II9tUC6aOjrGBy017zEItREWS3QDEQI/vMhwSVTo/1e2664X/uFi6gx6sRwFnSAPu1ODmcAsu2sf8IuwYArWOf4gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMGRm/lIRcy/+ytunLDm+e8jOW7xfcSayxDmzpAAAAAiKB2TmOdpVByNvc2jO/SqWcRJnwnp6i4PhwcXOdR2sf+adsEMvxMdgZ9RYJ0BKLVq++GfFFu+oFIYBJkEkLMJpzwID++OVGHruXrGUzSEC5Cyny69vOfFr8T0fbCq+HOAgUABQKgaAYABwYGAQADAgS2AaMmXOLzaY3EgB0sBAAAAAAEAAAAFAAAAFFLyx+aq7kE5hBr0QUrZtJwbbu3BwAAAABsAAAAAAoAAACF+6k+4pxgT6hYo1FojAEpCEHq+xnGOnCkddPHvDvvn8qhRbbz/dR46Sb6cwLQdTEAAAAAAAAAAAAAAAAAAAAAAAAeg9KXLT3KOjMNYMJ3fuW40laDxj+jWRFphWCYMPQgVAUABAAtEQAAADiSTMM0VhiQ46gZQHNTcQ4J"
         );
 
         Ok(())
