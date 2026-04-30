@@ -9,7 +9,7 @@ use crate::models::{
     referral::Referral,
     response::ExplorerTransactionResponse,
     spot::{OrderbookResponse, SpotMeta},
-    user::{AgentSession, LedgerUpdate, UserFee, UserRole},
+    user::{AgentSession, LedgerUpdate, UserAbstractionMode, UserFee, UserRole},
 };
 use chain_traits::ChainTraits;
 use gem_client::{CONTENT_TYPE, Client, ClientExt, ContentType};
@@ -180,6 +180,14 @@ impl<C: Client> HyperCoreClient<C> {
     pub async fn get_user_role(&self, user: &str) -> Result<UserRole, Box<dyn Error + Send + Sync>> {
         self.info(json!({
             "type": "userRole",
+            "user": user
+        }))
+        .await
+    }
+
+    pub async fn get_user_abstraction(&self, user: &str) -> Result<UserAbstractionMode, Box<dyn Error + Send + Sync>> {
+        self.info(json!({
+            "type": "userAbstraction",
             "user": user
         }))
         .await

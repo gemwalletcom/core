@@ -13,8 +13,10 @@ use primitives::{
 
 use crate::{
     config::HypercoreConfig,
-    models::{order::OpenOrder, perp_dex::PerpDex, position::AssetPositions},
-    provider::perpetual_mapper::{map_account_summary_aggregate, map_candlesticks, map_perpetual_portfolio, map_perpetuals_data, map_positions, merge_perpetual_portfolios},
+    models::{order::OpenOrder, perp_dex::PerpDex, position::AssetPositions, user::UserAbstractionMode},
+    provider::perpetual_mapper::{
+        map_account_summary_aggregate, map_candlesticks, map_perpetual_balance_from_spot, map_perpetual_portfolio, map_perpetuals_data, map_positions, merge_perpetual_portfolios,
+    },
     rpc::client::HyperCoreClient,
 };
 
@@ -67,6 +69,10 @@ impl<C: Client> HyperCoreClient<C> {
             .unwrap_or_else(|_| vec![(0, None)])
     }
 
+    async fn get_account_mode(&self, address: &str) -> UserAbstractionMode {
+        self.get_user_abstraction(address).await.unwrap_or(UserAbstractionMode::Default)
+    }
+
     async fn get_positions_for_dex(&self, address: String, dex: Option<String>) -> Result<AssetPositions, Box<dyn Error + Sync + Send>> {
         match dex.as_deref() {
             Some(dex) => self.get_clearinghouse_state_with_dex(&address, dex).await,
@@ -93,6 +99,7 @@ impl<C: Client> HyperCoreClient<C> {
 #[async_trait]
 impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
     async fn get_positions(&self, address: String) -> Result<PerpetualPositionsSummary, Box<dyn Error + Sync + Send>> {
+        let mode = self.get_account_mode(&address).await;
         let dex_entries = self.get_active_dex_entries().await;
         let summaries = try_join_all(dex_entries.into_iter().map(|(_, dex)| {
             let address = address.clone();
@@ -125,6 +132,15 @@ impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
                 (acc_pos, acc_bal)
             },
         );
+
+        let balance = match mode {
+            UserAbstractionMode::Default | UserAbstractionMode::Disabled | UserAbstractionMode::DexAbstraction => balance,
+            UserAbstractionMode::UnifiedAccount | UserAbstractionMode::PortfolioMargin => {
+                let spot = self.get_spot_balances(&address).await?;
+                map_perpetual_balance_from_spot(&spot)
+            }
+        };
+
         Ok(PerpetualPositionsSummary { positions, balance })
     }
 
@@ -386,6 +402,114 @@ mod tests {
         assert!(!seen_requests.contains(&clearinghouse_state_dex2_request));
         assert!(!seen_requests.contains(&open_orders_dex1_request));
         assert!(!seen_requests.contains(&open_orders_dex2_request));
+    }
+
+    #[tokio::test]
+    async fn test_get_positions_uses_spot_balance_for_unified_account() {
+        let user_abstraction_request: Value = load_testdata("perpetual_positions_request_user_abstraction.json");
+        let clearinghouse_state_request: Value = load_testdata("perpetual_positions_request_clearinghouse_state.json");
+        let spot_clearinghouse_request: Value = load_testdata("perpetual_positions_request_spot_clearinghouse_state.json");
+        let open_orders_request: Value = load_testdata("perpetual_positions_request_open_orders.json");
+
+        let responses = Arc::new(vec![
+            (
+                user_abstraction_request.clone(),
+                include_bytes!("../../testdata/perpetual_positions_response_user_abstraction_unified.json").to_vec(),
+            ),
+            (
+                clearinghouse_state_request.clone(),
+                include_bytes!("../../testdata/perpetual_positions_response_clearinghouse_state.json").to_vec(),
+            ),
+            (
+                spot_clearinghouse_request.clone(),
+                include_bytes!("../../testdata/perpetual_positions_response_spot_clearinghouse_state_unified.json").to_vec(),
+            ),
+            (
+                open_orders_request.clone(),
+                include_bytes!("../../testdata/perpetual_positions_response_open_orders.json").to_vec(),
+            ),
+        ]);
+        let seen_requests = Arc::new(Mutex::new(Vec::new()));
+        let responses_clone = Arc::clone(&responses);
+        let seen_requests_clone = Arc::clone(&seen_requests);
+        let client = MockClient::new().with_post(move |path, body| {
+            assert_eq!(path, "/info");
+
+            let request: Value = serde_json::from_slice(body).unwrap();
+            seen_requests_clone.lock().unwrap().push(request.clone());
+
+            responses_clone
+                .iter()
+                .find(|(expected_request, _)| *expected_request == request)
+                .map(|(_, response)| response.clone())
+                .ok_or_else(|| ClientError::Http { status: 404, body: body.to_vec() })
+        });
+
+        let preferences = Arc::new(InMemoryPreferences::new());
+        let secure_preferences = Arc::new(InMemoryPreferences::new());
+        let client = HyperCoreClient::new_with_preferences(client, preferences, secure_preferences);
+
+        let summary = client.get_positions("0x123".to_string()).await.unwrap();
+        let seen_requests = seen_requests.lock().unwrap().clone();
+
+        assert_eq!(summary.positions.len(), 1);
+        assert_eq!(summary.balance.available, 26.07);
+        assert_eq!(summary.balance.reserved, 0.0);
+        assert_eq!(summary.balance.withdrawable, 26.07);
+        assert_eq!(
+            seen_requests,
+            vec![user_abstraction_request, clearinghouse_state_request, open_orders_request, spot_clearinghouse_request,]
+        );
+    }
+
+    #[tokio::test]
+    async fn test_get_positions_uses_perp_balance_for_default_mode() {
+        let user_abstraction_request: Value = load_testdata("perpetual_positions_request_user_abstraction.json");
+        let clearinghouse_state_request: Value = load_testdata("perpetual_positions_request_clearinghouse_state.json");
+        let open_orders_request: Value = load_testdata("perpetual_positions_request_open_orders.json");
+
+        let responses = Arc::new(vec![
+            (
+                user_abstraction_request.clone(),
+                include_bytes!("../../testdata/perpetual_positions_response_user_abstraction_default.json").to_vec(),
+            ),
+            (
+                clearinghouse_state_request.clone(),
+                include_bytes!("../../testdata/perpetual_positions_response_clearinghouse_state.json").to_vec(),
+            ),
+            (
+                open_orders_request.clone(),
+                include_bytes!("../../testdata/perpetual_positions_response_open_orders.json").to_vec(),
+            ),
+        ]);
+        let seen_requests = Arc::new(Mutex::new(Vec::new()));
+        let responses_clone = Arc::clone(&responses);
+        let seen_requests_clone = Arc::clone(&seen_requests);
+        let client = MockClient::new().with_post(move |path, body| {
+            assert_eq!(path, "/info");
+
+            let request: Value = serde_json::from_slice(body).unwrap();
+            seen_requests_clone.lock().unwrap().push(request.clone());
+
+            responses_clone
+                .iter()
+                .find(|(expected_request, _)| *expected_request == request)
+                .map(|(_, response)| response.clone())
+                .ok_or_else(|| ClientError::Http { status: 404, body: body.to_vec() })
+        });
+
+        let preferences = Arc::new(InMemoryPreferences::new());
+        let secure_preferences = Arc::new(InMemoryPreferences::new());
+        let client = HyperCoreClient::new_with_preferences(client, preferences, secure_preferences);
+
+        let summary = client.get_positions("0x123".to_string()).await.unwrap();
+        let seen_requests = seen_requests.lock().unwrap().clone();
+
+        assert_eq!(summary.positions.len(), 1);
+        assert_eq!(summary.balance.available, 8000.0);
+        assert_eq!(summary.balance.reserved, 2000.0);
+        assert_eq!(summary.balance.withdrawable, 8000.0);
+        assert_eq!(seen_requests, vec![user_abstraction_request, clearinghouse_state_request, open_orders_request]);
     }
 }
 

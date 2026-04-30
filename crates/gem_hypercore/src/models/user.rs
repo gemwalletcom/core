@@ -9,6 +9,16 @@ pub struct UserRole {
     pub role: String,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum UserAbstractionMode {
+    Default,
+    Disabled,
+    DexAbstraction,
+    UnifiedAccount,
+    PortfolioMargin,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AgentSession {

@@ -8,6 +8,7 @@ pub struct Balance {
     pub coin: String,
     pub token: u32,
     pub total: String,
+    pub hold: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
