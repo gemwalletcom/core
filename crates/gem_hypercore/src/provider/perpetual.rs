@@ -69,10 +69,6 @@ impl<C: Client> HyperCoreClient<C> {
             .unwrap_or_else(|_| vec![(0, None)])
     }
 
-    async fn get_account_mode(&self, address: &str) -> UserAbstractionMode {
-        self.get_user_abstraction(address).await.unwrap_or(UserAbstractionMode::Default)
-    }
-
     async fn get_positions_for_dex(&self, address: String, dex: Option<String>) -> Result<AssetPositions, Box<dyn Error + Sync + Send>> {
         match dex.as_deref() {
             Some(dex) => self.get_clearinghouse_state_with_dex(&address, dex).await,
@@ -99,7 +95,7 @@ impl<C: Client> HyperCoreClient<C> {
 #[async_trait]
 impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
     async fn get_positions(&self, address: String) -> Result<PerpetualPositionsSummary, Box<dyn Error + Sync + Send>> {
-        let mode = self.get_account_mode(&address).await;
+        let mode = self.get_user_abstraction(&address).await?;
         let dex_entries = self.get_active_dex_entries().await;
         let summaries = try_join_all(dex_entries.into_iter().map(|(_, dex)| {
             let address = address.clone();
@@ -294,6 +290,10 @@ mod tests {
         let open_orders_dex2_request: Value = load_testdata("perpetual_positions_request_open_orders_dex2.json");
 
         let responses = Arc::new(vec![
+            (
+                load_testdata("perpetual_positions_request_user_abstraction.json"),
+                include_bytes!("../../testdata/perpetual_positions_response_user_abstraction_default.json").to_vec(),
+            ),
             (perp_dexs_request, include_bytes!("../../testdata/perpetual_positions_response_perp_dexs.json").to_vec()),
             (
                 clearinghouse_state_request,
@@ -362,6 +362,10 @@ mod tests {
         let open_orders_dex2_request: Value = load_testdata("perpetual_positions_request_open_orders_dex2.json");
 
         let responses = Arc::new(vec![
+            (
+                load_testdata("perpetual_positions_request_user_abstraction.json"),
+                include_bytes!("../../testdata/perpetual_positions_response_user_abstraction_default.json").to_vec(),
+            ),
             (
                 clearinghouse_state_request.clone(),
                 include_bytes!("../../testdata/perpetual_positions_response_clearinghouse_state.json").to_vec(),
