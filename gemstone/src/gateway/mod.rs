@@ -13,8 +13,9 @@ pub(crate) use preferences::PreferencesWrapper;
 use crate::alien::{AlienProvider, AlienProviderWrapper};
 use crate::api_client::GemApiClient;
 use crate::models::*;
-use crate::transaction_state::TransactionStatusClient;
+use crate::transaction_state::StatusProvider;
 use chain_traits::ChainTraits;
+use swapper::swapper::GemSwapper as Swapper;
 use std::future::Future;
 use std::sync::Arc;
 use yielder::Yielder;
@@ -33,7 +34,7 @@ pub struct GemGateway {
     pub api_client: GemApiClient,
     chain_factory: Arc<ChainClientFactory>,
     yielder: Yielder,
-    status_client: TransactionStatusClient,
+    status_provider: StatusProvider,
 }
 
 impl std::fmt::Debug for GemGateway {
@@ -70,13 +71,15 @@ impl GemGateway {
     pub fn new(provider: Arc<dyn AlienProvider>, preferences: Arc<dyn GemPreferences>, secure_preferences: Arc<dyn GemPreferences>, api_url: String) -> Self {
         let api_client = GemApiClient::new(api_url, provider.clone());
         let chain_factory = Arc::new(ChainClientFactory::new(provider.clone(), preferences, secure_preferences));
-        let yielder = Yielder::new(Arc::new(AlienProviderWrapper::new(provider)));
-        let status_client = TransactionStatusClient::new(chain_factory.clone());
+        let alien_wrapper = Arc::new(AlienProviderWrapper::new(provider));
+        let yielder = Yielder::new(alien_wrapper.clone());
+        let swapper = Swapper::new(alien_wrapper);
+        let status_provider = StatusProvider::new(chain_factory.clone(), swapper);
         Self {
             api_client,
             chain_factory,
             yielder,
-            status_client,
+            status_provider,
         }
     }
 
@@ -107,7 +110,7 @@ impl GemGateway {
     }
 
     pub async fn get_transaction_status(&self, chain: Chain, request: GemTransactionStateRequest) -> Result<GemTransactionUpdate, GatewayError> {
-        Ok(self.status_client.status(chain, request.into()).await?)
+        Ok(self.status_provider.get(chain, request).await?)
     }
 
     pub async fn get_chain_id(&self, chain: Chain) -> Result<String, GatewayError> {

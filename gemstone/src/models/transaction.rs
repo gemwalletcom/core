@@ -4,12 +4,13 @@ use primitives::contract_call_data::ContractCallData;
 use primitives::{
     AccountDataType, Asset, EarnType, FeeOption, GasPriceType, HyperliquidOrder, PerpetualConfirmData, PerpetualDirection, PerpetualMarginType, PerpetualProvider, PerpetualType,
     Resource, SignerInput, StakeType, TransactionChange, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransactionMetadata,
-    TransactionPerpetualMetadata, TransactionState, TransactionStateRequest, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction,
+    TransactionPerpetualMetadata, TransactionState, TransactionStateRequest, TransactionSwapMetadata, TransactionType, TransactionUpdate, TransferDataExtra, TransferDataOutputAction,
     TransferDataOutputType, TronStakeData, TronUnfreeze, TronVote, UInt64, WalletConnectionSessionAppMetadata,
     perpetual::{CancelOrderData, PerpetualModifyConfirmData, PerpetualModifyPositionType, PerpetualReduceData, TPSLOrderData},
 };
 use std::collections::HashMap;
 use swap::{GemApprovalData, GemSwapData};
+use swapper::SwapperProvider;
 
 pub type GemPerpetualDirection = PerpetualDirection;
 pub type GemPerpetualProvider = PerpetualProvider;
@@ -86,6 +87,7 @@ pub struct TransactionPerpetualMetadata {
 #[uniffi::remote(Enum)]
 pub enum TransactionMetadata {
     Perpetual(TransactionPerpetualMetadata),
+    Swap(TransactionSwapMetadata),
 }
 
 #[uniffi::remote(Enum)]
@@ -146,6 +148,7 @@ pub struct GemTransactionStateRequest {
     pub sender_address: String,
     pub created_at: i64,
     pub block_number: i64,
+    pub swap_provider: Option<SwapperProvider>,
 }
 
 pub type GemHyperliquidOrder = HyperliquidOrder;
