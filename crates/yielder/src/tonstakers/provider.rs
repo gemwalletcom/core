@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -45,6 +46,10 @@ impl TonstakersProvider {
 impl EarnProvider for TonstakersProvider {
     fn get_provider(&self, asset_id: &AssetId) -> Option<DelegationValidator> {
         (asset_id.chain == Chain::Ton && asset_id.is_native()).then(|| YieldProvider::Tonstakers.delegation_validator(Chain::Ton))
+    }
+
+    fn underlying_assets() -> HashMap<AssetId, Vec<AssetId>> {
+        HashMap::from([(AssetId::from_chain(Chain::Ton), vec![AssetId::from_token(Chain::Ton, TS_TON_MASTER)])])
     }
 
     async fn get_position(&self, address: &str, _asset_id: &AssetId) -> Result<Option<DelegationBase>, YielderError> {

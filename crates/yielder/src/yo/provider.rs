@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::slice::from_ref;
 use std::sync::Arc;
 
@@ -60,6 +61,13 @@ impl YoEarnProvider {
 impl EarnProvider for YoEarnProvider {
     fn get_provider(&self, asset_id: &AssetId) -> Option<DelegationValidator> {
         self.get_asset(asset_id).ok().map(|a| YieldProvider::Yo.delegation_validator(a.chain))
+    }
+
+    fn underlying_assets() -> HashMap<AssetId, Vec<AssetId>> {
+        supported_assets()
+            .iter()
+            .map(|asset| (asset.asset_id(), vec![AssetId::from_token(asset.chain, &asset.yo_token.to_string())]))
+            .collect()
     }
 
     async fn get_position(&self, address: &str, asset_id: &AssetId) -> Result<Option<DelegationBase>, YielderError> {

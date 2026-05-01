@@ -1,5 +1,6 @@
 pub mod chain;
 pub mod docs;
+pub mod earn;
 pub mod node;
 pub mod public;
 pub mod rewards;
@@ -19,6 +20,7 @@ use std::{collections::HashMap, str::FromStr};
 
 use {
     docs::{DocsUrl, get_docs_url},
+    earn::get_underlying_assets_by_provider,
     public::{ASSETS_URL, PublicUrl, get_public_url},
     rewards::{RewardsUrl, get_rewards_url},
     social::{SocialUrl, get_social_url, get_social_url_deeplink},
@@ -45,6 +47,10 @@ impl Config {
     fn get_stake_config(&self, chain: &str) -> StakeChainConfig {
         let chain = StakeChain::from_str(chain).unwrap();
         get_stake_config(chain)
+    }
+
+    fn get_underlying_assets_by_provider(&self, provider_id: &str) -> HashMap<String, Vec<String>> {
+        get_underlying_assets_by_provider(provider_id)
     }
 
     fn get_swap_config(&self) -> SwapConfig {

@@ -4,7 +4,7 @@ mod contract;
 mod mapper;
 mod provider;
 
-use assets::{YoAsset, supported_assets};
+pub(crate) use assets::{YoAsset, supported_assets};
 pub use provider::YoEarnProvider;
 
 use alloy_primitives::{Address, address};
