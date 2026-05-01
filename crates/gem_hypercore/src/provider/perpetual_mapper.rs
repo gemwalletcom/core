@@ -10,6 +10,7 @@ use primitives::{
     Asset, AssetId, AssetType, Chain, Perpetual, PerpetualBalance, PerpetualDirection, PerpetualMarginType, PerpetualOrderType, PerpetualPosition, PerpetualProvider,
     PerpetualTriggerOrder,
     chart::{ChartCandleStick, ChartDateValue},
+    known_assets::USDC_SYMBOL,
     perpetual::{PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
     portfolio::{PerpetualAccountSummary, PerpetualPortfolio, PerpetualPortfolioTimeframeData},
 };
@@ -17,7 +18,6 @@ use std::collections::BTreeMap;
 
 const HIP3_PERP_ASSET_OFFSET: u32 = 100_000;
 const HIP3_PERP_ASSET_STRIDE: u32 = 10_000;
-const USDC_COIN: &str = "USDC";
 
 pub fn create_perpetual_asset_id(coin: &str) -> AssetId {
     crate::models::metadata::perpetual_asset_id(coin)
@@ -48,7 +48,7 @@ pub fn map_perpetual_balance(positions: &AssetPositions) -> PerpetualBalance {
 }
 
 pub fn map_perpetual_balance_from_spot(balances: &Balances) -> PerpetualBalance {
-    let usdc = balances.balances.iter().find(|b| b.coin == USDC_COIN);
+    let usdc = balances.balances.iter().find(|b| b.coin == USDC_SYMBOL);
     let total = usdc.and_then(|b| b.total.parse::<f64>().ok()).unwrap_or(0.0);
     let hold = usdc.and_then(|b| b.hold.parse::<f64>().ok()).unwrap_or(0.0);
     let reserved = f64::min(f64::max(hold, 0.0), f64::max(total, 0.0));
