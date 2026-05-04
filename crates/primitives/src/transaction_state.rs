@@ -22,3 +22,17 @@ impl TransactionState {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_completed() {
+        assert!(TransactionState::Confirmed.is_completed());
+        assert!(TransactionState::Failed.is_completed());
+        assert!(TransactionState::Reverted.is_completed());
+        assert!(!TransactionState::Pending.is_completed());
+        assert!(!TransactionState::InTransit.is_completed());
+    }
+}

@@ -19,7 +19,7 @@ impl<C: Client> HyperCoreClient<C> {
     pub async fn transaction_state(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
         match request.id.parse::<u64>() {
             Ok(oid) => {
-                let start_time = (request.created_at - 5) * 1000;
+                let start_time = request.created_at - 5_000;
                 let fills = self.get_user_fills_by_time(&request.sender_address, start_time).await?;
                 Ok(transaction_state_mapper::map_transaction_state_order(fills, oid, request.id))
             }
