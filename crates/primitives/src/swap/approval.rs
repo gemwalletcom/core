@@ -100,7 +100,6 @@ pub struct SwapProviderData {
 #[serde(rename_all = "camelCase")]
 pub enum SwapStatus {
     Pending,
-    InTransit,
     Completed,
     Failed,
 }
@@ -110,7 +109,7 @@ impl SwapStatus {
         match self {
             SwapStatus::Completed => Some(TransactionState::Confirmed),
             SwapStatus::Failed => Some(TransactionState::Failed),
-            SwapStatus::Pending | SwapStatus::InTransit => None,
+            SwapStatus::Pending => None,
         }
     }
 }

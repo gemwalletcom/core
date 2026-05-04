@@ -167,7 +167,6 @@ pub struct SwapperQuoteAsset {
 #[uniffi::remote(Enum)]
 pub enum SwapperSwapStatus {
     Pending,
-    InTransit,
     Completed,
     Failed,
 }
