@@ -13,8 +13,10 @@ use primitives::{
 
 use crate::{
     config::HypercoreConfig,
-    models::{order::OpenOrder, perp_dex::PerpDex, position::AssetPositions},
-    provider::perpetual_mapper::{map_account_summary_aggregate, map_candlesticks, map_perpetual_portfolio, map_perpetuals_data, map_positions, merge_perpetual_portfolios},
+    models::{order::OpenOrder, perp_dex::PerpDex, position::AssetPositions, user::UserAbstractionMode},
+    provider::perpetual_mapper::{
+        map_account_summary_aggregate, map_candlesticks, map_perpetual_balance_from_spot, map_perpetual_portfolio, map_perpetuals_data, map_positions, merge_perpetual_portfolios,
+    },
     rpc::client::HyperCoreClient,
 };
 
@@ -93,7 +95,8 @@ impl<C: Client> HyperCoreClient<C> {
 #[async_trait]
 impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
     async fn get_positions(&self, address: String) -> Result<PerpetualPositionsSummary, Box<dyn Error + Sync + Send>> {
-        let dex_entries = self.get_active_dex_entries().await;
+        let (mode, dex_entries) = futures::join!(self.get_user_abstraction(&address), self.get_active_dex_entries());
+        let mode = mode?;
         let summaries = try_join_all(dex_entries.into_iter().map(|(_, dex)| {
             let address = address.clone();
             async move {
@@ -125,6 +128,15 @@ impl<C: Client> ChainPerpetual for HyperCoreClient<C> {
                 (acc_pos, acc_bal)
             },
         );
+
+        let balance = match mode {
+            UserAbstractionMode::Default | UserAbstractionMode::Disabled | UserAbstractionMode::DexAbstraction => balance,
+            UserAbstractionMode::UnifiedAccount | UserAbstractionMode::PortfolioMargin => {
+                let spot = self.get_spot_balances(&address).await?;
+                map_perpetual_balance_from_spot(&spot)
+            }
+        };
+
         Ok(PerpetualPositionsSummary { positions, balance })
     }
 
@@ -278,6 +290,10 @@ mod tests {
         let open_orders_dex2_request: Value = load_testdata("perpetual_positions_request_open_orders_dex2.json");
 
         let responses = Arc::new(vec![
+            (
+                serde_json::json!({"type": "userAbstraction", "user": "0x123"}),
+                include_bytes!("../../testdata/perpetual_positions_response_user_abstraction_default.json").to_vec(),
+            ),
             (perp_dexs_request, include_bytes!("../../testdata/perpetual_positions_response_perp_dexs.json").to_vec()),
             (
                 clearinghouse_state_request,
@@ -346,6 +362,10 @@ mod tests {
         let open_orders_dex2_request: Value = load_testdata("perpetual_positions_request_open_orders_dex2.json");
 
         let responses = Arc::new(vec![
+            (
+                serde_json::json!({"type": "userAbstraction", "user": "0x123"}),
+                include_bytes!("../../testdata/perpetual_positions_response_user_abstraction_default.json").to_vec(),
+            ),
             (
                 clearinghouse_state_request.clone(),
                 include_bytes!("../../testdata/perpetual_positions_response_clearinghouse_state.json").to_vec(),

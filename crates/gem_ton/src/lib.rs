@@ -14,5 +14,5 @@ pub mod address;
 pub mod constants;
 pub mod models;
 
-pub use address::Address;
+pub use address::{Address, validate_address};
 pub use primitives::AddressError;

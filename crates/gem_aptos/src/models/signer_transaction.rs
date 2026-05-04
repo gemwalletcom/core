@@ -1,5 +1,5 @@
+use crate::AccountAddress;
 use crate::r#move::{EntryFunction, TypeTag};
-use crate::signer::AccountAddress;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

@@ -1,0 +1,9 @@
+{
+  "id": "ord_019de25e-59d8-7ca6-b5e1-39651db9717f",
+  "status": "completed",
+  "amountIn": "65415",
+  "amountOut": "21857183468046165",
+  "destination": {
+    "txHash": "0xf3fa9ca081e1f97022352c80345b46ae5934b0fae68c76ab5ccc70773ef1443e"
+  }
+}

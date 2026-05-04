@@ -1,4 +1,5 @@
 pub mod assets;
+pub mod nft;
 pub mod prices;
 pub mod transactions;
 

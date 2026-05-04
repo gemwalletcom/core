@@ -31,6 +31,7 @@ pub(crate) fn consumer_config(consumer: &settings::Consumer) -> ConsumerConfig {
         timeout_on_error: consumer.error.timeout,
         skip_on_error: consumer.error.skip,
         delay: consumer.delay,
+        retries: consumer.error.retries,
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::signer::AccountAddress;
+use crate::AccountAddress;
 use serde::Serialize;
 use serde::ser::{SerializeSeq, Serializer};
 

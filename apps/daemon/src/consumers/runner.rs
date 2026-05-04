@@ -68,15 +68,40 @@ impl ChainConsumerRunner {
         Fut: std::future::Future<Output = Result<(), Box<dyn Error + Send + Sync>>> + Send + 'static,
     {
         info_with_fields!("running consumer", consumer = self.queue.to_string(), chains = chains.len());
-        let tasks = chains.into_iter().map(|chain| {
+        let restart_delay = self.config.timeout_on_error;
+        let retries = self.config.retries;
+        let queue = self.queue.to_string();
+
+        let mut set = tokio::task::JoinSet::new();
+        for chain in chains {
             let runner = self.clone();
             let f = f.clone();
-            async move { (chain, f(runner, chain).await) }
-        });
+            let queue = queue.clone();
+            set.spawn(async move {
+                let mut failures: u32 = 0;
+                loop {
+                    match f(runner.clone(), chain).await {
+                        Ok(()) => return Ok(()),
+                        Err(err) => {
+                            failures += 1;
+                            error_with_fields!("consumer chain error", &*err, consumer = queue.as_str(), chain = chain.as_ref(), attempt = failures);
+                            if failures >= retries {
+                                return Err(err);
+                            }
+                            if crate::shutdown::sleep_or_shutdown(restart_delay, &runner.shutdown_rx).await {
+                                return Ok(());
+                            }
+                        }
+                    }
+                }
+            });
+        }
 
-        for (chain, result) in futures::future::join_all(tasks).await {
-            if let Err(err) = result {
-                error_with_fields!("consumer chain error", &*err, chain = chain.as_ref());
+        while let Some(joined) = set.join_next().await {
+            match joined {
+                Ok(Ok(())) => {}
+                Ok(Err(err)) => return Err(err),
+                Err(join_err) => return Err(Box::new(join_err)),
             }
         }
         Ok(())

@@ -34,6 +34,10 @@ impl Address for AlgorandAddress {
     }
 }
 
+pub fn validate_address(address: &str) -> bool {
+    AlgorandAddress::is_valid(address)
+}
+
 impl AlgorandAddress {
     fn checksum(bytes: &[u8; 32]) -> [u8; ADDRESS_CHECKSUM_LENGTH] {
         let digest = sha512_256(bytes);
@@ -53,15 +57,19 @@ impl fmt::Display for AlgorandAddress {
 mod tests {
     use super::*;
 
+    const VALID_ADDRESS: &str = "QKDS2YGDHDFZFAAGA4HAF3AJIKW5ZN46P66QDR3ELCXKKJUJTPJSXVHNQU";
+
     #[test]
     fn test_algorand_address() {
-        assert!(AlgorandAddress::is_valid("QKDS2YGDHDFZFAAGA4HAF3AJIKW5ZN46P66QDR3ELCXKKJUJTPJSXVHNQU"));
-        assert!(!AlgorandAddress::is_valid(""));
-        assert!(!AlgorandAddress::is_valid("invalid"));
-        assert!(!AlgorandAddress::is_valid("QKDS2YGDHDFZFAAGA4HAF3AJIKW5ZN46P66QDR3ELCXKKJUJTPJSXVHNQX"));
+        let parsed = AlgorandAddress::from_str(VALID_ADDRESS).unwrap();
 
-        let addr = AlgorandAddress::from_str("QKDS2YGDHDFZFAAGA4HAF3AJIKW5ZN46P66QDR3ELCXKKJUJTPJSXVHNQU").unwrap();
-        assert_eq!(addr.to_string(), "QKDS2YGDHDFZFAAGA4HAF3AJIKW5ZN46P66QDR3ELCXKKJUJTPJSXVHNQU");
-        assert_eq!(addr.as_bytes().len(), 32);
+        assert!(validate_address(VALID_ADDRESS));
+        assert_eq!(parsed.to_string(), VALID_ADDRESS);
+        assert_eq!(parsed.as_bytes().len(), 32);
+
+        assert!(!validate_address(""));
+        assert!(!validate_address("invalid"));
+        // wrong checksum (last char flipped)
+        assert!(!validate_address("QKDS2YGDHDFZFAAGA4HAF3AJIKW5ZN46P66QDR3ELCXKKJUJTPJSXVHNQX"));
     }
 }

@@ -282,6 +282,7 @@ pub struct ConsumerError {
     #[serde(deserialize_with = "duration::deserialize")]
     pub timeout: Duration,
     pub skip: bool,
+    pub retries: u32,
 }
 
 #[derive(Debug, Deserialize, Clone)]

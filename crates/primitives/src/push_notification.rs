@@ -32,14 +32,14 @@ impl PushNotification {
     pub fn new_buy_asset(asset_id: AssetId) -> Self {
         Self {
             notification_type: PushNotificationTypes::BuyAsset,
-            data: serde_json::to_value(PushNotificationAsset { asset_id: asset_id.to_string() }).ok(),
+            data: serde_json::to_value(PushNotificationAsset { asset_id }).ok(),
         }
     }
 
-    pub fn new_fiat_transaction(asset_id: AssetId) -> Self {
+    pub fn new_fiat_transaction(wallet_id: WalletId, asset_id: AssetId) -> Self {
         Self {
             notification_type: PushNotificationTypes::FiatTransaction,
-            data: serde_json::to_value(PushNotificationAsset { asset_id: asset_id.to_string() }).ok(),
+            data: serde_json::to_value(PushNotificationWalletAsset { wallet_id, asset_id }).ok(),
         }
     }
 
@@ -63,8 +63,8 @@ pub struct PushNotificationPayloadType {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PushNotificationTransaction {
-    pub wallet_id: String,
-    pub asset_id: String,
+    pub wallet_id: WalletId,
+    pub asset_id: AssetId,
     #[typeshare(skip)]
     pub transaction_id: String,
     pub transaction: Transaction,
@@ -74,15 +74,15 @@ pub struct PushNotificationTransaction {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PushNotificationAsset {
-    pub asset_id: String,
+    pub asset_id: AssetId,
 }
 
 #[typeshare(swift = "Equatable, Sendable")]
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PushNotificationSwapAsset {
-    pub from_asset_id: String,
-    pub to_asset_id: String,
+    pub from_asset_id: AssetId,
+    pub to_asset_id: AssetId,
 }
 
 #[typeshare(swift = "Equatable, Sendable")]

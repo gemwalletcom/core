@@ -1,4 +1,5 @@
 use crate::models::{
+    balance::Balances,
     candlestick::Candlestick,
     metadata::HypercoreMetadataResponse,
     order::OpenOrder,
@@ -9,6 +10,7 @@ use primitives::{
     Asset, AssetId, AssetType, Chain, Perpetual, PerpetualBalance, PerpetualDirection, PerpetualMarginType, PerpetualOrderType, PerpetualPosition, PerpetualProvider,
     PerpetualTriggerOrder,
     chart::{ChartCandleStick, ChartDateValue},
+    known_assets::USDC_SYMBOL,
     perpetual::{PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
     portfolio::{PerpetualAccountSummary, PerpetualPortfolio, PerpetualPortfolioTimeframeData},
 };
@@ -42,6 +44,20 @@ pub fn map_perpetual_balance(positions: &AssetPositions) -> PerpetualBalance {
         available,
         reserved,
         withdrawable,
+    }
+}
+
+pub fn map_perpetual_balance_from_spot(balances: &Balances) -> PerpetualBalance {
+    let usdc = balances.balances.iter().find(|b| b.coin == USDC_SYMBOL);
+    let total = usdc.and_then(|b| b.total.parse::<f64>().ok()).unwrap_or(0.0);
+    let hold = usdc.and_then(|b| b.hold.parse::<f64>().ok()).unwrap_or(0.0);
+    let reserved = f64::min(f64::max(hold, 0.0), f64::max(total, 0.0));
+    let available = f64::max(total - reserved, 0.0);
+
+    PerpetualBalance {
+        available,
+        reserved,
+        withdrawable: available,
     }
 }
 
@@ -305,6 +321,7 @@ pub fn map_tp_sl_from_orders(orders: &[OpenOrder], coin: &str) -> (Option<Perpet
 mod tests {
     use super::*;
     use crate::models::{
+        balance::{Balance, Balances},
         metadata::{AssetMetadata, HypercoreUniverseResponse, UniverseAsset},
         position::{AssetPosition, AssetPositions, CumulativeFunding, Leverage, LeverageType, MarginSummary, Position, PositionType},
     };
@@ -868,5 +885,23 @@ mod tests {
 
         let summary = merged.account_summary.unwrap();
         assert_eq!(summary.account_value, 1000.0);
+    }
+
+    #[test]
+    fn test_map_perpetual_balance_from_spot() {
+        let balances = Balances {
+            balances: vec![Balance {
+                coin: "USDC".to_string(),
+                token: 0,
+                total: "100.0".to_string(),
+                hold: "30.0".to_string(),
+            }],
+        };
+
+        let balance = map_perpetual_balance_from_spot(&balances);
+
+        assert_eq!(balance.available, 70.0);
+        assert_eq!(balance.reserved, 30.0);
+        assert_eq!(balance.withdrawable, 70.0);
     }
 }

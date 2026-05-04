@@ -16,6 +16,7 @@ pub struct ConsumerConfig {
     pub timeout_on_error: Duration,
     pub skip_on_error: bool,
     pub delay: Duration,
+    pub retries: u32,
 }
 
 enum ProcessResult<R> {

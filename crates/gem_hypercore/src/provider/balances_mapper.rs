@@ -88,6 +88,7 @@ mod tests {
                 coin: "USDC".to_string(),
                 token: 0,
                 total: "56003537".to_string(),
+                hold: "0".to_string(),
             }],
         };
 

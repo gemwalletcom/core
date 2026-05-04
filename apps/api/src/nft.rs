@@ -1,20 +1,9 @@
 use crate::params::{NftAssetIdParam, NftCollectionIdParam};
-use crate::responders::{ApiError, ApiResponse};
+use crate::responders::ApiError;
 use ::nft::NFTClient;
 use primitives::NFTResource;
 use rocket::serde::json::Json;
-use rocket::{State, get, put};
-use streamer::{StreamProducer, StreamProducerQueue};
-
-#[put("/nft/collections/update/<collection_id>")]
-pub async fn update_nft_collection(collection_id: NftCollectionIdParam, client: &State<NFTClient>) -> Result<ApiResponse<bool>, ApiError> {
-    Ok(client.update_collection(&collection_id.0.id()).await?.into())
-}
-
-#[put("/nft/assets/update/<asset_id>")]
-pub async fn update_nft_asset(asset_id: NftAssetIdParam, stream_producer: &State<StreamProducer>) -> Result<ApiResponse<bool>, ApiError> {
-    Ok(stream_producer.publish_fetch_nft_asset(asset_id.0).await?.into())
-}
+use rocket::{State, get};
 
 #[get("/nft/assets/<asset_id>/preview")]
 pub async fn get_nft_asset_preview(asset_id: NftAssetIdParam, client: &State<NFTClient>) -> Result<Json<NFTResource>, ApiError> {

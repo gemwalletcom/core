@@ -33,6 +33,7 @@ impl FiatWebhookConsumer {
 
     async fn send_fiat_notification(&self, updated: &FiatTransactionRow) -> Result<(), Box<dyn Error + Send + Sync>> {
         let asset = self.database.assets()?.get_asset(&updated.asset_id.0)?;
+        let wallet_id = self.database.wallets()?.get_wallet_by_id(updated.wallet_id)?.wallet_id.0;
         let devices: Vec<Device> = self
             .database
             .wallets()?
@@ -51,7 +52,7 @@ impl FiatWebhookConsumer {
             .filter_map(|device| {
                 let localizer = LanguageLocalizer::new_with_language(device.locale.as_str());
                 let message = Pusher::fiat_transaction_message(&localizer, &quote_type, provider.name(), &asset, crypto_value).ok()?;
-                let data = PushNotification::new_fiat_transaction(asset.id.clone());
+                let data = PushNotification::new_fiat_transaction(wallet_id.clone(), asset.id.clone());
                 GorushNotification::from_device(device.clone(), message.title, message.message.unwrap_or_default(), data)
             })
             .collect();

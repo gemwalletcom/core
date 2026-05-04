@@ -43,6 +43,10 @@ impl Address for StellarAddress {
     }
 }
 
+pub fn validate_address(address: &str) -> bool {
+    StellarAddress::is_valid(address)
+}
+
 impl StellarAddress {
     fn crc16_xmodem(data: &[u8]) -> u16 {
         let mut crc: u16 = 0;
@@ -66,15 +70,19 @@ impl fmt::Display for StellarAddress {
 mod tests {
     use super::*;
 
+    const VALID_ADDRESS: &str = "GAE2SZV4VLGBAPRYRFV2VY7YYLYGYIP5I7OU7BSP6DJT7GAZ35OKFDYI";
+
     #[test]
     fn test_stellar_address() {
-        assert!(StellarAddress::is_valid("GAE2SZV4VLGBAPRYRFV2VY7YYLYGYIP5I7OU7BSP6DJT7GAZ35OKFDYI"));
-        assert!(!StellarAddress::is_valid(""));
-        assert!(!StellarAddress::is_valid("invalid"));
-        assert!(!StellarAddress::is_valid("GAE2SZV4VLGBAPRYRFV2VY7YYLYGYIP5I7OU7BSP6DJT7GAZ35OKFDYZ"));
+        let parsed = StellarAddress::from_str(VALID_ADDRESS).unwrap();
 
-        let addr = StellarAddress::from_str("GAE2SZV4VLGBAPRYRFV2VY7YYLYGYIP5I7OU7BSP6DJT7GAZ35OKFDYI").unwrap();
-        assert_eq!(addr.to_string(), "GAE2SZV4VLGBAPRYRFV2VY7YYLYGYIP5I7OU7BSP6DJT7GAZ35OKFDYI");
-        assert_eq!(addr.as_bytes().len(), 32);
+        assert!(validate_address(VALID_ADDRESS));
+        assert_eq!(parsed.to_string(), VALID_ADDRESS);
+        assert_eq!(parsed.as_bytes().len(), 32);
+
+        assert!(!validate_address(""));
+        assert!(!validate_address("invalid"));
+        // wrong checksum (last char flipped)
+        assert!(!validate_address("GAE2SZV4VLGBAPRYRFV2VY7YYLYGYIP5I7OU7BSP6DJT7GAZ35OKFDYZ"));
     }
 }

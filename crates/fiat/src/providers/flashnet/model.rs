@@ -74,9 +74,7 @@ pub struct FlashnetWebhookPayload {
 pub struct FlashnetWebhookData {
     pub id: String,
     pub status: Option<String>,
-    pub amount_out: Option<String>,
     pub destination: Option<FlashnetDestination>,
-    pub payment_intent: Option<FlashnetPaymentIntent>,
 }
 
 impl FlashnetWebhookData {
@@ -86,9 +84,7 @@ impl FlashnetWebhookData {
         Some(FlashnetOrder {
             id: self.id,
             status,
-            amount_out: self.amount_out,
             destination: self.destination,
-            payment_intent: self.payment_intent,
         })
     }
 }
@@ -98,18 +94,12 @@ impl FlashnetWebhookData {
 pub struct FlashnetOrder {
     pub id: String,
     pub status: String,
-    pub amount_out: Option<String>,
     pub destination: Option<FlashnetDestination>,
-    pub payment_intent: Option<FlashnetPaymentIntent>,
 }
 
 impl FlashnetOrder {
     pub fn destination_tx_hash(&self) -> Option<&str> {
         self.destination.as_ref().and_then(|destination| destination.tx_hash.as_deref())
-    }
-
-    pub fn effective_amount_out(&self) -> Option<&str> {
-        self.amount_out.as_deref().or(self.payment_intent.as_ref().and_then(|pi| pi.target_amount_out.as_deref()))
     }
 }
 
@@ -117,10 +107,4 @@ impl FlashnetOrder {
 #[serde(rename_all = "camelCase")]
 pub struct FlashnetDestination {
     pub tx_hash: Option<String>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FlashnetPaymentIntent {
-    pub target_amount_out: Option<String>,
 }

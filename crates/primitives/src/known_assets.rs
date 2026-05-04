@@ -5,7 +5,7 @@ use crate::{Asset, AssetId, AssetType, Chain, asset_constants::*};
 const USDT_NAME: &str = "Tether";
 const USDT_SYMBOL: &str = "USDT";
 const USDC_NAME: &str = "USDC";
-const USDC_SYMBOL: &str = "USDC";
+pub const USDC_SYMBOL: &str = "USDC";
 const WBTC_SYMBOL: &str = "WBTC";
 const WBTC_NAME: &str = "Wrapped BTC";
 const DAI_NAME: &str = "Dai Stablecoin";

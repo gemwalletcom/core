@@ -83,8 +83,6 @@ fn mount_routes(rocket: Rocket<Build>, admin_enabled: bool) -> Rocket<Build> {
                 nft::get_nft_asset_preview,
                 nft::get_nft_asset_resource,
                 nft::get_nft_collection_preview,
-                nft::update_nft_collection,
-                nft::update_nft_asset,
                 markets::get_markets,
                 chain::staking::get_validators,
                 chain::staking::get_staking_apy,
@@ -146,7 +144,13 @@ fn mount_routes(rocket: Rocket<Build>, admin_enabled: bool) -> Rocket<Build> {
     if admin_enabled {
         rocket.mount(
             "/v1/admin",
-            routes![admin::assets::add_asset, admin::transactions::add_transaction, admin::prices::add_price],
+            routes![
+                admin::assets::add_asset,
+                admin::transactions::add_transaction,
+                admin::prices::add_price,
+                admin::nft::update_nft_asset,
+                admin::nft::update_nft_collection,
+            ],
         )
     } else {
         rocket

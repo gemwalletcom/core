@@ -18,8 +18,7 @@ use settings::Settings;
 use storage::{ConfigCacher, Database};
 use streamer::{ConsumerStatusReporter, PricesPayload, QueueName, ShutdownReceiver, TransactionsPayload, WalletStreamPayload, run_consumer};
 
-use crate::consumers::runner::ChainConsumerRunner;
-use crate::consumers::{consumer_config, reader_for_queue};
+use crate::consumers::{consumer_config, producer_for_queue, reader_for_queue};
 use crate::pusher::Pusher;
 
 use store_pending_transactions_consumer::StorePendingTransactionsConsumer;
@@ -30,13 +29,12 @@ pub async fn run_consumer_store(settings: Settings, shutdown_rx: ShutdownReceive
     let database = Database::new(&settings.postgres.url, settings.postgres.pool);
     let settings = Arc::new(settings);
 
-    futures::future::try_join_all(vec![
-        tokio::spawn(run_store_transactions(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
-        tokio::spawn(run_store_prices(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
-        tokio::spawn(run_store_pending_transactions(settings.clone(), shutdown_rx.clone(), reporter.clone())),
-        tokio::spawn(run_wallet_stream(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone())),
-    ])
-    .await?;
+    tokio::try_join!(
+        run_store_transactions(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone()),
+        run_store_prices(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone()),
+        run_store_pending_transactions(settings.clone(), shutdown_rx.clone(), reporter.clone()),
+        run_wallet_stream(settings.clone(), database.clone(), shutdown_rx.clone(), reporter.clone()),
+    )?;
 
     Ok(())
 }
@@ -47,40 +45,26 @@ async fn run_store_transactions(
     shutdown_rx: ShutdownReceiver,
     reporter: Arc<dyn ConsumerStatusReporter>,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
-    ChainConsumerRunner::new((*settings).clone(), database, QueueName::StoreTransactions, shutdown_rx, reporter)
-        .await?
-        .run(|runner, chain| async move {
-            let queue = QueueName::StoreTransactions;
-            let name = format!("{}.{}", queue, chain.as_ref());
-            let stream_reader = runner.stream_reader().await?;
-            let stream_producer = runner.stream_producer().await?;
-            let config_cacher = ConfigCacher::new(runner.database.clone());
-            let consumer = StoreTransactionsConsumer {
-                database: runner.database.clone(),
-                stream_producer,
-                pusher: Pusher::new(runner.database.clone()),
-                config: StoreTransactionsConsumerConfig {
-                    swap_outdated_timeout: config_cacher.get_duration(ConfigKey::TransactionSwapOutdatedTimeout)?,
-                    outdated_block_count: config_cacher.get_i64(ConfigKey::TransactionsOutdatedBlockCount)? as u64,
-                    outdated_min_timeout: config_cacher.get_duration(ConfigKey::TransactionsOutdatedMinTimeout)?,
-                    min_amount_usd: config_cacher.get_f64(ConfigKey::TransactionsMinAmountUsd)?,
-                    primary_price_max_age: config_cacher.get_duration(ConfigKey::PricePrimaryMaxAge)?,
-                },
-                vault_client: SwapVaultAddressClient::new(runner.cacher.clone()),
-            };
-            run_consumer::<TransactionsPayload, StoreTransactionsConsumer, usize>(
-                &name,
-                stream_reader,
-                queue,
-                Some(chain.as_ref()),
-                consumer,
-                runner.config,
-                runner.shutdown_rx,
-                runner.reporter,
-            )
-            .await
-        })
-        .await
+    let queue = QueueName::StoreTransactions;
+    let (name, stream_reader) = reader_for_queue(&settings, &queue, &shutdown_rx).await?;
+    let stream_producer = producer_for_queue(&settings, &name, shutdown_rx.clone()).await?;
+    let cacher = CacherClient::new(&settings.redis.url).await;
+    let config_cacher = ConfigCacher::new(database.clone());
+    let config = StoreTransactionsConsumerConfig {
+        swap_outdated_timeout: config_cacher.get_duration(ConfigKey::TransactionSwapOutdatedTimeout)?,
+        outdated_block_count: config_cacher.get_i64(ConfigKey::TransactionsOutdatedBlockCount)? as u64,
+        outdated_min_timeout: config_cacher.get_duration(ConfigKey::TransactionsOutdatedMinTimeout)?,
+        min_amount_usd: config_cacher.get_f64(ConfigKey::TransactionsMinAmountUsd)?,
+        primary_price_max_age: config_cacher.get_duration(ConfigKey::PricePrimaryMaxAge)?,
+    };
+    let consumer = StoreTransactionsConsumer {
+        database: database.clone(),
+        stream_producer,
+        pusher: Pusher::new(database),
+        config,
+        vault_client: SwapVaultAddressClient::new(cacher),
+    };
+    run_consumer::<TransactionsPayload, StoreTransactionsConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx, reporter).await
 }
 
 async fn run_store_prices(

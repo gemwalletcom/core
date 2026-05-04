@@ -191,13 +191,26 @@ async fn run_consumer_services(settings: settings::Settings, services: &[Consume
             let failures = failures.clone();
             let options = options.clone();
             tokio::spawn(async move {
-                match run_consumer((*settings.as_ref()).clone(), svc, shutdown_rx, reporter, options).await {
-                    Ok(_) => info_with_fields!("consumer stopped", consumer = svc_name.as_str(), status = "ok"),
-                    Err(err) => {
-                        let message = err.to_string();
-                        error_with_fields!("consumer failed", &*err, consumer = svc_name.as_str());
-                        if let Ok(mut list) = failures.lock() {
-                            list.push(format!("{}: {}", svc_name, message));
+                let restart_delay = settings.consumer.error.timeout;
+                loop {
+                    if *shutdown_rx.borrow() {
+                        break;
+                    }
+                    match run_consumer((*settings.as_ref()).clone(), svc.clone(), shutdown_rx.clone(), reporter.clone(), options.clone()).await {
+                        Ok(_) => {
+                            info_with_fields!("consumer stopped", consumer = svc_name.as_str(), status = "ok");
+                            break;
+                        }
+                        Err(err) => {
+                            let message = err.to_string();
+                            error_with_fields!("consumer failed", &*err, consumer = svc_name.as_str());
+                            if let Ok(mut list) = failures.lock() {
+                                list.push(format!("{}: {}", svc_name, message));
+                            }
+                            if shutdown::sleep_or_shutdown(restart_delay, &shutdown_rx).await {
+                                break;
+                            }
+                            info_with_fields!("consumer restarting", consumer = svc_name.as_str());
                         }
                     }
                 }

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use gem_client::Client;
-use gem_cosmos::{converter::convert_cosmos_address, models::message::send_msg_json};
+use gem_cosmos::{address::CosmosAddress, models::message::send_msg_json};
 use primitives::{AssetId, Chain, chain_cosmos::CosmosChain, swap::SwapQuoteDataType};
 
 use super::{SQUID_COSMOS_MULTICALL, SUPPORTED_CHAINS, client::SquidClient, model::*};
@@ -61,7 +61,7 @@ where
                 if base.is_empty() {
                     return None;
                 }
-                convert_cosmos_address(base, cosmos_chain.hrp()).ok()
+                CosmosAddress::convert(base, cosmos_chain.hrp()).ok()
             }
         }
     }

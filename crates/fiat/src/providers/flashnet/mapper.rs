@@ -112,14 +112,13 @@ pub fn map_webhook(payload: FlashnetWebhookPayload) -> Result<FiatWebhook, io::E
 
 pub fn map_order(order: FlashnetOrder) -> FiatTransactionUpdate {
     let transaction_id = order.id.clone();
-    let fiat_amount = order.effective_amount_out().and_then(|value| BigNumberFormatter::value_as_f64(value, USDB_DECIMALS).ok());
 
     FiatTransactionUpdate {
         transaction_id,
         provider_transaction_id: None,
         status: map_status(&order.status),
         transaction_hash: order.destination_tx_hash().map(str::to_string),
-        fiat_amount,
+        fiat_amount: None,
         fiat_currency: Some(Currency::USD.to_string()),
     }
 }
@@ -311,7 +310,7 @@ mod tests {
                         provider_transaction_id: None,
                         status: FiatTransactionStatus::Complete,
                         transaction_hash: Some("solana_test_signature_completed".to_string()),
-                        fiat_amount: Some(24.737625),
+                        fiat_amount: None,
                         fiat_currency: Some("USD".to_string()),
                     }
                 );
@@ -339,7 +338,7 @@ mod tests {
                 provider_transaction_id: None,
                 status: FiatTransactionStatus::Complete,
                 transaction_hash: Some("solana_sig_123".to_string()),
-                fiat_amount: Some(1.2345),
+                fiat_amount: None,
                 fiat_currency: Some("USD".to_string()),
             }
         );
@@ -357,14 +356,14 @@ mod tests {
                 provider_transaction_id: None,
                 status: FiatTransactionStatus::Complete,
                 transaction_hash: Some("solana_test_signature_completed".to_string()),
-                fiat_amount: Some(24.737625),
+                fiat_amount: None,
                 fiat_currency: Some("USD".to_string()),
             }
         );
     }
 
     #[test]
-    fn map_order_falls_back_to_payment_intent_target_amount() {
+    fn map_order_ignores_payment_intent_target_amount_for_fiat_amount() {
         let payload: serde_json::Value = serde_json::from_str(include_str!("../../../testdata/flashnet/webhook_pending.json")).unwrap();
         let order: FlashnetOrder = serde_json::from_value(payload["data"].clone()).unwrap();
 
@@ -375,7 +374,24 @@ mod tests {
                 provider_transaction_id: None,
                 status: FiatTransactionStatus::Pending,
                 transaction_hash: None,
-                fiat_amount: Some(49.47525),
+                fiat_amount: None,
+                fiat_currency: Some("USD".to_string()),
+            }
+        );
+    }
+
+    #[test]
+    fn map_order_does_not_use_crypto_amount_as_fiat_amount() {
+        let order: FlashnetOrder = serde_json::from_str(include_str!("../../../testdata/flashnet/order_completed_eth.json")).unwrap();
+
+        assert_eq!(
+            map_order(order),
+            FiatTransactionUpdate {
+                transaction_id: "ord_019de25e-59d8-7ca6-b5e1-39651db9717f".to_string(),
+                provider_transaction_id: None,
+                status: FiatTransactionStatus::Complete,
+                transaction_hash: Some("0xf3fa9ca081e1f97022352c80345b46ae5934b0fae68c76ab5ccc70773ef1443e".to_string()),
+                fiat_amount: None,
                 fiat_currency: Some("USD".to_string()),
             }
         );

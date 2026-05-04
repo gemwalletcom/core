@@ -1,5 +1,5 @@
+pub mod address;
 pub mod constants;
-pub mod converter;
 
 #[cfg(feature = "rpc")]
 pub mod rpc;
@@ -11,3 +11,5 @@ pub mod provider;
 pub mod signer;
 
 pub mod models;
+
+pub use address::validate_address;

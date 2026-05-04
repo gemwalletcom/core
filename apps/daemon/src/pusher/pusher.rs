@@ -164,10 +164,10 @@ impl Pusher {
         let message = self.message(localizer, &transaction, &subscription.address, &assets)?;
 
         let notification_transaction = PushNotificationTransaction {
-            wallet_id: subscription.wallet_id.id(),
+            wallet_id: subscription.wallet_id.clone(),
             transaction_id: transaction.id.to_string(),
             transaction: transaction.clone(),
-            asset_id: transaction.asset_id.to_string(),
+            asset_id: transaction.asset_id.clone(),
         };
         let data = PushNotification {
             notification_type: PushNotificationTypes::Transaction,

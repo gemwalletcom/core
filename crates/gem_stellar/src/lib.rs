@@ -12,6 +12,6 @@ pub mod models;
 pub mod signer;
 
 #[cfg(feature = "signer")]
-pub use address::StellarAddress;
+pub use address::{StellarAddress, validate_address};
 #[cfg(feature = "signer")]
 pub use signer::*;

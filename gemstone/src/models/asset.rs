@@ -1,4 +1,4 @@
-use primitives::{Asset, AssetId, AssetType, Chain};
+use primitives::{Asset, AssetId, AssetScore, AssetType, Chain};
 
 pub type GemAsset = Asset;
 pub type GemAssetId = AssetId;
@@ -44,6 +44,11 @@ pub fn get_asset(chain: Chain) -> GemAsset {
 #[uniffi::export]
 pub fn asset_default_rank(chain: Chain) -> i32 {
     get_default_rank(chain)
+}
+
+#[uniffi::export]
+pub fn default_token_rank() -> i32 {
+    AssetScore::default().rank
 }
 
 #[uniffi::export]
