@@ -123,6 +123,10 @@ impl AddressTrait for Address {
     }
 }
 
+pub fn validate_address(address: &str) -> bool {
+    Address::is_valid(address)
+}
+
 pub fn hex_to_base64_address(hex_str: &str) -> Option<String> {
     Address::try_parse_hex(hex_str).map(|address| address.encode())
 }
@@ -146,6 +150,7 @@ mod tests {
         assert_eq!(<Address as AddressTrait>::from_str(encoded).unwrap(), address);
         assert_eq!(Address::try_parse(encoded), Some(address));
         assert!(Address::is_valid(encoded));
+        assert!(validate_address(encoded));
         assert_eq!(address.as_bytes().len(), RAW_ADDRESS_LEN);
         assert_eq!(address.workchain(), 0);
         assert_eq!(hex::encode(address.hash_part()), "8e874b7ad9bbebbfc48810b8939c98f50580246f19982040dbcb253c4c3daf78");
@@ -166,6 +171,7 @@ mod tests {
         assert!(Address::try_parse_hex("0:invalid_hex").is_none());
         assert!(Address::try_parse_hex("0:abcd1234").is_none());
         assert!(!Address::is_valid("invalid"));
+        assert!(!validate_address("invalid"));
         assert!(Address::try_parse("invalid").is_none());
     }
 

@@ -1,4 +1,4 @@
-use crate::signer::AccountAddress;
+use crate::AccountAddress;
 use num_bigint::BigUint;
 use num_traits::ToPrimitive;
 use primitives::{SignerError, decode_hex};

@@ -5,7 +5,8 @@ use primitives::SignerError;
 use signer::Ed25519KeyPair;
 use std::time::SystemTime;
 
-use super::{AccountAddress, EntryFunction};
+use super::EntryFunction;
+use crate::AccountAddress;
 
 const RAW_TRANSACTION_SALT: &[u8] = b"APTOS::RawTransaction";
 const MESSAGE_SALT: &[u8] = b"APTOS::Message";

@@ -3,6 +3,7 @@
 
 use {
     borsh::{BorshDeserialize, BorshSerialize},
+    primitives::Address as AddressTrait,
     std::{convert::TryFrom, fmt, mem, str::FromStr},
 };
 
@@ -70,7 +71,7 @@ pub struct Pubkey(pub(crate) [u8; 32]);
 impl TryFrom<&str> for Pubkey {
     type Error = ParsePubkeyError;
     fn try_from(s: &str) -> Result<Self, Self::Error> {
-        Pubkey::from_str(s)
+        <Self as FromStr>::from_str(s)
     }
 }
 
@@ -96,6 +97,20 @@ impl FromStr for Pubkey {
         } else {
             Pubkey::try_from(pubkey_vec).map_err(|_| ParsePubkeyError::Invalid)
         }
+    }
+}
+
+impl AddressTrait for Pubkey {
+    fn try_parse(address: &str) -> Option<Self> {
+        <Self as FromStr>::from_str(address).ok()
+    }
+
+    fn as_bytes(&self) -> &[u8] {
+        self.as_ref()
+    }
+
+    fn encode(&self) -> String {
+        self.to_string()
     }
 }
 

@@ -1,4 +1,4 @@
-use primitives::{SignerError, decode_hex};
+use primitives::{Address as AddressTrait, SignerError, decode_hex};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;
@@ -39,6 +39,24 @@ impl FromStr for AccountAddress {
     }
 }
 
+impl AddressTrait for AccountAddress {
+    fn try_parse(address: &str) -> Option<Self> {
+        Self::from_hex(address).ok()
+    }
+
+    fn as_bytes(&self) -> &[u8] {
+        &self.0
+    }
+
+    fn encode(&self) -> String {
+        self.to_string()
+    }
+}
+
+pub fn validate_address(address: &str) -> bool {
+    AccountAddress::is_valid(address)
+}
+
 impl fmt::Display for AccountAddress {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "0x{}", ::hex::encode(self.0))
@@ -49,9 +67,19 @@ impl fmt::Display for AccountAddress {
 mod tests {
     use super::*;
 
+    const VALID_ADDRESS: &str = "0x6467997d9c3a5bc9f714e17a168984595ce9bec7350645713a1fe7983a7f5fcc";
+
     #[test]
-    fn parse_address_short_hex() {
-        let address = AccountAddress::from_hex("0x1").unwrap();
-        assert_eq!(address.to_string(), format!("0x{}", "00".repeat(31) + "01"));
+    fn test_aptos_address() {
+        let parsed = AccountAddress::from_hex(VALID_ADDRESS).unwrap();
+
+        assert!(validate_address(VALID_ADDRESS));
+        assert_eq!(parsed.to_string(), VALID_ADDRESS);
+        assert_eq!(parsed.as_bytes().len(), 32);
+        assert!(!validate_address("invalid"));
+
+        // short hex is left-padded to 32 bytes (Aptos framework address convention)
+        let short = AccountAddress::from_hex("0x1").unwrap();
+        assert_eq!(short.to_string(), format!("0x{}", "00".repeat(31) + "01"));
     }
 }

@@ -16,6 +16,14 @@ impl ChainAddress {
     pub fn new(chain: Chain, address: String) -> Self {
         Self { chain, address }
     }
+
+    pub fn address(&self) -> &str {
+        &self.address
+    }
+
+    pub fn chain(&self) -> Chain {
+        self.chain
+    }
 }
 
 impl fmt::Display for ChainAddress {

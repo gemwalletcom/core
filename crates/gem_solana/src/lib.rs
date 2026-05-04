@@ -1,3 +1,4 @@
+pub mod address;
 pub mod constants;
 pub mod hash;
 pub mod jsonrpc;
@@ -17,6 +18,7 @@ pub mod transaction;
 #[cfg(feature = "signer")]
 pub mod signer;
 
+pub use address::validate_address;
 pub use jsonrpc::SolanaRpc;
 pub use transaction::{decode_transaction, try_decode_transaction};
 
@@ -78,8 +80,8 @@ pub fn get_token_program_id_by_address(address: &str) -> Result<SolanaTokenProgr
 
 pub fn get_pubkey_by_asset(asset_id: &AssetId) -> Option<Pubkey> {
     match &asset_id.token_id {
-        Some(token_id) => Pubkey::from_str(token_id).ok(),
-        None => Pubkey::from_str(WSOL_TOKEN_ADDRESS).ok(),
+        Some(token_id) => <Pubkey as FromStr>::from_str(token_id).ok(),
+        None => <Pubkey as FromStr>::from_str(WSOL_TOKEN_ADDRESS).ok(),
     }
 }
 
