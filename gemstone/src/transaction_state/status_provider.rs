@@ -23,7 +23,7 @@ impl StatusProvider {
             Some(provider) => self.get_swap_status(chain, provider, &request.id).await,
             None => self.get_chain_status(chain, &request).await,
         };
-        get_resolved_status(chain, request.created_at, result)
+        get_transaction_update(chain, request.created_at, result)
     }
 
     async fn get_chain_status(&self, chain: Chain, request: &GemTransactionStateRequest) -> Result<TransactionUpdate, TransactionStatusError> {
@@ -55,7 +55,7 @@ impl StatusProvider {
     }
 }
 
-fn get_resolved_status(
+fn get_transaction_update(
     chain: Chain,
     created_at: i64,
     result: Result<TransactionUpdate, TransactionStatusError>,
@@ -65,17 +65,11 @@ fn get_resolved_status(
     let expired = elapsed > timeout;
 
     match result {
-        Ok(update) => {
-            let running = match update.state {
-                TransactionState::Pending | TransactionState::InTransit => true,
-                TransactionState::Confirmed | TransactionState::Failed | TransactionState::Reverted => false,
-            };
-            Ok(if expired && running {
-                TransactionUpdate::new_state(TransactionState::Failed)
-            } else {
-                update
-            })
-        }
+        Ok(update) => Ok(if expired && !update.state.is_completed() {
+            TransactionUpdate::new_state(TransactionState::Failed)
+        } else {
+            update
+        }),
         err @ Err(TransactionStatusError::NetworkError(_)) => err,
         Err(_) if expired => Ok(TransactionUpdate::new_state(TransactionState::Failed)),
         Err(err) => Err(err),

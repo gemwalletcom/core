@@ -13,3 +13,12 @@ pub enum TransactionState {
     Failed,
     Reverted,
 }
+
+impl TransactionState {
+    pub fn is_completed(&self) -> bool {
+        match self {
+            Self::Confirmed | Self::Failed | Self::Reverted => true,
+            Self::Pending | Self::InTransit => false,
+        }
+    }
+}
