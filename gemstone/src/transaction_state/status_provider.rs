@@ -23,7 +23,7 @@ impl StatusProvider {
             Some(provider) => self.get_swap_status(chain, provider, &request.id).await,
             None => self.get_chain_status(chain, &request).await,
         };
-        apply_timeout(chain, request.created_at, result)
+        get_resolved_status(chain, request.created_at, result)
     }
 
     async fn get_chain_status(&self, chain: Chain, request: &GemTransactionStateRequest) -> Result<TransactionUpdate, TransactionStatusError> {
@@ -55,7 +55,7 @@ impl StatusProvider {
     }
 }
 
-fn apply_timeout(
+fn get_resolved_status(
     chain: Chain,
     created_at: i64,
     result: Result<TransactionUpdate, TransactionStatusError>,
