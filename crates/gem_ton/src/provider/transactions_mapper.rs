@@ -61,7 +61,7 @@ pub fn map_transactions(transactions: Vec<TransactionMessage>) -> Vec<Transactio
 fn map_transaction_message(transaction: TransactionMessage) -> Option<Transaction> {
     let asset_id = Chain::Ton.as_asset_id();
     let state = map_transaction_state(&transaction);
-    let created_at = DateTime::from_timestamp(0, 0)?; // TransactionMessage doesn't have utime field
+    let created_at = DateTime::from_timestamp(transaction.now, 0)?;
     let hash = transaction.hash.clone();
 
     // Handle outgoing transfers (with out messages)
@@ -192,6 +192,7 @@ mod tests {
         assert_eq!(transaction.hash, TEST_TRANSACTION_ID);
         assert_eq!(transaction.transaction_type, TransactionType::Transfer);
         assert_eq!(transaction.state, TransactionState::Confirmed);
+        assert_eq!(transaction.created_at.timestamp(), 1755574728);
     }
 
     #[test]

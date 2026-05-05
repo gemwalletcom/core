@@ -6,7 +6,6 @@ use std::error::Error;
 use gem_client::Client;
 
 use crate::{models::action::ExchangeRequest, provider::transaction_state_mapper, rpc::client::HyperCoreClient};
-use primitives::{TransactionChange, TransactionState};
 
 #[async_trait]
 impl<C: Client> ChainTransactionState for HyperCoreClient<C> {
@@ -29,15 +28,7 @@ impl<C: Client> HyperCoreClient<C> {
 
     async fn action_state(&self, request: &TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
         let nonce = ExchangeRequest::get_nonce(&request.id).ok_or("Invalid action request id")?;
-        let hash = self.get_tx_hash_by_nonce(&request.sender_address, nonce).await;
-
-        let mut update = TransactionUpdate::new_state(TransactionState::Confirmed);
-        if let Ok(hash) = hash {
-            update.changes = vec![TransactionChange::HashChange {
-                old: request.id.clone(),
-                new: hash,
-            }];
-        }
-        Ok(update)
+        let updates = self.get_ledger_updates(&request.sender_address).await?;
+        Ok(transaction_state_mapper::map_transaction_state_action(updates, nonce, request.id.clone()))
     }
 }

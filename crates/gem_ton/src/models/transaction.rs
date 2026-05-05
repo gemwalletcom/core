@@ -23,6 +23,7 @@ pub struct MessageTransactions {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionMessage {
     pub hash: String,
+    pub now: i64,
     #[serde(deserialize_with = "deserialize_biguint_from_str")]
     pub total_fees: BigUint,
     pub description: Option<TransactionDescription>,

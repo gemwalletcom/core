@@ -1,4 +1,7 @@
-use crate::models::order::{FillDirection, UserFill};
+use crate::models::{
+    order::{FillDirection, UserFill},
+    user::LedgerUpdate,
+};
 use primitives::{
     PerpetualDirection, PerpetualProvider, TransactionChange, TransactionMetadata, TransactionPerpetualMetadata, TransactionState, TransactionType, TransactionUpdate,
 };
@@ -57,6 +60,19 @@ pub fn map_transaction_state_order(fills: Vec<UserFill>, oid: u64, request_id: S
     }
 
     update
+}
+
+pub fn map_transaction_state_action(updates: Vec<LedgerUpdate>, nonce: u64, request_id: String) -> TransactionUpdate {
+    match updates.iter().find(|update| update.delta.nonce == Some(nonce)) {
+        Some(update) => TransactionUpdate::new(
+            TransactionState::Confirmed,
+            vec![TransactionChange::HashChange {
+                old: request_id,
+                new: update.hash.clone(),
+            }],
+        ),
+        None => TransactionUpdate::new_state(TransactionState::Pending),
+    }
 }
 
 #[cfg(test)]
@@ -148,6 +164,33 @@ mod tests {
                 old: request_id,
                 new: "0xd16518b18533f577d2de043763f8ad020482009720371449752dc4044437cf62".to_string(),
             }
+        );
+    }
+
+    #[test]
+    fn test_map_transaction_state_action_without_matching_nonce_stays_pending() {
+        let updates = serde_json::from_str(include_str!("../../testdata/user_non_funding_ledger_updates_action_hash.json")).unwrap();
+        let update = map_transaction_state_action(updates, 1777960893093, "action:1777960893093".to_string());
+
+        assert_eq!(update.state, TransactionState::Pending);
+        assert!(update.changes.is_empty());
+    }
+
+    #[test]
+    fn test_map_transaction_state_action_confirms_with_hash_change() {
+        let updates = serde_json::from_str(include_str!("../../testdata/user_non_funding_ledger_updates_action_hash.json")).unwrap();
+        let request_id = "action:1777960893092".to_string();
+        let update = map_transaction_state_action(updates, 1777960893092, request_id.clone());
+
+        assert_eq!(
+            update,
+            TransactionUpdate::new(
+                TransactionState::Confirmed,
+                vec![TransactionChange::HashChange {
+                    old: request_id,
+                    new: "0xba3bce0950157157bbb5043aaee1060201e300eeeb1890295e04795c0f194b42".to_string(),
+                }]
+            )
         );
     }
 
