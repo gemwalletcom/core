@@ -17,21 +17,13 @@ pub struct CosmosChainSigner;
 impl ChainSigner for CosmosChainSigner {
     fn sign_transfer(&self, input: &SignerInput, private_key: &[u8]) -> Result<String, SignerError> {
         let chain = Self::chain(input)?;
-        let message = transaction::transfer_message(input, chain.denom().as_ref());
-        let gas_limit = Self::gas_limit(input, 1)?;
-        let fee_amount = input.fee.fee.to_string();
-
-        Self::sign_messages(chain, input, vec![message], gas_limit, fee_amount, private_key)
+        Self::sign_send(chain, input, chain.denom().as_ref(), private_key)
     }
 
     fn sign_token_transfer(&self, input: &SignerInput, private_key: &[u8]) -> Result<String, SignerError> {
         let chain = Self::chain(input)?;
         let denom = input.input_type.get_asset().id.get_token_id()?;
-        let message = transaction::transfer_message(input, denom);
-        let gas_limit = Self::gas_limit(input, 1)?;
-        let fee_amount = input.fee.fee.to_string();
-
-        Self::sign_messages(chain, input, vec![message], gas_limit, fee_amount, private_key)
+        Self::sign_send(chain, input, denom, private_key)
     }
 
     fn sign_swap(&self, input: &SignerInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
@@ -113,6 +105,13 @@ impl CosmosChainSigner {
                 amount: fee_amount,
             }],
         }
+    }
+
+    fn sign_send(chain: CosmosChain, input: &SignerInput, denom: &str, private_key: &[u8]) -> Result<String, SignerError> {
+        let message = transaction::transfer_message(input, denom);
+        let gas_limit = Self::gas_limit(input, 1)?;
+        let fee_amount = input.fee.fee.to_string();
+        Self::sign_messages(chain, input, vec![message], gas_limit, fee_amount, private_key)
     }
 
     fn sign_messages(chain: CosmosChain, input: &SignerInput, messages: Vec<CosmosMessage>, gas_limit: u64, fee_amount: String, private_key: &[u8]) -> Result<String, SignerError> {
