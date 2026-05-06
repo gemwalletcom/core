@@ -1,4 +1,7 @@
+use std::collections::HashMap;
+
 use num_bigint::BigUint;
+use primitives::TransactionState;
 use serde::{Deserialize, Serialize};
 use serde_serializers::deserialize_biguint_from_str;
 
@@ -18,6 +21,63 @@ pub struct DecodedBody {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MessageTransactions {
     pub transactions: Vec<TransactionMessage>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TraceResponse {
+    pub traces: Vec<Trace>,
+}
+
+impl TraceResponse {
+    pub fn root_transaction(&self) -> Option<&TransactionMessage> {
+        let trace = self.traces.first()?;
+        let transaction_id = trace.transactions_order.first()?;
+        trace.transactions.get(transaction_id)
+    }
+
+    pub fn action_state(&self) -> Option<TransactionState> {
+        self.traces.first().map(Trace::action_state)
+    }
+
+    pub fn has_actions(&self) -> bool {
+        match self.traces.first() {
+            Some(trace) => !trace.actions.is_empty(),
+            None => false,
+        }
+    }
+}
+
+#[derive(Debug, Serialize)]
+pub struct TraceByMessageQuery {
+    pub msg_hash: String,
+    pub include_actions: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Trace {
+    pub is_incomplete: bool,
+    pub actions: Vec<TraceAction>,
+    pub transactions_order: Vec<String>,
+    pub transactions: HashMap<String, TransactionMessage>,
+}
+
+impl Trace {
+    fn action_state(&self) -> TransactionState {
+        if self.is_incomplete {
+            return TransactionState::Pending;
+        }
+        for action in &self.actions {
+            if action.success == Some(false) {
+                return TransactionState::Reverted;
+            }
+        }
+        TransactionState::Confirmed
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TraceAction {
+    pub success: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -10,8 +10,8 @@ use crate::{provider::transaction_state_mapper::map_transaction_status, rpc::cli
 #[async_trait]
 impl<C: Client> ChainTransactionState for TonClient<C> {
     async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
-        let transactions = self.get_transaction(request.id.clone()).await?;
-        map_transaction_status(request, transactions)
+        let traces = self.get_traces_by_message(request.id.clone()).await?;
+        map_transaction_status(request, traces)
     }
 }
 
@@ -20,6 +20,21 @@ mod chain_integration_tests {
     use crate::provider::testkit::*;
     use chain_traits::ChainTransactionState;
     use primitives::{TransactionState, TransactionStateRequest};
+
+    const FAILED_SWAP_MESSAGE_HASH: &str = "cf2fc2efd8d6f6b018f949b8f07e7e4b898a34a8bd422fcffb76bdc6e947b7e7";
+    const FAILED_SWAP_ROOT_TRANSACTION_HASH: &str = "L5Egpf9I3suIl6CdddcmMS44geWLFKgHi3EbBDz7qy8=";
+
+    #[tokio::test]
+    async fn test_get_traces_by_message() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let client = create_ton_test_client();
+        let traces = client.get_traces_by_message(FAILED_SWAP_MESSAGE_HASH.to_string()).await?;
+        let transaction = traces.root_transaction().ok_or("missing root transaction")?;
+
+        assert_eq!(traces.has_actions(), true);
+        assert_eq!(transaction.hash.as_str(), FAILED_SWAP_ROOT_TRANSACTION_HASH);
+
+        Ok(())
+    }
 
     #[tokio::test]
     async fn test_ton_transaction_status_confirmed() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {

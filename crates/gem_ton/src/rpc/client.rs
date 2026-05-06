@@ -4,11 +4,11 @@ use primitives::{Asset, AssetId, AssetType, chain::Chain};
 use serde_json;
 
 use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainStaking, ChainTraits};
-use gem_client::{Client, ClientExt};
+use gem_client::{Client, ClientExt, build_path_with_query};
 
 use crate::models::{
     ApiResult, BroadcastTransaction, Chainhead, JettonInfo, JettonOffchainMetadata, JettonWalletsResponse, MessageTransactions, NftCollectionsResponse, NftItemsResponse,
-    SimpleJettonBalance, WalletInfo,
+    SimpleJettonBalance, TraceByMessageQuery, TraceResponse, WalletInfo,
 };
 
 #[derive(Debug)]
@@ -65,6 +65,17 @@ impl<C: Client> TonClient<C> {
 
     pub async fn get_transaction(&self, hash: String) -> Result<MessageTransactions, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get(&format!("/api/v3/transactionsByMessage?msg_hash={}", hash)).await?)
+    }
+
+    pub async fn get_traces_by_message(&self, hash: String) -> Result<TraceResponse, Box<dyn Error + Send + Sync>> {
+        let path = build_path_with_query(
+            "/api/v3/traces",
+            &TraceByMessageQuery {
+                msg_hash: hash,
+                include_actions: true,
+            },
+        )?;
+        Ok(self.client.get(&path).await?)
     }
 
     pub async fn get_jetton_wallets(&self, address: String) -> Result<JettonWalletsResponse, Box<dyn Error + Send + Sync>> {

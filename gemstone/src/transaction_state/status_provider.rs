@@ -21,8 +21,8 @@ impl StatusProvider {
     pub async fn get(&self, chain: Chain, request: GemTransactionStateRequest) -> Result<TransactionUpdate, TransactionStatusError> {
         let created_at = request.created_at;
         let result = match request.swap_provider {
-            Some(provider) => self.get_swap_status(chain, provider, &request.id).await,
-            None => self.get_chain_status(chain, request).await,
+            Some(provider) if provider.is_cross_chain() => self.get_swap_status(chain, provider, &request.id).await,
+            _ => self.get_chain_status(chain, request).await,
         };
         get_transaction_update(chain, created_at, result)
     }
