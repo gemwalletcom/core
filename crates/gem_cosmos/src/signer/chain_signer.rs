@@ -161,10 +161,52 @@ mod tests {
     use std::collections::HashMap;
 
     use num_bigint::BigInt;
-    use primitives::{Asset, Chain, GasPriceType, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata};
+    use primitives::{Asset, Chain, Delegation, DelegationValidator, GasPriceType, RedelegateData, StakeType, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata};
     use serde_json::Value;
 
     use super::*;
+
+    // Derived from "seminar cruel gown pause law tortoise step stairs size amused pond weapon" via m/44'/118'/0'/0/0.
+    const OSMO_PRIVATE_KEY_HEX: &str = "325f5eba4c6466ca5a88638c74db5b396edb624efced0924a10aeb897525923c";
+    const OSMO_VALIDATOR: &str = "osmovaloper1pxphtfhqnx9ny27d53z4052e3r76e7qq495ehm";
+    const OSMO_VALIDATOR_DST: &str = "osmovaloper1z0sh4s80u99l6y9d3vfy582p8jejeeu6tcucs2";
+    const OSMO_STAKE_MEMO: &str = "Stake via Gem Wallet";
+
+    fn signed_tx_bytes(signed: &str) -> String {
+        let value: Value = serde_json::from_str(signed).unwrap();
+        assert_eq!(value["mode"], "BROADCAST_MODE_SYNC");
+        value["tx_bytes"].as_str().unwrap().to_string()
+    }
+
+    // Inputs from wallet-core THORChainTests.swift testProtobufModeSigning; bytes pinned to Gem signer (no fee coins, sync mode).
+    #[test]
+    fn test_sign_thorchain_transfer() {
+        let private_key = hex::decode("7105512f0c020a1dd759e14b865ec0125f59ac31e34d7a2807a228ed50cb343e").unwrap();
+        let fee_amount = BigInt::from(200u64);
+        let input = SignerInput::new(
+            TransactionLoadInput {
+                input_type: TransactionInputType::Transfer(Asset::from_chain(Chain::Thorchain)),
+                sender_address: "thor1z53wwe7md6cewz9sqwqzn0aavpaun0gw0exn2r".to_string(),
+                destination_address: "thor1e2ryt8asq4gu0h6z2sx9u7rfrykgxwkmr9upxn".to_string(),
+                value: "38000000".to_string(),
+                gas_price: GasPriceType::regular(fee_amount.clone()),
+                memo: None,
+                is_max_value: false,
+                metadata: TransactionLoadMetadata::Cosmos {
+                    account_number: 593,
+                    sequence: 21,
+                    chain_id: "thorchain-mainnet-v1".to_string(),
+                },
+            },
+            TransactionFee::new_gas_price_type(GasPriceType::regular(fee_amount.clone()), fee_amount, BigInt::from(2_500_000u64), HashMap::new()),
+        );
+
+        let signed = CosmosChainSigner.sign_transfer(&input, &private_key).unwrap();
+        assert_eq!(
+            signed_tx_bytes(&signed),
+            "ClIKUAoOL3R5cGVzLk1zZ1NlbmQSPgoUFSLnZ9tusZcIsAOAKb+9YHvJvQ4SFMqGRZ+wBVHH30JUDF54aRksgzrbGhAKBHJ1bmUSCDM4MDAwMDAwElkKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQPtmX45bPQpL1/OWkK7pBWZzNXZbjExVKfJ6nBJ3jF8dxIECgIIARgVEgUQoMuYARpAj4gtkfIP83fI0HHaCa95deqwo280CoLDVHJ6BkSGADxQaYoBWJW/NwaMU05d34AkUgesUjJHk1238cG9Am+J0g=="
+        );
+    }
 
     #[test]
     fn test_sign_injective_transfer_matches_expected_tx_bytes() {
@@ -190,12 +232,80 @@ mod tests {
         );
 
         let signed = CosmosChainSigner.sign_transfer(&input, &private_key).unwrap();
-        let signed: Value = serde_json::from_str(&signed).unwrap();
-
-        assert_eq!(signed["mode"], "BROADCAST_MODE_SYNC");
         assert_eq!(
-            signed["tx_bytes"],
+            signed_tx_bytes(&signed),
             "Co8BCowBChwvY29zbW9zLmJhbmsudjFiZXRhMS5Nc2dTZW5kEmwKKmluajEzdTZnN3ZxZ3cwNzRtZ21mMnplMmNhZHp2a3o5c25sd2NydHE4YRIqaW5qMXhtcGtteHI0YXMwMGVtMjN0YzJ6Z211eXkyZ3I0aDN3Z2NsNnZkGhIKA2luahILMTAwMDAwMDAwMDASngEKfgp0Ci0vaW5qZWN0aXZlLmNyeXB0by52MWJldGExLmV0aHNlY3AyNTZrMS5QdWJLZXkSQwpBBFoMa4O4vZgn5QcnDK20mbfjqQlSRvaiITKB94PYd8mLJWdCdBsGOfMXdo/k9MJ2JmDCESKDp2hdgVUH3uMikXMSBAoCCAEYARIcChYKA2luahIPMTAwMDAwMDAwMDAwMDAwELDbBhpAx2vkplmzeK7n3puCFGPWhLd0l/ZC/CYkGl+stH+3S3hiCvIe7uwwMpUlNaSwvT8HwF1kNUp+Sx2m0Uo1x5xcFw=="
+        );
+    }
+
+    #[test]
+    fn test_sign_osmosis_messages() {
+        let private_key = hex::decode(OSMO_PRIVATE_KEY_HEX).unwrap();
+        let signer = CosmosChainSigner;
+
+        let transfer = SignerInput::mock_osmosis(
+            TransactionInputType::Transfer(Asset::from_chain(Chain::Osmosis)),
+            "osmo1rcjvzz8wzktqfz8qjf0l9q45kzxvd0z0n7l5cf",
+            None,
+        );
+        assert_eq!(
+            signed_tx_bytes(&signer.sign_transfer(&transfer, &private_key).unwrap()),
+            "CooBCocBChwvY29zbW9zLmJhbmsudjFiZXRhMS5Nc2dTZW5kEmcKK29zbW8xa2dsZW11bXU4bW42NThqNmc0ejlqem4zemVmMnFkeXl2a2x3YTMSK29zbW8xcmNqdnp6OHd6a3RxZno4cWpmMGw5cTQ1a3p4dmQwejBuN2w1Y2YaCwoFdW9zbW8SAjEwEmgKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQMslcYn7DhPe5b/8lM3FnPXhGBj5SdC15+XI1hZ1gYbBBIECgIIARgKEhQKDgoFdW9zbW8SBTEwMDAwEMCaDBpAVJkDxaS5ZaghmJ6ZtpC9yim7JA8duO8MwOODdJeHEHssH3PQN+4Yl+SVyLtNEW6+IDUKfkG1dfIYOvpRiFlOyg=="
+        );
+
+        let stake = SignerInput::mock_osmosis(
+            TransactionInputType::Stake(Asset::from_chain(Chain::Osmosis), StakeType::Stake(DelegationValidator::mock_osmosis(OSMO_VALIDATOR))),
+            "",
+            Some(OSMO_STAKE_MEMO),
+        );
+        let signed = signer.sign_stake(&stake, &private_key).unwrap();
+        assert_eq!(signed.len(), 1);
+        assert_eq!(
+            signed_tx_bytes(&signed[0]),
+            "Cq4BCpUBCiMvY29zbW9zLnN0YWtpbmcudjFiZXRhMS5Nc2dEZWxlZ2F0ZRJuCitvc21vMWtnbGVtdW11OG1uNjU4ajZnNHo5anpuM3plZjJxZHl5dmtsd2EzEjJvc21vdmFsb3BlcjFweHBodGZocW54OW55MjdkNTN6NDA1MmUzcjc2ZTdxcTQ5NWVobRoLCgV1b3NtbxICMTASFFN0YWtlIHZpYSBHZW0gV2FsbGV0EmgKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQMslcYn7DhPe5b/8lM3FnPXhGBj5SdC15+XI1hZ1gYbBBIECgIIARgKEhQKDgoFdW9zbW8SBTEwMDAwEMCaDBpAxh9uwNZvql2fODCEAp4XhucO1cxXYrz2oMEkat+wvJEP1VDlai4ZnLz+n9mRbgjF143EfsaonoEh36uQKYOWuQ=="
+        );
+
+        let undelegate = SignerInput::mock_osmosis(
+            TransactionInputType::Stake(Asset::from_chain(Chain::Osmosis), StakeType::Unstake(Delegation::mock_osmosis(OSMO_VALIDATOR))),
+            "",
+            Some(OSMO_STAKE_MEMO),
+        );
+        // Auto-claims pending rewards before unstake (matches prior iOS behavior; Android's prior signer skipped this).
+        let signed = signer.sign_stake(&undelegate, &private_key).unwrap();
+        assert_eq!(
+            signed_tx_bytes(&signed[0]),
+            "Cs8CCpwBCjcvY29zbW9zLmRpc3RyaWJ1dGlvbi52MWJldGExLk1zZ1dpdGhkcmF3RGVsZWdhdG9yUmV3YXJkEmEKK29zbW8xa2dsZW11bXU4bW42NThqNmc0ejlqem4zemVmMnFkeXl2a2x3YTMSMm9zbW92YWxvcGVyMXB4cGh0Zmhxbng5bnkyN2Q1M3o0MDUyZTNyNzZlN3FxNDk1ZWhtCpcBCiUvY29zbW9zLnN0YWtpbmcudjFiZXRhMS5Nc2dVbmRlbGVnYXRlEm4KK29zbW8xa2dsZW11bXU4bW42NThqNmc0ejlqem4zemVmMnFkeXl2a2x3YTMSMm9zbW92YWxvcGVyMXB4cGh0Zmhxbng5bnkyN2Q1M3o0MDUyZTNyNzZlN3FxNDk1ZWhtGgsKBXVvc21vEgIxMBIUU3Rha2UgdmlhIEdlbSBXYWxsZXQSaApQCkYKHy9jb3Ntb3MuY3J5cHRvLnNlY3AyNTZrMS5QdWJLZXkSIwohAyyVxifsOE97lv/yUzcWc9eEYGPlJ0LXn5cjWFnWBhsEEgQKAggBGAoSFAoOCgV1b3NtbxIFMTAwMDAQgLUYGkCA133uwfd5FIq0KwZtG+gduTmeUmvgZ4dFmxLb23a37zBIOAx26XVJQ9PNDD2tFlODaVLjnN+a2saa4KOXz/wG"
+        );
+
+        let redelegate = SignerInput::mock_osmosis(
+            TransactionInputType::Stake(
+                Asset::from_chain(Chain::Osmosis),
+                StakeType::Redelegate(RedelegateData {
+                    delegation: Delegation::mock_osmosis(OSMO_VALIDATOR),
+                    to_validator: DelegationValidator::mock_osmosis(OSMO_VALIDATOR_DST),
+                }),
+            ),
+            "",
+            Some(OSMO_STAKE_MEMO),
+        );
+        let signed = signer.sign_stake(&redelegate, &private_key).unwrap();
+        assert_eq!(
+            signed_tx_bytes(&signed[0]),
+            "CokDCpwBCjcvY29zbW9zLmRpc3RyaWJ1dGlvbi52MWJldGExLk1zZ1dpdGhkcmF3RGVsZWdhdG9yUmV3YXJkEmEKK29zbW8xa2dsZW11bXU4bW42NThqNmc0ejlqem4zemVmMnFkeXl2a2x3YTMSMm9zbW92YWxvcGVyMXB4cGh0Zmhxbng5bnkyN2Q1M3o0MDUyZTNyNzZlN3FxNDk1ZWhtCtEBCiovY29zbW9zLnN0YWtpbmcudjFiZXRhMS5Nc2dCZWdpblJlZGVsZWdhdGUSogEKK29zbW8xa2dsZW11bXU4bW42NThqNmc0ejlqem4zemVmMnFkeXl2a2x3YTMSMm9zbW92YWxvcGVyMXB4cGh0Zmhxbng5bnkyN2Q1M3o0MDUyZTNyNzZlN3FxNDk1ZWhtGjJvc21vdmFsb3BlcjF6MHNoNHM4MHU5OWw2eTlkM3ZmeTU4MnA4amVqZWV1NnRjdWNzMiILCgV1b3NtbxICMTASFFN0YWtlIHZpYSBHZW0gV2FsbGV0EmgKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQMslcYn7DhPe5b/8lM3FnPXhGBj5SdC15+XI1hZ1gYbBBIECgIIARgKEhQKDgoFdW9zbW8SBTEwMDAwEIC1GBpAPgfCbDv4AFbBsGokEl26JCKuyt7R0PN2/jHsBnva4dQqd7kxKIIwGq2yDmwserV4/2B1I51W2JHL0m8/ZOYT7g=="
+        );
+
+        let rewards = SignerInput::mock_osmosis(
+            TransactionInputType::Stake(
+                Asset::from_chain(Chain::Osmosis),
+                StakeType::Rewards(vec![DelegationValidator::mock_osmosis(OSMO_VALIDATOR), DelegationValidator::mock_osmosis(OSMO_VALIDATOR)]),
+            ),
+            "",
+            Some(OSMO_STAKE_MEMO),
+        );
+        let signed = signer.sign_stake(&rewards, &private_key).unwrap();
+        assert_eq!(
+            signed_tx_bytes(&signed[0]),
+            "CtQCCpwBCjcvY29zbW9zLmRpc3RyaWJ1dGlvbi52MWJldGExLk1zZ1dpdGhkcmF3RGVsZWdhdG9yUmV3YXJkEmEKK29zbW8xa2dsZW11bXU4bW42NThqNmc0ejlqem4zemVmMnFkeXl2a2x3YTMSMm9zbW92YWxvcGVyMXB4cGh0Zmhxbng5bnkyN2Q1M3o0MDUyZTNyNzZlN3FxNDk1ZWhtCpwBCjcvY29zbW9zLmRpc3RyaWJ1dGlvbi52MWJldGExLk1zZ1dpdGhkcmF3RGVsZWdhdG9yUmV3YXJkEmEKK29zbW8xa2dsZW11bXU4bW42NThqNmc0ejlqem4zemVmMnFkeXl2a2x3YTMSMm9zbW92YWxvcGVyMXB4cGh0Zmhxbng5bnkyN2Q1M3o0MDUyZTNyNzZlN3FxNDk1ZWhtEhRTdGFrZSB2aWEgR2VtIFdhbGxldBJoClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDLJXGJ+w4T3uW//JTNxZz14RgY+UnQteflyNYWdYGGwQSBAoCCAEYChIUCg4KBXVvc21vEgUxMDAwMBCAtRgaQH/U90uCH0zx9AdY+ALIHM5aZ1crBSwYzeZZejb5rWjEMVXRScjOfvng33XFnFHdI4Epp9ykNNtQVUw9BJnZshU="
         );
     }
 }

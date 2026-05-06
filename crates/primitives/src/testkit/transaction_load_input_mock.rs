@@ -1,4 +1,5 @@
-use super::signer_mock::{TEST_EVM_RECIPIENT, TEST_EVM_SENDER};
+use super::signer_mock::{TEST_EVM_RECIPIENT, TEST_EVM_SENDER, TEST_OSMOSIS_SENDER};
+use std::collections::HashMap;
 use crate::{
     Asset, Chain, GasPriceType, SignerInput, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransferDataExtra, TransferDataOutputAction,
     TransferDataOutputType, WalletConnectionSessionAppMetadata,
@@ -95,6 +96,23 @@ impl SignerInput {
                 metadata,
             },
             TransactionFee::default(),
+        )
+    }
+
+    pub fn mock_osmosis(input_type: TransactionInputType, destination: &str, memo: Option<&str>) -> Self {
+        let fee_amount = BigInt::from(10_000u64);
+        SignerInput::new(
+            TransactionLoadInput {
+                input_type,
+                sender_address: TEST_OSMOSIS_SENDER.to_string(),
+                destination_address: destination.to_string(),
+                value: "10".to_string(),
+                gas_price: GasPriceType::regular(fee_amount.clone()),
+                memo: memo.map(str::to_string),
+                is_max_value: false,
+                metadata: TransactionLoadMetadata::mock_osmosis(),
+            },
+            TransactionFee::new_gas_price_type(GasPriceType::regular(fee_amount.clone()), fee_amount, BigInt::from(200_000u64), HashMap::new()),
         )
     }
 

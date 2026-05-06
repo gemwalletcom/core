@@ -1,3 +1,4 @@
+use gem_encoding::protobuf::*;
 use primitives::{Address, DelegationValidator, SignerError, SignerInput, StakeType, chain_cosmos::CosmosChain};
 
 use crate::address::CosmosAddress;
@@ -5,8 +6,6 @@ use crate::constants::{
     MESSAGE_DELEGATE, MESSAGE_EXECUTE_CONTRACT, MESSAGE_IBC_TRANSFER, MESSAGE_REDELEGATE, MESSAGE_REWARD_BETA, MESSAGE_SEND, MESSAGE_SEND_BETA, MESSAGE_UNDELEGATE,
 };
 use crate::models::{Coin, CosmosMessage};
-
-use super::protobuf::*;
 
 pub const COSMOS_SECP256K1_PUBKEY_TYPE: &str = "/cosmos.crypto.secp256k1.PubKey";
 pub const INJECTIVE_ETHSECP256K1_PUBKEY_TYPE: &str = "/injective.crypto.v1beta1.ethsecp256k1.PubKey";
@@ -74,6 +73,10 @@ fn encode_send(chain: CosmosChain, from_address: &str, to_address: &str, amount:
         }
     };
     Ok([address_fields, coin_fields].concat())
+}
+
+fn encode_coin(denom: &str, amount: &str) -> Vec<u8> {
+    [encode_string_field(1, denom), encode_string_field(2, amount)].concat()
 }
 
 fn reward_messages(delegator_address: &str, validators: &[DelegationValidator]) -> Vec<CosmosMessage> {
