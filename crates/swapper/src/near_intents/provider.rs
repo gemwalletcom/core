@@ -10,7 +10,7 @@ use crate::{
     client_factory::create_client_with_chain,
     cross_chain::VaultAddresses,
     fees::DEFAULT_REFERRER,
-    fees::resolve_max_quote_value,
+    fees::quote_value_after_reserve_by_chain,
     near_intents::client::{base_url, explorer_url},
 };
 use async_trait::async_trait;
@@ -292,7 +292,7 @@ where
             SwapperMode::ExactOut => return Err(SwapperError::NotSupportedAsset),
         };
 
-        let amount = resolve_max_quote_value(request)?;
+        let amount = quote_value_after_reserve_by_chain(request)?;
         let quote_request = self.build_quote_request(request, mode, amount.clone(), true)?;
         let response = Self::extract_quote(self.client.fetch_quote(&quote_request).await?, request.from_asset.decimals)?;
         let amount_out = Self::parse_amount(&response.quote.amount_out, "amountOut")?;
@@ -423,31 +423,31 @@ mod tests {
     }
 
     #[test]
-    fn resolve_quote_amount_with_use_max_reserves_fee() {
+    fn quote_amount_with_use_max_reserves_fee() {
         let reserve = U256::from_str(reserved_tx_fees(Chain::Ethereum).unwrap()).unwrap();
         let amount = (reserve + U256::from(500u64)).to_string();
 
         let request = build_quote_request(&amount, true, Chain::Ethereum);
-        let result = resolve_max_quote_value(&request).expect("expected amount to resolve");
+        let result = quote_value_after_reserve_by_chain(&request).unwrap();
 
         assert_eq!(result, (U256::from_str(&amount).unwrap() - reserve).to_string());
     }
 
     #[test]
-    fn resolve_quote_amount_without_use_max_keeps_amount() {
+    fn quote_amount_without_use_max_keeps_amount() {
         let amount = "123456";
         let request = build_quote_request(amount, false, Chain::Ethereum);
-        let result = resolve_max_quote_value(&request).expect("expected amount to resolve");
+        let result = quote_value_after_reserve_by_chain(&request).unwrap();
 
         assert_eq!(result, amount);
     }
 
     #[test]
-    fn resolve_quote_amount_rejects_when_under_reserved() {
+    fn quote_amount_rejects_when_under_reserved() {
         let reserve = U256::from_str(reserved_tx_fees(Chain::Ethereum).unwrap()).unwrap();
         let request = build_quote_request(&reserve.to_string(), true, Chain::Ethereum);
 
-        let err = resolve_max_quote_value(&request).expect_err("expected error");
+        let err = quote_value_after_reserve_by_chain(&request).expect_err("expected error");
 
         assert!(matches!(err, SwapperError::InputAmountError { .. }));
     }
@@ -537,7 +537,7 @@ mod tests {
             "message": "Amount is too low for bridge, try at least 8516130",
         });
 
-        let decoded: QuoteResponseResult = serde_json::from_value(payload).expect("failed to decode error payload");
+        let decoded: QuoteResponseResult = serde_json::from_value(payload).unwrap();
 
         let QuoteResponseResult::Err(err) = decoded else {
             panic!("expected error variant");

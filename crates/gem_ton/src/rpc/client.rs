@@ -11,6 +11,7 @@ use crate::models::{
     SimpleJettonBalance, WalletInfo,
 };
 
+#[derive(Debug)]
 pub struct TonClient<C: Client> {
     pub client: C,
 }

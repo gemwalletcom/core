@@ -175,11 +175,8 @@ mod tests {
         swap_data.data.value = "241000000".to_string();
         swap_data.data.data = mock_cell();
         swap_data.data.gas_limit = None;
-        let input = SignerInput::mock_with_input_type(
+        let input = SignerInput::mock_ton(
             TransactionInputType::Swap(Asset::from_chain(Chain::Ton), Asset::from_chain(Chain::Ton), swap_data),
-            "",
-            "",
-            "0",
             TransactionLoadMetadata::mock_ton(1),
         );
 

@@ -14,7 +14,7 @@ use super::{
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider,
-    SwapperQuoteData, approval::check_approval_erc20, config::get_swap_api_url, cross_chain::VaultAddresses, fees::DEFAULT_REFERRER, fees::resolve_max_quote_value,
+    SwapperQuoteData, approval::check_approval_erc20, config::get_swap_api_url, cross_chain::VaultAddresses, fees::DEFAULT_REFERRER, fees::quote_value_after_reserve_by_chain,
 };
 
 #[derive(Debug)]
@@ -72,7 +72,7 @@ where
         let origin_currency = asset_to_currency(&from_asset_id)?;
         let destination_currency = asset_to_currency(&to_asset_id)?;
         let app_fees = resolve_app_fees(request);
-        let from_value = resolve_max_quote_value(request)?;
+        let from_value = quote_value_after_reserve_by_chain(request)?;
 
         let relay_request = RelayQuoteRequest {
             user: request.wallet_address.clone(),

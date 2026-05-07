@@ -11,6 +11,7 @@ pub struct SwapTransactionParams<'a> {
     pub simulation: &'a SwapSimulation,
     pub from_native: bool,
     pub to_native: bool,
+    pub sender_jetton_wallet: Option<&'a str>,
     pub from_value: &'a str,
     pub min_ask_amount: &'a str,
     pub wallet_address: &'a str,

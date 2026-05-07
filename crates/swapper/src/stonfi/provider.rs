@@ -7,11 +7,11 @@ use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteAsset,
     SwapperQuoteData,
     config::get_swap_api_url,
-    fees::{default_referral_fees, resolve_max_quote_value},
+    fees::{default_referral_fees, quote_value_after_reserve_by_chain},
 };
 use async_trait::async_trait;
 use gem_client::Client;
-use gem_ton::constants::TON_PROXY_JETTON_ADDRESS;
+use gem_ton::{address::base64_to_hex_address, constants::TON_PROXY_JETTON_ADDRESS, rpc::client::TonClient};
 use number_formatter::BigNumberFormatter;
 use primitives::Chain;
 use std::{fmt::Debug, sync::Arc};
@@ -25,11 +25,14 @@ where
 {
     provider: ProviderType,
     client: StonfiClient<C>,
+    ton_client: TonClient<RpcClient>,
 }
 
 impl Stonfi<RpcClient> {
     pub fn new(rpc_provider: Arc<dyn RpcProvider>) -> Self {
-        Self::new_with_client(RpcClient::new(get_swap_api_url("stonfi"), rpc_provider))
+        let endpoint = rpc_provider.get_endpoint(Chain::Ton).expect("failed to get TON endpoint for STON.fi");
+        let ton_client = TonClient::new(RpcClient::new(endpoint, rpc_provider.clone()));
+        Self::new_with_clients(RpcClient::new(get_swap_api_url("stonfi"), rpc_provider), ton_client)
     }
 }
 
@@ -37,11 +40,30 @@ impl<C> Stonfi<C>
 where
     C: Client + Clone + Send + Sync + Debug + 'static,
 {
-    pub fn new_with_client(client: C) -> Self {
+    pub fn new_with_clients(client: C, ton_client: TonClient<RpcClient>) -> Self {
         Self {
             provider: ProviderType::new(SwapperProvider::StonfiV2),
             client: StonfiClient::new(client),
+            ton_client,
         }
+    }
+
+    async fn sender_jetton_wallet(&self, quote: &Quote) -> Result<Option<String>, SwapperError> {
+        if quote.request.from_asset.is_native() {
+            return Ok(None);
+        }
+        let token_id = quote.request.from_asset.asset_id().token_id.ok_or(SwapperError::NotSupportedAsset)?;
+        let jetton_token_id = base64_to_hex_address(&token_id).ok_or(SwapperError::NotSupportedAsset)?.to_uppercase();
+        let wallet = self
+            .ton_client
+            .get_jetton_wallets(quote.request.wallet_address.clone())
+            .await
+            .map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))?
+            .jetton_wallets
+            .into_iter()
+            .find(|wallet| wallet.jetton == jetton_token_id)
+            .ok_or_else(|| SwapperError::ComputeQuoteError("missing sender jetton wallet".into()))?;
+        Ok(Some(wallet.address))
     }
 }
 
@@ -59,7 +81,7 @@ where
     }
 
     async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
-        let from_value = resolve_max_quote_value(request)?;
+        let from_value = quote_value_after_reserve_by_chain(request)?;
         let referral_fee = request.options.fee.clone().map(|fees| fees.ton).unwrap_or_else(|| default_referral_fees().ton);
         let simulation_request = SimulateSwapRequest {
             offer_address: token_address(&request.from_asset),
@@ -98,11 +120,13 @@ where
         } else {
             &quote.request.destination_address
         };
+        let sender_jetton_wallet = self.sender_jetton_wallet(quote).await?;
 
         let tx = build_swap_transaction(SwapTransactionParams {
             simulation: &simulation,
             from_native: quote.request.from_asset.is_native(),
             to_native: quote.request.to_asset.is_native(),
+            sender_jetton_wallet: sender_jetton_wallet.as_deref(),
             from_value: &quote.from_value,
             min_ask_amount: &simulation.min_ask_units,
             wallet_address: &quote.request.wallet_address,

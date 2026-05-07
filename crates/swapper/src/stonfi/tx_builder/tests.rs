@@ -2,6 +2,8 @@ use super::*;
 use crate::stonfi::{model::SwapSimulation, testkit::TEST_TON_WALLET_ADDRESS};
 use gem_ton::tvm::BagOfCells;
 
+const TEST_SENDER_JETTON_WALLET: &str = "EQAlgB03OjJKdXrlwZiGJD5snSzPKF2VL5bErJn_cqJANGH9";
+
 #[test]
 fn test_build_v1_swap_transaction() {
     let v1: SwapSimulation = serde_json::from_str(include_str!("../testdata/v1_simulation.json")).unwrap();
@@ -10,6 +12,7 @@ fn test_build_v1_swap_transaction() {
         simulation: &v1,
         from_native: true,
         to_native: false,
+        sender_jetton_wallet: None,
         from_value: "1000000000",
         min_ask_amount: &v1.min_ask_units,
         wallet_address: TEST_TON_WALLET_ADDRESS,
@@ -39,6 +42,7 @@ fn test_build_v2_swap_transactions() {
         simulation: &v2,
         from_native: true,
         to_native: false,
+        sender_jetton_wallet: None,
         from_value: "1000000000",
         min_ask_amount: &v2.min_ask_units,
         wallet_address: TEST_TON_WALLET_ADDRESS,
@@ -63,6 +67,7 @@ fn test_build_v2_swap_transactions() {
         simulation: &v2,
         from_native: false,
         to_native: true,
+        sender_jetton_wallet: Some(TEST_SENDER_JETTON_WALLET),
         from_value: "1000000",
         min_ask_amount: "740000000",
         wallet_address: TEST_TON_WALLET_ADDRESS,
@@ -75,7 +80,7 @@ fn test_build_v2_swap_transactions() {
     })
     .unwrap();
 
-    assert_eq!(jetton_transaction.to, v2.offer_jetton_wallet);
+    assert_eq!(jetton_transaction.to, TEST_SENDER_JETTON_WALLET);
     assert_eq!(jetton_transaction.value, "300000000");
     assert_eq!(
         jetton_transaction.data,

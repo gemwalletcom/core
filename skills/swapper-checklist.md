@@ -29,7 +29,7 @@ For the given provider, verify each item by reading the provider code and relate
 - [ ] Addresses match what the provider actually uses in transactions
 
 ### 6. Max Swap (use_max_amount)
-- [ ] `get_quote()` calls `resolve_max_quote_value(request)?` from `crate::fees`
+- [ ] `get_quote()` calls `quote_value_after_reserve_by_chain(request)?` from `crate::fees`
 - [ ] Adjusted value used for both the API quote request and `Quote.from_value`
 - [ ] Reserved fees for supported chains exist in `RESERVED_NATIVE_FEES` (`fees/reserve.rs`)
 

@@ -97,6 +97,22 @@ impl SignerInput {
             TransactionFee::default(),
         )
     }
+
+    pub fn mock_ton(input_type: TransactionInputType, metadata: TransactionLoadMetadata) -> Self {
+        SignerInput::new(
+            TransactionLoadInput {
+                input_type,
+                sender_address: "UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg".to_string(),
+                destination_address: "UQBY1cVPu4SIr36q0M3HWcqPb_efyVVRBsEzmwN-wKQDR6zg".to_string(),
+                value: "10000".to_string(),
+                gas_price: GasPriceType::regular(0),
+                memo: None,
+                is_max_value: false,
+                metadata,
+            },
+            TransactionFee::default(),
+        )
+    }
 }
 
 impl TransactionLoadInput {

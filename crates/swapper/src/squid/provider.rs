@@ -11,7 +11,7 @@ use crate::{
     SwapperQuoteData,
     config::{DEFAULT_SWAP_FEE_BPS, get_swap_api_url},
     cross_chain::VaultAddresses,
-    fees::resolve_max_quote_value,
+    fees::quote_value_after_reserve_by_chain,
 };
 
 #[derive(Debug)]
@@ -112,7 +112,7 @@ where
     }
 
     async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
-        let from_value = resolve_max_quote_value(request)?;
+        let from_value = quote_value_after_reserve_by_chain(request)?;
         let (response, _, _) = self.fetch_route(request, &from_value, true).await?;
 
         Ok(Quote {

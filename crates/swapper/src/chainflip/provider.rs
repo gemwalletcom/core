@@ -20,7 +20,7 @@ use crate::{
     amount_to_value,
     approval::{check_approval_erc20, get_swap_gas_limit_with_approval},
     cross_chain::VaultAddresses,
-    fees::{DEFAULT_CHAINFLIP_FEE_BPS, apply_slippage_in_bp, resolve_max_quote_value},
+    fees::{DEFAULT_CHAINFLIP_FEE_BPS, apply_slippage_in_bp, quote_value_after_reserve_by_chain},
     solana::DEFAULT_SWAP_GAS_LIMIT,
 };
 use primitives::{ChainType, chain::Chain, swap::QuoteAsset};
@@ -70,7 +70,7 @@ where
     }
 
     fn get_quote_value(request: &QuoteRequest) -> Result<String, SwapperError> {
-        let value = resolve_max_quote_value(request)?;
+        let value = quote_value_after_reserve_by_chain(request)?;
         if !request.options.use_max_amount || !request.from_asset.asset_id().is_native() {
             return Ok(value);
         }

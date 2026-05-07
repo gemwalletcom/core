@@ -51,9 +51,12 @@ fn build_jetton_swap(params: SwapTransactionParams<'_>, swap_body: &CellArc) -> 
         (V1_JETTON_TO_JETTON_GAS, V1_JETTON_TO_JETTON_FORWARD_GAS)
     };
     let body = build_jetton_transfer_body(&from_value, &router, Some(&wallet), &BigUint::from(forward_gas), Some(swap_body))?;
+    let sender_jetton_wallet = params
+        .sender_jetton_wallet
+        .ok_or_else(|| SwapperError::ComputeQuoteError("missing sender jetton wallet".into()))?;
 
     Ok(TxParams {
-        to: params.simulation.offer_jetton_wallet.clone(),
+        to: sender_jetton_wallet.to_string(),
         value: gas.to_string(),
         data: BagOfCells::from_root(body).to_base64(true)?,
     })

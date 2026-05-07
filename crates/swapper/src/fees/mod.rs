@@ -3,7 +3,7 @@ mod reserve;
 mod slippage;
 
 pub use referral::{ReferralFee, ReferralFees, default_referral_fees};
-pub use reserve::{RESERVED_NATIVE_FEES, reserved_tx_fees, resolve_max_quote_value};
+pub use reserve::{RESERVED_NATIVE_FEES, quote_value_after_reserve, quote_value_after_reserve_by_chain, reserved_tx_fees};
 pub use slippage::{BasisPointConvert, apply_slippage_in_bp};
 
 pub const DEFAULT_SWAP_FEE_BPS: u32 = 50;

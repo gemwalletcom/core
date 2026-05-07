@@ -45,13 +45,10 @@ pub fn reserved_tx_fees(chain: Chain) -> Option<&'static str> {
     RESERVED_NATIVE_FEES.get(&chain).copied()
 }
 
-pub fn resolve_max_quote_value(request: &QuoteRequest) -> Result<String, SwapperError> {
+pub fn quote_value_after_reserve(request: &QuoteRequest, reserved: &str) -> Result<String, SwapperError> {
     if !request.options.use_max_amount || !request.from_asset.asset_id().is_native() {
         return Ok(request.value.clone());
     }
-    let Some(reserved) = reserved_tx_fees(request.from_asset.chain()) else {
-        return Ok(request.value.clone());
-    };
     let reserved_fee = U256::from_str(reserved).map_err(|_| SwapperError::ComputeQuoteError(format!("invalid reserved fee: {reserved}")))?;
     let amount = U256::from_str(&request.value).map_err(|_| SwapperError::ComputeQuoteError(format!("invalid amount: {}", request.value)))?;
     if amount <= reserved_fee {
@@ -60,4 +57,11 @@ pub fn resolve_max_quote_value(request: &QuoteRequest) -> Result<String, Swapper
         });
     }
     Ok((amount - reserved_fee).to_string())
+}
+
+pub fn quote_value_after_reserve_by_chain(request: &QuoteRequest) -> Result<String, SwapperError> {
+    let Some(reserved) = reserved_tx_fees(request.from_asset.chain()) else {
+        return Ok(request.value.clone());
+    };
+    quote_value_after_reserve(request, reserved)
 }

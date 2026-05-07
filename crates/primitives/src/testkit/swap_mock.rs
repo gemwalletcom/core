@@ -66,6 +66,25 @@ impl SwapData {
             data: SwapQuoteData::mock(),
         }
     }
+
+    pub fn mock_contract(provider: SwapProvider, from_value: &str, to_value: &str, value: &str) -> Self {
+        let swap_data = Self::mock_with_values(provider, from_value, to_value);
+        SwapData {
+            data: SwapQuoteData {
+                value: value.to_string(),
+                ..swap_data.data
+            },
+            ..swap_data
+        }
+    }
+
+    pub fn mock_transfer(provider: SwapProvider, from_value: &str, to_value: &str, to: &str) -> Self {
+        let swap_data = Self::mock_with_values(provider, from_value, to_value);
+        SwapData {
+            data: SwapQuoteData::new_tranfer(to.to_string(), from_value.to_string(), None),
+            ..swap_data
+        }
+    }
 }
 
 impl SwapQuote {
