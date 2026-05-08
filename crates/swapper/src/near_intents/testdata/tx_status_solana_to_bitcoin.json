@@ -1,0 +1,13 @@
+[
+  {
+    "originAsset": "nep141:sol.omft.near",
+    "destinationAsset": "1cs_v1:btc:native:coin",
+    "depositAddress": "Ds6hfv9TMJWtbHX4gkKimBJ2DoLYVXuEM2atQ69T8MzP",
+    "status": "PROCESSING",
+    "amountIn": "646605458",
+    "amountOut": "69086",
+    "originChainTxHashes": [
+      "4bADLaRWEXmDQsMSGdnDF5TwDQChvmW7WNroEbnGcWbtzHoJdcpieHFwfyaKK3XfZWeqsPgSyS7SuZBjVtUx1KBn"
+    ]
+  }
+]

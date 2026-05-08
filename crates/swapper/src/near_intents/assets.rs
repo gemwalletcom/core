@@ -23,7 +23,7 @@ pub const NEAR_INTENTS_ETH_CBBTC: &str = "nep141:eth-0xcbb7c0000ab88b473b1f5afd9
 pub const NEAR_INTENTS_ETH_LINK: &str = "nep141:eth-0x514910771af9ca656af840dff83e8264ecf986ca.omft.near";
 pub const NEAR_INTENTS_ETH_UNI: &str = "nep141:eth-0x1f9840a85d5af5bf1d1762f925bdaddc4201f984.omft.near";
 pub const NEAR_INTENTS_ETH_AAVE: &str = "nep141:eth-0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9.omft.near";
-pub const NEAR_INTENTS_BTC_NATIVE: &str = "nep141:btc.omft.near";
+pub const NEAR_INTENTS_BTC_NATIVE: &str = "1cs_v1:btc:native:coin";
 pub const NEAR_INTENTS_SOL_NATIVE: &str = "nep141:sol.omft.near";
 pub const NEAR_INTENTS_SOL_USDC: &str = "nep141:sol-5ce3bf3a31af18be40ba30f721101b4341690186.omft.near";
 pub const NEAR_INTENTS_SOL_USDT: &str = "nep141:sol-c800a4bd850783ccb82c2b2c7e84175443606352.omft.near";
@@ -240,18 +240,18 @@ pub static NEAR_INTENTS_ASSETS: LazyLock<HashMap<Chain, AssetsMap>> = LazyLock::
     map
 });
 
-pub fn get_near_intents_asset_id(asset: &SwapperQuoteAsset) -> Result<String, SwapperError> {
+pub fn get_near_asset_id(asset: &SwapperQuoteAsset) -> Result<String, SwapperError> {
     let asset_id = asset.asset_id();
     let chain_assets = NEAR_INTENTS_ASSETS.get(&asset_id.chain).ok_or(SwapperError::NotSupportedChain)?;
 
     chain_assets.get(&asset_id).map(|value| (*value).to_string()).ok_or(SwapperError::NotSupportedAsset)
 }
 
-pub fn get_asset_id_from_near_intents(near_intents_id: &str) -> Option<AssetId> {
+pub fn get_asset_id_from_near_asset(near_asset_id: &str) -> Option<AssetId> {
     NEAR_INTENTS_ASSETS
         .values()
         .flat_map(|assets| assets.iter())
-        .find(|(_, v)| **v == near_intents_id)
+        .find(|(_, v)| **v == near_asset_id)
         .map(|(k, _)| k.clone())
 }
 
@@ -274,13 +274,17 @@ mod tests {
             decimals: 6,
         };
 
-        let result = get_near_intents_asset_id(&asset).unwrap();
+        let result = get_near_asset_id(&asset).unwrap();
         assert_eq!(result, NEAR_INTENTS_ETH_USDC);
     }
 
     #[test]
     fn test_supported_assets_contains_near() {
         let supported = supported_assets();
-        assert!(supported.iter().any(|entry| matches!(entry, SwapperChainAsset::Assets(chain, _) if *chain == Chain::Near)));
+        let contains_near = supported.iter().any(|entry| match entry {
+            SwapperChainAsset::All(chain) => *chain == Chain::Near,
+            SwapperChainAsset::Assets(chain, _) => *chain == Chain::Near,
+        });
+        assert!(contains_near);
     }
 }
