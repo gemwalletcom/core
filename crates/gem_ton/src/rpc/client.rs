@@ -1,6 +1,7 @@
 use std::error::Error;
 
 use primitives::{Asset, AssetId, AssetType, chain::Chain};
+use serde::Serialize;
 use serde_json;
 
 use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainStaking, ChainTraits};
@@ -8,8 +9,11 @@ use gem_client::{Client, ClientExt, build_path_with_query};
 
 use crate::models::{
     ApiResult, BroadcastTransaction, Chainhead, JettonInfo, JettonOffchainMetadata, JettonWalletsResponse, MessageTransactions, NftCollectionsResponse, NftItemsResponse,
-    SimpleJettonBalance, TraceByMessageQuery, TraceResponse, WalletInfo,
+    SimpleJettonBalance, TraceByBlockQuery, TraceByMessageQuery, TraceResponse, WalletInfo,
 };
+
+const TONCENTER_V3_BLOCK_LIMIT: usize = 100;
+const TONCENTER_SORT_ASC: &str = "asc";
 
 #[derive(Debug)]
 pub struct TonClient<C: Client> {
@@ -23,13 +27,6 @@ impl<C: Client> TonClient<C> {
 
     pub async fn get_master_head(&self) -> Result<Chainhead, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get("/api/v3/masterchainInfo").await?)
-    }
-
-    pub async fn get_transactions_by_masterchain_block(&self, block_id: String) -> Result<MessageTransactions, Box<dyn Error + Send + Sync>> {
-        Ok(self
-            .client
-            .get(&format!("/api/v3/transactionsByMasterchainBlock?seqno={}&limit=100&offset=0", block_id))
-            .await?)
     }
 
     pub async fn get_transactions_by_address(&self, address: String, limit: usize) -> Result<MessageTransactions, Box<dyn Error + Send + Sync>> {
@@ -68,13 +65,26 @@ impl<C: Client> TonClient<C> {
     }
 
     pub async fn get_traces_by_message(&self, hash: String) -> Result<TraceResponse, Box<dyn Error + Send + Sync>> {
-        let path = build_path_with_query(
-            "/api/v3/traces",
-            &TraceByMessageQuery {
-                msg_hash: hash,
-                include_actions: true,
-            },
-        )?;
+        let query = TraceByMessageQuery {
+            msg_hash: hash,
+            include_actions: true,
+        };
+        self.get_traces(query).await
+    }
+
+    pub async fn get_traces_by_masterchain_block(&self, block: u64) -> Result<TraceResponse, Box<dyn Error + Send + Sync>> {
+        let query = TraceByBlockQuery {
+            mc_seqno: block,
+            include_actions: true,
+            limit: TONCENTER_V3_BLOCK_LIMIT,
+            offset: 0,
+            sort: TONCENTER_SORT_ASC,
+        };
+        self.get_traces(query).await
+    }
+
+    async fn get_traces<T: Serialize>(&self, query: T) -> Result<TraceResponse, Box<dyn Error + Send + Sync>> {
+        let path = build_path_with_query("/api/v3/traces", &query)?;
         Ok(self.client.get(&path).await?)
     }
 

@@ -1,0 +1,86 @@
+{
+  "traces": [
+    {
+      "is_incomplete": false,
+      "actions": [
+        {
+          "success": true
+        }
+      ],
+      "transactions_order": [
+        "6ZPUwTBTl4tiZRV1YcRU73MSdNg24xOe1k/fWLZjW/c="
+      ],
+      "transactions": {
+        "6ZPUwTBTl4tiZRV1YcRU73MSdNg24xOe1k/fWLZjW/c=": {
+          "hash": "6ZPUwTBTl4tiZRV1YcRU73MSdNg24xOe1k/fWLZjW/c=",
+          "now": 1755568380,
+          "total_fees": "2402737",
+          "description": {
+            "aborted": false,
+            "compute_ph": {
+              "success": true,
+              "exit_code": 0
+            },
+            "action": {
+              "success": true
+            }
+          },
+          "out_msgs": [
+            {
+              "source": "0:33A14A5A9406979D59B9328898591660B8B1736342B11632EFDCC911AB9057CF",
+              "destination": "0:D291966E797465D25524E216A02DAF0AAC9CD96E6B5313F44F6704C3488C37D9",
+              "value": "10000000",
+              "op_code": "0x0",
+              "decoded_op_name": null,
+              "body": null,
+              "comment": null,
+              "decoded_body": null
+            }
+          ],
+          "in_msg": null
+        }
+      }
+    },
+    {
+      "is_incomplete": false,
+      "actions": [
+        {
+          "success": false
+        }
+      ],
+      "transactions_order": [
+        "L5Egpf9I3suIl6CdddcmMS44geWLFKgHi3EbBDz7qy8="
+      ],
+      "transactions": {
+        "L5Egpf9I3suIl6CdddcmMS44geWLFKgHi3EbBDz7qy8=": {
+          "hash": "L5Egpf9I3suIl6CdddcmMS44geWLFKgHi3EbBDz7qy8=",
+          "now": 1755568390,
+          "total_fees": "2760123",
+          "description": {
+            "aborted": false,
+            "compute_ph": {
+              "success": true,
+              "exit_code": 0
+            },
+            "action": {
+              "success": true
+            }
+          },
+          "out_msgs": [
+            {
+              "source": "0:B77DFEB2A1D8C25DC6F4FDB280454275F6A81DC3CD6884EF0E4FA64A768D1042",
+              "destination": "0:017CE17C998BAC2342AD12554D94CC3559B2B56958F843BD9F0101208761A5CD",
+              "value": "25000000",
+              "op_code": "0x0",
+              "decoded_op_name": null,
+              "body": null,
+              "comment": null,
+              "decoded_body": null
+            }
+          ],
+          "in_msg": null
+        }
+      }
+    }
+  ]
+}

@@ -14,6 +14,14 @@ use settings::testkit::get_test_settings;
 pub const TEST_ADDRESS: &str = "UQAzoUpalAaXnVm5MoiYWRZguLFzY0KxFjLv3MkRq5BXz3VV";
 #[cfg(test)]
 pub const TEST_TRANSACTION_ID: &str = "gyjq/7IJ5KpSvZlnwixaS3RjI2xk1+5pup0k++S/yXY=";
+#[cfg(test)]
+pub const FAILED_SWAP_MESSAGE_HASH: &str = "cf2fc2efd8d6f6b018f949b8f07e7e4b898a34a8bd422fcffb76bdc6e947b7e7";
+#[cfg(test)]
+pub const FAILED_SWAP_ROOT_TRANSACTION_HASH: &str = "L5Egpf9I3suIl6CdddcmMS44geWLFKgHi3EbBDz7qy8=";
+#[cfg(test)]
+pub const SUCCESS_SWAP_MESSAGE_HASH: &str = "e993d4c13053978b6265157561c454ef731274d836e3139ed64fdf58b6635bf7";
+#[cfg(test)]
+pub const SUCCESS_SWAP_ROOT_TRANSACTION_HASH: &str = "6ZPUwTBTl4tiZRV1YcRU73MSdNg24xOe1k/fWLZjW/c=";
 
 #[cfg(test)]
 impl TraceResponse {
@@ -25,6 +33,18 @@ impl TraceResponse {
                 transactions_order: vec![transaction.hash.clone()],
                 transactions: HashMap::from([(transaction.hash.clone(), transaction)]),
             }],
+        }
+    }
+
+    pub fn mock_block_traces() -> Self {
+        serde_json::from_str(include_str!("../../testdata/block_traces.json")).unwrap()
+    }
+
+    pub fn mock_block_trace(index: usize) -> Self {
+        let traces = Self::mock_block_traces();
+
+        TraceResponse {
+            traces: vec![traces.traces[index].clone()],
         }
     }
 }

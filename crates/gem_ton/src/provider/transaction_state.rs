@@ -21,16 +21,13 @@ mod chain_integration_tests {
     use chain_traits::ChainTransactionState;
     use primitives::{TransactionState, TransactionStateRequest};
 
-    const FAILED_SWAP_MESSAGE_HASH: &str = "cf2fc2efd8d6f6b018f949b8f07e7e4b898a34a8bd422fcffb76bdc6e947b7e7";
-    const FAILED_SWAP_ROOT_TRANSACTION_HASH: &str = "L5Egpf9I3suIl6CdddcmMS44geWLFKgHi3EbBDz7qy8=";
-
     #[tokio::test]
     async fn test_get_traces_by_message() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_ton_test_client();
         let traces = client.get_traces_by_message(FAILED_SWAP_MESSAGE_HASH.to_string()).await?;
         let transaction = traces.root_transaction().ok_or("missing root transaction")?;
 
-        assert_eq!(traces.has_actions(), true);
+        assert!(traces.has_actions());
         assert_eq!(transaction.hash.as_str(), FAILED_SWAP_ROOT_TRANSACTION_HASH);
 
         Ok(())

@@ -30,9 +30,7 @@ pub struct TraceResponse {
 
 impl TraceResponse {
     pub fn root_transaction(&self) -> Option<&TransactionMessage> {
-        let trace = self.traces.first()?;
-        let transaction_id = trace.transactions_order.first()?;
-        trace.transactions.get(transaction_id)
+        self.traces.first()?.root_transaction()
     }
 
     pub fn action_state(&self) -> Option<TransactionState> {
@@ -40,10 +38,7 @@ impl TraceResponse {
     }
 
     pub fn has_actions(&self) -> bool {
-        match self.traces.first() {
-            Some(trace) => !trace.actions.is_empty(),
-            None => false,
-        }
+        self.traces.first().is_some_and(Trace::has_actions)
     }
 }
 
@@ -51,6 +46,15 @@ impl TraceResponse {
 pub struct TraceByMessageQuery {
     pub msg_hash: String,
     pub include_actions: bool,
+}
+
+#[derive(Debug, Serialize)]
+pub struct TraceByBlockQuery {
+    pub mc_seqno: u64,
+    pub include_actions: bool,
+    pub limit: usize,
+    pub offset: usize,
+    pub sort: &'static str,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -62,7 +66,16 @@ pub struct Trace {
 }
 
 impl Trace {
-    fn action_state(&self) -> TransactionState {
+    pub fn root_transaction(&self) -> Option<&TransactionMessage> {
+        let transaction_id = self.transactions_order.first()?;
+        self.transactions.get(transaction_id)
+    }
+
+    pub fn has_actions(&self) -> bool {
+        !self.actions.is_empty()
+    }
+
+    pub fn action_state(&self) -> TransactionState {
         if self.is_incomplete {
             return TransactionState::Pending;
         }

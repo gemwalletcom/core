@@ -1,6 +1,6 @@
 use crate::address::Address;
 use crate::constants::FAILED_OPERATION_OPCODES;
-use crate::models::{BroadcastTransaction, HasMemo, TransactionMessage};
+use crate::models::{BroadcastTransaction, HasMemo, Trace, TransactionMessage};
 use chrono::DateTime;
 use gem_encoding::decode_base64;
 use primitives::{Address as AddressTrait, Transaction, TransactionState, TransactionType, chain::Chain};
@@ -58,9 +58,33 @@ pub fn map_transactions(transactions: Vec<TransactionMessage>) -> Vec<Transactio
     transactions.into_iter().filter_map(map_transaction_message).collect()
 }
 
+pub fn map_trace_transactions(traces: Vec<Trace>) -> Vec<Transaction> {
+    traces.into_iter().flat_map(map_trace_transaction).collect()
+}
+
+fn map_trace_transaction(trace: Trace) -> Vec<Transaction> {
+    let root_hash = trace.transactions_order.first().cloned();
+    let trace_state = if trace.is_incomplete || trace.has_actions() { Some(trace.action_state()) } else { None };
+    let mut transactions = trace.transactions;
+
+    trace
+        .transactions_order
+        .into_iter()
+        .filter_map(|hash| {
+            let transaction = transactions.remove(&hash)?;
+            let state = if root_hash.as_ref() == Some(&hash) { trace_state } else { None };
+            map_transaction_message_with_state(transaction, state)
+        })
+        .collect()
+}
+
 fn map_transaction_message(transaction: TransactionMessage) -> Option<Transaction> {
+    map_transaction_message_with_state(transaction, None)
+}
+
+fn map_transaction_message_with_state(transaction: TransactionMessage, state: Option<TransactionState>) -> Option<Transaction> {
     let asset_id = Chain::Ton.as_asset_id();
-    let state = map_transaction_state(&transaction);
+    let state = state.unwrap_or_else(|| map_transaction_state(&transaction));
     let created_at = DateTime::from_timestamp(transaction.now, 0)?;
     let hash = transaction.hash.clone();
 
@@ -159,8 +183,8 @@ fn extract_memo<T: HasMemo>(message: &T) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::MessageTransactions;
-    use crate::provider::testkit::TEST_TRANSACTION_ID;
+    use crate::models::{MessageTransactions, TraceResponse};
+    use crate::provider::testkit::{FAILED_SWAP_ROOT_TRANSACTION_HASH, SUCCESS_SWAP_ROOT_TRANSACTION_HASH, TEST_TRANSACTION_ID};
 
     #[test]
     fn test_transaction_transfer_state_success() {
@@ -284,5 +308,19 @@ mod tests {
             assert!(!transaction.from.is_empty());
             assert!(!transaction.to.is_empty());
         }
+    }
+
+    #[test]
+    fn test_map_trace_transactions_by_block() {
+        let traces = TraceResponse::mock_block_traces();
+
+        assert_eq!(traces.traces.len(), 2);
+
+        let transactions = map_trace_transactions(traces.traces);
+        let hashes = transactions.iter().map(|transaction| transaction.hash.as_str()).collect::<Vec<_>>();
+
+        assert_eq!(hashes, vec![SUCCESS_SWAP_ROOT_TRANSACTION_HASH, FAILED_SWAP_ROOT_TRANSACTION_HASH]);
+        assert_eq!(transactions[0].state, TransactionState::Confirmed);
+        assert_eq!(transactions[1].state, TransactionState::Reverted);
     }
 }

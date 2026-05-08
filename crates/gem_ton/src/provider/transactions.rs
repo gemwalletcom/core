@@ -5,13 +5,16 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::Transaction;
 
-use crate::{provider::transactions_mapper::map_transactions, rpc::client::TonClient};
+use crate::{
+    provider::transactions_mapper::{map_trace_transactions, map_transactions},
+    rpc::client::TonClient,
+};
 
 #[async_trait]
 impl<C: Client> ChainTransactions for TonClient<C> {
     async fn get_transactions_by_block(&self, block: u64) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
-        let transactions = self.get_transactions_by_masterchain_block(block.to_string()).await?;
-        Ok(map_transactions(transactions.transactions))
+        let traces = self.get_traces_by_masterchain_block(block).await?;
+        Ok(map_trace_transactions(traces.traces))
     }
 
     async fn get_transaction_by_hash(&self, hash: String) -> Result<Option<Transaction>, Box<dyn Error + Sync + Send>> {

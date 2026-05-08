@@ -22,6 +22,7 @@ pub fn map_transaction_status(_request: TransactionStateRequest, traces: TraceRe
 mod tests {
     use super::*;
     use crate::models::{MessageTransactions, TraceAction};
+    use crate::provider::testkit::{FAILED_SWAP_MESSAGE_HASH, SUCCESS_SWAP_MESSAGE_HASH};
     use primitives::TransactionState;
 
     #[test]
@@ -47,9 +48,9 @@ mod tests {
     }
 
     #[test]
-    fn test_map_transaction_status_success_swap_trace() {
-        let request = TransactionStateRequest::new_id("e993d4c13053978b6265157561c454ef731274d836e3139ed64fdf58b6635bf7".to_string());
-        let traces: TraceResponse = serde_json::from_str(include_str!("../../testdata/transaction_swap_jetton_ton_success_trace.json")).unwrap();
+    fn test_map_transaction_status_success_trace_action() {
+        let request = TransactionStateRequest::new_id(SUCCESS_SWAP_MESSAGE_HASH.to_string());
+        let traces = TraceResponse::mock_block_trace(0);
 
         let update = map_transaction_status(request, traces).unwrap();
         assert_eq!(update.state, TransactionState::Confirmed);
@@ -57,9 +58,9 @@ mod tests {
     }
 
     #[test]
-    fn test_map_transaction_status_failed_swap_trace() {
-        let request = TransactionStateRequest::new_id("cf2fc2efd8d6f6b018f949b8f07e7e4b898a34a8bd422fcffb76bdc6e947b7e7".to_string());
-        let traces: TraceResponse = serde_json::from_str(include_str!("../../testdata/transaction_swap_jetton_ton_failed_trace.json")).unwrap();
+    fn test_map_transaction_status_failed_trace_action() {
+        let request = TransactionStateRequest::new_id(FAILED_SWAP_MESSAGE_HASH.to_string());
+        let traces = TraceResponse::mock_block_trace(1);
         let transaction = traces.root_transaction().unwrap().clone();
 
         let root_update = map_transaction_status(request.clone(), TraceResponse::mock(transaction, false, vec![])).unwrap();
