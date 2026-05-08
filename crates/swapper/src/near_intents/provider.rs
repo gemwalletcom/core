@@ -565,20 +565,13 @@ mod swap_integration_tests {
     use super::*;
     use crate::near_intents::assets::NEAR_INTENTS_BTC_NATIVE;
     use crate::{
-        FetchQuoteData, SwapperMode, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode, alien::reqwest_provider::NativeProvider, config::get_swap_config, models::Options,
+        FetchQuoteData, SwapperMode, SwapperQuoteAsset, alien::reqwest_provider::NativeProvider, config::get_swap_config, models::Options,
     };
     use primitives::{
         AssetId, Chain,
         asset_constants::{ARBITRUM_USDC_ASSET_ID, BASE_USDC_ASSET_ID},
     };
     use std::sync::Arc;
-
-    fn exact_slippage_options() -> Options {
-        Options::new_with_slippage(SwapperSlippage {
-            bps: 100,
-            mode: SwapperSlippageMode::Exact,
-        })
-    }
 
     #[tokio::test]
     async fn test_near_intents_quote() -> Result<(), SwapperError> {
@@ -587,13 +580,8 @@ mod swap_integration_tests {
 
         let swap_config = get_swap_config();
         let options = Options {
-            slippage: SwapperSlippage {
-                bps: 100,
-                mode: SwapperSlippageMode::Exact,
-            },
             fee: Some(swap_config.referral_fee),
-            preferred_providers: vec![],
-            use_max_amount: false,
+            ..Options::mock_exact(100)
         };
 
         let request = QuoteRequest {
@@ -627,7 +615,7 @@ mod swap_integration_tests {
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             value: "100000".to_string(),
             mode: SwapperMode::ExactIn,
-            options: exact_slippage_options(),
+            options: Options::mock_exact(100),
         };
 
         let quote = provider.get_quote(&from_bitcoin_request).await?;
@@ -650,7 +638,7 @@ mod swap_integration_tests {
             destination_address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh".to_string(),
             value: "10000000".to_string(),
             mode: SwapperMode::ExactIn,
-            options: exact_slippage_options(),
+            options: Options::mock_exact(100),
         };
 
         let quote = provider.get_quote(&to_bitcoin_request).await?;
@@ -681,7 +669,7 @@ mod swap_integration_tests {
             destination_address: "test.near".to_string(),
             value: "20000000".to_string(),
             mode: SwapperMode::ExactIn,
-            options: exact_slippage_options(),
+            options: Options::mock_exact(100),
         };
 
         let quote = match provider.get_quote(&request).await {

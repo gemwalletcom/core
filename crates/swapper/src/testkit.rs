@@ -33,6 +33,12 @@ impl Route {
     }
 }
 
+impl Options {
+    pub fn mock_exact(bps: u32) -> Self {
+        Self::new_with_slippage(SwapperSlippage::mock_exact(bps))
+    }
+}
+
 impl QuoteRequest {
     pub fn mock(chain: Chain, token_id: Option<&str>) -> Self {
         QuoteRequest {
