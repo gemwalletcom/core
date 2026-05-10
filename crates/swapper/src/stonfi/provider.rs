@@ -1,20 +1,26 @@
 use super::{
     client::StonfiClient,
-    model::{SimulateSwapRequest, SwapSimulation},
+    model::{QuotePath, SimulateSwapRequest, SwapSimulation},
     tx_builder::{ReferralParams, SwapTransactionParams, build_swap_transaction},
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteAsset,
     SwapperQuoteData,
     config::get_swap_api_url,
-    fees::{default_referral_fees, quote_value_after_reserve_by_chain},
+    fees::{ReferralFee, default_referral_fees, quote_value_after_reserve_by_chain},
 };
 use async_trait::async_trait;
+use futures::future::{join, join_all};
 use gem_client::Client;
-use gem_ton::{address::base64_to_hex_address, constants::TON_PROXY_JETTON_ADDRESS, rpc::client::TonClient};
+use gem_ton::{
+    address::{Address, base64_to_hex_address},
+    constants::TON_PROXY_JETTON_ADDRESS,
+    rpc::client::TonClient,
+};
+use num_bigint::BigUint;
 use number_formatter::BigNumberFormatter;
-use primitives::Chain;
-use std::{fmt::Debug, sync::Arc};
+use primitives::{AssetId, Chain, asset_constants::TON_USDT_ASSET_ID};
+use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 const SLIPPAGE_BPS_DECIMALS: u32 = 4;
 
@@ -46,6 +52,120 @@ where
             client: StonfiClient::new(client),
             ton_client,
         }
+    }
+
+    fn intermediary_tokens() -> Vec<SwapperQuoteAsset> {
+        vec![SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ton)), SwapperQuoteAsset::from(TON_USDT_ASSET_ID.clone())]
+    }
+
+    async fn quote_path_via_intermediary(&self, intermediary: &SwapperQuoteAsset, from_value: &str, request: &QuoteRequest) -> Result<QuotePath, SwapperError> {
+        let to_intermediary = self.simulate(&request.from_asset, from_value, intermediary, request, false).await?;
+        if !to_intermediary.router.is_supported_v2() {
+            return Err(SwapperError::InvalidRoute);
+        }
+        // The second hop quote uses the first hop's expected output; execution still applies min_ask_units per hop.
+        let from_intermediary = self.simulate(intermediary, &to_intermediary.ask_units, &request.to_asset, request, true).await?;
+        if !from_intermediary.router.is_supported_v2() {
+            return Err(SwapperError::InvalidRoute);
+        }
+        Ok(QuotePath {
+            to_value: from_intermediary.ask_units.clone(),
+            routes: vec![
+                Route {
+                    input: request.from_asset.asset_id(),
+                    output: intermediary.asset_id(),
+                    route_data: serde_json::to_string(&to_intermediary)?,
+                },
+                Route {
+                    input: intermediary.asset_id(),
+                    output: request.to_asset.asset_id(),
+                    route_data: serde_json::to_string(&from_intermediary)?,
+                },
+            ],
+        })
+    }
+
+    async fn quote_direct(&self, request: &QuoteRequest, from_value: &str) -> Result<QuotePath, SwapperError> {
+        let simulation = self.simulate(&request.from_asset, from_value, &request.to_asset, request, true).await?;
+        Ok(QuotePath {
+            to_value: simulation.ask_units.clone(),
+            routes: vec![Route {
+                input: request.from_asset.asset_id(),
+                output: request.to_asset.asset_id(),
+                route_data: serde_json::to_string(&simulation)?,
+            }],
+        })
+    }
+
+    async fn quote_intermediary_paths(&self, request: &QuoteRequest, from_value: &str) -> Vec<Result<QuotePath, SwapperError>> {
+        let intermediary_tokens = Self::intermediary_tokens()
+            .into_iter()
+            .filter(|intermediary| {
+                let intermediary_id = intermediary.asset_id();
+                intermediary_id != request.from_asset.asset_id() && intermediary_id != request.to_asset.asset_id()
+            })
+            .collect::<Vec<_>>();
+        join_all(
+            intermediary_tokens
+                .iter()
+                .map(|intermediary| self.quote_path_via_intermediary(intermediary, from_value, request)),
+        )
+        .await
+    }
+
+    async fn simulate(
+        &self,
+        from_asset: &SwapperQuoteAsset,
+        from_value: &str,
+        to_asset: &SwapperQuoteAsset,
+        request: &QuoteRequest,
+        // Multi-hop quotes charge referral only on the final swap.
+        apply_referral: bool,
+    ) -> Result<SwapSimulation, SwapperError> {
+        let referral_fee = if apply_referral {
+            request.options.fee.clone().map(|fees| fees.ton).unwrap_or_else(|| default_referral_fees().ton)
+        } else {
+            ReferralFee {
+                bps: 0,
+                ..default_referral_fees().ton
+            }
+        };
+        let simulation_request = SimulateSwapRequest {
+            offer_address: token_address(from_asset),
+            units: from_value.to_string(),
+            ask_address: token_address(to_asset),
+            slippage_tolerance: slippage_tolerance(request.options.slippage.bps)?,
+            referral_address: referral_fee.address,
+            referral_fee_bps: referral_fee.bps.to_string(),
+        };
+        self.client.simulate_swap(&simulation_request).await
+    }
+
+    fn select_best_quote_path(paths: impl IntoIterator<Item = Result<QuotePath, SwapperError>>) -> Result<QuotePath, SwapperError> {
+        let mut error = None;
+        paths
+            .into_iter()
+            .filter_map(|result| match result {
+                Ok(path) => BigUint::from_str(&path.to_value).ok().map(|amount| (amount, path)),
+                Err(err) => {
+                    if error.is_none() {
+                        error = Some(err);
+                    }
+                    None
+                }
+            })
+            .max_by(|(left, _), (right, _)| left.cmp(right))
+            .map(|(_, path)| path)
+            .ok_or_else(|| error.unwrap_or(SwapperError::NoQuoteAvailable))
+    }
+
+    async fn get_quotes(&self, request: &QuoteRequest, from_value: &str) -> Result<QuotePath, SwapperError> {
+        if request.from_asset.is_native() || request.to_asset.is_native() {
+            return self.quote_direct(request, from_value).await;
+        }
+
+        let (direct, intermediary_paths) = join(self.quote_direct(request, from_value), self.quote_intermediary_paths(request, from_value)).await;
+        Self::select_best_quote_path(std::iter::once(direct).chain(intermediary_paths))
     }
 
     async fn sender_jetton_wallet(&self, quote: &Quote) -> Result<Option<String>, SwapperError> {
@@ -82,28 +202,14 @@ where
 
     async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let from_value = quote_value_after_reserve_by_chain(request)?;
-        let referral_fee = request.options.fee.clone().map(|fees| fees.ton).unwrap_or_else(|| default_referral_fees().ton);
-        let simulation_request = SimulateSwapRequest {
-            offer_address: token_address(&request.from_asset),
-            units: from_value.clone(),
-            ask_address: token_address(&request.to_asset),
-            slippage_tolerance: slippage_tolerance(request.options.slippage.bps)?,
-            referral_address: referral_fee.address.clone(),
-            referral_fee_bps: referral_fee.bps.to_string(),
-        };
-
-        let simulation = self.client.simulate_swap(&simulation_request).await?;
+        let path = self.get_quotes(request, &from_value).await?;
 
         Ok(Quote {
             from_value,
-            to_value: simulation.ask_units.clone(),
+            to_value: path.to_value,
             data: ProviderData {
                 provider: self.provider().clone(),
-                routes: vec![Route {
-                    input: request.from_asset.asset_id(),
-                    output: request.to_asset.asset_id(),
-                    route_data: serde_json::to_string(&simulation)?,
-                }],
+                routes: path.routes,
                 slippage_bps: request.options.slippage.bps,
             },
             request: request.clone(),
@@ -112,8 +218,17 @@ where
     }
 
     async fn get_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
-        let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
-        let simulation: SwapSimulation = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
+        let simulations = quote
+            .data
+            .routes
+            .iter()
+            .map(|route| serde_json::from_str::<SwapSimulation>(&route.route_data).map_err(|_| SwapperError::InvalidRoute))
+            .collect::<Result<Vec<_>, _>>()?;
+        if simulations.len() > 2 {
+            return Err(SwapperError::InvalidRoute);
+        }
+        let simulation = simulations.first().ok_or(SwapperError::InvalidRoute)?;
+        let next_swap = simulations.get(1);
         let referral_fee = quote.request.options.fee.clone().map(|fees| fees.ton).unwrap_or_else(|| default_referral_fees().ton);
         let receiver_address = if quote.request.destination_address.is_empty() {
             &quote.request.wallet_address
@@ -123,16 +238,16 @@ where
         let sender_jetton_wallet = self.sender_jetton_wallet(quote).await?;
 
         let tx = build_swap_transaction(SwapTransactionParams {
-            simulation: &simulation,
+            simulation,
+            next_swap,
             from_native: quote.request.from_asset.is_native(),
             to_native: quote.request.to_asset.is_native(),
             sender_jetton_wallet: sender_jetton_wallet.as_deref(),
             from_value: &quote.from_value,
-            min_ask_amount: &simulation.min_ask_units,
-            wallet_address: &quote.request.wallet_address,
-            receiver_address,
+            wallet_address: Address::parse(&quote.request.wallet_address)?,
+            receiver_address: Address::parse(receiver_address)?,
             referral: ReferralParams {
-                address: &referral_fee.address,
+                address: Address::parse(&referral_fee.address)?,
                 bps: referral_fee.bps,
             },
             deadline: None,
@@ -177,9 +292,12 @@ mod tests {
 mod swap_integration_tests {
     use super::*;
     use crate::{
+        Options, SwapperMode, SwapperQuoteAsset,
         alien::reqwest_provider::NativeProvider,
+        stonfi::testkit::NOT_TOKEN_ID,
         testkit::{TEST_TON_WALLET_ADDRESS, mock_ton},
     };
+    use primitives::{AssetId, asset_constants::TON_USDT_ASSET_ID};
 
     #[tokio::test]
     async fn test_stonfi_fetch_quote_and_quote_data_ton_to_usdt() -> Result<(), SwapperError> {
@@ -199,6 +317,40 @@ mod swap_integration_tests {
         assert!(!quote_data.value.is_empty());
         assert!(quote_data.data.starts_with("te6cc"));
         println!("STON.fi TON -> USDT quote_data: {quote_data:?}");
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_stonfi_fetch_quote_and_quote_data_not_to_usdt() -> Result<(), SwapperError> {
+        let rpc_provider = Arc::new(NativeProvider::default());
+        let provider = Stonfi::new(rpc_provider);
+        let request = QuoteRequest {
+            from_asset: SwapperQuoteAsset::from(AssetId::from_token(Chain::Ton, NOT_TOKEN_ID)),
+            to_asset: SwapperQuoteAsset::from(TON_USDT_ASSET_ID.clone()),
+            wallet_address: TEST_TON_WALLET_ADDRESS.to_string(),
+            destination_address: TEST_TON_WALLET_ADDRESS.to_string(),
+            value: "1000000000000".to_string(),
+            mode: SwapperMode::ExactIn,
+            options: Options::new_with_slippage(100.into()),
+        };
+
+        let quote = provider.get_quote(&request).await?;
+        assert_eq!(quote.from_value, request.value);
+        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
+        assert_eq!(quote.data.provider, provider.provider().clone());
+        assert_eq!(quote.data.routes.len(), 2);
+        assert_eq!(quote.data.routes[0].input, AssetId::from_token(Chain::Ton, NOT_TOKEN_ID));
+        assert_eq!(quote.data.routes[0].output, AssetId::from_chain(Chain::Ton));
+        assert_eq!(quote.data.routes[1].input, AssetId::from_chain(Chain::Ton));
+        assert_eq!(quote.data.routes[1].output, TON_USDT_ASSET_ID.clone());
+        println!("STON.fi NOT -> USDT quote: {quote:?}");
+
+        let quote_data = provider.get_quote_data(&quote, FetchQuoteData::None).await?;
+        assert!(!quote_data.to.is_empty());
+        assert!(!quote_data.value.is_empty());
+        assert!(quote_data.data.starts_with("te6cc"));
+        println!("STON.fi NOT -> USDT quote_data: {quote_data:?}");
 
         Ok(())
     }

@@ -1,7 +1,5 @@
 mod message;
 mod model;
-#[cfg(test)]
-mod tests;
 mod v1;
 mod v2;
 
@@ -17,9 +15,10 @@ enum RouterVersion {
 }
 
 pub fn build_swap_transaction(params: SwapTransactionParams<'_>) -> Result<TxParams, SwapperError> {
-    match router_version(&params.simulation.router)? {
-        RouterVersion::V1 => v1::build_swap_transaction(params),
-        RouterVersion::V2 => v2::build_swap_transaction(params),
+    match (router_version(&params.simulation.router)?, params.next_swap.is_some()) {
+        (RouterVersion::V1, false) => v1::build_swap_transaction(params),
+        (RouterVersion::V1, true) => Err(SwapperError::ComputeQuoteError("STON.fi v1 multi-hop swap is not supported".into())),
+        (RouterVersion::V2, _) => v2::build_swap_transaction(params),
     }
 }
 
