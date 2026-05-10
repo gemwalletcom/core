@@ -1,7 +1,7 @@
 use super::{
     client::StonfiClient,
     model::{QuotePath, SimulateSwapRequest, SwapSimulation},
-    tx_builder::{ReferralParams, SwapTransactionParams, build_swap_transaction},
+    tx_builder::{NextSwapParams, ReferralParams, SwapTransactionParams, build_swap_transaction},
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteAsset,
@@ -228,7 +228,15 @@ where
             return Err(SwapperError::InvalidRoute);
         }
         let simulation = simulations.first().ok_or(SwapperError::InvalidRoute)?;
-        let next_swap = simulations.get(1);
+        let next_swap = simulations
+            .get(1)
+            .map(|next_simulation| {
+                Ok::<_, SwapperError>(NextSwapParams {
+                    simulation: next_simulation,
+                    min_ask_amount: scaled_next_min_ask_amount(simulation, next_simulation)?,
+                })
+            })
+            .transpose()?;
         let referral_fee = quote.request.options.fee.clone().map(|fees| fees.ton).unwrap_or_else(|| default_referral_fees().ton);
         let receiver_address = if quote.request.destination_address.is_empty() {
             &quote.request.wallet_address
@@ -269,6 +277,16 @@ fn slippage_tolerance(bps: u32) -> Result<String, SwapperError> {
     Ok(BigNumberFormatter::value(&u64::from(bps).to_string(), SLIPPAGE_BPS_DECIMALS as i32)?)
 }
 
+fn scaled_next_min_ask_amount(first: &SwapSimulation, next: &SwapSimulation) -> Result<BigUint, SwapperError> {
+    let first_ask = BigUint::from_str(&first.ask_units)?;
+    if first_ask == BigUint::from(0u8) {
+        return Err(SwapperError::InvalidRoute);
+    }
+    let first_min = BigUint::from_str(&first.min_ask_units)?;
+    let next_min = BigUint::from_str(&next.min_ask_units)?;
+    Ok((next_min * first_min) / first_ask)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -285,6 +303,14 @@ mod tests {
         assert_eq!(slippage_tolerance(50).unwrap(), "0.005");
         assert_eq!(slippage_tolerance(100).unwrap(), "0.01");
         assert_eq!(slippage_tolerance(10_000).unwrap(), "1");
+    }
+
+    #[test]
+    fn test_scaled_next_min_ask_amount() {
+        let first = SwapSimulation::mock("", "", "260238", "257635");
+        let next = SwapSimulation::mock("", "", "709", "702");
+
+        assert_eq!(scaled_next_min_ask_amount(&first, &next).unwrap(), BigUint::from(694u32));
     }
 }
 

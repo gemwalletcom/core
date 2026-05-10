@@ -8,10 +8,16 @@ pub struct ReferralParams {
     pub bps: u32,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
+pub struct NextSwapParams<'a> {
+    pub simulation: &'a SwapSimulation,
+    pub min_ask_amount: BigUint,
+}
+
+#[derive(Debug, Clone)]
 pub struct SwapTransactionParams<'a> {
     pub simulation: &'a SwapSimulation,
-    pub next_swap: Option<&'a SwapSimulation>,
+    pub next_swap: Option<NextSwapParams<'a>>,
     pub from_native: bool,
     pub to_native: bool,
     pub sender_jetton_wallet: Option<&'a str>,

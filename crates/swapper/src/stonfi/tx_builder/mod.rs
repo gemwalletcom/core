@@ -6,7 +6,7 @@ mod v2;
 use super::model::Router;
 use crate::SwapperError;
 
-pub use model::{ReferralParams, SwapTransactionParams, TxParams};
+pub use model::{NextSwapParams, ReferralParams, SwapTransactionParams, TxParams};
 
 #[derive(Debug, Clone, Copy)]
 enum RouterVersion {

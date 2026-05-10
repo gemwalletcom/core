@@ -1,8 +1,8 @@
 use super::{
     message::build_jetton_transfer_body,
-    model::{SwapCellParams, SwapTransactionParams, TxParams},
+    model::{NextSwapParams, SwapCellParams, SwapTransactionParams, TxParams},
 };
-use crate::{SwapperError, stonfi::model::SwapSimulation};
+use crate::SwapperError;
 use gem_ton::{
     address::Address,
     tvm::{BagOfCells, Cell, CellArc, CellBuilder},
@@ -69,9 +69,9 @@ fn build_jetton_swap(params: SwapTransactionParams<'_>, swap_body: &CellArc) -> 
 
 fn build_swap_body(params: &SwapTransactionParams<'_>) -> Result<Cell, SwapperError> {
     let ask_wallet = Address::parse(&params.simulation.ask_jetton_wallet)?;
-    let receiver_address = match params.next_swap {
-        Some(next_swap) if params.simulation.router == next_swap.router => Address::parse(&params.simulation.router.address)?,
-        Some(next_swap) => Address::parse(&next_swap.router.address)?,
+    let receiver_address = match params.next_swap.as_ref() {
+        Some(next_swap) if params.simulation.router == next_swap.simulation.router => Address::parse(&params.simulation.router.address)?,
+        Some(next_swap) => Address::parse(&next_swap.simulation.router.address)?,
         None => params.receiver_address,
     };
     let min_ask_amount = BigUint::from_str(&params.simulation.min_ask_units)?;
@@ -83,7 +83,12 @@ fn build_swap_body(params: &SwapTransactionParams<'_>) -> Result<Cell, SwapperEr
     };
     let deadline = params.deadline.unwrap_or_else(|| unix_timestamp() + default_deadline_seconds);
 
-    let next_payload = params.next_swap.map(|next_swap| build_next_swap_body(params, next_swap)).transpose()?.map(Cell::into_arc);
+    let next_payload = params
+        .next_swap
+        .as_ref()
+        .map(|next_swap| build_next_swap_body(params, next_swap))
+        .transpose()?
+        .map(Cell::into_arc);
     let custom_payload_forward_gas = next_swap_forward_gas(params);
 
     build_swap_cell(SwapCellParams {
@@ -100,14 +105,13 @@ fn build_swap_body(params: &SwapTransactionParams<'_>) -> Result<Cell, SwapperEr
     })
 }
 
-fn build_next_swap_body(params: &SwapTransactionParams<'_>, next_swap: &SwapSimulation) -> Result<Cell, SwapperError> {
-    let opcode = if params.simulation.router == next_swap.router {
+fn build_next_swap_body(params: &SwapTransactionParams<'_>, next_swap: &NextSwapParams<'_>) -> Result<Cell, SwapperError> {
+    let opcode = if params.simulation.router == next_swap.simulation.router {
         V2_CROSS_SWAP_OPCODE
     } else {
         V2_SWAP_OPCODE
     };
-    let ask_wallet = Address::parse(&next_swap.ask_jetton_wallet)?;
-    let min_ask_amount = BigUint::from_str(&next_swap.min_ask_units)?;
+    let ask_wallet = Address::parse(&next_swap.simulation.ask_jetton_wallet)?;
     let deadline = params.deadline.unwrap_or_else(|| unix_timestamp() + V2_DEFAULT_DEADLINE_SECONDS);
 
     build_swap_cell(SwapCellParams {
@@ -115,7 +119,7 @@ fn build_next_swap_body(params: &SwapTransactionParams<'_>, next_swap: &SwapSimu
         ask_wallet,
         refund_address: params.wallet_address,
         receiver_address: params.receiver_address,
-        min_ask_amount,
+        min_ask_amount: next_swap.min_ask_amount.clone(),
         forward_gas: 0,
         next_payload: None,
         referral_bps: params.referral.bps,
@@ -150,8 +154,8 @@ fn build_swap_cell(params: SwapCellParams<'_>) -> Result<Cell, SwapperError> {
 
 fn next_swap_forward_gas(params: &SwapTransactionParams<'_>) -> u64 {
     // Same-router cross-swaps route internally; inter-router hops need extra forward gas.
-    match params.next_swap {
-        Some(next_swap) if params.simulation.router != next_swap.router => V2_JETTON_SWAP_FORWARD_GAS,
+    match params.next_swap.as_ref() {
+        Some(next_swap) if params.simulation.router != next_swap.simulation.router => V2_JETTON_SWAP_FORWARD_GAS,
         _ => 0,
     }
 }
@@ -170,7 +174,10 @@ fn build_pton_ton_transfer_body(amount: &BigUint, refund_address: &Address, forw
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::stonfi::{model::SwapSimulation, tx_builder::SwapTransactionParams};
+    use crate::stonfi::{
+        model::SwapSimulation,
+        tx_builder::{NextSwapParams, SwapTransactionParams},
+    };
 
     const TEST_SENDER_JETTON_WALLET: &str = "EQAlgB03OjJKdXrlwZiGJD5snSzPKF2VL5bErJn_cqJANGH9";
 
@@ -226,7 +233,10 @@ mod tests {
             "702",
         );
         let cross_transaction = build_swap_transaction(SwapTransactionParams {
-            next_swap: Some(&swap_from_intermediary),
+            next_swap: Some(NextSwapParams {
+                simulation: &swap_from_intermediary,
+                min_ask_amount: BigUint::from(694u32),
+            }),
             ..SwapTransactionParams::mock(&swap_to_intermediary)
         })
         .unwrap();
@@ -235,14 +245,17 @@ mod tests {
         assert_eq!(cross_transaction.value, "1310000000");
         assert_eq!(
             cross_transaction.data,
-            "te6cckECBQEAAbUAAWQB84NdAAAAAAAAAABDuaygCABnQpS1KA0vOrNyZREwsizBcWLmxoViLGXfuZIjVyCvnwEB4WZk3iqAEkWsT6+x23oBycR3thipTt3Lw+jK50NeiC8K/0fEfSPwAM6FKWpQGl51ZuTKImFkWYLixc2NCsRYy79zJEauQV8+ABnQpS1KA0vOrNyZREwsizBcWLmxoViLGXfuZIjVyCvngAAAADKp+IBAAgGTMD7mOAElwoI1yo0SXmdlkVE9Ugchsf6Z93IvTIdyPOfuDftzohAAAEADOhSlqUBpedWbkyiJhZFmC4sXNjQrEWMu/cyRGrkFfPgDAeFpzxpbgBJEGDA02f1Zojb3HsQnG+N3OZBW3aTMOl6/XcQJZ99kEADOhSlqUBpedWbkyiJhZFmC4sXNjQrEWMu/cyRGrkFfPgAZ0KUtSgNLzqzcmURMLIswXFi5saFYixl37mSI1cgr54AAAAAyqfiAQAQAkSAr6ABnQpS1KA0vOrNyZREwsizBcWLmxoViLGXfuZIjVyCvngAAGUADOhSlqUBpedWbkyiJhZFmC4sXNjQrEWMu/cyRGrkFfPhztcoQ"
+            "te6cckECBQEAAbUAAWQB84NdAAAAAAAAAABDuaygCABnQpS1KA0vOrNyZREwsizBcWLmxoViLGXfuZIjVyCvnwEB4WZk3iqAEkWsT6+x23oBycR3thipTt3Lw+jK50NeiC8K/0fEfSPwAM6FKWpQGl51ZuTKImFkWYLixc2NCsRYy79zJEauQV8+ABnQpS1KA0vOrNyZREwsizBcWLmxoViLGXfuZIjVyCvngAAAADKp+IBAAgGTMD7mOAElwoI1yo0SXmdlkVE9Ugchsf6Z93IvTIdyPOfuDftzohAAAEADOhSlqUBpedWbkyiJhZFmC4sXNjQrEWMu/cyRGrkFfPgDAeFpzxpbgBJEGDA02f1Zojb3HsQnG+N3OZBW3aTMOl6/XcQJZ99kEADOhSlqUBpedWbkyiJhZFmC4sXNjQrEWMu/cyRGrkFfPgAZ0KUtSgNLzqzcmURMLIswXFi5saFYixl37mSI1cgr54AAAAAyqfiAQAQAkSAraABnQpS1KA0vOrNyZREwsizBcWLmxoViLGXfuZIjVyCvngAAGUADOhSlqUBpedWbkyiJhZFmC4sXNjQrEWMu/cyRGrkFfPhOi4cX"
         );
         assert!(BagOfCells::parse_base64(&cross_transaction.data).is_ok());
 
         let mut swap_from_intermediary_on_other_router = swap_from_intermediary.clone();
         swap_from_intermediary_on_other_router.router.address = "EQDx--jUU9PUtHltPYZX7wdzIi0SPY3KZ8nvOs0iZvQJd6Ql".to_string();
         let forward_transaction = build_swap_transaction(SwapTransactionParams {
-            next_swap: Some(&swap_from_intermediary_on_other_router),
+            next_swap: Some(NextSwapParams {
+                simulation: &swap_from_intermediary_on_other_router,
+                min_ask_amount: BigUint::from(694u32),
+            }),
             from_native: false,
             sender_jetton_wallet: Some(TEST_SENDER_JETTON_WALLET),
             from_value: "1000000",
@@ -254,7 +267,7 @@ mod tests {
         assert_eq!(forward_transaction.value, "540000000");
         assert_eq!(
             forward_transaction.data,
-            "te6cckECBQEAAd4AAa4Pin6lAAAAAAAAAAAw9CQIASXCgjXKjRJeZ2WRUT1SByGx/pn3ci9Mh3I85+4N+3OjAAzoUpalAaXnVm5MoiYWRZguLFzY0KxFjLv3MkRq5BXzyDk4cAEBAeFmZN4qgBJFrE+vsdt6AcnEd7YYqU7dy8PoyudDXogvCv9HxH0j8ADOhSlqUBpedWbkyiJhZFmC4sXNjQrEWMu/cyRGrkFfPgAZ0KUtSgNLzqzcmURMLIswXFi5saFYixl37mSI1cgr54AAAAAyqfiAQAIBmzA+5jgB4/fRqKenqWjy2nsMr94O5kRaJHsblM+T3nWaRM3oEu6BycOAEAAAQAM6FKWpQGl51ZuTKImFkWYLixc2NCsRYy79zJEauQV8+AMB4WZk3iqAEkQYMDTZ/VmiNvcexCcb43c5kFbdpMw6Xr9dxAln32QQAM6FKWpQGl51ZuTKImFkWYLixc2NCsRYy79zJEauQV8+ABnQpS1KA0vOrNyZREwsizBcWLmxoViLGXfuZIjVyCvngAAAADKp+IBABACRICvoAGdClLUoDS86s3JlETCyLMFxYubGhWIsZd+5kiNXIK+eAAAZQAM6FKWpQGl51ZuTKImFkWYLixc2NCsRYy79zJEauQV8+KOohs0="
+            "te6cckECBQEAAd4AAa4Pin6lAAAAAAAAAAAw9CQIASXCgjXKjRJeZ2WRUT1SByGx/pn3ci9Mh3I85+4N+3OjAAzoUpalAaXnVm5MoiYWRZguLFzY0KxFjLv3MkRq5BXzyDk4cAEBAeFmZN4qgBJFrE+vsdt6AcnEd7YYqU7dy8PoyudDXogvCv9HxH0j8ADOhSlqUBpedWbkyiJhZFmC4sXNjQrEWMu/cyRGrkFfPgAZ0KUtSgNLzqzcmURMLIswXFi5saFYixl37mSI1cgr54AAAAAyqfiAQAIBmzA+5jgB4/fRqKenqWjy2nsMr94O5kRaJHsblM+T3nWaRM3oEu6BycOAEAAAQAM6FKWpQGl51ZuTKImFkWYLixc2NCsRYy79zJEauQV8+AMB4WZk3iqAEkQYMDTZ/VmiNvcexCcb43c5kFbdpMw6Xr9dxAln32QQAM6FKWpQGl51ZuTKImFkWYLixc2NCsRYy79zJEauQV8+ABnQpS1KA0vOrNyZREwsizBcWLmxoViLGXfuZIjVyCvngAAAADKp+IBABACRICtoAGdClLUoDS86s3JlETCyLMFxYubGhWIsZd+5kiNXIK+eAAAZQAM6FKWpQGl51ZuTKImFkWYLixc2NCsRYy79zJEauQV8+J6Wy8o="
         );
         assert!(BagOfCells::parse_base64(&forward_transaction.data).is_ok());
     }
