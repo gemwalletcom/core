@@ -35,7 +35,7 @@ use config::ConfigClient;
 use devices::DevicesClient;
 use devices::{
     AddressNamesClient, FiatQuotesClient, NotificationsClient, PortfolioClient, RewardsClient, RewardsRedemptionClient, ScanClient, ScanProviderFactory, TransactionsClient,
-    WalletsClient,
+    WalletConfigurationClient, WalletsClient,
 };
 use gem_auth::AuthClient;
 use gem_rewards::{AbuseIPDBClient, IpApiClient, IpCheckProvider, IpSecurityClient};
@@ -114,6 +114,7 @@ fn mount_routes(rocket: Rocket<Build>, admin_enabled: bool) -> Rocket<Build> {
                 devices::report_device_nft_v2,
                 devices::scan_device_transaction_v2,
                 devices::get_device_assets_v2,
+                devices::get_device_wallet_configuration_v2,
                 devices::get_device_name_resolve_v2,
                 devices::get_device_transaction_by_id_v2,
                 devices::get_device_transactions_v2,
@@ -195,6 +196,7 @@ async fn rocket_api(settings: Settings) -> Result<Rocket<Build>, Box<dyn std::er
 
     let security_providers = ScanProviderFactory::create_providers(&settings_clone);
     let scan_client = ScanClient::new(database.clone(), security_providers);
+    let wallet_configuration_client = WalletConfigurationClient::new(database.clone(), ChainProviders::new(ProviderFactory::new_providers(&settings)), cacher_client.clone());
     let assets_client = AssetsClient::new(database.clone(), price_config);
     let search_index_client = SearchIndexClient::new(&settings_clone.meilisearch.url.clone(), &settings_clone.meilisearch.key.clone());
     let search_client = SearchClient::new(&search_index_client, price_client.clone());
@@ -246,6 +248,7 @@ async fn rocket_api(settings: Settings) -> Result<Rocket<Build>, Box<dyn std::er
         .manage(Mutex::new(search_client))
         .manage(Mutex::new(transactions_client))
         .manage(Mutex::new(address_names_client))
+        .manage(wallet_configuration_client)
         .manage(Mutex::new(scan_client))
         .manage(Mutex::new(swap_client))
         .manage(nft_client)

@@ -344,6 +344,7 @@ mod tests {
         assert_eq!(coin("ETH.ETH").resolve_asset_id(), Some(Chain::Ethereum.as_asset_id()));
         assert_eq!(coin("BTC.BTC").resolve_asset_id(), Some(Chain::Bitcoin.as_asset_id()));
         assert_eq!(coin("THOR.RUNE").resolve_asset_id(), Some(Chain::Thorchain.as_asset_id()));
+        assert_eq!(coin("ZEC.ZEC").resolve_asset_id(), Some(Chain::Zcash.as_asset_id()));
         assert_eq!(
             coin("ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7").resolve_asset_id(),
             Some(ETHEREUM_USDT_ASSET_ID.clone())

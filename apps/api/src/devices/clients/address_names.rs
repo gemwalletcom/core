@@ -64,7 +64,7 @@ fn asset_entry(asset: Asset) -> Option<(ChainAddress, AddressName)> {
             chain: asset.chain,
             address,
             name: asset.name,
-            address_type: Some(AddressType::Contract),
+            address_type: AddressType::Contract,
             status: VerificationStatus::Verified,
         },
     ))

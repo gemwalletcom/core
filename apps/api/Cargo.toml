@@ -17,6 +17,7 @@ prometheus-client = { workspace = true }
 strum = { workspace = true }
 redis = { workspace = true }
 chrono = { workspace = true }
+futures = { workspace = true }
 gem_hash = { path = "../../crates/gem_hash" }
 hex = { workspace = true }
 reqwest = { workspace = true }

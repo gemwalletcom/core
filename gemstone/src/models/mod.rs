@@ -1,4 +1,3 @@
-pub mod address;
 pub mod asset;
 pub mod balance;
 mod custom_types;
@@ -14,7 +13,6 @@ pub mod swap;
 pub mod token;
 pub mod transaction;
 
-pub use address::*;
 pub use asset::*;
 pub use balance::*;
 pub use gateway::*;

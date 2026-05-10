@@ -6,7 +6,7 @@ impl AddressName {
             chain: Chain::Ethereum,
             address: address.to_string(),
             name: name.to_string(),
-            address_type: Some(address_type),
+            address_type,
             status,
         }
     }

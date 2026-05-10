@@ -17,7 +17,7 @@ use super::{
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperQuoteData,
-    approval::check_approval_erc20, cross_chain::VaultAddresses, thorchain::client::ThorChainSwapClient,
+    approval::check_approval_erc20, cross_chain::VaultAddresses, fees::quote_value_after_reserve_by_chain, thorchain::client::ThorChainSwapClient,
 };
 
 pub struct ThorchainCrossChain;
@@ -91,7 +91,8 @@ where
         let from_asset = THORChainAsset::from_asset_id(&request.from_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
         let to_asset = THORChainAsset::from_asset_id(&request.to_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
 
-        let value = super::asset::value_from(&request.value, from_asset.decimals as i32);
+        let from_value = quote_value_after_reserve_by_chain(request)?;
+        let value = super::asset::value_from(&from_value, from_asset.decimals as i32);
 
         if from_asset.chain != THORChainName::Thorchain {
             let inbound_addresses = self.client.get_inbound_addresses().await?;
@@ -132,7 +133,7 @@ where
         };
 
         let quote = Quote {
-            from_value: request.clone().value,
+            from_value,
             to_value: to_value.to_string(),
             data: ProviderData {
                 provider: self.provider().clone(),
@@ -167,7 +168,7 @@ where
             .unwrap();
 
         let route_data: RouteData = serde_json::from_str(&quote.data.routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
-        let value = quote.request.value.clone();
+        let value = quote.from_value.clone();
 
         let approval: Option<ApprovalData> = {
             if from_asset.use_evm_router() {
@@ -206,13 +207,70 @@ fn min_value(dust_threshold: &BigInt) -> BigInt {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
+
     use super::*;
+    use crate::{Options, SwapperMode, SwapperQuoteAsset, alien::mock::ProviderMock};
 
     #[test]
     fn test_min_value() {
         assert_eq!(min_value(&BigInt::from(10000)), BigInt::from(20000));
         assert_eq!(min_value(&BigInt::from(0)), BigInt::from(0));
         assert_eq!(min_value(&BigInt::from(50000)), BigInt::from(100000));
+    }
+
+    #[test]
+    fn test_supported_assets_contains_zcash() {
+        let provider = Arc::new(ProviderMock::new(String::new()));
+        let swapper = ThorChain::new(provider);
+
+        let supported = swapper.supported_assets();
+        let has_zcash = supported.iter().any(|asset| match asset {
+            SwapperChainAsset::Assets(chain, _) => *chain == Chain::Zcash,
+            SwapperChainAsset::All(chain) => *chain == Chain::Zcash,
+        });
+
+        assert!(has_zcash);
+    }
+
+    #[tokio::test]
+    async fn test_get_quote_data_uses_quote_from_value() {
+        let provider = Arc::new(ProviderMock::new(String::new()));
+        let swapper = ThorChain::new(provider);
+        let route_data = RouteData {
+            router_address: None,
+            inbound_address: "t1Ku2KLyndDPsR32jwnrTMd3yvi9tfFP8ML".to_string(),
+        };
+        let request = QuoteRequest {
+            from_asset: SwapperQuoteAsset::from(Chain::Zcash.as_asset_id()),
+            to_asset: SwapperQuoteAsset::from(Chain::Bitcoin.as_asset_id()),
+            wallet_address: "t1sender".to_string(),
+            destination_address: "bc1qdestination".to_string(),
+            value: "11000000".to_string(),
+            mode: SwapperMode::ExactIn,
+            options: Options::default(),
+        };
+        let quote = Quote {
+            from_value: "10000000".to_string(),
+            to_value: "1".to_string(),
+            data: ProviderData {
+                provider: swapper.provider().clone(),
+                routes: vec![Route {
+                    input: Chain::Zcash.as_asset_id(),
+                    output: Chain::Bitcoin.as_asset_id(),
+                    route_data: serde_json::to_string(&route_data).unwrap(),
+                }],
+                slippage_bps: 50,
+            },
+            request,
+            eta_in_seconds: None,
+        };
+
+        let data = swapper.get_quote_data(&quote, FetchQuoteData::None).await.unwrap();
+
+        assert_eq!(data.to, "t1Ku2KLyndDPsR32jwnrTMd3yvi9tfFP8ML");
+        assert_eq!(data.value, "10000000");
+        assert_eq!(data.memo, Some("=:b:bc1qdestination:0/1/0::0".to_string()));
     }
 }
 

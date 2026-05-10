@@ -2,8 +2,14 @@ use super::signer_mock::TEST_EVM_RECIPIENT;
 use crate::{
     SwapProvider,
     asset_constants::ETHEREUM_USDT_TOKEN_ID,
-    swap::{ApprovalData, SwapData, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteDataType},
+    swap::{ApprovalData, Slippage, SlippageMode, SwapData, SwapProviderData, SwapQuote, SwapQuoteData, SwapQuoteDataType},
 };
+
+impl Slippage {
+    pub fn mock_exact(bps: u32) -> Self {
+        Self { bps, mode: SlippageMode::Exact }
+    }
+}
 
 impl ApprovalData {
     pub fn mock() -> Self {

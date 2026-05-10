@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use chain_traits::{ChainTraits, TransactionsRequest};
-use primitives::{Asset, AssetBalance, Chain, DelegationBase, PerpetualPositionsSummary, StakeValidator, Transaction};
+use primitives::{AddressStatus, Asset, AssetBalance, Chain, DelegationBase, PerpetualPositionsSummary, StakeValidator, Transaction};
 use settings::Settings;
 
 use crate::ProviderFactory;
@@ -93,6 +93,10 @@ impl ChainProviders {
 
     pub async fn get_perpetual_referred_addresses(&self, chain: Chain) -> Result<Vec<String>, Box<dyn Error + Send + Sync>> {
         self.get_provider(chain)?.get_perpetual_referred_addresses().await
+    }
+
+    pub async fn get_address_status(&self, chain: Chain, address: String) -> Result<Vec<AddressStatus>, Box<dyn Error + Send + Sync>> {
+        self.get_provider(chain)?.get_address_status(address).await
     }
 }
 

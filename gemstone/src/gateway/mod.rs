@@ -132,10 +132,6 @@ impl GemGateway {
         self.with_provider(chain, |provider| async move { provider.get_utxos(address).await }).await
     }
 
-    pub async fn get_address_status(&self, chain: Chain, address: String) -> Result<Vec<GemAddressStatus>, GatewayError> {
-        self.with_provider(chain, |provider| async move { provider.get_address_status(address).await }).await
-    }
-
     pub async fn get_transaction_preload(&self, chain: Chain, input: GemTransactionPreloadInput) -> Result<GemTransactionLoadMetadata, GatewayError> {
         let preload_input: primitives::TransactionPreloadInput = input.into();
         let metadata = self

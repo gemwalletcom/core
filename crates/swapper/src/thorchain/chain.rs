@@ -17,6 +17,7 @@ pub enum THORChainName {
     Xrp,
     Tron,
     Solana,
+    Zcash,
 }
 
 // https://dev.thorchain.org/concepts/memo-length-reduction.html
@@ -36,6 +37,7 @@ impl THORChainName {
             THORChainName::Xrp => "x",         // XRP.XRP
             THORChainName::Tron => "tr",       // TRON.TRX
             THORChainName::Solana => "o",      // SOL.SOL
+            THORChainName::Zcash => "z",       // ZEC.ZEC
         }
     }
 
@@ -54,6 +56,7 @@ impl THORChainName {
             THORChainName::Xrp => "XRP",
             THORChainName::Tron => "TRON",
             THORChainName::Solana => "SOL",
+            THORChainName::Zcash => "ZEC",
         }
     }
 
@@ -72,6 +75,7 @@ impl THORChainName {
             THORChainName::Xrp => Chain::Xrp,
             THORChainName::Tron => Chain::Tron,
             THORChainName::Solana => Chain::Solana,
+            THORChainName::Zcash => Chain::Zcash,
         }
     }
 
@@ -90,6 +94,7 @@ impl THORChainName {
             Chain::Xrp => Some(THORChainName::Xrp),
             Chain::Tron => Some(THORChainName::Tron),
             Chain::Solana => Some(THORChainName::Solana),
+            Chain::Zcash => Some(THORChainName::Zcash),
             _ => None,
         }
     }
@@ -105,7 +110,8 @@ impl THORChainName {
             | THORChainName::Litecoin
             | THORChainName::Xrp
             | THORChainName::Tron
-            | THORChainName::Solana => false,
+            | THORChainName::Solana
+            | THORChainName::Zcash => false,
         }
     }
 
@@ -118,7 +124,7 @@ impl THORChainName {
             let address = address.strip_prefix("0X").unwrap_or(address);
             ethereum_address_checksum(address).unwrap_or(address.to_string())
         } else {
-            address.to_lowercase()
+            address.to_string()
         }
     }
 }
@@ -147,5 +153,21 @@ mod tests {
                 variant.short_name()
             );
         }
+    }
+
+    #[test]
+    fn test_zcash_mapping() {
+        assert_eq!(THORChainName::Zcash.short_name(), "z");
+        assert_eq!(THORChainName::Zcash.long_name(), "ZEC");
+        assert_eq!(THORChainName::Zcash.chain(), Chain::Zcash);
+        assert_eq!(THORChainName::from_chain(&Chain::Zcash), Some(THORChainName::Zcash));
+        assert_eq!(THORChainName::from_symbol("ZEC"), Some(THORChainName::Zcash));
+        assert_eq!(THORChainName::from_symbol("z"), Some(THORChainName::Zcash));
+    }
+
+    #[test]
+    fn test_checksum_address_preserves_non_evm_case() {
+        let zcash = "t1Ku2KLyndDPsR32jwnrTMd3yvi9tfFP8ML";
+        assert_eq!(THORChainName::Zcash.checksum_address(zcash), zcash);
     }
 }

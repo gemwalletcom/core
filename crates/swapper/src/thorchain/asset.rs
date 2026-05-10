@@ -82,11 +82,18 @@ impl THORChainAsset {
     }
 
     pub fn from(chain: THORChainName, token_id: &str) -> Option<THORChainAsset> {
-        let token_id = chain.checksum_address(token_id);
         ASSETS
             .iter()
-            .find(|(c, id, _)| *c == chain && token_id == c.checksum_address(id))
+            .find(|(c, id, _)| *c == chain && Self::is_same_token_id(&chain, token_id, id))
             .map(|(c, _, asset)| c.asset((**asset).clone()))
+    }
+
+    fn is_same_token_id(chain: &THORChainName, lhs: &str, rhs: &str) -> bool {
+        if chain.is_evm_chain() {
+            chain.checksum_address(lhs) == chain.checksum_address(rhs)
+        } else {
+            lhs.eq_ignore_ascii_case(rhs)
+        }
     }
 
     // https://dev.thorchain.org/concepts/memos.html#swap
@@ -160,6 +167,9 @@ mod tests {
             decimals: 8,
         };
         assert_eq!(asset_without_token.asset_name(), "r");
+
+        let zcash = THORChainAsset::from_asset_id(Chain::Zcash.as_ref()).unwrap();
+        assert_eq!(zcash.asset_name(), "z");
     }
 
     #[test]
@@ -208,6 +218,12 @@ mod tests {
                 .unwrap()
                 .get_memo(destination_address.clone(), 0, 1, 0, fee_address.clone(), bps),
             Some("=:THOR.TCY:0x1234567890abcdef:0/1/0:g1:50".into())
+        );
+        assert_eq!(
+            THORChainAsset::from_asset_id(Chain::Zcash.as_ref())
+                .unwrap()
+                .get_memo("t1Ku2KLyndDPsR32jwnrTMd3yvi9tfFP8ML".to_string(), 0, 1, 0, fee_address.clone(), bps),
+            Some("=:z:t1Ku2KLyndDPsR32jwnrTMd3yvi9tfFP8ML:0/1/0:g1:50".into())
         );
     }
 

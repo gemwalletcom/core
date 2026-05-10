@@ -15,7 +15,7 @@ pub use client::DevicesClient;
 pub(crate) use clients::WalletSubscriptionInput;
 pub use clients::{
     AddressNamesClient, FiatQuotesClient, NotificationsClient, PortfolioClient, RewardsClient, RewardsRedemptionClient, ScanClient, ScanProviderFactory, TransactionsClient,
-    WalletsClient,
+    WalletConfigurationClient, WalletsClient,
 };
 use gem_auth::AuthClient;
 use guard::{AuthenticatedDevice, AuthenticatedDeviceWallet, VerifiedDeviceId};
@@ -27,7 +27,8 @@ use primitives::name::NameRecord;
 use primitives::rewards::{RedemptionRequest, RedemptionResult, RewardRedemptionOption};
 use primitives::{
     AddressName, AssetId, AuthNonce, ChainAddress, FiatAssets, FiatQuote, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuotes, InAppNotification, NFTData, PortfolioAssets,
-    PortfolioAssetsRequest, PriceAlerts, ReportNft, RewardEvent, Rewards, ScanTransaction, ScanTransactionPayload, Transaction, TransactionsResponse, WalletSubscriptionChains,
+    PortfolioAssetsRequest, PriceAlerts, ReportNft, RewardEvent, Rewards, ScanTransaction, ScanTransactionPayload, Transaction, TransactionsResponse, WalletConfigurationResult,
+    WalletSubscriptionChains,
 };
 use rocket::{State, delete, get, post, put, serde::json::Json, tokio::sync::Mutex};
 use std::sync::Arc;
@@ -236,6 +237,14 @@ pub async fn scan_device_transaction_v2(
     client: &State<Mutex<ScanClient>>,
 ) -> Result<ApiResponse<ScanTransaction>, ApiError> {
     Ok(client.lock().await.get_scan_transaction(request.0).await?.into())
+}
+
+#[get("/devices/wallet_configuration")]
+pub async fn get_device_wallet_configuration_v2(
+    device: AuthenticatedDeviceWallet,
+    client: &State<WalletConfigurationClient>,
+) -> Result<ApiResponse<WalletConfigurationResult>, ApiError> {
+    Ok(client.get_configuration(device.device_row.id, device.wallet_id, device.wallet_identifier).await?.into())
 }
 
 #[get("/devices/notifications?<from_timestamp>")]
