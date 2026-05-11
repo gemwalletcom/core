@@ -59,12 +59,15 @@ where
     }
 
     async fn quote_path_via_intermediary(&self, intermediary: &SwapperQuoteAsset, from_value: &str, request: &QuoteRequest) -> Result<QuotePath, SwapperError> {
-        let to_intermediary = self.simulate(&request.from_asset, from_value, intermediary, request, false).await?;
+        let referral_fee = Self::referral_fee(request);
+        let to_intermediary = self
+            .simulate(&request.from_asset, from_value, intermediary, request, ReferralFee { bps: 0, ..referral_fee.clone() })
+            .await?;
         if !to_intermediary.router.is_supported_v2() {
             return Err(SwapperError::InvalidRoute);
         }
         // The second hop quote uses the first hop's expected output; execution still applies min_ask_units per hop.
-        let from_intermediary = self.simulate(intermediary, &to_intermediary.ask_units, &request.to_asset, request, true).await?;
+        let from_intermediary = self.simulate(intermediary, &to_intermediary.ask_units, &request.to_asset, request, referral_fee).await?;
         if !from_intermediary.router.is_supported_v2() {
             return Err(SwapperError::InvalidRoute);
         }
@@ -86,7 +89,9 @@ where
     }
 
     async fn quote_direct(&self, request: &QuoteRequest, from_value: &str) -> Result<QuotePath, SwapperError> {
-        let simulation = self.simulate(&request.from_asset, from_value, &request.to_asset, request, true).await?;
+        let simulation = self
+            .simulate(&request.from_asset, from_value, &request.to_asset, request, Self::referral_fee(request))
+            .await?;
         Ok(QuotePath {
             to_value: simulation.ask_units.clone(),
             routes: vec![Route {
@@ -100,8 +105,8 @@ where
     async fn quote_intermediary_paths(&self, request: &QuoteRequest, from_value: &str) -> Vec<Result<QuotePath, SwapperError>> {
         let intermediary_tokens = Self::intermediary_tokens()
             .into_iter()
-            .filter(|intermediary| {
-                let intermediary_id = intermediary.asset_id();
+            .filter(|x| {
+                let intermediary_id = x.asset_id();
                 intermediary_id != request.from_asset.asset_id() && intermediary_id != request.to_asset.asset_id()
             })
             .collect::<Vec<_>>();
@@ -113,23 +118,18 @@ where
         .await
     }
 
+    fn referral_fee(request: &QuoteRequest) -> ReferralFee {
+        request.options.fee.clone().map(|fees| fees.ton).unwrap_or_else(|| default_referral_fees().ton)
+    }
+
     async fn simulate(
         &self,
         from_asset: &SwapperQuoteAsset,
         from_value: &str,
         to_asset: &SwapperQuoteAsset,
         request: &QuoteRequest,
-        // Multi-hop quotes charge referral only on the final swap.
-        apply_referral: bool,
+        referral_fee: ReferralFee,
     ) -> Result<SwapSimulation, SwapperError> {
-        let referral_fee = if apply_referral {
-            request.options.fee.clone().map(|fees| fees.ton).unwrap_or_else(|| default_referral_fees().ton)
-        } else {
-            ReferralFee {
-                bps: 0,
-                ..default_referral_fees().ton
-            }
-        };
         let simulation_request = SimulateSwapRequest {
             offer_address: token_address(from_asset),
             units: from_value.to_string(),
@@ -237,7 +237,7 @@ where
                 })
             })
             .transpose()?;
-        let referral_fee = quote.request.options.fee.clone().map(|fees| fees.ton).unwrap_or_else(|| default_referral_fees().ton);
+        let referral_fee = Self::referral_fee(&quote.request);
         let receiver_address = if quote.request.destination_address.is_empty() {
             &quote.request.wallet_address
         } else {
