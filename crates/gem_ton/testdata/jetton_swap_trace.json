@@ -1,0 +1,55 @@
+{
+  "traces": [
+    {
+      "is_incomplete": false,
+      "actions": [
+        {
+          "success": true,
+          "type": "jetton_swap",
+          "details": {
+            "dex": "stonfi_v2",
+            "sender": "0:33A14A5A9406979D59B9328898591660B8B1736342B11632EFDCC911AB9057CF",
+            "asset_in": null,
+            "asset_out": "0:B113A994B5024A16719F69139328EB759596C38A25F59028B146FECDC3621DFE",
+            "dex_incoming_transfer": {
+              "asset": null,
+              "amount": "1000000000"
+            },
+            "dex_outgoing_transfer": {
+              "asset": "0:B113A994B5024A16719F69139328EB759596C38A25F59028B146FECDC3621DFE",
+              "amount": "2436222"
+            }
+          }
+        }
+      ],
+      "transactions_order": [
+        "Jy/yVxsw+JLlTyRAM/dcrGXGzmM32RPFJg++f9VOgq0="
+      ],
+      "transactions": {
+        "Jy/yVxsw+JLlTyRAM/dcrGXGzmM32RPFJg++f9VOgq0=": {
+          "hash": "Jy/yVxsw+JLlTyRAM/dcrGXGzmM32RPFJg++f9VOgq0=",
+          "now": 1778565402,
+          "total_fees": "586312",
+          "description": {
+            "aborted": false,
+            "compute_ph": { "success": true, "exit_code": 0 },
+            "action": { "success": true }
+          },
+          "out_msgs": [
+            {
+              "source": "0:33A14A5A9406979D59B9328898591660B8B1736342B11632EFDCC911AB9057CF",
+              "destination": "0:92E1411AE546892F33B2C8A89EA90390D8FF4CFBB917A643B91E73F706FDB9D1",
+              "value": "1310000000",
+              "op_code": "0x0",
+              "decoded_op_name": null,
+              "body": null,
+              "comment": null,
+              "decoded_body": null
+            }
+          ],
+          "in_msg": null
+        }
+      }
+    }
+  ]
+}

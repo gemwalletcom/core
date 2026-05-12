@@ -1,9 +1,10 @@
 use crate::address::Address;
+use crate::address::hex_to_base64_address;
 use crate::constants::FAILED_OPERATION_OPCODES;
-use crate::models::{BroadcastTransaction, HasMemo, Trace, TransactionMessage};
+use crate::models::{BroadcastTransaction, HasMemo, JettonSwapDetails, TRACE_ACTION_JETTON_SWAP, Trace, TraceAction, TransactionMessage};
 use chrono::DateTime;
 use gem_encoding::decode_base64;
-use primitives::{Address as AddressTrait, Transaction, TransactionState, TransactionType, chain::Chain};
+use primitives::{AssetId, Transaction, TransactionState, TransactionSwapMetadata, TransactionType, chain::Chain};
 use std::error::Error;
 
 pub fn map_transaction_broadcast(broadcast_result: BroadcastTransaction) -> Result<String, Box<dyn Error + Sync + Send>> {
@@ -58,24 +59,53 @@ pub(crate) fn base64_hash_to_hex(base64_hash: &str) -> Option<String> {
     decode_base64(base64_hash).ok().map(hex::encode)
 }
 
-pub fn map_transactions(transactions: Vec<TransactionMessage>) -> Vec<Transaction> {
-    transactions.into_iter().filter_map(map_transaction_message).collect()
-}
-
 pub fn map_trace_transactions(traces: Vec<Trace>) -> Vec<Transaction> {
     traces.into_iter().filter_map(map_root_trace_transaction).collect()
 }
 
 fn map_root_trace_transaction(trace: Trace) -> Option<Transaction> {
-    let state = if trace.is_incomplete || trace.has_actions() { Some(trace.action_state()) } else { None };
+    let state = if trace.is_incomplete || trace.has_actions() {
+        Some(trace.action_state())
+    } else {
+        None
+    };
+    let swap = jetton_swap(&trace.actions);
     let mut transactions = trace.transactions;
     let root_hash = trace.transactions_order.into_iter().next()?;
     let root = transactions.remove(&root_hash)?;
-    map_transaction_message_with_state(root, state)
+    let mut transaction = map_transaction_message_with_state(root, state)?;
+    if let Some((sender, metadata)) = swap
+        && let Ok(value) = serde_json::to_value(metadata)
+    {
+        transaction.transaction_type = TransactionType::Swap;
+        transaction.from = sender.clone();
+        transaction.to = sender;
+        transaction.metadata = Some(value);
+    }
+    Some(transaction)
 }
 
-fn map_transaction_message(transaction: TransactionMessage) -> Option<Transaction> {
-    map_transaction_message_with_state(transaction, None)
+fn jetton_swap(actions: &[TraceAction]) -> Option<(String, TransactionSwapMetadata)> {
+    let action = actions
+        .iter()
+        .find(|action| action.action_type.as_deref() == Some(TRACE_ACTION_JETTON_SWAP) && action.success == Some(true))?;
+    let details: JettonSwapDetails = serde_json::from_value(action.details.clone()?).ok()?;
+    let sender = parse_address(&details.sender)?;
+    let metadata = TransactionSwapMetadata {
+        from_asset: ton_asset_id(details.asset_in.as_deref())?,
+        from_value: details.dex_incoming_transfer.amount,
+        to_asset: ton_asset_id(details.asset_out.as_deref())?,
+        to_value: details.dex_outgoing_transfer.amount,
+        provider: details.dex,
+    };
+    Some((sender, metadata))
+}
+
+fn ton_asset_id(raw_address: Option<&str>) -> Option<AssetId> {
+    match raw_address {
+        None => Some(AssetId::from_chain(Chain::Ton)),
+        Some(hex_address) => hex_to_base64_address(hex_address).map(|token_id| AssetId::from_token(Chain::Ton, &token_id)),
+    }
 }
 
 fn map_transaction_message_with_state(transaction: TransactionMessage, state: Option<TransactionState>) -> Option<Transaction> {
@@ -143,7 +173,7 @@ fn map_transaction_message_with_state(transaction: TransactionMessage, state: Op
 }
 
 fn parse_address(address: &str) -> Option<String> {
-    Address::try_parse_hex(address).map(|a| a.encode())
+    Address::try_parse_hex(address).map(|a| a.encode_non_bounceable())
 }
 
 fn is_simple_transfer(out_message: &crate::models::OutMessage) -> bool {
@@ -180,7 +210,7 @@ fn extract_memo<T: HasMemo>(message: &T) -> Option<String> {
 mod tests {
     use super::*;
     use crate::models::{MessageTransactions, TraceResponse};
-    use crate::provider::testkit::{FAILED_SWAP_ROOT_TRANSACTION_HEX_HASH, SUCCESS_SWAP_ROOT_TRANSACTION_HEX_HASH, TEST_TRANSACTION_HEX_HASH, TEST_TRANSACTION_ID};
+    use crate::provider::testkit::{FAILED_SWAP_ROOT_TRANSACTION_HEX_HASH, SUCCESS_SWAP_ROOT_TRANSACTION_HEX_HASH, TEST_TRANSACTION_ID};
 
     #[test]
     fn test_transaction_transfer_state_success() {
@@ -202,17 +232,6 @@ mod tests {
 
         let state = map_transaction_state(transaction);
         assert_eq!(state, TransactionState::Confirmed);
-    }
-
-    #[test]
-    fn test_map_transaction_by_hash() {
-        let transactions: MessageTransactions = serde_json::from_str(include_str!("../../testdata/transaction_status_response.json")).unwrap();
-        let transaction = map_transactions(transactions.transactions).into_iter().next().unwrap();
-
-        assert_eq!(transaction.hash, TEST_TRANSACTION_HEX_HASH);
-        assert_eq!(transaction.transaction_type, TransactionType::Transfer);
-        assert_eq!(transaction.state, TransactionState::Confirmed);
-        assert_eq!(transaction.created_at.timestamp(), 1755574728);
     }
 
     #[test]
@@ -289,21 +308,25 @@ mod tests {
     }
 
     #[test]
-    fn test_map_get_transactions_by_block() {
-        let block_transactions: MessageTransactions = serde_json::from_str(include_str!("../../testdata/block_transactions.json")).unwrap();
+    fn test_map_trace_transactions_jetton_swap() {
+        let traces = TraceResponse::mock_jetton_swap();
+        let transactions = map_trace_transactions(traces.traces);
 
-        assert_eq!(block_transactions.transactions.len(), 18);
+        assert_eq!(transactions.len(), 1);
+        let transaction = &transactions[0];
+        assert_eq!(transaction.transaction_type, TransactionType::Swap);
+        assert_eq!(transaction.state, TransactionState::Confirmed);
+        assert_eq!(transaction.from, "UQAzoUpalAaXnVm5MoiYWRZguLFzY0KxFjLv3MkRq5BXz3VV");
+        assert_eq!(transaction.from, transaction.to);
 
-        let transactions = map_transactions(block_transactions.transactions);
-
-        assert!(!transactions.is_empty());
-        assert!(transactions.len() < 18);
-
-        for transaction in &transactions {
-            assert!(!transaction.id.hash.is_empty());
-            assert!(!transaction.from.is_empty());
-            assert!(!transaction.to.is_empty());
-        }
+        let metadata = transaction.metadata.as_ref().expect("swap metadata");
+        let swap: TransactionSwapMetadata = serde_json::from_value(metadata.clone()).unwrap();
+        assert_eq!(swap.from_asset, AssetId::from_chain(Chain::Ton));
+        assert_eq!(swap.from_value, "1000000000");
+        assert_eq!(swap.to_asset.chain, Chain::Ton);
+        assert!(swap.to_asset.token_id.is_some());
+        assert_eq!(swap.to_value, "2436222");
+        assert_eq!(swap.provider.as_deref(), Some("stonfi_v2"));
     }
 
     #[test]

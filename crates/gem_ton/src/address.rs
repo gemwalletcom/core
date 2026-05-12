@@ -9,7 +9,8 @@ type Workchain = i32;
 type HashPart = [u8; 32];
 type RawBytes = [u8; 33];
 
-const USER_FRIENDLY_FLAG: u8 = 0x11;
+const TAG_BOUNCEABLE_MAINNET: u8 = 0x11;
+const TAG_NON_BOUNCEABLE_MAINNET: u8 = TAG_BOUNCEABLE_MAINNET | 0x40;
 const RAW_ADDRESS_LEN: usize = 33;
 const USER_FRIENDLY_ADDRESS_LEN: usize = 36;
 
@@ -72,10 +73,10 @@ impl Address {
         Ok(())
     }
 
-    fn encode_user_friendly(&self) -> String {
+    fn encode_user_friendly(&self, flag: u8) -> String {
         let mut buffer = [0u8; USER_FRIENDLY_ADDRESS_LEN];
 
-        buffer[0] = USER_FRIENDLY_FLAG;
+        buffer[0] = flag;
         buffer[1..RAW_ADDRESS_LEN + 1].copy_from_slice(&self.bytes);
 
         let crc = crc16(&buffer[..RAW_ADDRESS_LEN + 1]);
@@ -83,6 +84,14 @@ impl Address {
         buffer[35] = (crc & 0xFF) as u8;
 
         encode_base64_url(&buffer)
+    }
+
+    pub fn encode_bounceable(&self) -> String {
+        self.encode_user_friendly(TAG_BOUNCEABLE_MAINNET)
+    }
+
+    pub fn encode_non_bounceable(&self) -> String {
+        self.encode_user_friendly(TAG_NON_BOUNCEABLE_MAINNET)
     }
 }
 
@@ -119,7 +128,7 @@ impl AddressTrait for Address {
     }
 
     fn encode(&self) -> String {
-        self.encode_user_friendly()
+        self.encode_bounceable()
     }
 }
 

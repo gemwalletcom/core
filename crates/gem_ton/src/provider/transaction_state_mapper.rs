@@ -75,7 +75,15 @@ mod tests {
     fn test_map_transaction_status_incomplete_trace() {
         let request = TransactionStateRequest::new_id("hash".to_string());
         let transactions: MessageTransactions = serde_json::from_str(include_str!("../../testdata/transaction_transfer_state_success.json")).unwrap();
-        let traces = TraceResponse::mock(transactions.transactions.first().unwrap().clone(), true, vec![TraceAction { success: Some(true) }]);
+        let traces = TraceResponse::mock(
+            transactions.transactions.first().unwrap().clone(),
+            true,
+            vec![TraceAction {
+                success: Some(true),
+                action_type: None,
+                details: None,
+            }],
+        );
 
         let update = map_transaction_status(request, traces).unwrap();
         assert_eq!(update.state, TransactionState::Pending);

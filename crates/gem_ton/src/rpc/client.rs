@@ -8,8 +8,8 @@ use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainStakin
 use gem_client::{Client, ClientExt, build_path_with_query};
 
 use crate::models::{
-    ApiResult, BroadcastTransaction, Chainhead, JettonInfo, JettonOffchainMetadata, JettonWalletsResponse, MessageTransactions, NftCollectionsResponse, NftItemsResponse,
-    SimpleJettonBalance, TraceByAddressQuery, TraceByBlockQuery, TraceByMessageQuery, TraceByTransactionQuery, TraceResponse, WalletInfo,
+    ApiResult, BroadcastTransaction, Chainhead, JettonInfo, JettonOffchainMetadata, JettonWalletsResponse, NftCollectionsResponse, NftItemsResponse, SimpleJettonBalance,
+    TraceByAddressQuery, TraceByBlockQuery, TraceByMessageQuery, TraceByTransactionQuery, TraceResponse, WalletInfo,
 };
 
 const TONCENTER_V3_BLOCK_LIMIT: usize = 100;
@@ -28,10 +28,6 @@ impl<C: Client> TonClient<C> {
 
     pub async fn get_master_head(&self) -> Result<Chainhead, Box<dyn Error + Send + Sync>> {
         Ok(self.client.get("/api/v3/masterchainInfo").await?)
-    }
-
-    pub async fn get_transactions_by_address(&self, address: String, limit: usize) -> Result<MessageTransactions, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/api/v3/transactions?account={}&limit={}", address, limit)).await?)
     }
 
     pub async fn get_token_info(&self, token_id: String) -> Result<ApiResult<JettonInfo>, Box<dyn Error + Send + Sync>> {
@@ -61,10 +57,6 @@ impl<C: Client> TonClient<C> {
         Ok(self.client.post("/api/v2/sendBocReturnHash", &body).await?)
     }
 
-    pub async fn get_transaction(&self, hash: String) -> Result<MessageTransactions, Box<dyn Error + Send + Sync>> {
-        Ok(self.client.get(&format!("/api/v3/transactionsByMessage?msg_hash={}", hash)).await?)
-    }
-
     pub async fn get_traces_by_message(&self, hash: String) -> Result<TraceResponse, Box<dyn Error + Send + Sync>> {
         let query = TraceByMessageQuery {
             msg_hash: hash,
@@ -81,9 +73,6 @@ impl<C: Client> TonClient<C> {
         self.get_traces(query).await
     }
 
-    /// Fetches the trace for a transaction identified by either the inbound
-    /// message hash (returned by broadcast) or the on-chain transaction hash
-    /// (shown on block explorers). Tries `msg_hash` first, then `tx_hash`.
     pub async fn get_traces_by_hash(&self, hash: String) -> Result<TraceResponse, Box<dyn Error + Send + Sync>> {
         let traces = self.get_traces_by_message(hash.clone()).await?;
         if traces.traces.is_empty() {

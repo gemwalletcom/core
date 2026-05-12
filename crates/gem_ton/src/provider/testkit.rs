@@ -53,6 +53,10 @@ impl TraceResponse {
             traces: vec![traces.traces[index].clone()],
         }
     }
+
+    pub fn mock_jetton_swap() -> Self {
+        serde_json::from_str(include_str!("../../testdata/jetton_swap_trace.json")).unwrap()
+    }
 }
 
 #[cfg(all(test, feature = "chain_integration_tests"))]

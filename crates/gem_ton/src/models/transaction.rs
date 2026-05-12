@@ -103,9 +103,29 @@ impl Trace {
     }
 }
 
+pub const TRACE_ACTION_JETTON_SWAP: &str = "jetton_swap";
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TraceAction {
     pub success: Option<bool>,
+    #[serde(rename = "type")]
+    pub action_type: Option<String>,
+    pub details: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct JettonSwapDetails {
+    pub dex: Option<String>,
+    pub sender: String,
+    pub asset_in: Option<String>,
+    pub asset_out: Option<String>,
+    pub dex_incoming_transfer: SwapTransfer,
+    pub dex_outgoing_transfer: SwapTransfer,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SwapTransfer {
+    pub amount: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
