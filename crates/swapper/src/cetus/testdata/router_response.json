@@ -1,0 +1,44 @@
+{
+  "code": 200,
+  "msg": "Success",
+  "data": {
+    "request_id": "quote-id",
+    "amount_in": 1500000000,
+    "amount_out": 1916345,
+    "paths": [
+      {
+        "id": "0xpool1",
+        "provider": "BLUEFIN",
+        "from": "0x2::sui::SUI",
+        "target": "0xabc::coin::A",
+        "direction": false,
+        "amount_in": 300000000,
+        "amount_out": 290361611,
+        "published_at": "0xbluefin"
+      },
+      {
+        "id": "0xpool2",
+        "provider": "CETUS",
+        "from": "0x2::sui::SUI",
+        "target": "0xdef::coin::B",
+        "direction": false,
+        "amount_in": 1200000000,
+        "amount_out": 400,
+        "published_at": "0xcetus"
+      },
+      {
+        "id": "0xpool3",
+        "provider": "CETUS",
+        "from": "0xdef::coin::B",
+        "target": "0xdba::usdc::USDC",
+        "direction": true,
+        "amount_in": 400,
+        "amount_out": 100,
+        "published_at": "0xcetus"
+      }
+    ],
+    "packages": {
+      "aggregator_v3": "0xaggregator"
+    }
+  }
+}

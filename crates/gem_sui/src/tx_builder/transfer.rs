@@ -4,12 +4,13 @@ use std::str::FromStr;
 use sui_transaction_builder::{Argument, ObjectInput, TransactionBuilder};
 use sui_types::Address;
 
-fn build_transfer_ptb(input: &TransferInput) -> Result<(TransactionBuilder, Address), Box<dyn Error + Send + Sync>> {
+use super::{TransactionBuilderInput, finish_transaction};
+
+fn build_transfer_ptb(input: &TransferInput) -> Result<TransactionBuilder, Box<dyn Error + Send + Sync>> {
     if let Some(err) = crate::validate_enough_balance(&input.coins, input.amount) {
         return Err(err);
     }
 
-    let sender = Address::from_str(&input.sender)?;
     let recipient = Address::from_str(&input.recipient)?;
 
     let mut ptb = TransactionBuilder::new();
@@ -28,24 +29,21 @@ fn build_transfer_ptb(input: &TransferInput) -> Result<(TransactionBuilder, Addr
         ptb.transfer_objects(vec![split_result], recipient_argument);
     }
 
-    Ok((ptb, sender))
+    Ok(ptb)
 }
 
 pub fn encode_transfer(input: &TransferInput) -> Result<TxOutput, Box<dyn Error + Send + Sync>> {
-    let (mut ptb, sender) = build_transfer_ptb(input)?;
-    let coins = input.coins.iter().map(|x| x.object.to_input()).collect::<Vec<_>>();
-    super::tx::fill_tx(&mut ptb, sender, input.gas.price, input.gas.budget, coins);
-    let tx = ptb.try_build()?;
-
-    TxOutput::from_tx(&tx)
+    let ptb = build_transfer_ptb(input)?;
+    let gas_objects = input.coins.iter().map(|x| x.object.to_input()).collect::<Vec<_>>();
+    finish_transaction(ptb, TransactionBuilderInput::new(input.sender.as_str(), input.gas.price, input.gas.budget, gas_objects))
+        .map_err(|err| Box::new(err) as Box<dyn Error + Send + Sync>)
 }
 
-fn build_token_transfer_ptb(input: &TokenTransferInput) -> Result<(TransactionBuilder, Address), Box<dyn Error + Send + Sync>> {
+fn build_token_transfer_ptb(input: &TokenTransferInput) -> Result<TransactionBuilder, Box<dyn Error + Send + Sync>> {
     if let Some(err) = crate::validate_enough_balance(&input.tokens, input.amount) {
         return Err(err);
     }
     let mut ptb = TransactionBuilder::new();
-    let sender = Address::from_str(&input.sender)?;
     let recipient = Address::from_str(&input.recipient)?;
 
     if input.tokens.is_empty() {
@@ -69,24 +67,23 @@ fn build_token_transfer_ptb(input: &TokenTransferInput) -> Result<(TransactionBu
     let recipient_argument = ptb.pure(&recipient);
     ptb.transfer_objects(vec![split_result], recipient_argument);
 
-    Ok((ptb, sender))
+    Ok(ptb)
 }
 
 pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Box<dyn Error + Send + Sync>> {
-    let (mut ptb, sender) = build_token_transfer_ptb(input)?;
+    let ptb = build_token_transfer_ptb(input)?;
     let gas_coin = ObjectInput::immutable(
         input.gas_coin.object.object_id.parse().unwrap(),
         input.gas_coin.object.version,
         input.gas_coin.object.digest.parse().unwrap(),
     );
-    super::tx::fill_tx(&mut ptb, sender, input.gas.price, input.gas.budget, vec![gas_coin]);
-    let tx = ptb.try_build()?;
-    TxOutput::from_tx(&tx)
+    finish_transaction(ptb, TransactionBuilderInput::new(input.sender.as_str(), input.gas.price, input.gas.budget, vec![gas_coin]))
+        .map_err(|err| Box::new(err) as Box<dyn Error + Send + Sync>)
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{SUI_COIN_TYPE, tx::decode_transaction};
+    use crate::{SUI_COIN_TYPE, tx_builder::decode_transaction};
     use gem_encoding::encode_base64;
     use sui_types::Transaction;
 

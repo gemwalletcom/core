@@ -123,6 +123,10 @@ impl<C: Client + Clone> SuiClient<C> {
         Ok(self.client.call::<ResultData<Vec<SuiCoin>>>("suix_getCoins", params).await?.data)
     }
 
+    pub async fn get_coin_assets_by_type(&self, address: &str, coin_type: &str) -> Result<Vec<CoinAsset>, Box<dyn Error + Send + Sync>> {
+        self.get_coins(address, coin_type).await?.into_iter().map(CoinAsset::try_from).collect()
+    }
+
     pub async fn get_object(&self, object_id: String) -> Result<SuiObject, Box<dyn Error + Send + Sync>> {
         let params = serde_json::json!([object_id, {"showContent": true}]);
         Ok(self.client.call::<ResultData<SuiObject>>("sui_getObject", params).await?.data)

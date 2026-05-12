@@ -1,7 +1,7 @@
 use crate::{
     AssetList, FetchQuoteData, Permit2ApprovalData, ProviderType, Quote, QuoteRequest, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderMode,
-    SwapperQuoteData, across, alien::RpcProvider, chainflip, cross_chain::VaultAddresses, fees::DEFAULT_STABLE_SWAP_REFERRAL_BPS, fees::is_stablecoin_symbol, hyperliquid, jupiter,
-    near_intents, panora, proxy::provider_factory, relay, squid, stonfi, thorchain, uniswap,
+    SwapperQuoteData, across, alien::RpcProvider, cetus, chainflip, cross_chain::VaultAddresses, fees::DEFAULT_STABLE_SWAP_REFERRAL_BPS, fees::is_stablecoin_symbol, hyperliquid,
+    jupiter, near_intents, panora, proxy::provider_factory, relay, squid, stonfi, thorchain, uniswap,
 };
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
@@ -131,7 +131,7 @@ impl GemSwapper {
             Box::new(panora::Panora::new(rpc_provider.clone())),
             Box::new(near_intents::NearIntents::new(rpc_provider.clone())),
             Box::new(chainflip::ChainflipProvider::new(rpc_provider.clone())),
-            Box::new(provider_factory::new_cetus_aggregator(rpc_provider.clone())),
+            Box::new(cetus::Cetus::new(rpc_provider.clone())),
             Box::new(relay::Relay::new(rpc_provider.clone())),
             Box::new(squid::Squid::new(rpc_provider.clone())),
             uniswap::default::boxed_aerodrome(rpc_provider.clone()),

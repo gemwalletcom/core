@@ -51,6 +51,14 @@ pub trait Client: Send + Sync + Debug {
         R: DeserializeOwned;
 }
 
+pub trait ClientBounds: Client + Clone + Send + Sync + 'static {}
+
+impl<T> ClientBounds for T where T: Client + Clone + Send + Sync + 'static {}
+
+pub trait DebugClientBounds: ClientBounds + Debug {}
+
+impl<T> DebugClientBounds for T where T: ClientBounds + Debug {}
+
 #[async_trait]
 pub trait ClientExt: Client {
     async fn get<R>(&self, path: &str) -> Result<R, ClientError>

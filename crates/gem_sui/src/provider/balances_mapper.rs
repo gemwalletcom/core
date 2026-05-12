@@ -1,6 +1,6 @@
 use crate::models::Balance as SuiBalance;
 use crate::models::staking::SuiStakeDelegation;
-use crate::{SUI_COIN_TYPE, SUI_COIN_TYPE_FULL};
+use crate::{coin_type_matches, is_sui_coin};
 use num_bigint::BigUint;
 use primitives::{AssetBalance, AssetId, Balance, Chain};
 
@@ -60,7 +60,7 @@ pub fn map_assets_balances(balances: Vec<SuiBalance>) -> Vec<AssetBalance> {
     balances
         .into_iter()
         .filter_map(|balance| {
-            let asset_id = if balance.coin_type == SUI_COIN_TYPE || balance.coin_type == SUI_COIN_TYPE_FULL {
+            let asset_id = if is_sui_coin(&balance.coin_type) {
                 None // Skip native coin as it's handled separately
             } else {
                 Some(AssetId::from_token(Chain::Sui, &balance.coin_type))
@@ -69,14 +69,6 @@ pub fn map_assets_balances(balances: Vec<SuiBalance>) -> Vec<AssetBalance> {
             asset_id.map(|asset_id| AssetBalance::new_balance(asset_id, Balance::coin_balance(BigUint::try_from(balance.total_balance).unwrap_or_default())))
         })
         .collect()
-}
-
-fn coin_type_matches(coin_type: &str, token_id: &str) -> bool {
-    // Remove 0x prefix and normalize for comparison
-    let coin_type_normalized = coin_type.strip_prefix("0x").unwrap_or(coin_type).to_lowercase();
-    let token_id_normalized = token_id.strip_prefix("0x").unwrap_or(token_id).to_lowercase();
-
-    coin_type_normalized == token_id_normalized
 }
 
 #[cfg(test)]

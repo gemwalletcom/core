@@ -10,6 +10,7 @@ mod swapper_trait;
 pub mod testkit;
 
 pub mod across;
+pub mod cetus;
 pub mod chainflip;
 pub mod client_factory;
 pub mod config;

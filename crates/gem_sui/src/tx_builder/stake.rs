@@ -8,10 +8,12 @@ use std::{error::Error, str::FromStr};
 use sui_transaction_builder::{Function, ObjectInput, TransactionBuilder};
 use sui_types::{Address, Identifier};
 
+use super::{TransactionBuilderInput, finish_transaction};
+
 pub const SUI_REQUEST_ADD_STAKE: &str = "request_add_stake";
 pub const SUI_REQUEST_WITHDRAW_STAKE: &str = "request_withdraw_stake";
 
-fn build_split_and_stake_ptb(input: &StakeInput) -> Result<(TransactionBuilder, Address), Box<dyn Error + Send + Sync>> {
+fn build_split_and_stake_ptb(input: &StakeInput) -> Result<TransactionBuilder, Box<dyn Error + Send + Sync>> {
     if let Some(err) = crate::validate_enough_balance(&input.coins, input.stake_amount) {
         return Err(err);
     }
@@ -21,7 +23,6 @@ fn build_split_and_stake_ptb(input: &StakeInput) -> Result<(TransactionBuilder, 
         return Err("stake amount is too small".into());
     }
 
-    let sender = Address::from_str(&input.sender)?;
     let validator = Address::from_str(&input.validator)?;
 
     let mut ptb = TransactionBuilder::new();
@@ -39,32 +40,24 @@ fn build_split_and_stake_ptb(input: &StakeInput) -> Result<(TransactionBuilder, 
         Identifier::new(SUI_REQUEST_ADD_STAKE).unwrap(),
     );
 
-    // Get system state object
     let sys_state = ptb.object(sui_system_state_object_input());
     let validator_argument = ptb.pure(&validator);
 
     ptb.move_call(function, vec![sys_state, split_result, validator_argument]);
 
-    Ok((ptb, sender))
+    Ok(ptb)
 }
 
 pub fn encode_split_and_stake(input: &StakeInput) -> Result<TxOutput, Box<dyn Error + Send + Sync>> {
-    let (mut ptb, sender) = build_split_and_stake_ptb(input)?;
-    crate::tx::fill_tx(
-        &mut ptb,
-        sender,
-        input.gas.price,
-        input.gas.budget,
-        input.coins.iter().map(|x| x.object.to_input()).collect(),
-    );
-    let tx = ptb.try_build()?;
-    TxOutput::from_tx(&tx)
+    let ptb = build_split_and_stake_ptb(input)?;
+    let gas_objects = input.coins.iter().map(|x| x.object.to_input()).collect::<Vec<_>>();
+    finish_transaction(ptb, TransactionBuilderInput::new(input.sender.as_str(), input.gas.price, input.gas.budget, gas_objects))
+        .map_err(|err| Box::new(err) as Box<dyn Error + Send + Sync>)
 }
 
-fn build_unstake_ptb(input: &UnstakeInput) -> Result<(TransactionBuilder, Address, ObjectInput), Box<dyn Error + Send + Sync>> {
+fn build_unstake_ptb(input: &UnstakeInput) -> Result<(TransactionBuilder, ObjectInput), Box<dyn Error + Send + Sync>> {
     let mut ptb = TransactionBuilder::new();
 
-    let sender = Address::from_str(&input.sender)?;
     let staked_sui = ptb.object(ObjectInput::owned(
         input.staked_sui.object_id.parse().unwrap(),
         input.staked_sui.version,
@@ -81,19 +74,17 @@ fn build_unstake_ptb(input: &UnstakeInput) -> Result<(TransactionBuilder, Addres
         Identifier::new(SUI_REQUEST_WITHDRAW_STAKE).unwrap(),
     );
 
-    // Get system state object
     let sys_state = ptb.object(sui_system_state_object_input());
 
     ptb.move_call(function, vec![sys_state, staked_sui]);
 
-    Ok((ptb, sender, gas_coin))
+    Ok((ptb, gas_coin))
 }
 
 pub fn encode_unstake(input: &UnstakeInput) -> Result<TxOutput, Box<dyn Error + Send + Sync>> {
-    let (mut ptb, sender, gas_coin) = build_unstake_ptb(input)?;
-    crate::tx::fill_tx(&mut ptb, sender, input.gas.price, input.gas.budget, vec![gas_coin]);
-    let tx = ptb.try_build()?;
-    TxOutput::from_tx(&tx)
+    let (ptb, gas_coin) = build_unstake_ptb(input)?;
+    finish_transaction(ptb, TransactionBuilderInput::new(input.sender.as_str(), input.gas.price, input.gas.budget, vec![gas_coin]))
+        .map_err(|err| Box::new(err) as Box<dyn Error + Send + Sync>)
 }
 
 #[cfg(test)]
@@ -102,7 +93,7 @@ mod tests {
     use crate::{
         SUI_COIN_TYPE,
         models::{Coin, Gas, Object},
-        tx::decode_transaction,
+        tx_builder::decode_transaction,
     };
     use gem_encoding::encode_base64;
     use sui_types::Transaction;

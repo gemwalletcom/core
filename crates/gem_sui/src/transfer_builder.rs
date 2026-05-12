@@ -2,7 +2,7 @@ use crate::{
     ESTIMATION_GAS_BUDGET, SUI_COIN_TYPE, SuiClient,
     gas_budget::GAS_BUDGET_MULTIPLIER,
     models::{Coin, Gas, TokenTransferInput, TransferInput},
-    operations::{encode_token_transfer, encode_transfer},
+    tx_builder::{encode_token_transfer, encode_transfer},
 };
 use futures::try_join;
 use gem_client::Client;

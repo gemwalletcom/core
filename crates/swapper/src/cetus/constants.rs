@@ -1,0 +1,15 @@
+pub const CETUS: &str = "CETUS";
+pub const DEEPBOOK_V3: &str = "DEEPBOOKV3";
+pub const BLUEFIN: &str = "BLUEFIN";
+
+pub const DEFAULT_AGGREGATOR_PATH: &str = "cetus/router_v3";
+pub const ROUTER_API_VERSION: u32 = 1_010_502;
+
+pub const AGGREGATOR_V3_PACKAGE: &str = "aggregator_v3";
+pub const DEFAULT_AGGREGATOR_V3: &str = "0xde5d696a79714ca5cb910b9aed99d41f67353abb00715ceaeb0663d57ee39640";
+
+pub const CETUS_GLOBAL_CONFIG: &str = "0xdaa46292632c3c4d8f31f23ea0f9b36a28ff3677e9684980e4438403a67a3d8f";
+pub const CETUS_PARTNER: &str = "0x08b1875b6541c847f05ed71d04cbcfa66e4e8619bf3b8923b07c5b5409433366";
+pub const BLUEFIN_GLOBAL_CONFIG: &str = "0x03db251ba509a8d5d8777b6338836082335d93eecbdd09a11e190a1cff51c352";
+pub const DEEPBOOK_V3_GLOBAL_CONFIG: &str = "0x699d455ab8c5e02075b4345ea1f91be55bf46064ae6026cc2528e701ce3ac135";
+pub const DEEPBOOK_V3_DEEP_FEE_TYPE: &str = "0xdeeb7a4662eec9f2f3def03fb937a663dddaa2e215b8078a284d026b7946c270::deep::DEEP";

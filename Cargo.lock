@@ -7455,6 +7455,8 @@ dependencies = [
  "sha2 0.11.0",
  "solana-primitives",
  "strum",
+ "sui-sdk-types",
+ "sui-transaction-builder",
  "tokio",
  "tracing",
  "typeshare",
