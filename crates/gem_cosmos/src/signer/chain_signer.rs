@@ -178,9 +178,9 @@ mod tests {
         value["tx_bytes"].as_str().unwrap().to_string()
     }
 
-    // Inputs from wallet-core THORChainTests.swift testProtobufModeSigning; bytes pinned to Gem signer (no fee coins, sync mode).
     #[test]
     fn test_sign_thorchain_transfer() {
+        // Source: https://github.com/trustwallet/wallet-core/blob/4.3.22/swift/Tests/Blockchains/THORChainTests.swift
         let private_key = hex::decode("7105512f0c020a1dd759e14b865ec0125f59ac31e34d7a2807a228ed50cb343e").unwrap();
         let fee_amount = BigInt::from(200u64);
         let input = SignerInput::new(
@@ -270,7 +270,7 @@ mod tests {
             "",
             Some(OSMO_STAKE_MEMO),
         );
-        // Auto-claims pending rewards before unstake (matches prior iOS behavior; Android's prior signer skipped this).
+        // Auto-claims pending rewards before unstake.
         let signed = signer.sign_stake(&undelegate, &private_key).unwrap();
         assert_eq!(
             signed_tx_bytes(&signed[0]),
