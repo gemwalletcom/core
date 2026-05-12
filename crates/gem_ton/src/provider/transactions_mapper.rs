@@ -1,7 +1,7 @@
 use crate::address::Address;
 use crate::address::hex_to_base64_address;
 use crate::constants::FAILED_OPERATION_OPCODES;
-use crate::models::{BroadcastTransaction, HasMemo, JettonSwapDetails, TRACE_ACTION_JETTON_SWAP, Trace, TraceAction, TransactionMessage};
+use crate::models::{BroadcastTransaction, JettonSwapDetails, OutMessage, TRACE_ACTION_JETTON_SWAP, Trace, TraceAction, TransactionMessage};
 use chrono::DateTime;
 use gem_encoding::decode_base64;
 use primitives::{AssetId, Transaction, TransactionState, TransactionSwapMetadata, TransactionType, chain::Chain};
@@ -18,7 +18,6 @@ pub(crate) fn map_transaction_state(transaction: &TransactionMessage) -> Transac
             return TransactionState::Failed;
         }
         if let Some(compute_phase) = &description.compute_ph {
-            // If success is None or false, or if exit_code indicates failure
             if !compute_phase.success.unwrap_or(false) {
                 return TransactionState::Failed;
             }
@@ -39,11 +38,6 @@ pub(crate) fn map_transaction_state(transaction: &TransactionMessage) -> Transac
     if transaction.out_msgs.is_empty() {
         return TransactionState::Failed;
     }
-
-    // TODO: Check for bounce/bounced fields when available in OutMessage struct
-    // if transaction.out_msgs.iter().any(|msg| msg.bounce && msg.bounced) {
-    //     return TransactionState::Failed;
-    // }
 
     if let Some(in_msg) = &transaction.in_msg
         && let Some(opcode) = &in_msg.opcode
@@ -114,7 +108,6 @@ fn map_transaction_message_with_state(transaction: TransactionMessage, state: Op
     let created_at = DateTime::from_timestamp(transaction.now, 0)?;
     let hash = base64_hash_to_hex(&transaction.hash)?;
 
-    // Handle outgoing transfers (with out messages)
     if transaction.out_msgs.len() == 1 && is_simple_transfer(transaction.out_msgs.first()?) {
         let out_message = transaction.out_msgs.first()?;
         let from = parse_address(&out_message.source)?;
@@ -142,7 +135,6 @@ fn map_transaction_message_with_state(transaction: TransactionMessage, state: Op
         ));
     }
 
-    // Handle incoming transfers (with in message but no out messages)
     if transaction.out_msgs.is_empty()
         && let Some(in_msg) = &transaction.in_msg
         && let (Some(value), Some(source)) = (&in_msg.value, &in_msg.source)
@@ -163,7 +155,7 @@ fn map_transaction_message_with_state(transaction: TransactionMessage, state: Op
             transaction.total_fees.to_string(),
             asset_id,
             value.clone(),
-            None, // TransactionInMessage doesn't have memo fields
+            None,
             None,
             created_at,
         ));
@@ -183,14 +175,14 @@ fn is_simple_transfer(out_message: &crate::models::OutMessage) -> bool {
     }
 }
 
-fn extract_memo<T: HasMemo>(message: &T) -> Option<String> {
-    if let Some(comment) = message.comment()
+fn extract_memo(message: &OutMessage) -> Option<String> {
+    if let Some(comment) = &message.comment
         && !comment.is_empty()
     {
         return Some(comment.clone());
     }
 
-    if let Some(decoded_body) = message.decoded_body() {
+    if let Some(decoded_body) = &message.decoded_body {
         if let Some(text) = &decoded_body.text
             && !text.is_empty()
         {

@@ -5,11 +5,6 @@ use primitives::TransactionState;
 use serde::{Deserialize, Serialize};
 use serde_serializers::deserialize_biguint_from_str;
 
-pub trait HasMemo {
-    fn comment(&self) -> &Option<String>;
-    fn decoded_body(&self) -> &Option<DecodedBody>;
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DecodedBody {
     #[serde(rename = "type")]
@@ -145,53 +140,16 @@ pub struct OutMessage {
     pub destination: Option<String>,
     pub value: Option<String>,
     pub op_code: Option<String>,
-    pub decoded_op_name: Option<String>,
-    pub body: Option<String>,
     pub comment: Option<String>,
     pub decoded_body: Option<DecodedBody>,
-}
-
-impl HasMemo for OutMessage {
-    fn comment(&self) -> &Option<String> {
-        &self.comment
-    }
-
-    fn decoded_body(&self) -> &Option<DecodedBody> {
-        &self.decoded_body
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct InMessage {
-    pub hash: String,
-    pub msg_type: Option<String>,
-    pub value: Option<String>,
-    pub source: Option<String>,
-    pub destination: Option<String>,
-    pub body: Option<String>,
-    pub comment: Option<String>,
-    pub decoded_body: Option<DecodedBody>,
-}
-
-impl HasMemo for InMessage {
-    fn comment(&self) -> &Option<String> {
-        &self.comment
-    }
-
-    fn decoded_body(&self) -> &Option<DecodedBody> {
-        &self.decoded_body
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TransactionInMessage {
-    pub hash: String,
     pub source: Option<String>,
     pub destination: String,
     pub value: Option<String>,
     pub opcode: Option<String>,
-    pub bounce: Option<bool>,
-    pub bounced: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
