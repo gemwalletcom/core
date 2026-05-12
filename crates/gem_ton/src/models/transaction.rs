@@ -49,6 +49,12 @@ pub struct TraceByMessageQuery {
 }
 
 #[derive(Debug, Serialize)]
+pub struct TraceByTransactionQuery {
+    pub tx_hash: String,
+    pub include_actions: bool,
+}
+
+#[derive(Debug, Serialize)]
 pub struct TraceByBlockQuery {
     pub mc_seqno: u64,
     pub include_actions: bool,

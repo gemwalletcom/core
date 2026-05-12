@@ -9,7 +9,7 @@ use gem_client::{Client, ClientExt, build_path_with_query};
 
 use crate::models::{
     ApiResult, BroadcastTransaction, Chainhead, JettonInfo, JettonOffchainMetadata, JettonWalletsResponse, MessageTransactions, NftCollectionsResponse, NftItemsResponse,
-    SimpleJettonBalance, TraceByAddressQuery, TraceByBlockQuery, TraceByMessageQuery, TraceResponse, WalletInfo,
+    SimpleJettonBalance, TraceByAddressQuery, TraceByBlockQuery, TraceByMessageQuery, TraceByTransactionQuery, TraceResponse, WalletInfo,
 };
 
 const TONCENTER_V3_BLOCK_LIMIT: usize = 100;
@@ -68,6 +68,14 @@ impl<C: Client> TonClient<C> {
     pub async fn get_traces_by_message(&self, hash: String) -> Result<TraceResponse, Box<dyn Error + Send + Sync>> {
         let query = TraceByMessageQuery {
             msg_hash: hash,
+            include_actions: true,
+        };
+        self.get_traces(query).await
+    }
+
+    pub async fn get_traces_by_transaction(&self, hash: String) -> Result<TraceResponse, Box<dyn Error + Send + Sync>> {
+        let query = TraceByTransactionQuery {
+            tx_hash: hash,
             include_actions: true,
         };
         self.get_traces(query).await
