@@ -5,10 +5,7 @@ use std::error::Error;
 use gem_client::Client;
 use primitives::Transaction;
 
-use crate::{
-    provider::transactions_mapper::{map_trace_transactions, map_transactions},
-    rpc::client::TonClient,
-};
+use crate::{provider::transactions_mapper::map_trace_transactions, rpc::client::TonClient};
 
 #[async_trait]
 impl<C: Client> ChainTransactions for TonClient<C> {
@@ -18,21 +15,22 @@ impl<C: Client> ChainTransactions for TonClient<C> {
     }
 
     async fn get_transaction_by_hash(&self, hash: String) -> Result<Option<Transaction>, Box<dyn Error + Sync + Send>> {
-        Ok(map_transactions(self.get_transaction(hash).await?.transactions).into_iter().next())
+        let traces = self.get_traces_by_message(hash).await?;
+        Ok(map_trace_transactions(traces.traces).into_iter().next())
     }
 
     async fn get_transactions_by_address(&self, request: TransactionsRequest) -> Result<Vec<Transaction>, Box<dyn Error + Sync + Send>> {
         let TransactionsRequest { address, limit, .. } = request;
         let limit = limit.unwrap_or(100);
-        let transactions = self.get_transactions_by_address(address, limit).await?;
-        Ok(map_transactions(transactions.transactions))
+        let traces = self.get_traces_by_address(address, limit).await?;
+        Ok(map_trace_transactions(traces.traces))
     }
 }
 
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use super::*;
-    use crate::provider::testkit::{TEST_ADDRESS, TEST_TRANSACTION_ID, create_ton_test_client};
+    use crate::provider::testkit::{TEST_ADDRESS, TEST_TRANSACTION_HEX_HASH, TEST_TRANSACTION_ID, create_ton_test_client};
     use chain_traits::ChainState;
 
     #[tokio::test]
@@ -61,7 +59,7 @@ mod chain_integration_tests {
         let client = create_ton_test_client();
         let transaction = ChainTransactions::get_transaction_by_hash(&client, TEST_TRANSACTION_ID.to_string()).await?.unwrap();
 
-        assert_eq!(transaction.hash, TEST_TRANSACTION_ID);
+        assert_eq!(transaction.hash, TEST_TRANSACTION_HEX_HASH);
         Ok(())
     }
 }

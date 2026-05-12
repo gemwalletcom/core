@@ -9,10 +9,11 @@ use gem_client::{Client, ClientExt, build_path_with_query};
 
 use crate::models::{
     ApiResult, BroadcastTransaction, Chainhead, JettonInfo, JettonOffchainMetadata, JettonWalletsResponse, MessageTransactions, NftCollectionsResponse, NftItemsResponse,
-    SimpleJettonBalance, TraceByBlockQuery, TraceByMessageQuery, TraceResponse, WalletInfo,
+    SimpleJettonBalance, TraceByAddressQuery, TraceByBlockQuery, TraceByMessageQuery, TraceResponse, WalletInfo,
 };
 
 const TONCENTER_V3_BLOCK_LIMIT: usize = 100;
+const TONCENTER_SORT_DESC: &str = "desc";
 const TONCENTER_SORT_ASC: &str = "asc";
 
 #[derive(Debug)]
@@ -79,6 +80,17 @@ impl<C: Client> TonClient<C> {
             limit: TONCENTER_V3_BLOCK_LIMIT,
             offset: 0,
             sort: TONCENTER_SORT_ASC,
+        };
+        self.get_traces(query).await
+    }
+
+    pub async fn get_traces_by_address(&self, address: String, limit: usize) -> Result<TraceResponse, Box<dyn Error + Send + Sync>> {
+        let query = TraceByAddressQuery {
+            account: address,
+            include_actions: true,
+            limit,
+            offset: 0,
+            sort: TONCENTER_SORT_DESC,
         };
         self.get_traces(query).await
     }

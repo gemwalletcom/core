@@ -57,6 +57,15 @@ pub struct TraceByBlockQuery {
     pub sort: &'static str,
 }
 
+#[derive(Debug, Serialize)]
+pub struct TraceByAddressQuery {
+    pub account: String,
+    pub include_actions: bool,
+    pub limit: usize,
+    pub offset: usize,
+    pub sort: &'static str,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Trace {
     pub is_incomplete: bool,
