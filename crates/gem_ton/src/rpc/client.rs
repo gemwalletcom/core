@@ -81,6 +81,18 @@ impl<C: Client> TonClient<C> {
         self.get_traces(query).await
     }
 
+    /// Fetches the trace for a transaction identified by either the inbound
+    /// message hash (returned by broadcast) or the on-chain transaction hash
+    /// (shown on block explorers). Tries `msg_hash` first, then `tx_hash`.
+    pub async fn get_traces_by_hash(&self, hash: String) -> Result<TraceResponse, Box<dyn Error + Send + Sync>> {
+        let traces = self.get_traces_by_message(hash.clone()).await?;
+        if traces.traces.is_empty() {
+            self.get_traces_by_transaction(hash).await
+        } else {
+            Ok(traces)
+        }
+    }
+
     pub async fn get_traces_by_masterchain_block(&self, block: u64) -> Result<TraceResponse, Box<dyn Error + Send + Sync>> {
         let query = TraceByBlockQuery {
             mc_seqno: block,

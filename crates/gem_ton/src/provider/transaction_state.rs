@@ -10,7 +10,7 @@ use crate::{provider::transaction_state_mapper::map_transaction_status, rpc::cli
 #[async_trait]
 impl<C: Client> ChainTransactionState for TonClient<C> {
     async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
-        let traces = self.get_traces_by_message(request.id.clone()).await?;
+        let traces = self.get_traces_by_hash(request.id.clone()).await?;
         map_transaction_status(request, traces)
     }
 }

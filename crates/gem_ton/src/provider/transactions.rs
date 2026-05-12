@@ -15,7 +15,7 @@ impl<C: Client> ChainTransactions for TonClient<C> {
     }
 
     async fn get_transaction_by_hash(&self, hash: String) -> Result<Option<Transaction>, Box<dyn Error + Sync + Send>> {
-        let traces = self.get_traces_by_transaction(hash).await?;
+        let traces = self.get_traces_by_hash(hash).await?;
         Ok(map_trace_transactions(traces.traces).into_iter().next())
     }
 
