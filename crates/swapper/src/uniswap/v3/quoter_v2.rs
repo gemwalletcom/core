@@ -6,21 +6,14 @@ use gem_evm::{
 };
 use gem_jsonrpc::types::JsonRpcResponse;
 
-use crate::{SwapperError, SwapperMode};
+use crate::SwapperError;
 
-pub fn build_quoter_request(mode: &SwapperMode, wallet_address: &str, quoter_v2: &str, amount_in: U256, path: &Bytes) -> EthereumRpc {
-    let call_data: Vec<u8> = match mode {
-        SwapperMode::ExactIn => IQuoterV2::quoteExactInputCall {
-            path: path.clone(),
-            amountIn: amount_in,
-        }
-        .abi_encode(),
-        SwapperMode::ExactOut => IQuoterV2::quoteExactOutputCall {
-            path: path.clone(),
-            amountOut: amount_in,
-        }
-        .abi_encode(),
-    };
+pub fn build_quoter_request(wallet_address: &str, quoter_v2: &str, amount_in: U256, path: &Bytes) -> EthereumRpc {
+    let call_data: Vec<u8> = IQuoterV2::quoteExactInputCall {
+        path: path.clone(),
+        amountIn: amount_in,
+    }
+    .abi_encode();
 
     EthereumRpc::Call(TransactionObject::new_call_with_from(wallet_address, quoter_v2, call_data), BlockParameter::Latest)
 }

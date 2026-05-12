@@ -1,7 +1,9 @@
 use alloy_primitives::U256;
+use number_formatter::{BigNumberFormatter, NumberFormatterError};
 use std::ops::{Div, Mul};
 
 const HUNDRED_PERCENT_IN_BPS: u32 = 10000;
+const BPS_PER_PERCENT_DECIMALS: i32 = 2;
 
 pub trait BasisPointConvert: Sized + Copy {
     fn from_u32(value: u32) -> Self;
@@ -34,6 +36,10 @@ where
     (*amount * slippage) / basis_points
 }
 
+pub fn bps_to_percent_string(bps: u32) -> Result<String, NumberFormatterError> {
+    BigNumberFormatter::value(&bps.to_string(), BPS_PER_PERCENT_DECIMALS)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -45,5 +51,14 @@ mod tests {
         assert_eq!(apply_slippage_in_bp(&1000_u64, 500), 950_u64);
         assert_eq!(apply_slippage_in_bp(&U256::from(1000), 0), U256::from(1000));
         assert_eq!(apply_slippage_in_bp(&U256::from(1000), HUNDRED_PERCENT_IN_BPS), U256::ZERO);
+    }
+
+    #[test]
+    fn test_bps_to_percent_string() {
+        assert_eq!(bps_to_percent_string(100).unwrap(), "1");
+        assert_eq!(bps_to_percent_string(50).unwrap(), "0.5");
+        assert_eq!(bps_to_percent_string(200).unwrap(), "2");
+        assert_eq!(bps_to_percent_string(10).unwrap(), "0.1");
+        assert_eq!(bps_to_percent_string(0).unwrap(), "0");
     }
 }

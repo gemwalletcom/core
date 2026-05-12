@@ -1,10 +1,15 @@
+use std::str::FromStr;
+
+use num_bigint::BigInt;
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "signer")]
 use super::{ExecuteContractValue, IbcTransferValue};
 use crate::constants;
 #[cfg(feature = "signer")]
-use crate::constants::{MESSAGE_EXECUTE_CONTRACT, MESSAGE_IBC_TRANSFER, MESSAGE_SEND_BETA};
+use crate::constants::{
+    MESSAGE_DELEGATE, MESSAGE_EXECUTE_CONTRACT, MESSAGE_IBC_TRANSFER, MESSAGE_REDELEGATE, MESSAGE_REWARD_BETA, MESSAGE_SEND, MESSAGE_SEND_BETA, MESSAGE_UNDELEGATE,
+};
 #[cfg(feature = "signer")]
 use primitives::SignerError;
 
@@ -41,6 +46,12 @@ pub struct AuthInfo {
 pub struct Coin {
     pub denom: String,
     pub amount: String,
+}
+
+impl Coin {
+    pub fn get_amount(&self) -> Option<BigInt> {
+        BigInt::from_str(&self.amount).ok()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -84,16 +95,8 @@ impl Message {
 }
 
 impl MsgSend {
-    pub fn get_amount(&self, denom: &str) -> Option<num_bigint::BigInt> {
-        use std::str::FromStr;
-        let value = self
-            .amount
-            .clone()
-            .into_iter()
-            .filter(|x| x.denom == denom)
-            .flat_map(|x| num_bigint::BigInt::from_str(&x.amount).ok())
-            .sum();
-        Some(value)
+    pub fn get_amount(&self, denom: &str) -> Option<BigInt> {
+        Some(self.amount.iter().filter(|c| c.denom == denom).flat_map(Coin::get_amount).sum())
     }
 }
 
@@ -127,6 +130,26 @@ pub enum CosmosMessage {
         timeout_timestamp: u64,
         memo: String,
     },
+    Delegate {
+        delegator_address: String,
+        validator_address: String,
+        amount: Coin,
+    },
+    Undelegate {
+        delegator_address: String,
+        validator_address: String,
+        amount: Coin,
+    },
+    BeginRedelegate {
+        delegator_address: String,
+        validator_src_address: String,
+        validator_dst_address: String,
+        amount: Coin,
+    },
+    WithdrawDelegatorReward {
+        delegator_address: String,
+        validator_address: String,
+    },
 }
 
 pub fn send_msg_json(from: &str, to: &str, denom: &str, amount: &str) -> serde_json::Value {
@@ -151,7 +174,7 @@ impl CosmosMessage {
         let envelope: MessageEnvelope = serde_json::from_str(data)?;
 
         match envelope.type_url.as_str() {
-            MESSAGE_SEND_BETA => {
+            MESSAGE_SEND_BETA | MESSAGE_SEND => {
                 let v: MsgSend = serde_json::from_value(envelope.value)?;
                 Ok(Self::Send {
                     from_address: v.from_address,
@@ -178,6 +201,41 @@ impl CosmosMessage {
                     receiver: v.receiver,
                     timeout_timestamp: v.timeout_timestamp,
                     memo: v.memo,
+                })
+            }
+            MESSAGE_DELEGATE => {
+                let v: MsgDelegate = serde_json::from_value(envelope.value)?;
+                let amount = v.amount.ok_or_else(|| SignerError::invalid_input("missing delegate amount"))?;
+                Ok(Self::Delegate {
+                    delegator_address: v.delegator_address,
+                    validator_address: v.validator_address,
+                    amount,
+                })
+            }
+            MESSAGE_UNDELEGATE => {
+                let v: MsgUndelegate = serde_json::from_value(envelope.value)?;
+                let amount = v.amount.ok_or_else(|| SignerError::invalid_input("missing undelegate amount"))?;
+                Ok(Self::Undelegate {
+                    delegator_address: v.delegator_address,
+                    validator_address: v.validator_address,
+                    amount,
+                })
+            }
+            MESSAGE_REDELEGATE => {
+                let v: MsgBeginRedelegate = serde_json::from_value(envelope.value)?;
+                let amount = v.amount.ok_or_else(|| SignerError::invalid_input("missing redelegate amount"))?;
+                Ok(Self::BeginRedelegate {
+                    delegator_address: v.delegator_address,
+                    validator_src_address: v.validator_src_address,
+                    validator_dst_address: v.validator_dst_address,
+                    amount,
+                })
+            }
+            MESSAGE_REWARD_BETA => {
+                let v: MsgWithdrawDelegatorReward = serde_json::from_value(envelope.value)?;
+                Ok(Self::WithdrawDelegatorReward {
+                    delegator_address: v.delegator_address,
+                    validator_address: v.validator_address,
                 })
             }
             other => SignerError::invalid_input_err(format!("unsupported cosmos message type: {other}")),

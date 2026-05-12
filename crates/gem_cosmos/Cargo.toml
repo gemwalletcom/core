@@ -22,6 +22,7 @@ futures = { workspace = true, optional = true }
 number_formatter = { path = "../number_formatter", optional = true }
 
 signer = { path = "../signer", optional = true }
+k256 = { workspace = true, optional = true }
 
 num-bigint = { workspace = true }
 
@@ -35,12 +36,13 @@ rpc = [
     "dep:futures",
     "dep:number_formatter",
 ]
-signer = ["dep:signer"]
+signer = ["dep:signer", "dep:k256"]
 reqwest = ["gem_client/reqwest"]
 unit_tests = ["signer"]
 chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 
 [dev-dependencies]
+primitives = { path = "../primitives", features = ["testkit"] }
 tokio = { workspace = true, features = ["macros", "rt"] }
 reqwest = { workspace = true }
 settings = { path = "../settings", features = ["testkit"] }

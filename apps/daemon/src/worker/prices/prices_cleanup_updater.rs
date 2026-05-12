@@ -31,7 +31,7 @@ impl PricesCleanupUpdater {
             .prices()?
             .get_prices_by_filter(vec![PriceFilter::Provider(self.provider), PriceFilter::UpdatedBefore(cutoff)])?
             .into_iter()
-            .map(|p| p.id)
+            .map(|p| p.id.to_string())
             .collect();
         if ids.is_empty() {
             return Ok(0);

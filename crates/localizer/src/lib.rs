@@ -82,10 +82,10 @@ impl LanguageLocalizer {
         }
     }
 
-    pub fn price_alert_target(&self, symbol: &str, price: &str, change: &str) -> LanguageNotification {
+    pub fn price_alert_target(&self, symbol: &str, target_price: &str, current_price: &str, change: &str) -> LanguageNotification {
         LanguageNotification {
-            title: fl!(self.loader.as_ref(), "notification_price_alert_target_title", symbol = symbol, price = price),
-            description: fl!(self.loader.as_ref(), "notification_price_alert_target_description", price = price, change = change),
+            title: fl!(self.loader.as_ref(), "notification_price_alert_target_title", symbol = symbol, price = target_price),
+            description: fl!(self.loader.as_ref(), "notification_price_alert_target_description", price = current_price, change = change),
         }
     }
 

@@ -8,7 +8,7 @@ use primitives::AssetId;
 use crate::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider, PriceProvider, PriceProviderAsset, PriceProviderConfig};
 
 use super::client::JupiterClient;
-use super::mapper::{to_asset_price_mapping, to_jupiter_token_id};
+use super::mapper::{map_token_asset, map_token_price, to_asset_price_mapping, to_jupiter_token_id};
 use super::model::VerifiedToken;
 
 pub struct JupiterProvider {
@@ -42,12 +42,7 @@ impl PriceAssetsProvider for JupiterProvider {
     }
 
     async fn get_assets(&self) -> Result<Vec<PriceProviderAsset>, Box<dyn Error + Send + Sync>> {
-        Ok(self
-            .verified_tokens()
-            .await?
-            .into_iter()
-            .map(|t| PriceProviderAsset::with_price(to_asset_price_mapping(&t.id), None, Some(t.usd_price), Some(t.stats24h.price_change)))
-            .collect())
+        Ok(self.verified_tokens().await?.into_iter().map(map_token_asset).collect())
     }
 
     async fn get_mappings_for_asset_id(&self, asset_id: &AssetId) -> Result<Vec<AssetPriceMapping>, Box<dyn Error + Send + Sync>> {
@@ -70,21 +65,13 @@ impl PriceAssetsProvider for JupiterProvider {
         let tokens: HashMap<String, VerifiedToken> = self.verified_tokens().await?.into_iter().map(|t| (t.id.clone(), t)).collect();
         Ok(mappings
             .into_iter()
-            .filter_map(|mapping| {
-                tokens
-                    .get(&to_jupiter_token_id(&mapping.provider_price_id))
-                    .map(|token| to_asset_price_full(mapping, token))
-            })
+            .filter_map(|mapping| tokens.get(&to_jupiter_token_id(&mapping.provider_price_id)).map(|token| map_token_price(mapping, token)))
             .collect())
     }
 }
 
-fn to_asset_price_full(mapping: AssetPriceMapping, token: &VerifiedToken) -> AssetPriceFull {
-    AssetPriceFull::simple(mapping, token.usd_price, token.stats24h.price_change, PriceProvider::Jupiter)
-}
-
 #[cfg(all(test, feature = "price_integration_tests"))]
-mod tests {
+mod integration_tests {
     use super::super::testkit::create_jupiter_test_provider;
     use crate::{PriceAssetsProvider, PriceProvider};
 

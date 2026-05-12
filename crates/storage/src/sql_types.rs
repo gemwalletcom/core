@@ -13,8 +13,8 @@ use primitives::{
     AssetType as PrimitiveAssetType, Chain, FiatProviderName as PrimitiveFiatProviderName, FiatQuoteType as PrimitiveFiatQuoteType,
     FiatTransactionStatus as PrimitiveFiatTransactionStatus, IpUsageType as PrimitiveIpUsageType, LinkType as PrimitiveLinkType, NotificationType as PrimitiveNotificationType,
     PerpetualProvider as PrimitivePerpetualProvider, Platform as PrimitivePlatform, PlatformStore as PrimitivePlatformStore, PriceAlertDirection as PrimitivePriceAlertDirection,
-    PriceProvider as PrimitivePriceProvider, TransactionState as PrimitiveTransactionState, TransactionType as PrimitiveTransactionType, UsernameStatus as PrimitiveUsernameStatus,
-    WalletSource as PrimitiveWalletSource, WalletType as PrimitiveWalletType, WebhookKind as PrimitiveWebhookKind,
+    PriceId as PrimitivePriceId, PriceProvider as PrimitivePriceProvider, TransactionState as PrimitiveTransactionState, TransactionType as PrimitiveTransactionType,
+    UsernameStatus as PrimitiveUsernameStatus, WalletSource as PrimitiveWalletSource, WalletType as PrimitiveWalletType, WebhookKind as PrimitiveWebhookKind,
 };
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -288,7 +288,7 @@ impl ToSql<diesel::sql_types::Varchar, Pg> for AssetId {
 
 macro_rules! diesel_varchar_display {
     ($wrapper:ident, $inner:ty) => {
-        #[derive(Debug, Clone, Serialize, Deserialize, AsExpression, FromSqlRow)]
+        #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, AsExpression, FromSqlRow)]
         #[serde(transparent)]
         #[diesel(sql_type = diesel::sql_types::Varchar)]
         pub struct $wrapper(pub $inner);
@@ -303,6 +303,18 @@ macro_rules! diesel_varchar_display {
         impl From<$inner> for $wrapper {
             fn from(v: $inner) -> Self {
                 Self(v)
+            }
+        }
+
+        impl From<$wrapper> for $inner {
+            fn from(w: $wrapper) -> Self {
+                w.0
+            }
+        }
+
+        impl fmt::Display for $wrapper {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                self.0.fmt(f)
             }
         }
 
@@ -322,4 +334,5 @@ macro_rules! diesel_varchar_display {
     };
 }
 
+diesel_varchar_display!(PriceId, PrimitivePriceId);
 diesel_varchar_display!(WalletIdRow, primitives::WalletId);

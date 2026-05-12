@@ -1,4 +1,4 @@
-use crate::{Account, WalletType};
+use crate::{Account, WalletId, WalletType};
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumString};
 use typeshare::typeshare;
@@ -17,7 +17,7 @@ pub enum WalletSource {
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "camelCase")]
 pub struct Wallet {
-    pub id: String,
+    pub id: WalletId,
     pub external_id: Option<String>,
     pub name: String,
     pub index: i32,

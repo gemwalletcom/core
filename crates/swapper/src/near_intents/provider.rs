@@ -5,8 +5,8 @@ use super::{
     supported_assets,
 };
 use crate::{
-    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperMode,
-    SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, amount_to_value,
+    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider,
+    SwapperQuoteAsset, SwapperQuoteData, amount_to_value,
     client_factory::create_client_with_chain,
     cross_chain::VaultAddresses,
     fees::DEFAULT_REFERRER,
@@ -293,13 +293,8 @@ where
     }
 
     async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
-        let mode = match request.mode {
-            SwapperMode::ExactIn => SwapType::FlexInput,
-            SwapperMode::ExactOut => return Err(SwapperError::NotSupportedAsset),
-        };
-
         let amount = quote_value_after_reserve_by_chain(request)?;
-        let quote_request = self.build_quote_request(request, mode, amount.clone(), true)?;
+        let quote_request = self.build_quote_request(request, SwapType::FlexInput, amount.clone(), true)?;
         let response = Self::extract_quote(self.client.fetch_quote(&quote_request).await?, request.from_asset.decimals)?;
         let amount_out = Self::parse_amount(&response.quote.amount_out, "amountOut")?;
 
@@ -392,7 +387,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{SwapperError, SwapperMode, SwapperQuoteAsset, fees::reserved_tx_fees, models::Options};
+    use crate::{SwapperError, SwapperQuoteAsset, fees::reserved_tx_fees, models::Options};
     use alloy_primitives::U256;
     use primitives::{AssetId, Chain, asset_constants::TON_USDT_ASSET_ID};
     use serde_json::json;
@@ -422,7 +417,6 @@ mod tests {
             wallet_address: "wallet".into(),
             destination_address: "dest".into(),
             value: amount.into(),
-            mode: SwapperMode::ExactIn,
             options,
         }
     }
@@ -564,7 +558,7 @@ mod tests {
 mod swap_integration_tests {
     use super::*;
     use crate::near_intents::assets::NEAR_INTENTS_BTC_NATIVE;
-    use crate::{FetchQuoteData, SwapperMode, SwapperQuoteAsset, alien::reqwest_provider::NativeProvider, config::get_swap_config, models::Options};
+    use crate::{FetchQuoteData, SwapperQuoteAsset, alien::reqwest_provider::NativeProvider, config::get_swap_config, models::Options};
     use primitives::{
         AssetId, Chain,
         asset_constants::{ARBITRUM_USDC_ASSET_ID, BASE_USDC_ASSET_ID},
@@ -588,7 +582,6 @@ mod swap_integration_tests {
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             value: "500000".to_string(),
-            mode: SwapperMode::ExactIn,
             options,
         };
 
@@ -612,7 +605,6 @@ mod swap_integration_tests {
             wallet_address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh".to_string(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             value: "100000".to_string(),
-            mode: SwapperMode::ExactIn,
             options: Options::mock_exact(100),
         };
 
@@ -635,7 +627,6 @@ mod swap_integration_tests {
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             destination_address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh".to_string(),
             value: "10000000".to_string(),
-            mode: SwapperMode::ExactIn,
             options: Options::mock_exact(100),
         };
 
@@ -666,7 +657,6 @@ mod swap_integration_tests {
             wallet_address: "GBZXN7PIRZGNMHGA3RSSOEV56YXG54FSNTJDGQI3GHDVBKSXRZ5B6KJT".to_string(),
             destination_address: "test.near".to_string(),
             value: "20000000".to_string(),
-            mode: SwapperMode::ExactIn,
             options: Options::mock_exact(100),
         };
 

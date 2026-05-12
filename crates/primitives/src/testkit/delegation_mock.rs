@@ -36,6 +36,23 @@ impl Delegation {
         }
     }
 
+    pub fn mock_osmosis(validator_id: &str) -> Self {
+        Delegation {
+            base: DelegationBase {
+                asset_id: AssetId::from_chain(Chain::Osmosis),
+                state: DelegationState::Active,
+                balance: BigUint::from(10u32),
+                shares: BigUint::from(0u32),
+                rewards: BigUint::from(0u32),
+                completion_date: None,
+                delegation_id: "25053096".to_string(),
+                validator_id: validator_id.to_string(),
+            },
+            validator: DelegationValidator::mock_osmosis(validator_id),
+            price: None,
+        }
+    }
+
     pub fn mock_with_id(delegation_id: String) -> Self {
         Delegation::mock_base(DelegationBase::mock_with_id(delegation_id))
     }
@@ -72,5 +89,9 @@ impl DelegationBase {
 impl DelegationValidator {
     pub fn mock() -> Self {
         DelegationValidator::stake(Chain::Sui, "validator1".to_string(), "Test Validator".to_string(), true, 0.05, 0.08)
+    }
+
+    pub fn mock_osmosis(id: &str) -> Self {
+        DelegationValidator::stake(Chain::Osmosis, id.to_string(), String::new(), true, 1.0, 9.0)
     }
 }

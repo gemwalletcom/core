@@ -59,9 +59,11 @@ impl PricesRepository for DatabaseClient {
             .into_iter()
             .map(|(_, row)| row)
             .collect::<Vec<_>>();
-        resolve_primary(&providers, &rows, max_age)
-            .map(|row| PriceId::new(row.provider.0, row.provider_price_id.clone()))
-            .ok_or_else(|| DatabaseError::not_found(PriceRow::RESOURCE_NAME, asset_id.to_string()))
+        Ok(resolve_primary(&providers, &rows, max_age)
+            .ok_or_else(|| DatabaseError::not_found(PriceRow::RESOURCE_NAME, asset_id.to_string()))?
+            .id
+            .0
+            .clone())
     }
 
     fn get_primary_prices(&mut self, asset_ids: &[AssetId], max_age: Duration) -> Result<Vec<(AssetId, PriceRow)>, DatabaseError> {
@@ -149,23 +151,24 @@ impl PricesRepository for DatabaseClient {
         if prices.is_empty() {
             return Ok(vec![]);
         }
-        let price_ids: Vec<String> = prices.iter().map(|p| p.id.clone()).collect();
+        let price_ids: Vec<String> = prices.iter().map(|p| p.id.to_string()).collect();
         let mappings = PricesStore::get_prices_assets_for_price_ids(self, price_ids)?;
-        let mapped_ids: HashSet<String> = mappings.iter().map(|m| m.price_id.clone()).collect();
-        let to_store: Vec<PriceRow> = prices.into_iter().filter(|p| mapped_ids.contains(&p.id)).collect();
+        let mapped_ids: HashSet<String> = mappings.iter().map(|m| m.price_id.to_string()).collect();
+        let to_store: Vec<PriceRow> = prices.into_iter().filter(|p| mapped_ids.contains(&p.id.to_string())).collect();
         if to_store.is_empty() {
             return Ok(vec![]);
         }
-        let ids: Vec<String> = to_store.iter().map(|p| p.id.clone()).collect();
-        let incoming_by_id: HashMap<String, PriceRow> = to_store.iter().cloned().map(|p| (p.id.clone(), p)).collect();
+        let ids: Vec<String> = to_store.iter().map(|p| p.id.to_string()).collect();
+        let incoming_by_id: HashMap<String, PriceRow> = to_store.iter().cloned().map(|p| (p.id.to_string(), p)).collect();
         PricesStore::set_prices(self, to_store)?;
 
         let current_prices = PricesStore::get_prices_by_filter(self, vec![PriceFilter::Ids(ids)])?;
         let extreme_updates: Vec<(String, Vec<PriceUpdate>)> = current_prices
             .iter()
             .filter_map(|price| {
-                let updates = price.merge_extremes(incoming_by_id.get(&price.id));
-                (!updates.is_empty()).then_some((price.id.clone(), updates))
+                let id = price.id.to_string();
+                let updates = price.merge_extremes(incoming_by_id.get(&id));
+                (!updates.is_empty()).then_some((id, updates))
             })
             .collect();
         for (id, updates) in extreme_updates {

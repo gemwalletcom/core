@@ -1,7 +1,7 @@
 use crate::{
     AssetList, FetchQuoteData, Permit2ApprovalData, ProviderType, Quote, QuoteRequest, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderMode,
     SwapperQuoteData, across, alien::RpcProvider, chainflip, cross_chain::VaultAddresses, fees::DEFAULT_STABLE_SWAP_REFERRAL_BPS, fees::is_stablecoin_symbol, hyperliquid, jupiter,
-    near_intents, proxy::provider_factory, relay, squid, stonfi, thorchain, uniswap,
+    near_intents, panora, proxy::provider_factory, relay, squid, stonfi, thorchain, uniswap,
 };
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
@@ -38,14 +38,6 @@ impl GemSwapper {
             SwapperChainAsset::All(chain) => chain == asset_id.chain,
             SwapperChainAsset::Assets(chain, assets) => chain == asset_id.chain || assets.contains(&asset_id),
         })
-    }
-
-    fn filter_by_preferred_providers(preferred_providers: &[SwapperProvider], provider: &SwapperProvider) -> bool {
-        // if no preferred providers, return all
-        if preferred_providers.is_empty() {
-            return true;
-        }
-        preferred_providers.contains(provider)
     }
 
     fn get_swapper_by_provider(&self, provider: &SwapperProvider) -> Result<&dyn Swapper, SwapperError> {
@@ -136,7 +128,7 @@ impl GemSwapper {
             uniswap::default::boxed_wagmi(rpc_provider.clone()),
             Box::new(stonfi::Stonfi::new(rpc_provider.clone())),
             Box::new(provider_factory::new_mayan(rpc_provider.clone())),
-            Box::new(provider_factory::new_panora(rpc_provider.clone())),
+            Box::new(panora::Panora::new(rpc_provider.clone())),
             Box::new(near_intents::NearIntents::new(rpc_provider.clone())),
             Box::new(chainflip::ChainflipProvider::new(rpc_provider.clone())),
             Box::new(provider_factory::new_cetus_aggregator(rpc_provider.clone())),
@@ -181,13 +173,11 @@ impl GemSwapper {
         }
         let from_chain = request.from_asset.chain();
         let to_chain = request.to_asset.chain();
-        let preferred_providers = &request.options.preferred_providers;
         let providers: Vec<ProviderType> = self
             .swappers
             .iter()
             .filter(|x| Self::filter_by_provider_mode(&x.provider().mode, from_chain, to_chain))
             .filter(|x| Self::filter_by_supported_chains(x.supported_chains(), from_chain, to_chain))
-            .filter(|x| Self::filter_by_preferred_providers(preferred_providers, &x.provider().id))
             .map(|x| x.provider().clone())
             .collect();
         if providers.is_empty() {
@@ -270,7 +260,7 @@ mod tests {
 
     use super::*;
     use crate::{
-        Options, SwapperChainAsset, SwapperMode, SwapperProvider, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode,
+        Options, SwapperChainAsset, SwapperProvider, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode,
         alien::reqwest_provider::NativeProvider,
         fees::{DEFAULT_STABLE_SWAP_REFERRAL_BPS, DEFAULT_SWAP_FEE_BPS, ReferralFees},
         testkit::{MockSwapper, mock_quote},
@@ -292,14 +282,12 @@ mod tests {
             wallet_address: "0xwallet".into(),
             destination_address: "0xwallet".into(),
             value: "1000000".into(),
-            mode: SwapperMode::ExactIn,
             options: Options {
                 slippage: SwapperSlippage {
                     bps: 100,
                     mode: SwapperSlippageMode::Exact,
                 },
                 fee,
-                preferred_providers: vec![],
                 use_max_amount: false,
             },
         }

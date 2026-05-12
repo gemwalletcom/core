@@ -5,7 +5,6 @@ import Gemstone
 let SWAP_OPTIONS = SwapperOptions(
     slippage: getDefaultSlippage(chain: "solana"),
     fee: Config().getSwapConfig().referralFee,
-    preferredProviders: [],
     useMaxAmount: false
 )
 
@@ -21,7 +20,6 @@ public extension SwapperQuoteRequest {
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "100000000000000000", // 0.01 ETH
-        mode: .exactIn,
         options: SWAP_OPTIONS
     )
 
@@ -31,7 +29,6 @@ public extension SwapperQuoteRequest {
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "100000000", // 100 USDC
-        mode: .exactIn,
         options: SWAP_OPTIONS
     )
 
@@ -41,7 +38,6 @@ public extension SwapperQuoteRequest {
         walletAddress: TEST_SOL_WALLET,
         destinationAddress: TEST_SOL_WALLET,
         value: "1000000000", // 1 SOL
-        mode: .exactIn,
         options: SWAP_OPTIONS
     )
 
@@ -51,7 +47,6 @@ public extension SwapperQuoteRequest {
         walletAddress: TEST_SOL_WALLET,
         destinationAddress: TEST_SOL_WALLET,
         value: "1000000000", // 1000 JUP
-        mode: .exactIn,
         options: SWAP_OPTIONS
     )
 
@@ -61,7 +56,6 @@ public extension SwapperQuoteRequest {
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "100000000000000000000", // 100 UNI
-        mode: .exactIn,
         options: SWAP_OPTIONS
     )
 
@@ -71,7 +65,6 @@ public extension SwapperQuoteRequest {
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "1000000000000000000000", // 1000 Cake
-        mode: .exactIn,
         options: SWAP_OPTIONS
     )
 
@@ -81,7 +74,6 @@ public extension SwapperQuoteRequest {
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "400000000000000000", // 0.4
-        mode: .exactIn,
         options: SWAP_OPTIONS
     )
 
@@ -91,7 +83,6 @@ public extension SwapperQuoteRequest {
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "20000000000000000", // 0.02 eth
-        mode: .exactIn,
         options: SWAP_OPTIONS
     )
 
@@ -101,7 +92,6 @@ public extension SwapperQuoteRequest {
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "10000000000000000", // 0.01 eth
-        mode: .exactIn,
         options: SWAP_OPTIONS
     )
 
@@ -111,7 +101,6 @@ public extension SwapperQuoteRequest {
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "10000000000000000", // 0.01 eth
-        mode: .exactIn,
         options: SWAP_OPTIONS
     )
 
@@ -121,7 +110,6 @@ public extension SwapperQuoteRequest {
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "10000000000000000", // 0.01 eth
-        mode: .exactIn,
         options: SWAP_OPTIONS
     )
 
@@ -131,7 +119,6 @@ public extension SwapperQuoteRequest {
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "10000000000", // 10000 USDC
-        mode: .exactIn,
         options: SWAP_OPTIONS
     )
 
@@ -141,7 +128,6 @@ public extension SwapperQuoteRequest {
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "10000000000", // 10000 USDC
-        mode: .exactIn,
         options: SWAP_OPTIONS
     )
 
@@ -151,24 +137,17 @@ public extension SwapperQuoteRequest {
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "1000000000000000000", // 1 ETH
-        mode: .exactIn,
         options: SWAP_OPTIONS
     )
 
-    static let eth2usdc_v4: SwapperQuoteRequest = {
-        var options = SWAP_OPTIONS
-        options.preferredProviders = [SwapProvider.uniswapV4]
-
-        return SwapperQuoteRequest(
-            fromAsset: SwapperQuoteAsset(id: "unichain", decimals: 18),
-            toAsset: SwapperQuoteAsset(id: "unichain_0x078D782b760474a361dDA0AF3839290b0EF57AD6", decimals: 6),
-            walletAddress: TEST_ETH_WALLET,
-            destinationAddress: TEST_ETH_WALLET,
-            value: "1000000000000000000", // 1 ETH
-            mode: .exactIn,
-            options: options
-        )
-    }()
+    static let eth2usdc_v4: SwapperQuoteRequest = .init(
+        fromAsset: SwapperQuoteAsset(id: "unichain", decimals: 18),
+        toAsset: SwapperQuoteAsset(id: "unichain_0x078D782b760474a361dDA0AF3839290b0EF57AD6", decimals: 6),
+        walletAddress: TEST_ETH_WALLET,
+        destinationAddress: TEST_ETH_WALLET,
+        value: "1000000000000000000", // 1 ETH
+        options: SWAP_OPTIONS
+    )
 
     static let uni2dai_v4: SwapperQuoteRequest = .init(
         fromAsset: SwapperQuoteAsset(id: "unichain_0x8f187aA05619a017077f5308904739877ce9eA21", decimals: 18),
@@ -176,7 +155,6 @@ public extension SwapperQuoteRequest {
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_ETH_WALLET,
         value: "1000000000000000000", // 1 ETH
-        mode: .exactIn,
         options: SWAP_OPTIONS
     )
 
@@ -186,7 +164,6 @@ public extension SwapperQuoteRequest {
         walletAddress: TEST_ETH_WALLET,
         destinationAddress: TEST_BTC_WALLET,
         value: "1000000000000000000", // 1 ETH
-        mode: .exactIn,
         options: SWAP_OPTIONS
     )
 
@@ -196,7 +173,6 @@ public extension SwapperQuoteRequest {
         walletAddress: TEST_SUI_WALLET,
         destinationAddress: TEST_SUI_WALLET,
         value: "100000000000", // 100 SUI
-        mode: .exactIn,
         options: SWAP_OPTIONS
     )
 }

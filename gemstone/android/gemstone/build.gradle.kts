@@ -1,15 +1,8 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
-fun isSigningEnabled(): Boolean {
-    val signingKey = System.getenv("MVN_SIGNING_KEY")
-    val signingPassphrase = System.getenv("MVN_SIGNING_PASSPHRASE")
-    return !signingKey.isNullOrBlank() && !signingPassphrase.isNullOrBlank()
-}
-
 plugins {
     id("com.android.library")
     id("maven-publish")
-    id("signing")
 }
 
 val gemstoneRoot = project.projectDir.resolve("../..")
@@ -122,52 +115,12 @@ afterEvaluate {
                 groupId = "com.gemwallet.gemstone"
                 artifactId = "gemstone"
                 version = System.getenv("VER_NAME") ?: "1.0.0"
-                pom {
-                    name.set("Gemstone")
-                    description.set("Gem Wallet Core Android library")
-                    url.set("https://github.com/gemwalletcom/core")
-                    licenses {
-                        license {
-                            name.set("MIT")
-                            url.set("https://opensource.org/licenses/MIT")
-                        }
-                    }
-                    scm {
-                        url.set("https://github.com/gemwalletcom/core")
-                    }
-                    developers {
-                        developer {
-                            id.set("gemwallet")
-                            name.set("Gem Wallet")
-                        }
-                    }
-                }
             }
             create<MavenPublication>("debug") {
                 from(components["debug"])
                 groupId = "com.gemwallet.gemstone"
                 artifactId = "gemstone-debug"
                 version = System.getenv("VER_NAME") ?: "1.0.0-debug"
-            }
-        }
-    }
-
-    if (isSigningEnabled()) {
-        signing {
-            useInMemoryPgpKeys(System.getenv("MVN_SIGNING_KEY"), System.getenv("MVN_SIGNING_PASSPHRASE"))
-            sign(publishing.publications["release"])
-        }
-    }
-}
-
-publishing {
-    repositories {
-        maven {
-            name = "GPR"
-            url = uri("https://maven.pkg.github.com/gemwalletcom/core")
-            credentials {
-                username = project.findProperty("github.username") as String? ?: System.getenv("GITHUB_USER")
-                password = project.findProperty("github.token") as String? ?: System.getenv("GITHUB_TOKEN")
             }
         }
     }

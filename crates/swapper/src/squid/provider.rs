@@ -177,7 +177,7 @@ where
 #[cfg(all(test, feature = "swap_integration_tests"))]
 mod swap_integration_tests {
     use super::*;
-    use crate::{SwapperMode, SwapperQuoteAsset, models::Options};
+    use crate::{SwapperQuoteAsset, models::Options};
     use primitives::swap::SwapStatus;
 
     const OSMOSIS_ADDRESS: &str = "osmo1tkvyjqeq204rmrrz3w4hcrs336qahsfwn8m0ye";
@@ -198,7 +198,6 @@ mod swap_integration_tests {
             wallet_address: OSMOSIS_ADDRESS.to_string(),
             destination_address: COSMOS_ADDRESS.to_string(),
             value: "10000000".to_string(),
-            mode: SwapperMode::ExactIn,
             options: Options::new_with_slippage(100.into()),
         };
 
@@ -229,7 +228,6 @@ mod swap_integration_tests {
             wallet_address: COSMOS_ADDRESS.to_string(),
             destination_address: OSMOSIS_ADDRESS.to_string(),
             value: "1000000".to_string(),
-            mode: SwapperMode::ExactIn,
             options: Options::new_with_slippage(100.into()),
         };
 

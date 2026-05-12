@@ -210,7 +210,7 @@ mod tests {
     use std::sync::Arc;
 
     use super::*;
-    use crate::{Options, SwapperMode, SwapperQuoteAsset, alien::mock::ProviderMock};
+    use crate::{Options, SwapperQuoteAsset, alien::mock::ProviderMock};
 
     #[test]
     fn test_min_value() {
@@ -247,7 +247,6 @@ mod tests {
             wallet_address: "t1sender".to_string(),
             destination_address: "bc1qdestination".to_string(),
             value: "11000000".to_string(),
-            mode: SwapperMode::ExactIn,
             options: Options::default(),
         };
         let quote = Quote {

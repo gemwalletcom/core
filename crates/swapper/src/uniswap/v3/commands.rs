@@ -1,4 +1,4 @@
-use crate::{SwapperError, SwapperMode, eth_address, fees::apply_slippage_in_bp, models::*, uniswap::requires_native_wrapping};
+use crate::{SwapperError, eth_address, fees::apply_slippage_in_bp, models::*, uniswap::requires_native_wrapping};
 use gem_evm::uniswap::command::{ADDRESS_THIS, PayPortion, Permit2Permit, Sweep, Transfer, UniversalRouterCommand, UnwrapWeth, V3SwapExactIn, WrapEth};
 
 use alloy_primitives::{Address, Bytes, U256};
@@ -18,106 +18,98 @@ pub fn build_commands(
     let fee_options = options.fee.unwrap_or_default().evm;
     let recipient = eth_address::parse_str(&request.wallet_address)?;
 
-    let mode = request.mode;
     let wrap_input_eth = requires_native_wrapping(&request.from_asset.asset_id());
     let unwrap_output_weth = requires_native_wrapping(&request.to_asset.asset_id());
     let pay_fees = fee_options.bps > 0;
 
     let mut commands: Vec<UniversalRouterCommand> = vec![];
 
-    match mode {
-        SwapperMode::ExactIn => {
-            let amount_out = apply_slippage_in_bp(&quote_amount, options.slippage.bps + fee_options.bps);
+    let amount_out = apply_slippage_in_bp(&quote_amount, options.slippage.bps + fee_options.bps);
+    if wrap_input_eth {
+        // Wrap ETH, recipient is this_address
+        commands.push(UniversalRouterCommand::WRAP_ETH(WrapEth {
+            recipient: Address::from_str(ADDRESS_THIS).unwrap(),
+            amount_min: amount_in,
+        }));
+    } else if let Some(permit) = permit {
+        commands.push(UniversalRouterCommand::PERMIT2_PERMIT(permit));
+    }
+
+    // payer_is_user: is true when swapping tokens
+    let payer_is_user = !wrap_input_eth;
+    if pay_fees {
+        if fee_token_is_input {
+            // insert TRANSFER fee first
+            let fee = amount_in * U256::from(fee_options.bps) / U256::from(10000);
+            let fee_recipient = Address::from_str(fee_options.address.as_str()).unwrap();
             if wrap_input_eth {
-                // Wrap ETH, recipient is this_address
-                commands.push(UniversalRouterCommand::WRAP_ETH(WrapEth {
-                    recipient: Address::from_str(ADDRESS_THIS).unwrap(),
-                    amount_min: amount_in,
+                // if input is native ETH, we can transfer directly because of WRAP_ETH command
+                commands.push(UniversalRouterCommand::TRANSFER(Transfer {
+                    token: *token_in,
+                    recipient: fee_recipient,
+                    value: fee,
                 }));
-            } else if let Some(permit) = permit {
-                commands.push(UniversalRouterCommand::PERMIT2_PERMIT(permit));
-            }
-
-            // payer_is_user: is true when swapping tokens
-            let payer_is_user = !wrap_input_eth;
-            if pay_fees {
-                if fee_token_is_input {
-                    // insert TRANSFER fee first
-                    let fee = amount_in * U256::from(fee_options.bps) / U256::from(10000);
-                    let fee_recipient = Address::from_str(fee_options.address.as_str()).unwrap();
-                    if wrap_input_eth {
-                        // if input is native ETH, we can transfer directly because of WRAP_ETH command
-                        commands.push(UniversalRouterCommand::TRANSFER(Transfer {
-                            token: *token_in,
-                            recipient: fee_recipient,
-                            value: fee,
-                        }));
-                    } else {
-                        // call permit2 transfer instead
-                        commands.push(UniversalRouterCommand::PERMIT2_TRANSFER_FROM(Transfer {
-                            token: *token_in,
-                            recipient: fee_recipient,
-                            value: fee,
-                        }));
-                    };
-
-                    // insert V3_SWAP_EXACT_IN with amount - fee, recipient is user address
-                    commands.push(UniversalRouterCommand::V3_SWAP_EXACT_IN(V3SwapExactIn {
-                        recipient,
-                        amount_in: amount_in - fee,
-                        amount_out_min: amount_out,
-                        path: path.clone(),
-                        payer_is_user,
-                    }));
-                } else {
-                    // insert V3_SWAP_EXACT_IN
-                    // amount_out_min: if needs to pay fees, amount_out_min set to 0 and we will sweep the rest
-                    commands.push(UniversalRouterCommand::V3_SWAP_EXACT_IN(V3SwapExactIn {
-                        recipient: Address::from_str(ADDRESS_THIS).unwrap(),
-                        amount_in,
-                        amount_out_min: if pay_fees { U256::from(0) } else { amount_out },
-                        path: path.clone(),
-                        payer_is_user,
-                    }));
-
-                    // insert PAY_PORTION to fee_address
-                    commands.push(UniversalRouterCommand::PAY_PORTION(PayPortion {
-                        token: *token_out,
-                        recipient: Address::from_str(fee_options.address.as_str()).unwrap(),
-                        bips: U256::from(fee_options.bps),
-                    }));
-
-                    if !unwrap_output_weth {
-                        // MSG_SENDER should be the address of the caller
-                        commands.push(UniversalRouterCommand::SWEEP(Sweep {
-                            token: *token_out,
-                            recipient,
-                            amount_min: U256::from(amount_out),
-                        }));
-                    }
-                }
             } else {
-                // insert V3_SWAP_EXACT_IN
-                commands.push(UniversalRouterCommand::V3_SWAP_EXACT_IN(V3SwapExactIn {
-                    recipient,
-                    amount_in,
-                    amount_out_min: amount_out,
-                    path: path.clone(),
-                    payer_is_user,
+                // call permit2 transfer instead
+                commands.push(UniversalRouterCommand::PERMIT2_TRANSFER_FROM(Transfer {
+                    token: *token_in,
+                    recipient: fee_recipient,
+                    value: fee,
                 }));
-            }
+            };
 
-            if unwrap_output_weth {
-                // insert UNWRAP_WETH
-                commands.push(UniversalRouterCommand::UNWRAP_WETH(UnwrapWeth {
+            // insert V3_SWAP_EXACT_IN with amount - fee, recipient is user address
+            commands.push(UniversalRouterCommand::V3_SWAP_EXACT_IN(V3SwapExactIn {
+                recipient,
+                amount_in: amount_in - fee,
+                amount_out_min: amount_out,
+                path: path.clone(),
+                payer_is_user,
+            }));
+        } else {
+            // insert V3_SWAP_EXACT_IN
+            // amount_out_min: if needs to pay fees, amount_out_min set to 0 and we will sweep the rest
+            commands.push(UniversalRouterCommand::V3_SWAP_EXACT_IN(V3SwapExactIn {
+                recipient: Address::from_str(ADDRESS_THIS).unwrap(),
+                amount_in,
+                amount_out_min: if pay_fees { U256::from(0) } else { amount_out },
+                path: path.clone(),
+                payer_is_user,
+            }));
+
+            // insert PAY_PORTION to fee_address
+            commands.push(UniversalRouterCommand::PAY_PORTION(PayPortion {
+                token: *token_out,
+                recipient: Address::from_str(fee_options.address.as_str()).unwrap(),
+                bips: U256::from(fee_options.bps),
+            }));
+
+            if !unwrap_output_weth {
+                // MSG_SENDER should be the address of the caller
+                commands.push(UniversalRouterCommand::SWEEP(Sweep {
+                    token: *token_out,
                     recipient,
                     amount_min: U256::from(amount_out),
                 }));
             }
         }
-        SwapperMode::ExactOut => {
-            todo!("swap exact out not implemented");
-        }
+    } else {
+        // insert V3_SWAP_EXACT_IN
+        commands.push(UniversalRouterCommand::V3_SWAP_EXACT_IN(V3SwapExactIn {
+            recipient,
+            amount_in,
+            amount_out_min: amount_out,
+            path: path.clone(),
+            payer_is_user,
+        }));
+    }
+
+    if unwrap_output_weth {
+        // insert UNWRAP_WETH
+        commands.push(UniversalRouterCommand::UNWRAP_WETH(UnwrapWeth {
+            recipient,
+            amount_min: U256::from(amount_out),
+        }));
     }
     Ok(commands)
 }
@@ -147,7 +139,6 @@ mod tests {
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "10000000000000000".into(),
-            mode: SwapperMode::ExactIn,
             options: Options::default(),
         };
 
@@ -170,7 +161,6 @@ mod tests {
                 bps: 25,
                 address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
             })),
-            preferred_providers: vec![],
             use_max_amount: false,
         };
         request.options = options;
@@ -194,7 +184,6 @@ mod tests {
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "6500000".into(),
-            mode: SwapperMode::ExactIn,
             options: Options::default(),
         };
 
@@ -234,14 +223,12 @@ mod tests {
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "5064985".into(),
-            mode: SwapperMode::ExactIn,
             options: Options {
                 slippage: 100.into(),
                 fee: Some(ReferralFees::evm(ReferralFee {
                     bps: 25,
                     address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
                 })),
-                preferred_providers: vec![],
                 use_max_amount: false,
             },
         };
@@ -278,14 +265,12 @@ mod tests {
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "10000000".into(),
-            mode: SwapperMode::ExactIn,
             options: Options {
                 slippage: 100.into(),
                 fee: Some(ReferralFees::evm(ReferralFee {
                     bps: 25,
                     address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
                 })),
-                preferred_providers: vec![],
                 use_max_amount: false,
             },
         };
@@ -339,14 +324,12 @@ mod tests {
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "1000000000000000".into(),
-            mode: SwapperMode::ExactIn,
             options: Options {
                 slippage: 100.into(),
                 fee: Some(ReferralFees::evm(ReferralFee {
                     bps: 25,
                     address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
                 })),
-                preferred_providers: vec![],
                 use_max_amount: false,
             },
         };
@@ -378,7 +361,6 @@ mod tests {
             wallet_address: wallet.into(),
             destination_address: wallet.into(),
             value: "22000000000000000000".into(),
-            mode: SwapperMode::ExactIn,
             options: Options::default(),
         };
         let path = build_direct_pair(&token_celo, &token_usdt, FeeTier::Hundred);
@@ -404,14 +386,12 @@ mod tests {
             wallet_address: wallet.into(),
             destination_address: wallet.into(),
             value: "900000".into(),
-            mode: SwapperMode::ExactIn,
             options: Options {
                 slippage: 50.into(),
                 fee: Some(ReferralFees::evm(ReferralFee {
                     bps: 50,
                     address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
                 })),
-                preferred_providers: vec![],
                 use_max_amount: false,
             },
         };

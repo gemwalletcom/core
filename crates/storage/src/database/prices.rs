@@ -3,8 +3,13 @@ use crate::sql_types::PriceProviderRow;
 use crate::{DatabaseClient, models::*};
 use chrono::NaiveDateTime;
 use diesel::prelude::*;
+use diesel::sql_types::{Nullable, SingleValue, SqlType};
 use diesel::upsert::excluded;
 use primitives::PriceProvider;
+
+diesel::define_sql_function! {
+    fn coalesce<T: SqlType + SingleValue>(a: Nullable<T>, b: Nullable<T>) -> Nullable<T>;
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AssetsWithPricesFilter {
@@ -61,8 +66,9 @@ impl PricesStore for DatabaseClient {
             .do_update()
             .set((
                 price.eq(excluded(price)),
-                price_change_percentage_24h.eq(excluded(price_change_percentage_24h)),
+                price_change_percentage_24h.eq(coalesce(excluded(price_change_percentage_24h), price_change_percentage_24h)),
                 market_cap_rank.eq(excluded(market_cap_rank)),
+                total_volume.eq(excluded(total_volume)),
                 last_updated_at.eq(excluded(last_updated_at)),
             ))
             .execute(&mut self.connection)

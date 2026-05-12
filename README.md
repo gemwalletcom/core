@@ -65,50 +65,13 @@ Unzip and add it to your project as a local Swift Package.
 
 ### Android
 
-Add the following to your `libs.versions.toml` file:
-```toml
-[versions]
-gemstone = "<latest_version>"
+Build the Gemstone Android AAR from source and publish it to the local Maven cache:
 
-[libraries]
-gemstone = { module = "com.gemwallet.gemstone:gemstone", version.ref = "gemstone" }
+```bash
+just gemstone build-android
 ```
 
-Add the following to your `build.gradle.kts` file:
-
-```gradle
-dependencies {
-    api(libs.gemstone)
-}
-```
-
-#### Maven Central (Recommended)
-
-```gradle
-allprojects {
-    repositories {
-        mavenCentral()
-    }
-}
-```
-
-#### GitHub Packages (Alternative)
-
-Alternatively, you can use GitHub Packages (requires GitHub token):
-
-```gradle
-allprojects {
-    repositories {
-        maven {
-            url = uri("https://maven.pkg.github.com/gemwalletcom/core")
-            credentials {
-                username = <github_username>
-                password = <github_token>
-            }
-        }
-    }
-}
-```
+Then consume it from `mavenLocal()` in your Android project.
 
 # Contributing
 

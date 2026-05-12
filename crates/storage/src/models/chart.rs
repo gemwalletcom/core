@@ -20,7 +20,7 @@ impl ChartRow {
 
     pub fn from_price(price: PriceRow) -> Self {
         ChartRow {
-            coin_id: price.id,
+            coin_id: price.id.to_string(),
             price: price.price,
             created_at: price.last_updated_at,
         }
