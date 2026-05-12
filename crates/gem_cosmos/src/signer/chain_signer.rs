@@ -34,7 +34,7 @@ impl ChainSigner for CosmosChainSigner {
         // Prefer the provider's gas limit (with buffer); fall back to the preloaded swap gas
         // limit scaled by message count when the provider omits it.
         let gas_limit = match swap_data.data.gas_limit.as_ref().and_then(|g| g.parse::<u64>().ok()).filter(|&g| g > 0) {
-            Some(provider_gas) => provider_gas * GAS_BUFFER_NUMERATOR / GAS_BUFFER_DENOMINATOR,
+            Some(provider_gas) => (provider_gas as u128 * GAS_BUFFER_NUMERATOR as u128 / GAS_BUFFER_DENOMINATOR as u128) as u64,
             None => Self::gas_limit(input, messages.len())?,
         };
         let fee_amount = Self::scale_fee(gas_limit, input.fee.gas_price_u64()?);
