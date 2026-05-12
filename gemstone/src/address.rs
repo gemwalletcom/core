@@ -1,7 +1,7 @@
 use crate::GemstoneError;
 use gem_bitcoin::models::address::Address as BitcoinAddress;
-use gem_evm::ethereum_address_checksum;
-use primitives::{Chain, ChainAddress, ChainType};
+use gem_evm::address::EthereumAddress;
+use primitives::{Address as AddressTrait, Chain, ChainAddress, ChainType};
 use std::sync::Arc;
 
 #[derive(uniffi::Object)]
@@ -18,8 +18,12 @@ impl GemChainAddress {
                 msg: format!("Invalid address for {chain}"),
             });
         }
+        let normalized = match chain.chain_type() {
+            ChainType::Ethereum | ChainType::HyperCore => EthereumAddress::try_parse(&address).map(|a| a.encode()).unwrap_or(address),
+            _ => address,
+        };
         Ok(Arc::new(Self {
-            inner: ChainAddress::new(chain, address),
+            inner: ChainAddress::new(chain, normalized),
         }))
     }
 
@@ -53,14 +57,6 @@ pub fn short_address(address: &str, chain: Chain) -> String {
     }
 }
 
-#[uniffi::export]
-pub fn checksum_address(address: &str, chain: Chain) -> String {
-    match chain.chain_type() {
-        ChainType::Ethereum => ethereum_address_checksum(address).unwrap_or_else(|_| address.to_string()),
-        _ => address.to_string(),
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -80,6 +76,16 @@ mod tests {
     }
 
     #[test]
+    fn test_address_returns_checksum_for_evm() {
+        let lower = "0x5615e8ab93b9d695b6d4d6545f7792aa59e1069a".to_string();
+        let eip55 = "0x5615E8AB93b9d695b6d4d6545f7792aA59e1069a";
+        let solana = "GvhwZwtV32kYUXUw965CUM3KGPdtBsDwPVpi92brY5R2".to_string();
+
+        assert_eq!(GemChainAddress::new(lower.clone(), Chain::SmartChain).unwrap().address(), eip55);
+        assert_eq!(GemChainAddress::new(solana.clone(), Chain::Solana).unwrap().address(), solana);
+    }
+
+    #[test]
     fn test_short_address_bitcoincash() {
         let prefixed = "bitcoincash:qpzl3jxkzgvfd9flnd26leud5duv795fnv7vuaha70";
         let stripped = "qpzl3jxkzgvfd9flnd26leud5duv795fnv7vuaha70";
@@ -93,15 +99,5 @@ mod tests {
     fn test_short_address_passthrough() {
         let eth = "0x5615E8AB93b9d695b6d4d6545f7792aA59e1069a";
         assert_eq!(short_address(eth, Chain::Ethereum), eth);
-    }
-
-    #[test]
-    fn test_checksum_address() {
-        let lower = "0x5615e8ab93b9d695b6d4d6545f7792aa59e1069a";
-        let eip55 = "0x5615E8AB93b9d695b6d4d6545f7792aA59e1069a";
-
-        assert_eq!(checksum_address(lower, Chain::SmartChain), eip55);
-        assert_eq!(checksum_address("invalid", Chain::Ethereum), "invalid");
-        assert_eq!(checksum_address(lower, Chain::Bitcoin), lower);
     }
 }
