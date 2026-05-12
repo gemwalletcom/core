@@ -10,11 +10,11 @@ use super::{
     chain::RelayChain,
     client::RelayClient,
     mapper,
-    model::{RelayAppFee, RelayQuoteRequest, RelayQuoteResponse, relay_trade_type},
+    model::{RelayAppFee, RelayQuoteRequest, RelayQuoteResponse},
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider,
-    SwapperQuoteData, approval::check_approval_erc20, config::get_swap_api_url, cross_chain::VaultAddresses, fees::DEFAULT_REFERRER, fees::quote_value_after_reserve_by_chain,
+    SwapperQuoteData, approval::check_approval_erc20, config::get_swap_proxy_url, cross_chain::VaultAddresses, fees::DEFAULT_REFERRER, fees::quote_value_after_reserve_by_chain,
 };
 
 #[derive(Debug)]
@@ -29,7 +29,7 @@ where
 
 impl Relay<RpcClient> {
     pub fn new(rpc_provider: Arc<dyn RpcProvider>) -> Self {
-        let url = get_swap_api_url("relay");
+        let url = get_swap_proxy_url("relay");
         let client = RelayClient::new(RpcClient::new(url, rpc_provider.clone()));
         Self {
             provider: ProviderType::new(SwapperProvider::Relay),
@@ -82,7 +82,7 @@ where
             destination_currency,
             amount: from_value.clone(),
             recipient: request.destination_address.clone(),
-            trade_type: relay_trade_type(&request.mode).to_string(),
+            trade_type: "EXACT_INPUT".to_string(),
             referrer: if app_fees.is_empty() { None } else { Some(DEFAULT_REFERRER.to_string()) },
             app_fees,
             refund_to: request.wallet_address.clone(),
@@ -168,7 +168,7 @@ where
 #[cfg(all(test, feature = "swap_integration_tests"))]
 mod swap_integration_tests {
     use super::*;
-    use crate::{SwapperMode, SwapperQuoteAsset, alien::reqwest_provider::NativeProvider, models::Options};
+    use crate::{SwapperQuoteAsset, alien::reqwest_provider::NativeProvider, models::Options};
     use primitives::AssetId;
 
     #[tokio::test]
@@ -184,7 +184,6 @@ mod swap_integration_tests {
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             value: "500000".to_string(),
-            mode: SwapperMode::ExactIn,
             options: Options::new_with_slippage(100.into()),
         };
 
@@ -214,7 +213,6 @@ mod swap_integration_tests {
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             value: "5000000".to_string(),
-            mode: SwapperMode::ExactIn,
             options: Options::new_with_slippage(100.into()),
         };
 

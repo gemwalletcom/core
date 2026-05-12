@@ -115,7 +115,7 @@ impl Swapper for UniswapV4 {
         let base_pair = get_base_pair(&evm_chain, is_native_erc20(from_chain)).ok_or(SwapperError::ComputeQuoteError("base pair not found".into()))?;
         let fee_token_in = FeeToken::new(token_in, request.from_asset.symbol.as_str());
         let fee_token_out = FeeToken::new(token_out, request.to_asset.symbol.as_str());
-        let fee_preference = get_fee_token(&request.mode, Some(&base_pair), &fee_token_in, &fee_token_out);
+        let fee_preference = get_fee_token(Some(&base_pair), &fee_token_in, &fee_token_out);
         let fee_bps = request.options.clone().fee.unwrap_or_default().evm.bps;
         let quote_amount_in = if fee_preference.is_input_token && fee_bps > 0 {
             apply_slippage_in_bp(&from_value, fee_bps)
@@ -245,7 +245,7 @@ impl Swapper for UniswapV4 {
         let base_pair = get_base_pair(&evm_chain, is_native_erc20(from_asset.chain));
         let fee_token_in = FeeToken::new(token_in, request.from_asset.symbol.as_str());
         let fee_token_out = FeeToken::new(token_out, request.to_asset.symbol.as_str());
-        let fee_preference = get_fee_token(&request.mode, base_pair.as_ref(), &fee_token_in, &fee_token_out);
+        let fee_preference = get_fee_token(base_pair.as_ref(), &fee_token_in, &fee_token_out);
 
         let commands = build_commands(
             request,
@@ -274,7 +274,7 @@ impl Swapper for UniswapV4 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Options, SwapperMode, alien::mock::ProviderMock};
+    use crate::{Options, alien::mock::ProviderMock};
     use std::sync::Arc;
 
     #[test]
@@ -287,7 +287,6 @@ mod tests {
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "40000000000000000".into(), // 0.04 Cake
-            mode: SwapperMode::ExactIn,
             options: Options::default(),
         };
 
@@ -300,9 +299,8 @@ mod tests {
 
     #[cfg(all(test, feature = "swap_integration_tests", feature = "reqwest_provider"))]
     mod swap_integration_tests {
-        use super::*;
         use crate::{
-            FetchQuoteData, NativeProvider, Options, QuoteRequest, SwapperError, SwapperMode, SwapperProvider,
+            FetchQuoteData, NativeProvider, Options, QuoteRequest, SwapperError,
             fees::{ReferralFee, ReferralFees},
             uniswap,
         };
@@ -319,7 +317,6 @@ mod tests {
                     bps: 25,
                     address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
                 })),
-                preferred_providers: vec![SwapperProvider::UniswapV4],
                 use_max_amount: false,
             };
 
@@ -329,7 +326,6 @@ mod tests {
                 wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
                 destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
                 value: "10000000000000000".into(), // 0.01 ETH
-                mode: SwapperMode::ExactIn,
                 options,
             };
 

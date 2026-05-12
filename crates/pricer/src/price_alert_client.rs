@@ -1,6 +1,6 @@
 use chrono::{Duration, Utc};
 use gem_tracing::info_with_fields;
-use localizer::{LanguageLocalizer, LanguageNotification};
+use localizer::LanguageLocalizer;
 use number_formatter::NumberFormatter;
 use primitives::{
     Asset, AssetId, DEFAULT_FIAT_CURRENCY, Device, GorushNotification, Price, PriceAlert, PriceAlertDirection, PriceAlertType, PriceAlerts, PriceData, PushNotification,
@@ -204,7 +204,7 @@ impl PriceAlertClient {
                 continue;
             }
 
-            let price = match formatter.currency(alert.price.price, &alert.device.currency) {
+            let current_price = match formatter.currency(alert.price.price, &alert.device.currency) {
                 Some(p) => p,
                 None => {
                     info_with_fields!("unknown_currency_symbol", currency = &alert.device.currency);
@@ -215,15 +215,19 @@ impl PriceAlertClient {
             let change = formatter.percent(alert.price.price_change_percentage_24h, alert.device.locale.as_str());
             let localizer = LanguageLocalizer::new_with_language(alert.device.locale.as_str());
 
-            let message: LanguageNotification = match alert.alert_type {
-                PriceAlertType::PriceUp | PriceAlertType::PriceDown => localizer.price_alert_target(&alert.asset.full_name(), &price, &change),
-                PriceAlertType::PriceChangesUp | PriceAlertType::PricePercentChangeUp => localizer.price_alert_up(&alert.asset.full_name(), &price, &change),
-                PriceAlertType::PriceChangesDown | PriceAlertType::PricePercentChangeDown => localizer.price_alert_down(&alert.asset.full_name(), &price, &change),
-                PriceAlertType::AllTimeHigh => localizer.price_alert_all_time_high(&alert.asset.name, &price),
-                PriceAlertType::PriceMilestone => {
-                    let milestone_price = alert.milestone.and_then(|m| formatter.currency(m, &alert.device.currency)).unwrap_or_else(|| price.clone());
-                    localizer.price_alert_target(&alert.asset.full_name(), &milestone_price, &change)
+            let message = match &alert.alert_type {
+                PriceAlertType::PriceUp | PriceAlertType::PriceDown | PriceAlertType::PriceMilestone => {
+                    let Some(target_value) = Self::price_alert_target_value(&alert) else {
+                        continue;
+                    };
+                    let Some(target_price) = formatter.currency(target_value, &alert.device.currency) else {
+                        continue;
+                    };
+                    localizer.price_alert_target(&alert.asset.full_name(), &target_price, &current_price, &change)
                 }
+                PriceAlertType::PriceChangesUp | PriceAlertType::PricePercentChangeUp => localizer.price_alert_up(&alert.asset.full_name(), &current_price, &change),
+                PriceAlertType::PriceChangesDown | PriceAlertType::PricePercentChangeDown => localizer.price_alert_down(&alert.asset.full_name(), &current_price, &change),
+                PriceAlertType::AllTimeHigh => localizer.price_alert_all_time_high(&alert.asset.name, &current_price),
             };
 
             let data = PushNotification {
@@ -235,5 +239,54 @@ impl PriceAlertClient {
         }
 
         results
+    }
+
+    fn price_alert_target_value(alert: &PriceAlertNotification) -> Option<f64> {
+        match &alert.alert_type {
+            PriceAlertType::PriceUp | PriceAlertType::PriceDown => alert.price_alert.price,
+            PriceAlertType::PriceMilestone => alert.milestone,
+            PriceAlertType::PriceChangesUp
+            | PriceAlertType::PriceChangesDown
+            | PriceAlertType::PricePercentChangeUp
+            | PriceAlertType::PricePercentChangeDown
+            | PriceAlertType::AllTimeHigh => None,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use chrono::Utc;
+    use primitives::{Chain, PriceProvider};
+
+    use super::*;
+
+    #[test]
+    fn test_price_alert_target_value() {
+        let asset = Asset::from_chain(Chain::Bitcoin);
+        let alert = PriceAlertNotification {
+            device: Device::mock(),
+            asset: asset.clone(),
+            price: Price::new(80_954.0, -0.27, Utc::now(), PriceProvider::Coingecko),
+            alert_type: PriceAlertType::PriceDown,
+            price_alert: PriceAlert::new_price(asset.id.clone(), "USD".to_string(), 81_000.0, PriceAlertDirection::Down),
+            milestone: None,
+        };
+
+        assert_eq!(PriceAlertClient::price_alert_target_value(&alert), Some(81_000.0));
+
+        let milestone_alert = PriceAlertNotification {
+            alert_type: PriceAlertType::PriceMilestone,
+            price_alert: PriceAlert::new_auto(asset.id, "USD".to_string()),
+            milestone: Some(100_000.0),
+            ..alert.clone()
+        };
+        assert_eq!(PriceAlertClient::price_alert_target_value(&milestone_alert), Some(100_000.0));
+
+        let automatic_alert = PriceAlertNotification {
+            alert_type: PriceAlertType::PriceChangesUp,
+            ..alert
+        };
+        assert_eq!(PriceAlertClient::price_alert_target_value(&automatic_alert), None);
     }
 }

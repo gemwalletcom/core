@@ -128,7 +128,7 @@ impl Swapper for UniswapV3 {
 
         let fee_token_in = FeeToken::new(token_in, request.from_asset.symbol.as_str());
         let fee_token_out = FeeToken::new(token_out, request.to_asset.symbol.as_str());
-        let fee_preference = get_fee_token(&request.mode, Some(&base_pair), &fee_token_in, &fee_token_out);
+        let fee_preference = get_fee_token(Some(&base_pair), &fee_token_in, &fee_token_out);
         let fee_bps = request.options.clone().fee.unwrap_or_default().evm.bps;
 
         let quote_amount_in = if fee_preference.is_input_token && fee_bps > 0 {
@@ -144,7 +144,7 @@ impl Swapper for UniswapV3 {
                 let client = client.clone();
                 let calls: Vec<EthereumRpc> = paths
                     .iter()
-                    .map(|path| super::quoter_v2::build_quoter_request(&request.mode, &request.wallet_address, deployment.quoter_v2, quote_amount_in, &path.1))
+                    .map(|path| super::quoter_v2::build_quoter_request(&request.wallet_address, deployment.quoter_v2, quote_amount_in, &path.1))
                     .collect();
                 async move { client.batch_call_requests(calls).await }
             })
@@ -236,7 +236,7 @@ impl Swapper for UniswapV3 {
         let base_pair = get_base_pair(&evm_chain, use_weth);
         let fee_token_in = FeeToken::new(token_in, request.from_asset.symbol.as_str());
         let fee_token_out = FeeToken::new(token_out, request.to_asset.symbol.as_str());
-        let fee_preference = get_fee_token(&request.mode, base_pair.as_ref(), &fee_token_in, &fee_token_out);
+        let fee_preference = get_fee_token(base_pair.as_ref(), &fee_token_in, &fee_token_out);
 
         let path: Bytes = build_paths_with_routes(&quote.data.routes)?;
         let commands = build_commands(request, &token_in, &token_out, amount_in, to_amount, &path, permit, fee_preference.is_input_token)?;

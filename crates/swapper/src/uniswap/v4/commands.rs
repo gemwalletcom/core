@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::{QuoteRequest, Route, SwapperError, SwapperMode, eth_address, fees::apply_slippage_in_bp, uniswap::requires_native_wrapping};
+use crate::{QuoteRequest, Route, SwapperError, eth_address, fees::apply_slippage_in_bp, uniswap::requires_native_wrapping};
 use alloy_primitives::{Address, U256};
 use gem_evm::uniswap::{
     actions::V4Action::{SETTLE, SWAP_EXACT_IN, TAKE},
@@ -22,73 +22,65 @@ pub fn build_commands(
     let fee_options = options.fee.unwrap_or_default().evm;
     let recipient = eth_address::parse_str(&request.wallet_address)?;
 
-    let mode = request.mode;
     let input_is_native = requires_native_wrapping(&request.from_asset.asset_id());
     let pay_fees = fee_options.bps > 0;
 
     let mut commands: Vec<UniversalRouterCommand> = vec![];
 
-    match mode {
-        SwapperMode::ExactIn => {
-            let amount_out = apply_slippage_in_bp(&quote_amount, options.slippage.bps + fee_options.bps);
-            // Insert permit2 if needed
-            if let Some(permit) = permit {
-                commands.push(UniversalRouterCommand::PERMIT2_PERMIT(permit));
-            }
+    let amount_out = apply_slippage_in_bp(&quote_amount, options.slippage.bps + fee_options.bps);
+    // Insert permit2 if needed
+    if let Some(permit) = permit {
+        commands.push(UniversalRouterCommand::PERMIT2_PERMIT(permit));
+    }
 
-            if pay_fees {
-                if fee_token_is_input {
-                    // insert TRANSFER fee first
-                    let fee = amount_in * (fee_options.bps as u128) / 10000_u128;
-                    let fee_recipient = Address::from_str(fee_options.address.as_str()).unwrap();
-                    if input_is_native {
-                        // if input is native ETH, we can transfer directly
-                        commands.push(UniversalRouterCommand::TRANSFER(Transfer {
-                            token: *token_in,
-                            recipient: fee_recipient,
-                            value: U256::from(fee),
-                        }));
-                    } else {
-                        // call permit2 transfer instead
-                        commands.push(UniversalRouterCommand::PERMIT2_TRANSFER_FROM(Transfer {
-                            token: *token_in,
-                            recipient: fee_recipient,
-                            value: U256::from(fee),
-                        }));
-                    };
-                    // insert V4_SWAP with amount - fee
-                    // fee charged in token_in, so we need to use recipient as recipient
-                    let command = build_v4_swap_command(token_in, token_out, amount_in - fee, amount_out, swap_routes, &recipient)?;
-                    commands.push(command);
-                } else {
-                    // insert V4 SWAP
-                    // if needs to pay fees, amount_out_min set to 0 and we will sweep the rest
-                    let address_this = ADDRESS_THIS.parse().unwrap();
-                    let amount_out_min = if pay_fees { 0 } else { amount_out };
-                    let command = build_v4_swap_command(token_in, token_out, amount_in, amount_out_min, swap_routes, &address_this)?;
-                    commands.push(command);
-
-                    // insert PAY_PORTION to fee_address
-                    commands.push(UniversalRouterCommand::PAY_PORTION(PayPortion {
-                        token: *token_out,
-                        recipient: Address::from_str(fee_options.address.as_str()).unwrap(),
-                        bips: U256::from(fee_options.bps),
-                    }));
-
-                    commands.push(UniversalRouterCommand::SWEEP(Sweep {
-                        token: *token_out,
-                        recipient,
-                        amount_min: U256::from(amount_out),
-                    }));
-                }
+    if pay_fees {
+        if fee_token_is_input {
+            // insert TRANSFER fee first
+            let fee = amount_in * (fee_options.bps as u128) / 10000_u128;
+            let fee_recipient = Address::from_str(fee_options.address.as_str()).unwrap();
+            if input_is_native {
+                // if input is native ETH, we can transfer directly
+                commands.push(UniversalRouterCommand::TRANSFER(Transfer {
+                    token: *token_in,
+                    recipient: fee_recipient,
+                    value: U256::from(fee),
+                }));
             } else {
-                let command = build_v4_swap_command(token_in, token_out, amount_in, amount_out, swap_routes, &recipient)?;
-                commands.push(command);
-            }
+                // call permit2 transfer instead
+                commands.push(UniversalRouterCommand::PERMIT2_TRANSFER_FROM(Transfer {
+                    token: *token_in,
+                    recipient: fee_recipient,
+                    value: U256::from(fee),
+                }));
+            };
+            // insert V4_SWAP with amount - fee
+            // fee charged in token_in, so we need to use recipient as recipient
+            let command = build_v4_swap_command(token_in, token_out, amount_in - fee, amount_out, swap_routes, &recipient)?;
+            commands.push(command);
+        } else {
+            // insert V4 SWAP
+            // if needs to pay fees, amount_out_min set to 0 and we will sweep the rest
+            let address_this = ADDRESS_THIS.parse().unwrap();
+            let amount_out_min = if pay_fees { 0 } else { amount_out };
+            let command = build_v4_swap_command(token_in, token_out, amount_in, amount_out_min, swap_routes, &address_this)?;
+            commands.push(command);
+
+            // insert PAY_PORTION to fee_address
+            commands.push(UniversalRouterCommand::PAY_PORTION(PayPortion {
+                token: *token_out,
+                recipient: Address::from_str(fee_options.address.as_str()).unwrap(),
+                bips: U256::from(fee_options.bps),
+            }));
+
+            commands.push(UniversalRouterCommand::SWEEP(Sweep {
+                token: *token_out,
+                recipient,
+                amount_min: U256::from(amount_out),
+            }));
         }
-        SwapperMode::ExactOut => {
-            todo!("swap exact out not implemented");
-        }
+    } else {
+        let command = build_v4_swap_command(token_in, token_out, amount_in, amount_out, swap_routes, &recipient)?;
+        commands.push(command);
     }
     Ok(commands)
 }
@@ -160,7 +152,6 @@ mod tests {
             wallet_address: wallet.into(),
             destination_address: wallet.into(),
             value: "22000000000000000000".into(),
-            mode: SwapperMode::ExactIn,
             options: Options::default(),
         };
         let commands = build_commands(&request, &token_celo, &token_usdt, 22_000_000_000_000_000_000, 14_804_757, &routes, None, false).unwrap();
@@ -175,14 +166,12 @@ mod tests {
             wallet_address: wallet.into(),
             destination_address: wallet.into(),
             value: "900000".into(),
-            mode: SwapperMode::ExactIn,
             options: Options {
                 slippage: 50.into(),
                 fee: Some(ReferralFees::evm(ReferralFee {
                     bps: 50,
                     address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
                 })),
-                preferred_providers: vec![],
                 use_max_amount: false,
             },
         };

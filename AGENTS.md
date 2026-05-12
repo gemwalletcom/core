@@ -16,6 +16,12 @@ Read this file first, then load the relevant skills for your current task. `proj
 - [Common Issues](skills/common-issues.md) — Known anti-patterns and their fixes
 - [Swapper Checklist](skills/swapper-checklist.md) — Integration checklist for swapper providers
 
+## Before Coding
+
+- State assumptions explicitly. UniFFI bounds, lifetimes, provider trait contracts, and JSON shape assumptions are invisible — call them out so a reviewer can spot the wrong one
+- Read before you write. Open the file's existing exports, the immediate caller, the related provider/mapper/repository, and any obvious testkit fixture before adding code. "Looks orthogonal to me" is the most expensive sentence in this crate
+- If two patterns in the codebase contradict (e.g., two providers handling decimals or error mapping differently), do not average them. Pick one — typically the more recent or better tested — explain why, and flag the other for cleanup
+
 ## Task Completion
 
 Before finishing a task:
@@ -27,6 +33,7 @@ Before finishing a task:
 
 ## Test Rules
 
+- Tests must verify intent, not just behavior. A test that still passes when the function returns a hardcoded constant is a tautology — fix the assertion or the function under test.
 - Do not write tolerance-based assertions against live network values or values recomputed from separate RPC/API calls in integration tests. These tests are flaky and low-signal.
 - For integration tests, assert stable invariants only. For exact numeric behavior, cover the pure calculation in unit tests with deterministic inputs.
 - Write one test function with many assertions instead of many separate single-assertion test functions. Group related cases into a single `test_<function_name>` test.

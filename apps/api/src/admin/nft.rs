@@ -8,7 +8,7 @@ use crate::responders::{ApiError, ApiResponse};
 
 #[put("/nft/collections/update/<collection_id>")]
 pub async fn update_nft_collection(_admin: AdminAuthorized, collection_id: NftCollectionIdParam, client: &State<NFTClient>) -> Result<ApiResponse<bool>, ApiError> {
-    Ok(client.update_collection(&collection_id.0.id()).await?.into())
+    Ok(client.update_collection(&collection_id.0.to_string()).await?.into())
 }
 
 #[put("/nft/assets/update/<asset_id>")]

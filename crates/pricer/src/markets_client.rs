@@ -29,7 +29,7 @@ impl MarketsClient {
     pub async fn get_asset_ids_for_provider_price_ids(&self, provider: PriceProvider, provider_price_ids: Vec<String>) -> Result<Vec<AssetId>, Box<dyn Error + Send + Sync>> {
         let price_ids: Vec<String> = provider_price_ids.iter().map(|id| PriceId::id_for(provider, id)).collect();
         let assets = self.database.prices()?.get_prices_assets_for_price_ids(price_ids.clone())?;
-        let asset_map: std::collections::HashMap<_, _> = assets.into_iter().map(|x| (x.price_id, x.asset_id)).collect();
+        let asset_map: std::collections::HashMap<_, _> = assets.into_iter().map(|x| (x.price_id.to_string(), x.asset_id)).collect();
         Ok(price_ids
             .into_iter()
             .filter_map(|price_id| asset_map.get(&price_id).map(|asset_id| asset_id.0.clone()))

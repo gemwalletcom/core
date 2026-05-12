@@ -60,14 +60,14 @@ mod chain_integration_tests {
     use super::*;
     use crate::{
         PYUSD_TOKEN_MINT, USDC_TOKEN_MINT, USDT_TOKEN_MINT,
-        provider::testkit::{TEST_ADDRESS, create_solana_test_client},
+        provider::testkit::create_solana_test_client,
     };
-    use primitives::Chain;
+    use primitives::{Chain, testkit::signer_mock::TEST_SOLANA_SENDER};
 
     #[tokio::test]
     async fn test_solana_get_balance_coin() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_solana_test_client();
-        let balance = client.get_balance_coin(TEST_ADDRESS.to_string()).await?;
+        let balance = client.get_balance_coin(TEST_SOLANA_SENDER.to_string()).await?;
 
         assert_eq!(balance.asset_id.chain, Chain::Solana);
         assert_eq!(balance.asset_id.token_id, None);
@@ -81,7 +81,7 @@ mod chain_integration_tests {
         let client = create_solana_test_client();
         let token_ids = vec![USDC_TOKEN_MINT.to_string(), USDT_TOKEN_MINT.to_string(), PYUSD_TOKEN_MINT.to_string()];
 
-        let balances = client.get_balance_tokens(TEST_ADDRESS.to_string(), token_ids.clone()).await?;
+        let balances = client.get_balance_tokens(TEST_SOLANA_SENDER.to_string(), token_ids.clone()).await?;
 
         assert_eq!(balances.len(), token_ids.len());
         for (i, balance) in balances.iter().enumerate() {
@@ -96,7 +96,7 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_solana_get_balance_staking() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_solana_test_client();
-        let staking_balance = client.get_balance_staking(TEST_ADDRESS.to_string()).await?;
+        let staking_balance = client.get_balance_staking(TEST_SOLANA_SENDER.to_string()).await?;
 
         if let Some(balance) = staking_balance {
             assert_eq!(balance.asset_id.chain, Chain::Solana);
@@ -110,7 +110,7 @@ mod chain_integration_tests {
     #[tokio::test]
     async fn test_solana_get_balance_assets() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let client = create_solana_test_client();
-        let address = TEST_ADDRESS.to_string();
+        let address = TEST_SOLANA_SENDER.to_string();
         let assets = client.get_balance_assets(address).await?;
 
         for asset in assets {

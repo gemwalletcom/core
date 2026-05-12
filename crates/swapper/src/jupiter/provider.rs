@@ -4,7 +4,7 @@ use super::{
     model::{QuoteDataRequest, QuoteRequest as JupiterRequest, QuoteResponse},
 };
 use crate::{
-    FetchQuoteData, Options, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperMode, SwapperProvider, SwapperQuoteData,
+    FetchQuoteData, Options, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData,
     error::INVALID_ADDRESS, solana,
 };
 use alloy_primitives::U256;
@@ -53,16 +53,11 @@ where
             .ok_or_else(|| SwapperError::ComputeQuoteError(format!("{}: {asset_id}", INVALID_ADDRESS)))
     }
 
-    fn get_fee_mint(&self, mode: &SwapperMode, input: &str, output: &str) -> String {
-        match mode {
-            SwapperMode::ExactIn => {
-                if self.fee_mints.contains(output) {
-                    return output.to_string();
-                }
-                input.to_string()
-            }
-            SwapperMode::ExactOut => input.to_string(),
+    fn get_fee_mint(&self, input: &str, output: &str) -> String {
+        if self.fee_mints.contains(output) {
+            return output.to_string();
         }
+        input.to_string()
     }
 
     fn get_fee_token_account(&self, options: &Options, mint: &str, token_program: &str) -> Option<String> {
@@ -84,8 +79,8 @@ where
             .ok_or_else(|| SwapperError::ComputeQuoteError("fetch_token_program error".to_string()))
     }
 
-    async fn fetch_fee_account(&self, mode: &SwapperMode, options: &Options, input_mint: &str, output_mint: &str) -> Result<String, SwapperError> {
-        let fee_mint = self.get_fee_mint(mode, input_mint, output_mint);
+    async fn fetch_fee_account(&self, options: &Options, input_mint: &str, output_mint: &str) -> Result<String, SwapperError> {
+        let fee_mint = self.get_fee_mint(input_mint, output_mint);
         // if fee_mint is in preset, no need to fetch token program
         let token_program = if self.fee_mints.contains(fee_mint.as_str()) {
             return Ok(self.get_fee_token_account(options, fee_mint.as_str(), TOKEN_PROGRAM).unwrap_or_default());
@@ -170,7 +165,7 @@ where
         let output_mint = route.output.token_id.clone().unwrap();
 
         let quote_response: QuoteResponse = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
-        let fee_account = self.fetch_fee_account(&quote.request.mode, &quote.request.options, &input_mint, &output_mint).await?;
+        let fee_account = self.fetch_fee_account(&quote.request.options, &input_mint, &output_mint).await?;
 
         let request = QuoteDataRequest {
             user_public_key: quote.request.wallet_address.clone(),
@@ -199,7 +194,7 @@ where
 #[cfg(all(test, feature = "swap_integration_tests"))]
 mod swap_integration_tests {
     use super::*;
-    use crate::{FetchQuoteData, SwapperMode, SwapperQuoteAsset, alien::reqwest_provider::NativeProvider, models::Options};
+    use crate::{FetchQuoteData, SwapperQuoteAsset, alien::reqwest_provider::NativeProvider, models::Options};
     use primitives::AssetId;
     use std::sync::Arc;
 
@@ -216,7 +211,6 @@ mod swap_integration_tests {
             wallet_address: "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy".to_string(),
             destination_address: "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy".to_string(),
             value: "1000000000".to_string(),
-            mode: SwapperMode::ExactIn,
             options,
         };
 

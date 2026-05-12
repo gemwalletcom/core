@@ -1,4 +1,3 @@
-use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 use std::fmt;
 use std::str::FromStr;
 
@@ -48,15 +47,4 @@ impl FromStr for PriceId {
     }
 }
 
-impl Serialize for PriceId {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&self.to_string())
-    }
-}
-
-impl<'de> Deserialize<'de> for PriceId {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        let s = String::deserialize(deserializer)?;
-        s.parse().map_err(de::Error::custom)
-    }
-}
+crate::impl_string_serde!(PriceId);

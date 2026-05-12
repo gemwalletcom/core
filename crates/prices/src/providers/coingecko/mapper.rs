@@ -244,5 +244,7 @@ mod tests {
         assert_eq!(prices[1].mapping.provider_price_id, smartchain.provider_price_id);
         assert_eq!(prices[0].price.price, 0.12);
         assert_eq!(prices[1].price.price, 0.12);
+        assert_eq!(prices[0].market.as_ref().and_then(|m| m.total_volume), Some(10.0));
+        assert_eq!(prices[1].market.as_ref().and_then(|m| m.total_volume), Some(10.0));
     }
 }

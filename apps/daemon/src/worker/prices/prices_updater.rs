@@ -89,7 +89,7 @@ impl PricesUpdater {
             return Ok(vec![]);
         }
 
-        let provider_price_ids_by_price_id: HashMap<String, String> = prices.into_iter().map(|price| (price.id, price.provider_price_id)).collect();
+        let provider_price_ids_by_price_id: HashMap<String, String> = prices.into_iter().map(|price| (price.id.to_string(), price.provider_price_id().to_string())).collect();
         let asset_rows = self
             .database
             .prices()?
@@ -99,7 +99,7 @@ impl PricesUpdater {
             .into_iter()
             .filter_map(|row| {
                 provider_price_ids_by_price_id
-                    .get(&row.price_id)
+                    .get(&row.price_id.to_string())
                     .cloned()
                     .map(|provider_price_id| AssetPriceMapping::new(row.asset_id.0, provider_price_id))
             })

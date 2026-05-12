@@ -550,10 +550,8 @@ diesel::table! {
         id -> Varchar,
         #[max_length = 32]
         provider -> Varchar,
-        #[max_length = 256]
-        provider_price_id -> Varchar,
         price -> Float8,
-        price_change_percentage_24h -> Float8,
+        price_change_percentage_24h -> Nullable<Float8>,
         market_cap_rank -> Nullable<Int4>,
         last_updated_at -> Timestamp,
         updated_at -> Timestamp,
@@ -562,6 +560,7 @@ diesel::table! {
         all_time_low_date -> Nullable<Timestamp>,
         all_time_high -> Float8,
         all_time_low -> Float8,
+        total_volume -> Nullable<Float8>,
     }
 }
 

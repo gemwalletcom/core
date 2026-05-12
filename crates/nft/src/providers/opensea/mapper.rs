@@ -22,16 +22,18 @@ impl Nft {
         let traits = self.traits.clone().unwrap_or_default();
         let resource_url = self.resource_url();
         let preview_url = self.preview_url();
+        let collection_id = asset.get_collection_id();
+        let token_type = self.as_type()?;
 
         Some(NFTAsset {
-            id: asset.to_string(),
-            collection_id: asset.get_collection_id().id(),
-            contract_address: Some(asset.contract_address),
-            token_id: asset.token_id,
-            token_type: self.as_type()?,
+            chain: asset.chain,
+            contract_address: Some(asset.contract_address.clone()),
+            token_id: asset.token_id.clone(),
+            id: asset,
+            collection_id,
+            token_type,
             name: self.name.clone(),
             description: Some(self.description.clone()),
-            chain: asset.chain,
             resource: NFTResource::from_url(resource_url),
             images: NFTImages {
                 preview: NFTResource::from_url(preview_url),
@@ -104,12 +106,12 @@ impl Collection {
         let is_verified = self.safelist_status.as_deref() == Some("verified");
 
         primitives::NFTCollection {
-            id: collection.id(),
+            chain: collection.chain,
+            contract_address: collection.contract_address.clone(),
+            id: collection,
             name: self.name.clone(),
             symbol: Some(self.collection.clone()),
             description: self.description.clone(),
-            chain: collection.chain,
-            contract_address: collection.contract_address.clone(),
             images: NFTImages {
                 preview: NFTResource::from_url(self.image_url.as_deref().unwrap_or("")),
             },

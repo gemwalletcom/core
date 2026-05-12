@@ -3,8 +3,8 @@ use primitives::{AssetId, Chain};
 use std::str::FromStr;
 pub use swapper::{
     AssetList as SwapperAssetList, FetchQuoteData, Options as SwapperOptions, ProviderData as SwapperProviderData, ProviderType as SwapperProviderType, Quote as SwapperQuote,
-    QuoteRequest as SwapperQuoteRequest, Route as SwapperRoute, SwapperMode, SwapperProvider, SwapperProviderMode, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode,
-    SwapperSwapResult, SwapperSwapStatus, SwapperTransactionSwapMetadata, permit2_data::Permit2Data,
+    QuoteRequest as SwapperQuoteRequest, Route as SwapperRoute, SwapperProvider, SwapperProviderMode, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode, SwapperSwapResult,
+    SwapperSwapStatus, SwapperTransactionSwapMetadata, permit2_data::Permit2Data,
 };
 
 pub use crate::models::swap::GemSwapQuoteData;
@@ -69,7 +69,6 @@ pub struct SwapperProviderType {
 pub struct SwapperOptions {
     pub slippage: SwapperSlippage,
     pub fee: Option<SwapReferralFees>,
-    pub preferred_providers: Vec<SwapperProvider>,
     pub use_max_amount: bool,
 }
 
@@ -80,7 +79,6 @@ pub struct SwapperQuoteRequest {
     pub wallet_address: String,
     pub destination_address: String,
     pub value: String,
-    pub mode: SwapperMode,
     pub options: SwapperOptions,
 }
 
@@ -137,12 +135,6 @@ pub enum SwapperProviderMode {
     CrossChain,
     Bridge,
     OmniChain(Vec<Chain>),
-}
-
-#[uniffi::remote(Enum)]
-pub enum SwapperMode {
-    ExactIn,
-    ExactOut,
 }
 
 #[uniffi::remote(Record)]

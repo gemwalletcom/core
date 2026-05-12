@@ -2,6 +2,9 @@
 
 pub type UInt64 = u64;
 
+#[macro_use]
+pub mod string_serde;
+
 pub mod localize;
 pub use self::localize::Localize;
 
@@ -68,6 +71,10 @@ pub mod asset_type;
 pub use self::asset_type::{AssetSubtype, AssetType};
 pub mod asset_price;
 pub use self::asset_price::{AssetMarket, AssetPrice, AssetPrices, AssetPricesRequest, ChartPeriod, ChartTimeframe, ChartValue, Charts};
+pub mod asset_fiat_value;
+pub use self::asset_fiat_value::AssetFiatValue;
+pub mod total_value_type;
+pub use self::total_value_type::TotalValueType;
 pub mod asset_price_info;
 pub use self::asset_price_info::AssetPriceInfo;
 pub mod asset_details;
@@ -134,6 +141,8 @@ pub mod verification_status;
 pub use self::verification_status::VerificationStatus;
 pub mod address_status;
 pub use self::address_status::AddressStatus;
+pub mod wallet_configuration;
+pub use self::wallet_configuration::{WalletConfiguration, WalletConfigurationResult};
 pub mod utxo;
 pub use self::utxo::UTXO;
 pub mod push_notification;

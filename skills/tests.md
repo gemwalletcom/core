@@ -40,6 +40,8 @@ let response: ApiResponse = serde_json::from_str(
 
 Add `mock()` constructors in `testkit/` modules instead of building structs inline in tests:
 
+If the mock lives in another crate behind a `testkit` feature, enable that crate with `features = ["testkit"]` under `[dev-dependencies]` and use the shared `mock()` instead of writing a local fixture.
+
 ```rust
 // good — crates/gem_hypercore/src/testkit.rs
 impl AssetPositions {

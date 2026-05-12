@@ -5,6 +5,14 @@ impl TransactionLoadMetadata {
         TransactionLoadMetadata::Aptos { sequence: 0, data: None }
     }
 
+    pub fn mock_osmosis() -> Self {
+        TransactionLoadMetadata::Cosmos {
+            account_number: 2_913_388,
+            sequence: 10,
+            chain_id: "osmosis-1".to_string(),
+        }
+    }
+
     pub fn mock_evm(nonce: u64, chain_id: u64) -> Self {
         TransactionLoadMetadata::Evm {
             nonce,

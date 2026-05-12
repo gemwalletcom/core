@@ -21,6 +21,8 @@ pub struct VerifiedToken {
 pub struct TokenStats {
     #[serde(default)]
     pub price_change: f64,
+    pub buy_volume: Option<f64>,
+    pub sell_volume: Option<f64>,
 }
 
 pub type VerifiedTokensResponse = Vec<VerifiedToken>;

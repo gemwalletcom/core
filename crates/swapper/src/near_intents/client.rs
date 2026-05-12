@@ -1,15 +1,15 @@
-use crate::{SwapperError, config::get_swap_api_url};
+use crate::{SwapperError, config::get_swap_proxy_url};
 use gem_client::{Client, ClientExt};
 use std::{collections::HashMap, fmt::Debug};
 
 use super::model::{ExplorerTransaction, QuoteRequest, QuoteResponseResult};
 
 pub fn base_url() -> String {
-    get_swap_api_url("near-intents/1click")
+    get_swap_proxy_url("near-intents/1click")
 }
 
 pub fn explorer_url() -> String {
-    get_swap_api_url("near-intents/explorer")
+    get_swap_proxy_url("near-intents/explorer")
 }
 
 #[derive(Clone, Debug)]

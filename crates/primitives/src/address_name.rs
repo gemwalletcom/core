@@ -11,6 +11,6 @@ pub struct AddressName {
     pub address: String,
     pub name: String,
     #[serde(rename = "type")]
-    pub address_type: Option<AddressType>,
+    pub address_type: AddressType,
     pub status: VerificationStatus,
 }

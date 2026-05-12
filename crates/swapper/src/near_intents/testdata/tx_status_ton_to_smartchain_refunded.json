@@ -1,0 +1,14 @@
+[
+  {
+    "originAsset": "nep245:v2_1.omni.hot.tg:1117_3tsdfyziyc7EJbP2aULWSKU4toBaAcN4FdTgfm5W1mC4ouR",
+    "destinationAsset": "nep245:v2_1.omni.hot.tg:56_11111111111111111111",
+    "depositAddress": "UQAqln5N_XeZTa6SfGlWaINzJU5xCV9XnKylr-S1mZ_8Na3s",
+    "status": "REFUNDED",
+    "amountIn": "6321766",
+    "amountOut": "9690124016594003",
+    "originChainTxHashes": [
+      "145c3d667b373efdb3023476dd1f2199096ce65878723a04929964dc2304d09a",
+      "e0c0768baf51bf44e0ae1136618e8bb33453a3cf7c490a66df2237451f56554a"
+    ]
+  }
+]

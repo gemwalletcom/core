@@ -19,7 +19,7 @@ pub struct NFTDocument {
 impl NFTDocument {
     pub fn new(collection: NFTCollection) -> Self {
         Self {
-            id: sanitize_index_primary_id(&collection.id),
+            id: sanitize_index_primary_id(&collection.id.to_string()),
             collection,
         }
     }

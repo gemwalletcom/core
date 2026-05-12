@@ -76,15 +76,16 @@ pub fn map_nft_data(response: NftItemsResponse) -> Vec<NFTData> {
 
 fn build_asset(asset_id: NFTAssetId, info: &TokenInfo, collection_image: Option<&str>) -> NFTAsset {
     let image = info.image.as_deref().or(collection_image).unwrap_or_default();
+    let collection_id = asset_id.get_collection_id();
     NFTAsset {
-        id: asset_id.to_string(),
-        collection_id: asset_id.get_collection_id().id(),
+        chain: asset_id.chain,
         contract_address: Some(asset_id.token_id.clone()),
         token_id: asset_id.token_id.clone(),
+        id: asset_id,
+        collection_id,
         token_type: NFTType::JETTON,
         name: token_info_name(info).unwrap_or_default().to_string(),
         description: info.description.clone(),
-        chain: asset_id.chain,
         resource: NFTResource::from_url(image),
         images: NFTImages {
             preview: NFTResource::from_url(image),
@@ -96,7 +97,7 @@ fn build_asset(asset_id: NFTAssetId, info: &TokenInfo, collection_image: Option<
 fn build_collection(collection_id: &NFTCollectionId, info: &TokenInfo) -> NFTCollection {
     let image = info.image.clone().unwrap_or_default();
     NFTCollection {
-        id: collection_id.id(),
+        id: collection_id.clone(),
         name: token_info_name(info).unwrap_or_default().to_string(),
         symbol: None,
         description: info.description.clone(),
@@ -161,8 +162,8 @@ mod tests {
         let asset_id = NFTAssetId::new(Chain::Ton, VERIFIED_COLLECTION, ITEM);
         let asset = map_asset(response, asset_id).expect("Failed to map asset");
 
-        assert_eq!(asset.id, format!("ton_{VERIFIED_COLLECTION}::{ITEM}"));
-        assert_eq!(asset.collection_id, format!("ton_{VERIFIED_COLLECTION}"));
+        assert_eq!(asset.id.to_string(), format!("ton_{VERIFIED_COLLECTION}::{ITEM}"));
+        assert_eq!(asset.collection_id.to_string(), format!("ton_{VERIFIED_COLLECTION}"));
         assert_eq!(asset.chain, Chain::Ton);
         assert_eq!(asset.token_id, ITEM);
         assert_eq!(asset.contract_address.as_deref(), Some(ITEM));
@@ -184,7 +185,7 @@ mod tests {
         let collection_id = NFTCollectionId::new(Chain::Ton, NUMBERS_COLLECTION);
         let collection = map_collection(response, collection_id).expect("Failed to map collection");
 
-        assert_eq!(collection.id, format!("ton_{NUMBERS_COLLECTION}"));
+        assert_eq!(collection.id.to_string(), format!("ton_{NUMBERS_COLLECTION}"));
         assert_eq!(collection.chain, Chain::Ton);
         assert_eq!(collection.contract_address, NUMBERS_COLLECTION);
         assert_eq!(collection.name, "Anonymous Telegram Numbers");

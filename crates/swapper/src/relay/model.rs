@@ -1,20 +1,13 @@
 use std::collections::BTreeSet;
 
 use gem_evm::address::ethereum_address_checksum;
-use primitives::swap::{SwapMode, SwapStatus};
+use primitives::swap::SwapStatus;
 use serde::{Deserialize, Serialize};
 
 const STEP_SWAP: &str = "swap";
 const STEP_DEPOSIT: &str = "deposit";
 const STEP_APPROVE: &str = "approve";
 const STEP_TRANSACTION: &str = "transaction";
-
-pub fn relay_trade_type(mode: &SwapMode) -> &'static str {
-    match mode {
-        SwapMode::ExactIn => "EXACT_INPUT",
-        SwapMode::ExactOut => "EXACT_OUTPUT",
-    }
-}
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]

@@ -97,7 +97,7 @@ impl<'r> FromParam<'r> for NftCollectionIdParam {
         if param.len() > MAX_NFT_ID_LENGTH {
             return Err(param);
         }
-        NFTCollectionId::from_id(param).map(NftCollectionIdParam).ok_or(param)
+        param.parse().map(NftCollectionIdParam).map_err(|_| param)
     }
 }
 
@@ -110,7 +110,7 @@ impl<'r> FromParam<'r> for NftAssetIdParam {
         if param.len() > MAX_NFT_ID_LENGTH {
             return Err(param);
         }
-        NFTAssetId::from_id(param).map(NftAssetIdParam).ok_or(param)
+        param.parse().map(NftAssetIdParam).map_err(|_| param)
     }
 }
 

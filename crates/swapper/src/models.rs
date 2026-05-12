@@ -1,5 +1,5 @@
 use super::permit2_data::Permit2Data;
-use crate::{SwapperMode, SwapperProvider, SwapperQuoteAsset, SwapperSlippage, config::DEFAULT_SLIPPAGE_BPS, fees::ReferralFees};
+use crate::{SwapperProvider, SwapperQuoteAsset, SwapperSlippage, config::DEFAULT_SLIPPAGE_BPS, fees::ReferralFees};
 pub use primitives::swap::SwapResult;
 use primitives::{
     AssetId, Chain,
@@ -57,7 +57,6 @@ pub struct QuoteRequest {
     pub wallet_address: String,
     pub destination_address: String,
     pub value: String,
-    pub mode: SwapperMode,
     pub options: Options,
 }
 
@@ -65,7 +64,6 @@ pub struct QuoteRequest {
 pub struct Options {
     pub slippage: SwapperSlippage,
     pub fee: Option<ReferralFees>,
-    pub preferred_providers: Vec<SwapperProvider>,
     pub use_max_amount: bool,
 }
 
@@ -80,7 +78,6 @@ impl Default for Options {
         Self {
             slippage: DEFAULT_SLIPPAGE_BPS.into(),
             fee: None,
-            preferred_providers: vec![],
             use_max_amount: false,
         }
     }

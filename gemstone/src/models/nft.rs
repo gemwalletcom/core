@@ -43,8 +43,8 @@ pub struct GemNFTAttribute {
 
 #[uniffi::remote(Record)]
 pub struct GemNFTAsset {
-    pub id: String,
-    pub collection_id: String,
+    pub id: primitives::NFTAssetId,
+    pub collection_id: primitives::NFTCollectionId,
     pub contract_address: Option<String>,
     pub token_id: String,
     pub token_type: GemNFTType,

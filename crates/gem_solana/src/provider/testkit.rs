@@ -8,8 +8,6 @@ use gem_jsonrpc::JsonRpcClient;
 use settings::testkit::get_test_settings;
 
 #[cfg(feature = "chain_integration_tests")]
-pub const TEST_ADDRESS: &str = "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H";
-#[cfg(feature = "chain_integration_tests")]
 pub const TEST_EMPTY_ADDRESS: &str = "EniLGJRPvjbD51z5r59HRN4XoeMmRC4zMtHNHBKi1sFA";
 #[cfg(test)]
 pub const TEST_TRANSACTION_ID: &str = "4dHnggcXjvmMJY2J6iGqse12PeCYQzuTySgwJa36K8MuntmwNrCNztvYRX5ZGpQXzKjaf7g5vaZM7LTuXLNbi2Zx";

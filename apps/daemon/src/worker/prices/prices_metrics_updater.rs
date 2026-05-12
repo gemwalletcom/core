@@ -27,7 +27,7 @@ impl PricesMetricsUpdater {
         let now = Utc::now();
         let upper = (now - Duration::hours(24)).naive_utc();
         let lower = (now - Duration::hours(25)).naive_utc();
-        let price_ids: Vec<String> = rows.iter().map(|p| p.id.clone()).collect();
+        let price_ids: Vec<String> = rows.iter().map(|p| p.id.to_string()).collect();
         let prices_24h_ago: HashMap<String, f64> = self
             .database
             .charts()?
@@ -40,15 +40,13 @@ impl PricesMetricsUpdater {
             if row.price == 0.0 {
                 continue;
             }
-            let prev = prices_24h_ago.get(&row.id).copied().unwrap_or(0.0);
+            let price_id = row.id.to_string();
+            let prev = prices_24h_ago.get(&price_id).copied().unwrap_or(0.0);
             if prev == 0.0 {
                 continue;
             }
             let change = (row.price - prev) / prev * 100.0;
-            updated += self
-                .database
-                .prices()?
-                .update_prices(vec![row.id.clone()], vec![PriceUpdate::PriceChangePercentage24h(change)])?;
+            updated += self.database.prices()?.update_prices(vec![price_id], vec![PriceUpdate::PriceChangePercentage24h(change)])?;
         }
         Ok(updated)
     }

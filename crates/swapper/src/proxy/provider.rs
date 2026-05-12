@@ -10,7 +10,7 @@ use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperError, SwapperProvider, SwapperProviderMode, SwapperQuoteData,
     alien::{RpcClient, RpcProvider},
     approval::{check_approval_erc20, get_swap_gas_limit_with_approval},
-    config::get_swap_api_url,
+    config::get_swap_proxy_url,
     cross_chain::VaultAddresses,
     fees::{DEFAULT_AGGREGATOR_FEE_BPS, DEFAULT_SWAP_FEE_BPS},
     models::SwapperChainAsset,
@@ -104,7 +104,7 @@ where
 
 impl ProxyProvider<RpcClient> {
     fn new_with_path(provider: SwapperProvider, path: &str, assets: Vec<SwapperChainAsset>, rpc_provider: Arc<dyn RpcProvider>) -> Self {
-        let base_url = get_swap_api_url(&format!("swapper/{path}"));
+        let base_url = get_swap_proxy_url(&format!("swapper/{path}"));
         let client = ProxyClient::new(RpcClient::new(base_url, rpc_provider.clone()));
         Self::new_with_client(provider, client, assets, rpc_provider)
     }
@@ -148,10 +148,6 @@ impl ProxyProvider<RpcClient> {
 
     pub fn new_cetus_aggregator(rpc_provider: Arc<dyn RpcProvider>) -> Self {
         Self::new_with_path(SwapperProvider::CetusAggregator, "cetus", vec![SwapperChainAsset::All(Chain::Sui)], rpc_provider)
-    }
-
-    pub fn new_panora(rpc_provider: Arc<dyn RpcProvider>) -> Self {
-        Self::new_with_path(SwapperProvider::Panora, "panora", vec![SwapperChainAsset::All(Chain::Aptos)], rpc_provider)
     }
 
     pub fn new_mayan(rpc_provider: Arc<dyn RpcProvider>) -> Self {
@@ -254,7 +250,7 @@ where
     async fn get_swap_result(&self, _chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
         match self.provider.id {
             SwapperProvider::Mayan => {
-                let base_url = get_swap_api_url("mayan/explorer");
+                let base_url = get_swap_proxy_url("mayan/explorer");
                 let client = MayanExplorer::new(base_url, self.rpc_provider.clone());
                 let result = client.get_transaction_status(transaction_hash).await?;
                 Ok(map_swap_result(&result))
@@ -275,7 +271,7 @@ where
     async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<VaultAddresses, SwapperError> {
         match self.provider.id {
             SwapperProvider::Mayan => {
-                let base_url = get_swap_api_url("mayan/price");
+                let base_url = get_swap_proxy_url("mayan/price");
                 let client = MayanPrice::new(base_url, self.rpc_provider.clone());
                 let api_addresses = client.get_chains().await.map(MayanChain::unique_addresses).unwrap_or_default();
 
@@ -373,7 +369,7 @@ mod swap_integration_tests {
     use super::*;
     use crate::{
         alien::reqwest_provider::NativeProvider,
-        {SwapperMode, SwapperQuoteAsset, models::Options},
+        {SwapperQuoteAsset, models::Options},
     };
     use primitives::{AssetId, asset_constants::SUI_USDC_TOKEN_ID, swap::SwapStatus};
 
@@ -390,7 +386,6 @@ mod swap_integration_tests {
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             destination_address: "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy".to_string(),
             value: "50000000000000000".to_string(),
-            mode: SwapperMode::ExactIn,
             options,
         };
 
@@ -424,7 +419,6 @@ mod swap_integration_tests {
             wallet_address: "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".to_string(),
             destination_address: "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".to_string(),
             value: "1500000000".to_string(),
-            mode: SwapperMode::ExactIn,
             options,
         };
 
@@ -477,7 +471,6 @@ mod swap_integration_tests {
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             destination_address: "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy".to_string(),
             value: "1".to_string(), // 1 wei - too small
-            mode: SwapperMode::ExactIn,
             options,
         };
 
@@ -507,7 +500,6 @@ mod swap_integration_tests {
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             destination_address: "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy".to_string(),
             value: "50000000000000000".to_string(), // 0.05 ETH
-            mode: SwapperMode::ExactIn,
             options,
         };
 

@@ -2,14 +2,14 @@ use diesel::prelude::*;
 use primitives::{NFTAsset, NFTImages, NFTResource};
 use serde::{Deserialize, Serialize};
 
-use crate::sql_types::{ChainRow, NftType};
+use crate::sql_types::{ChainRow, NftAssetIdRow, NftCollectionIdRow, NftType};
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::nft_assets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct NftAssetRow {
     pub id: i32,
-    pub identifier: String,
+    pub identifier: NftAssetIdRow,
     pub collection_id: i32,
     pub chain: ChainRow,
     pub name: String,
@@ -28,7 +28,7 @@ pub struct NftAssetRow {
 #[diesel(table_name = crate::schema::nft_assets)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct NewNftAssetRow {
-    pub identifier: String,
+    pub identifier: NftAssetIdRow,
     pub collection_id: i32,
     pub chain: ChainRow,
     pub name: String,
@@ -44,10 +44,10 @@ pub struct NewNftAssetRow {
 }
 
 impl NftAssetRow {
-    pub fn as_primitive(&self, collection_identifier: String) -> NFTAsset {
+    pub fn as_primitive(&self, collection_identifier: NftCollectionIdRow) -> NFTAsset {
         NFTAsset {
-            id: self.identifier.clone(),
-            collection_id: collection_identifier,
+            id: self.identifier.0.clone(),
+            collection_id: collection_identifier.0,
             name: self.name.clone(),
             description: Some(self.description.clone()),
             chain: self.chain.0,
@@ -72,7 +72,7 @@ impl NftAssetRow {
 impl NewNftAssetRow {
     pub fn from_primitive(primitive: NFTAsset, collection_id: i32) -> Self {
         Self {
-            identifier: primitive.id.clone(),
+            identifier: primitive.id.clone().into(),
             collection_id,
             chain: ChainRow::from(primitive.chain),
             name: primitive.name.clone(),

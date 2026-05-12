@@ -118,6 +118,24 @@ mod tests {
     }
 
     #[test]
+    fn zcash_native() {
+        let result = map_quote_data(
+            &asset(Chain::Zcash, None),
+            &route_data(None, "t1Ku2KLyndDPsR32jwnrTMd3yvi9tfFP8ML"),
+            None,
+            "10000000".to_string(),
+            "=:b:bc1qdestination:0/1/0:g1:50".to_string(),
+            None,
+        );
+
+        assert_eq!(result.to, "t1Ku2KLyndDPsR32jwnrTMd3yvi9tfFP8ML");
+        assert_eq!(result.value, "10000000");
+        assert_eq!(result.data, "");
+        assert_eq!(result.memo, Some("=:b:bc1qdestination:0/1/0:g1:50".to_string()));
+        assert_eq!(result.gas_limit, None);
+    }
+
+    #[test]
     fn evm_router_with_approval() {
         let usdc_eth = ETHEREUM_USDC_TOKEN_ID.to_string();
         let approval = Some(ApprovalData::make(&usdc_eth, "0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146", "2000", false));

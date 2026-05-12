@@ -69,18 +69,20 @@ impl ChartsHistoryUpdater {
             .prices()?
             .get_prices_by_filter(vec![PriceFilter::Provider(provider)])?
             .into_iter()
-            .filter(|p| !synced.contains(&p.id))
+            .filter(|p| !synced.contains(&p.id.to_string()))
             .collect();
 
         for price in &prices {
-            info_with_fields!("charts history sync started", price_id = price.id.clone());
+            let provider_price_id = price.provider_price_id();
+            let price_id = price.id.to_string();
+            info_with_fields!("charts history sync started", price_id = price_id.clone());
             let daily = self
                 .sync(
                     price,
                     "daily",
                     ChartTimeframe::Daily,
                     SECONDS_PER_DAY as i64,
-                    self.provider.get_charts_daily(&price.provider_price_id),
+                    self.provider.get_charts_daily(provider_price_id),
                 )
                 .await?;
             let hourly = self
@@ -89,21 +91,21 @@ impl ChartsHistoryUpdater {
                     "hourly",
                     ChartTimeframe::Hourly,
                     SECONDS_PER_HOUR as i64,
-                    self.provider.get_charts_hourly(&price.provider_price_id, self.config.hourly_duration),
+                    self.provider.get_charts_hourly(provider_price_id, self.config.hourly_duration),
                 )
                 .await?;
             let has_history = daily.received + hourly.received > 0;
             let extremes_updates = if has_history {
-                self.database.prices()?.update_extremes_for_price(&price.id)?
+                self.database.prices()?.update_extremes_for_price(&price_id)?
             } else {
                 0
             };
             if has_history {
-                self.cacher.add_to_set_cached(CacheKey::ChartsHistory(provider_id), std::slice::from_ref(&price.id)).await?;
+                self.cacher.add_to_set_cached(CacheKey::ChartsHistory(provider_id), std::slice::from_ref(&price_id)).await?;
             }
             info_with_fields!(
                 "charts history sync finished",
-                price_id = price.id.clone(),
+                price_id = price_id,
                 daily_received = daily.received,
                 daily_inserted = daily.inserted,
                 hourly_received = hourly.received,
@@ -126,9 +128,10 @@ impl ChartsHistoryUpdater {
         future: impl std::future::Future<Output = Result<Vec<ChartValue>, Box<dyn Error + Send + Sync>>>,
     ) -> Result<HistorySyncStats, Box<dyn Error + Send + Sync>> {
         let values = future.await.inspect_err(|error| {
-            info_with_fields!("charts history get failed", price_id = price.id.clone(), kind = label, error = error.to_string());
+            info_with_fields!("charts history get failed", price_id = price.id.to_string(), kind = label, error = error.to_string());
         })?;
-        let rows = bucketed_chart_rows(&price.id, &values, bucket_size_seconds);
+        let price_id = price.id.to_string();
+        let rows = bucketed_chart_rows(&price_id, &values, bucket_size_seconds);
         Ok(HistorySyncStats {
             received: values.len(),
             inserted: self.database.charts()?.add_charts(timeframe, rows)?,

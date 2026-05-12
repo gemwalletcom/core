@@ -26,7 +26,7 @@ pub struct NFTData {
 #[serde(rename_all = "camelCase")]
 #[typeshare(swift = "Sendable, Hashable, Equatable, Identifiable")]
 pub struct NFTCollection {
-    pub id: String,
+    pub id: NFTCollectionId,
     pub name: String,
     #[typeshare(skip)]
     pub symbol: Option<String>,
@@ -49,10 +49,6 @@ impl Hash for NFTCollection {
 }
 
 impl NFTCollection {
-    pub fn id(chain: Chain, contract_address: &str) -> String {
-        format!("{}{CHAIN_SEPARATOR}{}", chain.as_ref(), contract_address)
-    }
-
     pub fn images(&self) -> NFTImages {
         let image = format!("{}/{}/collection_original.png", self.chain.as_ref(), self.contract_address);
         NFTImages {
@@ -74,8 +70,8 @@ impl NFTCollection {
 #[serde(rename_all = "camelCase")]
 #[typeshare(swift = "Sendable, Hashable, Equatable, Identifiable")]
 pub struct NFTAsset {
-    pub id: String,
-    pub collection_id: String,
+    pub id: NFTAssetId,
+    pub collection_id: NFTCollectionId,
     pub contract_address: Option<String>,
     pub token_id: String,
     pub token_type: NFTType,
@@ -122,16 +118,14 @@ pub struct NFTAssetData {
     pub asset: NFTAsset,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NFTAssetId {
     pub chain: Chain,
     pub contract_address: String,
     pub token_id: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NFTCollectionId {
     pub chain: Chain,
     pub contract_address: String,
@@ -144,18 +138,6 @@ impl NFTCollectionId {
             contract_address: contract_address.to_string(),
         }
     }
-
-    pub fn from_id(id: &str) -> Option<Self> {
-        let (chain, contract_address) = id.split_once(CHAIN_SEPARATOR)?;
-        Some(Self {
-            chain: Chain::from_str(chain).ok()?,
-            contract_address: contract_address.to_string(),
-        })
-    }
-
-    pub fn id(&self) -> String {
-        format!("{}{CHAIN_SEPARATOR}{}", self.chain.as_ref(), self.contract_address)
-    }
 }
 
 impl NFTAssetId {
@@ -165,16 +147,6 @@ impl NFTAssetId {
             contract_address: contract_address.to_string(),
             token_id: token_id.to_string(),
         }
-    }
-
-    pub fn from_id(id: &str) -> Option<Self> {
-        let (chain, rest) = id.split_once(CHAIN_SEPARATOR)?;
-        let (contract_address, token_id) = rest.split_once(TOKEN_ID_SEPARATOR)?;
-        Some(Self {
-            chain: Chain::from_str(chain).ok()?,
-            contract_address: contract_address.to_string(),
-            token_id: token_id.to_string(),
-        })
     }
 
     pub fn get_collection_id(&self) -> NFTCollectionId {
@@ -187,6 +159,41 @@ impl fmt::Display for NFTAssetId {
         write!(f, "{}{CHAIN_SEPARATOR}{}{TOKEN_ID_SEPARATOR}{}", self.chain.as_ref(), self.contract_address, self.token_id)
     }
 }
+
+impl fmt::Display for NFTCollectionId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}{CHAIN_SEPARATOR}{}", self.chain.as_ref(), self.contract_address)
+    }
+}
+
+impl FromStr for NFTAssetId {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (chain, rest) = s.split_once(CHAIN_SEPARATOR).ok_or_else(|| format!("Invalid NFTAssetId: {s}"))?;
+        let (contract_address, token_id) = rest.split_once(TOKEN_ID_SEPARATOR).ok_or_else(|| format!("Invalid NFTAssetId: {s}"))?;
+        Ok(Self {
+            chain: Chain::from_str(chain).map_err(|_| format!("Unknown chain: {chain}"))?,
+            contract_address: contract_address.to_string(),
+            token_id: token_id.to_string(),
+        })
+    }
+}
+
+impl FromStr for NFTCollectionId {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (chain, contract_address) = s.split_once(CHAIN_SEPARATOR).ok_or_else(|| format!("Invalid NFTCollectionId: {s}"))?;
+        Ok(Self {
+            chain: Chain::from_str(chain).map_err(|_| format!("Unknown chain: {chain}"))?,
+            contract_address: contract_address.to_string(),
+        })
+    }
+}
+
+crate::impl_string_serde!(NFTAssetId);
+crate::impl_string_serde!(NFTCollectionId);
 
 #[derive(Debug, Clone, Serialize, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -307,31 +314,31 @@ mod tests {
     #[test]
     fn test_collection_id() {
         let eth = NFTCollectionId::new(Chain::Ethereum, "0xabc");
-        assert_eq!(eth.id(), "ethereum_0xabc");
-        assert_eq!(NFTCollectionId::from_id(&eth.id()), Some(eth));
+        assert_eq!(eth.to_string(), "ethereum_0xabc");
+        assert_eq!(eth.to_string().parse::<NFTCollectionId>().ok(), Some(eth));
 
         let ton = NFTCollectionId::new(Chain::Ton, TON_COLLECTION);
-        assert_eq!(ton.id(), format!("ton_{TON_COLLECTION}"));
-        assert_eq!(NFTCollectionId::from_id(&ton.id()), Some(ton));
+        assert_eq!(ton.to_string(), format!("ton_{TON_COLLECTION}"));
+        assert_eq!(ton.to_string().parse::<NFTCollectionId>().ok(), Some(ton));
 
-        assert_eq!(NFTCollectionId::from_id("just-chain"), None);
-        assert_eq!(NFTCollectionId::from_id("not_a_real_chain"), None);
+        assert!("just-chain".parse::<NFTCollectionId>().is_err());
+        assert!("not_a_real_chain".parse::<NFTCollectionId>().is_err());
     }
 
     #[test]
     fn test_asset_id() {
         let eth = NFTAssetId::new(Chain::Ethereum, "0xabc", "42");
         assert_eq!(eth.to_string(), "ethereum_0xabc::42");
-        assert_eq!(NFTAssetId::from_id("ethereum_0xabc::42"), Some(eth));
+        assert_eq!("ethereum_0xabc::42".parse::<NFTAssetId>().ok(), Some(eth));
 
         let ton = NFTAssetId::new(Chain::Ton, TON_COLLECTION, TON_TOKEN);
         assert_eq!(ton.to_string(), format!("ton_{TON_COLLECTION}::{TON_TOKEN}"));
-        assert_eq!(NFTAssetId::from_id(&ton.to_string()), Some(ton.clone()));
+        assert_eq!(ton.to_string().parse::<NFTAssetId>().ok(), Some(ton.clone()));
         assert_eq!(ton.get_collection_id(), NFTCollectionId::new(Chain::Ton, TON_COLLECTION));
 
-        assert_eq!(NFTAssetId::from_id("ethereum_0xabc"), None);
-        assert_eq!(NFTAssetId::from_id("nonsense"), None);
-        assert_eq!(NFTAssetId::from_id("ton_short"), None);
+        assert!("ethereum_0xabc".parse::<NFTAssetId>().is_err());
+        assert!("nonsense".parse::<NFTAssetId>().is_err());
+        assert!("ton_short".parse::<NFTAssetId>().is_err());
     }
 
     #[test]

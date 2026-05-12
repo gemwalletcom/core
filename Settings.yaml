@@ -201,24 +201,12 @@ chains:
     url: https://rpc.stable.xyz
 
 swap:
-  jupiter:
-    url: "https://quote-api.jup.ag"
-    key: ""
-    fee:
-      percent: 0
-      address: ""
-  thorchain:
-    url: "https://thornode.ninerealms.com"
-    key: ""
-    fee:
-      percent: 0
-      address: ""
-  aftermath:
-    url: "https://aftermath.finance/api"
-    key: ""
-    fee:
-      percent: 0
-      address: ""
+  okx:
+    key:
+      public: ""
+      secret: ""
+    passphrase: ""
+    project: ""
 scan:
   timeout: 1200ms
   goplus:

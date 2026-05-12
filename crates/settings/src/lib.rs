@@ -27,6 +27,8 @@ pub struct Settings {
     pub paybis: Paybis,
     pub flashnet: UrlKeySettings,
 
+    pub swap: Swap,
+
     pub prices: Prices,
     pub coingecko: CoinGecko,
     pub charter: Charter,
@@ -392,6 +394,18 @@ pub struct Chatwoot {
 pub struct Claude {
     pub url: String,
     pub key: KeySecret,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Swap {
+    pub okx: Okx,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Okx {
+    pub key: Key,
+    pub passphrase: String,
+    pub project: String,
 }
 
 #[cfg(feature = "testkit")]

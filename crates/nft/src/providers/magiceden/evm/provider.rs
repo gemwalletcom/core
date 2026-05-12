@@ -80,7 +80,7 @@ mod nft_integration_tests {
         let asset = client.get_asset(asset_id).await?;
         println!("MagicEden EVM asset: {:?}", asset);
 
-        assert_eq!(asset.id, format!("smartchain_{}_410", TEST_BSC_COLLECTION));
+        assert_eq!(asset.id, NFTAssetId::new(Chain::SmartChain, TEST_BSC_COLLECTION, "410"));
         assert_eq!(asset.chain, Chain::SmartChain);
         assert!(!asset.name.is_empty());
         assert!(!asset.attributes.is_empty());

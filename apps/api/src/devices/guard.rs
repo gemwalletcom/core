@@ -1,3 +1,4 @@
+use primitives::WalletId;
 use rocket::Request;
 use rocket::http::Status;
 use rocket::outcome::Outcome::{Error, Success};
@@ -128,6 +129,7 @@ impl<'r> FromRequest<'r> for AuthenticatedDevice {
 pub struct AuthenticatedDeviceWallet {
     pub device_row: DeviceRow,
     pub wallet_id: i32,
+    pub wallet_identifier: WalletId,
 }
 
 #[rocket::async_trait]
@@ -156,6 +158,7 @@ impl<'r> FromRequest<'r> for AuthenticatedDeviceWallet {
         Success(AuthenticatedDeviceWallet {
             device_row,
             wallet_id: wallet_row.id,
+            wallet_identifier: wallet_row.wallet_id.0,
         })
     }
 }

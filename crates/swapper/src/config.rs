@@ -9,10 +9,10 @@ pub const DEFAULT_SWAP_FEE_BPS: u32 = 50;
 pub const DEFAULT_CHAINFLIP_FEE_BPS: u32 = 45;
 pub const DEFAULT_STABLE_SWAP_REFERRAL_BPS: u32 = 25;
 
-pub const API_BASE_URL: &str = "https://api.gemwallet.com/proxy/swap";
+pub const API_BASE_URL: &str = "https://api.gemwallet.com";
 
-pub fn get_swap_api_url(path: &str) -> String {
-    format!("{API_BASE_URL}/{path}")
+pub fn get_swap_proxy_url(path: &str) -> String {
+    format!("{API_BASE_URL}/proxy/swap/{path}")
 }
 
 #[derive(Debug, Clone, PartialEq)]

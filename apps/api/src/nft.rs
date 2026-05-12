@@ -19,5 +19,5 @@ pub async fn get_nft_asset_resource(asset_id: NftAssetIdParam, client: &State<NF
 
 #[get("/nft/collections/<collection_id>/preview")]
 pub async fn get_nft_collection_preview(collection_id: NftCollectionIdParam, client: &State<NFTClient>) -> Result<Json<NFTResource>, ApiError> {
-    Ok(Json(client.load_nft_collection(&collection_id.0.id())?.images.preview))
+    Ok(Json(client.load_nft_collection(&collection_id.0.to_string())?.images.preview))
 }

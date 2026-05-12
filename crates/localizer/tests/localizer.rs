@@ -41,3 +41,12 @@ fn test_fiat_purchase_title() {
 
     assert_eq!(&localizer.notification_fiat_purchase_title("0.01 ETH"), "🚀 Bought \u{2068}0.01 ETH\u{2069}");
 }
+
+#[test]
+fn test_price_alert_target_uses_target_and_current_price() {
+    let localizer = LanguageLocalizer::new_with_language("en");
+    let message = localizer.price_alert_target("Bitcoin (BTC)", "$81,000.00", "$80,954.00", "-0.27%");
+
+    assert_eq!(message.title, "\u{1f3af} \u{2068}Bitcoin (BTC)\u{2069} reached \u{2068}$81,000.00\u{2069}");
+    assert_eq!(message.description, "Now at \u{2068}$80,954.00\u{2069} (\u{2068}-0.27%\u{2069}).");
+}

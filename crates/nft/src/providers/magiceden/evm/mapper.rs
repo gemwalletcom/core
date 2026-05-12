@@ -32,15 +32,16 @@ impl TokenDetail {
             _ => return None,
         };
 
+        let collection_id = asset.get_collection_id();
         Some(NFTAsset {
-            id: asset.to_string(),
-            collection_id: asset.get_collection_id().id(),
-            contract_address: Some(asset.contract_address),
-            token_id: asset.token_id,
+            chain: asset.chain,
+            contract_address: Some(asset.contract_address.clone()),
+            token_id: asset.token_id.clone(),
+            id: asset,
+            collection_id,
             token_type,
             name: self.name.clone().unwrap_or_default(),
             description: self.description.clone(),
-            chain: asset.chain,
             resource: NFTResource::from_url(&image_url),
             images: NFTImages {
                 preview: NFTResource::from_url(&image_url),
@@ -63,12 +64,12 @@ impl CollectionDetail {
         let contract_address = ethereum_address_checksum(&self.id).unwrap_or_else(|_| self.id.clone());
 
         primitives::NFTCollection {
-            id: collection.id(),
+            chain: collection.chain,
+            id: collection,
+            contract_address,
             name: self.name.clone(),
             symbol: self.symbol.clone(),
             description: self.description.clone(),
-            chain: collection.chain,
-            contract_address,
             images: NFTImages {
                 preview: NFTResource::from_url(&image_url),
             },

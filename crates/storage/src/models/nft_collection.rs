@@ -3,14 +3,14 @@ use diesel::prelude::*;
 use primitives::{AssetLink, NFTCollection, NFTImages, NFTResource, VerificationStatus};
 use serde::{Deserialize, Serialize};
 
-use crate::sql_types::ChainRow;
+use crate::sql_types::{ChainRow, NftCollectionIdRow};
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::nft_collections)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct NftCollectionRow {
     pub id: i32,
-    pub identifier: String,
+    pub identifier: NftCollectionIdRow,
     pub chain: ChainRow,
     pub name: String,
     pub description: String,
@@ -28,7 +28,7 @@ pub struct NftCollectionRow {
 #[diesel(table_name = crate::schema::nft_collections)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct NewNftCollectionRow {
-    pub identifier: String,
+    pub identifier: NftCollectionIdRow,
     pub chain: ChainRow,
     pub name: String,
     pub description: String,
@@ -44,7 +44,7 @@ pub struct NewNftCollectionRow {
 impl NewNftCollectionRow {
     pub fn from_primitive(collection: NFTCollection) -> Self {
         NewNftCollectionRow {
-            identifier: collection.id.clone(),
+            identifier: collection.id.clone().into(),
             name: collection.name.clone(),
             description: collection.description.unwrap_or_default(),
             chain: ChainRow::from(collection.chain),
@@ -62,7 +62,7 @@ impl NewNftCollectionRow {
 impl NftCollectionRow {
     pub fn as_primitive(&self, links: Vec<AssetLink>) -> NFTCollection {
         NFTCollection {
-            id: self.identifier.clone(),
+            id: self.identifier.0.clone(),
             name: self.name.clone(),
             symbol: self.symbol.clone(),
             description: Some(self.description.clone()),

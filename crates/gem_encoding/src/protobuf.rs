@@ -1,11 +1,13 @@
 pub fn encode_varint(value: u64) -> Vec<u8> {
     let mut buf = Vec::new();
-    let mut v = value;
-    while v >= 0x80 {
-        buf.push((v as u8) | 0x80);
-        v >>= 7;
+    let mut value = value;
+
+    while value >= 0x80 {
+        buf.push((value as u8) | 0x80);
+        value >>= 7;
     }
-    buf.push(v as u8);
+
+    buf.push(value as u8);
     buf
 }
 
@@ -17,6 +19,7 @@ pub fn encode_varint_field(field_number: u32, value: u64) -> Vec<u8> {
     if value == 0 {
         return Vec::new();
     }
+
     [field_tag(field_number, 0), encode_varint(value)].concat()
 }
 
@@ -24,22 +27,20 @@ pub fn encode_bytes_field(field_number: u32, data: &[u8]) -> Vec<u8> {
     if data.is_empty() {
         return Vec::new();
     }
+
     [field_tag(field_number, 2), encode_varint(data.len() as u64), data.to_vec()].concat()
 }
 
-pub fn encode_string_field(field_number: u32, s: &str) -> Vec<u8> {
-    encode_bytes_field(field_number, s.as_bytes())
+pub fn encode_string_field(field_number: u32, value: &str) -> Vec<u8> {
+    encode_bytes_field(field_number, value.as_bytes())
 }
 
-pub fn encode_message_field(field_number: u32, msg: &[u8]) -> Vec<u8> {
-    if msg.is_empty() {
+pub fn encode_message_field(field_number: u32, message: &[u8]) -> Vec<u8> {
+    if message.is_empty() {
         return Vec::new();
     }
-    encode_bytes_field(field_number, msg)
-}
 
-pub fn encode_coin(denom: &str, amount: &str) -> Vec<u8> {
-    [encode_string_field(1, denom), encode_string_field(2, amount)].concat()
+    encode_bytes_field(field_number, message)
 }
 
 #[cfg(test)]
@@ -58,6 +59,7 @@ mod tests {
     #[test]
     fn test_encode_string_field() {
         let result = encode_string_field(1, "test");
+
         assert_eq!(result, vec![0x0A, 4, b't', b'e', b's', b't']);
     }
 

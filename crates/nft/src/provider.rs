@@ -24,15 +24,12 @@ pub trait NFTProvider: Send + Sync {
     }
     async fn get_nft_data(&self, chain: Chain, address: String) -> Result<Vec<NFTData>, Box<dyn Error + Send + Sync>> {
         let assets = self.get_nft_assets(chain, address).await?;
-        let mut by_collection: HashMap<String, Vec<NFTAsset>> = HashMap::new();
+        let mut by_collection: HashMap<NFTCollectionId, Vec<NFTAsset>> = HashMap::new();
         for asset in assets {
             by_collection.entry(asset.collection_id.clone()).or_default().push(asset);
         }
         let mut result = Vec::with_capacity(by_collection.len());
-        for (collection_id_str, assets) in by_collection {
-            let Some(collection_id) = NFTCollectionId::from_id(&collection_id_str) else {
-                continue;
-            };
+        for (collection_id, assets) in by_collection {
             if let Ok(collection) = self.get_collection(collection_id).await {
                 result.push(NFTData { collection, assets });
             }

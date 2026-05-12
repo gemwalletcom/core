@@ -78,7 +78,8 @@ impl<C: Client + Clone> ChainTransactionLoad for SolanaClient<C> {
 #[cfg(all(test, feature = "chain_integration_tests"))]
 mod chain_integration_tests {
     use super::*;
-    use crate::provider::testkit::{TEST_ADDRESS, TEST_EMPTY_ADDRESS, create_solana_test_client};
+    use primitives::testkit::signer_mock::TEST_SOLANA_SENDER;
+    use crate::provider::testkit::{ TEST_EMPTY_ADDRESS, create_solana_test_client};
     use primitives::swap::SwapData;
     use primitives::{Asset, SwapProvider};
 
@@ -95,8 +96,8 @@ mod chain_integration_tests {
         let client = create_solana_test_client();
         let input = TransactionPreloadInput {
             input_type: TransactionInputType::Transfer(Asset::mock_sol()),
-            sender_address: TEST_ADDRESS.to_string(),
-            destination_address: TEST_ADDRESS.to_string(),
+            sender_address: TEST_SOLANA_SENDER.to_string(),
+            destination_address: TEST_SOLANA_SENDER.to_string(),
         };
         let result = client.get_transaction_preload(input).await?;
 
@@ -114,7 +115,7 @@ mod chain_integration_tests {
         let client = create_solana_test_client();
         let input = TransactionPreloadInput {
             input_type: TransactionInputType::Transfer(Asset::mock_spl_token()),
-            sender_address: TEST_ADDRESS.to_string(),
+            sender_address: TEST_SOLANA_SENDER.to_string(),
             destination_address: "4BgapREafMMprtU6CehRmH8LUY26PRFmGf7K4S44oSMW".to_string(),
         };
 
@@ -135,8 +136,8 @@ mod chain_integration_tests {
         let swap_data = SwapData::mock_with_provider(SwapProvider::Jupiter);
         let input = TransactionPreloadInput {
             input_type: TransactionInputType::Swap(Asset::mock_spl_token().clone(), Asset::mock_ethereum_usdc().clone(), swap_data),
-            sender_address: TEST_ADDRESS.to_string(),
-            destination_address: TEST_ADDRESS.to_string(),
+            sender_address: TEST_SOLANA_SENDER.to_string(),
+            destination_address: TEST_SOLANA_SENDER.to_string(),
         };
 
         let result = client.get_transaction_preload(input).await?;
@@ -161,7 +162,7 @@ mod chain_integration_tests {
         let swap_data = SwapData::mock_with_provider(SwapProvider::Jupiter);
         let input = TransactionPreloadInput {
             input_type: TransactionInputType::Swap(Asset::mock_spl_token(), Asset::mock_spl_token(), swap_data),
-            sender_address: TEST_ADDRESS.to_string(),
+            sender_address: TEST_SOLANA_SENDER.to_string(),
             destination_address: TEST_EMPTY_ADDRESS.to_string(),
         };
 

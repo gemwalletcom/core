@@ -12,10 +12,3 @@ pub enum SwapProviderMode {
     Bridge,
     OmniChain(Vec<Chain>), // supports both on-chain and cross-chain. Specify the chain for on-chain swaps
 }
-
-#[derive(Debug, Copy, Clone, PartialEq, Serialize, Deserialize)]
-#[typeshare]
-pub enum SwapMode {
-    ExactIn,
-    ExactOut,
-}

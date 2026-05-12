@@ -268,7 +268,6 @@ mod tests {
         let spot = HyperCoreSpot::new(Arc::new(crate::NativeProvider::new()));
 
         let mut request = mock_quote(from_asset, to_asset);
-        request.options.preferred_providers = vec![SwapperProvider::Hyperliquid];
         request.value = "2000000000".into();
 
         let quote = spot.get_quote(&request).await.unwrap();

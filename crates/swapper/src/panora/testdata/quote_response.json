@@ -1,0 +1,95 @@
+{
+  "toToken": {
+    "decimals": 6
+  },
+  "quotes": [
+    {
+      "toTokenAmount": "0.891234",
+      "txData": {
+        "function": "0x1c3206329806286fd2223647c9f9b130e66baeb6d7224a18c1f642ffe48f3b4c::panora_swap::router_entry",
+        "type_arguments": [
+          "0x1::aptos_coin::AptosCoin"
+        ],
+        "arguments": [
+          null,
+          "0x4eb20e735591a85bb58921ef2e6b55c385bba10e817ffe1e02e50deb6c594aef",
+          1,
+          "2",
+          [
+            1,
+            2,
+            "0x0f"
+          ],
+          [
+            [
+              [
+                1,
+                2
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                1,
+                "2"
+              ]
+            ]
+          ],
+          [
+            [
+              [
+                1,
+                false,
+                ""
+              ]
+            ]
+          ],
+          [
+            [
+              1,
+              2
+            ],
+            [
+              3
+            ]
+          ],
+          [
+            [
+              [
+                "0x4eb20e735591a85bb58921ef2e6b55c385bba10e817ffe1e02e50deb6c594aef"
+              ]
+            ]
+          ],
+          [
+            [
+              "0x4eb20e735591a85bb58921ef2e6b55c385bba10e817ffe1e02e50deb6c594aef"
+            ]
+          ],
+          [
+            [
+              "0x4eb20e735591a85bb58921ef2e6b55c385bba10e817ffe1e02e50deb6c594aef"
+            ]
+          ],
+          null,
+          [
+            [
+              [
+                3
+              ]
+            ]
+          ],
+          null,
+          "0x4eb20e735591a85bb58921ef2e6b55c385bba10e817ffe1e02e50deb6c594aef",
+          [
+            1,
+            "2"
+          ],
+          100,
+          "200",
+          "0x4eb20e735591a85bb58921ef2e6b55c385bba10e817ffe1e02e50deb6c594aef"
+        ]
+      }
+    }
+  ]
+}

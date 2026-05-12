@@ -15,7 +15,7 @@ pub use client::DevicesClient;
 pub(crate) use clients::WalletSubscriptionInput;
 pub use clients::{
     AddressNamesClient, FiatQuotesClient, NotificationsClient, PortfolioClient, RewardsClient, RewardsRedemptionClient, ScanClient, ScanProviderFactory, TransactionsClient,
-    WalletsClient,
+    WalletConfigurationClient, WalletsClient,
 };
 use gem_auth::AuthClient;
 use guard::{AuthenticatedDevice, AuthenticatedDeviceWallet, VerifiedDeviceId};
@@ -24,10 +24,12 @@ use nft::NFTClient;
 use primitives::DeviceToken;
 use primitives::device::Device;
 use primitives::name::NameRecord;
+use primitives::nft::NFTAssetData;
 use primitives::rewards::{RedemptionRequest, RedemptionResult, RewardRedemptionOption};
 use primitives::{
     AddressName, AssetId, AuthNonce, ChainAddress, FiatAssets, FiatQuote, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuotes, InAppNotification, NFTData, PortfolioAssets,
-    PortfolioAssetsRequest, PriceAlerts, ReportNft, RewardEvent, Rewards, ScanTransaction, ScanTransactionPayload, Transaction, TransactionsResponse, WalletSubscriptionChains,
+    PortfolioAssetsRequest, PriceAlerts, ReportNft, RewardEvent, Rewards, ScanTransaction, ScanTransactionPayload, Transaction, TransactionsResponse, WalletConfigurationResult,
+    WalletSubscriptionChains,
 };
 use rocket::{State, delete, get, post, put, serde::json::Json, tokio::sync::Mutex};
 use std::sync::Arc;
@@ -99,6 +101,11 @@ pub async fn get_device_address_names_v2(
 #[get("/devices/nft_assets")]
 pub async fn get_device_nft_assets_v2(device: AuthenticatedDeviceWallet, client: &State<NFTClient>) -> Result<ApiResponse<Vec<NFTData>>, ApiError> {
     Ok(client.get_nft_assets_by_wallet_id(device.device_row.id, device.wallet_id).await?.into())
+}
+
+#[get("/devices/nft_assets/<asset_id>")]
+pub async fn get_device_nft_asset_v2(_device: AuthenticatedDevice, asset_id: NftAssetIdParam, client: &State<NFTClient>) -> Result<ApiResponse<NFTAssetData>, ApiError> {
+    Ok(client.get_nft_asset_data(asset_id.0)?.into())
 }
 
 #[post("/devices/nft_assets/<asset_id>/refresh")]
@@ -236,6 +243,14 @@ pub async fn scan_device_transaction_v2(
     client: &State<Mutex<ScanClient>>,
 ) -> Result<ApiResponse<ScanTransaction>, ApiError> {
     Ok(client.lock().await.get_scan_transaction(request.0).await?.into())
+}
+
+#[get("/devices/wallet_configuration")]
+pub async fn get_device_wallet_configuration_v2(
+    device: AuthenticatedDeviceWallet,
+    client: &State<WalletConfigurationClient>,
+) -> Result<ApiResponse<WalletConfigurationResult>, ApiError> {
+    Ok(client.get_configuration(device.device_row.id, device.wallet_id, device.wallet_identifier).await?.into())
 }
 
 #[get("/devices/notifications?<from_timestamp>")]

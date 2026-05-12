@@ -3,7 +3,7 @@ use std::error::Error;
 use localizer::LanguageLocalizer;
 use number_formatter::{ValueFormatter, ValueStyle};
 use primitives::{
-    AddressFormatStyle, AddressFormatter, Asset, AssetVecExt, Chain, DeviceSubscription, FiatQuoteType, GorushNotification, NFTAssetId, PushNotification,
+    AddressFormatStyle, AddressFormatter, Asset, AssetVecExt, Chain, DeviceSubscription, FiatQuoteType, GorushNotification, PushNotification,
     PushNotificationTransaction, PushNotificationTypes, Transaction, TransactionNFTTransferMetadata, TransactionPerpetualMetadata, TransactionSwapMetadata, TransactionType,
 };
 use storage::{Database, ScanAddressesRepository};
@@ -67,7 +67,7 @@ impl Pusher {
             TransactionType::TransferNFT => {
                 let metadata = transaction.metadata.clone().ok_or("Missing metadata")?;
                 let metadata: TransactionNFTTransferMetadata = serde_json::from_value(metadata)?;
-                let nft_asset_id = NFTAssetId::from_id(&metadata.asset_id.clone()).ok_or("Missing nft asset id")?;
+                let nft_asset_id = metadata.asset_id;
                 let name = if let Some(name) = metadata.name {
                     name
                 } else if nft_asset_id.token_id.len() < 6 {

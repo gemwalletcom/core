@@ -23,15 +23,16 @@ impl Nft {
 
     pub fn as_primitive(&self, asset: NFTAssetId, owner: String) -> Option<NFTAsset> {
         let traits = self.attributes.clone();
+        let collection_id = asset.get_collection_id();
         Some(NFTAsset {
-            id: asset.to_string(),
-            collection_id: asset.get_collection_id().id(),
+            chain: asset.chain,
             contract_address: Some(owner),
-            token_id: asset.token_id,
+            token_id: asset.token_id.clone(),
+            id: asset,
+            collection_id,
             token_type: NFTType::SPL,
             name: self.name.clone(),
             description: None,
-            chain: asset.chain,
             resource: NFTResource::from_url(&self.image),
             images: NFTImages {
                 preview: NFTResource::from_url(&self.image),
@@ -51,12 +52,12 @@ impl Trait {
 impl Collection {
     pub fn as_primitive(&self, collection: NFTCollectionId) -> primitives::NFTCollection {
         primitives::NFTCollection {
-            id: collection.id(),
+            chain: collection.chain,
+            contract_address: self.on_chain_collection_address.clone(),
+            id: collection,
             name: self.name.clone(),
             symbol: self.symbol.clone(),
             description: Some(self.description.clone()),
-            chain: collection.chain,
-            contract_address: self.on_chain_collection_address.clone(),
             images: NFTImages {
                 preview: NFTResource::from_url(&self.image),
             },

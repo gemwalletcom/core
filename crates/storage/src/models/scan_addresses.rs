@@ -27,7 +27,7 @@ impl ScanAddressRow {
             chain: self.chain.0,
             address: self.address,
             name: self.name?,
-            address_type: Some(self.type_.0.clone()),
+            address_type: self.type_.0.clone(),
             status: if self.is_fraudulent {
                 VerificationStatus::Suspicious
             } else if self.is_verified {

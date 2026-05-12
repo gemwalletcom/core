@@ -798,7 +798,7 @@ mod tests {
     mod swap_integration_tests {
         use super::*;
         use crate::{
-            FetchQuoteData, NativeProvider, Options, QuoteRequest, SwapperError, SwapperMode,
+            FetchQuoteData, NativeProvider, Options, QuoteRequest, SwapperError,
             fees::{DEFAULT_STABLE_SWAP_REFERRAL_BPS, ReferralFee, ReferralFees},
         };
         use primitives::{AssetId, Chain, swap::SwapStatus};
@@ -814,7 +814,6 @@ mod tests {
                     bps: DEFAULT_STABLE_SWAP_REFERRAL_BPS,
                     address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
                 })),
-                preferred_providers: vec![],
                 use_max_amount: false,
             };
 
@@ -824,7 +823,6 @@ mod tests {
                 wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
                 destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
                 value: "20000000000000000".into(), // 0.02 ETH
-                mode: SwapperMode::ExactIn,
                 options,
             };
 
@@ -849,7 +847,6 @@ mod tests {
             let options = Options {
                 slippage: 100.into(),
                 fee: None,
-                preferred_providers: vec![],
                 use_max_amount: false,
             };
 
@@ -862,7 +859,6 @@ mod tests {
                 wallet_address: wallet.into(),
                 destination_address: wallet.into(),
                 value: "50000000".into(), // 50 USDC
-                mode: SwapperMode::ExactIn,
                 options,
             };
 

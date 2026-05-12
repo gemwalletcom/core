@@ -29,6 +29,21 @@ pub fn confirmed_config(mut extras: serde_json::Value) -> serde_json::Value {
     extras
 }
 
+fn send_transaction_params(data: String, skip_preflight: Option<bool>) -> serde_json::Value {
+    let mut config = serde_json::json!({
+        "encoding": "base64",
+        "preflightCommitment": COMMITMENT_CONFIRMED,
+    });
+
+    if let Some(skip) = skip_preflight
+        && let Some(obj) = config.as_object_mut()
+    {
+        obj.insert("skipPreflight".to_string(), skip.into());
+    }
+
+    serde_json::json!([data, config])
+}
+
 pub fn token_accounts_by_owner_params(owner: &str, program_id: &str) -> serde_json::Value {
     serde_json::json!([owner, { "programId": program_id }, confirmed_config(serde_json::json!({ "encoding": "jsonParsed" }))])
 }
@@ -117,24 +132,7 @@ impl<C: Client + Clone> SolanaClient<C> {
     }
 
     pub async fn send_transaction(&self, data: String, skip_preflight: Option<bool>) -> Result<String, JsonRpcError> {
-        let mut params = serde_json::json!([
-            data,
-            {
-                "encoding": "base64"
-            }
-        ]);
-
-        if let Some(skip) = skip_preflight {
-            params = serde_json::json!([
-                data,
-                {
-                    "encoding": "base64",
-                    "skipPreflight": skip
-                }
-            ]);
-        }
-
-        self.rpc_call("sendTransaction", params).await
+        self.rpc_call("sendTransaction", send_transaction_params(data, skip_preflight)).await
     }
 
     pub async fn get_recent_prioritization_fees(&self) -> Result<Vec<SolanaPrioritizationFee>, JsonRpcError> {

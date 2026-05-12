@@ -609,6 +609,7 @@ dependencies = [
  "chrono",
  "config",
  "fiat",
+ "futures",
  "gem_auth",
  "gem_client",
  "gem_hash",
@@ -3204,6 +3205,7 @@ dependencies = [
  "gem_encoding",
  "gem_hash",
  "hex",
+ "k256",
  "num-bigint",
  "number_formatter",
  "primitives",
@@ -4577,9 +4579,9 @@ dependencies = [
 
 [[package]]
 name = "jsonwebtoken"
-version = "10.3.0"
+version = "10.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0529410abe238729a60b108898784df8984c87f6054c9c4fcacc47e4803c1ce1"
+checksum = "eba32bfb4ffdeaca3e34431072faf01745c9b26d25504aa7a6cf5684334fc4fc"
 dependencies = [
  "aws-lc-rs",
  "base64",
@@ -4590,6 +4592,7 @@ dependencies = [
  "serde_json",
  "signature",
  "simple_asn1",
+ "zeroize",
 ]
 
 [[package]]
@@ -6379,9 +6382,9 @@ dependencies = [
 
 [[package]]
 name = "rust_decimal"
-version = "1.41.0"
+version = "1.42.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ce901f9a19d251159075a4c37af514c3b8ef99c22e02dd8c19161cf397ee94a"
+checksum = "0c5108e3d4d903e21aac27f12ba5377b6b34f9f44b325e4894c7924169d06995"
 dependencies = [
  "arrayvec",
  "borsh",
@@ -7419,6 +7422,7 @@ dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
  "async-trait",
+ "base64",
  "bigdecimal",
  "bs58",
  "chrono",
@@ -7435,6 +7439,7 @@ dependencies = [
  "gem_sui",
  "gem_ton",
  "hex",
+ "hmac 0.13.0",
  "num-bigint",
  "num-integer",
  "num-traits",
@@ -7446,6 +7451,8 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "serde_urlencoded",
+ "settings",
+ "sha2 0.11.0",
  "solana-primitives",
  "strum",
  "tokio",

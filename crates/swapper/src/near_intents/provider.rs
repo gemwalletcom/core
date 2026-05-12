@@ -1,12 +1,12 @@
 use super::{
     AppFee, DepositMode, NearIntentsClient, NearIntentsExplorer, QuoteRequest as NearQuoteRequest, QuoteResponse, QuoteResponseError, QuoteResponseResult, SwapType,
-    auto_quote_time_chains, deposit_memo_chains, get_asset_id_from_near_intents, get_near_intents_asset_id,
+    auto_quote_time_chains, deposit_memo_chains, get_asset_id_from_near_asset, get_near_asset_id,
     model::{DEFAULT_WAIT_TIME_MS, DEPOSIT_TYPE_ORIGIN, ExplorerTransaction, RECIPIENT_TYPE_DESTINATION},
     supported_assets,
 };
 use crate::{
-    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperMode,
-    SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, amount_to_value,
+    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider,
+    SwapperQuoteAsset, SwapperQuoteData, amount_to_value,
     client_factory::create_client_with_chain,
     cross_chain::VaultAddresses,
     fees::DEFAULT_REFERRER,
@@ -20,6 +20,7 @@ use primitives::{Chain, TransactionSwapMetadata, swap::SwapStatus};
 use std::{fmt::Debug, sync::Arc};
 
 const DEFAULT_DEADLINE_MINUTES: i64 = 30;
+const BITCOIN_DEADLINE_MINUTES: i64 = 60;
 
 // Supported-chain subset of https://docs.near-intents.org/security-compliance/treasury-addresses
 const TREASURY_ADDRESSES: [&str; 16] = [
@@ -119,14 +120,15 @@ where
     }
 
     fn build_quote_request(&self, request: &QuoteRequest, mode: SwapType, amount: String, dry: bool) -> Result<NearQuoteRequest, SwapperError> {
-        let origin_asset = get_near_intents_asset_id(&request.from_asset)?;
-        let destination_asset = get_near_intents_asset_id(&request.to_asset)?;
+        let origin_asset = get_near_asset_id(&request.from_asset)?;
+        let destination_asset = get_near_asset_id(&request.to_asset)?;
         let deposit_mode = Self::resolve_deposit_mode(&request.from_asset);
         let from_chain = request.from_asset.asset_id().chain;
         let to_chain = request.to_asset.asset_id().chain;
         let quote_waiting_time_ms = Some(Self::resolve_quote_waiting_time(from_chain, to_chain));
 
-        let deadline = (Utc::now() + Duration::minutes(DEFAULT_DEADLINE_MINUTES)).to_rfc3339();
+        let deadline_minutes = Self::get_deadline_by_chain(from_chain).max(Self::get_deadline_by_chain(to_chain));
+        let deadline = (Utc::now() + Duration::minutes(deadline_minutes)).to_rfc3339();
 
         Ok(NearQuoteRequest {
             origin_asset,
@@ -167,8 +169,8 @@ where
     }
 
     fn build_swap_metadata(tx: &ExplorerTransaction) -> Option<TransactionSwapMetadata> {
-        let from_asset = get_asset_id_from_near_intents(&tx.origin_asset)?;
-        let to_asset = get_asset_id_from_near_intents(&tx.destination_asset)?;
+        let from_asset = get_asset_id_from_near_asset(&tx.origin_asset)?;
+        let to_asset = get_asset_id_from_near_asset(&tx.destination_asset)?;
         Some(TransactionSwapMetadata {
             from_asset,
             from_value: tx.amount_in.clone(),
@@ -192,6 +194,10 @@ where
         } else {
             DEFAULT_WAIT_TIME_MS
         }
+    }
+
+    fn get_deadline_by_chain(chain: Chain) -> i64 {
+        if chain == Chain::Bitcoin { BITCOIN_DEADLINE_MINUTES } else { DEFAULT_DEADLINE_MINUTES }
     }
 
     async fn build_deposit_data(
@@ -287,13 +293,8 @@ where
     }
 
     async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
-        let mode = match request.mode {
-            SwapperMode::ExactIn => SwapType::FlexInput,
-            SwapperMode::ExactOut => return Err(SwapperError::NotSupportedAsset),
-        };
-
         let amount = quote_value_after_reserve_by_chain(request)?;
-        let quote_request = self.build_quote_request(request, mode, amount.clone(), true)?;
+        let quote_request = self.build_quote_request(request, SwapType::FlexInput, amount.clone(), true)?;
         let response = Self::extract_quote(self.client.fetch_quote(&quote_request).await?, request.from_asset.decimals)?;
         let amount_out = Self::parse_amount(&response.quote.amount_out, "amountOut")?;
 
@@ -386,10 +387,9 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{SwapperError, SwapperMode, SwapperQuoteAsset, fees::reserved_tx_fees, models::Options};
+    use crate::{SwapperError, SwapperQuoteAsset, fees::reserved_tx_fees, models::Options};
     use alloy_primitives::U256;
-    use primitives::asset_constants::SMARTCHAIN_USDT_ASSET_ID;
-    use primitives::{AssetId, Chain};
+    use primitives::{AssetId, Chain, asset_constants::TON_USDT_ASSET_ID};
     use serde_json::json;
 
     use std::str::FromStr;
@@ -417,7 +417,6 @@ mod tests {
             wallet_address: "wallet".into(),
             destination_address: "dest".into(),
             value: amount.into(),
-            mode: SwapperMode::ExactIn,
             options,
         }
     }
@@ -449,7 +448,10 @@ mod tests {
 
         let err = quote_value_after_reserve_by_chain(&request).expect_err("expected error");
 
-        assert!(matches!(err, SwapperError::InputAmountError { .. }));
+        match err {
+            SwapperError::InputAmountError { .. } => {}
+            _ => panic!("expected input amount error"),
+        }
     }
 
     #[test]
@@ -472,18 +474,18 @@ mod tests {
     }
 
     #[test]
-    fn swap_result_smartchain_to_bitcoin() {
-        let result = status(include_str!("testdata/tx_status_smartchain_to_bitcoin.json"));
+    fn swap_result_solana_to_bitcoin() {
+        let result = status(include_str!("testdata/tx_status_solana_to_bitcoin.json"));
 
         assert_eq!(
             result,
             SwapResult {
-                status: SwapStatus::Completed,
+                status: SwapStatus::Pending,
                 metadata: Some(TransactionSwapMetadata {
-                    from_asset: SMARTCHAIN_USDT_ASSET_ID.clone(),
-                    from_value: "82000000000000000000".to_string(),
+                    from_asset: AssetId::from_chain(Chain::Solana),
+                    from_value: "646605458".to_string(),
                     to_asset: AssetId::from_chain(Chain::Bitcoin),
-                    to_value: "120496".to_string(),
+                    to_value: "69086".to_string(),
                     provider: Some("near_intents".to_string()),
                 }),
             }
@@ -491,18 +493,18 @@ mod tests {
     }
 
     #[test]
-    fn swap_result_bitcoin_to_ton_refunded() {
-        let result = status(include_str!("testdata/tx_status_bitcoin_to_ton_refunded.json"));
+    fn swap_result_ton_to_smartchain_refunded() {
+        let result = status(include_str!("testdata/tx_status_ton_to_smartchain_refunded.json"));
 
         assert_eq!(
             result,
             SwapResult {
                 status: SwapStatus::Failed,
                 metadata: Some(TransactionSwapMetadata {
-                    from_asset: AssetId::from_chain(Chain::Bitcoin),
-                    from_value: "20000".to_string(),
-                    to_asset: AssetId::from_chain(Chain::Ton),
-                    to_value: "10031752296".to_string(),
+                    from_asset: TON_USDT_ASSET_ID.clone(),
+                    from_value: "6321766".to_string(),
+                    to_asset: AssetId::from_chain(Chain::SmartChain),
+                    to_value: "9690124016594003".to_string(),
                     provider: Some("near_intents".to_string()),
                 }),
             }
@@ -555,7 +557,8 @@ mod tests {
 #[cfg(all(test, feature = "swap_integration_tests", feature = "reqwest_provider"))]
 mod swap_integration_tests {
     use super::*;
-    use crate::{FetchQuoteData, SwapperMode, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode, alien::reqwest_provider::NativeProvider, models::Options};
+    use crate::near_intents::assets::NEAR_INTENTS_BTC_NATIVE;
+    use crate::{FetchQuoteData, SwapperQuoteAsset, alien::reqwest_provider::NativeProvider, config::get_swap_config, models::Options};
     use primitives::{
         AssetId, Chain,
         asset_constants::{ARBITRUM_USDC_ASSET_ID, BASE_USDC_ASSET_ID},
@@ -567,17 +570,10 @@ mod swap_integration_tests {
         let rpc_provider = Arc::new(NativeProvider::new().set_debug(true));
         let provider = NearIntents::new(rpc_provider);
 
-        use crate::config::get_swap_config;
-
         let swap_config = get_swap_config();
         let options = Options {
-            slippage: SwapperSlippage {
-                bps: 100,
-                mode: SwapperSlippageMode::Exact,
-            },
             fee: Some(swap_config.referral_fee),
-            preferred_providers: vec![],
-            use_max_amount: false,
+            ..Options::mock_exact(100)
         };
 
         let request = QuoteRequest {
@@ -586,7 +582,6 @@ mod swap_integration_tests {
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
             value: "500000".to_string(),
-            mode: SwapperMode::ExactIn,
             options,
         };
 
@@ -600,14 +595,61 @@ mod swap_integration_tests {
     }
 
     #[tokio::test]
-    async fn test_near_intents_stellar_requires_memo() -> Result<(), SwapperError> {
+    async fn test_near_intents_bitcoin_quotes() -> Result<(), SwapperError> {
         let rpc_provider = Arc::new(NativeProvider::new().set_debug(true));
         let provider = NearIntents::new(rpc_provider);
 
-        let options = Options::new_with_slippage(SwapperSlippage {
-            bps: 100,
-            mode: SwapperSlippageMode::Exact,
-        });
+        let from_bitcoin_request = QuoteRequest {
+            from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Bitcoin)),
+            to_asset: SwapperQuoteAsset::from(BASE_USDC_ASSET_ID.clone()),
+            wallet_address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh".to_string(),
+            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
+            value: "100000".to_string(),
+            options: Options::mock_exact(100),
+        };
+
+        let quote = provider.get_quote(&from_bitcoin_request).await?;
+        let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
+        let quote_request: NearQuoteRequest = serde_json::from_str(&route.route_data)?;
+
+        assert_eq!(quote_request.origin_asset, NEAR_INTENTS_BTC_NATIVE);
+        assert!(!quote.to_value.is_empty());
+
+        println!(
+            "Near Intents BTC quote: from_value={}, to_value={}, eta={:?}",
+            quote.from_value, quote.to_value, quote.eta_in_seconds
+        );
+        println!("Near Intents BTC quote request: {}", route.route_data);
+
+        let to_bitcoin_request = QuoteRequest {
+            from_asset: SwapperQuoteAsset::from(BASE_USDC_ASSET_ID.clone()),
+            to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Bitcoin)),
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
+            destination_address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh".to_string(),
+            value: "10000000".to_string(),
+            options: Options::mock_exact(100),
+        };
+
+        let quote = provider.get_quote(&to_bitcoin_request).await?;
+        let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
+        let quote_request: NearQuoteRequest = serde_json::from_str(&route.route_data)?;
+
+        assert_eq!(quote_request.destination_asset, NEAR_INTENTS_BTC_NATIVE);
+        assert!(!quote.to_value.is_empty());
+
+        println!(
+            "Near Intents to BTC quote: from_value={}, to_value={}, eta={:?}",
+            quote.from_value, quote.to_value, quote.eta_in_seconds
+        );
+        println!("Near Intents to BTC quote request: {}", route.route_data);
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_near_intents_stellar_requires_memo() -> Result<(), SwapperError> {
+        let rpc_provider = Arc::new(NativeProvider::new().set_debug(true));
+        let provider = NearIntents::new(rpc_provider);
 
         let request = QuoteRequest {
             from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Stellar)),
@@ -615,8 +657,7 @@ mod swap_integration_tests {
             wallet_address: "GBZXN7PIRZGNMHGA3RSSOEV56YXG54FSNTJDGQI3GHDVBKSXRZ5B6KJT".to_string(),
             destination_address: "test.near".to_string(),
             value: "20000000".to_string(),
-            mode: SwapperMode::ExactIn,
-            options,
+            options: Options::mock_exact(100),
         };
 
         let quote = match provider.get_quote(&request).await {

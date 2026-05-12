@@ -9,7 +9,7 @@ use super::{SQUID_COSMOS_MULTICALL, SUPPORTED_CHAINS, client::SquidClient, model
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider,
     SwapperQuoteData,
-    config::{DEFAULT_SWAP_FEE_BPS, get_swap_api_url},
+    config::{DEFAULT_SWAP_FEE_BPS, get_swap_proxy_url},
     cross_chain::VaultAddresses,
     fees::quote_value_after_reserve_by_chain,
 };
@@ -25,7 +25,7 @@ where
 
 impl Squid<RpcClient> {
     pub fn new(rpc_provider: Arc<dyn RpcProvider>) -> Self {
-        let client = SquidClient::new(RpcClient::new(get_swap_api_url("squid"), rpc_provider));
+        let client = SquidClient::new(RpcClient::new(get_swap_proxy_url("squid"), rpc_provider));
         Self {
             provider: ProviderType::new(SwapperProvider::Squid),
             client,
@@ -177,7 +177,7 @@ where
 #[cfg(all(test, feature = "swap_integration_tests"))]
 mod swap_integration_tests {
     use super::*;
-    use crate::{SwapperMode, SwapperQuoteAsset, models::Options};
+    use crate::{SwapperQuoteAsset, models::Options};
     use primitives::swap::SwapStatus;
 
     const OSMOSIS_ADDRESS: &str = "osmo1tkvyjqeq204rmrrz3w4hcrs336qahsfwn8m0ye";
@@ -198,7 +198,6 @@ mod swap_integration_tests {
             wallet_address: OSMOSIS_ADDRESS.to_string(),
             destination_address: COSMOS_ADDRESS.to_string(),
             value: "10000000".to_string(),
-            mode: SwapperMode::ExactIn,
             options: Options::new_with_slippage(100.into()),
         };
 
@@ -229,7 +228,6 @@ mod swap_integration_tests {
             wallet_address: COSMOS_ADDRESS.to_string(),
             destination_address: OSMOSIS_ADDRESS.to_string(),
             value: "1000000".to_string(),
-            mode: SwapperMode::ExactIn,
             options: Options::new_with_slippage(100.into()),
         };
 

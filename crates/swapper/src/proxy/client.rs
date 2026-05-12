@@ -1,61 +1,60 @@
 use crate::SwapperError;
-use gem_client::{Client, ClientExt, build_path_with_query};
+use gem_client::{Client, ClientExt};
 use primitives::swap::{ProxyQuote, ProxyQuoteRequest, SwapQuoteData};
-use serde::Deserialize;
-use serde::Serialize;
+use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use std::fmt::Debug;
-
-const API_VERSION: u8 = 1;
-
-#[derive(Debug, Serialize)]
-struct VersionQuery {
-    v: u8,
-}
 
 #[derive(Debug, Deserialize)]
 pub struct ProxyError {
     pub err: SwapperError,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(untagged)]
-enum ProxyResponse<T> {
+pub enum ProxyResponse<T> {
     Ok { ok: T },
-    Err(ProxyError),
+    Err { err: SwapperError },
+}
+
+impl<T> From<Result<T, SwapperError>> for ProxyResponse<T> {
+    fn from(result: Result<T, SwapperError>) -> Self {
+        match result {
+            Ok(ok) => Self::Ok { ok },
+            Err(err) => Self::Err { err },
+        }
+    }
+}
+
+impl<T> From<ProxyResponse<T>> for Result<T, SwapperError> {
+    fn from(response: ProxyResponse<T>) -> Self {
+        match response {
+            ProxyResponse::Ok { ok } => Ok(ok),
+            ProxyResponse::Err { err } => Err(err),
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
-pub struct ProxyClient<C>
-where
-    C: Client + Clone + Debug,
-{
+pub struct ProxyClient<C: Client + Clone + Debug> {
     client: C,
 }
 
-impl<C> ProxyClient<C>
-where
-    C: Client + Clone + Debug,
-{
+impl<C: Client + Clone + Debug> ProxyClient<C> {
     pub fn new(client: C) -> Self {
         Self { client }
     }
 
     pub async fn get_quote(&self, request: ProxyQuoteRequest) -> Result<ProxyQuote, SwapperError> {
-        let path = build_path_with_query("/quote", &VersionQuery { v: API_VERSION }).map_err(SwapperError::from)?;
-        let response: ProxyResponse<ProxyQuote> = self.client.post(&path, &request).await.map_err(SwapperError::from)?;
-        match response {
-            ProxyResponse::Ok { ok } => Ok(ok),
-            ProxyResponse::Err(e) => Err(e.err),
-        }
+        self.post("/quote", &request).await
     }
 
     pub async fn get_quote_data(&self, quote: ProxyQuote) -> Result<SwapQuoteData, SwapperError> {
-        let path = build_path_with_query("/quote_data", &VersionQuery { v: API_VERSION }).map_err(SwapperError::from)?;
-        let response: ProxyResponse<SwapQuoteData> = self.client.post(&path, &quote).await.map_err(SwapperError::from)?;
-        match response {
-            ProxyResponse::Ok { ok } => Ok(ok),
-            ProxyResponse::Err(e) => Err(e.err),
-        }
+        self.post("/quote_data", &quote).await
+    }
+
+    async fn post<Req: Serialize + Send + Sync, Res: DeserializeOwned + Send>(&self, path: &str, body: &Req) -> Result<Res, SwapperError> {
+        let response: ProxyResponse<Res> = self.client.post(path, body).await?;
+        response.into()
     }
 }
 
