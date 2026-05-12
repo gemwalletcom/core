@@ -42,8 +42,7 @@ pub(super) struct SwapLimits {
 
 impl SwapLimits {
     pub(super) fn new(quote: &Quote, router: &RouterData, referral_fee: &ReferralFee) -> Result<Self, SwapperError> {
-        let amount_out = u128::from(router.amount_out);
-        let expected_amount_out = apply_slippage_in_bp(&amount_out, referral_fee.bps);
+        let expected_amount_out = apply_slippage_in_bp(&router.amount_out, referral_fee.bps);
         let amount_out_limit = apply_slippage_in_bp(&expected_amount_out, quote.data.slippage_bps);
         let fee_rate = referral_fee
             .bps
@@ -62,8 +61,8 @@ impl SwapLimits {
         };
 
         Ok(Self {
-            expected_amount_out: u64::try_from(expected_amount_out).map_err(|_| SwapperError::TransactionError("Sui amount overflow".to_string()))?,
-            amount_out_limit: u64::try_from(amount_out_limit).map_err(|_| SwapperError::TransactionError("Sui amount overflow".to_string()))?,
+            expected_amount_out,
+            amount_out_limit,
             fee_rate,
             fee_recipient,
         })

@@ -16,6 +16,10 @@ use gem_sui::{
 };
 use sui_transaction_builder::{Argument, TransactionBuilder};
 
+// Move sigs:
+//   `<published_at>::deepbookv3::swap<A, B>(swap_context, global_config, pool, amount_in, direction, deep_coin, clock)`
+//   `<published_at>::deepbookv3::add_deep_price_point_v2<A, B, RefBase, RefQuote>(pool, reference_pool, clock)`
+// Source: https://github.com/CetusProtocol/aggregator/blob/main/src/movecall/deepbook_v3.ts
 pub(super) fn build_swap(txb: &mut TransactionBuilder, resolver: &ObjectResolver, flattened_path: &FlattenedPath, swap_context: Argument) -> Result<(), SwapperError> {
     let step = SwapStep::try_from(flattened_path)?;
 

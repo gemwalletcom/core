@@ -146,10 +146,6 @@ impl ProxyProvider<RpcClient> {
         )
     }
 
-    pub fn new_cetus_aggregator(rpc_provider: Arc<dyn RpcProvider>) -> Self {
-        Self::new_with_path(SwapperProvider::CetusAggregator, "cetus", vec![SwapperChainAsset::All(Chain::Sui)], rpc_provider)
-    }
-
     pub fn new_mayan(rpc_provider: Arc<dyn RpcProvider>) -> Self {
         let assets = vec![
             SwapperChainAsset::Assets(
@@ -371,7 +367,7 @@ mod swap_integration_tests {
         alien::reqwest_provider::NativeProvider,
         {SwapperQuoteAsset, models::Options},
     };
-    use primitives::{AssetId, asset_constants::SUI_USDC_TOKEN_ID, swap::SwapStatus};
+    use primitives::{AssetId, swap::SwapStatus};
 
     #[tokio::test]
     async fn test_mayan_provider_fetch_quote() -> Result<(), SwapperError> {
@@ -401,38 +397,6 @@ mod swap_integration_tests {
         let route = &quote.data.routes[0];
         assert_eq!(route.input, AssetId::from_chain(Chain::Ethereum));
         assert_eq!(route.output, AssetId::from_chain(Chain::Solana));
-        assert!(!route.route_data.is_empty());
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_cetus_provider_fetch_quote() -> Result<(), SwapperError> {
-        let rpc_provider = Arc::new(NativeProvider::default());
-        let provider = ProxyProvider::new_cetus_aggregator(rpc_provider);
-
-        let options = Options::new_with_slippage(50.into());
-
-        let request = QuoteRequest {
-            from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Sui)),
-            to_asset: SwapperQuoteAsset::from(AssetId::from(Chain::Sui, Some(SUI_USDC_TOKEN_ID.to_string()))),
-            wallet_address: "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".to_string(),
-            destination_address: "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".to_string(),
-            value: "1500000000".to_string(),
-            options,
-        };
-
-        let quote = provider.get_quote(&request).await?;
-
-        assert_eq!(quote.from_value, request.value);
-        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
-        assert_eq!(quote.data.provider, provider.provider().clone());
-        assert_eq!(quote.data.routes.len(), 1);
-        assert_eq!(quote.data.slippage_bps, 50);
-
-        let route = &quote.data.routes[0];
-        assert_eq!(route.input, AssetId::from_chain(Chain::Sui));
-        assert_eq!(route.output, AssetId::from(Chain::Sui, Some(SUI_USDC_TOKEN_ID.to_string())));
         assert!(!route.route_data.is_empty());
 
         Ok(())

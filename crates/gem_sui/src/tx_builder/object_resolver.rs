@@ -4,60 +4,62 @@ use crate::{
     models::ResultData,
 };
 use gem_client::Client;
-use std::collections::{BTreeSet, HashMap};
+use std::{
+    collections::{BTreeSet, HashMap},
+    str::FromStr,
+};
 use sui_transaction_builder::{Argument, ObjectInput, TransactionBuilder};
+use sui_types::Address;
 
 pub struct ObjectResolver {
-    objects: HashMap<String, DataObject<()>>,
+    shared_versions: HashMap<String, u64>,
 }
 
 impl ObjectResolver {
-    pub async fn prefetch<C: Client + Clone>(client: &SuiClient<C>, object_ids: Vec<String>) -> Result<Self, SuiError> {
-        let object_ids = object_ids.into_iter().collect::<BTreeSet<_>>().into_iter().collect::<Vec<_>>();
-        if object_ids.is_empty() {
-            return Ok(Self { objects: HashMap::new() });
-        }
+    pub async fn prefetch<C: Client + Clone>(client: &SuiClient<C>, object_ids: Vec<String>, pinned: &HashMap<String, u64>) -> Result<Self, SuiError> {
+        let unique_ids: Vec<String> = object_ids.into_iter().collect::<BTreeSet<_>>().into_iter().collect();
+        let missing: Vec<String> = unique_ids.iter().filter(|id| !pinned.contains_key(*id)).cloned().collect();
 
-        let options = ObjectDataOptions {
-            show_type: false,
-            show_owner: true,
-            show_display: false,
-            show_content: false,
-            show_bcs: false,
+        let fetched: Vec<ResultData<DataObject<()>>> = if missing.is_empty() {
+            Vec::new()
+        } else {
+            client
+                .rpc_call(SuiRpc::GetMultipleObjects(missing.clone(), Some(ObjectDataOptions::owner_only())))
+                .await
+                .map_err(|err| SuiError::invalid_input(err.to_string()))?
         };
-        let response: Vec<ResultData<DataObject<()>>> = client
-            .rpc_call(SuiRpc::GetMultipleObjects(object_ids.clone(), Some(options)))
-            .await
-            .map_err(|err| SuiError::invalid_input(err.to_string()))?;
-        if response.len() != object_ids.len() {
+        if fetched.len() != missing.len() {
             return Err(SuiError::invalid_input(format!(
                 "Sui object response count mismatch: requested {}, received {}",
-                object_ids.len(),
-                response.len()
+                missing.len(),
+                fetched.len()
             )));
         }
 
-        Ok(Self {
-            objects: object_ids.into_iter().zip(response).map(|(object_id, response)| (object_id, response.data)).collect(),
-        })
+        let mut shared_versions: HashMap<String, u64> = fetched
+            .into_iter()
+            .zip(&missing)
+            .filter_map(|(result, id)| result.data.initial_shared_version().map(|version| (id.clone(), version)))
+            .collect();
+        for id in &unique_ids {
+            if let Some(&version) = pinned.get(id) {
+                shared_versions.insert(id.clone(), version);
+            }
+        }
+        Ok(Self { shared_versions })
     }
 
     pub fn shared_object_input(&self, object_id: &str, mutable: bool) -> Result<ObjectInput, SuiError> {
-        let data = self.object_data(object_id)?;
-        let initial_shared_version = data
-            .initial_shared_version()
-            .ok_or_else(|| SuiError::invalid_input(format!("Object is not shared: {object_id}")))?;
-        Ok(ObjectInput::shared(data.object_id, initial_shared_version, mutable))
+        let version = self
+            .shared_versions
+            .get(object_id)
+            .copied()
+            .ok_or_else(|| SuiError::invalid_input(format!("Sui shared object was not prefetched: {object_id}")))?;
+        let address = Address::from_str(object_id).map_err(|err| SuiError::invalid_input(format!("Invalid Sui address {object_id}: {err}")))?;
+        Ok(ObjectInput::shared(address, version, mutable))
     }
 
     pub fn shared_object(&self, txb: &mut TransactionBuilder, object_id: &str, mutable: bool) -> Result<Argument, SuiError> {
         Ok(txb.object(self.shared_object_input(object_id, mutable)?))
-    }
-
-    fn object_data(&self, object_id: &str) -> Result<DataObject<()>, SuiError> {
-        self.objects
-            .get(object_id)
-            .cloned()
-            .ok_or_else(|| SuiError::invalid_input(format!("Sui object was not prefetched: {object_id}")))
     }
 }

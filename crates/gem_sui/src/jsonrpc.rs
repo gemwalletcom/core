@@ -96,6 +96,18 @@ impl Default for ObjectDataOptions {
     }
 }
 
+impl ObjectDataOptions {
+    pub fn owner_only() -> Self {
+        Self {
+            show_type: false,
+            show_owner: true,
+            show_display: false,
+            show_content: false,
+            show_bcs: false,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SuiData<T> {

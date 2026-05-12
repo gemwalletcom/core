@@ -1,3 +1,5 @@
+use std::{collections::HashMap, sync::LazyLock};
+
 pub const CETUS: &str = "CETUS";
 pub const DEEPBOOK_V3: &str = "DEEPBOOKV3";
 pub const BLUEFIN: &str = "BLUEFIN";
@@ -13,3 +15,17 @@ pub const CETUS_PARTNER: &str = "0x08b1875b6541c847f05ed71d04cbcfa66e4e8619bf3b8
 pub const BLUEFIN_GLOBAL_CONFIG: &str = "0x03db251ba509a8d5d8777b6338836082335d93eecbdd09a11e190a1cff51c352";
 pub const DEEPBOOK_V3_GLOBAL_CONFIG: &str = "0x699d455ab8c5e02075b4345ea1f91be55bf46064ae6026cc2528e701ce3ac135";
 pub const DEEPBOOK_V3_DEEP_FEE_TYPE: &str = "0xdeeb7a4662eec9f2f3def03fb937a663dddaa2e215b8078a284d026b7946c270::deep::DEEP";
+
+pub const CETUS_GLOBAL_CONFIG_INIT_VER: u64 = 1_574_190;
+pub const CETUS_PARTNER_INIT_VER: u64 = 507_739_678;
+pub const BLUEFIN_GLOBAL_CONFIG_INIT_VER: u64 = 406_496_849;
+pub const DEEPBOOK_V3_GLOBAL_CONFIG_INIT_VER: u64 = 526_005_852;
+
+pub static PINNED_VERSIONS: LazyLock<HashMap<String, u64>> = LazyLock::new(|| {
+    HashMap::from([
+        (CETUS_GLOBAL_CONFIG.to_string(), CETUS_GLOBAL_CONFIG_INIT_VER),
+        (CETUS_PARTNER.to_string(), CETUS_PARTNER_INIT_VER),
+        (BLUEFIN_GLOBAL_CONFIG.to_string(), BLUEFIN_GLOBAL_CONFIG_INIT_VER),
+        (DEEPBOOK_V3_GLOBAL_CONFIG.to_string(), DEEPBOOK_V3_GLOBAL_CONFIG_INIT_VER),
+    ])
+});

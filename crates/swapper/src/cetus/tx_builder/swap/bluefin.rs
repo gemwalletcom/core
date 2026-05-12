@@ -13,6 +13,8 @@ use gem_sui::{
 };
 use sui_transaction_builder::{Argument, TransactionBuilder};
 
+// Move sig: `<published_at>::bluefin::swap<A, B>(swap_context, global_config, pool, direction, amount_in, clock)`
+// Source: https://github.com/CetusProtocol/aggregator/blob/main/src/movecall/bluefin.ts
 pub(super) fn build_swap(txb: &mut TransactionBuilder, resolver: &ObjectResolver, flattened_path: &FlattenedPath, swap_context: Argument) -> Result<(), SwapperError> {
     let step = SwapStep::try_from(flattened_path)?;
     let global_config = resolver.shared_object(txb, BLUEFIN_GLOBAL_CONFIG, true).map_err(tx_error)?;

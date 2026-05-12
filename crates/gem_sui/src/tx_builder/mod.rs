@@ -1,6 +1,6 @@
 mod input;
 #[cfg(feature = "rpc")]
-mod object_resolver;
+pub(crate) mod object_resolver;
 #[cfg(feature = "rpc")]
 mod prefetch;
 pub mod stake;

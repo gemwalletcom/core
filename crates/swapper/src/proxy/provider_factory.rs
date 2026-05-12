@@ -11,10 +11,6 @@ pub fn new_okx(rpc_provider: Arc<dyn RpcProvider>) -> ProxyProvider<RpcClient> {
     ProxyProvider::new_okx(rpc_provider)
 }
 
-pub fn new_cetus_aggregator(rpc_provider: Arc<dyn RpcProvider>) -> ProxyProvider<RpcClient> {
-    ProxyProvider::new_cetus_aggregator(rpc_provider)
-}
-
 pub fn new_mayan(rpc_provider: Arc<dyn RpcProvider>) -> ProxyProvider<RpcClient> {
     ProxyProvider::new_mayan(rpc_provider)
 }

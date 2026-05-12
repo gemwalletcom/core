@@ -103,15 +103,68 @@ pub(super) fn build_swap(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::cetus::testkit::{route_path, router};
+    use crate::cetus::{
+        constants::DEEPBOOK_V3,
+        model::{ExtendedDetails, RouterResponse},
+        testkit::{route_path, router},
+    };
+
+    fn fixture_router() -> RouterData {
+        match serde_json::from_str::<RouterResponse>(include_str!("../../testdata/router_response.json")).unwrap() {
+            RouterResponse::Ok { data } => data,
+            RouterResponse::Err { .. } => panic!("Expected router response"),
+        }
+    }
 
     #[test]
     fn test_shared_object_ids() {
         let mut router_data = router(1000);
         router_data.paths = vec![route_path(true, Some("0x1".to_string()))];
 
-        let object_ids = shared_object_ids(&router_data).unwrap();
+        let object_ids: BTreeSet<String> = shared_object_ids(&router_data).unwrap().into_iter().collect();
+        let expected: BTreeSet<String> = [CETUS_PARTNER, "0x1", CETUS_GLOBAL_CONFIG].iter().map(|s| s.to_string()).collect();
 
-        assert_eq!(object_ids, vec![CETUS_PARTNER.to_string(), "0x1".to_string(), CETUS_GLOBAL_CONFIG.to_string()]);
+        assert_eq!(object_ids, expected);
+
+        let fixture_ids: BTreeSet<String> = shared_object_ids(&fixture_router()).unwrap().into_iter().collect();
+        let expected_fixture: BTreeSet<String> = [
+            BLUEFIN_GLOBAL_CONFIG,
+            CETUS_GLOBAL_CONFIG,
+            CETUS_PARTNER,
+            "0xpool1",
+            "0xpool2",
+            "0xpool3",
+        ]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+        assert_eq!(fixture_ids, expected_fixture);
+
+        let mut deepbook_router = router(1000);
+        let mut path = route_path(true, Some("0xdb".to_string()));
+        path.provider = DEEPBOOK_V3.to_string();
+        path.id = "0xdb_pool".to_string();
+        path.extended_details = Some(ExtendedDetails {
+            deepbookv3_need_add_deep_price_point: Some(true),
+            deepbookv3_reference_pool_id: Some("0xref_pool".to_string()),
+            deepbookv3_reference_pool_base_type: None,
+            deepbookv3_reference_pool_quote_type: None,
+        });
+        deepbook_router.paths = vec![path];
+        let deepbook_ids: BTreeSet<String> = shared_object_ids(&deepbook_router).unwrap().into_iter().collect();
+        let expected_deepbook: BTreeSet<String> = [DEEPBOOK_V3_GLOBAL_CONFIG, "0xdb_pool", "0xref_pool"].iter().map(|s| s.to_string()).collect();
+        assert_eq!(deepbook_ids, expected_deepbook);
+
+        let mut bad_router = router(1000);
+        let mut bad_path = route_path(true, Some("0xdb".to_string()));
+        bad_path.provider = DEEPBOOK_V3.to_string();
+        bad_path.extended_details = Some(ExtendedDetails {
+            deepbookv3_need_add_deep_price_point: Some(true),
+            deepbookv3_reference_pool_id: None,
+            deepbookv3_reference_pool_base_type: None,
+            deepbookv3_reference_pool_quote_type: None,
+        });
+        bad_router.paths = vec![bad_path];
+        assert!(matches!(shared_object_ids(&bad_router), Err(SwapperError::InvalidRoute)));
     }
 }

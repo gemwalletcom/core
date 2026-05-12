@@ -3,7 +3,11 @@ use super::{
     swap::shared_object_ids,
     transaction::{BuildInput, build_transaction},
 };
-use crate::{Quote, SwapperError, SwapperQuoteData, cetus::model::RouterData, fees::ReferralFee};
+use crate::{
+    Quote, SwapperError, SwapperQuoteData,
+    cetus::{constants::PINNED_VERSIONS, model::RouterData},
+    fees::ReferralFee,
+};
 use gem_client::ClientBounds;
 use gem_sui::{ESTIMATION_GAS_BUDGET, SuiClient, gas_budget::GAS_BUDGET_MULTIPLIER, tx_builder::PrefetchedTransactionData};
 
@@ -12,9 +16,17 @@ pub async fn build_quote_data<C: ClientBounds>(client: &SuiClient<C>, quote: &Qu
     let from_coin_type = router.paths.first().ok_or(SwapperError::InvalidRoute)?.from.clone();
     let target_coin_type = router.paths.last().ok_or(SwapperError::InvalidRoute)?.target.clone();
     let amount = quote.from_value.parse::<u64>()?;
-    let prefetched = PrefetchedTransactionData::prefetch(client, sender, &from_coin_type, &target_coin_type, shared_object_ids(router)?, ESTIMATION_GAS_BUDGET)
-        .await
-        .map_err(sui_error)?;
+    let prefetched = PrefetchedTransactionData::prefetch(
+        client,
+        sender,
+        &from_coin_type,
+        &target_coin_type,
+        shared_object_ids(router)?,
+        &PINNED_VERSIONS,
+        ESTIMATION_GAS_BUDGET,
+    )
+    .await
+    .map_err(sui_error)?;
 
     let input = BuildInput {
         transaction: prefetched.transaction.clone(),
