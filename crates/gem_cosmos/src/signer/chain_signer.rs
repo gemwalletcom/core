@@ -31,17 +31,13 @@ impl ChainSigner for CosmosChainSigner {
         let chain = Self::chain(input)?;
 
         let messages = CosmosMessage::parse_array(&swap_data.data.data)?;
-        let gas_limit = swap_data
-            .data
-            .gas_limit
-            .as_ref()
-            .and_then(|g| g.parse::<u64>().ok())
-            .filter(|&g| g > 0)
-            .ok_or_else(|| SignerError::invalid_input("missing or invalid gas_limit"))?;
-        let gas_limit = gas_limit * GAS_BUFFER_NUMERATOR / GAS_BUFFER_DENOMINATOR;
-
-        let base_fee = input.fee.gas_price_u64()?;
-        let fee_amount = ((gas_limit as u128 * base_fee as u128 / BASE_FEE_GAS_UNITS as u128) as u64).to_string();
+        // Prefer the provider's gas limit (with buffer); fall back to the preloaded swap gas
+        // limit scaled by message count when the provider omits it.
+        let gas_limit = match swap_data.data.gas_limit.as_ref().and_then(|g| g.parse::<u64>().ok()).filter(|&g| g > 0) {
+            Some(provider_gas) => provider_gas * GAS_BUFFER_NUMERATOR / GAS_BUFFER_DENOMINATOR,
+            None => Self::gas_limit(input, messages.len())?,
+        };
+        let fee_amount = Self::scale_fee(gas_limit, input.fee.gas_price_u64()?);
 
         Ok(vec![Self::sign_messages(chain, input, messages, gas_limit, fee_amount, private_key)?])
     }
@@ -95,6 +91,10 @@ impl CosmosChainSigner {
             .gas_limit()?
             .checked_mul(message_count)
             .ok_or_else(|| SignerError::invalid_input("gas limit overflow"))
+    }
+
+    fn scale_fee(gas_limit: u64, base_fee: u64) -> String {
+        ((gas_limit as u128 * base_fee as u128 / BASE_FEE_GAS_UNITS as u128) as u64).to_string()
     }
 
     fn fee_coins(chain: CosmosChain, fee_amount: String) -> Vec<Coin> {
@@ -161,7 +161,10 @@ mod tests {
     use std::collections::HashMap;
 
     use num_bigint::BigInt;
-    use primitives::{Asset, Chain, Delegation, DelegationValidator, GasPriceType, RedelegateData, StakeType, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata};
+    use primitives::{
+        Asset, Chain, Delegation, DelegationValidator, GasPriceType, RedelegateData, StakeType, SwapProvider, TransactionFee, TransactionInputType, TransactionLoadInput,
+        TransactionLoadMetadata, swap::SwapData,
+    };
     use serde_json::Value;
 
     use super::*;
@@ -307,5 +310,28 @@ mod tests {
             signed_tx_bytes(&signed[0]),
             "CtQCCpwBCjcvY29zbW9zLmRpc3RyaWJ1dGlvbi52MWJldGExLk1zZ1dpdGhkcmF3RGVsZWdhdG9yUmV3YXJkEmEKK29zbW8xa2dsZW11bXU4bW42NThqNmc0ejlqem4zemVmMnFkeXl2a2x3YTMSMm9zbW92YWxvcGVyMXB4cGh0Zmhxbng5bnkyN2Q1M3o0MDUyZTNyNzZlN3FxNDk1ZWhtCpwBCjcvY29zbW9zLmRpc3RyaWJ1dGlvbi52MWJldGExLk1zZ1dpdGhkcmF3RGVsZWdhdG9yUmV3YXJkEmEKK29zbW8xa2dsZW11bXU4bW42NThqNmc0ejlqem4zemVmMnFkeXl2a2x3YTMSMm9zbW92YWxvcGVyMXB4cGh0Zmhxbng5bnkyN2Q1M3o0MDUyZTNyNzZlN3FxNDk1ZWhtEhRTdGFrZSB2aWEgR2VtIFdhbGxldBJoClAKRgofL2Nvc21vcy5jcnlwdG8uc2VjcDI1NmsxLlB1YktleRIjCiEDLJXGJ+w4T3uW//JTNxZz14RgY+UnQteflyNYWdYGGwQSBAoCCAEYChIUCg4KBXVvc21vEgUxMDAwMBCAtRgaQH/U90uCH0zx9AdY+ALIHM5aZ1crBSwYzeZZejb5rWjEMVXRScjOfvng33XFnFHdI4Epp9ykNNtQVUw9BJnZshU="
         );
+    }
+
+    // sign_swap should accept a missing/zero provider gas limit and fall back to the preloaded value.
+    #[test]
+    fn test_sign_swap_falls_back_when_provider_gas_missing() {
+        let private_key = hex::decode(OSMO_PRIVATE_KEY_HEX).unwrap();
+        let msg_send = r#"[{"typeUrl":"/cosmos.bank.v1beta1.MsgSend","value":{"from_address":"osmo1kglemumu8mn658j6g4z9jzn3zef2qdyyvklwa3","to_address":"osmo1rcjvzz8wzktqfz8qjf0l9q45kzxvd0z0n7l5cf","amount":[{"denom":"uosmo","amount":"10"}]}}]"#;
+
+        for gas_limit in [None, Some("0"), Some("")] {
+            let swap_data = SwapData::mock_with_provider_data(SwapProvider::Squid, msg_send, gas_limit);
+            let input = SignerInput::mock_osmosis(
+                TransactionInputType::Swap(Asset::from_chain(Chain::Osmosis), Asset::from_chain(Chain::Osmosis), swap_data),
+                "",
+                None,
+            );
+            let signed = CosmosChainSigner.sign_swap(&input, &private_key).expect("swap should sign");
+            assert_eq!(signed.len(), 1);
+            // Identical bytes to the OSMO native transfer (1 msg, 200000 gas, 10000 uosmo fee).
+            assert_eq!(
+                signed_tx_bytes(&signed[0]),
+                "CooBCocBChwvY29zbW9zLmJhbmsudjFiZXRhMS5Nc2dTZW5kEmcKK29zbW8xa2dsZW11bXU4bW42NThqNmc0ejlqem4zemVmMnFkeXl2a2x3YTMSK29zbW8xcmNqdnp6OHd6a3RxZno4cWpmMGw5cTQ1a3p4dmQwejBuN2w1Y2YaCwoFdW9zbW8SAjEwEmgKUApGCh8vY29zbW9zLmNyeXB0by5zZWNwMjU2azEuUHViS2V5EiMKIQMslcYn7DhPe5b/8lM3FnPXhGBj5SdC15+XI1hZ1gYbBBIECgIIARgKEhQKDgoFdW9zbW8SBTEwMDAwEMCaDBpAVJkDxaS5ZaghmJ6ZtpC9yim7JA8duO8MwOODdJeHEHssH3PQN+4Yl+SVyLtNEW6+IDUKfkG1dfIYOvpRiFlOyg=="
+            );
+        }
     }
 }

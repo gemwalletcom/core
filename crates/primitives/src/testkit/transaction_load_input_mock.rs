@@ -1,10 +1,10 @@
 use super::signer_mock::{TEST_EVM_RECIPIENT, TEST_EVM_SENDER, TEST_OSMOSIS_SENDER};
-use std::collections::HashMap;
 use crate::{
     Asset, Chain, GasPriceType, SignerInput, TransactionFee, TransactionInputType, TransactionLoadInput, TransactionLoadMetadata, TransferDataExtra, TransferDataOutputAction,
     TransferDataOutputType, WalletConnectionSessionAppMetadata,
 };
 use num_bigint::BigInt;
+use std::collections::HashMap;
 
 impl TransactionLoadInput {
     pub fn mock() -> Self {
