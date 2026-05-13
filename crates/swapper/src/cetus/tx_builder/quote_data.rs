@@ -43,7 +43,8 @@ pub async fn build_quote_data<C: ClientBounds>(client: &SuiClient<C>, quote: &Qu
         .await
         .map_err(|err| SwapperError::TransactionError(err.to_string()))?;
     if dry_run.effects.status.status != "success" {
-        return Err(SwapperError::TransactionError("Sui swap simulation failed".to_string()));
+        let detail = dry_run.effects.status.error.as_deref().unwrap_or("no details available");
+        return Err(SwapperError::TransactionError(format!("Sui swap simulation failed: {detail}")));
     }
 
     let fee = dry_run

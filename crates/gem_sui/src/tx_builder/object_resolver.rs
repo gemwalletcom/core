@@ -28,13 +28,6 @@ impl ObjectResolver {
                 .await
                 .map_err(|err| SuiError::invalid_input(err.to_string()))?
         };
-        if fetched.len() != missing.len() {
-            return Err(SuiError::invalid_input(format!(
-                "Sui object response count mismatch: requested {}, received {}",
-                missing.len(),
-                fetched.len()
-            )));
-        }
 
         let mut shared_versions: HashMap<String, u64> = fetched
             .into_iter()

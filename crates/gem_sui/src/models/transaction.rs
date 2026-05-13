@@ -24,6 +24,7 @@ pub struct SuiTransaction {
 #[serde(rename_all = "camelCase")]
 pub struct SuiStatus {
     pub status: String,
+    pub error: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

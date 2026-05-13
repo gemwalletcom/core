@@ -1,25 +1,24 @@
 use crate::{SUI_COIN_TYPE, SUI_COIN_TYPE_FULL};
+use primitives::hex::decode_hex;
+
+const SUI_ADDRESS_LENGTH: usize = 32;
 
 pub fn full_coin_type(coin_type: &str) -> String {
-    let Some(index) = coin_type.find("::") else {
+    let Some((prefix, rest)) = coin_type.split_once("::") else {
         return coin_type.to_string();
     };
-    let prefix = &coin_type[..index];
-    let rest = &coin_type[index..];
-    let Some(hex) = prefix.strip_prefix("0x") else {
-        return coin_type.to_string();
-    };
-    if hex.len() > 64 {
-        return coin_type.to_string();
+    match decode_hex(prefix) {
+        Ok(bytes) if bytes.len() <= SUI_ADDRESS_LENGTH => {
+            let mut padded = [0u8; SUI_ADDRESS_LENGTH];
+            padded[SUI_ADDRESS_LENGTH - bytes.len()..].copy_from_slice(&bytes);
+            format!("0x{}::{rest}", hex::encode(padded))
+        }
+        _ => coin_type.to_string(),
     }
-    format!("0x{hex:0>64}{rest}")
 }
 
-pub fn coin_type_matches(coin_type: &str, token_id: &str) -> bool {
-    let coin_type = coin_type.strip_prefix("0x").unwrap_or(coin_type).to_lowercase();
-    let token_id = token_id.strip_prefix("0x").unwrap_or(token_id).to_lowercase();
-
-    coin_type == token_id
+pub fn coin_type_matches(a: &str, b: &str) -> bool {
+    full_coin_type(a) == full_coin_type(b)
 }
 
 pub fn is_sui_coin(coin_type: &str) -> bool {
@@ -37,6 +36,10 @@ mod tests {
             "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI"
         );
         assert_eq!(
+            full_coin_type("2::sui::SUI"),
+            "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI"
+        );
+        assert_eq!(
             full_coin_type("0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI"),
             "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI"
         );
@@ -49,6 +52,10 @@ mod tests {
         assert!(coin_type_matches("0x2::sui::SUI", "0x2::sui::SUI"));
         assert!(coin_type_matches("0x2::sui::SUI", "2::sui::SUI"));
         assert!(coin_type_matches("2::sui::SUI", "0x2::sui::SUI"));
+        assert!(coin_type_matches(
+            "0x2::sui::SUI",
+            "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI"
+        ));
         assert!(!coin_type_matches("0x2::sui::SUI", "0x3::token::TOKEN"));
     }
 
