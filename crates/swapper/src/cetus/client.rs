@@ -1,5 +1,5 @@
 use super::{
-    constants::{BLUEFIN, CETUS, DEEPBOOK_V3, ROUTER_API_VERSION},
+    constants::{BLUEFIN, CETUS, CETUS_DLMM, DEEPBOOK_V3, ROUTER_API_VERSION},
     model::{RouterData, RouterRequest, RouterResponse},
 };
 use crate::SwapperError;
@@ -27,7 +27,7 @@ where
             target,
             amount,
             by_amount_in: true,
-            providers: [CETUS, DEEPBOOK_V3, BLUEFIN].join(","),
+            providers: [CETUS, CETUS_DLMM, DEEPBOOK_V3, BLUEFIN].join(","),
             v: ROUTER_API_VERSION,
         };
         let path = build_path_with_query("/find_routes", &request)?;
