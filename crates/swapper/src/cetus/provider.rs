@@ -2,7 +2,7 @@ use super::{client::CetusClient, constants::DEFAULT_AGGREGATOR_PATH, model::Rout
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData,
     client_factory::create_client_with_chain,
-    config::get_swap_api_url,
+    config::get_swap_proxy_url,
     fees::{ReferralFee, apply_slippage_in_bp, default_referral_fees, quote_value_after_reserve_by_chain},
 };
 use async_trait::async_trait;
@@ -33,7 +33,7 @@ where
 
 impl Cetus<RpcClient, RpcClient> {
     pub fn new(rpc_provider: Arc<dyn RpcProvider>) -> Self {
-        let cetus_client = RpcClient::new(get_swap_api_url(DEFAULT_AGGREGATOR_PATH), rpc_provider.clone());
+        let cetus_client = RpcClient::new(get_swap_proxy_url(DEFAULT_AGGREGATOR_PATH), rpc_provider.clone());
         let sui_client = create_client_with_chain(rpc_provider, Chain::Sui);
         Self::with_clients(CetusClient::new(cetus_client), SuiClient::new(sui_client))
     }
