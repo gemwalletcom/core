@@ -1,7 +1,7 @@
+use super::{finalize_swap, prepare_swap_inputs};
 use super::super::{
-    constants::{FUNCTION_ADD_DEEP_PRICE_POINT, FUNCTION_SWAP, MODULE_DEEPBOOK_V3},
+    constants::{FUNCTION_ADD_DEEP_PRICE_POINT, MODULE_DEEPBOOK_V3},
     error::tx_error,
-    model::SwapStep,
 };
 use crate::{
     SwapperError,
@@ -21,35 +21,20 @@ use sui_transaction_builder::{Argument, TransactionBuilder};
 //   `<published_at>::deepbookv3::add_deep_price_point_v2<A, B, RefBase, RefQuote>(pool, reference_pool, clock)`
 // Source: https://github.com/CetusProtocol/aggregator/blob/main/src/movecall/deepbook_v3.ts
 pub(super) fn build_swap(txb: &mut TransactionBuilder, resolver: &ObjectResolver, flattened_path: &FlattenedPath, swap_context: Argument) -> Result<(), SwapperError> {
-    let step = SwapStep::try_from(flattened_path)?;
-
-    if step
-        .path
-        .extended_details
-        .as_ref()
-        .and_then(|details| details.deepbookv3_need_add_deep_price_point)
-        .unwrap_or(false)
-    {
-        add_deep_price_point(txb, resolver, step.path, step.path.extended_details.as_ref().ok_or(SwapperError::InvalidRoute)?)?;
+    let path = &flattened_path.path;
+    if path.extended_details.as_ref().and_then(|d| d.deepbookv3_need_add_deep_price_point).unwrap_or(false) {
+        add_deep_price_point(txb, resolver, path, path.extended_details.as_ref().ok_or(SwapperError::InvalidRoute)?)?;
     }
 
+    let s = prepare_swap_inputs(txb, resolver, flattened_path, DEEPBOOK_V3_GLOBAL_CONFIG)?;
     let deep_coin = zero_coin(txb, DEEPBOOK_V3_DEEP_FEE_TYPE).map_err(tx_error)?;
-    let global_config = resolver.shared_object(txb, DEEPBOOK_V3_GLOBAL_CONFIG, true).map_err(tx_error)?;
-    let pool = resolver.shared_object(txb, &step.path.id, true).map_err(tx_error)?;
-    let amount_in = txb.pure(&step.amount_in);
-    let direction = txb.pure(&step.path.direction);
-    let clock = txb.object(sui_clock_object_input());
-
-    move_call(
+    // deepbook uses (amount_in, direction) order, with deep_coin appended before clock.
+    finalize_swap(
         txb,
-        step.published_at,
+        &s.step,
         MODULE_DEEPBOOK_V3,
-        FUNCTION_SWAP,
-        &[step.coin_a, step.coin_b],
-        vec![swap_context, global_config, pool, amount_in, direction, deep_coin, clock],
+        vec![swap_context, s.global_config, s.pool, s.amount_in, s.direction, deep_coin, s.clock],
     )
-    .map_err(tx_error)?;
-    Ok(())
 }
 
 fn add_deep_price_point(txb: &mut TransactionBuilder, resolver: &ObjectResolver, path: &Path, details: &ExtendedDetails) -> Result<(), SwapperError> {

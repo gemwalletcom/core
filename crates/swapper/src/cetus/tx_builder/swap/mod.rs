@@ -1,12 +1,11 @@
 mod bluefin;
 mod cetus;
-mod cetus_dlmm;
 mod deepbook;
 
 use super::{
-    constants::{FUNCTION_CONFIRM_SWAP, FUNCTION_NEW_SWAP_CONTEXT, MODULE_ROUTER},
+    constants::{FUNCTION_CONFIRM_SWAP, FUNCTION_NEW_SWAP_CONTEXT, FUNCTION_SWAP, MODULE_ROUTER},
     error::tx_error,
-    model::SwapLimits,
+    model::{SwapLimits, SwapStep},
 };
 use crate::{
     Quote, SwapperError,
@@ -15,13 +14,52 @@ use crate::{
             BLUEFIN, BLUEFIN_GLOBAL_CONFIG, CETUS, CETUS_DLMM, CETUS_DLMM_GLOBAL_CONFIG, CETUS_DLMM_PARTNER, CETUS_DLMM_VERSIONED, CETUS_GLOBAL_CONFIG, CETUS_PARTNER,
             DEEPBOOK_V3, DEEPBOOK_V3_GLOBAL_CONFIG,
         },
-        model::{ProcessedRouterData, RouterData},
+        model::{FlattenedPath, ProcessedRouterData, RouterData},
     },
     fees::ReferralFee,
 };
-use gem_sui::tx_builder::{ObjectResolver, move_call};
+use gem_sui::{
+    sui_clock_object_input,
+    tx_builder::{ObjectResolver, move_call},
+};
 use std::collections::BTreeSet;
 use sui_transaction_builder::{Argument, TransactionBuilder};
+
+pub(super) struct SwapInputs<'a> {
+    pub step: SwapStep<'a>,
+    pub global_config: Argument,
+    pub pool: Argument,
+    pub direction: Argument,
+    pub amount_in: Argument,
+    pub clock: Argument,
+}
+
+pub(super) fn prepare_swap_inputs<'a>(
+    txb: &mut TransactionBuilder,
+    resolver: &ObjectResolver,
+    flattened_path: &'a FlattenedPath,
+    global_config_id: &str,
+) -> Result<SwapInputs<'a>, SwapperError> {
+    let step = SwapStep::try_from(flattened_path)?;
+    let global_config = resolver.shared_object(txb, global_config_id, true).map_err(tx_error)?;
+    let pool = resolver.shared_object(txb, &step.path.id, true).map_err(tx_error)?;
+    let direction = txb.pure(&step.path.direction);
+    let amount_in = txb.pure(&step.amount_in);
+    let clock = txb.object(sui_clock_object_input());
+    Ok(SwapInputs {
+        step,
+        global_config,
+        pool,
+        direction,
+        amount_in,
+        clock,
+    })
+}
+
+pub(super) fn finalize_swap(txb: &mut TransactionBuilder, step: &SwapStep<'_>, module: &str, args: Vec<Argument>) -> Result<(), SwapperError> {
+    move_call(txb, step.published_at, module, FUNCTION_SWAP, &[step.coin_a, step.coin_b], args).map_err(tx_error)?;
+    Ok(())
+}
 
 pub(super) fn shared_object_ids(router: &RouterData) -> Result<Vec<String>, SwapperError> {
     let mut object_ids = BTreeSet::new();
@@ -92,8 +130,8 @@ pub(super) fn build_swap(
 
     for flattened_path in &processed.flattened_paths {
         match flattened_path.path.provider.as_str() {
-            CETUS => cetus::build_swap(txb, resolver, flattened_path, swap_context)?,
-            CETUS_DLMM => cetus_dlmm::build_swap(txb, resolver, flattened_path, swap_context)?,
+            CETUS => cetus::build_clmm_swap(txb, resolver, flattened_path, swap_context)?,
+            CETUS_DLMM => cetus::build_dlmm_swap(txb, resolver, flattened_path, swap_context)?,
             BLUEFIN => bluefin::build_swap(txb, resolver, flattened_path, swap_context)?,
             DEEPBOOK_V3 => deepbook::build_swap(txb, resolver, flattened_path, swap_context)?,
             provider => return Err(SwapperError::TransactionError(format!("Unsupported Cetus route provider: {provider}"))),

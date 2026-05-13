@@ -1,36 +1,15 @@
-use super::super::{
-    constants::{FUNCTION_SWAP, MODULE_BLUEFIN},
-    error::tx_error,
-    model::SwapStep,
-};
+use super::{finalize_swap, prepare_swap_inputs};
+use super::super::constants::MODULE_BLUEFIN;
 use crate::{
     SwapperError,
     cetus::{constants::BLUEFIN_GLOBAL_CONFIG, model::FlattenedPath},
 };
-use gem_sui::{
-    sui_clock_object_input,
-    tx_builder::{ObjectResolver, move_call},
-};
+use gem_sui::tx_builder::ObjectResolver;
 use sui_transaction_builder::{Argument, TransactionBuilder};
 
 // Move sig: `<published_at>::bluefin::swap<A, B>(swap_context, global_config, pool, direction, amount_in, clock)`
 // Source: https://github.com/CetusProtocol/aggregator/blob/main/src/movecall/bluefin.ts
 pub(super) fn build_swap(txb: &mut TransactionBuilder, resolver: &ObjectResolver, flattened_path: &FlattenedPath, swap_context: Argument) -> Result<(), SwapperError> {
-    let step = SwapStep::try_from(flattened_path)?;
-    let global_config = resolver.shared_object(txb, BLUEFIN_GLOBAL_CONFIG, true).map_err(tx_error)?;
-    let pool = resolver.shared_object(txb, &step.path.id, true).map_err(tx_error)?;
-    let direction = txb.pure(&step.path.direction);
-    let amount_in = txb.pure(&step.amount_in);
-    let clock = txb.object(sui_clock_object_input());
-
-    move_call(
-        txb,
-        step.published_at,
-        MODULE_BLUEFIN,
-        FUNCTION_SWAP,
-        &[step.coin_a, step.coin_b],
-        vec![swap_context, global_config, pool, direction, amount_in, clock],
-    )
-    .map_err(tx_error)?;
-    Ok(())
+    let s = prepare_swap_inputs(txb, resolver, flattened_path, BLUEFIN_GLOBAL_CONFIG)?;
+    finalize_swap(txb, &s.step, MODULE_BLUEFIN, vec![swap_context, s.global_config, s.pool, s.direction, s.amount_in, s.clock])
 }
