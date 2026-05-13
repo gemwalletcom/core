@@ -1,5 +1,6 @@
 mod bluefin;
 mod cetus;
+mod cetus_dlmm;
 mod deepbook;
 
 use super::{
@@ -10,7 +11,10 @@ use super::{
 use crate::{
     Quote, SwapperError,
     cetus::{
-        constants::{BLUEFIN, BLUEFIN_GLOBAL_CONFIG, CETUS, CETUS_GLOBAL_CONFIG, CETUS_PARTNER, DEEPBOOK_V3, DEEPBOOK_V3_GLOBAL_CONFIG},
+        constants::{
+            BLUEFIN, BLUEFIN_GLOBAL_CONFIG, CETUS, CETUS_DLMM, CETUS_DLMM_GLOBAL_CONFIG, CETUS_DLMM_PARTNER, CETUS_DLMM_VERSIONED, CETUS_GLOBAL_CONFIG, CETUS_PARTNER,
+            DEEPBOOK_V3, DEEPBOOK_V3_GLOBAL_CONFIG,
+        },
         model::{ProcessedRouterData, RouterData},
     },
     fees::ReferralFee,
@@ -27,6 +31,12 @@ pub(super) fn shared_object_ids(router: &RouterData) -> Result<Vec<String>, Swap
                 object_ids.insert(CETUS_GLOBAL_CONFIG.to_string());
                 object_ids.insert(path.id.clone());
                 object_ids.insert(CETUS_PARTNER.to_string());
+            }
+            CETUS_DLMM => {
+                object_ids.insert(CETUS_DLMM_GLOBAL_CONFIG.to_string());
+                object_ids.insert(path.id.clone());
+                object_ids.insert(CETUS_DLMM_PARTNER.to_string());
+                object_ids.insert(CETUS_DLMM_VERSIONED.to_string());
             }
             BLUEFIN => {
                 object_ids.insert(BLUEFIN_GLOBAL_CONFIG.to_string());
@@ -83,6 +93,7 @@ pub(super) fn build_swap(
     for flattened_path in &processed.flattened_paths {
         match flattened_path.path.provider.as_str() {
             CETUS => cetus::build_swap(txb, resolver, flattened_path, swap_context)?,
+            CETUS_DLMM => cetus_dlmm::build_swap(txb, resolver, flattened_path, swap_context)?,
             BLUEFIN => bluefin::build_swap(txb, resolver, flattened_path, swap_context)?,
             DEEPBOOK_V3 => deepbook::build_swap(txb, resolver, flattened_path, swap_context)?,
             provider => return Err(SwapperError::TransactionError(format!("Unsupported Cetus route provider: {provider}"))),
@@ -154,6 +165,18 @@ mod tests {
         let deepbook_ids: BTreeSet<String> = shared_object_ids(&deepbook_router).unwrap().into_iter().collect();
         let expected_deepbook: BTreeSet<String> = [DEEPBOOK_V3_GLOBAL_CONFIG, "0xdb_pool", "0xref_pool"].iter().map(|s| s.to_string()).collect();
         assert_eq!(deepbook_ids, expected_deepbook);
+
+        let mut dlmm_router = router(1000);
+        let mut dlmm_path = route_path(true, Some("0xdlmm".to_string()));
+        dlmm_path.provider = CETUS_DLMM.to_string();
+        dlmm_path.id = "0xdlmm_pool".to_string();
+        dlmm_router.paths = vec![dlmm_path];
+        let dlmm_ids: BTreeSet<String> = shared_object_ids(&dlmm_router).unwrap().into_iter().collect();
+        let expected_dlmm: BTreeSet<String> = [CETUS_DLMM_GLOBAL_CONFIG, CETUS_DLMM_PARTNER, CETUS_DLMM_VERSIONED, "0xdlmm_pool"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        assert_eq!(dlmm_ids, expected_dlmm);
 
         let mut bad_router = router(1000);
         let mut bad_path = route_path(true, Some("0xdb".to_string()));

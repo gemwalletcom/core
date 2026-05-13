@@ -1,5 +1,6 @@
 pub(super) const MODULE_ROUTER: &str = "router";
 pub(super) const MODULE_CETUS: &str = "cetus";
+pub(super) const MODULE_CETUS_DLMM: &str = "cetus_dlmm";
 pub(super) const MODULE_BLUEFIN: &str = "bluefin";
 pub(super) const MODULE_DEEPBOOK_V3: &str = "deepbookv3";
 
