@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::{QuoteRequest, Route, SwapperError, eth_address, fees::apply_slippage_in_bp, uniswap::requires_native_wrapping};
+use crate::{QuoteRequest, Route, SwapperError, eth_address, uniswap::requires_native_wrapping};
 use alloy_primitives::{Address, U256};
 use gem_evm::uniswap::{
     actions::V4Action::{SETTLE, SWAP_EXACT_IN, TAKE},
@@ -13,75 +13,70 @@ pub fn build_commands(
     token_in: &Address,
     token_out: &Address,
     amount_in: u128,
-    quote_amount: u128,
+    amount_out_min: u128,
     swap_routes: &[Route],
     permit: Option<Permit2Permit>,
     fee_token_is_input: bool,
 ) -> Result<Vec<UniversalRouterCommand>, SwapperError> {
-    let options = request.options.clone();
-    let fee_options = options.fee.unwrap_or_default().evm;
+    let fee_options = request.options.fee.as_ref().map(|fees| &fees.evm).filter(|fee| fee.bps > 0);
     let recipient = eth_address::parse_str(&request.wallet_address)?;
 
     let input_is_native = requires_native_wrapping(&request.from_asset.asset_id());
-    let pay_fees = fee_options.bps > 0;
 
-    let mut commands: Vec<UniversalRouterCommand> = vec![];
-
-    let amount_out = apply_slippage_in_bp(&quote_amount, options.slippage.bps + fee_options.bps);
     // Insert permit2 if needed
-    if let Some(permit) = permit {
-        commands.push(UniversalRouterCommand::PERMIT2_PERMIT(permit));
-    }
+    let permit_command = permit.map(UniversalRouterCommand::PERMIT2_PERMIT);
 
-    if pay_fees {
+    let swap_commands = if let Some(fee_options) = fee_options {
+        let fee_recipient = Address::from_str(fee_options.address.as_str()).unwrap();
         if fee_token_is_input {
             // insert TRANSFER fee first
             let fee = amount_in * (fee_options.bps as u128) / 10000_u128;
-            let fee_recipient = Address::from_str(fee_options.address.as_str()).unwrap();
-            if input_is_native {
+            let fee_command = if input_is_native {
                 // if input is native ETH, we can transfer directly
-                commands.push(UniversalRouterCommand::TRANSFER(Transfer {
+                UniversalRouterCommand::TRANSFER(Transfer {
                     token: *token_in,
                     recipient: fee_recipient,
                     value: U256::from(fee),
-                }));
+                })
             } else {
                 // call permit2 transfer instead
-                commands.push(UniversalRouterCommand::PERMIT2_TRANSFER_FROM(Transfer {
+                UniversalRouterCommand::PERMIT2_TRANSFER_FROM(Transfer {
                     token: *token_in,
                     recipient: fee_recipient,
                     value: U256::from(fee),
-                }));
+                })
             };
             // insert V4_SWAP with amount - fee
             // fee charged in token_in, so we need to use recipient as recipient
-            let command = build_v4_swap_command(token_in, token_out, amount_in - fee, amount_out, swap_routes, &recipient)?;
-            commands.push(command);
+            let command = build_v4_swap_command(token_in, token_out, amount_in - fee, amount_out_min, swap_routes, &recipient)?;
+            vec![fee_command, command]
         } else {
             // insert V4 SWAP
             // if needs to pay fees, amount_out_min set to 0 and we will sweep the rest
             let address_this = ADDRESS_THIS.parse().unwrap();
-            let amount_out_min = if pay_fees { 0 } else { amount_out };
-            let command = build_v4_swap_command(token_in, token_out, amount_in, amount_out_min, swap_routes, &address_this)?;
-            commands.push(command);
+            let command = build_v4_swap_command(token_in, token_out, amount_in, 0, swap_routes, &address_this)?;
 
             // insert PAY_PORTION to fee_address
-            commands.push(UniversalRouterCommand::PAY_PORTION(PayPortion {
-                token: *token_out,
-                recipient: Address::from_str(fee_options.address.as_str()).unwrap(),
-                bips: U256::from(fee_options.bps),
-            }));
-
-            commands.push(UniversalRouterCommand::SWEEP(Sweep {
-                token: *token_out,
-                recipient,
-                amount_min: U256::from(amount_out),
-            }));
+            vec![
+                command,
+                UniversalRouterCommand::PAY_PORTION(PayPortion {
+                    token: *token_out,
+                    recipient: fee_recipient,
+                    bips: U256::from(fee_options.bps),
+                }),
+                UniversalRouterCommand::SWEEP(Sweep {
+                    token: *token_out,
+                    recipient,
+                    amount_min: U256::from(amount_out_min),
+                }),
+            ]
         }
     } else {
-        let command = build_v4_swap_command(token_in, token_out, amount_in, amount_out, swap_routes, &recipient)?;
-        commands.push(command);
-    }
+        let command = build_v4_swap_command(token_in, token_out, amount_in, amount_out_min, swap_routes, &recipient)?;
+        vec![command]
+    };
+
+    let commands = permit_command.into_iter().chain(swap_commands).collect();
     Ok(commands)
 }
 
@@ -185,5 +180,35 @@ mod tests {
         assert!(matches!(commands[0], UniversalRouterCommand::V4_SWAP { .. }));
         assert!(matches!(commands[1], UniversalRouterCommand::PAY_PORTION(_)));
         assert!(matches!(commands[2], UniversalRouterCommand::SWEEP(_)));
+    }
+
+    #[test]
+    fn test_build_commands_uses_min_amount_without_reapplying_slippage() {
+        let token_celo = Address::from_str(CELO_WETH_TOKEN_ID).unwrap();
+        let token_usdt = Address::from_str(CELO_USDT_TOKEN_ID).unwrap();
+        let wallet = "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7";
+        let routes = vec![Route::mock(
+            AssetId::from(Chain::Celo, Some(CELO_WETH_TOKEN_ID.into())),
+            AssetId::from(Chain::Celo, Some(CELO_USDT_TOKEN_ID.into())),
+        )];
+        let request = QuoteRequest {
+            from_asset: AssetId::from(Chain::Celo, None).into(),
+            to_asset: AssetId::from(Chain::Celo, Some(CELO_USDT_TOKEN_ID.into())).into(),
+            wallet_address: wallet.into(),
+            destination_address: wallet.into(),
+            value: "22000000000000000000".into(),
+            options: Options::new_with_slippage(100.into()),
+        };
+        let amount_out_min = 14_804_757_u128;
+
+        let commands = build_commands(&request, &token_celo, &token_usdt, 22_000_000_000_000_000_000, amount_out_min, &routes, None, false).unwrap();
+
+        match &commands[0] {
+            UniversalRouterCommand::V4_SWAP { actions } => match &actions[0] {
+                SWAP_EXACT_IN(params) => assert_eq!(params.amountOutMinimum, amount_out_min),
+                _ => panic!("expected SWAP_EXACT_IN"),
+            },
+            _ => panic!("expected V4_SWAP"),
+        }
     }
 }

@@ -52,49 +52,44 @@ pub fn decode_action_data(data: &[u8]) -> Result<Vec<V4Action>, alloy_sol_types:
     // The ABI encoding for a sequence of actions is (bytes opcodes, bytes[] action_data)
     let (action_opcodes_bytes, action_data_bytes) = <(Bytes, Vec<Bytes>) as SolValue>::abi_decode_sequence(data)?;
 
-    let action_opcodes: Vec<u8> = action_opcodes_bytes.to_vec();
-    let action_data_list: Vec<Vec<u8>> = action_data_bytes.into_iter().map(|b| b.to_vec()).collect();
-
-    if action_opcodes.len() != action_data_list.len() {
+    if action_opcodes_bytes.len() != action_data_bytes.len() {
         return Err(alloy_sol_types::Error::Other("Mismatched opcodes and data lengths".into()));
     }
 
-    let mut decoded_actions = Vec::with_capacity(action_opcodes.len());
-
-    for (i, opcode) in action_opcodes.iter().enumerate() {
-        let action_data = &action_data_list[i];
-        let action_data_slice = action_data.as_slice();
-        let action = match *opcode {
-            SWAP_EXACT_IN_SINGLE_ACTION => V4Action::SWAP_EXACT_IN_SINGLE(<IV4Router::ExactInputSingleParams as SolValue>::abi_decode(action_data_slice)?),
-            SWAP_EXACT_IN_ACTION => V4Action::SWAP_EXACT_IN(<IV4Router::ExactInputParams as SolValue>::abi_decode(action_data_slice)?),
-            SWAP_EXACT_OUT_SINGLE_ACTION => V4Action::SWAP_EXACT_OUT_SINGLE(<IV4Router::ExactOutputSingleParams as SolValue>::abi_decode(action_data_slice)?),
-            SWAP_EXACT_OUT_ACTION => V4Action::SWAP_EXACT_OUT(<IV4Router::ExactOutputParams as SolValue>::abi_decode(action_data_slice)?),
-            SETTLE_ACTION => {
-                let (currency, amount, payer_is_user) = <(Address, U256, bool) as SolValue>::abi_decode(action_data_slice)?;
-                V4Action::SETTLE { currency, amount, payer_is_user }
-            }
-            SETTLE_ALL_ACTION => {
-                let (currency, max_amount) = <(Address, U256) as SolValue>::abi_decode(action_data_slice)?;
-                V4Action::SETTLE_ALL { currency, max_amount }
-            }
-            TAKE_ACTION => {
-                let (currency, recipient, amount) = <(Address, Address, U256) as SolValue>::abi_decode(action_data_slice)?;
-                V4Action::TAKE { currency, recipient, amount }
-            }
-            TAKE_ALL_ACTION => {
-                let (currency, min_amount) = <(Address, U256) as SolValue>::abi_decode(action_data_slice)?;
-                V4Action::TAKE_ALL { currency, min_amount }
-            }
-            TAKE_PORTION_ACTION => {
-                let (currency, recipient, bips) = <(Address, Address, U256) as SolValue>::abi_decode(action_data_slice)?;
-                V4Action::TAKE_PORTION { currency, recipient, bips }
-            }
-            _ => return Err(alloy_sol_types::Error::Other(format!("Unknown action opcode: {opcode}").into())),
-        };
-        decoded_actions.push(action);
-    }
-
-    Ok(decoded_actions)
+    action_opcodes_bytes
+        .iter()
+        .zip(action_data_bytes.iter())
+        .map(|(opcode, action_data)| {
+            let action_data_slice = action_data.as_ref();
+            Ok(match *opcode {
+                SWAP_EXACT_IN_SINGLE_ACTION => V4Action::SWAP_EXACT_IN_SINGLE(<IV4Router::ExactInputSingleParams as SolValue>::abi_decode(action_data_slice)?),
+                SWAP_EXACT_IN_ACTION => V4Action::SWAP_EXACT_IN(<IV4Router::ExactInputParams as SolValue>::abi_decode(action_data_slice)?),
+                SWAP_EXACT_OUT_SINGLE_ACTION => V4Action::SWAP_EXACT_OUT_SINGLE(<IV4Router::ExactOutputSingleParams as SolValue>::abi_decode(action_data_slice)?),
+                SWAP_EXACT_OUT_ACTION => V4Action::SWAP_EXACT_OUT(<IV4Router::ExactOutputParams as SolValue>::abi_decode(action_data_slice)?),
+                SETTLE_ACTION => {
+                    let (currency, amount, payer_is_user) = <(Address, U256, bool) as SolValue>::abi_decode(action_data_slice)?;
+                    V4Action::SETTLE { currency, amount, payer_is_user }
+                }
+                SETTLE_ALL_ACTION => {
+                    let (currency, max_amount) = <(Address, U256) as SolValue>::abi_decode(action_data_slice)?;
+                    V4Action::SETTLE_ALL { currency, max_amount }
+                }
+                TAKE_ACTION => {
+                    let (currency, recipient, amount) = <(Address, Address, U256) as SolValue>::abi_decode(action_data_slice)?;
+                    V4Action::TAKE { currency, recipient, amount }
+                }
+                TAKE_ALL_ACTION => {
+                    let (currency, min_amount) = <(Address, U256) as SolValue>::abi_decode(action_data_slice)?;
+                    V4Action::TAKE_ALL { currency, min_amount }
+                }
+                TAKE_PORTION_ACTION => {
+                    let (currency, recipient, bips) = <(Address, Address, U256) as SolValue>::abi_decode(action_data_slice)?;
+                    V4Action::TAKE_PORTION { currency, recipient, bips }
+                }
+                _ => return Err(alloy_sol_types::Error::Other(format!("Unknown action opcode: {opcode}").into())),
+            })
+        })
+        .collect()
 }
 
 #[rustfmt::skip]

@@ -1,6 +1,6 @@
 use alloy_primitives::{Address, U256, hex::encode_prefixed as HexEncode};
 use async_trait::async_trait;
-use std::{collections::HashSet, fmt, str::FromStr, sync::Arc, vec};
+use std::{fmt, str::FromStr, sync::Arc};
 
 use crate::{
     FetchQuoteData, Permit2ApprovalData, ProviderData, ProviderType, Quote, QuoteRequest, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData,
@@ -8,12 +8,12 @@ use crate::{
     approval::evm::{check_approval_erc20_with_client, check_approval_permit2_with_client},
     approval::get_swap_gas_limit_with_approval,
     eth_address,
-    fees::apply_slippage_in_bp,
+    fees::{apply_slippage_in_bp, quote_value_after_reserve_by_chain},
     uniswap::{
         deadline::get_sig_deadline,
         fee_token::{FeeToken, get_fee_token},
         is_native_erc20,
-        quote_result::get_best_quote,
+        quote_result::{get_best_quote, get_selected_candidate},
         requires_native_wrapping,
         swap_route::{RouteData, build_swap_route, get_intermediaries},
     },
@@ -24,12 +24,14 @@ use gem_evm::{
     uniswap::{
         FeeTier,
         command::encode_commands,
-        contracts::v4::IV4Quoter::QuoteExactParams,
         deployment::v4::get_uniswap_deployment_by_chain,
         path::{TokenPair, get_base_pair},
     },
 };
-use gem_jsonrpc::client::JsonRpcClient;
+use gem_jsonrpc::{
+    client::JsonRpcClient,
+    types::{JsonRpcError, JsonRpcResults},
+};
 use primitives::{AssetId, Chain, EVMChain, swap::ApprovalData};
 
 use super::{
@@ -38,6 +40,8 @@ use super::{
     path::{build_pool_keys, build_quote_exact_params},
     quoter::{build_quote_exact_requests, build_quote_exact_single_request},
 };
+
+type QuoteBatchFuture = BoxFuture<'static, Result<JsonRpcResults<String>, JsonRpcError>>;
 
 pub struct UniswapV4 {
     pub provider: ProviderType,
@@ -66,11 +70,6 @@ impl UniswapV4 {
         Ok(JsonRpcClient::new(client))
     }
 
-    fn is_base_pair(token_in: &Address, token_out: &Address, evm_chain: &EVMChain) -> bool {
-        let base_set: HashSet<Address> = HashSet::from_iter(get_base_pair(evm_chain, is_native_erc20(evm_chain.to_chain())).unwrap().path_building_array());
-        base_set.contains(token_in) || base_set.contains(token_out)
-    }
-
     fn parse_asset_address(asset_id: &str, evm_chain: EVMChain) -> Result<Address, SwapperError> {
         let asset_id = AssetId::new(asset_id).ok_or(SwapperError::NotSupportedAsset)?;
         if requires_native_wrapping(&asset_id) {
@@ -80,11 +79,11 @@ impl UniswapV4 {
         }
     }
 
-    fn parse_request(request: &QuoteRequest) -> Result<(EVMChain, Address, Address, u128), SwapperError> {
+    fn parse_request_value(request: &QuoteRequest, value: &str) -> Result<(EVMChain, Address, Address, u128), SwapperError> {
         let evm_chain = EVMChain::from_chain(request.from_asset.chain()).ok_or(SwapperError::NotSupportedChain)?;
         let token_in = Self::parse_asset_address(&request.from_asset.id, evm_chain)?;
         let token_out = Self::parse_asset_address(&request.to_asset.id, evm_chain)?;
-        let amount_in = u128::from_str(&request.value).map_err(SwapperError::from)?;
+        let amount_in = u128::from_str(value).map_err(SwapperError::from)?;
 
         Ok((evm_chain, token_in, token_out, amount_in))
     }
@@ -108,15 +107,15 @@ impl Swapper for UniswapV4 {
 
     async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let from_chain = request.from_asset.chain();
-        let to_chain = request.to_asset.chain();
         let deployment = get_uniswap_deployment_by_chain(&from_chain).ok_or(SwapperError::NotSupportedChain)?;
-        let (evm_chain, token_in, token_out, from_value) = Self::parse_request(request)?;
+        let from_value = quote_value_after_reserve_by_chain(request)?;
+        let (evm_chain, token_in, token_out, from_value) = Self::parse_request_value(request, &from_value)?;
         let fee_tiers = self.get_tiers();
         let base_pair = get_base_pair(&evm_chain, is_native_erc20(from_chain)).ok_or(SwapperError::ComputeQuoteError("base pair not found".into()))?;
         let fee_token_in = FeeToken::new(token_in, request.from_asset.symbol.as_str());
         let fee_token_out = FeeToken::new(token_out, request.to_asset.symbol.as_str());
         let fee_preference = get_fee_token(Some(&base_pair), &fee_token_in, &fee_token_out);
-        let fee_bps = request.options.clone().fee.unwrap_or_default().evm.bps;
+        let fee_bps = request.options.fee.as_ref().map_or(0, |fees| fees.evm.bps);
         let quote_amount_in = if fee_preference.is_input_token && fee_bps > 0 {
             apply_slippage_in_bp(&from_value, fee_bps)
         } else {
@@ -126,33 +125,31 @@ impl Swapper for UniswapV4 {
         let pool_keys = build_pool_keys(&token_in, &token_out, &fee_tiers);
         let client = Arc::new(self.client_for(from_chain)?);
 
-        let mut requests: Vec<BoxFuture<'static, _>> = Vec::new();
         let initial_client = Arc::clone(&client);
         let direct_calls: Vec<EthereumRpc> = pool_keys
             .iter()
             .map(|pool_key| build_quote_exact_single_request(&token_in, deployment.quoter, quote_amount_in, &pool_key.1))
             .collect();
-        requests.push(Box::pin(async move { initial_client.batch_call_requests(direct_calls).await }));
+        let direct_request: QuoteBatchFuture = Box::pin(async move { initial_client.batch_call_requests(direct_calls).await });
+        let direct_batch = (pool_keys.into_iter().map(|pool_key| pool_key.0).collect(), direct_request);
 
-        let quote_exact_params: Vec<Vec<(Vec<TokenPair>, QuoteExactParams)>>;
-        if !Self::is_base_pair(&token_in, &token_out, &evm_chain) {
-            let intermediaries = get_intermediaries(&token_in, &token_out, &base_pair);
-            quote_exact_params = build_quote_exact_params(quote_amount_in, &token_in, &token_out, &fee_tiers, &intermediaries);
-            build_quote_exact_requests(deployment.quoter, &quote_exact_params).iter().for_each(|call_array| {
+        let intermediaries = get_intermediaries(&token_in, &token_out, &base_pair);
+        let quote_exact_params = build_quote_exact_params(quote_amount_in, &token_in, &token_out, &fee_tiers, &intermediaries);
+        let quote_calls = build_quote_exact_requests(deployment.quoter, &quote_exact_params);
+        let quote_batches: Vec<(Vec<Vec<TokenPair>>, QuoteBatchFuture)> = std::iter::once(direct_batch)
+            .chain(quote_calls.into_iter().zip(quote_exact_params.iter()).map(|(calls, quote_array)| {
+                let candidates = quote_array.iter().map(|param| param.0.clone()).collect();
                 let client = Arc::clone(&client);
-                let calls = call_array.clone();
-                requests.push(Box::pin(async move { client.batch_call_requests(calls).await }));
-            });
-        } else {
-            quote_exact_params = vec![];
-        }
+                let request: QuoteBatchFuture = Box::pin(async move { client.batch_call_requests(calls).await });
+                (candidates, request)
+            }))
+            .collect();
+        let (quote_candidates, requests): (Vec<Vec<Vec<TokenPair>>>, Vec<QuoteBatchFuture>) = quote_batches.into_iter().unzip();
 
         let batch_results = join_all(requests).await;
 
         let quote_result = get_best_quote(&batch_results, super::quoter::decode_quoter_response)?;
-
-        let fee_tier_idx = quote_result.fee_tier_idx;
-        let batch_idx = quote_result.batch_idx;
+        let selected_path = get_selected_candidate(&quote_candidates, &quote_result)?;
 
         let to_value = if fee_preference.is_input_token {
             quote_result.amount_out
@@ -161,28 +158,14 @@ impl Swapper for UniswapV4 {
         };
         let to_min_value = apply_slippage_in_bp(&to_value, request.options.slippage.bps);
 
-        let fee_tier: u32 = fee_tiers[fee_tier_idx % fee_tiers.len()] as u32;
-        let asset_id_in = AssetId::from(from_chain, Some(token_in.to_checksum(None)));
-        let asset_id_out = AssetId::from(to_chain, Some(token_out.to_checksum(None)));
-        let asset_id_intermediary: Option<AssetId> = match batch_idx {
-            0 => None,
-            _ => {
-                let first_token_out = &quote_exact_params[batch_idx][0].0[0].token_out;
-                Some(AssetId::from(to_chain, Some(first_token_out.to_checksum(None))))
-            }
-        };
-        let route_data = RouteData {
-            fee_tier: fee_tier.to_string(),
-            min_amount_out: to_min_value.to_string(),
-        };
-        let routes = build_swap_route(&asset_id_in, asset_id_intermediary.as_ref(), &asset_id_out, &route_data);
+        let routes = build_swap_route(from_chain, selected_path, &to_min_value.to_string())?;
 
         Ok(Quote {
-            from_value: request.value.clone(),
+            from_value: from_value.to_string(),
             to_value: to_value.to_string(),
             data: ProviderData {
                 provider: self.provider().clone(),
-                routes: routes.clone(),
+                routes,
                 slippage_bps: request.options.slippage.bps,
             },
             request: request.clone(),
@@ -195,7 +178,7 @@ impl Swapper for UniswapV4 {
         if requires_native_wrapping(&from_asset) {
             return Ok(None);
         }
-        let (_, token_in, _, amount_in) = Self::parse_request(&quote.request)?;
+        let (_, token_in, _, amount_in) = Self::parse_request_value(&quote.request, &quote.from_value)?;
         let deployment = get_uniswap_deployment_by_chain(&from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
 
         let client = self.client_for(from_asset.chain)?;
@@ -216,9 +199,10 @@ impl Swapper for UniswapV4 {
     async fn get_quote_data(&self, quote: &Quote, data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let request = &quote.request;
         let from_asset = request.from_asset.asset_id();
-        let (_, token_in, token_out, amount_in) = Self::parse_request(request)?;
+        let (_, token_in, token_out, amount_in) = Self::parse_request_value(request, &quote.from_value)?;
         let deployment = get_uniswap_deployment_by_chain(&from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
-        let route_data: RouteData = serde_json::from_str(&quote.data.routes.first().unwrap().route_data).map_err(|_| SwapperError::InvalidRoute)?;
+        let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
+        let route_data: RouteData = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
         let to_amount = u128::from_str(&route_data.min_amount_out).map_err(SwapperError::from)?;
 
         let client = self.client_for(from_asset.chain)?;
@@ -259,7 +243,7 @@ impl Swapper for UniswapV4 {
         )?;
         let encoded = encode_commands(&commands, U256::from(sig_deadline));
 
-        let value = if wrap_input_eth { request.value.clone() } else { String::from("0") };
+        let value = if wrap_input_eth { quote.from_value.clone() } else { String::from("0") };
 
         Ok(SwapperQuoteData::new_contract(
             deployment.universal_router.into(),
@@ -274,27 +258,165 @@ impl Swapper for UniswapV4 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Options, alien::mock::ProviderMock};
+    use crate::uniswap::quote_result::QuoteResult;
+    use crate::{
+        Options, Swapper,
+        alien::{AlienError, Target},
+        uniswap::default::new_uniswap_v4,
+    };
+    use alloy_primitives::address;
+    use async_trait::async_trait;
+    use gem_jsonrpc::{RpcResponse, rpc::RpcProvider as GenericRpcProvider};
+    use primitives::asset_constants::ETHEREUM_USDC_TOKEN_ID;
+    use serde_json::Value;
     use std::sync::Arc;
 
-    #[test]
-    fn test_is_base_pair() {
-        let provider = Arc::new(ProviderMock::new("{}".to_string()));
-        let swapper = UniswapV4::new(provider);
+    fn quote_exact_single_result(amount_out: u128, gas_estimate: u128) -> String {
+        format!("0x{amount_out:064x}{gas_estimate:064x}")
+    }
+
+    #[derive(Debug)]
+    struct QuoterProviderMock {
+        result: String,
+        expected_amount: String,
+    }
+
+    impl QuoterProviderMock {
+        fn new(result: String, expected_amount: u128) -> Arc<Self> {
+            Arc::new(Self {
+                result,
+                expected_amount: format!("{expected_amount:064x}"),
+            })
+        }
+
+        fn batch_response(&self, target: Target) -> RpcResponse {
+            let body = target.body.unwrap();
+            let requests: Vec<Value> = serde_json::from_slice(&body).unwrap();
+            let matching_amount_count = requests
+                .iter()
+                .filter(|request| request["params"][0]["data"].as_str().unwrap().contains(&self.expected_amount))
+                .count();
+
+            assert!(!requests.is_empty());
+            assert_eq!(matching_amount_count, requests.len());
+
+            let responses: Vec<Value> = requests
+                .iter()
+                .map(|request| {
+                    serde_json::json!({
+                        "jsonrpc": "2.0",
+                        "id": request["id"].as_u64().unwrap(),
+                        "result": self.result,
+                    })
+                })
+                .collect();
+            RpcResponse {
+                status: Some(200),
+                data: serde_json::to_vec(&responses).unwrap(),
+            }
+        }
+    }
+
+    #[async_trait]
+    impl GenericRpcProvider for QuoterProviderMock {
+        type Error = AlienError;
+
+        async fn request(&self, target: Target) -> Result<RpcResponse, Self::Error> {
+            Ok(self.batch_response(target))
+        }
+
+        fn get_endpoint(&self, _chain: Chain) -> Result<String, Self::Error> {
+            Ok(String::from("http://localhost:8080"))
+        }
+    }
+
+    #[tokio::test]
+    async fn test_use_max_amount_reserves_native_value_for_quote_and_quote_data() {
+        let provider = QuoterProviderMock::new(quote_exact_single_result(25_710_318, 84_766), 1_000_000_000_000_000);
+        let swapper = new_uniswap_v4(provider);
         let request = QuoteRequest {
-            from_asset: AssetId::from(Chain::SmartChain, Some("0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82".to_string())).into(),
-            to_asset: AssetId::from_chain(Chain::SmartChain).into(),
+            from_asset: AssetId::from_chain(Chain::Ethereum).into(),
+            to_asset: AssetId::from(Chain::Ethereum, Some(ETHEREUM_USDC_TOKEN_ID.into())).into(),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
-            value: "40000000000000000".into(), // 0.04 Cake
-            options: Options::default(),
+            value: "2000000000000000".into(),
+            options: Options {
+                use_max_amount: true,
+                ..Options::default()
+            },
         };
 
-        let (evm_chain, token_in, token_out, _) = UniswapV4::parse_request(&request).unwrap();
+        let quote = swapper.get_quote(&request).await.unwrap();
+        let quote_data = swapper.get_quote_data(&quote, FetchQuoteData::None).await.unwrap();
 
-        assert!(UniswapV4::is_base_pair(&token_in, &token_out, &evm_chain));
-        // Ensure provider field is used to avoid warnings
-        assert_eq!(swapper.provider.id, SwapperProvider::UniswapV4);
+        assert_eq!(quote.from_value, "1000000000000000");
+        assert_eq!(quote_data.value, quote.from_value);
+    }
+
+    #[test]
+    fn test_selected_candidate_batches_include_direct_routes() {
+        let token_in = address!("0x1111111111111111111111111111111111111111");
+        let first_intermediary = address!("0x2222222222222222222222222222222222222222");
+        let last_intermediary = address!("0x3333333333333333333333333333333333333333");
+        let token_out = address!("0x4444444444444444444444444444444444444444");
+        let candidates = vec![
+            vec![vec![TokenPair {
+                token_in,
+                token_out,
+                fee_tier: FeeTier::Hundred,
+            }]],
+            vec![TokenPair::new_two_hop_with_fees(
+                &token_in,
+                &first_intermediary,
+                &token_out,
+                FeeTier::Hundred,
+                FeeTier::ThreeThousand,
+            )],
+            vec![TokenPair::new_two_hop_with_fees(
+                &token_in,
+                &last_intermediary,
+                &token_out,
+                FeeTier::FiveHundred,
+                FeeTier::TenThousand,
+            )],
+        ];
+
+        assert_eq!(
+            get_selected_candidate(
+                &candidates,
+                &QuoteResult {
+                    amount_out: U256::from(1),
+                    route_idx: 0,
+                    batch_idx: 0,
+                }
+            )
+            .unwrap(),
+            &candidates[0][0]
+        );
+        assert_eq!(
+            get_selected_candidate(
+                &candidates,
+                &QuoteResult {
+                    amount_out: U256::from(2),
+                    route_idx: 0,
+                    batch_idx: 1,
+                }
+            )
+            .unwrap(),
+            &candidates[1][0]
+        );
+        assert_eq!(
+            get_selected_candidate(
+                &candidates,
+                &QuoteResult {
+                    amount_out: U256::from(3),
+                    route_idx: 0,
+                    batch_idx: 2,
+                }
+            )
+            .unwrap(),
+            &candidates[2][0]
+        );
     }
 
     #[cfg(all(test, feature = "swap_integration_tests", feature = "reqwest_provider"))]

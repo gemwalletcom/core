@@ -26,7 +26,7 @@ pub fn build_quote_exact_single_request(token_in: &Address, v4_quoter: &str, amo
 pub fn build_quote_exact_requests(v4_quoter: &str, quote_params: &[Vec<(Vec<TokenPair>, IV4Quoter::QuoteExactParams)>]) -> Vec<Vec<EthereumRpc>> {
     quote_params
         .iter()
-        .map(|quote_array| quote_array.iter().map(|x| build_quote_exact_request(v4_quoter, &x.1).clone()).collect::<Vec<_>>())
+        .map(|quote_array| quote_array.iter().map(|x| build_quote_exact_request(v4_quoter, &x.1)).collect::<Vec<_>>())
         .collect()
 }
 
@@ -98,7 +98,7 @@ mod tests {
 
         assert_eq!(rpc_calls.len(), 3); // 3 intermediaries (ETH, USDC, USDT)
 
-        // 3 fee tiers
-        rpc_calls.iter().for_each(|call_array| assert_eq!(call_array.len(), 3));
+        // 3 fee tiers per hop: 3 x 3 mixed-fee combinations
+        rpc_calls.iter().for_each(|call_array| assert_eq!(call_array.len(), 9));
     }
 }

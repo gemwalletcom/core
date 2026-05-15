@@ -58,25 +58,26 @@ pub fn build_quote_exact_params(
         .map(|intermediary| {
             fee_tiers
                 .iter()
-                .map(|fee_tier| TokenPair::new_two_hop(token_in, intermediary, token_out, *fee_tier))
-                .filter(|token_pairs| token_pairs.len() >= 2)
-                .map(|token_pairs| {
-                    let quote_exact_params = QuoteExactParams {
-                        exactCurrency: token_pairs[0].token_in,
-                        path: token_pairs
-                            .iter()
-                            .map(|token_pair| PathKey {
-                                intermediateCurrency: token_pair.token_out,
-                                fee: token_pair.fee_tier.as_u24(),
-                                tickSpacing: token_pair.fee_tier.default_tick_spacing(),
-                                hooks: Address::ZERO,
-                                hookData: Bytes::new(),
-                            })
-                            .collect(),
-                        exactAmount: amount_in,
-                    };
+                .flat_map(|first_fee_tier| {
+                    fee_tiers.iter().map(move |second_fee_tier| {
+                        let token_pairs = TokenPair::new_two_hop_with_fees(token_in, intermediary, token_out, *first_fee_tier, *second_fee_tier);
+                        let quote_exact_params = QuoteExactParams {
+                            exactCurrency: token_pairs[0].token_in,
+                            path: token_pairs
+                                .iter()
+                                .map(|token_pair| PathKey {
+                                    intermediateCurrency: token_pair.token_out,
+                                    fee: token_pair.fee_tier.as_u24(),
+                                    tickSpacing: token_pair.fee_tier.default_tick_spacing(),
+                                    hooks: Address::ZERO,
+                                    hookData: Bytes::new(),
+                                })
+                                .collect(),
+                            exactAmount: amount_in,
+                        };
 
-                    (token_pairs, quote_exact_params)
+                        (token_pairs, quote_exact_params)
+                    })
                 })
                 .collect()
         })
@@ -103,5 +104,51 @@ impl TryFrom<&Route> for PathKey {
             hooks: Address::ZERO,
             hookData: Bytes::new(),
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::uniswap::swap_route::build_swap_route;
+    use alloy_primitives::address;
+    use primitives::Chain;
+
+    #[test]
+    fn test_build_quote_exact_params_uses_mixed_fee_two_hop() {
+        let token_in = address!("0x1111111111111111111111111111111111111111");
+        let intermediary = address!("0x2222222222222222222222222222222222222222");
+        let token_out = address!("0x3333333333333333333333333333333333333333");
+        let fee_tiers = vec![FeeTier::Hundred, FeeTier::ThreeThousand];
+
+        let params = build_quote_exact_params(100, &token_in, &token_out, &fee_tiers, &[intermediary]);
+
+        assert_eq!(params.len(), 1);
+        assert_eq!(params[0].len(), 4);
+        let fees: Vec<(FeeTier, FeeTier)> = params[0].iter().map(|param| (param.0[0].fee_tier, param.0[1].fee_tier)).collect();
+        assert_eq!(
+            fees,
+            vec![
+                (FeeTier::Hundred, FeeTier::Hundred),
+                (FeeTier::Hundred, FeeTier::ThreeThousand),
+                (FeeTier::ThreeThousand, FeeTier::Hundred),
+                (FeeTier::ThreeThousand, FeeTier::ThreeThousand),
+            ]
+        );
+    }
+
+    #[test]
+    fn test_path_key_from_route_uses_per_hop_fee_tier() {
+        let token_in = address!("0x1111111111111111111111111111111111111111");
+        let intermediary = address!("0x2222222222222222222222222222222222222222");
+        let token_out = address!("0x3333333333333333333333333333333333333333");
+        let token_pairs = TokenPair::new_two_hop_with_fees(&token_in, &intermediary, &token_out, FeeTier::Hundred, FeeTier::ThreeThousand);
+        let routes = build_swap_route(Chain::Optimism, &token_pairs, "100").unwrap();
+
+        let first = PathKey::try_from(&routes[0]).unwrap();
+        let second = PathKey::try_from(&routes[1]).unwrap();
+
+        assert_eq!(first.fee, FeeTier::Hundred.as_u24());
+        assert_eq!(second.fee, FeeTier::ThreeThousand.as_u24());
     }
 }
