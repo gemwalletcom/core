@@ -93,6 +93,42 @@ mod swap_integration_tests {
     const TEST_WALLET: &str = "0x9059c9d089cebc40fbe8c365782ab1285b99959fa386f5a5fc9cdf861a3e0b17";
     const BLUE_TOKEN_ID: &str = "0xe1b45a0e641b9955a20aa0ad1c1f4ad86aad8afb07296d4085e349a50e90bdca::blue::BLUE";
 
+    fn print_quote(label: &str, quote: &Quote) -> Result<PoolRoute, SwapperError> {
+        let route_entry = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
+        let route: PoolRoute = serde_json::from_str(&route_entry.route_data)?;
+        println!(
+            "{label} quote: from_value={}, to_value={}, hops={}, gross_out={}, net_out={}, fee_side={:?}, fee_amount={}",
+            quote.from_value,
+            quote.to_value,
+            route.hops.len(),
+            route.gross_amount_out(),
+            route.net_amount_out(),
+            route.fee_side,
+            route.fee_amount
+        );
+        for (index, hop) in route.hops.iter().enumerate() {
+            println!(
+                "{label} hop {}: amount_in={}, amount_out={}, a2b={}, pool_id={}",
+                index + 1,
+                hop.amount_in,
+                hop.amount_out,
+                hop.a2b,
+                hop.pool_id
+            );
+        }
+        Ok(route)
+    }
+
+    fn print_quote_data(label: &str, quote_data: &SwapperQuoteData) {
+        println!(
+            "{label} quote_data: to={}, value={}, data_len={}, gas_limit={:?}",
+            quote_data.to,
+            quote_data.value,
+            quote_data.data.len(),
+            quote_data.gas_limit
+        );
+    }
+
     #[tokio::test]
     async fn test_cetus_clmm_provider_fetch_quote_and_data() -> Result<(), SwapperError> {
         let rpc_provider = Arc::new(NativeProvider::default());
@@ -108,6 +144,8 @@ mod swap_integration_tests {
 
         let quote = provider.get_quote(&request).await?;
         let quote_data = provider.get_quote_data(&quote, FetchQuoteData::None).await?;
+        print_quote("SUI->USDC", &quote)?;
+        print_quote_data("SUI->USDC", &quote_data);
 
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
         assert!(!quote_data.data.is_empty());
@@ -131,6 +169,8 @@ mod swap_integration_tests {
 
         let quote = provider.get_quote(&request).await?;
         let quote_data = provider.get_quote_data(&quote, FetchQuoteData::None).await?;
+        print_quote("USDC->SUI", &quote)?;
+        print_quote_data("USDC->SUI", &quote_data);
 
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
         assert!(!quote_data.data.is_empty());
@@ -153,6 +193,7 @@ mod swap_integration_tests {
         };
 
         let quote = provider.get_quote(&request).await?;
+        print_quote("SUI->BLUE", &quote)?;
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
         Ok(())
     }
@@ -172,8 +213,7 @@ mod swap_integration_tests {
 
         let quote = provider.get_quote(&request).await?;
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
-        let route_entry = quote.data.routes.first().unwrap();
-        let route: PoolRoute = serde_json::from_str(&route_entry.route_data).unwrap();
+        let route = print_quote("USDC->BLUE", &quote)?;
         assert!(!route.hops.is_empty() && route.hops.len() <= 2);
         Ok(())
     }
@@ -193,8 +233,7 @@ mod swap_integration_tests {
 
         let quote = provider.get_quote(&request).await?;
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
-        let route_entry = quote.data.routes.first().unwrap();
-        let route: PoolRoute = serde_json::from_str(&route_entry.route_data).unwrap();
+        let route = print_quote("BLUE->USDC", &quote)?;
         assert!(!route.hops.is_empty() && route.hops.len() <= 2);
         Ok(())
     }

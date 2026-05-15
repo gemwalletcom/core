@@ -7,7 +7,7 @@ edition = { workspace = true }
 default = ["types"]
 types = []
 client = ["dep:gem_client", "dep:async-trait", "dep:primitives", "dep:hex"]
-reqwest = ["client", "gem_client/reqwest"]
+reqwest = ["client", "dep:reqwest", "gem_client/reqwest"]
 testkit = ["client", "gem_client/testkit"]
 
 [dependencies]
@@ -18,6 +18,7 @@ gem_client = { path = "../gem_client", optional = true }
 async-trait = { workspace = true, optional = true }
 primitives = { path = "../primitives", optional = true }
 hex = { workspace = true, optional = true }
+reqwest = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }

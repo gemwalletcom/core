@@ -90,6 +90,7 @@ fn process_data() {
 ## Code Organization
 
 - **Modular structure**: Break down long files into smaller, focused modules by logical responsibility
+- **Thin module entrances**: For multi-file modules, prefer a directory module with a thin `mod.rs` (or crate `lib.rs`) that only declares submodules and re-exports the public surface; keep implementation details in focused child files
 - **Avoid duplication**: Search for existing implementations before writing new code; reuse existing code or crates
 - **Shared crates**: If functionality could be reused, create a shared crate rather than duplicating logic
 - **Bird's eye view**: Step back and look at the overall structure; identify opportunities to simplify and consolidate

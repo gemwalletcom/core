@@ -8,6 +8,7 @@ default = ["base64"]
 base32 = ["dep:data-encoding"]
 base58 = ["dep:bs58"]
 base64 = ["dep:base64"]
+protobuf = []
 
 [dependencies]
 base64 = { workspace = true, optional = true }

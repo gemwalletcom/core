@@ -1,17 +1,16 @@
 use std::{error::Error, str::FromStr};
 
 use num_bigint::{BigInt, BigUint};
-use prost_types::{ListValue, Struct, Value, value::Kind};
-use sui_rpc::proto::sui::rpc::v2::{self as proto, owner::OwnerKind};
 
+use super::proto::{self, OwnerKind, Timestamp};
 use crate::models::transaction::SuiStatus;
 use crate::models::{
     BalanceChange, Checkpoint, Digest, Effect, Event, GasObject, GasUsed, InspectCommandResult, InspectEffects, InspectGasUsed, InspectResult, Owner, OwnerObject, Status,
     SuiEffects,
 };
 
-pub(super) fn timestamp_millis(timestamp: &prost_types::Timestamp) -> i64 {
-    timestamp.seconds.saturating_mul(1000) + i64::from(timestamp.nanos / 1_000_000)
+pub(super) fn timestamp_millis(timestamp: &Timestamp) -> i64 {
+    timestamp.millis()
 }
 
 pub(super) fn map_checkpoint(checkpoint: proto::Checkpoint) -> Result<Checkpoint, Box<dyn Error + Send + Sync>> {
@@ -104,15 +103,15 @@ fn map_events(events: proto::TransactionEvents) -> Vec<Event> {
         .into_iter()
         .map(|event| Event {
             event_type: event.event_type.unwrap_or_default(),
-            parsed_json: event.json.as_deref().map(prost_value_to_json),
+            parsed_json: event.json,
             package_id: event.package_id.unwrap_or_default(),
         })
         .collect()
 }
 
 fn map_owner(owner: &proto::Owner) -> Owner {
-    match OwnerKind::try_from(owner.kind.unwrap_or_default()) {
-        Ok(OwnerKind::Address) => Owner::OwnerObject(OwnerObject {
+    match owner.kind() {
+        OwnerKind::Address => Owner::OwnerObject(OwnerObject {
             address_owner: owner.address.clone(),
         }),
         _ => Owner::String(owner.address.clone().unwrap_or_default()),
@@ -148,25 +147,6 @@ pub(super) fn map_inspect_result(response: proto::SimulateTransactionResponse) -
             })
             .collect(),
     }
-}
-
-fn prost_value_to_json(value: &Value) -> serde_json::Value {
-    match value.kind.as_ref() {
-        Some(Kind::NullValue(_)) | None => serde_json::Value::Null,
-        Some(Kind::NumberValue(value)) => serde_json::Number::from_f64(*value).map(serde_json::Value::Number).unwrap_or(serde_json::Value::Null),
-        Some(Kind::StringValue(value)) => serde_json::Value::String(value.clone()),
-        Some(Kind::BoolValue(value)) => serde_json::Value::Bool(*value),
-        Some(Kind::StructValue(value)) => struct_to_json(value),
-        Some(Kind::ListValue(value)) => list_to_json(value),
-    }
-}
-
-fn struct_to_json(value: &Struct) -> serde_json::Value {
-    serde_json::Value::Object(value.fields.iter().map(|(key, value)| (key.clone(), prost_value_to_json(value))).collect())
-}
-
-fn list_to_json(value: &ListValue) -> serde_json::Value {
-    serde_json::Value::Array(value.values.iter().map(prost_value_to_json).collect())
 }
 
 fn required<T>(value: Option<T>, message: &'static str) -> Result<T, Box<dyn Error + Send + Sync>> {

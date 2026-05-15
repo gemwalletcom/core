@@ -1,6 +1,7 @@
 pub mod client;
-pub(crate) mod codec;
 mod mapper;
+pub(crate) mod proto;
 mod staking;
+mod transport;
 
 pub use client::SuiClient;

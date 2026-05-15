@@ -237,7 +237,7 @@ impl CetusClmm {
         let quote_results = self.inspect_batch_quotes(&inputs).await.unwrap_or_else(|_| vec![None; candidates.len()]);
 
         hops.into_iter()
-            .zip(quote_results.into_iter())
+            .zip(quote_results)
             .map(|(mut hop, quote)| {
                 let q = quote?;
                 if q.amount_out == 0 || q.is_exceed {
@@ -266,7 +266,7 @@ impl CetusClmm {
 
         hop_pairs
             .into_iter()
-            .zip(fused_results.into_iter())
+            .zip(fused_results)
             .map(|((mut hop1, mut hop2), (q1, q2))| {
                 let q1 = q1?;
                 if q1.amount_out == 0 || q1.is_exceed {

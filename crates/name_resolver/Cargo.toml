@@ -8,16 +8,14 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 reqwest = { workspace = true }
 async-trait = { workspace = true }
-gem_encoding = { path = "../gem_encoding" }
+gem_encoding = { path = "../gem_encoding", features = ["protobuf"] }
 borsh = { workspace = true }
 hex = { workspace = true }
 alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }
 alloy-ens = { version = "2.0.0" }
 gem_client = { path = "../gem_client", features = ["reqwest"] }
-gem_jsonrpc = { path = "../gem_jsonrpc", features = ["client"] }
-sui-rpc = { workspace = true }
-tonic = { workspace = true }
+gem_jsonrpc = { path = "../gem_jsonrpc", features = ["reqwest"] }
 idna = { version = "1.1.0" }
 
 settings = { path = "../settings" }

@@ -1,9 +1,9 @@
+use crate::rpc::proto::OwnerKind;
 use crate::{SuiClient, SuiError};
 use std::{
     collections::{BTreeSet, HashMap},
     str::FromStr,
 };
-use sui_rpc::proto::sui::rpc::v2::owner::OwnerKind;
 use sui_transaction_builder::{Argument, ObjectInput, TransactionBuilder};
 use sui_types::Address;
 
@@ -26,8 +26,8 @@ impl ObjectResolver {
             .into_iter()
             .filter_map(|object| {
                 let id = object.object_id?;
-                object.owner.and_then(|owner| match OwnerKind::try_from(owner.kind.unwrap_or_default()) {
-                    Ok(OwnerKind::Shared) => owner.version.map(|version| (id, version)),
+                object.owner.and_then(|owner| match owner.kind() {
+                    OwnerKind::Shared => owner.version.map(|version| (id, version)),
                     _ => None,
                 })
             })

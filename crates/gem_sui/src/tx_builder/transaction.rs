@@ -1,7 +1,8 @@
 use super::TransactionBuilderInput;
 use crate::{
-    SUI_FRAMEWORK_PACKAGE, SuiError, is_sui_coin,
+    SuiError, is_sui_coin,
     models::{CoinAsset, TxOutput},
+    sui_framework_package_address,
 };
 use gem_encoding::decode_base64;
 use num_traits::ToPrimitive;
@@ -13,7 +14,8 @@ use sui_types::{Address, Identifier, TypeTag};
 const MODULE_COIN: &str = "coin";
 const FUNCTION_ZERO: &str = "zero";
 
-pub fn move_call(txb: &mut TransactionBuilder, package: &str, module: &str, function: &str, type_args: &[&str], arguments: Vec<Argument>) -> Result<Argument, SuiError> {
+pub fn move_call(txb: &mut TransactionBuilder, package: impl ToString, module: &str, function: &str, type_args: &[&str], arguments: Vec<Argument>) -> Result<Argument, SuiError> {
+    let package = package.to_string();
     let type_args = type_args
         .iter()
         .map(|value| {
@@ -23,7 +25,7 @@ pub fn move_call(txb: &mut TransactionBuilder, package: &str, module: &str, func
         })
         .collect::<Result<Vec<_>, _>>()?;
     let function = Function::new(
-        Address::from_str(package).map_err(|err| SuiError::invalid_input(format!("Invalid Sui address {package}: {err}")))?,
+        Address::from_str(&package).map_err(|err| SuiError::invalid_input(format!("Invalid Sui address {package}: {err}")))?,
         Identifier::new(module).map_err(|err| SuiError::invalid_input(err.to_string()))?,
         Identifier::new(function).map_err(|err| SuiError::invalid_input(err.to_string()))?,
     )
@@ -32,7 +34,7 @@ pub fn move_call(txb: &mut TransactionBuilder, package: &str, module: &str, func
 }
 
 pub fn zero_coin(txb: &mut TransactionBuilder, coin_type: &str) -> Result<Argument, SuiError> {
-    move_call(txb, SUI_FRAMEWORK_PACKAGE, MODULE_COIN, FUNCTION_ZERO, &[coin_type], vec![])
+    move_call(txb, sui_framework_package_address(), MODULE_COIN, FUNCTION_ZERO, &[coin_type], vec![])
 }
 
 pub fn build_input_coin(txb: &mut TransactionBuilder, coin_type: &str, amount: u64, from_coins: &[CoinAsset]) -> Result<Argument, SuiError> {

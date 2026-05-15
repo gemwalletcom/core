@@ -8,13 +8,12 @@ default = []
 rpc = [
     "dep:async-trait",
     "dep:chain_traits",
+    "gem_encoding/protobuf",
     "dep:gem_jsonrpc",
-    "dep:prost",
-    "dep:prost-types",
-    "dep:sui-rpc",
 ]
+reqwest = ["rpc", "gem_jsonrpc/reqwest"]
 signer = ["dep:signer"]
-chain_integration_tests = ["rpc", "settings/testkit"]
+chain_integration_tests = ["rpc", "reqwest", "settings/testkit"]
 
 [dependencies]
 primitives = { path = "../primitives" }
@@ -38,9 +37,6 @@ signer = { path = "../signer", optional = true }
 num-bigint = { workspace = true, features = ["serde"] }
 async-trait = { workspace = true, optional = true }
 chain_traits = { path = "../chain_traits", optional = true }
-prost = { workspace = true, optional = true }
-prost-types = { workspace = true, optional = true }
-sui-rpc = { workspace = true, optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }

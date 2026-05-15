@@ -1,19 +1,16 @@
 use std::{error::Error, str::FromStr};
 
 use num_bigint::BigUint;
-use prost_types::FieldMask;
-use sui_rpc::{
-    field::FieldMaskUtil,
-    proto::sui::rpc::v2::{
-        self as proto, Input, ListOwnedObjectsRequest, MoveCall, ProgrammableTransaction, SimulateTransactionRequest, Transaction as GrpcTransaction,
-        simulate_transaction_request::TransactionChecks,
-    },
-};
 use sui_types::Address;
 
 use super::client::{PATH_LIST_OWNED_OBJECTS, PATH_SIMULATE_TRANSACTION, SuiClient};
 use super::mapper::timestamp_millis;
+use super::proto::{
+    self as proto, Argument, FieldMask, Input, ListOwnedObjectsRequest, ListOwnedObjectsResponse, MoveCall, ProgrammableTransaction, SimulateTransactionRequest,
+    SimulateTransactionResponse, Transaction as GrpcTransaction, TransactionChecks, TransactionKind, WithMut,
+};
 use crate::models::staking::{SuiStake, SuiStakeDelegation, SuiStakeStatus, SuiSystemState, SuiValidator, SuiValidators};
+use crate::{SUI_SYSTEM_ID, sui_system_package_address, sui_system_state_object_id};
 
 const STAKED_SUI_TYPE: &str = "0x3::staking_pool::StakedSui";
 
@@ -94,26 +91,17 @@ impl SuiClient {
     }
 
     async fn list_delegated_stake(&self, address: &Address) -> Result<Vec<DelegatedStake>, Box<dyn Error + Send + Sync>> {
-        let mut request = ListOwnedObjectsRequest::default()
-            .with_owner(address)
-            .with_page_size(500)
-            .with_read_mask(FieldMask::from_str("contents"))
-            .with_object_type(STAKED_SUI_TYPE);
+        let mut request = ListOwnedObjectsRequest {
+            owner: Some(address.to_string()),
+            page_size: Some(500),
+            read_mask: Some(FieldMask::from_path_string("contents")),
+            object_type: Some(STAKED_SUI_TYPE.to_string()),
+            ..Default::default()
+        };
         let mut objects = Vec::new();
-        let mut client = if self.has_transport() { None } else { Some(self.client()?) };
 
         loop {
-            let response: proto::ListOwnedObjectsResponse = if self.has_transport() {
-                self.grpc_unary(PATH_LIST_OWNED_OBJECTS, request.clone()).await?
-            } else {
-                client
-                    .as_mut()
-                    .ok_or("missing Sui gRPC client")?
-                    .state_client()
-                    .list_owned_objects(request.clone())
-                    .await?
-                    .into_inner()
-            };
+            let response: ListOwnedObjectsResponse = self.grpc_unary(PATH_LIST_OWNED_OBJECTS, request.clone()).await?;
             objects.extend(response.objects);
             if response.next_page_token.is_none() {
                 break;
@@ -156,20 +144,17 @@ impl SuiClient {
     }
 
     async fn calculate_rewards(&self, staked_sui_ids: &[Address]) -> Result<Vec<(Address, u64)>, Box<dyn Error + Send + Sync>> {
-        let mut ptb = ProgrammableTransaction::default().with_inputs(vec![Input::default().with_object_id("0x5")]);
-        let system_object = proto::Argument::new_input(0);
+        let mut ptb = ProgrammableTransaction {
+            inputs: vec![Input::object_id(sui_system_state_object_id())],
+            ..Default::default()
+        };
+        let system_object = Argument::new_input(0);
 
         for id in staked_sui_ids {
-            let staked_sui = proto::Argument::new_input(ptb.inputs.len() as u16);
-            ptb.inputs.push(Input::default().with_object_id(id));
-            ptb.commands.push(
-                MoveCall::default()
-                    .with_package("0x3")
-                    .with_module("sui_system")
-                    .with_function("calculate_rewards")
-                    .with_arguments(vec![system_object, staked_sui])
-                    .into(),
-            );
+            let staked_sui = Argument::new_input(ptb.inputs.len() as u16);
+            ptb.inputs.push(Input::object_id(id));
+            ptb.commands
+                .push(MoveCall::from_parts(sui_system_package_address(), SUI_SYSTEM_ID, "calculate_rewards", vec![system_object, staked_sui]).into());
         }
 
         let response = self.simulate_staking_transaction(ptb).await?;
@@ -186,26 +171,24 @@ impl SuiClient {
                     return Err("invalid Sui rewards BCS value".into());
                 }
                 let value = rewards.value.as_ref().ok_or("missing Sui rewards bytes")?;
-                Ok((*id, u64::from_le_bytes(value.as_ref().try_into()?)))
+                let bytes: [u8; size_of::<u64>()] = value.as_slice().try_into()?;
+                Ok((*id, u64::from_le_bytes(bytes)))
             })
             .collect()
     }
 
     async fn get_validator_address_by_pool_id(&self, pool_ids: &[Address]) -> Result<Vec<(Address, Address)>, Box<dyn Error + Send + Sync>> {
-        let mut ptb = ProgrammableTransaction::default().with_inputs(vec![Input::default().with_object_id("0x5")]);
-        let system_object = proto::Argument::new_input(0);
+        let mut ptb = ProgrammableTransaction {
+            inputs: vec![Input::object_id(sui_system_state_object_id())],
+            ..Default::default()
+        };
+        let system_object = Argument::new_input(0);
 
         for id in pool_ids {
-            let pool_id = proto::Argument::new_input(ptb.inputs.len() as u16);
-            ptb.inputs.push(Input::default().with_pure(id.into_inner().to_vec()));
-            ptb.commands.push(
-                MoveCall::default()
-                    .with_package("0x3")
-                    .with_module("sui_system")
-                    .with_function("validator_address_by_pool_id")
-                    .with_arguments(vec![system_object, pool_id])
-                    .into(),
-            );
+            let pool_id = Argument::new_input(ptb.inputs.len() as u16);
+            ptb.inputs.push(Input::pure(id.into_inner().to_vec()));
+            ptb.commands
+                .push(MoveCall::from_parts(sui_system_package_address(), SUI_SYSTEM_ID, "validator_address_by_pool_id", vec![system_object, pool_id]).into());
         }
 
         let response = self.simulate_staking_transaction(ptb).await?;
@@ -232,16 +215,12 @@ impl SuiClient {
     }
 
     async fn simulate_staking_transaction(&self, ptb: ProgrammableTransaction) -> Result<proto::SimulateTransactionResponse, Box<dyn Error + Send + Sync>> {
-        let transaction = GrpcTransaction::default().with_kind(ptb).with_sender("0x0");
-        let request = SimulateTransactionRequest::new(transaction)
-            .with_read_mask(FieldMask::from_paths(["command_outputs.return_values.value", "transaction.effects.status"]))
-            .with_checks(TransactionChecks::Disabled);
-        let response = if self.has_transport() {
-            self.grpc_unary(PATH_SIMULATE_TRANSACTION, request).await?
-        } else {
-            let mut client = self.client()?;
-            client.execution_client().simulate_transaction(request).await?.into_inner()
-        };
+        let transaction = GrpcTransaction::from_kind(TransactionKind::programmable_transaction(ptb), "0x0");
+        let request = SimulateTransactionRequest::new(transaction).with(|request| {
+            request.read_mask = Some(FieldMask::from_paths(["command_outputs.return_values.value", "transaction.effects.status"]));
+            request.checks = Some(TransactionChecks::Disabled);
+        });
+        let response: SimulateTransactionResponse = self.grpc_unary(PATH_SIMULATE_TRANSACTION, request).await?;
         if !response
             .transaction
             .as_ref()

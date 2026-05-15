@@ -1,4 +1,5 @@
 mod error;
+#[cfg(feature = "protobuf")]
 pub mod protobuf;
 
 #[cfg(feature = "base32")]

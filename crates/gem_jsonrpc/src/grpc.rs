@@ -62,3 +62,47 @@ impl GrpcTransport for AlienGrpcTransport {
         Ok(response.data)
     }
 }
+
+#[cfg(feature = "reqwest")]
+#[derive(Clone, Debug)]
+pub struct ReqwestGrpcTransport {
+    client: reqwest::Client,
+}
+
+#[cfg(feature = "reqwest")]
+impl ReqwestGrpcTransport {
+    pub fn new() -> Self {
+        Self { client: reqwest::Client::new() }
+    }
+
+    pub fn new_with_client(client: reqwest::Client) -> Self {
+        Self { client }
+    }
+}
+
+#[cfg(feature = "reqwest")]
+impl Default for ReqwestGrpcTransport {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[cfg(feature = "reqwest")]
+#[async_trait]
+impl GrpcTransport for ReqwestGrpcTransport {
+    async fn unary(&self, endpoint: &str, path: &str, body: Vec<u8>) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
+        let response = self
+            .client
+            .post(format!("{}{}", endpoint.trim_end_matches('/'), path))
+            .header("Content-Type", "application/grpc+proto")
+            .header("Accept", "application/grpc+proto")
+            .header("TE", "trailers")
+            .body(body)
+            .send()
+            .await?;
+        let status = response.status().as_u16();
+        let bytes = response.bytes().await?.to_vec();
+        ensure_success_status(Some(status))?;
+        Ok(bytes)
+    }
+}

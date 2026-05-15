@@ -1,8 +1,9 @@
 use std::error::Error;
 
+use gem_encoding::protobuf::decode_grpc_message;
+
 use crate::models::SuiBroadcastTransaction;
-use crate::rpc::codec::decode_grpc_message;
-use sui_rpc::proto::sui::rpc::v2::ExecuteTransactionResponse;
+use crate::rpc::proto::ExecuteTransactionResponse;
 
 pub fn map_transaction_broadcast_request(data: &str) -> Result<(String, String), Box<dyn Error + Sync + Send>> {
     let parts = data.split_once('_').ok_or("Invalid transaction data format. Expected format: data_signature")?;
@@ -30,27 +31,21 @@ pub fn map_transaction_broadcast_response_from_grpc(response: &[u8]) -> Result<S
 #[cfg(test)]
 mod tests {
     use super::*;
-    use prost::Message;
-    use sui_rpc::proto::sui::rpc::v2::ExecutedTransaction;
+    use gem_encoding::protobuf::{encode_message_field, encode_string_field};
 
-    fn grpc_frame<M: Message>(message: &M) -> Vec<u8> {
-        let mut payload = Vec::new();
-        message.encode(&mut payload).unwrap();
-
+    fn grpc_frame(payload: &[u8]) -> Vec<u8> {
         let mut frame = Vec::new();
         frame.push(0);
         frame.extend_from_slice(&(payload.len() as u32).to_be_bytes());
-        frame.extend_from_slice(&payload);
+        frame.extend_from_slice(payload);
         frame
     }
 
     #[test]
     fn test_map_transaction_broadcast_response_from_grpc() {
         let digest = "HgFLiBHYjYKhEh5NPY52Zm9bhwrs4W6AxE46gMU7nwhZ";
-        let mut transaction = ExecutedTransaction::default();
-        transaction.digest = Some(digest.to_string());
-        let mut response = ExecuteTransactionResponse::default();
-        response.transaction = Some(transaction);
+        let transaction = encode_string_field(1, digest);
+        let response = encode_message_field(1, &transaction);
 
         assert_eq!(map_transaction_broadcast_response_from_grpc(&grpc_frame(&response)).unwrap(), digest);
     }

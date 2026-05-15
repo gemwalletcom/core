@@ -24,7 +24,7 @@ gem_near = { path = "../gem_near", features = ["rpc", "reqwest"] }
 gem_polkadot = { path = "../gem_polkadot", features = ["rpc", "reqwest"] }
 gem_solana = { path = "../gem_solana", features = ["rpc", "reqwest"] }
 gem_stellar = { path = "../gem_stellar", features = ["rpc", "reqwest"] }
-gem_sui = { path = "../gem_sui", features = ["rpc"] }
+gem_sui = { path = "../gem_sui", features = ["rpc", "reqwest"] }
 gem_ton = { path = "../gem_ton", features = ["rpc", "reqwest"] }
 gem_tron = { path = "../gem_tron", features = ["rpc", "reqwest"] }
 gem_xrp = { path = "../gem_xrp", features = ["rpc", "reqwest"] }
