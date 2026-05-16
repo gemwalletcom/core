@@ -7,7 +7,9 @@ All commands use the `just` task runner. Run from the workspace root unless spec
 ```sh
 just build                      # Build the workspace
 just build-gemstone             # Build cross-platform library
-just gemstone build-ios         # Build iOS Swift Package (run in gemstone/)
+just gemstone build-ios         # Build the core iOS GemTest project
+just gemstone bindgen-swift     # Generate iOS Swift bindings (run in gemstone/)
+just gemstone prepare-ios-package # Prepare the core iOS GemTest package (run in gemstone/)
 just gemstone build-android     # Build Android AAR (run in gemstone/)
 ```
 
@@ -59,9 +61,9 @@ Note: Mobile builds require UniFFI bindings generation and platform-specific com
 ### Swift Bindings (iOS)
 ```sh
 just gemstone bindgen-swift     # Generate Swift bindings only (run in gemstone/)
-just gemstone build-ios         # Full iOS build including Swift binding generation (run in gemstone/)
+just gemstone prepare-ios-package # Copy Swift bindings into the GemTest local package
 ```
-Generated files: `gemstone/generated/swift/` → copied to `gemstone/target/spm/`
+Generated files: `gemstone/generated/swift/`; the core iOS example copies these into `gemstone/tests/ios/Packages/Gemstone`.
 
 ### Kotlin Bindings (Android)
 ```sh

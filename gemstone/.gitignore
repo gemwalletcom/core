@@ -5,3 +5,9 @@ xcuserdata/
 jniLibs/
 .kotlin/
 gradle-daemon-jvm.properties
+tests/ios/**/.build/
+tests/ios/**/.swiftpm/
+tests/ios/GemTest/Package.resolved
+tests/ios/build/
+tests/ios/Packages/Gemstone/Sources/Gemstone/
+tests/ios/Packages/Gemstone/Sources/GemstoneFFI/include/

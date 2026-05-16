@@ -10,7 +10,7 @@ let package = Package(
     products: [
         .library(
             name: "Gemstone",
-            targets: ["Gemstone", "GemstoneFFI"]
+            targets: ["Gemstone"]
         )
     ],
     dependencies: [
@@ -20,9 +20,13 @@ let package = Package(
             name: "Gemstone",
             dependencies: ["GemstoneFFI"],
             swiftSettings: [
-                .swiftLanguageMode(.v5) // TODO: - remove when GemstoneFFI will support swift6 fully
+                .swiftLanguageMode(.v5)
             ]
         ),
-        .binaryTarget(name: "GemstoneFFI", path: "Sources/GemstoneFFI.xcframework")
+        .target(
+            name: "GemstoneFFI",
+            path: "Sources/GemstoneFFI",
+            publicHeadersPath: "include"
+        )
     ]
 )

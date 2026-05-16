@@ -12,7 +12,6 @@ test:
     cargo test --lib
 
 export ANDROID_HOME := env("ANDROID_HOME", "~/Library/Android/sdk")
-export HOST_ARCH := arch()
 
 install-ndk:
     #!/usr/bin/env bash
@@ -25,135 +24,136 @@ install-ndk:
 install-ios-targets:
     #!/usr/bin/env bash
     rustup target add aarch64-apple-ios-sim aarch64-apple-ios aarch64-apple-ios-macabi aarch64-apple-darwin
-    if [ ${HOST_ARCH} == "x86_64" ]; then \
-        rustup target add x86_64-apple-ios; \
-    fi
 
 install-android-targets:
     rustup target add x86_64-linux-android aarch64-linux-android armv7-linux-androideabi
     cargo install cargo-ndk@4.1.2
 
-test-ios:
+build-ios: prepare-ios-package build-ios-lib
     #!/usr/bin/env bash
     set -o pipefail
     DEVICE_ID=$(xcrun simctl list devices available | grep iPhone | head -1 | sed 's/.*(\([A-F0-9-]*\)).*/\1/')
+    DERIVED_DATA_PATH="$PWD/${IOS_DERIVED_DATA}"
+    PRODUCTS_DIR="$DERIVED_DATA_PATH/Build/Products/$XCODE_CONFIGURATION-iphonesimulator"
     echo "Using Simulator: $DEVICE_ID"
-    xcodebuild -project tests/ios/GemTest/GemTest.xcodeproj \
+    cd ${IOS_PROJECT_FOLDER}
+    xcodebuild \
     -scheme GemTest \
+    -configuration "$XCODE_CONFIGURATION" \
+    -derivedDataPath "$DERIVED_DATA_PATH" \
     -destination "platform=iOS Simulator,id=$DEVICE_ID,arch=arm64" \
+    "OTHER_LDFLAGS=\$(inherited) -L$PRODUCTS_DIR -lgemstone" \
+    build | xcbeautify
+
+test-ios: prepare-ios-package build-ios-simulator-lib
+    #!/usr/bin/env bash
+    set -o pipefail
+    DEVICE_ID=$(xcrun simctl list devices available | grep iPhone | head -1 | sed 's/.*(\([A-F0-9-]*\)).*/\1/')
+    DERIVED_DATA_PATH="$PWD/${IOS_DERIVED_DATA}"
+    PRODUCTS_DIR="$DERIVED_DATA_PATH/Build/Products/$XCODE_CONFIGURATION-iphonesimulator"
+    echo "Using Simulator: $DEVICE_ID"
+    cd ${IOS_PROJECT_FOLDER}
+    xcodebuild \
+    -scheme GemTest \
+    -configuration "$XCODE_CONFIGURATION" \
+    -derivedDataPath "$DERIVED_DATA_PATH" \
+    -destination "platform=iOS Simulator,id=$DEVICE_ID,arch=arm64" \
+    "OTHER_LDFLAGS=\$(inherited) -L$PRODUCTS_DIR -lgemstone" \
     test | xcbeautify
 
 export LIB_NAME := "gemstone"
-export FW_NAME := "Gemstone"
 export STATIC_LIB_NAME := "lib" + LIB_NAME + ".a"
 export DY_LIB_NAME := if os() == "macos" { "libgemstone.dylib" } else { "libgemstone.so" }
 
-export BUILD_MODE_ENV := env("BUILD_MODE", "debug")
-export BUILD_MODE_TARGET := if BUILD_MODE_ENV == "release" { "release" } else { "debug" }
-export BUILD_FLAG := if BUILD_MODE_TARGET == "release" { "--release" } else { "" }
+export BUILD_MODE := if env("BUILD_MODE", "debug") == "release" { "release" } else { "debug" }
+export XCODE_CONFIGURATION := if BUILD_MODE == "release" { "Release" } else { "Debug" }
+CARGO_BUILD_FLAG := if BUILD_MODE == "release" { "--release" } else { "" }
 
 export TARGET_DIR := "../target"
 export GEN_SWIFT_FOLDER := "generated/swift"
 export GEN_KOTLIN_FOLDER := "generated/kotlin"
 export ANDROID_MODULE_FOLDER := "android/gemstone/src/main/java"
+export IOS_PROJECT_FOLDER := "tests/ios/GemTest"
+export IOS_PACKAGE_FOLDER := "tests/ios/Packages/Gemstone"
+export IOS_DERIVED_DATA := "tests/ios/build/DerivedData"
+export IOS_SIMULATOR_RUST_TARGET := "aarch64-apple-ios-sim"
+export IOS_RUST_TARGETS := IOS_SIMULATOR_RUST_TARGET + " aarch64-apple-ios aarch64-apple-ios-macabi aarch64-apple-darwin"
 
-export TARGET_XC_FW_FOLDER := "target/spm"
-export FW_FFI_NAME := FW_NAME + "FFI"
-export FW_FFI_FILE := FW_FFI_NAME + ".framework"
-export XC_FW_FFI_NAME := FW_FFI_NAME + ".xcframework"
-export DEPLOYMENT_TARGET := env("IPHONEOS_DEPLOYMENT_TARGET", "17.0")
-export LIB_OUTPUT_PATH := TARGET_DIR + "/" + BUILD_MODE_TARGET + "/" + DY_LIB_NAME
-build-ios: build-targets bindgen-swift assemble-frameworks xcframework cp-xcframework-source
+export LIB_OUTPUT_PATH := TARGET_DIR + "/" + BUILD_MODE + "/" + DY_LIB_NAME
 
-build-targets:
+build-ios-lib targets=IOS_RUST_TARGETS:
     #!/usr/bin/env bash
-    echo "Host: ${HOST_ARCH}, iOS deployment target ${DEPLOYMENT_TARGET}, BUILD_MODE_TARGET: ${BUILD_MODE_TARGET}"
-    if [ ${HOST_ARCH} == "x86_64" ]; then \
-        IPHONEOS_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET} cargo build --target x86_64-apple-ios ${BUILD_FLAG}; \
-    else \
-        IPHONEOS_DEPLOYMENT_TARGET=${DEPLOYMENT_TARGET} cargo build --target aarch64-apple-ios-sim --target aarch64-apple-ios ${BUILD_FLAG}; \
-        env -u IPHONEOS_DEPLOYMENT_TARGET cargo build --target aarch64-apple-ios-macabi --target aarch64-apple-darwin ${BUILD_FLAG}; \
+    set -euo pipefail
+
+    targets="{{targets}}"
+    profile="${BUILD_MODE}"
+    build_flag="{{CARGO_BUILD_FLAG}}"
+
+    products_dir="$PWD/${IOS_DERIVED_DATA}/Build/Products/$XCODE_CONFIGURATION-iphonesimulator"
+    mkdir -p "$products_dir"
+    built_simulator=0
+
+    for rust_target in $targets; do
+        echo "note: Building Gemstone Rust library for $rust_target ($profile)"
+        case "$rust_target" in
+            aarch64-apple-ios | aarch64-apple-ios-sim)
+                IPHONEOS_DEPLOYMENT_TARGET=17.0 cargo build --target "$rust_target" --lib ${build_flag}
+                ;;
+            aarch64-apple-ios-macabi | aarch64-apple-darwin)
+                env -u IPHONEOS_DEPLOYMENT_TARGET cargo build --target "$rust_target" --lib ${build_flag}
+                ;;
+            *)
+                echo "error: unsupported Gemstone iOS Rust target: $rust_target" >&2
+                exit 1
+                ;;
+        esac
+
+        if [ "$rust_target" = "${IOS_SIMULATOR_RUST_TARGET}" ]; then
+            built_simulator=1
+        fi
+    done
+
+    if [ "$built_simulator" -eq 1 ]; then
+        cp "${TARGET_DIR}/${IOS_SIMULATOR_RUST_TARGET}/$profile/libgemstone.a" "$products_dir/libgemstone.a"
+        echo "note: Gemstone Rust library ready at $products_dir/libgemstone.a"
     fi
+
+build-ios-simulator-lib: (build-ios-lib IOS_SIMULATOR_RUST_TARGET)
 
 bindgen-swift:
     #!/usr/bin/env bash
     echo "Bindgen swift $STATIC_LIB_NAME"
     mkdir -p ${GEN_SWIFT_FOLDER}
-    if [ "${BUILD_MODE_TARGET}" == "release" ]; then \
+    if [ "${BUILD_MODE}" == "release" ]; then \
         export RUSTFLAGS="${RUSTFLAGS:-} -C strip=none"; \
     fi
-    cargo build ${BUILD_FLAG}
+    cargo build {{CARGO_BUILD_FLAG}}
     if [ ! -f "${LIB_OUTPUT_PATH}" ]; then \
-        echo "Failed to locate ${DY_LIB_NAME} at ${LIB_OUTPUT_PATH} (mode ${BUILD_MODE_TARGET})"; \
+        echo "Failed to locate ${DY_LIB_NAME} at ${LIB_OUTPUT_PATH} (mode ${BUILD_MODE})"; \
         exit 1; \
     fi; \
-    cargo run ${BUILD_FLAG} -p uniffi-bindgen -- generate --library --language swift --crate ${LIB_NAME} -o ${GEN_SWIFT_FOLDER} "${LIB_OUTPUT_PATH}"
+    cargo run {{CARGO_BUILD_FLAG}} -p uniffi-bindgen -- generate --library --language swift --crate ${LIB_NAME} -o ${GEN_SWIFT_FOLDER} "${LIB_OUTPUT_PATH}"
 
-assemble-frameworks:
+prepare-ios-package: bindgen-swift
     #!/usr/bin/env bash
-    MODULE_MAP=$(
-    cat << EOF
-    // This file was autogenerated by some hot garbage in the uniffi crate.
-    framework module ${FW_FFI_NAME} {
-        header "${FW_FFI_NAME}.h"
-        export *
-    }
-    EOF
-    )
-    cd ${TARGET_DIR} && find . -type d -name ${FW_FFI_FILE} | xargs rm -rf
-    targets=(aarch64-apple-ios-sim aarch64-apple-ios aarch64-apple-ios-macabi aarch64-apple-darwin)
-    if [ ${HOST_ARCH} == "x86_64" ]; then
-        targets=(x86_64-apple-ios)
-    fi
-    for target in ${targets[@]}; do \
-        pushd ${TARGET_DIR}/${target}/${BUILD_MODE_TARGET} > /dev/null && \
-        mkdir -p ${FW_FFI_FILE} && \
-        cd ${FW_FFI_FILE} && \
-        mkdir Headers Modules && \
-        echo "$MODULE_MAP" > ./Modules/module.modulemap && \
-        cp ../../../../${LIB_NAME}/${GEN_SWIFT_FOLDER}/${FW_FFI_NAME}.h ./Headers && \
-        cp ../${STATIC_LIB_NAME} ./${FW_FFI_NAME} && \
-        cp ../../../../${LIB_NAME}/src/Info.plist ./; \
-        popd > /dev/null; \
-    done
-
-xcframework:
-    #!/usr/bin/env bash
-    rm -rf ${TARGET_XC_FW_FOLDER}/Sources/${XC_FW_FFI_NAME}
-    mkdir -p ${TARGET_XC_FW_FOLDER}/Sources
-    if [ ${HOST_ARCH} == "x86_64" ]; then \
-        xcodebuild -create-xcframework \
-            -framework ${TARGET_DIR}/x86_64-apple-ios/${BUILD_MODE_TARGET}/${FW_FFI_FILE} \
-            -output ${TARGET_XC_FW_FOLDER}/Sources/${XC_FW_FFI_NAME}; \
-    else \
-        xcodebuild -create-xcframework \
-            -framework ${TARGET_DIR}/aarch64-apple-ios/${BUILD_MODE_TARGET}/${FW_FFI_FILE} \
-            -framework ${TARGET_DIR}/aarch64-apple-ios-sim/${BUILD_MODE_TARGET}/${FW_FFI_FILE} \
-            -framework ${TARGET_DIR}/aarch64-apple-ios-macabi/${BUILD_MODE_TARGET}/${FW_FFI_FILE} \
-            -framework ${TARGET_DIR}/aarch64-apple-darwin/${BUILD_MODE_TARGET}/${FW_FFI_FILE} \
-            -output ${TARGET_XC_FW_FOLDER}/Sources/${XC_FW_FFI_NAME}; \
-    fi
-
-cp-xcframework-source:
-    #!/usr/bin/env bash
-    mkdir -p ${TARGET_XC_FW_FOLDER}/Sources/${FW_NAME}
-    cp src/Package.swift ${TARGET_XC_FW_FOLDER}
-    cp ${GEN_SWIFT_FOLDER}/${FW_NAME}.swift ${TARGET_XC_FW_FOLDER}/Sources/${FW_NAME}
+    mkdir -p ${IOS_PACKAGE_FOLDER}/Sources/Gemstone ${IOS_PACKAGE_FOLDER}/Sources/GemstoneFFI/include
+    cp ${GEN_SWIFT_FOLDER}/gemstone.swift ${IOS_PACKAGE_FOLDER}/Sources/Gemstone/Gemstone.swift
+    cp ${GEN_SWIFT_FOLDER}/GemstoneFFI.h ${IOS_PACKAGE_FOLDER}/Sources/GemstoneFFI/include/GemstoneFFI.h
 
 bindgen-kotlin:
     #!/usr/bin/env bash
-    echo "Bindgen kotlin BUILD_MODE_TARGET: ${BUILD_MODE_TARGET}"
+    echo "Bindgen kotlin BUILD_MODE: ${BUILD_MODE}"
     rm -rf ${GEN_KOTLIN_FOLDER} ${ANDROID_MODULE_FOLDER}/uniffi
     mkdir -p ${GEN_KOTLIN_FOLDER} ${ANDROID_MODULE_FOLDER}
-    if [ "${BUILD_MODE_TARGET}" == "release" ]; then \
+    if [ "${BUILD_MODE}" == "release" ]; then \
         export RUSTFLAGS="${RUSTFLAGS:-} -C strip=none"; \
     fi
-    cargo build ${BUILD_FLAG}
+    cargo build {{CARGO_BUILD_FLAG}}
     if [ ! -f "${LIB_OUTPUT_PATH}" ]; then \
-        echo "Failed to locate ${DY_LIB_NAME} at ${LIB_OUTPUT_PATH} (mode ${BUILD_MODE_TARGET})"; \
+        echo "Failed to locate ${DY_LIB_NAME} at ${LIB_OUTPUT_PATH} (mode ${BUILD_MODE})"; \
         exit 1; \
     fi; \
-    cargo run ${BUILD_FLAG} -p uniffi-bindgen -- generate --library --language kotlin --crate ${LIB_NAME} --no-format -o ${GEN_KOTLIN_FOLDER} "${LIB_OUTPUT_PATH}"
+    cargo run {{CARGO_BUILD_FLAG}} -p uniffi-bindgen -- generate --library --language kotlin --crate ${LIB_NAME} --no-format -o ${GEN_KOTLIN_FOLDER} "${LIB_OUTPUT_PATH}"
     cp -Rf ${GEN_KOTLIN_FOLDER}/uniffi ${ANDROID_MODULE_FOLDER}
 
 build-android: bindgen-kotlin
