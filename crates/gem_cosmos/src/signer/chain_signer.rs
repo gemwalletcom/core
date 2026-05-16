@@ -1,7 +1,7 @@
 use gem_encoding::encode_base64;
 use gem_hash::{keccak::keccak256, sha2::sha256};
 use k256::{PublicKey, elliptic_curve::sec1::ToEncodedPoint};
-use primitives::{ChainSigner, SignerError, SignerInput, chain_cosmos::CosmosChain};
+use primitives::{ChainSigner, SignerError, SignerInput, TransactionLoadMetadata, chain_cosmos::CosmosChain};
 use signer::{SignatureScheme, Signer};
 
 use super::transaction::{self, COSMOS_SECP256K1_PUBKEY_TYPE, CosmosTxParams, INJECTIVE_ETHSECP256K1_PUBKEY_TYPE};
@@ -10,6 +10,7 @@ use crate::models::{Coin, CosmosMessage};
 const BASE_FEE_GAS_UNITS: u64 = 200_000;
 const GAS_BUFFER_NUMERATOR: u64 = 13;
 const GAS_BUFFER_DENOMINATOR: u64 = 10;
+const DEFAULT_STAKE_MEMO: &str = "Stake via Gem Wallet";
 
 #[derive(Default)]
 pub struct CosmosChainSigner;
@@ -38,8 +39,9 @@ impl ChainSigner for CosmosChainSigner {
             None => Self::gas_limit(input, messages.len())?,
         };
         let fee_amount = Self::scale_fee(gas_limit, input.fee.gas_price_u64()?);
+        let memo = input.memo.as_deref().unwrap_or("");
 
-        Ok(vec![Self::sign_messages(chain, input, messages, gas_limit, fee_amount, private_key)?])
+        Ok(vec![Self::sign_messages(chain, &input.metadata, messages, gas_limit, fee_amount, memo, private_key)?])
     }
 
     fn sign_stake(&self, input: &SignerInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
@@ -47,8 +49,9 @@ impl ChainSigner for CosmosChainSigner {
         let messages = transaction::stake_messages(input, chain)?;
         let gas_limit = Self::gas_limit(input, messages.len())?;
         let fee_amount = input.fee.fee.to_string();
+        let memo = input.memo.as_deref().filter(|m| !m.is_empty()).unwrap_or(DEFAULT_STAKE_MEMO);
 
-        Ok(vec![Self::sign_messages(chain, input, messages, gas_limit, fee_amount, private_key)?])
+        Ok(vec![Self::sign_messages(chain, &input.metadata, messages, gas_limit, fee_amount, memo, private_key)?])
     }
 }
 
@@ -111,15 +114,24 @@ impl CosmosChainSigner {
         let message = transaction::transfer_message(input, denom);
         let gas_limit = Self::gas_limit(input, 1)?;
         let fee_amount = input.fee.fee.to_string();
-        Self::sign_messages(chain, input, vec![message], gas_limit, fee_amount, private_key)
+        let memo = input.memo.as_deref().unwrap_or("");
+        Self::sign_messages(chain, &input.metadata, vec![message], gas_limit, fee_amount, memo, private_key)
     }
 
-    fn sign_messages(chain: CosmosChain, input: &SignerInput, messages: Vec<CosmosMessage>, gas_limit: u64, fee_amount: String, private_key: &[u8]) -> Result<String, SignerError> {
-        let account_number = input.metadata.get_account_number().map_err(SignerError::from_display)?;
-        let sequence = input.metadata.get_sequence().map_err(SignerError::from_display)?;
-        let chain_id = input.metadata.get_chain_id().map_err(SignerError::from_display)?;
+    fn sign_messages(
+        chain: CosmosChain,
+        metadata: &TransactionLoadMetadata,
+        messages: Vec<CosmosMessage>,
+        gas_limit: u64,
+        fee_amount: String,
+        memo: &str,
+        private_key: &[u8],
+    ) -> Result<String, SignerError> {
+        let account_number = metadata.get_account_number().map_err(SignerError::from_display)?;
+        let sequence = metadata.get_sequence().map_err(SignerError::from_display)?;
+        let chain_id = metadata.get_chain_id().map_err(SignerError::from_display)?;
         let encoded: Vec<Vec<u8>> = messages.iter().map(|m| m.encode_as_any(chain)).collect::<Result<Vec<_>, _>>()?;
-        let body_bytes = CosmosTxParams::encode_tx_body(&encoded, input.memo.as_deref().unwrap_or(""));
+        let body_bytes = CosmosTxParams::encode_tx_body(&encoded, memo);
 
         let params = CosmosTxParams {
             body_bytes,
@@ -173,7 +185,6 @@ mod tests {
     const OSMO_PRIVATE_KEY_HEX: &str = "325f5eba4c6466ca5a88638c74db5b396edb624efced0924a10aeb897525923c";
     const OSMO_VALIDATOR: &str = "osmovaloper1pxphtfhqnx9ny27d53z4052e3r76e7qq495ehm";
     const OSMO_VALIDATOR_DST: &str = "osmovaloper1z0sh4s80u99l6y9d3vfy582p8jejeeu6tcucs2";
-    const OSMO_STAKE_MEMO: &str = "Stake via Gem Wallet";
 
     fn signed_tx_bytes(signed: &str) -> String {
         let value: Value = serde_json::from_str(signed).unwrap();
@@ -249,7 +260,6 @@ mod tests {
         let transfer = SignerInput::mock_osmosis(
             TransactionInputType::Transfer(Asset::from_chain(Chain::Osmosis)),
             "osmo1rcjvzz8wzktqfz8qjf0l9q45kzxvd0z0n7l5cf",
-            None,
         );
         assert_eq!(
             signed_tx_bytes(&signer.sign_transfer(&transfer, &private_key).unwrap()),
@@ -259,7 +269,6 @@ mod tests {
         let stake = SignerInput::mock_osmosis(
             TransactionInputType::Stake(Asset::from_chain(Chain::Osmosis), StakeType::Stake(DelegationValidator::mock_osmosis(OSMO_VALIDATOR))),
             "",
-            Some(OSMO_STAKE_MEMO),
         );
         let signed = signer.sign_stake(&stake, &private_key).unwrap();
         assert_eq!(signed.len(), 1);
@@ -271,7 +280,6 @@ mod tests {
         let undelegate = SignerInput::mock_osmosis(
             TransactionInputType::Stake(Asset::from_chain(Chain::Osmosis), StakeType::Unstake(Delegation::mock_osmosis(OSMO_VALIDATOR))),
             "",
-            Some(OSMO_STAKE_MEMO),
         );
         // Auto-claims pending rewards before unstake.
         let signed = signer.sign_stake(&undelegate, &private_key).unwrap();
@@ -289,7 +297,6 @@ mod tests {
                 }),
             ),
             "",
-            Some(OSMO_STAKE_MEMO),
         );
         let signed = signer.sign_stake(&redelegate, &private_key).unwrap();
         assert_eq!(
@@ -303,7 +310,6 @@ mod tests {
                 StakeType::Rewards(vec![DelegationValidator::mock_osmosis(OSMO_VALIDATOR), DelegationValidator::mock_osmosis(OSMO_VALIDATOR)]),
             ),
             "",
-            Some(OSMO_STAKE_MEMO),
         );
         let signed = signer.sign_stake(&rewards, &private_key).unwrap();
         assert_eq!(
@@ -323,7 +329,6 @@ mod tests {
             let input = SignerInput::mock_osmosis(
                 TransactionInputType::Swap(Asset::from_chain(Chain::Osmosis), Asset::from_chain(Chain::Osmosis), swap_data),
                 "",
-                None,
             );
             let signed = CosmosChainSigner.sign_swap(&input, &private_key).expect("swap should sign");
             assert_eq!(signed.len(), 1);
