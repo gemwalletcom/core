@@ -107,7 +107,6 @@ pub(super) async fn build_quote_data(
 
 pub(super) fn build_batch_quote_inspect(quotes: &[(&Hop, u64)]) -> Result<Vec<u8>, SwapperError> {
     let mut txb = TransactionBuilder::new();
-    let published_at = SuiAddress::from_str(CETUS_CLMM_PUBLISHED_AT).map(Address::from)?;
     for (hop, amount_in) in quotes {
         let pool = txb.object(shared_object_input(&hop.pool_id, hop.pool_init_version, false)?);
         let a2b = txb.pure(&hop.a2b);
@@ -115,7 +114,7 @@ pub(super) fn build_batch_quote_inspect(quotes: &[(&Hop, u64)]) -> Result<Vec<u8
         let amount = txb.pure(amount_in);
         move_call(
             &mut txb,
-            published_at,
+            cetus_clmm_publish_at(),
             MODULE_POOL,
             FUNCTION_CALCULATE_SWAP_RESULT,
             &[&hop.coin_a, &hop.coin_b],
@@ -128,7 +127,6 @@ pub(super) fn build_batch_quote_inspect(quotes: &[(&Hop, u64)]) -> Result<Vec<u8
 
 pub(super) fn build_batch_multi_hop_quote_inspect(routes: &[(&Hop, &Hop, u64)]) -> Result<Vec<u8>, SwapperError> {
     let mut txb = TransactionBuilder::new();
-    let published_at = SuiAddress::from_str(CETUS_CLMM_PUBLISHED_AT).map(Address::from)?;
     for (hop1, hop2, amount_in) in routes {
         let pool1 = txb.object(shared_object_input(&hop1.pool_id, hop1.pool_init_version, false)?);
         let a2b1 = txb.pure(&hop1.a2b);
@@ -136,20 +134,20 @@ pub(super) fn build_batch_multi_hop_quote_inspect(routes: &[(&Hop, &Hop, u64)]) 
         let amount = txb.pure(amount_in);
         let csr1 = move_call(
             &mut txb,
-            published_at,
+            cetus_clmm_publish_at(),
             MODULE_POOL,
             FUNCTION_CALCULATE_SWAP_RESULT,
             &[&hop1.coin_a, &hop1.coin_b],
             vec![pool1, a2b1, by_amount_in_1, amount],
         )
         .map_err(error)?;
-        let amount2 = move_call(&mut txb, published_at, MODULE_POOL, FUNCTION_CALCULATED_SWAP_RESULT_AMOUNT_OUT, &[], vec![csr1]).map_err(error)?;
+        let amount2 = move_call(&mut txb, cetus_clmm_publish_at(), MODULE_POOL, FUNCTION_CALCULATED_SWAP_RESULT_AMOUNT_OUT, &[], vec![csr1]).map_err(error)?;
         let pool2 = txb.object(shared_object_input(&hop2.pool_id, hop2.pool_init_version, false)?);
         let a2b2 = txb.pure(&hop2.a2b);
         let by_amount_in_2 = txb.pure(&true);
         move_call(
             &mut txb,
-            published_at,
+            cetus_clmm_publish_at(),
             MODULE_POOL,
             FUNCTION_CALCULATE_SWAP_RESULT,
             &[&hop2.coin_a, &hop2.coin_b],
@@ -162,12 +160,11 @@ pub(super) fn build_batch_multi_hop_quote_inspect(routes: &[(&Hop, &Hop, u64)]) 
 
 pub(super) fn build_pool_id_inspect(coin_a: &str, coin_b: &str, tick_spacing: u32) -> Result<Vec<u8>, SwapperError> {
     let mut txb = TransactionBuilder::new();
-    let published_at = SuiAddress::from_str(CETUS_CLMM_PUBLISHED_AT).map(Address::from)?;
     let tick = txb.pure(&tick_spacing);
-    let key = move_call(&mut txb, published_at, MODULE_FACTORY, FUNCTION_NEW_POOL_KEY, &[coin_a, coin_b], vec![tick]).map_err(error)?;
+    let key = move_call(&mut txb, cetus_clmm_publish_at(), MODULE_FACTORY, FUNCTION_NEW_POOL_KEY, &[coin_a, coin_b], vec![tick]).map_err(error)?;
     let pools = txb.object(shared_object_input(CETUS_POOLS_REGISTRY, CETUS_SHARED_INIT_VERSION, false)?);
-    let info = move_call(&mut txb, published_at, MODULE_FACTORY, FUNCTION_POOL_SIMPLE_INFO, &[], vec![pools, key]).map_err(error)?;
-    move_call(&mut txb, published_at, MODULE_FACTORY, FUNCTION_POOL_ID, &[], vec![info]).map_err(error)?;
+    let info = move_call(&mut txb, cetus_clmm_publish_at(), MODULE_FACTORY, FUNCTION_POOL_SIMPLE_INFO, &[], vec![pools, key]).map_err(error)?;
+    move_call(&mut txb, cetus_clmm_publish_at(), MODULE_FACTORY, FUNCTION_POOL_ID, &[], vec![info]).map_err(error)?;
     inspect_transaction_kind_bytes(txb)
 }
 
@@ -352,6 +349,10 @@ pub(super) fn referral_fee_amount(amount: u64, bps: u32) -> Result<u64, SwapperE
 fn transfer_coin(txb: &mut TransactionBuilder, coin: Argument, recipient: Address) {
     let recipient = txb.pure(&recipient);
     txb.transfer_objects(vec![coin], recipient);
+}
+
+fn cetus_clmm_publish_at() -> Address {
+    SuiAddress::from_str(CETUS_CLMM_PUBLISHED_AT).map(Address::from).unwrap()
 }
 
 fn shared_object_input(object_id: &str, initial_shared_version: u64, mutable: bool) -> Result<ObjectInput, SwapperError> {
