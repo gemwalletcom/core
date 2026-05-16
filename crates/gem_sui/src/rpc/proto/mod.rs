@@ -37,4 +37,4 @@ pub(crate) trait WithMut: Sized {
     }
 }
 
-impl<T> WithMut for T {}
+impl<T: gem_encoding::protobuf::MessageEncode> WithMut for T {}

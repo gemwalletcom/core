@@ -86,7 +86,11 @@ fn read_varint(data: &[u8], position: &mut usize) -> MessageResult<u64> {
     while *position < data.len() {
         let byte = data[*position];
         *position += 1;
-        result |= u64::from(byte & 0x7f) << shift;
+        let value = u64::from(byte & 0x7f);
+        if shift == 63 && value > 1 {
+            return Err("protobuf varint overflows u64".into());
+        }
+        result |= value << shift;
         if byte & 0x80 == 0 {
             return Ok(result);
         }
@@ -184,6 +188,13 @@ mod tests {
         .unwrap();
 
         assert_eq!(values, vec!["test", "7"]);
+    }
+
+    #[test]
+    fn test_visit_fields_rejects_varint_overflow() {
+        let message = [vec![0x08], vec![0xff; 9], vec![0x02]].concat();
+
+        assert_eq!(visit_fields(&message, |_| Ok(())).unwrap_err().to_string(), "protobuf varint overflows u64");
     }
 
     #[derive(Debug, Default, PartialEq)]

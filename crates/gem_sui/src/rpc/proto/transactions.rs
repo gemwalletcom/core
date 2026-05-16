@@ -265,7 +265,7 @@ proto_decode!(Event {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use gem_encoding::protobuf::{MessageDecode, encode_message_field, encode_string_field};
+    use gem_encoding::protobuf::{MessageDecode, MessageEncode, encode_message_field, encode_string_field};
 
     #[test]
     fn test_execute_transaction_response_decode() {
@@ -274,5 +274,33 @@ mod tests {
         let response = encode_message_field(1, &transaction);
 
         assert_eq!(ExecuteTransactionResponse::decode(&response).unwrap().transaction.unwrap().digest.unwrap(), digest);
+    }
+
+    #[test]
+    fn test_request_wire_bytes() {
+        let transaction = Transaction::from_transaction_bcs(vec![1, 2, 3]);
+        let read_mask = FieldMask::from_paths(["digest"]);
+        let simulate = SimulateTransactionRequest {
+            transaction: Some(transaction.clone()),
+            read_mask: Some(read_mask.clone()),
+            checks: Some(TransactionChecks::Disabled),
+        };
+        let execute = ExecuteTransactionRequest {
+            transaction: Some(transaction),
+            signatures: vec![UserSignature {
+                bcs: Some(Bcs::new("UserSignatureBytes", vec![0xaa, 0xbb])),
+                scheme: Some(0),
+            }],
+            read_mask: Some(read_mask),
+        };
+
+        assert_eq!(
+            hex::encode(simulate.encode()),
+            "0a180a160a0f5472616e73616374696f6e44617461120301020312080a066469676573741801"
+        );
+        assert_eq!(
+            hex::encode(execute.encode()),
+            "0a180a160a0f5472616e73616374696f6e446174611203010203121c0a180a12557365725369676e617475726542797465731202aabb10001a080a06646967657374"
+        );
     }
 }

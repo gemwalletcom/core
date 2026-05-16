@@ -35,7 +35,13 @@ pub fn encode_bytes_field(field_number: u32, data: &[u8]) -> Vec<u8> {
         return Vec::new();
     }
 
-    [field_tag(field_number, WIRE_LENGTH_DELIMITED), encode_varint(data.len() as u64), data.to_vec()].concat()
+    let tag = field_tag(field_number, WIRE_LENGTH_DELIMITED);
+    let len = encode_varint(data.len() as u64);
+    let mut buf = Vec::with_capacity(tag.len() + len.len() + data.len());
+    buf.extend_from_slice(&tag);
+    buf.extend_from_slice(&len);
+    buf.extend_from_slice(data);
+    buf
 }
 
 pub fn encode_string_field(field_number: u32, value: &str) -> Vec<u8> {

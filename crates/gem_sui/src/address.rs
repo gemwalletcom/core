@@ -4,6 +4,12 @@ use sui_types::Address;
 
 pub struct SuiAddress(Address);
 
+impl From<SuiAddress> for Address {
+    fn from(value: SuiAddress) -> Self {
+        value.0
+    }
+}
+
 impl AddressTrait for SuiAddress {
     fn try_parse(address: &str) -> Option<Self> {
         Address::from_str(address).ok().map(Self)

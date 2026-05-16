@@ -14,8 +14,7 @@ use sui_types::{Address, Identifier, TypeTag};
 const MODULE_COIN: &str = "coin";
 const FUNCTION_ZERO: &str = "zero";
 
-pub fn move_call(txb: &mut TransactionBuilder, package: impl ToString, module: &str, function: &str, type_args: &[&str], arguments: Vec<Argument>) -> Result<Argument, SuiError> {
-    let package = package.to_string();
+pub fn move_call(txb: &mut TransactionBuilder, package: Address, module: &str, function: &str, type_args: &[&str], arguments: Vec<Argument>) -> Result<Argument, SuiError> {
     let type_args = type_args
         .iter()
         .map(|value| {
@@ -25,7 +24,7 @@ pub fn move_call(txb: &mut TransactionBuilder, package: impl ToString, module: &
         })
         .collect::<Result<Vec<_>, _>>()?;
     let function = Function::new(
-        Address::from_str(&package).map_err(|err| SuiError::invalid_input(format!("Invalid Sui address {package}: {err}")))?,
+        package,
         Identifier::new(module).map_err(|err| SuiError::invalid_input(err.to_string()))?,
         Identifier::new(function).map_err(|err| SuiError::invalid_input(err.to_string()))?,
     )

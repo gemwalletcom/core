@@ -160,3 +160,24 @@ impl OwnerKind {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use gem_encoding::protobuf::MessageDecode;
+
+    #[test]
+    fn test_object_response_wire_bytes_decode() {
+        let response = hex::decode("0a2b120530786162631807220a6f626a2d6469676573742a0b0801120730786f776e65723204636f696ea8067b").unwrap();
+        let object = GetObjectResponse::decode(&response).unwrap().object.unwrap();
+        let owner = object.owner.unwrap();
+
+        assert_eq!(object.object_id.as_deref(), Some("0xabc"));
+        assert_eq!(object.version, Some(7));
+        assert_eq!(object.digest.as_deref(), Some("obj-digest"));
+        assert_eq!(owner.kind(), OwnerKind::Address);
+        assert_eq!(owner.address.as_deref(), Some("0xowner"));
+        assert_eq!(object.object_type.as_deref(), Some("coin"));
+        assert_eq!(object.balance, Some(123));
+    }
+}

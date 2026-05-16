@@ -83,3 +83,24 @@ pub struct CheckpointedTransactionInfo {
 proto_decode!(CheckpointedTransactionInfo {
     1 => transaction: optional_string,
 });
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use gem_encoding::protobuf::MessageDecode;
+
+    #[test]
+    fn test_checkpoint_response_wire_bytes_decode() {
+        let response = hex::decode("0a2a082a1211636865636b706f696e742d6469676573741a0a180728633a04707265762a0722050a03747831").unwrap();
+        let checkpoint = GetCheckpointResponse::decode(&response).unwrap().checkpoint.unwrap();
+        let summary = checkpoint.summary.unwrap();
+        let contents = checkpoint.contents.unwrap();
+
+        assert_eq!(checkpoint.sequence_number, Some(42));
+        assert_eq!(checkpoint.digest.as_deref(), Some("checkpoint-digest"));
+        assert_eq!(summary.epoch, Some(7));
+        assert_eq!(summary.total_network_transactions, Some(99));
+        assert_eq!(summary.previous_digest.as_deref(), Some("prev"));
+        assert_eq!(contents.transactions[0].transaction.as_deref(), Some("tx1"));
+    }
+}
