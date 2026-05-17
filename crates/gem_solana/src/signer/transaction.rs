@@ -29,7 +29,7 @@ pub(crate) fn compute_budget_instructions(fee: &TransactionFee) -> Result<Vec<In
 pub(crate) fn sign_single_signer_instructions(input: &SignerInput, private_key: &[u8], fee_payer: Pubkey, instructions: Vec<Instruction>) -> Result<String, SignerError> {
     let mut transaction = build_legacy_transaction(fee_payer, block_hash(input)?, instructions)?;
     if transaction.num_required_signatures() != 1 {
-        return SignerError::invalid_input_err("Solana transaction requires more than one signer");
+        return Err(SignerError::invalid_input("Solana transaction requires more than one signer"));
     }
     transaction.sign(&[private_key]).map_err(|e| SignerError::signing_error(format!("sign: {e}")))?;
     let bytes = transaction
@@ -66,7 +66,7 @@ fn build_legacy_transaction(fee_payer: Pubkey, recent_blockhash: [u8; 32], instr
     let num_required_signatures = buckets[0].len() + buckets[1].len();
     let account_keys = account_keys(fee_payer, &buckets);
     if account_keys.len() > u8::MAX as usize || num_required_signatures > u8::MAX as usize {
-        return SignerError::invalid_input_err("Solana transaction has too many account keys");
+        return Err(SignerError::invalid_input("Solana transaction has too many account keys"));
     }
 
     let key_to_index = account_keys.iter().enumerate().map(|(index, pubkey)| (*pubkey, index as u8)).collect::<HashMap<_, _>>();

@@ -3,7 +3,7 @@ use primitives::{Asset, AssetType, SignerError, SignerInput, SolanaTokenProgramI
 use solana_primitives::{
     Instruction, Pubkey,
     instructions::{
-        associated_token::{create_associated_token_account_with_program_id, get_associated_token_address_with_program_id},
+        associated_token::{create_associated_token_account_idempotent, get_associated_token_address_with_program_id},
         memo::memo,
         program_ids::{token_2022_program, token_program},
         token::transfer_checked_with_program_id,
@@ -27,7 +27,7 @@ pub(in crate::signer) fn token_transfer(input: &SignerInput, sender: Pubkey) -> 
         None => {
             let recipient = Pubkey::from_base58(&input.destination_address).map_err(SignerError::from_display)?;
             let recipient_token_address = get_associated_token_address_with_program_id(&recipient, &mint, &token_program_id);
-            instructions.push(create_associated_token_account_with_program_id(&sender, &recipient, &mint, &token_program_id));
+            instructions.push(create_associated_token_account_idempotent(&sender, &recipient, &mint, &token_program_id));
             recipient_token_address
         }
     };
@@ -88,7 +88,7 @@ mod tests {
         Pubkey,
         instructions::{
             associated_token::get_associated_token_address_with_program_id,
-            program_ids::{ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID, token_program},
+            program_ids::{ASSOCIATED_TOKEN_PROGRAM_ID, MEMO_PROGRAM_ID, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID, token_program},
         },
     };
 
@@ -124,7 +124,7 @@ mod tests {
             (0..transaction.instructions().len()).map(|index| program_id(&transaction, index)).collect::<Vec<_>>(),
             vec![ASSOCIATED_TOKEN_PROGRAM_ID, TOKEN_PROGRAM_ID]
         );
-        assert_eq!(transaction.instructions()[0].data, Vec::<u8>::new());
+        assert_eq!(transaction.instructions()[0].data, vec![1]);
         assert_eq!(account_key(&transaction, 0, 1), recipient_token_address);
         assert_eq!(account_key(&transaction, 1, 2), recipient_token_address);
         assert_eq!(transaction.instructions()[1].data, transfer_checked_data(123456, 6));
@@ -171,5 +171,25 @@ mod tests {
             signer.sign_token_transfer(&input, &TEST_PRIVATE_KEY).unwrap_err().to_string(),
             "Invalid input: Solana token program metadata does not match asset type"
         );
+
+        let input = TransactionLoadInput {
+            input_type: TransactionInputType::Transfer(Asset::mock_spl_token()),
+            sender_address: sender_address(),
+            destination_address: TEST_RECIPIENT.to_string(),
+            value: "123456".to_string(),
+            gas_price: GasPriceType::regular(0),
+            memo: Some("token memo".to_string()),
+            is_max_value: false,
+            metadata: solana_metadata(Some(TEST_SENDER_TOKEN_ADDRESS), Some(TEST_SENDER_TOKEN_ADDRESS), Some(SolanaTokenProgramId::Token)),
+        };
+        let input = SignerInput::new(input, TransactionFee::default());
+        let result = signer.sign_token_transfer(&input, &TEST_PRIVATE_KEY).unwrap();
+        let transaction = crate::decode_transaction(&result).unwrap();
+        assert_eq!(
+            (0..transaction.instructions().len()).map(|index| program_id(&transaction, index)).collect::<Vec<_>>(),
+            vec![MEMO_PROGRAM_ID, TOKEN_PROGRAM_ID]
+        );
+        assert_eq!(transaction.instructions()[0].accounts, Vec::<u8>::new());
+        assert_eq!(transaction.instructions()[0].data, b"token memo");
     }
 }

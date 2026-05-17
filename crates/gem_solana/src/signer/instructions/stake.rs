@@ -13,7 +13,7 @@ pub(in crate::signer) fn stake(input: &SignerInput, sender: Pubkey) -> Result<Ve
             let seed = stake_account::seed_from_blockhash(input)?;
             instructions.extend(stake_account::delegate_instructions(sender, validator, stake_account, seed, input.value_as_u64()?)?);
             if let Some(memo_text) = input.get_memo() {
-                instructions.push(memo(memo_text, &[&sender]));
+                instructions.push(memo(memo_text, &[]));
             }
         }
         StakeType::Unstake(delegation) => {
@@ -25,10 +25,10 @@ pub(in crate::signer) fn stake(input: &SignerInput, sender: Pubkey) -> Result<Ve
             instructions.push(stake_account::withdraw_instruction(stake_account, sender, sender, input.value_as_u64()?)?);
         }
         StakeType::Redelegate(_) | StakeType::Rewards(_) => {
-            return SignerError::invalid_input_err("unsupported Solana stake action");
+            return Err(SignerError::invalid_input("unsupported Solana stake action"));
         }
         StakeType::Freeze(_) | StakeType::Unfreeze(_) => {
-            return SignerError::invalid_input_err("Solana does not support freeze operations");
+            return Err(SignerError::invalid_input("Solana does not support freeze operations"));
         }
     }
     Ok(instructions)
@@ -119,6 +119,7 @@ mod tests {
             data
         });
         assert_eq!(transaction.instructions()[2].data, stake_data(2));
+        assert_eq!(transaction.instructions()[3].accounts, Vec::<u8>::new());
         assert_eq!(transaction.instructions()[3].data, b"stake memo");
 
         let delegation = Delegation::mock_with_id(TEST_RECIPIENT.to_string());

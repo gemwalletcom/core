@@ -67,6 +67,7 @@ mod tests {
             data.extend_from_slice(&2_000u32.to_le_bytes());
             data
         });
+        assert_eq!(transaction.instructions()[2].accounts, Vec::<u8>::new());
         assert_eq!(transaction.instructions()[2].data, b"HelloSolanaMemo");
         assert_eq!(transaction.instructions()[3].data, transfer_data(42));
     }

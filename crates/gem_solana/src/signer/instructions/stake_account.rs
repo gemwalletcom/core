@@ -37,7 +37,7 @@ pub(super) fn deactivate_instruction(stake_account: Pubkey, authority: Pubkey) -
             AccountMeta {
                 pubkey: authority,
                 is_signer: true,
-                is_writable: true,
+                is_writable: false,
             },
         ],
         data: STAKE_DEACTIVATE.to_le_bytes().to_vec(),
@@ -93,7 +93,8 @@ pub(super) fn from_blockhash(sender: &Pubkey, input: &SignerInput) -> Result<Pub
 }
 
 pub(super) fn seed_from_blockhash(input: &SignerInput) -> Result<String, SignerError> {
-    Ok(input.metadata.get_block_hash()?.chars().take(32).collect())
+    let block_hash = input.metadata.get_block_hash()?;
+    Ok(block_hash[..block_hash.len().min(32)].to_string())
 }
 
 fn create_with_seed_instruction(sender: Pubkey, stake_account: Pubkey, seed: String, lamports: u64) -> Result<Instruction, SignerError> {
