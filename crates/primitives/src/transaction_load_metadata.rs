@@ -178,6 +178,13 @@ impl TransactionLoadMetadata {
         }
     }
 
+    pub fn get_solana_token_program_id(&self) -> Result<Option<SolanaTokenProgramId>, Box<dyn std::error::Error + Send + Sync>> {
+        match self {
+            TransactionLoadMetadata::Solana { token_program, .. } => Ok(token_program.clone()),
+            _ => Err("Solana token program not available for this metadata type".into()),
+        }
+    }
+
     pub fn get_message_bytes(&self) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         match self {
             TransactionLoadMetadata::Sui { message_bytes, .. } => Ok(message_bytes.clone()),
@@ -228,6 +235,18 @@ mod tests {
         assert_eq!(
             TransactionLoadMetadata::None.get_hyperliquid_order().unwrap_err().to_string(),
             "Hyperliquid order not available for this metadata type"
+        );
+
+        let metadata = TransactionLoadMetadata::Solana {
+            sender_token_address: None,
+            recipient_token_address: None,
+            token_program: Some(SolanaTokenProgramId::Token2022),
+            block_hash: "block_hash".into(),
+        };
+        assert_eq!(metadata.get_solana_token_program_id().unwrap(), Some(SolanaTokenProgramId::Token2022));
+        assert_eq!(
+            TransactionLoadMetadata::None.get_solana_token_program_id().unwrap_err().to_string(),
+            "Solana token program not available for this metadata type"
         );
     }
 }

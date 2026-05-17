@@ -3402,7 +3402,6 @@ dependencies = [
  "bs58",
  "chain_traits",
  "chrono",
- "curve25519-dalek",
  "futures",
  "gem_client",
  "gem_encoding",
@@ -7197,9 +7196,9 @@ dependencies = [
 
 [[package]]
 name = "solana-primitives"
-version = "0.2.4"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e3d64c5a1dbad530374048c9338341aba7738a71c9a78b4b5f6c389d45e34cfe"
+checksum = "3ca1c1649cc283a69f4703287d7615fa759c3ebd7692092c547864ae4726af48"
 dependencies = [
  "base64",
  "borsh",

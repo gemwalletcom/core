@@ -7,7 +7,7 @@ use serde_json::{self, json};
 
 use gem_client::ReqwestClient;
 use gem_jsonrpc::JsonRpcClient;
-use gem_solana::{COMMITMENT_CONFIRMED, pubkey::Pubkey};
+use gem_solana::{COMMITMENT_CONFIRMED, Pubkey, find_program_address};
 use primitives::{
     chain::Chain,
     contract_constants::{SOLANA_ALLDOMAINS_ANS_PROGRAM_ID, SOLANA_ALLDOMAINS_NAME_HOUSE_PROGRAM_ID, SOLANA_ALLDOMAINS_ROOT_PUBLIC_KEY, SOLANA_ALLDOMAINS_TLD_HOUSE_PROGRAM_ID},
@@ -49,18 +49,14 @@ impl AllDomainsClient {
         let mut seeds = Vec::new();
         seeds.push(hashed_name.as_ref());
 
-        let default_pubkey = Pubkey::from([0u8; 32]);
-        let name_class_key = name_class.unwrap_or(default_pubkey.clone());
+        let default_pubkey = Pubkey::new([0u8; 32]);
+        let name_class_key = name_class.unwrap_or(default_pubkey);
         let parent_name_key = parent_name.unwrap_or(default_pubkey);
-        seeds.push(name_class_key.as_ref());
-        seeds.push(parent_name_key.as_ref());
+        seeds.push(name_class_key.as_bytes().as_ref());
+        seeds.push(parent_name_key.as_bytes().as_ref());
 
         let ans_program_id = Pubkey::from_str(SOLANA_ALLDOMAINS_ANS_PROGRAM_ID)?;
-        if let Some((pda, bump)) = Pubkey::try_find_program_address(&seeds, &ans_program_id) {
-            Ok((pda, bump))
-        } else {
-            Err("Failed to derive PDA".into())
-        }
+        Ok(find_program_address(&ans_program_id, &seeds)?)
     }
 
     fn find_tld_house(&self, tld_string: &str) -> Result<(Pubkey, u8), Box<dyn Error + Send + Sync>> {
@@ -68,31 +64,19 @@ impl AllDomainsClient {
         let seeds = &[TLD_HOUSE_PREFIX.as_bytes(), tld_lower.as_bytes()];
 
         let tld_house_program_id = Pubkey::from_str(SOLANA_ALLDOMAINS_TLD_HOUSE_PROGRAM_ID)?;
-        if let Some((pda, bump)) = Pubkey::try_find_program_address(seeds, &tld_house_program_id) {
-            Ok((pda, bump))
-        } else {
-            Err("Failed to derive TLD house PDA".into())
-        }
+        Ok(find_program_address(&tld_house_program_id, seeds)?)
     }
 
     fn find_name_house(&self, tld_house: Pubkey) -> Result<(Pubkey, u8), Box<dyn Error + Send + Sync>> {
-        let seeds = &[NAME_HOUSE_PREFIX.as_bytes(), tld_house.as_ref()];
+        let seeds = &[NAME_HOUSE_PREFIX.as_bytes(), tld_house.as_bytes().as_ref()];
         let name_house_program_id = Pubkey::from_str(SOLANA_ALLDOMAINS_NAME_HOUSE_PROGRAM_ID)?;
-        if let Some((pda, bump)) = Pubkey::try_find_program_address(seeds, &name_house_program_id) {
-            Ok((pda, bump))
-        } else {
-            Err("Failed to derive name house PDA".into())
-        }
+        Ok(find_program_address(&name_house_program_id, seeds)?)
     }
 
     fn find_nft_record(&self, name_account: Pubkey, name_house_account: Pubkey) -> Result<(Pubkey, u8), Box<dyn Error + Send + Sync>> {
-        let seeds = &[NFT_RECORD_PREFIX.as_bytes(), name_house_account.as_ref(), name_account.as_ref()];
+        let seeds = &[NFT_RECORD_PREFIX.as_bytes(), name_house_account.as_bytes().as_ref(), name_account.as_bytes().as_ref()];
         let name_house_program_id = Pubkey::from_str(SOLANA_ALLDOMAINS_NAME_HOUSE_PROGRAM_ID)?;
-        if let Some((pda, bump)) = Pubkey::try_find_program_address(seeds, &name_house_program_id) {
-            Ok((pda, bump))
-        } else {
-            Err("Failed to derive NFT record PDA".into())
-        }
+        Ok(find_program_address(&name_house_program_id, seeds)?)
     }
 
     async fn get_origin_name_account_key(&self) -> Result<Pubkey, Box<dyn Error + Send + Sync>> {

@@ -3,7 +3,6 @@ pub mod constants;
 pub mod hash;
 pub mod jsonrpc;
 pub mod metaplex;
-pub mod pubkey;
 pub mod token_account;
 
 #[cfg(any(feature = "rpc", feature = "reqwest"))]
@@ -20,6 +19,7 @@ pub mod signer;
 
 pub use address::validate_address;
 pub use jsonrpc::SolanaRpc;
+pub use solana_primitives::{Pubkey, find_program_address};
 pub use transaction::{decode_transaction, try_decode_transaction};
 
 #[cfg(all(feature = "reqwest", not(feature = "rpc")))]
@@ -58,9 +58,6 @@ pub const SYSTEM_PROGRAMS: &[&str] = &[
 pub const COMMITMENT_CONFIRMED: &str = "confirmed";
 
 use primitives::{AssetId, SolanaTokenProgramId};
-use pubkey::Pubkey;
-use std::str::FromStr;
-
 pub fn get_token_program_by_id(id: SolanaTokenProgramId) -> &'static str {
     match id {
         SolanaTokenProgramId::Token => TOKEN_PROGRAM,
@@ -80,8 +77,8 @@ pub fn get_token_program_id_by_address(address: &str) -> Result<SolanaTokenProgr
 
 pub fn get_pubkey_by_asset(asset_id: &AssetId) -> Option<Pubkey> {
     match &asset_id.token_id {
-        Some(token_id) => <Pubkey as FromStr>::from_str(token_id).ok(),
-        None => <Pubkey as FromStr>::from_str(WSOL_TOKEN_ADDRESS).ok(),
+        Some(token_id) => Pubkey::from_base58(token_id).ok(),
+        None => Pubkey::from_base58(WSOL_TOKEN_ADDRESS).ok(),
     }
 }
 

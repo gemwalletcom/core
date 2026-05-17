@@ -46,9 +46,8 @@ pub fn decode_metadata(base64_str: &str) -> Result<Metadata, Box<dyn std::error:
 #[cfg(test)]
 mod tests {
     use crate::{
-        USDC_TOKEN_MINT,
+        Pubkey, USDC_TOKEN_MINT,
         metaplex::{Key, decode_metadata, metadata::Metadata},
-        pubkey::Pubkey,
     };
     use std::str::FromStr;
 

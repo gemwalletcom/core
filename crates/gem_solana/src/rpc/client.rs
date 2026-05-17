@@ -146,10 +146,10 @@ impl<C: Client + Clone> SolanaClient<C> {
 
     pub async fn get_metaplex_metadata(&self, token_mint: &str) -> Result<crate::metaplex::metadata::Metadata, Box<dyn Error + Send + Sync>> {
         use crate::{
+            Pubkey,
             metaplex::decode_metadata,
             metaplex::metadata::Metadata,
             models::{ValueData, ValueResult},
-            pubkey::Pubkey,
         };
         use std::str::FromStr;
 

@@ -1,7 +1,7 @@
 use std::time::SystemTime;
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use gem_solana::pubkey::Pubkey;
+use gem_solana::Pubkey;
 
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
 pub struct NameRecordHeader {

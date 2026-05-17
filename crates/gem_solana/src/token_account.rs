@@ -1,13 +1,13 @@
-use crate::{ASSOCIATED_TOKEN_ACCOUNT_PROGRAM, pubkey::Pubkey};
+use crate::{ASSOCIATED_TOKEN_ACCOUNT_PROGRAM, Pubkey, find_program_address};
 
 pub fn get_token_account(wallet: &str, token_mint: &str, token_program: &str) -> String {
-    let owner = Pubkey::try_from(wallet).unwrap();
-    let token_program = Pubkey::try_from(token_program).unwrap();
-    let mint = Pubkey::try_from(token_mint).unwrap();
-    let associated_token_program = Pubkey::try_from(ASSOCIATED_TOKEN_ACCOUNT_PROGRAM).unwrap();
-    let seeds = vec![owner.as_ref(), token_program.as_ref(), mint.as_ref()];
+    let owner = Pubkey::from_base58(wallet).unwrap();
+    let token_program = Pubkey::from_base58(token_program).unwrap();
+    let mint = Pubkey::from_base58(token_mint).unwrap();
+    let associated_token_program = Pubkey::from_base58(ASSOCIATED_TOKEN_ACCOUNT_PROGRAM).unwrap();
+    let seeds = [owner.as_bytes().as_ref(), token_program.as_bytes().as_ref(), mint.as_bytes().as_ref()];
 
-    Pubkey::try_find_program_address(&seeds, &associated_token_program).unwrap().0.to_string()
+    find_program_address(&associated_token_program, &seeds).unwrap().0.to_string()
 }
 
 #[cfg(test)]

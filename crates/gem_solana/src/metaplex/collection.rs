@@ -1,5 +1,5 @@
-use crate::pubkey::Pubkey;
 use borsh::{BorshDeserialize, BorshSerialize};
+use solana_primitives::Pubkey;
 
 #[derive(BorshSerialize, BorshDeserialize, PartialEq, Eq, Debug, Clone)]
 pub struct Collection {
