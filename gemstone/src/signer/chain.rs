@@ -109,23 +109,50 @@ impl GemChainSigner {
         let signer_input: SignerInput = input.into();
         let key = private_key;
 
-        method(self.signer.as_ref(), &signer_input, key.as_slice()).map_err(|err| match err {
-            SignerError::SigningError(_) => unsupported_error(self.chain, action),
-            other => GemstoneError::from(other),
-        })
+        method(self.signer.as_ref(), &signer_input, key.as_slice()).map_err(|err| map_signer_error(self.chain, action, err))
     }
 
     fn dispatch_message<T, F>(&self, message: Vec<u8>, private_key: Vec<u8>, action: &'static str, method: F) -> Result<T, GemstoneError>
     where
         F: Fn(&dyn ChainSigner, &[u8], &[u8]) -> Result<T, SignerError>,
     {
-        method(self.signer.as_ref(), &message, &private_key).map_err(|err| match err {
-            SignerError::SigningError(_) => unsupported_error(self.chain, action),
-            other => GemstoneError::from(other),
-        })
+        method(self.signer.as_ref(), &message, &private_key).map_err(|err| map_signer_error(self.chain, action, err))
+    }
+}
+
+fn map_signer_error(chain: Chain, action: &str, error: SignerError) -> GemstoneError {
+    match error {
+        SignerError::SigningError(message) if message == format!("sign_{} not implemented", action.replace(' ', "_")) => unsupported_error(chain, action),
+        error => GemstoneError::from(error),
     }
 }
 
 fn unsupported_error(chain: Chain, action: &str) -> GemstoneError {
     SignerError::SigningError(format!("{action} not supported for chain {:?}", chain)).into()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_map_signer_error() {
+        assert_eq!(
+            map_signer_error(Chain::Solana, "stake", SignerError::SigningError("sign_stake not implemented".to_string())).to_string(),
+            "Signing error: stake not supported for chain solana"
+        );
+        assert_eq!(
+            map_signer_error(
+                Chain::Solana,
+                "token transfer",
+                SignerError::SigningError("sign_token_transfer not implemented".to_string())
+            )
+            .to_string(),
+            "Signing error: token transfer not supported for chain solana"
+        );
+        assert_eq!(
+            map_signer_error(Chain::Solana, "stake", SignerError::signing_error("sign: invalid private key")).to_string(),
+            "Signing error: sign: invalid private key"
+        );
+    }
 }
