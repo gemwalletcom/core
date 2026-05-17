@@ -3168,16 +3168,25 @@ name = "gem_cardano"
 version = "1.0.0"
 dependencies = [
  "async-trait",
+ "bech32",
  "chain_traits",
  "chrono",
+ "curve25519-dalek",
+ "futures",
  "gem_client",
+ "gem_hash",
+ "hex",
  "num-bigint",
+ "num-traits",
  "primitives",
  "reqwest 0.13.2",
  "serde",
  "serde_json",
+ "serde_serializers",
  "settings",
+ "sha2 0.11.0",
  "tokio",
+ "zeroize",
 ]
 
 [[package]]
@@ -3266,6 +3275,7 @@ dependencies = [
 name = "gem_hash"
 version = "1.0.0"
 dependencies = [
+ "blake2",
  "hex",
  "sha2 0.11.0",
  "sha3 0.10.8",
@@ -3342,16 +3352,21 @@ name = "gem_polkadot"
 version = "1.0.0"
 dependencies = [
  "async-trait",
+ "bs58",
  "chain_traits",
  "chrono",
  "gem_client",
+ "gem_hash",
+ "hex",
  "num-bigint",
  "primitives",
+ "rand 0.10.1",
  "reqwest 0.13.2",
  "serde",
  "serde_json",
  "serde_serializers",
  "settings",
+ "signer",
  "tokio",
 ]
 
@@ -3533,12 +3548,16 @@ name = "gem_xrp"
 version = "1.0.0"
 dependencies = [
  "async-trait",
+ "bigdecimal",
+ "bs58",
  "chain_traits",
  "chrono",
  "gem_client",
+ "gem_hash",
  "gem_jsonrpc",
  "hex",
  "num-bigint",
+ "num-traits",
  "number_formatter",
  "primitives",
  "reqwest 0.13.2",
@@ -3546,6 +3565,7 @@ dependencies = [
  "serde_json",
  "serde_serializers",
  "settings",
+ "signer",
  "tokio",
 ]
 
@@ -4653,9 +4673,9 @@ dependencies = [
 
 [[package]]
 name = "lapin"
-version = "4.7.1"
+version = "4.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "478790661081f7434e111a31953acc1cf23654cf2a2d815d0e12cef9a2aed720"
+checksum = "f296d806dbacc044135c9686a0d3e78b5122907d4d6604c72a825316139e9f2d"
 dependencies = [
  "amq-protocol",
  "async-rs",

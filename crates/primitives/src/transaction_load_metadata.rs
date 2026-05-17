@@ -40,6 +40,7 @@ pub enum TransactionLoadMetadata {
     },
     Cardano {
         utxos: Vec<UTXO>,
+        block_number: u64,
     },
     Evm {
         nonce: u64,
@@ -114,6 +115,7 @@ impl TransactionLoadMetadata {
             TransactionLoadMetadata::Polkadot { block_number, .. } => Ok(*block_number),
             TransactionLoadMetadata::Tron { block_number, .. } => Ok(*block_number),
             TransactionLoadMetadata::Xrp { block_number, .. } => Ok(*block_number),
+            TransactionLoadMetadata::Cardano { block_number, .. } => Ok(*block_number),
             _ => Err("Block number not available for this metadata type".into()),
         }
     }
@@ -148,7 +150,7 @@ impl TransactionLoadMetadata {
         match self {
             TransactionLoadMetadata::Bitcoin { utxos } => Ok(utxos.clone()),
             TransactionLoadMetadata::Zcash { utxos, .. } => Ok(utxos.clone()),
-            TransactionLoadMetadata::Cardano { utxos } => Ok(utxos.clone()),
+            TransactionLoadMetadata::Cardano { utxos, .. } => Ok(utxos.clone()),
             _ => Err("UTXOs not available for this metadata type".into()),
         }
     }

@@ -6,12 +6,14 @@ use primitives::chain::Chain;
 
 use crate::models::{
     account::BalanceResponse,
-    block::{BlockData, GenesisData},
-    rpc::{Block, Blocks, Data},
+    block::{Block, BlockData, GenesisData},
+    rpc::{Block as RpcBlock, Blocks, Data},
     transaction::TransactionBroadcast,
     utxo::{UTXO, UTXOS},
 };
 use primitives::graphql::GraphqlData;
+
+const TIP_QUERY: &str = "{ cardano { tip { number slotNo } } }";
 
 #[derive(Debug)]
 pub struct CardanoClient<C: Client> {
@@ -24,15 +26,19 @@ impl<C: Client> CardanoClient<C> {
         Self { client, chain: Chain::Cardano }
     }
 
-    pub async fn get_tip_number(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        let json = serde_json::json!({
-            "query": "{ cardano { tip { number } } }"
-        });
-        let response: Data<BlockData> = self.client.post("/", &json).await?;
-        Ok(response.data.cardano.tip.number as i64)
+    pub fn get_chain(&self) -> Chain {
+        self.chain
     }
 
-    pub async fn get_block(&self, block_number: i64) -> Result<Block, Box<dyn Error + Send + Sync>> {
+    pub(crate) async fn get_tip(&self) -> Result<Block, Box<dyn Error + Send + Sync>> {
+        let json = serde_json::json!({
+            "query": TIP_QUERY
+        });
+        let response: Data<BlockData> = self.client.post("/", &json).await?;
+        Ok(response.data.cardano.tip)
+    }
+
+    pub async fn get_block(&self, block_number: u64) -> Result<RpcBlock, Box<dyn Error + Send + Sync>> {
         let json = serde_json::json!({
             "query": "query GetBlockByNumber($blockNumber: Int!) { blocks(where: { number: { _eq: $blockNumber } }) { number hash forgedAt transactions { hash inputs { address value } outputs { address value } fee } } }",
             "variables": {
@@ -107,15 +113,9 @@ impl<C: Client> CardanoClient<C> {
 
         Err("Failed to broadcast transaction - no data or hash returned".into())
     }
-}
 
-impl<C: Client> CardanoClient<C> {
-    pub fn get_chain(&self) -> Chain {
-        self.chain
-    }
-
-    pub async fn get_latest_block(&self) -> Result<i64, Box<dyn Error + Send + Sync>> {
-        self.get_tip_number().await
+    pub async fn get_latest_block(&self) -> Result<u64, Box<dyn Error + Send + Sync>> {
+        Ok(self.get_tip().await?.number)
     }
 }
 
@@ -130,5 +130,27 @@ impl<C: Client> ChainTraits for CardanoClient<C> {}
 impl<C: Client> ChainProvider for CardanoClient<C> {
     fn get_chain(&self) -> Chain {
         self.chain
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use gem_client::testkit::MockClient;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn test_get_tip() {
+        let client = MockClient::new().with_post(|path, body| {
+            assert_eq!(path, "/");
+            let request: serde_json::Value = serde_json::from_slice(body).unwrap();
+            assert_eq!(request["query"], "{ cardano { tip { number slotNo } } }");
+            Ok(br#"{"data":{"cardano":{"tip":{"number":13427226,"slotNo":"187400452"}}}}"#.to_vec())
+        });
+
+        let cardano = CardanoClient::new(client);
+        let tip = cardano.get_tip().await.unwrap();
+        assert_eq!(tip.number, 13_427_226);
+        assert_eq!(tip.slot_no, 187_400_452);
     }
 }

@@ -440,6 +440,7 @@ pub enum GemTransactionLoadMetadata {
     },
     Cardano {
         utxos: Vec<GemUTXO>,
+        block_number: u64,
     },
     Evm {
         nonce: u64,
@@ -528,7 +529,7 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
             },
             TransactionLoadMetadata::Bitcoin { utxos } => GemTransactionLoadMetadata::Bitcoin { utxos },
             TransactionLoadMetadata::Zcash { utxos, branch_id } => GemTransactionLoadMetadata::Zcash { utxos, branch_id },
-            TransactionLoadMetadata::Cardano { utxos } => GemTransactionLoadMetadata::Cardano { utxos },
+            TransactionLoadMetadata::Cardano { utxos, block_number } => GemTransactionLoadMetadata::Cardano { utxos, block_number },
             TransactionLoadMetadata::Evm { nonce, chain_id, contract_call } => GemTransactionLoadMetadata::Evm { nonce, chain_id, contract_call },
             TransactionLoadMetadata::Near { sequence, block_hash } => GemTransactionLoadMetadata::Near { sequence, block_hash },
             TransactionLoadMetadata::Stellar {
@@ -616,7 +617,7 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
             },
             GemTransactionLoadMetadata::Bitcoin { utxos } => TransactionLoadMetadata::Bitcoin { utxos },
             GemTransactionLoadMetadata::Zcash { utxos, branch_id } => TransactionLoadMetadata::Zcash { utxos, branch_id },
-            GemTransactionLoadMetadata::Cardano { utxos } => TransactionLoadMetadata::Cardano { utxos },
+            GemTransactionLoadMetadata::Cardano { utxos, block_number } => TransactionLoadMetadata::Cardano { utxos, block_number },
             GemTransactionLoadMetadata::Evm { nonce, chain_id, contract_call } => TransactionLoadMetadata::Evm { nonce, chain_id, contract_call },
             GemTransactionLoadMetadata::Near { sequence, block_hash } => TransactionLoadMetadata::Near { sequence, block_hash },
             GemTransactionLoadMetadata::Stellar {

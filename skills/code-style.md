@@ -33,9 +33,9 @@ fn is_hypercore_spot_swap(order: &Order) -> bool { ... }
 fn is_spot_swap(order: &Order) -> bool { ... }
 ```
 
-### Forbidden names
+### Intent-specific names
 
-Don't use `util`, `utils`, `normalize`, or any similar names for modules or functions.
+Name functions and modules after the domain action and result they own. Prefer codebase language such as `parse_destination_tag`, `build_transfer_message`, `sign_trust_set`, `map_balance_assets`, or `encode_memo` over vague names. Avoid `util`, `utils`, `normalize`, `resolve`, `process`, `handle`, `manage`, `perform`, `execute`, and similar names unless a framework or protocol owns the signature.
 
 ### No type suffixes
 

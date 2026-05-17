@@ -1,0 +1,42 @@
+{
+  "digest": "DXKezMGJZaxJRC6a6zCr3JdfquYGxgU1zjV4xrNAaCFB",
+  "effects": {
+    "status": {
+      "status": "success"
+    },
+    "gasUsed": {
+      "computationCost": "110000",
+      "storageCost": "922191600",
+      "storageRebate": "911690604",
+      "nonRefundableStorageFee": "9208996"
+    },
+    "gasObject": {
+      "owner": {
+        "AddressOwner": "0x1930a5e729ad95a48e4d9dc2ca8a001f8ed18b20077c083cd6b1d3355a7972a5"
+      }
+    }
+  },
+  "balanceChanges": [
+    {
+      "owner": {
+        "AddressOwner": "0x1930a5e729ad95a48e4d9dc2ca8a001f8ed18b20077c083cd6b1d3355a7972a5"
+      },
+      "coinType": "0x0000000000000000000000000000000000000000000000000000000000000002::sui::SUI",
+      "amount": "-2010610996"
+    }
+  ],
+  "events": [
+    {
+      "type": "0x0000000000000000000000000000000000000000000000000000000000000003::validator::StakingRequestEvent",
+      "parsedJson": {
+        "amount": "2000000000",
+        "epoch": "1130",
+        "pool_id": "0xb4ca70974bd2877216c6d5838cad197a8dcfda0cf800ab4223d2cccf251dd670",
+        "staker_address": "0x1930a5e729ad95a48e4d9dc2ca8a001f8ed18b20077c083cd6b1d3355a7972a5",
+        "validator_address": "0xbba318294a51ddeafa50c335c8e77202170e1f272599a2edc40592100863f638"
+      },
+      "packageId": "0x0000000000000000000000000000000000000000000000000000000000000003"
+    }
+  ],
+  "timestampMs": "1778964551487"
+}

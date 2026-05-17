@@ -1,7 +1,8 @@
+use std::error::Error;
+
 use async_trait::async_trait;
 use chain_traits::ChainTransactionLoad;
 use num_bigint::BigInt;
-use std::error::Error;
 
 use gem_client::Client;
 use primitives::{
@@ -27,16 +28,15 @@ impl<C: Client> ChainTransactionLoad for PolkadotClient<C> {
         })
     }
 
-    async fn get_transaction_fee_from_data(&self, tx: String) -> Result<TransactionFee, Box<dyn Error + Sync + Send>> {
-        let fee = self.estimate_fee(&tx).await?;
+    async fn get_transaction_fee_from_data(&self, transaction: String) -> Result<TransactionFee, Box<dyn Error + Sync + Send>> {
+        let fee = self.estimate_fee(&transaction).await?;
         Ok(TransactionFee::new_from_fee(BigInt::from(fee.partial_fee)))
     }
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
-        Ok(TransactionLoadData {
-            fee: input.default_fee(),
-            metadata: input.metadata,
-        })
+        let fee_estimation_transaction = crate::transfer::fee_estimation_transaction(&input)?;
+        let fee = self.get_transaction_fee_from_data(fee_estimation_transaction).await?;
+        Ok(TransactionLoadData { fee, metadata: input.metadata })
     }
 
     async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {

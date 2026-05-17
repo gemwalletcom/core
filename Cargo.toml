@@ -92,6 +92,7 @@ chrono = { version = "0.4.43", features = ["serde"] }
 # crypto
 base64 = { version = "0.22.1" }
 bech32 = { version = "0.11.1" }
+blake2 = { version = "0.10.6" }
 bs58 = { version = "0.5.1", features = ["check"] }
 hex = { version = "0.4.3" }
 crc = { version = "3.4.0" }

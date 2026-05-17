@@ -1,5 +1,5 @@
-use crate::models::{BalanceChange, Digest, EventStake, EventUnstake, GasUsed, TransactionBlocks};
-use crate::{SUI_COIN_TYPE, SUI_COIN_TYPE_FULL, SUI_STAKE_EVENT, SUI_UNSTAKE_EVENT};
+use crate::models::{BalanceChange, Digest, Event, EventStake, EventUnstake, GasUsed, TransactionBlocks};
+use crate::{SUI_COIN_TYPE, SUI_STAKE_EVENT, SUI_UNSTAKE_EVENT, full_coin_type};
 use chain_primitives::{BalanceDiff, SwapMapper};
 use chrono::{TimeZone, Utc};
 use num_bigint::BigUint;
@@ -32,9 +32,8 @@ pub fn map_transaction(transaction: Digest) -> Option<Transaction> {
         TransactionState::Failed
     };
     let owner = effects.gas_object.owner.get_address_owner();
-    let sui_coin_type = chain.as_denom()?;
 
-    let (asset_id, from, to, transaction_type, value, metadata) = map_transaction_type(&transaction.events, &balance_changes, &owner, sui_coin_type, &fee)?;
+    let (asset_id, from, to, transaction_type, value, metadata) = map_transaction_type(&transaction.events, &balance_changes, &owner, &fee)?;
 
     Some(Transaction::new(
         hash,
@@ -54,23 +53,22 @@ pub fn map_transaction(transaction: Digest) -> Option<Transaction> {
 }
 
 fn map_transaction_type(
-    events: &[crate::models::Event],
+    events: &[Event],
     balance_changes: &[BalanceChange],
     owner: &Option<String>,
-    sui_coin_type: &str,
     fee: &BigUint,
 ) -> Option<(AssetId, String, String, TransactionType, String, Option<serde_json::Value>)> {
     let chain = CHAIN;
 
     // system & token transfer
     if events.is_empty() && (balance_changes.len() == 2 || balance_changes.len() == 3) {
-        let (from_change, to_change) = if balance_changes.len() == 2 && balance_changes[0].coin_type == sui_coin_type && balance_changes[1].coin_type == sui_coin_type {
+        let (from_change, to_change) = if balance_changes.len() == 2 && is_native_sui(&balance_changes[0].coin_type) && is_native_sui(&balance_changes[1].coin_type) {
             if balance_changes[0].amount < balance_changes[1].amount {
                 (balance_changes[0].clone(), balance_changes[1].clone())
             } else {
                 (balance_changes[1].clone(), balance_changes[0].clone())
             }
-        } else if balance_changes.len() == 3 && balance_changes[0].coin_type == sui_coin_type {
+        } else if balance_changes.len() == 3 && is_native_sui(&balance_changes[0].coin_type) {
             if balance_changes[1].amount < balance_changes[2].amount {
                 (balance_changes[1].clone(), balance_changes[2].clone())
             } else {
@@ -80,7 +78,7 @@ fn map_transaction_type(
             return None;
         };
 
-        let asset_id = if from_change.coin_type == sui_coin_type {
+        let asset_id = if is_native_sui(&from_change.coin_type) {
             chain.as_asset_id()
         } else {
             AssetId::from_token(chain, &from_change.coin_type)
@@ -96,8 +94,8 @@ fn map_transaction_type(
     }
 
     // stake
-    if events.len() == 1 && events.first().is_some_and(|e| e.event_type == SUI_STAKE_EVENT) {
-        let event_json = events.first()?.parsed_json.clone()?;
+    if let Some(event) = single_event(events, SUI_STAKE_EVENT) {
+        let event_json = event.parsed_json.clone()?;
         let stake = serde_json::from_value::<EventStake>(event_json).ok()?;
         return Some((
             chain.as_asset_id(),
@@ -115,7 +113,7 @@ fn map_transaction_type(
         let swap = match owner_balance_changes.len() {
             2 => map_swap_from_balance_changes(owner_balance_changes, fee)?,
             3 => {
-                let filtered: Vec<_> = owner_balance_changes.into_iter().filter(|x| x.coin_type != SUI_COIN_TYPE).collect();
+                let filtered: Vec<_> = owner_balance_changes.into_iter().filter(|x| !is_native_sui(&x.coin_type)).collect();
                 map_swap_from_balance_changes(filtered, fee)?
             }
             _ => return None,
@@ -132,8 +130,8 @@ fn map_transaction_type(
     }
 
     // unstake
-    if events.len() == 1 && events.first().is_some_and(|e| e.event_type == SUI_UNSTAKE_EVENT) {
-        let event_json = events.first()?.parsed_json.clone()?;
+    if let Some(event) = single_event(events, SUI_UNSTAKE_EVENT) {
+        let event_json = event.parsed_json.clone()?;
         let stake = serde_json::from_value::<EventUnstake>(event_json).ok()?;
         return Some((
             chain.as_asset_id(),
@@ -179,10 +177,26 @@ pub fn map_swap_from_balance_changes(balance_changes: Vec<BalanceChange>, fee: &
 }
 
 pub fn map_asset_id(coin_type: &str) -> AssetId {
-    match coin_type {
-        SUI_COIN_TYPE | SUI_COIN_TYPE_FULL => Chain::Sui.as_asset_id(),
-        _ => AssetId::from_token(Chain::Sui, coin_type),
+    if is_native_sui(coin_type) {
+        Chain::Sui.as_asset_id()
+    } else {
+        AssetId::from_token(Chain::Sui, coin_type)
     }
+}
+
+fn is_native_sui(coin_type: &str) -> bool {
+    type_tag_matches(coin_type, SUI_COIN_TYPE)
+}
+
+fn single_event<'a>(events: &'a [Event], event_type: &str) -> Option<&'a Event> {
+    let [event] = events else {
+        return None;
+    };
+    type_tag_matches(&event.event_type, event_type).then_some(event)
+}
+
+fn type_tag_matches(value: &str, expected: &str) -> bool {
+    full_coin_type(value) == full_coin_type(expected)
 }
 
 pub fn map_transaction_blocks(transaction_blocks: TransactionBlocks) -> Vec<Transaction> {
@@ -192,7 +206,58 @@ pub fn map_transaction_blocks(transaction_blocks: TransactionBlocks) -> Vec<Tran
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::models::{Effect, GasObject, Owner, OwnerObject, Status};
     use crate::provider::testkit::TEST_TRANSACTION_ID;
+    use crate::{SUI_COIN_TYPE_FULL, SUI_UNSTAKE_EVENT};
+    use num_bigint::{BigInt, BigUint};
+    use serde_json::json;
+
+    const OWNER_ADDRESS: &str = "0x1930a5e729ad95a48e4d9dc2ca8a001f8ed18b20077c083cd6b1d3355a7972a5";
+    const RECIPIENT_ADDRESS: &str = "0x9d6b98b18fd26b5efeec68d020dcf1be7a94c2c315353779bc6b3aed44188ddf";
+    const VALIDATOR_ADDRESS: &str = "0xbba318294a51ddeafa50c335c8e77202170e1f272599a2edc40592100863f638";
+    const TOKEN_A: &str = "0x00000000000000000000000000000000000000000000000000000000000000aa::coin::AAA";
+    const TOKEN_B: &str = "0x00000000000000000000000000000000000000000000000000000000000000bb::coin::BBB";
+
+    fn owner(address: &str) -> Owner {
+        Owner::OwnerObject(OwnerObject {
+            address_owner: Some(address.to_string()),
+        })
+    }
+
+    fn balance_change(address: &str, coin_type: &str, amount: i64) -> BalanceChange {
+        BalanceChange {
+            owner: owner(address),
+            coin_type: coin_type.to_string(),
+            amount: BigInt::from(amount),
+        }
+    }
+
+    fn event(event_type: impl Into<String>, parsed_json: serde_json::Value) -> Event {
+        Event {
+            event_type: event_type.into(),
+            parsed_json: Some(parsed_json),
+            package_id: String::new(),
+        }
+    }
+
+    fn make_digest(events: Vec<Event>, balance_changes: Vec<BalanceChange>) -> Digest {
+        Digest {
+            digest: "test".to_string(),
+            effects: Effect {
+                gas_used: GasUsed {
+                    computation_cost: BigUint::from(0u32),
+                    storage_cost: BigUint::from(0u32),
+                    storage_rebate: BigUint::from(0u32),
+                    non_refundable_storage_fee: BigUint::from(0u32),
+                },
+                status: Status { status: "success".to_string() },
+                gas_object: GasObject { owner: owner(OWNER_ADDRESS) },
+            },
+            balance_changes: Some(balance_changes),
+            events,
+            timestamp_ms: 1778964551487,
+        }
+    }
 
     #[test]
     fn test_map_transaction_blocks() {
@@ -220,5 +285,83 @@ mod tests {
 
         assert_eq!(transaction.hash, TEST_TRANSACTION_ID);
         assert_eq!(transaction.transaction_type, TransactionType::Transfer);
+    }
+
+    #[test]
+    fn test_map_full_type_tags() {
+        let digest: Digest = serde_json::from_str(include_str!("../../testdata/stake_grpc.json")).unwrap();
+        let transaction = map_transaction(digest).unwrap();
+
+        assert_eq!(transaction.hash, "DXKezMGJZaxJRC6a6zCr3JdfquYGxgU1zjV4xrNAaCFB");
+        assert_eq!(transaction.transaction_type, TransactionType::StakeDelegate);
+        assert_eq!(transaction.value, "2000000000");
+        assert_eq!(transaction.from, OWNER_ADDRESS);
+        assert_eq!(transaction.to, VALIDATOR_ADDRESS);
+        assert_eq!(transaction.fee, "10610996");
+        assert_eq!(map_asset_id(SUI_COIN_TYPE_FULL), Chain::Sui.as_asset_id());
+
+        let native_transfer = map_transaction(make_digest(
+            vec![],
+            vec![
+                balance_change(OWNER_ADDRESS, SUI_COIN_TYPE_FULL, -101744880),
+                balance_change(RECIPIENT_ADDRESS, SUI_COIN_TYPE_FULL, 100000000),
+            ],
+        ))
+        .unwrap();
+
+        assert_eq!(native_transfer.transaction_type, TransactionType::Transfer);
+        assert_eq!(native_transfer.asset_id, Chain::Sui.as_asset_id());
+        assert_eq!(native_transfer.value, "100000000");
+
+        let token_transfer = map_transaction(make_digest(
+            vec![],
+            vec![
+                balance_change(OWNER_ADDRESS, SUI_COIN_TYPE_FULL, -1000),
+                balance_change(OWNER_ADDRESS, TOKEN_A, -100),
+                balance_change(RECIPIENT_ADDRESS, TOKEN_A, 100),
+            ],
+        ))
+        .unwrap();
+
+        assert_eq!(token_transfer.transaction_type, TransactionType::Transfer);
+        assert_eq!(token_transfer.asset_id, AssetId::from_token(Chain::Sui, TOKEN_A));
+        assert_eq!(token_transfer.value, "100");
+
+        let swap = map_transaction(make_digest(
+            vec![event("0x00000000000000000000000000000000000000000000000000000000000000cc::pool::SwapEvent", json!({}))],
+            vec![
+                balance_change(OWNER_ADDRESS, SUI_COIN_TYPE_FULL, -1000),
+                balance_change(OWNER_ADDRESS, TOKEN_A, -200),
+                balance_change(OWNER_ADDRESS, TOKEN_B, 150),
+            ],
+        ))
+        .unwrap();
+
+        assert_eq!(swap.transaction_type, TransactionType::Swap);
+        assert_eq!(swap.value, "200");
+        let metadata: TransactionSwapMetadata = serde_json::from_value(swap.metadata.unwrap()).unwrap();
+        assert_eq!(metadata.from_asset, AssetId::from_token(Chain::Sui, TOKEN_A));
+        assert_eq!(metadata.from_value, "200");
+        assert_eq!(metadata.to_asset, AssetId::from_token(Chain::Sui, TOKEN_B));
+        assert_eq!(metadata.to_value, "150");
+
+        let unstake = map_transaction(make_digest(
+            vec![event(
+                full_coin_type(SUI_UNSTAKE_EVENT),
+                json!({
+                    "principal_amount": "3000000000",
+                    "reward_amount": "42",
+                    "staker_address": OWNER_ADDRESS,
+                    "validator_address": VALIDATOR_ADDRESS,
+                }),
+            )],
+            vec![balance_change(OWNER_ADDRESS, SUI_COIN_TYPE_FULL, 3000000000)],
+        ))
+        .unwrap();
+
+        assert_eq!(unstake.transaction_type, TransactionType::StakeUndelegate);
+        assert_eq!(unstake.value, "3000000000");
+        assert_eq!(unstake.from, OWNER_ADDRESS);
+        assert_eq!(unstake.to, VALIDATOR_ADDRESS);
     }
 }

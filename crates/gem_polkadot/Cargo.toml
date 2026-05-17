@@ -5,6 +5,7 @@ edition = { workspace = true }
 
 [features]
 default = ["rpc"]
+signer = []
 rpc = [
     "dep:serde_json",
     "dep:serde_serializers",
@@ -20,6 +21,11 @@ primitives = { path = "../primitives" }
 serde = { workspace = true, features = ["derive"] }
 num-bigint = { workspace = true }
 chrono = { workspace = true, features = ["serde"] }
+bs58 = { workspace = true }
+gem_hash = { path = "../gem_hash" }
+hex = { workspace = true }
+signer = { path = "../signer" }
+rand = { workspace = true }
 
 # Optional RPC dependencies
 serde_json = { workspace = true, optional = true }

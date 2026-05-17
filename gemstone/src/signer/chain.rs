@@ -1,15 +1,18 @@
 use crate::{GemstoneError, models::transaction::GemSignerInput};
 use gem_algorand::AlgorandChainSigner;
 use gem_aptos::AptosChainSigner;
+use gem_cardano::signer::CardanoChainSigner;
 use gem_cosmos::signer::CosmosChainSigner;
 use gem_evm::signer::EvmChainSigner;
 use gem_hypercore::signer::HyperCoreSigner;
 use gem_near::NearChainSigner;
+use gem_polkadot::signer::PolkadotChainSigner;
 use gem_solana::signer::SolanaChainSigner;
 use gem_stellar::StellarChainSigner;
 use gem_sui::signer::SuiChainSigner;
 use gem_ton::signer::TonChainSigner;
 use gem_tron::TronChainSigner;
+use gem_xrp::signer::XrpChainSigner;
 use primitives::{Chain, ChainSigner, ChainType, EVMChain, SignerError, SignerInput};
 
 #[derive(uniffi::Object)]
@@ -34,6 +37,9 @@ impl GemChainSigner {
             ChainType::Near => Box::new(NearChainSigner),
             ChainType::Algorand => Box::new(AlgorandChainSigner),
             ChainType::Stellar => Box::new(StellarChainSigner),
+            ChainType::Xrp => Box::new(XrpChainSigner),
+            ChainType::Polkadot => Box::new(PolkadotChainSigner),
+            ChainType::Cardano => Box::new(CardanoChainSigner),
             _ => todo!("Signer not implemented for chain {:?}", chain),
         };
 
@@ -41,47 +47,53 @@ impl GemChainSigner {
     }
 
     pub fn sign_transfer(&self, input: GemSignerInput, private_key: Vec<u8>) -> Result<String, GemstoneError> {
-        self.dispatch(input, private_key, "transfer", |signer, tx, key| signer.sign_transfer(tx, key))
+        self.dispatch(input, private_key, "transfer", |signer, signer_input, key| signer.sign_transfer(signer_input, key))
     }
 
     pub fn sign_token_transfer(&self, input: GemSignerInput, private_key: Vec<u8>) -> Result<String, GemstoneError> {
-        self.dispatch(input, private_key, "token transfer", |signer, tx, key| signer.sign_token_transfer(tx, key))
+        self.dispatch(input, private_key, "token transfer", |signer, signer_input, key| {
+            signer.sign_token_transfer(signer_input, key)
+        })
     }
 
     pub fn sign_nft_transfer(&self, input: GemSignerInput, private_key: Vec<u8>) -> Result<String, GemstoneError> {
-        self.dispatch(input, private_key, "nft transfer", |signer, tx, key| signer.sign_nft_transfer(tx, key))
+        self.dispatch(input, private_key, "nft transfer", |signer, signer_input, key| signer.sign_nft_transfer(signer_input, key))
     }
 
     pub fn sign_swap(&self, input: GemSignerInput, private_key: Vec<u8>) -> Result<Vec<String>, GemstoneError> {
-        self.dispatch(input, private_key, "swap", |signer, tx, key| signer.sign_swap(tx, key))
+        self.dispatch(input, private_key, "swap", |signer, signer_input, key| signer.sign_swap(signer_input, key))
     }
 
     pub fn sign_token_approval(&self, input: GemSignerInput, private_key: Vec<u8>) -> Result<String, GemstoneError> {
-        self.dispatch(input, private_key, "token approval", |signer, tx, key| signer.sign_token_approval(tx, key))
+        self.dispatch(input, private_key, "token approval", |signer, signer_input, key| {
+            signer.sign_token_approval(signer_input, key)
+        })
     }
 
     pub fn sign_stake(&self, input: GemSignerInput, private_key: Vec<u8>) -> Result<Vec<String>, GemstoneError> {
-        self.dispatch(input, private_key, "stake", |signer, tx, key| signer.sign_stake(tx, key))
+        self.dispatch(input, private_key, "stake", |signer, signer_input, key| signer.sign_stake(signer_input, key))
     }
 
     pub fn sign_account_action(&self, input: GemSignerInput, private_key: Vec<u8>) -> Result<String, GemstoneError> {
-        self.dispatch(input, private_key, "account action", |signer, tx, key| signer.sign_account_action(tx, key))
+        self.dispatch(input, private_key, "account action", |signer, signer_input, key| {
+            signer.sign_account_action(signer_input, key)
+        })
     }
 
     pub fn sign_perpetual(&self, input: GemSignerInput, private_key: Vec<u8>) -> Result<Vec<String>, GemstoneError> {
-        self.dispatch(input, private_key, "perpetual", |signer, tx, key| signer.sign_perpetual(tx, key))
+        self.dispatch(input, private_key, "perpetual", |signer, signer_input, key| signer.sign_perpetual(signer_input, key))
     }
 
     pub fn sign_withdrawal(&self, input: GemSignerInput, private_key: Vec<u8>) -> Result<String, GemstoneError> {
-        self.dispatch(input, private_key, "withdrawal", |signer, tx, key| signer.sign_withdrawal(tx, key))
+        self.dispatch(input, private_key, "withdrawal", |signer, signer_input, key| signer.sign_withdrawal(signer_input, key))
     }
 
     pub fn sign_data(&self, input: GemSignerInput, private_key: Vec<u8>) -> Result<String, GemstoneError> {
-        self.dispatch(input, private_key, "data", |signer, tx, key| signer.sign_data(tx, key))
+        self.dispatch(input, private_key, "data", |signer, signer_input, key| signer.sign_data(signer_input, key))
     }
 
     pub fn sign_earn(&self, input: GemSignerInput, private_key: Vec<u8>) -> Result<Vec<String>, GemstoneError> {
-        self.dispatch(input, private_key, "earn", |signer, tx, key| signer.sign_earn(tx, key))
+        self.dispatch(input, private_key, "earn", |signer, signer_input, key| signer.sign_earn(signer_input, key))
     }
 
     pub fn sign_message(&self, message: Vec<u8>, private_key: Vec<u8>) -> Result<String, GemstoneError> {
@@ -94,10 +106,10 @@ impl GemChainSigner {
     where
         F: Fn(&dyn ChainSigner, &SignerInput, &[u8]) -> Result<T, SignerError>,
     {
-        let tx_input: SignerInput = input.into();
+        let signer_input: SignerInput = input.into();
         let key = private_key;
 
-        method(self.signer.as_ref(), &tx_input, key.as_slice()).map_err(|err| match err {
+        method(self.signer.as_ref(), &signer_input, key.as_slice()).map_err(|err| match err {
             SignerError::SigningError(_) => unsupported_error(self.chain, action),
             other => GemstoneError::from(other),
         })

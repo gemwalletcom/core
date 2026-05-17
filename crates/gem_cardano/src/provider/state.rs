@@ -13,6 +13,6 @@ impl<C: Client> ChainState for CardanoClient<C> {
     }
 
     async fn get_block_latest_number(&self) -> Result<u64, Box<dyn Error + Sync + Send>> {
-        Ok(self.get_latest_block().await? as u64)
+        self.get_latest_block().await
     }
 }

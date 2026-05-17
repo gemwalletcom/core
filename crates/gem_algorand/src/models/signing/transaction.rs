@@ -24,7 +24,7 @@ impl AlgorandTransaction {
             input,
             Operation::Payment {
                 destination: AlgorandAddress::from_str(&input.destination_address).invalid_input("invalid Algorand address")?,
-                amount: input.value.parse::<u64>().invalid_input("invalid Algorand amount")?,
+                amount: input.value_as_u64()?,
             },
         )
     }
@@ -34,7 +34,7 @@ impl AlgorandTransaction {
             input,
             Operation::AssetTransfer {
                 destination: AlgorandAddress::from_str(&input.destination_address).invalid_input("invalid Algorand address")?,
-                amount: input.value.parse::<u64>().invalid_input("invalid Algorand amount")?,
+                amount: input.value_as_u64()?,
                 asset_id: get_asset_id(input)?,
             },
         )

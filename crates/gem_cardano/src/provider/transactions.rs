@@ -11,7 +11,7 @@ use crate::rpc::client::CardanoClient;
 #[async_trait]
 impl<C: Client> ChainTransactions for CardanoClient<C> {
     async fn get_transactions_by_block(&self, block_number: u64) -> Result<Vec<Transaction>, Box<dyn Error + Send + Sync>> {
-        let block = self.get_block(block_number as i64).await?;
+        let block = self.get_block(block_number).await?;
         let transactions = block
             .transactions
             .clone()

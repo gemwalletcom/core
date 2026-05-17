@@ -8,7 +8,7 @@ use crate::models::account::PolkadotAccountBalance;
 use crate::models::block::PolkadotNodeVersion;
 use crate::models::fee::PolkadotEstimateFee;
 use crate::models::rpc::{Block, BlockHeader};
-use crate::models::transaction::{PolkadotTransactionBroadcastResponse, PolkadotTransactionMaterial};
+use crate::models::transaction::{PolkadotTransactionBroadcastResponse, PolkadotTransactionMaterial, PolkadotTransactionPayload};
 
 pub struct PolkadotClient<C: Client> {
     pub client: C,
@@ -27,8 +27,8 @@ impl<C: Client> PolkadotClient<C> {
         Ok(self.client.get("/transaction/material").await?)
     }
 
-    pub async fn estimate_fee(&self, tx: &str) -> Result<PolkadotEstimateFee, Box<dyn Error + Send + Sync>> {
-        let payload = serde_json::json!({ "tx": tx });
+    pub async fn estimate_fee(&self, transaction: &str) -> Result<PolkadotEstimateFee, Box<dyn Error + Send + Sync>> {
+        let payload = PolkadotTransactionPayload { tx: transaction.to_string() };
         Ok(self.client.post("/transaction/fee-estimate", &payload).await?)
     }
 
@@ -44,8 +44,8 @@ impl<C: Client> PolkadotClient<C> {
         Ok(self.client.get(&format!("/blocks?range={}-{}&noFees=true", from, to)).await?)
     }
 
-    pub async fn broadcast_transaction(&self, data: String) -> Result<PolkadotTransactionBroadcastResponse, Box<dyn Error + Send + Sync>> {
-        let payload = serde_json::json!({ "tx": data });
+    pub async fn broadcast_transaction(&self, transaction: String) -> Result<PolkadotTransactionBroadcastResponse, Box<dyn Error + Send + Sync>> {
+        let payload = PolkadotTransactionPayload { tx: transaction };
         Ok(self.client.post("/transaction", &payload).await?)
     }
 

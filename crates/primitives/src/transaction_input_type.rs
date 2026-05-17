@@ -5,7 +5,8 @@ use crate::swap::{ApprovalData, SwapData};
 use crate::transaction_fee::TransactionFee;
 use crate::transaction_load_metadata::TransactionLoadMetadata;
 use crate::{
-    Asset, GasPriceType, PerpetualType, TransactionPreloadInput, TransactionType, TransferDataExtra, WalletConnectionSessionAppMetadata, nft::NFTAsset, perpetual::AccountDataType,
+    Asset, GasPriceType, PerpetualType, SignerError, TransactionPreloadInput, TransactionType, TransferDataExtra, WalletConnectionSessionAppMetadata, nft::NFTAsset,
+    perpetual::AccountDataType,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -177,6 +178,10 @@ impl TransactionLoadInput {
         self.memo.as_deref().filter(|m| !m.is_empty())
     }
 
+    pub fn value_as_u64(&self) -> Result<u64, SignerError> {
+        self.value.parse::<u64>().map_err(|_| SignerError::invalid_input("invalid transaction amount"))
+    }
+
     pub fn to_preload_input(&self) -> TransactionPreloadInput {
         TransactionPreloadInput {
             input_type: self.input_type.clone(),
@@ -270,5 +275,24 @@ mod tests {
             TransactionInputType::Transfer(Asset::mock()).get_perpetual_type().unwrap_err(),
             "expected perpetual transaction"
         );
+    }
+
+    #[test]
+    fn transaction_load_input_value_as_u64() {
+        let mut input = TransactionLoadInput {
+            input_type: TransactionInputType::Transfer(Asset::mock()),
+            sender_address: "sender".to_string(),
+            destination_address: "destination".to_string(),
+            value: "123".to_string(),
+            gas_price: GasPriceType::regular(1u64),
+            memo: None,
+            is_max_value: false,
+            metadata: TransactionLoadMetadata::None,
+        };
+
+        assert_eq!(input.value_as_u64().unwrap(), 123);
+
+        input.value = "1.23".to_string();
+        assert_eq!(input.value_as_u64().unwrap_err().to_string(), "Invalid input: invalid transaction amount");
     }
 }
