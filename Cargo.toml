@@ -122,7 +122,7 @@ regex = { version = "1.12.3" }
 
 alloy-primitives = { version = "1.6.0", features = ["k256"] }
 alloy-sol-types = { version = "1.5.7", features = ["eip712-serde"] }
-alloy-dyn-abi = { version = "1.5.7", features = ["eip712"] }
+alloy-dyn-abi = { version = "1.6.0", features = ["eip712"] }
 alloy-json-abi = { version = "1.5.7" }
 alloy-signer = { version = "2.0.0" }
 alloy-signer-local = { version = "2.0.0" }
