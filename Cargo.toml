@@ -121,13 +121,13 @@ uniffi = { version = "0.31.1" }
 regex = { version = "1.12.3" }
 
 alloy-primitives = { version = "1.6.0", features = ["k256"] }
-alloy-sol-types = { version = "1.5.7", features = ["eip712-serde"] }
-alloy-dyn-abi = { version = "1.5.7", features = ["eip712"] }
+alloy-sol-types = { version = "1.6.0", features = ["eip712-serde"] }
+alloy-dyn-abi = { version = "1.6.0", features = ["eip712"] }
 alloy-json-abi = { version = "1.5.7" }
-alloy-signer = { version = "2.0.0" }
-alloy-signer-local = { version = "2.0.0" }
+alloy-signer = { version = "2.0.5" }
+alloy-signer-local = { version = "2.0.5" }
 alloy-network = { version = "2.0.0" }
-alloy-consensus = { version = "2.0.0" }
+alloy-consensus = { version = "2.0.5" }
 alloy-rlp = { version = "0.3.15" }
 jsonwebtoken = { version = "10.4.0", features = ["aws_lc_rs"] }
 
