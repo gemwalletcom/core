@@ -112,7 +112,7 @@ impl From<gem_ton::tvm::TvmError> for SwapperError {
 
 impl From<gem_solana::SolanaError> for SwapperError {
     fn from(err: gem_solana::SolanaError) -> Self {
-        Self::ComputeQuoteError(format!("{INVALID_ADDRESS}: {err}"))
+        Self::ComputeQuoteError(format!("Solana error: {err}"))
     }
 }
 
@@ -149,5 +149,18 @@ impl From<num_bigint::ParseBigIntError> for SwapperError {
 impl From<number_formatter::NumberFormatterError> for SwapperError {
     fn from(err: number_formatter::NumberFormatterError) -> Self {
         Self::ComputeQuoteError(format!("{}: {err}", INVALID_AMOUNT))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_solana_error_mapping() {
+        assert_eq!(
+            SwapperError::from(gem_solana::SolanaError::InvalidTransaction),
+            SwapperError::ComputeQuoteError("Solana error: Invalid transaction".to_string())
+        );
     }
 }
