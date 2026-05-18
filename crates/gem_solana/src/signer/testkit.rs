@@ -3,7 +3,6 @@ use primitives::testkit::signer_mock::TEST_PRIVATE_KEY;
 use primitives::{SolanaTokenProgramId, TransactionLoadMetadata};
 use solana_primitives::{Pubkey, VersionedTransaction, get_address};
 
-pub const TEST_BLOCK_HASH: &str = "11111111111111111111111111111111";
 pub const TEST_RECIPIENT: &str = "EN2sCsJ1WDV8UFqsiTXHcUPUxQ4juE71eCknHYYMifkd";
 pub const TEST_SENDER_TOKEN_ADDRESS: &str = "HEeranxp3y7kVQKVSLdZW1rUmnbs7bAtUTMu8o88Jash";
 
@@ -16,12 +15,7 @@ pub fn sender_address_for_key(private_key: &[u8]) -> String {
 }
 
 pub fn solana_metadata(sender_token_address: Option<&str>, recipient_token_address: Option<&str>, token_program: Option<SolanaTokenProgramId>) -> TransactionLoadMetadata {
-    TransactionLoadMetadata::Solana {
-        sender_token_address: sender_token_address.map(String::from),
-        recipient_token_address: recipient_token_address.map(String::from),
-        token_program,
-        block_hash: TEST_BLOCK_HASH.to_string(),
-    }
+    TransactionLoadMetadata::mock_solana_token(sender_token_address, recipient_token_address, token_program)
 }
 
 pub fn private_key_base58(value: &str) -> Vec<u8> {

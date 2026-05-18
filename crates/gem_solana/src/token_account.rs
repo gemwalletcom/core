@@ -1,13 +1,13 @@
-use crate::{ASSOCIATED_TOKEN_ACCOUNT_PROGRAM, Pubkey, find_program_address};
+use crate::{ASSOCIATED_TOKEN_ACCOUNT_PROGRAM, Pubkey, SolanaError, find_program_address};
 
-pub fn get_token_account(wallet: &str, token_mint: &str, token_program: &str) -> String {
-    let owner = Pubkey::from_base58(wallet).unwrap();
-    let token_program = Pubkey::from_base58(token_program).unwrap();
-    let mint = Pubkey::from_base58(token_mint).unwrap();
-    let associated_token_program = Pubkey::from_base58(ASSOCIATED_TOKEN_ACCOUNT_PROGRAM).unwrap();
+pub fn get_token_account(wallet: &str, token_mint: &str, token_program: &str) -> Result<String, SolanaError> {
+    let owner = Pubkey::from_base58(wallet)?;
+    let token_program = Pubkey::from_base58(token_program)?;
+    let mint = Pubkey::from_base58(token_mint)?;
+    let associated_token_program = Pubkey::from_base58(ASSOCIATED_TOKEN_ACCOUNT_PROGRAM)?;
     let seeds = [owner.as_bytes().as_ref(), token_program.as_bytes().as_ref(), mint.as_bytes().as_ref()];
 
-    find_program_address(&associated_token_program, &seeds).unwrap().0.to_string()
+    Ok(find_program_address(&associated_token_program, &seeds)?.0.to_string())
 }
 
 #[cfg(test)]
@@ -16,7 +16,7 @@ mod tests {
     use crate::{PYUSD_TOKEN_MINT, TOKEN_PROGRAM, TOKEN_PROGRAM_2022, USDC_TOKEN_MINT, USDS_TOKEN_MINT, USDT_TOKEN_MINT, WSOL_TOKEN_ADDRESS};
 
     #[test]
-    fn test_get_token_account() {
+    fn test_get_token_account() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let test_cases = [
             (
                 "CzVqG98YbFNiMREwgTswSML59CNrfobsNX4N9j6K8fbC",
@@ -51,8 +51,12 @@ mod tests {
         ];
 
         for (wallet, token_mint, token_program, expected_token_account) in test_cases.iter() {
-            let fee_token_account = get_token_account(wallet, token_mint, token_program);
+            let fee_token_account = get_token_account(wallet, token_mint, token_program)?;
             assert_eq!(fee_token_account, *expected_token_account);
         }
+
+        assert!(get_token_account("invalid", USDC_TOKEN_MINT, TOKEN_PROGRAM).is_err());
+
+        Ok(())
     }
 }

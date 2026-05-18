@@ -110,6 +110,12 @@ impl From<gem_ton::tvm::TvmError> for SwapperError {
     }
 }
 
+impl From<gem_solana::SolanaError> for SwapperError {
+    fn from(err: gem_solana::SolanaError) -> Self {
+        Self::ComputeQuoteError(format!("{INVALID_ADDRESS}: {err}"))
+    }
+}
+
 impl From<primitives::AddressError> for SwapperError {
     fn from(err: primitives::AddressError) -> Self {
         Self::ComputeQuoteError(format!("{INVALID_ADDRESS}: {err}"))

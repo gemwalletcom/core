@@ -131,6 +131,10 @@ impl SignerInput {
             TransactionFee::default(),
         )
     }
+
+    pub fn mock_solana(block_hash: &str) -> Self {
+        SignerInput::new(TransactionLoadInput::mock_solana(block_hash), TransactionFee::default())
+    }
 }
 
 impl TransactionLoadInput {
@@ -147,6 +151,19 @@ impl TransactionLoadInput {
                 sequence,
                 block_hash: block_hash.into(),
             },
+        }
+    }
+
+    pub fn mock_solana(block_hash: &str) -> Self {
+        TransactionLoadInput {
+            input_type: TransactionInputType::Transfer(Asset::mock_sol()),
+            sender_address: String::new(),
+            destination_address: String::new(),
+            value: "0".to_string(),
+            gas_price: GasPriceType::regular(0),
+            memo: None,
+            is_max_value: false,
+            metadata: TransactionLoadMetadata::mock_solana(block_hash),
         }
     }
 

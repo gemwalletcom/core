@@ -60,12 +60,12 @@ where
         input.to_string()
     }
 
-    fn get_fee_token_account(&self, options: &Options, mint: &str, token_program: &str) -> Option<String> {
+    fn get_fee_token_account(&self, options: &Options, mint: &str, token_program: &str) -> Result<Option<String>, SwapperError> {
         if let Some(fee) = &options.fee {
-            let fee_account = get_token_account(&fee.solana.address, mint, token_program);
-            return Some(fee_account);
+            let fee_account = get_token_account(&fee.solana.address, mint, token_program)?;
+            return Ok(Some(fee_account));
         }
-        None
+        Ok(None)
     }
 
     async fn fetch_token_program(&self, mint: &str) -> Result<String, SwapperError> {
@@ -83,12 +83,12 @@ where
         let fee_mint = self.get_fee_mint(input_mint, output_mint);
         // if fee_mint is in preset, no need to fetch token program
         let token_program = if self.fee_mints.contains(fee_mint.as_str()) {
-            return Ok(self.get_fee_token_account(options, fee_mint.as_str(), TOKEN_PROGRAM).unwrap_or_default());
+            return Ok(self.get_fee_token_account(options, fee_mint.as_str(), TOKEN_PROGRAM)?.unwrap_or_default());
         } else {
             self.fetch_token_program(&fee_mint).await?
         };
 
-        let mut fee_account = self.get_fee_token_account(options, &fee_mint, &token_program).unwrap_or_default();
+        let mut fee_account = self.get_fee_token_account(options, &fee_mint, &token_program)?.unwrap_or_default();
         if fee_account.is_empty() {
             return Ok(fee_account);
         }

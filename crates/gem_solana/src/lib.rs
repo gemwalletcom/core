@@ -19,7 +19,7 @@ pub mod signer;
 
 pub use address::validate_address;
 pub use jsonrpc::SolanaRpc;
-pub use solana_primitives::{Pubkey, find_program_address};
+pub use solana_primitives::{Pubkey, SolanaError, find_program_address};
 pub use transaction::{decode_transaction, try_decode_transaction};
 
 #[cfg(all(feature = "reqwest", not(feature = "rpc")))]
