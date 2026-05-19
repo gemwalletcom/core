@@ -9,6 +9,8 @@ const TYPE_URL_PREFIX: &str = "type.googleapis.com/protocol.";
 pub enum TronContractType {
     #[strum(serialize = "TransferContract")]
     Transfer = 1,
+    #[strum(serialize = "TransferAssetContract")]
+    TransferAsset = 2,
     #[strum(serialize = "VoteWitnessContract")]
     VoteWitness = 4,
     #[strum(serialize = "WithdrawBalanceContract")]
@@ -21,6 +23,10 @@ pub enum TronContractType {
     UnfreezeBalanceV2 = 55,
     #[strum(serialize = "WithdrawExpireUnfreezeContract")]
     WithdrawExpireUnfreeze = 56,
+    #[strum(serialize = "DelegateResourceContract")]
+    DelegateResource = 57,
+    #[strum(serialize = "UnDelegateResourceContract")]
+    UnDelegateResource = 58,
 }
 
 impl TronContractType {

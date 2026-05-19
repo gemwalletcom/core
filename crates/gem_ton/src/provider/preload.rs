@@ -2,15 +2,15 @@ use async_trait::async_trait;
 use chain_traits::ChainTransactionLoad;
 use gem_client::Client;
 use num_bigint::BigInt;
-use primitives::FeeOption;
 use primitives::{
-    AssetSubtype, FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
+    AssetSubtype, FeeOption, FeePriority, FeeRate, GasPriceType, TransactionFee, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata,
     TransactionPreloadInput, swap::SwapQuoteDataType,
 };
 use std::collections::HashMap;
 use std::error::Error;
 
 use crate::address::base64_to_hex_address;
+use crate::constants::NFT_TRANSFER_ATTACHMENT;
 use crate::rpc::client::TonClient;
 
 const TON_BASE_FEE: u64 = 10_000_000;
@@ -24,8 +24,12 @@ pub fn calculate_transaction_fee(input: &TransactionLoadInput, recipient_token_a
     let mut options = HashMap::new();
 
     let fee = match &input.input_type {
-        TransactionInputType::Transfer(asset) | TransactionInputType::TransferNft(asset, _) | TransactionInputType::Account(asset, _) => {
+        TransactionInputType::Transfer(asset) | TransactionInputType::Account(asset, _) => {
             transfer_fee(asset.id.token_subtype(), input.memo.as_deref(), recipient_token_address.as_deref(), &base_fee, &mut options)
+        }
+        TransactionInputType::TransferNft(_, _) => {
+            options.insert(FeeOption::TokenAccountCreation, BigInt::from(NFT_TRANSFER_ATTACHMENT));
+            base_fee.clone()
         }
         TransactionInputType::Swap(from_asset, _, swap_data) => match &swap_data.data.data_type {
             SwapQuoteDataType::Contract => {
@@ -135,7 +139,7 @@ fn get_recipient_jetton_wallet(input: &TransactionPreloadInput) -> Option<&str> 
 mod tests {
     use super::*;
     use num_bigint::BigInt;
-    use primitives::{Asset, AssetId, AssetType, Chain, GasPriceType, SwapProvider, TransactionPreloadInput, swap::SwapData};
+    use primitives::{Asset, AssetId, AssetType, Chain, GasPriceType, NFTAsset, SwapProvider, TransactionPreloadInput, swap::SwapData};
 
     fn create_input(asset_type: AssetType, memo: Option<String>) -> TransactionLoadInput {
         let (token_id, name, symbol, decimals) = match asset_type {
@@ -183,6 +187,17 @@ mod tests {
         let fee = calculate_transaction_fee(&create_input(AssetType::NATIVE, Some("memo".to_string())), None);
         assert_eq!(fee.fee, BigInt::from(TON_BASE_FEE));
         assert_eq!(fee.options.len(), 0);
+    }
+
+    #[test]
+    fn test_ton_nft_transfer_fee_includes_attachment() {
+        let mut input = create_input(AssetType::NATIVE, None);
+        input.input_type = TransactionInputType::TransferNft(Asset::from_chain(Chain::Ton), NFTAsset::mock_ton());
+
+        let fee = calculate_transaction_fee(&input, None);
+
+        assert_eq!(fee.fee, BigInt::from(TON_BASE_FEE + NFT_TRANSFER_ATTACHMENT));
+        assert_eq!(fee.options.get(&FeeOption::TokenAccountCreation), Some(&BigInt::from(NFT_TRANSFER_ATTACHMENT)));
     }
 
     #[test]

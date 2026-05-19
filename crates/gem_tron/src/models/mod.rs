@@ -1,6 +1,6 @@
 use crate::address::serializer::deserialize as tron_address_deserialize;
 use primitives::hex::decode_hex_utf8;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::{error::Error, fmt};
 
 pub mod account;
@@ -67,9 +67,17 @@ pub struct TransactionData {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Contract {
     #[serde(rename = "type")]
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    #[serde(default, deserialize_with = "deserialize_contract_type_optional", skip_serializing_if = "Option::is_none")]
     pub contract_type: Option<TronContractType>,
     pub parameter: ContractParameter,
+}
+
+fn deserialize_contract_type_optional<'de, D>(deserializer: D) -> Result<Option<TronContractType>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value = Option::<String>::deserialize(deserializer)?;
+    Ok(value.as_deref().and_then(|value| value.parse().ok()))
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

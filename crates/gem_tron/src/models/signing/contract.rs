@@ -203,6 +203,9 @@ impl TronContract {
                 let value: OwnerContractValue = serde_json::from_value(value)?;
                 Ok(Self::WithdrawExpireUnfreeze { owner: value.owner_address })
             }
+            TronContractType::TransferAsset | TronContractType::DelegateResource | TronContractType::UnDelegateResource => {
+                Err(SignerError::invalid_input(format!("unsupported Tron contract type: {contract_type}")))
+            }
         }
     }
 }

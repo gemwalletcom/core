@@ -1,0 +1,61 @@
+[
+    {
+        "blockNumber": 82834891,
+        "blockTimeStamp": 1779173205000,
+        "receipt": {
+            "result": "SUCCESS"
+        },
+        "id": "delegate_resource_tx"
+    },
+    {
+        "blockNumber": 82834891,
+        "blockTimeStamp": 1779173205000,
+        "receipt": {
+            "result": "SUCCESS"
+        },
+        "id": "undelegate_resource_tx"
+    },
+    {
+        "blockNumber": 82834891,
+        "blockTimeStamp": 1779173205000,
+        "receipt": {
+            "result": "SUCCESS"
+        },
+        "id": "transfer_asset_tx"
+    },
+    {
+        "blockNumber": 82834891,
+        "blockTimeStamp": 1779173205000,
+        "receipt": {
+            "result": "SUCCESS"
+        },
+        "id": "future_unknown_contract_tx"
+    },
+    {
+        "id": "10f1e5b04c0dd39f14d4b5ca270899b36ae9c52ac1b9b64b76360c7373cc0893",
+        "blockNumber": 82834891,
+        "blockTimeStamp": 1779173205000,
+        "contractResult": [
+            "0000000000000000000000000000000000000000000000000000000000000000"
+        ],
+        "contract_address": "41a614f803b6fd780986a42c78ec9c7f77e6ded13c",
+        "receipt": {
+            "energy_usage": 64285,
+            "energy_usage_total": 64285,
+            "net_usage": 345,
+            "result": "SUCCESS",
+            "energy_penalty_total": 49635
+        },
+        "log": [
+            {
+                "address": "a614f803b6fd780986a42c78ec9c7f77e6ded13c",
+                "topics": [
+                    "ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+                    "000000000000000000000000ddb0132599837a32a0ad2c32daa1a8652aaa37e9",
+                    "000000000000000000000000d8976c02cc751cb514ec2ba58ba975dac9a7b034"
+                ],
+                "data": "000000000000000000000000000000000000000000000000000000000ed77040"
+            }
+        ]
+    }
+]

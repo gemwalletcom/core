@@ -1,0 +1,33 @@
+{
+    "nft_items": [
+        {
+            "address": "0:AFC49CB8786F21C87045B19EDE78FC6B46C5104845133F8E9A6D440601C198EA",
+            "collection_address": "0:4186117A3BE8DF8B54C4175AECEA911ACA7123845ADC8D4082D837D4C33278A5"
+        }
+    ],
+    "metadata": {
+        "0:4186117A3BE8DF8B54C4175AECEA911ACA7123845ADC8D4082D837D4C33278A5": {
+            "token_info": [
+                {
+                    "valid": true,
+                    "name": "Unverified Collection",
+                    "description": "A TON NFT collection without a verified marketplace.",
+                    "image": "https://example.com/unverified-collection.png",
+                    "extra": {
+                        "marketplace": "other.io"
+                    }
+                }
+            ]
+        },
+        "0:AFC49CB8786F21C87045B19EDE78FC6B46C5104845133F8E9A6D440601C198EA": {
+            "token_info": [
+                {
+                    "valid": true,
+                    "name": "Unverified Item",
+                    "description": "A TON NFT",
+                    "image": "https://example.com/unverified-item.png"
+                }
+            ]
+        }
+    }
+}

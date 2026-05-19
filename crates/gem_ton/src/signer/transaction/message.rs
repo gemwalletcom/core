@@ -1,9 +1,9 @@
 use num_bigint::BigUint;
 use primitives::SignerError;
 
-use super::request::{JettonTransferRequest, TransferPayload, TransferRequest};
+use super::request::{JettonTransferRequest, NftTransferRequest, TransferPayload, TransferRequest};
 use crate::{
-    constants::JETTON_TRANSFER_OPCODE,
+    constants::{JETTON_TRANSFER_OPCODE, NFT_TRANSFER_OPCODE},
     tvm::{Cell, CellArc, CellBuilder},
 };
 
@@ -55,11 +55,14 @@ pub(super) fn build_internal_message(request: &TransferRequest) -> Result<Intern
 }
 
 fn build_payload(request: &TransferRequest) -> Result<CellArc, SignerError> {
-    match (&request.payload, &request.comment) {
-        (Some(TransferPayload::Jetton(jetton)), _) => build_jetton_payload(jetton),
-        (Some(TransferPayload::Custom(payload)), _) => Ok(payload.clone()),
-        (None, Some(comment)) => build_comment_payload(comment),
-        (None, None) => Ok(CellBuilder::new().build()?.into_arc()),
+    match &request.payload {
+        Some(TransferPayload::Jetton(jetton)) => build_jetton_payload(jetton),
+        Some(TransferPayload::Nft(nft)) => build_nft_payload(nft),
+        Some(TransferPayload::Custom(payload)) => Ok(payload.clone()),
+        None => match &request.comment {
+            Some(comment) => build_comment_payload(comment),
+            None => Ok(CellBuilder::new().build()?.into_arc()),
+        },
     }
 }
 
@@ -78,20 +81,23 @@ fn build_jetton_payload(request: &JettonTransferRequest) -> Result<CellArc, Sign
         .store_address(&request.destination)?
         .store_address(&request.response_address)?;
 
-    match &request.custom_payload {
-        Some(custom_payload) => {
-            builder.store_bit(true)?.store_reference(custom_payload)?;
-        }
-        None => {
-            builder.store_bit(false)?;
-        }
-    }
+    builder.store_maybe_reference(request.custom_payload.as_ref())?;
+    let forward_payload = request.comment.as_deref().map(build_comment_payload).transpose()?;
+    builder.store_coins(&request.forward_ton_amount)?.store_maybe_reference(forward_payload.as_ref())?;
 
-    if let Some(comment) = &request.comment {
-        let payload = build_comment_payload(comment)?;
-        builder.store_coins(&request.forward_ton_amount)?.store_bit(true)?.store_reference(&payload)?;
-    } else {
-        builder.store_coins(&request.forward_ton_amount)?.store_bit(false)?;
-    }
+    Ok(builder.build()?.into_arc())
+}
+
+fn build_nft_payload(request: &NftTransferRequest) -> Result<CellArc, SignerError> {
+    let mut builder = CellBuilder::new();
+    builder
+        .store_u32(32, NFT_TRANSFER_OPCODE)?
+        .store_u64(64, request.query_id)?
+        .store_address(&request.new_owner)?
+        .store_address(&request.response_destination)?
+        .store_maybe_reference(None)?;
+
+    let forward_payload = request.comment.as_deref().map(build_comment_payload).transpose()?;
+    builder.store_coins(&request.forward_amount)?.store_maybe_reference(forward_payload.as_ref())?;
     Ok(builder.build()?.into_arc())
 }

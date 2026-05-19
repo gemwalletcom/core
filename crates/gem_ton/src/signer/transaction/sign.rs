@@ -6,10 +6,11 @@ use primitives::{FeeOption, SignerError, SignerInput};
 
 use super::{
     message::{InternalMessage, build_internal_message},
-    request::{JettonTransferRequest, TransferRequest},
+    request::{JettonTransferRequest, NftTransferRequest, TransferPayload, TransferRequest},
 };
 use crate::{
     address::Address,
+    constants::NFT_TRANSFER_FORWARD_AMOUNT,
     signer::signer::TonSigner,
     tvm::{BagOfCells, CellBuilder},
 };
@@ -38,7 +39,21 @@ impl TonSigner {
             forward_ton_amount: BigUint::from(1u8),
             comment: input.memo.clone(),
         };
-        let request = TransferRequest::new_jetton_transfer(&sender_token_address, token_account_creation_fee(input)?, jetton)?;
+        let request = TransferRequest::new_contract_transfer(&sender_token_address, optional_ton_attachment(input)?, TransferPayload::Jetton(jetton))?;
+        self.sign_requests(vec![request], input.metadata.get_sequence()?, expire_at)
+    }
+
+    pub fn sign_nft_transfer(&self, input: &SignerInput, expire_at: Option<u32>) -> Result<String, SignerError> {
+        let nft_asset = input.input_type.get_nft_asset()?;
+        let nft_item = nft_asset.get_contract_address()?;
+        let nft = NftTransferRequest {
+            query_id: 0,
+            new_owner: Address::parse(&input.destination_address)?,
+            response_destination: Address::parse(&input.sender_address)?,
+            forward_amount: BigUint::from(NFT_TRANSFER_FORWARD_AMOUNT),
+            comment: input.memo.clone(),
+        };
+        let request = TransferRequest::new_contract_transfer(nft_item, optional_ton_attachment(input)?, TransferPayload::Nft(nft))?;
         self.sign_requests(vec![request], input.metadata.get_sequence()?, expire_at)
     }
 
@@ -70,7 +85,7 @@ impl TonSigner {
     }
 }
 
-fn token_account_creation_fee(input: &SignerInput) -> Result<BigUint, SignerError> {
+fn optional_ton_attachment(input: &SignerInput) -> Result<BigUint, SignerError> {
     let Some(value) = input.fee.options.get(&FeeOption::TokenAccountCreation) else {
         return Ok(BigUint::ZERO);
     };
@@ -90,9 +105,10 @@ fn resolve_expire_at(sequence: u32, expire_at: Option<u32>) -> Result<u32, Signe
 
 #[cfg(test)]
 mod tests {
-    use num_bigint::BigUint;
+    use num_bigint::{BigInt, BigUint};
     use primitives::{
-        Address as AddressTrait, Asset, AssetId, AssetType, Chain, SignerInput, TransactionInputType, TransactionLoadMetadata, asset_constants::TON_USDT_TOKEN_ID, swap::SwapData,
+        Address as AddressTrait, Asset, AssetId, AssetType, Chain, FeeOption, NFTAsset, SignerInput, TransactionFee, TransactionInputType, TransactionLoadMetadata,
+        asset_constants::TON_USDT_TOKEN_ID, swap::SwapData,
     };
 
     use super::super::{
@@ -101,6 +117,7 @@ mod tests {
     };
     use crate::{
         address::Address,
+        constants::NFT_TRANSFER_ATTACHMENT,
         signer::{TonSigner, testkit::mock_cell},
     };
 
@@ -147,6 +164,36 @@ mod tests {
         assert_eq!(
             signer.sign_token_transfer(&input, Some(1_000_000_000)).unwrap(),
             "te6cckEBBAEA/wABRYgBkF1w67cBLG0e0D7j0y2ShzflCe2JrlAjS4pC8UHg85AMAQGcbaO6bjRLkbewbUrj8cYUocJI7vJDeXH4uoZqtTZzf5CRVBRw8rjMKMNg4MEafTwywe6wo2+BhefXkhOtdEakCympoxc7msoAAAAAAQADAgFgYgASwA6bnRklOr1y4MxDEh82TpZnlC7Kl8tiVkz/uVEgGgAAAAAAAAAAAAAAAAABAwCmD4p+pQAAAAAAAAAAInEIAZBdcOu3ASxtHtA+49Mtkoc35Qntia5QI0uKQvFB4PORADILrh124CWNo9oH3HplslDm/KE9sTXKBGlxSF4oPB5yAgKLD74O"
+        );
+    }
+
+    #[test]
+    fn test_sign_nft_transfer() {
+        let signer = test_signer();
+        let mut input = SignerInput::mock_ton(
+            TransactionInputType::TransferNft(Asset::from_chain(Chain::Ton), NFTAsset::mock_ton()),
+            TransactionLoadMetadata::mock_ton(1),
+        );
+        input.fee = TransactionFee::new_from_fee_with_option(BigInt::from(0), FeeOption::TokenAccountCreation, BigInt::from(NFT_TRANSFER_ATTACHMENT));
+
+        assert_eq!(
+            signer.sign_nft_transfer(&input, Some(1_000_000_000)).unwrap(),
+            "te6cckECBAEAAQMAAUWIAZBdcOu3ASxtHtA+49Mtkoc35Qntia5QI0uKQvFB4POQDAEBnNqNNNoZtfnJIY5Ay3QVhWak/TIAnQoTWEq80qOayjpIrJzSwtwHEOKtIL9yqLZw0PhzzP5Q/hDKawfvX80AhAYpqaMXO5rKAAAAAAEAAwIBaGIAV+JOXDw3kOQ4ItjPbzx+NaNiiCQiiZ/HTTaiAwDgzHUgF9eEAAAAAAAAAAAAAAAAAAEDAKVfzD0UAAAAAAAAAACACxq4qfdwkRXv1VoZuOs5Ue3+8/kqqiDYJnNgb9gUgGjwAWNXFT7uEiK9+qtDNx1nKj2/3n8lVUQbBM5sDfsCkA0ccxLQCBmg7No="
+        );
+    }
+
+    #[test]
+    fn test_sign_nft_transfer_validates_contract_address() {
+        let signer = test_signer();
+
+        let mut nft_asset = NFTAsset::mock_ton();
+        nft_asset.contract_address = None;
+        let input_type = TransactionInputType::TransferNft(Asset::from_chain(Chain::Ton), nft_asset);
+        let input = SignerInput::mock_ton(input_type, TransactionLoadMetadata::mock_ton(1));
+
+        assert_eq!(
+            signer.sign_nft_transfer(&input, Some(1_000_000_000)).unwrap_err().to_string(),
+            "Invalid input: missing NFT contract address"
         );
     }
 

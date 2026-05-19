@@ -1,0 +1,22 @@
+{
+    "nft_collections": [
+        {
+            "address": "0:B06D484DD51108E2AF8DF04576A2B74CC57A209C35B6CB4B5E46204FD118E009"
+        }
+    ],
+    "metadata": {
+        "0:B06D484DD51108E2AF8DF04576A2B74CC57A209C35B6CB4B5E46204FD118E009": {
+            "token_info": [
+                {
+                    "valid": true,
+                    "name": "Getgems Collection",
+                    "description": "A TON NFT collection listed on Getgems.",
+                    "image": "https://example.com/getgems.png",
+                    "extra": {
+                        "marketplace": "getgems.io"
+                    }
+                }
+            ]
+        }
+    }
+}

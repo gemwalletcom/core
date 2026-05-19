@@ -4,6 +4,7 @@ use std::str::FromStr;
 use crc::Crc;
 use gem_encoding::{decode_base64_no_pad, decode_base64_url, encode_base64_url};
 use primitives::{Address as AddressTrait, AddressError, SignerError};
+use serde::{Deserialize, Deserializer, de::Error as _};
 
 #[cfg(feature = "tvm")]
 use crate::tvm::{BagOfCells, BitReader, Cell, CellBuilder, TvmError};
@@ -161,6 +162,16 @@ impl fmt::Debug for Address {
     }
 }
 
+impl<'de> Deserialize<'de> for Address {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let value = String::deserialize(deserializer)?;
+        Self::parse(&value).map_err(D::Error::custom)
+    }
+}
+
 impl AddressTrait for Address {
     fn try_parse(address: &str) -> Option<Self> {
         Self::try_parse_base64(address).or_else(|| Self::try_parse_hex(address))
@@ -206,6 +217,20 @@ mod tests {
         assert_eq!(address.as_bytes().len(), RAW_ADDRESS_LEN);
         assert_eq!(address.workchain(), 0);
         assert_eq!(hex::encode(address.hash_part()), "8e874b7ad9bbebbfc48810b8939c98f50580246f19982040dbcb253c4c3daf78");
+    }
+
+    #[test]
+    fn test_address_serde() {
+        let hex = "0:8e874b7ad9bbebbfc48810b8939c98f50580246f19982040dbcb253c4c3daf78";
+        let encoded = "EQCOh0t62bvrv8SIELiTnJj1BYAkbxmYIEDbyyU8TD2veND8";
+        let expected = Address::try_parse_hex(hex).unwrap();
+
+        let from_hex: Address = serde_json::from_value(serde_json::Value::String(hex.to_string())).unwrap();
+        let from_encoded: Address = serde_json::from_value(serde_json::Value::String(encoded.to_string())).unwrap();
+
+        assert_eq!(from_hex, expected);
+        assert_eq!(from_encoded, expected);
+        assert!(serde_json::from_value::<Address>(serde_json::Value::String("invalid".to_string())).is_err());
     }
 
     #[test]

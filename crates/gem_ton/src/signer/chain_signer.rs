@@ -25,6 +25,10 @@ impl ChainSigner for TonChainSigner {
         TonSigner::new(private_key)?.sign_token_transfer(input, None)
     }
 
+    fn sign_nft_transfer(&self, input: &SignerInput, private_key: &[u8]) -> Result<String, SignerError> {
+        TonSigner::new(private_key)?.sign_nft_transfer(input, None)
+    }
+
     fn sign_swap(&self, input: &SignerInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
         TonSigner::new(private_key)?.sign_swap(input, None)
     }

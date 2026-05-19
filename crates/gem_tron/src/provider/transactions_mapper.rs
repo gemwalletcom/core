@@ -144,8 +144,9 @@ pub fn map_transaction(chain: Chain, transaction: TronTransaction, receipt: Tran
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::models::{TransactionReceipt, TransactionReceiptData, TronTransactionBroadcast};
+    use crate::models::{BlockTransactions, TransactionReceipt, TransactionReceiptData, TronContractType, TronTransactionBroadcast};
     use crate::provider::testkit::TEST_TRANSACTION_ID;
+    use primitives::asset_constants::TRON_USDT_TOKEN_ID;
 
     #[test]
     fn test_map_transaction_broadcast_error() {
@@ -310,6 +311,30 @@ mod tests {
         let transaction = result.unwrap();
         assert_eq!(transaction.transaction_type, TransactionType::Transfer);
         assert_ne!(transaction.from, transaction.to);
+    }
+
+    #[test]
+    fn test_map_transactions_by_block_ignores_unsupported_contract_types() {
+        let block: BlockTransactions = serde_json::from_str(include_str!("../../testdata/block_mixed_contract_types.json")).unwrap();
+        let receipts: Vec<TransactionReceiptData> = serde_json::from_str(include_str!("../../testdata/block_mixed_contract_types_receipts.json")).unwrap();
+
+        assert_eq!(block.transactions.len(), 5);
+        assert_eq!(block.transactions[0].raw_data.contract[0].contract_type, Some(TronContractType::DelegateResource));
+        assert_eq!(block.transactions[1].raw_data.contract[0].contract_type, Some(TronContractType::UnDelegateResource));
+        assert_eq!(block.transactions[2].raw_data.contract[0].contract_type, Some(TronContractType::TransferAsset));
+        assert_eq!(block.transactions[3].raw_data.contract[0].contract_type, None);
+
+        let transactions = map_transactions_by_block(Chain::Tron, block, receipts);
+
+        assert_eq!(transactions.len(), 1);
+        let transaction = transactions.first().unwrap();
+        assert_eq!(transaction.hash, "10f1e5b04c0dd39f14d4b5ca270899b36ae9c52ac1b9b64b76360c7373cc0893");
+        assert_eq!(transaction.asset_id, AssetId::from_token(Chain::Tron, TRON_USDT_TOKEN_ID));
+        assert_eq!(transaction.from, "TWBPGLwQw2EbqYLLw1DJnTDt2ZQ9yJW1JJ");
+        assert_eq!(transaction.to, "TViSMURdt2dda6Pf163UBZoSfbV9hECvvc");
+        assert_eq!(transaction.value, "249000000");
+        assert_eq!(transaction.transaction_type, TransactionType::Transfer);
+        assert_eq!(transaction.state, TransactionState::Confirmed);
     }
 
     #[test]

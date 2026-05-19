@@ -29,14 +29,14 @@ impl TransferRequest {
         })
     }
 
-    pub(crate) fn new_jetton_transfer(jetton_wallet: &str, account_creation_fee: BigUint, jetton: JettonTransferRequest) -> Result<Self, SignerError> {
+    pub(crate) fn new_contract_transfer(destination: &str, attached_amount: BigUint, payload: TransferPayload) -> Result<Self, SignerError> {
         Ok(Self {
-            destination: Address::parse(jetton_wallet)?,
-            value: account_creation_fee,
+            destination: Address::parse(destination)?,
+            value: attached_amount,
             mode: DEFAULT_SEND_MODE,
             bounceable: true,
-            comment: jetton.comment.clone(),
-            payload: Some(TransferPayload::Jetton(jetton)),
+            comment: None,
+            payload: Some(payload),
             state_init: None,
         })
     }
@@ -63,6 +63,7 @@ impl TransferRequest {
 
 pub(crate) enum TransferPayload {
     Jetton(JettonTransferRequest),
+    Nft(NftTransferRequest),
     Custom(CellArc),
 }
 
@@ -73,5 +74,13 @@ pub(crate) struct JettonTransferRequest {
     pub response_address: Address,
     pub custom_payload: Option<CellArc>,
     pub forward_ton_amount: BigUint,
+    pub comment: Option<String>,
+}
+
+pub(crate) struct NftTransferRequest {
+    pub query_id: u64,
+    pub new_owner: Address,
+    pub response_destination: Address,
+    pub forward_amount: BigUint,
     pub comment: Option<String>,
 }

@@ -660,6 +660,19 @@ mod tests {
     }
 
     #[test]
+    fn sign_raw_json_rejects_known_unsupported_contract() {
+        let mut transaction = raw_transfer_transaction();
+        transaction["raw_data"]["contract"][0]["parameter"]["type_url"] = json!("type.googleapis.com/protocol.DelegateResourceContract");
+        transaction["raw_data"]["contract"][0]["type"] = json!("DelegateResourceContract");
+        let input = generic_input(transaction, TransferDataOutputType::EncodedTransaction);
+
+        assert_eq!(
+            TronChainSigner.sign_data(&input, &private_key()).unwrap_err().to_string(),
+            "Invalid input: unsupported Tron contract type: DelegateResourceContract"
+        );
+    }
+
+    #[test]
     fn sign_transfer_rejects_invalid_address() {
         let input = signer_input(
             TransactionInputType::Transfer(Asset::from_chain(Chain::Tron)),

@@ -31,6 +31,7 @@ pub struct TokenInfo {
 #[derive(Deserialize, Clone, Debug)]
 pub struct TokenInfoExtra {
     pub domain: Option<String>,
+    pub marketplace: Option<String>,
 }
 
 #[derive(Deserialize, Clone, Debug)]

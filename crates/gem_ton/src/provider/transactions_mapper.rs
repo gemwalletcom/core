@@ -1,12 +1,12 @@
-use crate::address::Address;
-use crate::address::hex_to_base64_address;
+use crate::address::{Address, hex_to_base64_address};
 use crate::constants::FAILED_OPERATION_OPCODES;
 use crate::models::{
-    BroadcastTransaction, JettonSwapDetails, JettonTransferDetails, OutMessage, TRACE_ACTION_JETTON_SWAP, TRACE_ACTION_JETTON_TRANSFER, Trace, TraceAction, TransactionMessage,
+    BroadcastTransaction, JettonSwapDetails, JettonTransferDetails, NftTransferDetails, OutMessage, TRACE_ACTION_JETTON_SWAP, TRACE_ACTION_JETTON_TRANSFER,
+    TRACE_ACTION_NFT_TRANSFER, Trace, TraceAction, TransactionMessage,
 };
 use chrono::DateTime;
 use gem_encoding::decode_base64;
-use primitives::{AssetId, Transaction, TransactionState, TransactionSwapMetadata, TransactionType, chain::Chain};
+use primitives::{AssetId, NFTAssetId, Transaction, TransactionNFTTransferMetadata, TransactionState, TransactionSwapMetadata, TransactionType, chain::Chain};
 use std::error::Error;
 
 pub fn map_transaction_broadcast(broadcast_result: BroadcastTransaction) -> Result<String, Box<dyn Error + Sync + Send>> {
@@ -75,6 +75,7 @@ fn map_root_trace_transaction(trace: Trace) -> Option<Transaction> {
     let root = trace.transactions.get(root_hash)?;
 
     let details = jetton_swap_details(&trace.actions)
+        .or_else(|| nft_transfer_details(&trace.actions))
         .or_else(|| jetton_transfer_details(&trace.actions))
         .or_else(|| simple_transfer_details(root))?;
 
@@ -121,6 +122,24 @@ fn jetton_transfer_details(actions: &[TraceAction]) -> Option<TransferDetails> {
         transaction_type: TransactionType::Transfer,
         memo: details.comment.filter(|comment| !comment.is_empty()),
         metadata: None,
+    })
+}
+
+fn nft_transfer_details(actions: &[TraceAction]) -> Option<TransferDetails> {
+    let details: NftTransferDetails = serde_json::from_value(find_action(actions, TRACE_ACTION_NFT_TRANSFER)?.details.clone()?).ok()?;
+    let collection = details.nft_collection.encode_bounceable();
+    let item = details.nft_item.encode_bounceable();
+    let metadata = TransactionNFTTransferMetadata::from_asset_id(NFTAssetId::new(Chain::Ton, &collection, &item));
+    let metadata_value = serde_json::to_value(metadata).ok()?;
+
+    Some(TransferDetails {
+        asset_id: AssetId::from_chain(Chain::Ton),
+        from: details.old_owner.encode_non_bounceable(),
+        to: details.new_owner.encode_non_bounceable(),
+        value: "0".to_string(),
+        transaction_type: TransactionType::TransferNFT,
+        memo: details.comment.filter(|comment| !comment.is_empty()),
+        metadata: Some(metadata_value),
     })
 }
 
@@ -239,8 +258,13 @@ fn extract_memo(message: &OutMessage) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::address::base64_to_hex_address;
     use crate::models::{MessageTransactions, TraceResponse};
     use crate::provider::testkit::{FAILED_SWAP_ROOT_TRANSACTION_HEX_HASH, SUCCESS_SWAP_ROOT_TRANSACTION_HEX_HASH, TEST_TRANSACTION_ID};
+    use primitives::testkit::signer_mock::TEST_TON_SENDER;
+    use serde_json::json;
+
+    const NFT_NEW_OWNER: &str = "UQDSkZZueXRl0lUk4hagLa8KrJzZbmtTE_RPZwTDSIw32WNH";
 
     #[test]
     fn test_transaction_transfer_state_success() {
@@ -401,6 +425,41 @@ mod tests {
         assert_eq!(transaction.fee, "472458");
         assert_eq!(transaction.fee_asset_id, AssetId::from_chain(Chain::Ton));
         assert_eq!(transaction.memo, None);
+    }
+
+    #[test]
+    fn test_map_trace_transactions_nft_transfer() {
+        let transactions: MessageTransactions = serde_json::from_str(include_str!("../../testdata/transaction_transfer_state_success.json")).unwrap();
+        let root = transactions.transactions.first().unwrap().clone();
+        let nft_asset_id = NFTAssetId::mock_ton();
+        let traces = TraceResponse::mock(
+            root,
+            false,
+            vec![TraceAction {
+                success: Some(true),
+                action_type: Some(TRACE_ACTION_NFT_TRANSFER.to_string()),
+                details: Some(json!({
+                    "nft_collection": base64_to_hex_address(&nft_asset_id.contract_address).unwrap(),
+                    "nft_item": base64_to_hex_address(&nft_asset_id.token_id).unwrap(),
+                    "old_owner": base64_to_hex_address(TEST_TON_SENDER).unwrap(),
+                    "new_owner": base64_to_hex_address(NFT_NEW_OWNER).unwrap(),
+                    "comment": "gift",
+                })),
+            }],
+        );
+
+        let transactions = map_trace_transactions(traces.traces);
+
+        assert_eq!(transactions.len(), 1);
+        let transaction = &transactions[0];
+        assert_eq!(transaction.transaction_type, TransactionType::TransferNFT);
+        assert_eq!(transaction.state, TransactionState::Confirmed);
+        assert_eq!(transaction.asset_id, AssetId::from_chain(Chain::Ton));
+        assert_eq!(transaction.from, TEST_TON_SENDER);
+        assert_eq!(transaction.to, NFT_NEW_OWNER);
+        assert_eq!(transaction.value, "0");
+        assert_eq!(transaction.memo.as_deref(), Some("gift"));
+        assert_eq!(transaction.nft_asset_id(), Some(nft_asset_id));
     }
 
     #[test]
