@@ -38,7 +38,7 @@ fn fee_token_priority(asset: &QuoteAsset) -> FeeTokenPriority {
 }
 
 fn prefer_input_as_fee_token(from_asset: &QuoteAsset, to_asset: &QuoteAsset) -> bool {
-    fee_token_priority(from_asset).rank() >= fee_token_priority(to_asset).rank()
+    fee_token_priority(from_asset).rank() > fee_token_priority(to_asset).rank()
 }
 
 #[cfg(test)]
@@ -77,7 +77,7 @@ mod tests {
         assert!(!prefer_input_as_fee_token(&fake_btc, &usdc));
         assert!(prefer_input_as_fee_token(&wbnb, &usdc));
         assert!(!prefer_input_as_fee_token(&usdc, &wbnb));
-        assert!(prefer_input_as_fee_token(&fake_btc, &fake_btc));
+        assert!(!prefer_input_as_fee_token(&fake_btc, &fake_btc));
         assert!(prefer_input_as_fee_token(&wsol, &sol_fake));
         assert!(!prefer_input_as_fee_token(&sol_fake, &wsol));
     }
