@@ -50,10 +50,17 @@ pub struct Transaction {
     pub value: String,
     pub value_in: String,
     pub fees: String,
+    pub confirmations: Option<i64>,
     pub block_time: i64,
     pub block_height: i64,
     pub vin: Vec<Input>,
     pub vout: Vec<Output>,
+}
+
+impl Transaction {
+    pub fn is_confirmed(&self) -> bool {
+        self.confirmations.map_or(self.block_height > 0, |confirmations| confirmations > 0)
+    }
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

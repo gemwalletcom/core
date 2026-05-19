@@ -41,8 +41,8 @@ impl StatusProvider {
     async fn cross_chain_swap_status(&self, chain: Chain, request: GemTransactionSwapStateRequest) -> Result<TransactionUpdate, TransactionStatusError> {
         match request.state {
             TransactionState::Pending => {
-                let source_update = self.chain_status(chain, request.transaction).await?;
-                Ok(pending_cross_chain_swap_update(source_update))
+                let source_chain_update = self.chain_status(chain, request.transaction).await?;
+                Ok(pending_cross_chain_swap_update(source_chain_update))
             }
             TransactionState::InTransit => {
                 let swap_update = self.swap_provider_status(chain, request.swap_provider, &request.transaction.id).await?;

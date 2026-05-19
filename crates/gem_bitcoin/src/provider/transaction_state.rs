@@ -11,7 +11,7 @@ use crate::rpc::client::BitcoinClient;
 impl<C: Client> ChainTransactionState for BitcoinClient<C> {
     async fn get_transaction_status(&self, request: TransactionStateRequest) -> Result<TransactionUpdate, Box<dyn Error + Sync + Send>> {
         let transaction = self.get_transaction(&request.id).await?;
-        let status = if transaction.block_height > 0 {
+        let status = if transaction.is_confirmed() {
             TransactionState::Confirmed
         } else {
             TransactionState::Pending

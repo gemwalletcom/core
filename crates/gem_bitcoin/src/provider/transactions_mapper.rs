@@ -54,11 +54,17 @@ pub fn map_transaction(chain: Chain, transaction: &Transaction) -> Option<primit
     let created_at = Utc.timestamp_opt(transaction.block_time, 0).single()?;
     let memo = op_return_memo(transaction);
 
+    let state = if transaction.is_confirmed() {
+        TransactionState::Confirmed
+    } else {
+        TransactionState::Pending
+    };
+
     let transaction = primitives::Transaction::new_with_utxo(
         transaction.txid.clone(),
         chain.as_asset_id(),
         TransactionType::Transfer,
-        TransactionState::Confirmed,
+        state,
         transaction.fees.clone(),
         chain.as_asset_id(),
         transaction.value.clone(),
@@ -179,5 +185,35 @@ mod tests {
         assert_eq!(mapped.hash, TEST_TRANSACTION_ID);
         assert_eq!(mapped.fee, "1694");
         assert_eq!(mapped.value, "546");
+    }
+
+    #[test]
+    fn test_map_transaction_unconfirmed() {
+        let transaction = Transaction {
+            block_height: -1,
+            confirmations: Some(0),
+            vin: vec![Input::mock()],
+            vout: vec![Output::mock()],
+            ..Transaction::mock()
+        };
+
+        let result = map_transaction(Chain::Doge, &transaction).unwrap();
+
+        assert_eq!(result.state, TransactionState::Pending);
+    }
+
+    #[test]
+    fn test_map_transaction_zero_confirmations_pending() {
+        let transaction = Transaction {
+            block_height: 0,
+            confirmations: Some(0),
+            vin: vec![Input::mock()],
+            vout: vec![Output::mock()],
+            ..Transaction::mock()
+        };
+
+        let result = map_transaction(Chain::Doge, &transaction).unwrap();
+
+        assert_eq!(result.state, TransactionState::Pending);
     }
 }

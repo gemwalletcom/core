@@ -7,6 +7,7 @@ impl Transaction {
             value: "100000".to_string(),
             value_in: "105000".to_string(),
             fees: "5000".to_string(),
+            confirmations: Some(1),
             block_time: 1640995200,
             block_height: 700000,
             vin: vec![],
