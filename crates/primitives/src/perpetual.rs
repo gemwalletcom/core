@@ -1,4 +1,4 @@
-use crate::{Asset, AssetId, PerpetualMarginType, PerpetualPosition, PerpetualProvider, UInt64};
+use crate::{Asset, AssetId, PerpetualId, PerpetualMarginType, PerpetualPosition, PerpetualProvider, UInt64};
 use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumString};
 use typeshare::typeshare;
@@ -7,7 +7,7 @@ use typeshare::typeshare;
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
 #[serde(rename_all = "camelCase")]
 pub struct Perpetual {
-    pub id: String,
+    pub id: PerpetualId,
     pub name: String,
     pub provider: PerpetualProvider,
     pub asset_id: AssetId,
@@ -38,7 +38,7 @@ pub struct PerpetualMarketData {
 #[serde(rename_all = "camelCase")]
 pub struct PerpetualBasic {
     pub asset_id: AssetId,
-    pub perpetual_id: String,
+    pub perpetual_id: PerpetualId,
     pub provider: PerpetualProvider,
 }
 

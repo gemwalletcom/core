@@ -6,13 +6,13 @@ use primitives::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::sql_types::{AssetId, PerpetualProviderRow};
+use crate::sql_types::{AssetId, PerpetualIdRow, PerpetualProviderRow};
 
 #[derive(Debug, Queryable, Selectable, Serialize, Deserialize, Clone)]
 #[diesel(table_name = crate::schema::perpetuals)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct PerpetualRow {
-    pub id: String,
+    pub id: PerpetualIdRow,
     pub name: String,
     pub provider: PerpetualProviderRow,
     pub asset_id: AssetId,
@@ -31,7 +31,7 @@ pub struct PerpetualRow {
 #[diesel(table_name = crate::schema::perpetuals)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 pub struct NewPerpetualRow {
-    pub id: String,
+    pub id: PerpetualIdRow,
     pub name: String,
     pub provider: PerpetualProviderRow,
     pub asset_id: AssetId,
@@ -65,7 +65,7 @@ impl NewPerpetualAssetRow {
 impl NewPerpetualRow {
     pub fn from_primitive(perpetual: PrimitivePerpetual) -> Self {
         Self {
-            id: perpetual.id,
+            id: perpetual.id.into(),
             name: perpetual.name,
             provider: perpetual.provider.into(),
             asset_id: perpetual.asset_id.into(),
@@ -84,7 +84,7 @@ impl NewPerpetualRow {
 impl PerpetualRow {
     pub fn as_primitive(&self) -> PrimitivePerpetual {
         PrimitivePerpetual {
-            id: self.id.clone(),
+            id: self.id.0.clone(),
             name: self.name.clone(),
             provider: self.provider.0.clone(),
             asset_id: self.asset_id.0.clone(),
@@ -102,7 +102,7 @@ impl PerpetualRow {
     pub fn as_basic(&self) -> PerpetualBasic {
         PerpetualBasic {
             asset_id: self.asset_id.0.clone(),
-            perpetual_id: self.id.clone(),
+            perpetual_id: self.id.0.clone(),
             provider: self.provider.0.clone(),
         }
     }

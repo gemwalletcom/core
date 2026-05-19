@@ -199,7 +199,7 @@ mod tests {
     use std::sync::{Arc, Mutex};
 
     use gem_client::{ClientError, testkit::MockClient};
-    use primitives::InMemoryPreferences;
+    use primitives::{InMemoryPreferences, PerpetualId, PerpetualProvider};
     use primitives::testkit::json::load_testdata;
     use serde_json::Value;
 
@@ -340,8 +340,8 @@ mod tests {
         let summary = client.get_positions("0x123".to_string()).await.unwrap();
         let seen_requests = seen_requests.lock().unwrap().clone();
 
-        let btc = summary.positions.iter().find(|position| position.perpetual_id == "hypercore_BTC").unwrap();
-        let eth = summary.positions.iter().find(|position| position.perpetual_id == "hypercore_ETH").unwrap();
+        let btc = summary.positions.iter().find(|position| position.perpetual_id == PerpetualId::new(PerpetualProvider::Hypercore, "BTC")).unwrap();
+        let eth = summary.positions.iter().find(|position| position.perpetual_id == PerpetualId::new(PerpetualProvider::Hypercore, "ETH")).unwrap();
 
         assert!(seen_requests.contains(&open_orders_request));
         assert!(seen_requests.contains(&open_orders_dex1_request));

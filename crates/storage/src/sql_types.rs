@@ -338,3 +338,4 @@ diesel_varchar_display!(PriceId, PrimitivePriceId);
 diesel_varchar_display!(WalletIdRow, primitives::WalletId);
 diesel_varchar_display!(NftAssetIdRow, primitives::NFTAssetId);
 diesel_varchar_display!(NftCollectionIdRow, primitives::NFTCollectionId);
+diesel_varchar_display!(PerpetualIdRow, primitives::PerpetualId);

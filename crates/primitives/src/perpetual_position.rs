@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use strum::{AsRefStr, EnumString};
 use typeshare::typeshare;
 
-use crate::{AssetId, PerpetualDirection};
+use crate::{AssetId, PerpetualDirection, PerpetualId};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, AsRefStr, EnumString)]
 #[typeshare(swift = "Equatable, Sendable, Hashable")]
@@ -35,7 +35,7 @@ pub struct PerpetualTriggerOrder {
 #[serde(rename_all = "camelCase")]
 pub struct PerpetualPosition {
     pub id: String,
-    pub perpetual_id: String,
+    pub perpetual_id: PerpetualId,
     pub asset_id: AssetId,
     pub size: f64,
     pub size_value: f64,

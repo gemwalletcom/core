@@ -122,7 +122,7 @@ fn relative_distance(current: f64, target: f64) -> Option<f64> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::{AssetId, Chain, PerpetualDirection, PerpetualMarginType, PerpetualOrderType, PerpetualTriggerOrder};
+    use primitives::{AssetId, Chain, PerpetualDirection, PerpetualId, PerpetualMarginType, PerpetualOrderType, PerpetualProvider, PerpetualTriggerOrder};
 
     fn config() -> PerpetualPriorityConfig {
         PerpetualPriorityConfig {
@@ -134,7 +134,7 @@ mod tests {
     fn position() -> PerpetualPosition {
         PerpetualPosition {
             id: "1".to_string(),
-            perpetual_id: "hypercore_BTC".to_string(),
+            perpetual_id: PerpetualId::new(PerpetualProvider::Hypercore, "BTC"),
             asset_id: AssetId::from_token(Chain::HyperCore, "perpetual::BTC"),
             size: 1.0,
             size_value: 100.0,
