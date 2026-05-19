@@ -57,8 +57,8 @@ impl Config {
         get_perpetual_config()
     }
 
-    fn select_leverage(&self, desired: i32, from: Vec<i32>) -> i32 {
-        select_leverage(desired, &from)
+    fn select_leverage(&self, desired: u8, options: Vec<u8>) -> u8 {
+        select_leverage(desired, &options)
     }
 
     fn get_docs_url(&self, item: DocsUrl) -> String {
