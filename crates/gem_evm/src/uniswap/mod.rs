@@ -53,6 +53,7 @@ impl TryFrom<u32> for FeeTier {
     fn try_from(value: u32) -> Result<Self, Self::Error> {
         match value {
             100 => Ok(FeeTier::Hundred),
+            400 => Ok(FeeTier::FourHundred),
             500 => Ok(FeeTier::FiveHundred),
             1500 => Ok(FeeTier::ThousandFiveHundred),
             2500 => Ok(FeeTier::TwoThousandFiveHundred),
@@ -60,5 +61,16 @@ impl TryFrom<u32> for FeeTier {
             10000 => Ok(FeeTier::TenThousand),
             _ => Err(format!("Invalid fee tier: {}", value).into()),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_fee_tier_try_from_four_hundred() {
+        assert_eq!(FeeTier::try_from(400).unwrap(), FeeTier::FourHundred);
+        assert_eq!(FeeTier::try_from("400").unwrap(), FeeTier::FourHundred);
     }
 }

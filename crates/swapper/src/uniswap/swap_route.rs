@@ -1,7 +1,7 @@
-use crate::Route;
+use crate::{Route, SwapperError};
 use alloy_primitives::Address;
-use gem_evm::uniswap::path::BasePair;
-use primitives::AssetId;
+use gem_evm::uniswap::path::{BasePair, TokenPair};
+use primitives::{AssetId, Chain};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -23,26 +23,23 @@ pub fn get_intermediaries_by_array(token_in: &Address, token_out: &Address, arra
         .collect()
 }
 
-pub fn build_swap_route(token_in: &AssetId, intermediary: Option<&AssetId>, token_out: &AssetId, route_data: &RouteData) -> Vec<Route> {
-    let data = serde_json::to_string(route_data).unwrap();
-    if let Some(intermediary) = intermediary {
-        vec![
-            Route {
-                input: token_in.clone(),
-                output: intermediary.clone(),
-                route_data: data.clone(),
-            },
-            Route {
-                input: intermediary.clone(),
-                output: token_out.clone(),
-                route_data: data,
-            },
-        ]
-    } else {
-        vec![Route {
-            input: token_in.clone(),
-            output: token_out.clone(),
-            route_data: data,
-        }]
+pub fn build_swap_route(chain: Chain, token_pairs: &[TokenPair], min_amount_out: &str) -> Result<Vec<Route>, SwapperError> {
+    if token_pairs.is_empty() {
+        return Err(SwapperError::InvalidRoute);
     }
+
+    token_pairs
+        .iter()
+        .map(|pair| {
+            let route_data = RouteData {
+                fee_tier: (pair.fee_tier as u32).to_string(),
+                min_amount_out: min_amount_out.to_string(),
+            };
+            Ok(Route {
+                input: AssetId::from(chain, Some(pair.token_in.to_checksum(None))),
+                output: AssetId::from(chain, Some(pair.token_out.to_checksum(None))),
+                route_data: serde_json::to_string(&route_data).map_err(|_| SwapperError::InvalidRoute)?,
+            })
+        })
+        .collect()
 }

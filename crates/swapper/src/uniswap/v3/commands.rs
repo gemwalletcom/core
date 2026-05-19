@@ -1,4 +1,4 @@
-use crate::{SwapperError, eth_address, fees::apply_slippage_in_bp, models::*, uniswap::requires_native_wrapping};
+use crate::{SwapperError, eth_address, models::*, uniswap::requires_native_wrapping};
 use gem_evm::uniswap::command::{ADDRESS_THIS, PayPortion, Permit2Permit, Sweep, Transfer, UniversalRouterCommand, UnwrapWeth, V3SwapExactIn, WrapEth};
 
 use alloy_primitives::{Address, Bytes, U256};
@@ -9,108 +9,117 @@ pub fn build_commands(
     token_in: &Address,
     token_out: &Address,
     amount_in: U256,
-    quote_amount: U256,
+    amount_out_min: U256,
     path: &Bytes,
     permit: Option<Permit2Permit>,
     fee_token_is_input: bool,
 ) -> Result<Vec<UniversalRouterCommand>, SwapperError> {
-    let options = request.options.clone();
-    let fee_options = options.fee.unwrap_or_default().evm;
+    let fee_options = request.options.fee.as_ref().map(|fees| &fees.evm).filter(|fee| fee.bps > 0);
     let recipient = eth_address::parse_str(&request.wallet_address)?;
+    let address_this = Address::from_str(ADDRESS_THIS).unwrap();
 
     let wrap_input_eth = requires_native_wrapping(&request.from_asset.asset_id());
     let unwrap_output_weth = requires_native_wrapping(&request.to_asset.asset_id());
-    let pay_fees = fee_options.bps > 0;
 
-    let mut commands: Vec<UniversalRouterCommand> = vec![];
-
-    let amount_out = apply_slippage_in_bp(&quote_amount, options.slippage.bps + fee_options.bps);
-    if wrap_input_eth {
+    let setup_command = if wrap_input_eth {
         // Wrap ETH, recipient is this_address
-        commands.push(UniversalRouterCommand::WRAP_ETH(WrapEth {
-            recipient: Address::from_str(ADDRESS_THIS).unwrap(),
+        Some(UniversalRouterCommand::WRAP_ETH(WrapEth {
+            recipient: address_this,
             amount_min: amount_in,
-        }));
-    } else if let Some(permit) = permit {
-        commands.push(UniversalRouterCommand::PERMIT2_PERMIT(permit));
-    }
+        }))
+    } else {
+        permit.map(UniversalRouterCommand::PERMIT2_PERMIT)
+    };
 
     // payer_is_user: is true when swapping tokens
     let payer_is_user = !wrap_input_eth;
-    if pay_fees {
+    let swap_recipient = if unwrap_output_weth { address_this } else { recipient };
+    let swap_commands = if let Some(fee_options) = fee_options {
+        let fee_recipient = Address::from_str(fee_options.address.as_str()).unwrap();
         if fee_token_is_input {
             // insert TRANSFER fee first
             let fee = amount_in * U256::from(fee_options.bps) / U256::from(10000);
-            let fee_recipient = Address::from_str(fee_options.address.as_str()).unwrap();
-            if wrap_input_eth {
+            let fee_command = if wrap_input_eth {
                 // if input is native ETH, we can transfer directly because of WRAP_ETH command
-                commands.push(UniversalRouterCommand::TRANSFER(Transfer {
+                UniversalRouterCommand::TRANSFER(Transfer {
                     token: *token_in,
                     recipient: fee_recipient,
                     value: fee,
-                }));
+                })
             } else {
                 // call permit2 transfer instead
-                commands.push(UniversalRouterCommand::PERMIT2_TRANSFER_FROM(Transfer {
+                UniversalRouterCommand::PERMIT2_TRANSFER_FROM(Transfer {
                     token: *token_in,
                     recipient: fee_recipient,
                     value: fee,
-                }));
+                })
             };
 
-            // insert V3_SWAP_EXACT_IN with amount - fee, recipient is user address
-            commands.push(UniversalRouterCommand::V3_SWAP_EXACT_IN(V3SwapExactIn {
-                recipient,
-                amount_in: amount_in - fee,
-                amount_out_min: amount_out,
-                path: path.clone(),
-                payer_is_user,
-            }));
+            vec![
+                fee_command,
+                UniversalRouterCommand::V3_SWAP_EXACT_IN(V3SwapExactIn {
+                    recipient: swap_recipient,
+                    amount_in: amount_in - fee,
+                    amount_out_min,
+                    path: path.clone(),
+                    payer_is_user,
+                }),
+            ]
         } else {
             // insert V3_SWAP_EXACT_IN
             // amount_out_min: if needs to pay fees, amount_out_min set to 0 and we will sweep the rest
-            commands.push(UniversalRouterCommand::V3_SWAP_EXACT_IN(V3SwapExactIn {
-                recipient: Address::from_str(ADDRESS_THIS).unwrap(),
+            let swap_command = UniversalRouterCommand::V3_SWAP_EXACT_IN(V3SwapExactIn {
+                recipient: address_this,
                 amount_in,
-                amount_out_min: if pay_fees { U256::from(0) } else { amount_out },
+                amount_out_min: U256::from(0),
                 path: path.clone(),
                 payer_is_user,
-            }));
+            });
 
             // insert PAY_PORTION to fee_address
-            commands.push(UniversalRouterCommand::PAY_PORTION(PayPortion {
+            let fee_command = UniversalRouterCommand::PAY_PORTION(PayPortion {
                 token: *token_out,
-                recipient: Address::from_str(fee_options.address.as_str()).unwrap(),
+                recipient: fee_recipient,
                 bips: U256::from(fee_options.bps),
-            }));
+            });
 
-            if !unwrap_output_weth {
+            if unwrap_output_weth {
+                vec![swap_command, fee_command]
+            } else {
                 // MSG_SENDER should be the address of the caller
-                commands.push(UniversalRouterCommand::SWEEP(Sweep {
-                    token: *token_out,
-                    recipient,
-                    amount_min: U256::from(amount_out),
-                }));
+                vec![
+                    swap_command,
+                    fee_command,
+                    UniversalRouterCommand::SWEEP(Sweep {
+                        token: *token_out,
+                        recipient,
+                        amount_min: amount_out_min,
+                    }),
+                ]
             }
         }
     } else {
         // insert V3_SWAP_EXACT_IN
-        commands.push(UniversalRouterCommand::V3_SWAP_EXACT_IN(V3SwapExactIn {
-            recipient,
+        vec![UniversalRouterCommand::V3_SWAP_EXACT_IN(V3SwapExactIn {
+            recipient: swap_recipient,
             amount_in,
-            amount_out_min: amount_out,
+            amount_out_min,
             path: path.clone(),
             payer_is_user,
-        }));
-    }
+        })]
+    };
 
-    if unwrap_output_weth {
+    let unwrap_command = if unwrap_output_weth {
         // insert UNWRAP_WETH
-        commands.push(UniversalRouterCommand::UNWRAP_WETH(UnwrapWeth {
+        Some(UniversalRouterCommand::UNWRAP_WETH(UnwrapWeth {
             recipient,
-            amount_min: U256::from(amount_out),
-        }));
-    }
+            amount_min: amount_out_min,
+        }))
+    } else {
+        None
+    };
+
+    let commands = setup_command.into_iter().chain(swap_commands).chain(unwrap_command).collect();
     Ok(commands)
 }
 
@@ -132,7 +141,7 @@ mod tests {
 
     #[test]
     fn test_build_commands_eth_to_token() {
-        let mut request = QuoteRequest {
+        let request = QuoteRequest {
             // ETH -> USDC
             from_asset: AssetId::from(Chain::Ethereum, None).into(),
             to_asset: AssetId::from(Chain::Ethereum, Some(ETHEREUM_USDC_TOKEN_ID.into())).into(),
@@ -155,15 +164,17 @@ mod tests {
         assert!(matches!(commands[0], UniversalRouterCommand::WRAP_ETH(_)));
         assert!(matches!(commands[1], UniversalRouterCommand::V3_SWAP_EXACT_IN(_)));
 
-        let options = Options {
-            slippage: 100.into(),
-            fee: Some(ReferralFees::evm(ReferralFee {
-                bps: 25,
-                address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
-            })),
-            use_max_amount: false,
+        let request = QuoteRequest {
+            options: Options {
+                slippage: 100.into(),
+                fee: Some(ReferralFees::evm(ReferralFee {
+                    bps: 25,
+                    address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
+                })),
+                use_max_amount: false,
+            },
+            ..request
         };
-        request.options = options;
 
         let commands = super::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), &path, None, false).unwrap();
 
@@ -215,6 +226,30 @@ mod tests {
     }
 
     #[test]
+    fn test_build_commands_uses_min_amount_without_reapplying_slippage() {
+        let request = QuoteRequest {
+            from_asset: AssetId::from(Chain::Optimism, Some(OPTIMISM_USDC_TOKEN_ID.into())).into(),
+            to_asset: AssetId::from(Chain::Optimism, Some(OPTIMISM_USDT_TOKEN_ID.into())).into(),
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            value: "6500000".into(),
+            options: Options::new_with_slippage(100.into()),
+        };
+        let token_in = eth_address::parse_str(request.from_asset.asset_id().token_id.as_ref().unwrap()).unwrap();
+        let token_out = eth_address::parse_str(request.to_asset.asset_id().token_id.as_ref().unwrap()).unwrap();
+        let amount_in = U256::from_str(&request.value).unwrap();
+        let amount_out_min = U256::from(6_500_000_u64);
+        let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred);
+
+        let commands = super::build_commands(&request, &token_in, &token_out, amount_in, amount_out_min, &path, None, false).unwrap();
+
+        match &commands[0] {
+            UniversalRouterCommand::V3_SWAP_EXACT_IN(swap) => assert_eq!(swap.amount_out_min, amount_out_min),
+            _ => panic!("expected V3_SWAP_EXACT_IN"),
+        }
+    }
+
+    #[test]
     fn test_build_commands_usdc_to_aave() {
         let request = QuoteRequest {
             // USDC -> AAVE
@@ -261,7 +296,7 @@ mod tests {
         let request = QuoteRequest {
             // USDCE -> ETH
             from_asset: AssetId::from(Chain::Optimism, Some(OPTIMISM_USDC_E_TOKEN_ID.into())).into(),
-            to_asset: AssetId::from(Chain::Ethereum, None).into(),
+            to_asset: AssetId::from(Chain::Optimism, None).into(),
             wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
             value: "10000000".into(),
@@ -312,6 +347,63 @@ mod tests {
         assert!(matches!(commands[1], UniversalRouterCommand::V3_SWAP_EXACT_IN(_)));
         assert!(matches!(commands[2], UniversalRouterCommand::PAY_PORTION(_)));
         assert!(matches!(commands[3], UniversalRouterCommand::UNWRAP_WETH(_)));
+    }
+
+    #[test]
+    fn test_build_commands_routes_weth_output_to_router_before_unwrap() {
+        let request = QuoteRequest {
+            from_asset: AssetId::from(Chain::Optimism, Some(OPTIMISM_USDC_E_TOKEN_ID.into())).into(),
+            to_asset: AssetId::from(Chain::Optimism, None).into(),
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".into(),
+            value: "10000000".into(),
+            options: Options::default(),
+        };
+        let token_in = eth_address::parse_str(request.from_asset.asset_id().token_id.as_ref().unwrap()).unwrap();
+        let token_out = eth_address::parse_str(OPTIMISM_WETH_TOKEN_ID).unwrap();
+        let amount_in = U256::from_str(&request.value).unwrap();
+        let amount_out_min = U256::from(3997001989341576u64);
+        let address_this = Address::from_str(ADDRESS_THIS).unwrap();
+        let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred);
+
+        let commands = super::build_commands(&request, &token_in, &token_out, amount_in, amount_out_min, &path, None, false).unwrap();
+
+        assert_eq!(commands.len(), 2);
+        match &commands[0] {
+            UniversalRouterCommand::V3_SWAP_EXACT_IN(swap) => assert_eq!(swap.recipient, address_this),
+            _ => panic!("expected V3_SWAP_EXACT_IN"),
+        }
+        match &commands[1] {
+            UniversalRouterCommand::UNWRAP_WETH(_) => {}
+            _ => panic!("expected UNWRAP_WETH"),
+        }
+
+        let request = QuoteRequest {
+            options: Options {
+                slippage: 100.into(),
+                fee: Some(ReferralFees::evm(ReferralFee {
+                    bps: 25,
+                    address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
+                })),
+                use_max_amount: false,
+            },
+            ..request
+        };
+        let commands = super::build_commands(&request, &token_in, &token_out, amount_in, amount_out_min, &path, None, true).unwrap();
+
+        assert_eq!(commands.len(), 3);
+        match &commands[0] {
+            UniversalRouterCommand::PERMIT2_TRANSFER_FROM(_) => {}
+            _ => panic!("expected PERMIT2_TRANSFER_FROM"),
+        }
+        match &commands[1] {
+            UniversalRouterCommand::V3_SWAP_EXACT_IN(swap) => assert_eq!(swap.recipient, address_this),
+            _ => panic!("expected V3_SWAP_EXACT_IN"),
+        }
+        match &commands[2] {
+            UniversalRouterCommand::UNWRAP_WETH(_) => {}
+            _ => panic!("expected UNWRAP_WETH"),
+        }
     }
 
     #[test]

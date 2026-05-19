@@ -23,11 +23,10 @@ pub struct TokenPairs(pub Vec<TokenPair>);
 impl Display for TokenPairs {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "[")?;
-        let mut iter = self.0.iter();
-        if let Some(first) = iter.next() {
-            write!(f, "{first}")?; // Write first element without a leading comma
-            for item in iter {
-                write!(f, ", {item}")?; // Write subsequent elements with a leading comma
+        if let Some((first, rest)) = self.0.split_first() {
+            write!(f, "{first}")?;
+            for item in rest {
+                write!(f, ", {item}")?;
             }
         }
         write!(f, "]")
@@ -36,16 +35,20 @@ impl Display for TokenPairs {
 
 impl TokenPair {
     pub fn new_two_hop(token_in: &Address, intermediary: &Address, token_out: &Address, fee_tier: FeeTier) -> Vec<TokenPair> {
+        Self::new_two_hop_with_fees(token_in, intermediary, token_out, fee_tier, fee_tier)
+    }
+
+    pub fn new_two_hop_with_fees(token_in: &Address, intermediary: &Address, token_out: &Address, first_fee_tier: FeeTier, second_fee_tier: FeeTier) -> Vec<TokenPair> {
         vec![
             TokenPair {
                 token_in: *token_in,
                 token_out: *intermediary,
-                fee_tier,
+                fee_tier: first_fee_tier,
             },
             TokenPair {
                 token_in: *intermediary,
                 token_out: *token_out,
-                fee_tier,
+                fee_tier: second_fee_tier,
             },
         ]
     }
@@ -60,17 +63,15 @@ pub struct BasePair {
 
 impl BasePair {
     pub fn path_building_array(&self) -> Vec<Address> {
-        let mut array = vec![self.native];
-        array.extend(self.stables.iter().cloned());
         // alternatives is not used for path building to reduce requests
-        array
+        std::iter::once(self.native).chain(self.stables.iter().copied()).collect()
     }
 
     pub fn fee_token_array(&self) -> Vec<Address> {
-        let mut array = vec![self.native];
-        array.extend(self.stables.iter().cloned());
-        array.extend(self.alternatives.iter().cloned());
-        array
+        std::iter::once(self.native)
+            .chain(self.stables.iter().copied())
+            .chain(self.alternatives.iter().copied())
+            .collect()
     }
 }
 
@@ -150,57 +151,43 @@ pub fn get_base_pair(chain: &EVMChain, weth_as_native: bool) -> Option<BasePair>
         _ => panic!("USDT is not configured for this chain"),
     };
 
-    let mut stables = vec![];
-    if !usdc.is_empty() {
-        stables.push(usdc.parse().ok()?);
-    }
-    if !usdt.is_empty() {
-        stables.push(usdt.parse().ok()?);
-    }
-    let alternatives = { if btc.is_empty() { vec![] } else { vec![btc.parse().ok()?] } };
+    let stables = [usdc, usdt]
+        .into_iter()
+        .filter(|token| !token.is_empty())
+        .map(|token| token.parse().ok())
+        .collect::<Option<Vec<_>>>()?;
+    let alternatives = if btc.is_empty() { vec![] } else { vec![btc.parse().ok()?] };
 
     Some(BasePair { native, stables, alternatives })
 }
 
 pub fn build_direct_pair(token_in: &Address, token_out: &Address, fee_tier: FeeTier) -> Bytes {
-    let mut bytes: Vec<u8> = vec![];
-    let fee = U24::from(fee_tier.as_u24());
-    bytes.extend(token_in.as_slice());
-    bytes.extend(&fee.to_be_bytes_vec());
-    bytes.extend(token_out.as_slice());
-    Bytes::from(bytes)
+    let fee = U24::from(fee_tier.as_u24()).to_be_bytes_vec();
+    Bytes::from([token_in.as_slice(), fee.as_slice(), token_out.as_slice()].concat())
 }
 
 pub fn validate_pairs(token_pairs: &[TokenPair]) -> bool {
     // verify token in and out are chained
-    let mut iter = token_pairs.iter().peekable();
-    let mut valid = true;
-    while let Some(current_pair) = iter.next() {
-        if let Some(next_pair) = iter.peek()
-            && current_pair.token_out != next_pair.token_in
-        {
-            valid = false;
-            break;
-        }
-    }
-    valid
+    token_pairs.windows(2).all(|pairs| pairs[0].token_out == pairs[1].token_in)
 }
 
 pub fn build_pairs(token_pairs: &[TokenPair]) -> Bytes {
-    let valid = validate_pairs(token_pairs);
-    if !valid {
+    if !validate_pairs(token_pairs) {
         panic!("invalid token pairs");
     }
 
-    let mut bytes: Vec<u8> = vec![];
-    for (idx, token_pair) in token_pairs.iter().enumerate() {
-        let fee = U24::from(token_pair.fee_tier.as_u24());
-        if idx == 0 {
-            bytes.extend(token_pair.token_in.as_slice());
-        }
-        bytes.extend(&fee.to_be_bytes_vec());
-        bytes.extend(token_pair.token_out.as_slice());
-    }
+    let bytes = token_pairs
+        .iter()
+        .enumerate()
+        .flat_map(|(idx, token_pair)| {
+            let fee = U24::from(token_pair.fee_tier.as_u24()).to_be_bytes_vec();
+            if idx == 0 {
+                [token_pair.token_in.as_slice(), fee.as_slice(), token_pair.token_out.as_slice()].concat()
+            } else {
+                [fee.as_slice(), token_pair.token_out.as_slice()].concat()
+            }
+        })
+        .collect::<Vec<u8>>();
     Bytes::from(bytes)
 }
 
