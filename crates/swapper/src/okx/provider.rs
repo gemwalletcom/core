@@ -164,7 +164,7 @@ fn max_auto_slippage_percent(slippage_bps: u32) -> Option<String> {
 }
 
 fn build_swap_params(request: &ProxyQuoteRequest, route: &QuoteData, chain: Chain, approve_transaction: bool) -> Result<SwapParams, SwapperError> {
-    let referrers = referrer_wallet_addresses(&request.from_asset, &request.to_asset, request.referral_bps, chain);
+    let referrers = referrer_wallet_addresses(&request.from_asset, &request.to_asset, chain);
     Ok(SwapParams {
         chain_index: chain_index(chain).ok_or(SwapperError::NotSupportedChain)?.to_string(),
         amount: request.from_value.clone(),
@@ -218,13 +218,11 @@ fn build_solana_quote_data(tx: &TransactionData) -> Result<SwapQuoteData, Swappe
 mod tests {
     use super::super::model::TokenInfo;
     use super::*;
-    use crate::fees::default_referral_fees;
+    use crate::fees::default_referral_address;
     use primitives::{
         AssetId,
-        asset_constants::{ETHEREUM_USDC_ASSET_ID, ETHEREUM_USDC_TOKEN_ID, SOLANA_USDC_ASSET_ID, SOLANA_USDC_TOKEN_ID},
+        asset_constants::{ETHEREUM_USDC_ASSET_ID, ETHEREUM_USDC_TOKEN_ID, SMARTCHAIN_CAKE_TOKEN_ID, SOLANA_USDC_ASSET_ID, SOLANA_USDC_TOKEN_ID},
     };
-
-    const SMARTCHAIN_FAKE_BTC_TOKEN_ID: &str = "0x4770Ab6fCed223124b8616e08003D37fF13F8888";
 
     fn quote_asset(id: &str) -> QuoteAsset {
         quote_asset_with_symbol(id, "")
@@ -371,18 +369,13 @@ mod tests {
         assert!(evm_params.from_token_referrer_wallet_address.is_none());
 
         let bnb = AssetId::from_chain(Chain::SmartChain).to_string();
-        let fake_btc = AssetId::from_token(Chain::SmartChain, SMARTCHAIN_FAKE_BTC_TOKEN_ID).to_string();
-        let bsc_request = proxy_request_with_assets(quote_asset_with_symbol(&bnb, "BNB"), quote_asset_with_symbol(&fake_btc, "BTC"), 100, 70);
-        let bsc_route = quote_data(EVM_NATIVE_TOKEN_ADDRESS, SMARTCHAIN_FAKE_BTC_TOKEN_ID);
+        let cake = AssetId::from_token(Chain::SmartChain, SMARTCHAIN_CAKE_TOKEN_ID).to_string();
+        let bsc_request = proxy_request_with_assets(quote_asset_with_symbol(&bnb, "BNB"), quote_asset_with_symbol(&cake, "CAKE"), 100, 70);
+        let bsc_route = quote_data(EVM_NATIVE_TOKEN_ADDRESS, SMARTCHAIN_CAKE_TOKEN_ID);
         let bsc_params = build_swap_params(&bsc_request, &bsc_route, Chain::SmartChain, false).unwrap();
-        let evm_referrer = default_referral_fees().evm.address;
+        let evm_referrer = default_referral_address(Chain::SmartChain);
         assert_eq!(bsc_params.from_token_referrer_wallet_address.as_deref(), Some(evm_referrer.as_str()));
         assert_eq!(bsc_params.to_token_referrer_wallet_address, None);
-
-        let no_fee_request = proxy_request_with_assets(quote_asset_with_symbol(&bnb, "BNB"), quote_asset_with_symbol(&fake_btc, "BTC"), 100, 0);
-        let no_fee_params = build_swap_params(&no_fee_request, &bsc_route, Chain::SmartChain, false).unwrap();
-        assert_eq!(no_fee_params.from_token_referrer_wallet_address, None);
-        assert_eq!(no_fee_params.to_token_referrer_wallet_address, None);
 
         let sol = AssetId::from_chain(Chain::Solana).to_string();
         let sol_request = proxy_request(&sol, &SOLANA_USDC_ASSET_ID.to_string(), 300, 50);

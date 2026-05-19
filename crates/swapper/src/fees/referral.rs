@@ -1,4 +1,5 @@
 use super::DEFAULT_SWAP_FEE_BPS;
+use primitives::{Chain, ChainType};
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct ReferralFees {
@@ -97,4 +98,25 @@ pub fn default_referral_fees() -> ReferralFees {
             bps: DEFAULT_SWAP_FEE_BPS,
         },
     }
+}
+
+fn default_referral_fee(chain: Chain) -> ReferralFee {
+    let fees = default_referral_fees();
+    match chain {
+        Chain::Solana => fees.solana,
+        Chain::Thorchain => fees.thorchain,
+        Chain::Sui => fees.sui,
+        Chain::Ton => fees.ton,
+        Chain::Tron => fees.tron,
+        Chain::Near => fees.near,
+        Chain::Aptos => fees.aptos,
+        Chain::Injective => fees.injective,
+        _ if chain.chain_type() == ChainType::Cosmos => fees.cosmos,
+        _ if chain.chain_type() == ChainType::Ethereum => fees.evm,
+        _ => ReferralFee::default(),
+    }
+}
+
+pub fn default_referral_address(chain: Chain) -> String {
+    default_referral_fee(chain).address
 }

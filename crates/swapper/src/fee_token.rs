@@ -56,20 +56,23 @@ fn is_wrapped_native_token(asset_id: &AssetId) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use primitives::{asset_constants::SMARTCHAIN_USDC_ASSET_ID, contract_constants::SOLANA_WRAPPED_SOL_TOKEN_ADDRESS};
+    use primitives::{
+        asset_constants::{SMARTCHAIN_CAKE_ASSET_ID, SMARTCHAIN_USDC_ASSET_ID},
+        contract_constants::SOLANA_WRAPPED_SOL_TOKEN_ADDRESS,
+    };
 
     #[test]
     fn test_fee_token_priority_from_asset() {
         let bnb = AssetId::from_chain(Chain::SmartChain);
         let wbnb = AssetId::from_token(Chain::SmartChain, EVMChain::SmartChain.weth_contract().unwrap());
         let usdc = SMARTCHAIN_USDC_ASSET_ID.clone();
-        let fake_btc = AssetId::from_token(Chain::SmartChain, "0x4770Ab6fCed223124b8616e08003D37fF13F8888");
+        let cake = SMARTCHAIN_CAKE_ASSET_ID.clone();
         let wsol = AssetId::from_token(Chain::Solana, SOLANA_WRAPPED_SOL_TOKEN_ADDRESS);
 
         assert_eq!(FeeTokenPriority::from_asset(&bnb, "BNB"), FeeTokenPriority::Native);
         assert_eq!(FeeTokenPriority::from_asset(&wbnb, "WBNB"), FeeTokenPriority::Native);
         assert_eq!(FeeTokenPriority::from_asset(&usdc, "USDC"), FeeTokenPriority::Stable);
-        assert_eq!(FeeTokenPriority::from_asset(&fake_btc, "BTC"), FeeTokenPriority::Other);
+        assert_eq!(FeeTokenPriority::from_asset(&cake, "CAKE"), FeeTokenPriority::Other);
         assert_eq!(FeeTokenPriority::from_asset(&wsol, "SOL"), FeeTokenPriority::Native);
     }
 
