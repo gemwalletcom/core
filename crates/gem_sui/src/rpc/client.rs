@@ -5,15 +5,16 @@ use gem_encoding::protobuf::{MessageDecode, MessageEncode, decode_grpc_message, 
 use gem_jsonrpc::grpc::GrpcTransport;
 use num_bigint::BigInt;
 use primitives::Chain;
+use serde::de::DeserializeOwned;
 use sui_types::Address;
 
 use super::mapper::{map_checkpoint, map_executed_transaction, map_inspect_result, map_sui_effects};
 use super::proto::{
     self as proto, BatchGetObjectsRequest, BatchGetObjectsResponse, BatchGetTransactionsRequest, BatchGetTransactionsResponse, ExecuteTransactionRequest,
     ExecuteTransactionResponse, FieldMask, GetBalanceRequest, GetBalanceResponse, GetCheckpointRequest, GetCheckpointResponse, GetCoinInfoRequest, GetCoinInfoResponse,
-    GetEpochRequest, GetEpochResponse, GetObjectRequest, GetObjectResponse, GetServiceInfoRequest, GetServiceInfoResponse, GetTransactionRequest, GetTransactionResponse,
-    ListBalancesRequest, ListBalancesResponse, ListOwnedObjectsRequest, ListOwnedObjectsResponse, SimulateTransactionRequest, SimulateTransactionResponse,
-    Transaction as GrpcTransaction, TransactionChecks, UserSignature as GrpcUserSignature, WithMut,
+    GetEpochRequest, GetEpochResponse, GetFunctionRequest, GetFunctionResponse, GetObjectRequest, GetObjectResponse, GetServiceInfoRequest, GetServiceInfoResponse,
+    GetTransactionRequest, GetTransactionResponse, ListBalancesRequest, ListBalancesResponse, ListOwnedObjectsRequest, ListOwnedObjectsResponse, SimulateTransactionRequest,
+    SimulateTransactionResponse, Transaction as GrpcTransaction, TransactionChecks, UserSignature as GrpcUserSignature, WithMut,
 };
 use super::transport::default_transport;
 use crate::models::transaction::{SuiBroadcastTransaction, SuiTransaction};
@@ -37,6 +38,7 @@ const PATH_GET_SERVICE_INFO: &str = "/sui.rpc.v2.LedgerService/GetServiceInfo";
 const PATH_GET_OBJECT: &str = "/sui.rpc.v2.LedgerService/GetObject";
 const PATH_GET_CHECKPOINT: &str = "/sui.rpc.v2.LedgerService/GetCheckpoint";
 const PATH_GET_TRANSACTION: &str = "/sui.rpc.v2.LedgerService/GetTransaction";
+const PATH_GET_FUNCTION: &str = "/sui.rpc.v2.MovePackageService/GetFunction";
 pub(super) const PATH_LIST_OWNED_OBJECTS: &str = "/sui.rpc.v2.StateService/ListOwnedObjects";
 const PATH_GET_BALANCE: &str = "/sui.rpc.v2.StateService/GetBalance";
 const PATH_LIST_BALANCES: &str = "/sui.rpc.v2.StateService/ListBalances";
@@ -223,6 +225,26 @@ impl SuiClient {
         })
     }
 
+    pub async fn get_object_json<T>(&self, object_id: String) -> Result<T, Box<dyn Error + Send + Sync>>
+    where
+        T: DeserializeOwned,
+    {
+        let object_id = Address::from_str(&object_id)?;
+        let request = GetObjectRequest::new(&object_id).with(|request| {
+            request.read_mask = Some(FieldMask::from_paths(["json"]));
+        });
+        let response: GetObjectResponse = self.grpc_unary(PATH_GET_OBJECT, request).await?;
+        let json = response.object.and_then(|object| object.json).ok_or("missing Sui object JSON")?;
+        Ok(serde_json::from_value(json)?)
+    }
+
+    pub(crate) async fn get_function(&self, package_id: &str, module: &str, function: &str) -> Result<proto::FunctionDescriptor, Box<dyn Error + Send + Sync>> {
+        let package_id = Address::from_str(package_id)?;
+        let request = GetFunctionRequest::new(&package_id, module, function);
+        let response: GetFunctionResponse = self.grpc_unary(PATH_GET_FUNCTION, request).await?;
+        Ok(response.function.ok_or("missing Sui function descriptor")?)
+    }
+
     pub async fn dry_run(&self, tx_data: String) -> Result<SuiTransaction, Box<dyn Error + Send + Sync>> {
         let transaction = decode_transaction_base64(&tx_data)?;
         let request = SimulateTransactionRequest::new(transaction).with(|request| {
@@ -309,14 +331,14 @@ impl SuiClient {
             .collect::<Result<Vec<_>, Box<dyn Error + Send + Sync>>>()?;
         let request = BatchGetObjectsRequest {
             requests,
-            read_mask: Some(FieldMask::from_paths(["object_id", "owner"])),
+            read_mask: Some(FieldMask::from_paths(["object_id", "version", "digest", "owner"])),
         };
         let response: BatchGetObjectsResponse = self.grpc_unary(PATH_BATCH_GET_OBJECTS, request).await?;
         response
             .objects
             .into_iter()
             .map(|result| match result {
-                proto::GetObjectResult::Object(object) => Ok(object),
+                proto::GetObjectResult::Object(object) => Ok(*object),
                 proto::GetObjectResult::Error(status) => Err(format!("Sui object gRPC error {}: {}", status.code, status.message).into()),
                 proto::GetObjectResult::Unknown => Err("missing Sui object result".into()),
             })

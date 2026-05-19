@@ -36,6 +36,16 @@ pub enum ApiError {
     InternalServerError(String),
 }
 
+impl ApiError {
+    pub fn bad_request(error: impl std::fmt::Display) -> Self {
+        Self::BadRequest(error.to_string())
+    }
+
+    pub fn internal_server_error(error: impl std::fmt::Display) -> Self {
+        Self::InternalServerError(error.to_string())
+    }
+}
+
 impl<'r> Responder<'r, 'static> for ApiError {
     fn respond_to(self, request: &'r Request<'_>) -> rocket::response::Result<'static> {
         let (status, message) = match self {

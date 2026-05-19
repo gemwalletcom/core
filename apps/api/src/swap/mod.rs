@@ -1,4 +1,5 @@
 pub mod client;
+pub mod mayan;
 pub mod near_intents;
 pub mod okx;
 

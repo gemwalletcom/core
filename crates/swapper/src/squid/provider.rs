@@ -136,7 +136,7 @@ where
         let (response, fee, fee_address) = self.fetch_route(&quote.request, &quote.from_value, false).await?;
         let tx = response.route.transaction_request.ok_or(SwapperError::InvalidRoute)?;
 
-        let swap_msg: serde_json::Value = serde_json::from_str(&tx.data).map_err(|e| SwapperError::TransactionError(e.to_string()))?;
+        let swap_msg: serde_json::Value = serde_json::from_str(&tx.data).map_err(SwapperError::transaction_error)?;
         let messages = match fee_address {
             Some(addr) if fee > 0 => {
                 let denom = Self::get_token_id(&quote.request.from_asset.asset_id())?;
@@ -144,7 +144,7 @@ where
             }
             _ => vec![swap_msg],
         };
-        let data = serde_json::to_string(&messages).map_err(|e| SwapperError::TransactionError(e.to_string()))?;
+        let data = serde_json::to_string(&messages).map_err(SwapperError::transaction_error)?;
 
         Ok(SwapperQuoteData {
             to: tx.target,

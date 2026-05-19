@@ -75,7 +75,7 @@ pub(super) fn simulate_buy(amount: &BigDecimal, asks: &[OrderbookLevel]) -> Resu
 }
 
 fn parse_decimal(value: &str) -> Result<BigDecimal, SwapperError> {
-    BigDecimal::from_str(value).map_err(|_| SwapperError::ComputeQuoteError("failed to parse orderbook level".to_string()))
+    BigDecimal::from_str(value).map_err(|_| SwapperError::compute_quote_error("failed to parse orderbook level"))
 }
 
 #[cfg(test)]

@@ -100,7 +100,7 @@ impl Across {
         let topic2 = format!("{:#066x}", U256::from(deposit_id));
         let topics = vec![Some(topic0), Some(topic1), Some(topic2)];
 
-        let current_block = client.get_latest_block().await.map_err(|e| SwapperError::TransactionError(e.to_string()))?;
+        let current_block = client.get_latest_block().await.map_err(SwapperError::transaction_error)?;
         let from_block = current_block.saturating_sub(FILL_LOOKBACK_BLOCKS);
         let from_block_hex = format!("0x{:x}", from_block);
 
@@ -138,7 +138,7 @@ impl Across {
         create_eth_client(self.rpc_provider.clone(), chain)?
             .multicall3(calls)
             .await
-            .map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))
+            .map_err(SwapperError::compute_quote_error)
     }
 
     async fn estimate_gas_transaction(&self, chain: Chain, tx: TransactionObject) -> Result<U256, SwapperError> {
@@ -290,7 +290,7 @@ impl Across {
             let results = create_eth_client(self.rpc_provider.clone(), Chain::Monad)?
                 .multicall3(vec![feed.latest_round_call3()])
                 .await
-                .map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))?;
+                .map_err(SwapperError::compute_quote_error)?;
             ChainlinkPriceFeed::decoded_answer(&results[0])
         } else {
             ChainlinkPriceFeed::decoded_answer(&existing_results[3])

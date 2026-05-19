@@ -10,9 +10,11 @@ pub const DEFAULT_CHAINFLIP_FEE_BPS: u32 = 45;
 pub const DEFAULT_STABLE_SWAP_REFERRAL_BPS: u32 = 25;
 
 pub const API_BASE_URL: &str = "https://api.gemwallet.com";
+pub const API_BASE_URL_ENV: &str = "GEM_API_BASE_URL";
 
 pub fn get_swap_proxy_url(path: &str) -> String {
-    format!("{API_BASE_URL}/proxy/swap/{path}")
+    let base_url = std::env::var(API_BASE_URL_ENV).unwrap_or_else(|_| API_BASE_URL.to_string());
+    format!("{}/proxy/swap/{path}", base_url.trim_end_matches('/'))
 }
 
 #[derive(Debug, Clone, PartialEq)]

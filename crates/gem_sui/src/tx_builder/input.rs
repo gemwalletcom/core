@@ -33,13 +33,10 @@ impl TransactionBuilderInput {
         let gas_price = client
             .get_gas_price()
             .await
-            .map_err(|err| SuiError::invalid_input(err.to_string()))?
+            .map_err(SuiError::from_display)?
             .to_u64()
             .ok_or_else(|| SuiError::invalid_input("Sui gas price overflow"))?;
-        let gas_coins = client
-            .get_coin_assets_by_type(sender, SUI_COIN_TYPE)
-            .await
-            .map_err(|err| SuiError::invalid_input(err.to_string()))?;
+        let gas_coins = client.get_coin_assets_by_type(sender, SUI_COIN_TYPE).await.map_err(SuiError::from_display)?;
         if gas_coins.is_empty() {
             return Err(SuiError::NoGasCoins);
         }

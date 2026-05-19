@@ -3,6 +3,7 @@ pub(crate) mod bcs;
 pub(crate) mod checkpoints;
 pub(crate) mod field;
 pub(crate) mod json;
+pub(crate) mod move_package;
 pub(crate) mod objects;
 pub(crate) mod service;
 pub(crate) mod status;
@@ -16,6 +17,7 @@ pub(crate) use balances::{GetBalanceRequest, GetBalanceResponse, GetCoinInfoRequ
 pub(crate) use bcs::Bcs;
 pub(crate) use checkpoints::{Checkpoint, GetCheckpointRequest, GetCheckpointResponse};
 pub(crate) use field::FieldMask;
+pub(crate) use move_package::{FunctionDescriptor, GetFunctionRequest, GetFunctionResponse, OpenSignature, open_signature};
 pub(crate) use objects::{
     BatchGetObjectsRequest, BatchGetObjectsResponse, GetObjectRequest, GetObjectResponse, GetObjectResult, ListOwnedObjectsRequest, ListOwnedObjectsResponse, Object, Owner,
     OwnerKind,

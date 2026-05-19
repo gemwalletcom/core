@@ -73,10 +73,7 @@ where
         let rpc_result: JsonRpcResult<ValueResult<Option<AccountData>>> = self.rpc_client.call_with_cache(&rpc_call, Some(u64::MAX)).await.map_err(SwapperError::from)?;
         let value = rpc_result.take()?;
 
-        value
-            .value
-            .map(|x| x.owner)
-            .ok_or_else(|| SwapperError::ComputeQuoteError("fetch_token_program error".to_string()))
+        value.value.map(|x| x.owner).ok_or_else(|| SwapperError::compute_quote_error("fetch_token_program error"))
     }
 
     async fn fetch_fee_account(&self, options: &Options, input_mint: &str, output_mint: &str) -> Result<String, SwapperError> {
