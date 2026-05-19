@@ -2,12 +2,13 @@ use super::{
     client::OkxDexClient,
     constants::{BASE_URL, EVM_NATIVE_TOKEN_ADDRESS, SOLANA_NATIVE_TOKEN_ADDRESS, chain_index, dex_ids, evm_gas_limit},
     model::{OkxApiResponse, OkxClientConfig, QuoteData, QuoteParams, SwapParams, TransactionData},
+    referral::referrer_wallet_addresses,
 };
 use crate::{
     SwapperError,
     alien::{RpcClient, RpcProvider},
     approval::check_approval_erc20,
-    fees::{bps_to_percent_string, default_referral_fees},
+    fees::bps_to_percent_string,
     models::ApprovalType,
 };
 use alloy_primitives::U256;
@@ -162,17 +163,8 @@ fn max_auto_slippage_percent(slippage_bps: u32) -> Option<String> {
     bps_to_percent_string(slippage_bps.saturating_mul(2)).ok()
 }
 
-fn referrer_wallet(chain: Chain) -> String {
-    let fees = default_referral_fees();
-    match chain {
-        Chain::Solana => fees.solana.address,
-        _ => fees.evm.address,
-    }
-}
-
 fn build_swap_params(request: &ProxyQuoteRequest, route: &QuoteData, chain: Chain, approve_transaction: bool) -> Result<SwapParams, SwapperError> {
-    let referrer = referrer_wallet(chain);
-    let (from_referrer, to_referrer) = if chain == Chain::Solana { (Some(referrer), None) } else { (None, Some(referrer)) };
+    let referrers = referrer_wallet_addresses(&request.from_asset, &request.to_asset, request.referral_bps, chain);
     Ok(SwapParams {
         chain_index: chain_index(chain).ok_or(SwapperError::NotSupportedChain)?.to_string(),
         amount: request.from_value.clone(),
@@ -186,8 +178,8 @@ fn build_swap_params(request: &ProxyQuoteRequest, route: &QuoteData, chain: Chai
         max_auto_slippage_percent: max_auto_slippage_percent(request.slippage_bps),
         dex_ids: dex_ids(chain),
         fee_percent: bps_to_percent_string(request.referral_bps)?,
-        from_token_referrer_wallet_address: from_referrer,
-        to_token_referrer_wallet_address: to_referrer,
+        from_token_referrer_wallet_address: referrers.from_token,
+        to_token_referrer_wallet_address: referrers.to_token,
     })
 }
 
@@ -226,30 +218,41 @@ fn build_solana_quote_data(tx: &TransactionData) -> Result<SwapQuoteData, Swappe
 mod tests {
     use super::super::model::TokenInfo;
     use super::*;
+    use crate::fees::default_referral_fees;
     use primitives::{
         AssetId,
         asset_constants::{ETHEREUM_USDC_ASSET_ID, ETHEREUM_USDC_TOKEN_ID, SOLANA_USDC_ASSET_ID, SOLANA_USDC_TOKEN_ID},
     };
 
+    const SMARTCHAIN_FAKE_BTC_TOKEN_ID: &str = "0x4770Ab6fCed223124b8616e08003D37fF13F8888";
+
     fn quote_asset(id: &str) -> QuoteAsset {
+        quote_asset_with_symbol(id, "")
+    }
+
+    fn quote_asset_with_symbol(id: &str, symbol: &str) -> QuoteAsset {
         QuoteAsset {
             id: id.to_string(),
-            symbol: String::new(),
+            symbol: symbol.to_string(),
             decimals: 18,
         }
     }
 
-    fn proxy_request(from_id: &str, to_id: &str, slippage_bps: u32, referral_bps: u32) -> ProxyQuoteRequest {
+    fn proxy_request_with_assets(from_asset: QuoteAsset, to_asset: QuoteAsset, slippage_bps: u32, referral_bps: u32) -> ProxyQuoteRequest {
         ProxyQuoteRequest {
             from_address: "0xabc".to_string(),
             to_address: "0xabc".to_string(),
-            from_asset: quote_asset(from_id),
-            to_asset: quote_asset(to_id),
+            from_asset,
+            to_asset,
             from_value: "1000000000000000000".to_string(),
             referral_bps,
             slippage_bps,
             use_max_amount: false,
         }
+    }
+
+    fn proxy_request(from_id: &str, to_id: &str, slippage_bps: u32, referral_bps: u32) -> ProxyQuoteRequest {
+        proxy_request_with_assets(quote_asset(from_id), quote_asset(to_id), slippage_bps, referral_bps)
     }
 
     fn quote_data(from_token: &str, to_token: &str) -> QuoteData {
@@ -366,6 +369,20 @@ mod tests {
         assert_eq!(evm_params.max_auto_slippage_percent.as_deref(), Some("2"));
         assert!(evm_params.to_token_referrer_wallet_address.is_some());
         assert!(evm_params.from_token_referrer_wallet_address.is_none());
+
+        let bnb = AssetId::from_chain(Chain::SmartChain).to_string();
+        let fake_btc = AssetId::from_token(Chain::SmartChain, SMARTCHAIN_FAKE_BTC_TOKEN_ID).to_string();
+        let bsc_request = proxy_request_with_assets(quote_asset_with_symbol(&bnb, "BNB"), quote_asset_with_symbol(&fake_btc, "BTC"), 100, 70);
+        let bsc_route = quote_data(EVM_NATIVE_TOKEN_ADDRESS, SMARTCHAIN_FAKE_BTC_TOKEN_ID);
+        let bsc_params = build_swap_params(&bsc_request, &bsc_route, Chain::SmartChain, false).unwrap();
+        let evm_referrer = default_referral_fees().evm.address;
+        assert_eq!(bsc_params.from_token_referrer_wallet_address.as_deref(), Some(evm_referrer.as_str()));
+        assert_eq!(bsc_params.to_token_referrer_wallet_address, None);
+
+        let no_fee_request = proxy_request_with_assets(quote_asset_with_symbol(&bnb, "BNB"), quote_asset_with_symbol(&fake_btc, "BTC"), 100, 0);
+        let no_fee_params = build_swap_params(&no_fee_request, &bsc_route, Chain::SmartChain, false).unwrap();
+        assert_eq!(no_fee_params.from_token_referrer_wallet_address, None);
+        assert_eq!(no_fee_params.to_token_referrer_wallet_address, None);
 
         let sol = AssetId::from_chain(Chain::Solana).to_string();
         let sol_request = proxy_request(&sol, &SOLANA_USDC_ASSET_ID.to_string(), 300, 50);

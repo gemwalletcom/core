@@ -4,6 +4,7 @@ mod cache;
 mod chainlink;
 pub mod cross_chain;
 mod eth_address;
+mod fee_token;
 pub mod fees;
 mod swapper_trait;
 

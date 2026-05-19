@@ -7,8 +7,10 @@ Audit a swapper provider in `crates/swapper/src/<provider>/provider.rs` against 
 For the given provider, verify each item by reading the provider code and related files.
 
 ### 1. get_quote Performance
-- [ ] Single API call (no chained requests)
-- [ ] No unnecessary RPC calls before quoting
+- [ ] Quote returns in under 1 second in normal conditions
+- [ ] Same-chain swaps prefer onchain math and node RPC over centralized quote APIs when practical
+- [ ] Cross-chain swaps may use centralized/provider APIs when that is the protocol integration surface
+- [ ] Avoid unnecessary chained API/RPC calls before quoting; batch or cache calls where practical
 - [ ] Errors mapped correctly (min amount, unsupported asset, etc.)
 
 ### 2. get_quote_data Correctness
@@ -23,10 +25,14 @@ For the given provider, verify each item by reading the provider code and relate
 ### 4. Referral Fee
 - [ ] Fee BPS constant defined in `crates/swapper/src/fees/mod.rs`
 - [ ] Passed to the provider API in quote requests
+- [ ] Referral fee token side selection is explicit and tested (prefer native/wrapped native, then stablecoins, over arbitrary route tokens)
 
-### 5. Vault Addresses
-- [ ] `get_vault_addresses()` returns all deposit addresses used by the provider
+### 5. Vault Addresses & Transaction Indexing
+- [ ] `get_vault_addresses()` returns all deposit addresses (user sends to vault) and send addresses (vault sends to user) used by the provider
 - [ ] Addresses match what the provider actually uses in transactions
+- [ ] Deposit addresses enable `is_cross_chain_swap()` detection in `cross_chain.rs`
+- [ ] Send addresses enable `is_from_vault_address()` detection for incoming swap completions
+- [ ] If the provider requires memo/payload validation (like Thorchain), `is_valid_swap_transaction()` handles it
 
 ### 6. Max Swap (use_max_amount)
 - [ ] `get_quote()` calls `quote_value_after_reserve_by_chain(request)?` from `crate::fees`
@@ -45,13 +51,8 @@ For the given provider, verify each item by reading the provider code and relate
 - [ ] `supported_assets()` returns correct `SwapperChainAsset` list
 - [ ] Uses asset constants from `primitives::asset_constants` (not inline `AssetId::from_token`)
 
-### 10. Swap Transaction Indexing
-- [ ] `get_vault_addresses()` returns `deposit` addresses (user sends to vault) and `send` addresses (vault sends to user)
-- [ ] Deposit addresses enable `is_cross_chain_swap()` detection in `cross_chain.rs`
-- [ ] Send addresses enable `is_from_vault_address()` detection for incoming swap completions
-- [ ] If the provider requires memo/payload validation (like Thorchain), `is_valid_swap_transaction()` handles it
-
-### 11. Tests
+### 10. Tests
 - [ ] Unit tests cover quote parsing, error mapping, and asset mapping
-- [ ] Integration tests gated behind `#[cfg(feature = "swap_integration_tests")]`
+- [ ] Live integration tests cover provider quotes/results and are gated behind `#[cfg(feature = "swap_integration_tests")]`
+- [ ] Avoid mock clients/tests that only assert mocked behavior and do not protect provider logic
 - [ ] Test fixtures in `<provider>/test/` directory

@@ -11,7 +11,7 @@ use crate::{
     fees::apply_slippage_in_bp,
     uniswap::{
         deadline::get_sig_deadline,
-        fee_token::{FeeToken, get_fee_token},
+        fee_token::is_quote_input_fee_token,
         is_native_erc20,
         quote_result::get_best_quote,
         requires_native_wrapping,
@@ -113,11 +113,9 @@ impl Swapper for UniswapV4 {
         let (evm_chain, token_in, token_out, from_value) = Self::parse_request(request)?;
         let fee_tiers = self.get_tiers();
         let base_pair = get_base_pair(&evm_chain, is_native_erc20(from_chain)).ok_or(SwapperError::ComputeQuoteError("base pair not found".into()))?;
-        let fee_token_in = FeeToken::new(token_in, request.from_asset.symbol.as_str());
-        let fee_token_out = FeeToken::new(token_out, request.to_asset.symbol.as_str());
-        let fee_preference = get_fee_token(Some(&base_pair), &fee_token_in, &fee_token_out);
+        let fee_token_is_input = is_quote_input_fee_token(Some(&base_pair), request, token_in, token_out);
         let fee_bps = request.options.clone().fee.unwrap_or_default().evm.bps;
-        let quote_amount_in = if fee_preference.is_input_token && fee_bps > 0 {
+        let quote_amount_in = if fee_token_is_input && fee_bps > 0 {
             apply_slippage_in_bp(&from_value, fee_bps)
         } else {
             from_value
@@ -154,7 +152,7 @@ impl Swapper for UniswapV4 {
         let fee_tier_idx = quote_result.fee_tier_idx;
         let batch_idx = quote_result.batch_idx;
 
-        let to_value = if fee_preference.is_input_token {
+        let to_value = if fee_token_is_input {
             quote_result.amount_out
         } else {
             apply_slippage_in_bp(&quote_result.amount_out, fee_bps)
@@ -243,20 +241,9 @@ impl Swapper for UniswapV4 {
         let sig_deadline = get_sig_deadline();
         let evm_chain = EVMChain::from_chain(from_asset.chain).ok_or(SwapperError::NotSupportedChain)?;
         let base_pair = get_base_pair(&evm_chain, is_native_erc20(from_asset.chain));
-        let fee_token_in = FeeToken::new(token_in, request.from_asset.symbol.as_str());
-        let fee_token_out = FeeToken::new(token_out, request.to_asset.symbol.as_str());
-        let fee_preference = get_fee_token(base_pair.as_ref(), &fee_token_in, &fee_token_out);
+        let fee_token_is_input = is_quote_input_fee_token(base_pair.as_ref(), request, token_in, token_out);
 
-        let commands = build_commands(
-            request,
-            &token_in,
-            &token_out,
-            amount_in,
-            to_amount,
-            &quote.data.routes,
-            permit,
-            fee_preference.is_input_token,
-        )?;
+        let commands = build_commands(request, &token_in, &token_out, amount_in, to_amount, &quote.data.routes, permit, fee_token_is_input)?;
         let encoded = encode_commands(&commands, U256::from(sig_deadline));
 
         let value = if wrap_input_eth { request.value.clone() } else { String::from("0") };
