@@ -1,6 +1,7 @@
 pub mod chain;
 pub mod docs;
 pub mod node;
+pub mod perpetual_config;
 pub mod public;
 pub mod rewards;
 pub mod social;
@@ -19,6 +20,7 @@ use std::{collections::HashMap, str::FromStr};
 
 use {
     docs::{DocsUrl, get_docs_url},
+    perpetual_config::{PerpetualConfig, get_perpetual_config, select_leverage},
     public::{ASSETS_URL, PublicUrl, get_public_url},
     rewards::{RewardsUrl, get_rewards_url},
     social::{SocialUrl, get_social_url, get_social_url_deeplink},
@@ -49,6 +51,14 @@ impl Config {
 
     fn get_swap_config(&self) -> SwapConfig {
         get_swap_config()
+    }
+
+    fn get_perpetual_config(&self) -> PerpetualConfig {
+        get_perpetual_config()
+    }
+
+    fn select_leverage(&self, desired: i32, from: Vec<i32>) -> i32 {
+        select_leverage(desired, &from)
     }
 
     fn get_docs_url(&self, item: DocsUrl) -> String {
