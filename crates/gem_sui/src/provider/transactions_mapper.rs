@@ -2,7 +2,7 @@ use crate::models::{BalanceChange, Digest, Event, EventStake, EventUnstake, GasU
 use crate::{SUI_COIN_TYPE, SUI_STAKE_EVENT, SUI_UNSTAKE_EVENT, full_coin_type};
 use chain_primitives::{BalanceDiff, SwapMapper};
 use chrono::{TimeZone, Utc};
-use num_bigint::BigUint;
+use num_bigint::{BigUint, Sign};
 use primitives::{AssetId, SwapProvider, Transaction, TransactionSmartContractMetadata, TransactionState, TransactionSwapMetadata, TransactionType, chain::Chain};
 
 const CHAIN: Chain = Chain::Sui;
@@ -62,21 +62,7 @@ fn map_transaction_type(
 
     // system & token transfer
     if events.is_empty() && (balance_changes.len() == 2 || balance_changes.len() == 3) {
-        let (from_change, to_change) = if balance_changes.len() == 2 && is_native_sui(&balance_changes[0].coin_type) && is_native_sui(&balance_changes[1].coin_type) {
-            if balance_changes[0].amount < balance_changes[1].amount {
-                (balance_changes[0].clone(), balance_changes[1].clone())
-            } else {
-                (balance_changes[1].clone(), balance_changes[0].clone())
-            }
-        } else if balance_changes.len() == 3 && is_native_sui(&balance_changes[0].coin_type) {
-            if balance_changes[1].amount < balance_changes[2].amount {
-                (balance_changes[1].clone(), balance_changes[2].clone())
-            } else {
-                (balance_changes[2].clone(), balance_changes[1].clone())
-            }
-        } else {
-            return None;
-        };
+        let (from_change, to_change) = map_transfer_balance_changes(balance_changes, fee)?;
 
         let asset_id = if is_native_sui(&from_change.coin_type) {
             chain.as_asset_id()
@@ -161,6 +147,38 @@ fn map_transaction_type(
     None
 }
 
+fn map_transfer_balance_changes<'a>(balance_changes: &'a [BalanceChange], fee: &BigUint) -> Option<(&'a BalanceChange, &'a BalanceChange)> {
+    let to_change = single(balance_changes.iter().filter(|change| change.amount.sign() == Sign::Plus))?;
+    let from_change = single(outgoing_changes(balance_changes, &to_change.coin_type)).or_else(|| select_native_transfer_source(balance_changes, to_change, fee))?;
+    Some((from_change, to_change))
+}
+
+fn single<T>(mut values: impl Iterator<Item = T>) -> Option<T> {
+    let value = values.next()?;
+    values.next().is_none().then_some(value)
+}
+
+fn outgoing_changes<'a>(balance_changes: &'a [BalanceChange], coin_type: &'a str) -> impl Iterator<Item = &'a BalanceChange> + 'a {
+    balance_changes
+        .iter()
+        .filter(move |change| change.amount.sign() == Sign::Minus && type_tag_matches(&change.coin_type, coin_type))
+}
+
+fn select_native_transfer_source<'a>(balance_changes: &'a [BalanceChange], to_change: &'a BalanceChange, fee: &BigUint) -> Option<&'a BalanceChange> {
+    if !is_native_sui(&to_change.coin_type) {
+        return None;
+    }
+
+    let amount = to_change.amount.magnitude().clone();
+    outgoing_changes(balance_changes, &to_change.coin_type)
+        .find(|change| change.amount.magnitude() == &amount)
+        .or_else(|| {
+            let amount_with_fee = amount + fee;
+            outgoing_changes(balance_changes, &to_change.coin_type).find(|change| change.amount.magnitude() == &amount_with_fee)
+        })
+        .or_else(|| outgoing_changes(balance_changes, &to_change.coin_type).max_by(|left, right| left.amount.magnitude().cmp(right.amount.magnitude())))
+}
+
 pub fn map_swap_from_balance_changes(balance_changes: Vec<BalanceChange>, fee: &BigUint) -> Option<TransactionSwapMetadata> {
     let balance_diffs: Vec<BalanceDiff> = balance_changes
         .into_iter()
@@ -214,6 +232,7 @@ mod tests {
 
     const OWNER_ADDRESS: &str = "0x1930a5e729ad95a48e4d9dc2ca8a001f8ed18b20077c083cd6b1d3355a7972a5";
     const RECIPIENT_ADDRESS: &str = "0x9d6b98b18fd26b5efeec68d020dcf1be7a94c2c315353779bc6b3aed44188ddf";
+    const SPONSORED_TRANSFER_SENDER_ADDRESS: &str = "0x00ea18889868519abd2f238966cab9875750bb2859ed3a34debec37781520138";
     const VALIDATOR_ADDRESS: &str = "0xbba318294a51ddeafa50c335c8e77202170e1f272599a2edc40592100863f638";
     const TOKEN_A: &str = "0x00000000000000000000000000000000000000000000000000000000000000aa::coin::AAA";
     const TOKEN_B: &str = "0x00000000000000000000000000000000000000000000000000000000000000bb::coin::BBB";
@@ -312,6 +331,15 @@ mod tests {
         assert_eq!(native_transfer.transaction_type, TransactionType::Transfer);
         assert_eq!(native_transfer.asset_id, Chain::Sui.as_asset_id());
         assert_eq!(native_transfer.value, "100000000");
+
+        let digest: Digest = serde_json::from_str(include_str!("../../testdata/sponsored_transfer_sui.json")).unwrap();
+        let sponsored_transfer = map_transaction(digest).unwrap();
+
+        assert_eq!(sponsored_transfer.transaction_type, TransactionType::Transfer);
+        assert_eq!(sponsored_transfer.asset_id, Chain::Sui.as_asset_id());
+        assert_eq!(sponsored_transfer.from, SPONSORED_TRANSFER_SENDER_ADDRESS);
+        assert_eq!(sponsored_transfer.to, OWNER_ADDRESS);
+        assert_eq!(sponsored_transfer.value, "5996594751");
 
         let token_transfer = map_transaction(make_digest(
             vec![],

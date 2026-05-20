@@ -115,6 +115,10 @@ pub struct Signature {
 #[serde(rename_all = "camelCase")]
 pub struct Instruction {
     pub program_id_index: usize,
+    #[serde(default)]
+    pub accounts: Vec<u8>,
+    #[serde(default)]
+    pub data: String,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

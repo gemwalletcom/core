@@ -15,7 +15,7 @@ use cacher::CacherClient;
 use pricer::PriceClient;
 use primitives::{Chain, NFTChain};
 use settings::Settings;
-use storage::{ConfigCacher, Database};
+use storage::Database;
 use streamer::{
     ChainAddressPayload, ConsumerStatusReporter, FetchAssetsPayload, FetchBlocksPayload, FetchNFTAssetPayload, FetchPricesPayload, QueueName, ShutdownReceiver, StreamConnection,
     StreamReader, run_consumer,
@@ -147,9 +147,8 @@ async fn run_fetch_prices(
     let config = reader_config(&settings.rabbitmq, name.clone());
     let stream_reader = StreamReader::from_connection(&connection, config).await?;
     let cacher = CacherClient::new(&settings.redis.url).await;
-    let config_cacher = ConfigCacher::new(database.clone());
     let price_client = PriceClient::new(database, cacher);
-    let providers = crate::worker::prices::price_providers(&settings, &config_cacher)?;
+    let providers = crate::worker::prices::price_providers(&settings);
     let consumer = FetchPricesConsumer { price_client, providers };
     run_consumer::<FetchPricesPayload, FetchPricesConsumer, usize>(&name, stream_reader, queue, None, consumer, consumer_config(&settings.consumer), shutdown_rx, reporter).await
 }

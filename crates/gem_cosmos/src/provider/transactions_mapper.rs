@@ -50,6 +50,10 @@ fn asset_id_from_denom(chain: primitives::Chain, denom: &str, default_denom: &st
 }
 
 pub fn map_transaction(cosmos_chain: CosmosChain, body: TransactionBody, auth_info: Option<AuthInfo>, transaction: TransactionResponse) -> Option<Transaction> {
+    if transaction.tx_response.code != 0 {
+        return None;
+    }
+
     let hash = transaction.tx_response.txhash.clone();
     let chain = cosmos_chain.as_chain();
     let default_denom = chain.as_denom()?.to_string();
@@ -64,11 +68,6 @@ pub fn map_transaction(cosmos_chain: CosmosChain, body: TransactionBody, auth_in
 
     let memo = if body.memo.is_empty() { None } else { Some(body.memo.clone()) };
 
-    let state = if transaction.tx_response.code == 0 {
-        TransactionState::Confirmed
-    } else {
-        TransactionState::Reverted
-    };
     let created_at = DateTime::parse_from_rfc3339(&transaction.tx_response.timestamp).ok()?.into();
 
     if body.messages.len() != 1 {
@@ -129,7 +128,7 @@ pub fn map_transaction(cosmos_chain: CosmosChain, body: TransactionBody, auth_in
         to_address,
         None,
         transaction_type,
-        state,
+        TransactionState::Confirmed,
         fee,
         fee_asset_id,
         value,
@@ -207,6 +206,24 @@ mod tests {
                 DateTime::parse_from_rfc3339("2025-06-20T04:09:19Z").unwrap().into(),
             )
         );
+    }
+
+    #[test]
+    fn test_map_reverted_transfer_is_ignored() {
+        let result = TransactionResponse::mock_reverted_transfer_spam();
+        let transactions = map_transactions(CosmosChain::Cosmos, vec![result]);
+
+        assert_eq!(transactions, vec![]);
+    }
+
+    #[test]
+    fn test_map_reverted_staking_is_ignored() {
+        let mut result = TransactionResponse::mock_delegate();
+        result.tx_response.code = 1;
+
+        let transactions = map_transactions(CosmosChain::Cosmos, vec![result]);
+
+        assert_eq!(transactions, vec![]);
     }
 
     #[test]

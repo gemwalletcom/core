@@ -1,11 +1,14 @@
 use crate::models::{
-    EpochInfo, InflationRate, ResultTokenInfo, Signature, SupplyResult, TokenAccountInfo, ValueResult, VoteAccounts,
+    AccountData, EpochInfo, InflationRate, ResultTokenInfo, Signature, SupplyResult, TokenAccountInfo, ValueResult, VoteAccounts,
     balances::SolanaBalance,
     blockhash::SolanaBlockhashResult,
     prioritization_fee::SolanaPrioritizationFee,
     transaction::{BlockTransactions, SolanaTransaction},
 };
-use crate::{COMMITMENT_CONFIRMED, STAKE_PROGRAM_ID};
+use crate::{
+    COMMITMENT_CONFIRMED, Pubkey, STAKE_PROGRAM_ID,
+    metaplex::{decode_metadata, metadata::Metadata},
+};
 use chain_traits::ChainProvider;
 #[cfg(feature = "rpc")]
 use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainTraits};
@@ -14,7 +17,7 @@ use gem_client::Client;
 #[cfg(feature = "rpc")]
 use gem_jsonrpc::{client::JsonRpcClient as GenericJsonRpcClient, types::JsonRpcError};
 use primitives::Chain;
-use std::error::Error;
+use std::{error::Error, str::FromStr};
 
 #[cfg(feature = "rpc")]
 pub struct SolanaClient<C: Client + Clone> {
@@ -144,31 +147,28 @@ impl<C: Client + Clone> SolanaClient<C> {
         self.rpc_call("getAccountInfo", params).await
     }
 
-    pub async fn get_metaplex_metadata(&self, token_mint: &str) -> Result<crate::metaplex::metadata::Metadata, Box<dyn Error + Send + Sync>> {
-        use crate::{
-            Pubkey,
-            metaplex::decode_metadata,
-            metaplex::metadata::Metadata,
-            models::{ValueData, ValueResult},
-        };
-        use std::str::FromStr;
+    pub(crate) async fn get_account_info_base64(&self, address: &str) -> Result<ValueResult<Option<AccountData>>, JsonRpcError> {
+        self.rpc_call(
+            "getAccountInfo",
+            serde_json::json!([address, confirmed_config(serde_json::json!({ "encoding": "base64" }))]),
+        )
+        .await
+    }
 
+    pub(crate) async fn find_token_account(&self, owner: &str, mint: &str) -> Result<Option<String>, JsonRpcError> {
+        let accounts = self.get_token_accounts_by_mint(owner, mint).await?;
+        Ok(accounts.value.first().map(|account| account.pubkey.clone()))
+    }
+
+    pub async fn get_metaplex_metadata(&self, token_mint: &str) -> Result<Metadata, Box<dyn Error + Send + Sync>> {
         let pubkey = Pubkey::from_str(token_mint)?;
         let metadata_key = Metadata::find_pda(pubkey)
             .ok_or::<Box<dyn Error + Send + Sync>>("metadata program account not found".into())?
             .0
             .to_string();
-
-        let result: ValueResult<Option<ValueData<Vec<String>>>> = self
-            .rpc_call(
-                "getAccountInfo",
-                serde_json::json!([metadata_key, confirmed_config(serde_json::json!({ "encoding": "base64" }))]),
-            )
-            .await?;
-
-        let value = result.value.ok_or("Failed to get metadata")?;
-        let meta = decode_metadata(&value.data[0]).map_err(|_| "Failed to decode metadata")?;
-        Ok(meta)
+        let value = self.get_account_info_base64(&metadata_key).await?.value.ok_or("Failed to get metadata")?;
+        let data = value.data.first().ok_or("Missing metadata account data")?;
+        decode_metadata(data).map_err(|_| "Failed to decode metadata".into())
     }
 
     pub async fn get_block_transactions(&self, slot: u64) -> Result<BlockTransactions, JsonRpcError> {

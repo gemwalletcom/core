@@ -44,8 +44,46 @@ pub enum ProgrammableConfig {
 
 impl Metadata {
     pub fn find_pda(mint: Pubkey) -> Option<(Pubkey, u8)> {
-        let mpl_id = Pubkey::from_str(METAPLEX_PROGRAM).unwrap();
-        let seeds = &["metadata".as_bytes(), mpl_id.as_bytes().as_ref(), mint.as_bytes().as_ref()];
-        find_program_address(&mpl_id, seeds).ok()
+        let mpl_id = Pubkey::from_str(METAPLEX_PROGRAM).ok()?;
+        find_program_address(&mpl_id, &["metadata".as_bytes(), mpl_id.as_bytes().as_ref(), mint.as_bytes().as_ref()]).ok()
+    }
+
+    pub fn find_master_edition_pda(mint: Pubkey) -> Option<(Pubkey, u8)> {
+        let mpl_id = Pubkey::from_str(METAPLEX_PROGRAM).ok()?;
+        find_program_address(
+            &mpl_id,
+            &["metadata".as_bytes(), mpl_id.as_bytes().as_ref(), mint.as_bytes().as_ref(), "edition".as_bytes()],
+        )
+        .ok()
+    }
+
+    pub fn find_token_record_pda(mint: Pubkey, token_account: Pubkey) -> Option<(Pubkey, u8)> {
+        let mpl_id = Pubkey::from_str(METAPLEX_PROGRAM).ok()?;
+        find_program_address(
+            &mpl_id,
+            &[
+                "metadata".as_bytes(),
+                mpl_id.as_bytes().as_ref(),
+                mint.as_bytes().as_ref(),
+                "token_record".as_bytes(),
+                token_account.as_bytes().as_ref(),
+            ],
+        )
+        .ok()
+    }
+
+    pub fn is_programmable(&self) -> bool {
+        #[allow(clippy::match_like_matches_macro)]
+        match self.token_standard {
+            Some(TokenStandard::ProgrammableNonFungible | TokenStandard::ProgrammableNonFungibleEdition) => true,
+            _ => false,
+        }
+    }
+
+    pub fn rule_set(&self) -> Option<Pubkey> {
+        match self.programmable_config {
+            Some(ProgrammableConfig::V1 { rule_set: Some(pubkey) }) => Some(pubkey),
+            _ => None,
+        }
     }
 }

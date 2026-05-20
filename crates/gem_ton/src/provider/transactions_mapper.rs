@@ -463,6 +463,25 @@ mod tests {
     }
 
     #[test]
+    fn test_map_trace_transactions_nft_transfer_real() {
+        let traces: TraceResponse = serde_json::from_str(include_str!("../../testdata/nft_transfer_trace.json")).unwrap();
+
+        let transactions = map_trace_transactions(traces.traces);
+
+        assert_eq!(transactions.len(), 1);
+        let transaction = &transactions[0];
+        assert_eq!(transaction.transaction_type, TransactionType::TransferNFT);
+        assert_eq!(transaction.state, TransactionState::Confirmed);
+        assert_eq!(transaction.asset_id, AssetId::from_chain(Chain::Ton));
+        assert_eq!(transaction.value, "0");
+
+        let nft_asset_id = transaction.nft_asset_id().expect("nft asset id");
+        assert_eq!(nft_asset_id.chain, Chain::Ton);
+        assert!(!nft_asset_id.contract_address.is_empty());
+        assert!(!nft_asset_id.token_id.is_empty());
+    }
+
+    #[test]
     fn test_map_trace_transactions_by_block() {
         let traces = TraceResponse::mock_block_traces();
 

@@ -1,25 +1,37 @@
-use crate::signer::transaction;
-use primitives::{Asset, AssetType, SignerError, SignerInput, SolanaTokenProgramId};
+use crate::{get_token_program_by_id, signer::transaction};
+use primitives::{Asset, SignerError, SignerInput, SolanaTokenProgramId};
 use solana_primitives::{
     Instruction, Pubkey,
     instructions::{
         associated_token::{create_associated_token_account_idempotent, get_associated_token_address_with_program_id},
         memo::memo,
-        program_ids::{token_2022_program, token_program},
         token::transfer_checked_with_program_id,
     },
 };
 
 pub(in crate::signer) fn token_transfer(input: &SignerInput, sender: Pubkey) -> Result<Vec<Instruction>, SignerError> {
+    let asset = input.input_type.get_asset();
     let token_program_id = token_program_id(input)?;
+    let mint = Pubkey::from_base58(asset.id.get_token_id()?).map_err(SignerError::from_display)?;
+    let decimals = token_decimals(asset)?;
+    let amount = input.value_as_u64()?;
+
+    spl_transfer_checked(input, sender, mint, amount, decimals, token_program_id)
+}
+
+pub(in crate::signer::instructions) fn spl_transfer_checked(
+    input: &SignerInput,
+    sender: Pubkey,
+    mint: Pubkey,
+    amount: u64,
+    decimals: u8,
+    token_program_id: Pubkey,
+) -> Result<Vec<Instruction>, SignerError> {
     let sender_token_address = input
         .metadata
         .get_sender_token_address()?
         .ok_or_else(|| SignerError::invalid_input("missing sender token address"))?;
     let sender_token_address = Pubkey::from_base58(&sender_token_address).map_err(SignerError::from_display)?;
-    let mint = Pubkey::from_base58(input.input_type.get_asset().id.get_token_id()?).map_err(SignerError::from_display)?;
-    let decimals = token_decimals(input.input_type.get_asset())?;
-    let amount = input.value_as_u64()?;
 
     let mut instructions = transaction::compute_budget_instructions(&input.fee)?;
     let recipient_token_address = match input.metadata.get_recipient_token_address()? {
@@ -49,30 +61,14 @@ pub(in crate::signer) fn token_transfer(input: &SignerInput, sender: Pubkey) -> 
 
 fn token_program_id(input: &SignerInput) -> Result<Pubkey, SignerError> {
     let asset = input.input_type.get_asset();
-    let token_program_id = token_program_id_for_asset(asset)?;
-    if let Some(metadata_program_id) = input.metadata.get_solana_token_program_id()? {
-        let metadata_program_id = token_program_id_for_metadata(&metadata_program_id);
-        if metadata_program_id != token_program_id {
-            return Err(SignerError::invalid_input("Solana token program metadata does not match asset type"));
-        }
-        return Ok(metadata_program_id);
+    let asset_program =
+        SolanaTokenProgramId::from_asset_type(&asset.asset_type).ok_or_else(|| SignerError::invalid_input(format!("unsupported Solana token type: {:?}", asset.asset_type)))?;
+    if let Some(metadata_program) = input.metadata.get_solana_token_program_id().map_err(SignerError::from_display)?
+        && metadata_program != asset_program
+    {
+        return Err(SignerError::invalid_input("Solana token program metadata does not match asset type"));
     }
-    Ok(token_program_id)
-}
-
-fn token_program_id_for_asset(asset: &Asset) -> Result<Pubkey, SignerError> {
-    match &asset.asset_type {
-        AssetType::SPL => Ok(token_program()),
-        AssetType::SPL2022 => Ok(token_2022_program()),
-        other => Err(SignerError::invalid_input(format!("unsupported Solana token type: {other:?}"))),
-    }
-}
-
-fn token_program_id_for_metadata(token_program_id: &SolanaTokenProgramId) -> Pubkey {
-    match token_program_id {
-        SolanaTokenProgramId::Token => token_program(),
-        SolanaTokenProgramId::Token2022 => token_2022_program(),
-    }
+    Pubkey::from_base58(get_token_program_by_id(asset_program)).map_err(SignerError::from_display)
 }
 
 fn token_decimals(asset: &Asset) -> Result<u8, SignerError> {

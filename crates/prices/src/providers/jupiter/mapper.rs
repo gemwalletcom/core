@@ -75,7 +75,6 @@ mod tests {
     fn test_map_token_price_maps_market_data() {
         let token = VerifiedToken {
             id: "token".to_string(),
-            organic_score: 100.0,
             usd_price: 2.0,
             mcap: Some(10.0),
             fdv: Some(20.0),

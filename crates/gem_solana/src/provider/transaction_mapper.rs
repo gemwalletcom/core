@@ -2,13 +2,44 @@ use chrono::DateTime;
 use num_bigint::Sign;
 
 use crate::{
-    COMPUTE_BUDGET_PROGRAM_ID, JUPITER_PROGRAM_ID, OKX_DEX_V2_PROGRAM_ID, SYSTEM_PROGRAM_ID, SYSTEM_PROGRAMS, TOKEN_PROGRAM,
+    COMPUTE_BUDGET_PROGRAM_ID, JUPITER_PROGRAM_ID, METAPLEX_CORE_PROGRAM, METAPLEX_PROGRAM, OKX_DEX_V2_PROGRAM_ID, SYSTEM_PROGRAM_ID, SYSTEM_PROGRAMS, TOKEN_PROGRAM,
     models::{BlockTransaction, BlockTransactions, Signature},
 };
-use primitives::{AssetId, Chain, SwapProvider, Transaction, TransactionState, TransactionSwapMetadata, TransactionType};
+use primitives::{AssetId, Chain, NFTAssetId, SwapProvider, Transaction, TransactionNFTTransferMetadata, TransactionState, TransactionSwapMetadata, TransactionType};
 
 const CHAIN: Chain = Chain::Solana;
 const SWAP_PROGRAMS: &[(SwapProvider, &str)] = &[(SwapProvider::Jupiter, JUPITER_PROGRAM_ID), (SwapProvider::Okx, OKX_DEX_V2_PROGRAM_ID)];
+const MPL_CORE_TRANSFER_V1: u8 = 14;
+
+struct MetaplexCoreNftTransfer {
+    sender: String,
+    new_owner: String,
+    asset: String,
+    collection: String,
+}
+
+fn map_metaplex_core_nft_transfer(transaction: &BlockTransaction, account_keys: &[String]) -> Option<MetaplexCoreNftTransfer> {
+    if !account_keys.iter().any(|key| key == METAPLEX_CORE_PROGRAM) {
+        return None;
+    }
+    let instruction = transaction
+        .transaction
+        .message
+        .instructions
+        .iter()
+        .find(|ix| account_keys.get(ix.program_id_index).map(String::as_str) == Some(METAPLEX_CORE_PROGRAM))?;
+    let data = bs58::decode(&instruction.data).into_vec().ok()?;
+    if data.first().copied() != Some(MPL_CORE_TRANSFER_V1) {
+        return None;
+    }
+    let resolve = |position: usize| account_keys.get(*instruction.accounts.get(position)? as usize).cloned();
+    Some(MetaplexCoreNftTransfer {
+        asset: resolve(0)?,
+        collection: resolve(1)?,
+        sender: resolve(2)?,
+        new_owner: resolve(4)?,
+    })
+}
 
 fn get_swap_provider(account_keys: &[String]) -> Option<(SwapProvider, &'static str)> {
     SWAP_PROGRAMS.iter().copied().find(|(_, program_id)| account_keys.iter().any(|key| key == program_id))
@@ -111,7 +142,7 @@ pub fn map_transaction(transaction: &BlockTransaction, block_time: i64) -> Optio
     let pre_token_balances = transaction.meta.pre_token_balances.clone();
     let post_token_balances = transaction.meta.post_token_balances.clone();
 
-    // SPL token transfer
+    // SPL token transfer (regular tokens or NFTs that go through the SPL Token program).
     if let Some(first_balance) = pre_token_balances.first() {
         let token_id = &first_balance.mint;
         if account_keys.contains(&TOKEN_PROGRAM.to_string())
@@ -120,11 +151,6 @@ pub fn map_transaction(transaction: &BlockTransaction, block_time: i64) -> Optio
             && pre_token_balances.iter().all(|b| &b.mint == token_id)
             && post_token_balances.iter().all(|b| &b.mint == token_id)
         {
-            let asset_id = AssetId {
-                chain,
-                token_id: Some(token_id.clone()),
-            };
-
             let sender_account_index: i64 = if transaction.meta.pre_token_balances.len() == 1 {
                 transaction.meta.pre_token_balances.first()?.account_index
             } else if pre_token_balances.first()?.get_amount() >= post_token_balances.first()?.get_amount() {
@@ -143,9 +169,23 @@ pub fn map_transaction(transaction: &BlockTransaction, block_time: i64) -> Optio
                 return None;
             }
             let value = from_value - to_value;
-
             let from = sender.owner.clone();
             let to = recipient.owner.clone();
+
+            let is_nft = account_keys.iter().any(|key| key == METAPLEX_PROGRAM);
+            let (transaction_type, asset_id, metadata) = if is_nft {
+                let metadata = TransactionNFTTransferMetadata::from_asset_id(NFTAssetId::new(chain, token_id, token_id));
+                (TransactionType::TransferNFT, chain.as_asset_id(), serde_json::to_value(metadata).ok())
+            } else {
+                (
+                    TransactionType::Transfer,
+                    AssetId {
+                        chain,
+                        token_id: Some(token_id.clone()),
+                    },
+                    None,
+                )
+            };
 
             let transaction = Transaction::new(
                 hash,
@@ -153,17 +193,37 @@ pub fn map_transaction(transaction: &BlockTransaction, block_time: i64) -> Optio
                 from,
                 to,
                 None,
-                TransactionType::Transfer,
+                transaction_type,
                 state,
                 fee.to_string(),
                 fee_asset_id,
                 value.to_string(),
                 None,
-                None,
+                metadata,
                 created_at,
             );
             return Some(transaction);
         }
+    }
+
+    // Metaplex Core NFT transfer (single instruction, no SPL token balances).
+    if let Some(nft) = map_metaplex_core_nft_transfer(transaction, &account_keys) {
+        let metadata = TransactionNFTTransferMetadata::from_asset_id(NFTAssetId::new(chain, &nft.collection, &nft.asset));
+        return Some(Transaction::new(
+            hash,
+            chain.as_asset_id(),
+            nft.sender,
+            nft.new_owner,
+            None,
+            TransactionType::TransferNFT,
+            state,
+            fee.to_string(),
+            fee_asset_id,
+            "0".to_string(),
+            None,
+            serde_json::to_value(metadata).ok(),
+            created_at,
+        ));
     }
 
     if let Some((provider, program_id)) = get_swap_provider(&account_keys) {
@@ -227,6 +287,39 @@ mod tests {
     };
     use gem_jsonrpc::types::JsonRpcErrorResponse;
     use primitives::{JsonRpcResult, asset_constants::SOLANA_USDC_ASSET_ID};
+
+    const PNFT_MINT: &str = "HP82kPNXnQcozjDrV4dLYfV6wwABQDMVPJXezDbZXHEy";
+    const CORE_ASSET: &str = "JATWmjADckr2M7TX5xMfo1HNfYS66DKot15fJ4hVLrVE";
+    const CORE_COLLECTION: &str = "5pQfZttNUtaj8sySRY9RsdtB81aEAQDh2vnacpxiwTpT";
+
+    #[test]
+    fn test_transaction_nft_token_program_transfer() {
+        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(include_str!("../../testdata/nft_token_program_transfer.json")).unwrap();
+
+        let transaction = map_transaction(&result.result, 1).unwrap();
+
+        assert_eq!(transaction.transaction_type, TransactionType::TransferNFT);
+        assert_eq!(transaction.asset_id, Chain::Solana.as_asset_id());
+        assert_eq!(transaction.from, "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H");
+
+        let metadata: TransactionNFTTransferMetadata = serde_json::from_value(transaction.metadata.unwrap()).unwrap();
+        assert_eq!(metadata.asset_id, NFTAssetId::new(Chain::Solana, PNFT_MINT, PNFT_MINT));
+    }
+
+    #[test]
+    fn test_transaction_nft_mplcore_transfer() {
+        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(include_str!("../../testdata/nft_mplcore_transfer.json")).unwrap();
+
+        let transaction = map_transaction(&result.result, 1).unwrap();
+
+        assert_eq!(transaction.transaction_type, TransactionType::TransferNFT);
+        assert_eq!(transaction.asset_id, Chain::Solana.as_asset_id());
+        assert_eq!(transaction.from, "8wytzyCBXco7yqgrLDiecpEt452MSuNWRe7xsLgAAX1H");
+        assert_eq!(transaction.to, "G7B17AigRCGvwnxFc5U8zY5T3NBGduLzT7KYApNU2VdR");
+
+        let metadata: TransactionNFTTransferMetadata = serde_json::from_value(transaction.metadata.unwrap()).unwrap();
+        assert_eq!(metadata.asset_id, NFTAssetId::new(Chain::Solana, CORE_COLLECTION, CORE_ASSET));
+    }
 
     #[test]
     fn test_transaction_swap_token_to_sol() {

@@ -5,10 +5,15 @@ use std::error::Error;
 use crate::provider::preload_mapper::{calculate_fee_rates, calculate_transaction_fee};
 use gem_client::Client;
 use primitives::{
-    AssetType, Chain, FeeRate, SolanaTokenProgramId, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput,
+    Chain, FeeRate, SolanaNftStandard, SolanaTokenProgramId, TransactionInputType, TransactionLoadData, TransactionLoadInput, TransactionLoadMetadata, TransactionPreloadInput,
 };
 
-use crate::rpc::client::SolanaClient;
+use crate::{METAPLEX_CORE_PROGRAM, get_token_program_id_by_address, metaplex_core, rpc::client::SolanaClient};
+
+struct SolanaNftPreload {
+    token_program: Option<SolanaTokenProgramId>,
+    standard: SolanaNftStandard,
+}
 
 #[cfg(feature = "rpc")]
 #[async_trait]
@@ -19,47 +24,57 @@ impl<C: Client + Clone> ChainTransactionLoad for SolanaClient<C> {
             sender_address,
             destination_address,
         } = input;
-        let (sender_lookup_address, recipient_lookup_address) = match &input_type {
-            TransactionInputType::Transfer(_) | TransactionInputType::TransferNft(_, _) => (&sender_address, &destination_address),
-            TransactionInputType::Swap(_, _, _) => (&sender_address, &sender_address),
-            _ => (&sender_address, &destination_address),
+
+        let (sender_lookup, recipient_lookup) = match input_type {
+            TransactionInputType::Swap(_, _, _) => (sender_address.as_str(), sender_address.as_str()),
+            _ => (sender_address.as_str(), destination_address.as_str()),
         };
 
-        let source_asset = input_type.get_asset().clone();
-        let recipient_asset = input_type.get_recipient_asset().clone();
+        let (sender_mint, recipient_mint, token_program, nft) = match &input_type {
+            TransactionInputType::TransferNft(_, nft_asset) => {
+                let SolanaNftPreload { token_program, standard } = self.detect_solana_nft(&nft_asset.token_id).await?;
+                let mint = token_program.is_some().then_some(nft_asset.token_id.as_str());
+                (mint, mint, token_program, Some(standard))
+            }
+            _ => {
+                let source = input_type.get_asset();
+                let recipient = input_type.get_recipient_asset();
+                let sender_mint = source.id.token_id.as_deref();
+                let recipient_mint = match recipient.chain() {
+                    Chain::Solana => recipient.id.token_id.as_deref(),
+                    _ => None,
+                };
+                (sender_mint, recipient_mint, SolanaTokenProgramId::from_asset_type(&source.asset_type), None)
+            }
+        };
 
         let sender_token_future = async {
-            if source_asset.chain() == Chain::Solana
-                && let Some(token_id) = source_asset.id.token_id.clone()
-            {
-                let accounts = self.get_token_accounts_by_mint(sender_lookup_address.as_str(), &token_id).await?;
-                return Ok(accounts.value.first().map(|account| account.pubkey.clone()));
+            match sender_mint {
+                Some(mint) => self.find_token_account(sender_lookup, mint).await,
+                None => Ok(None),
             }
-            Ok(None)
         };
-
         let recipient_token_future = async {
-            if recipient_asset.chain() == Chain::Solana
-                && let Some(token_id) = recipient_asset.id.token_id.clone()
-            {
-                let accounts = self.get_token_accounts_by_mint(recipient_lookup_address.as_str(), &token_id).await?;
-                return Ok(accounts.value.first().map(|account| account.pubkey.clone()));
+            match recipient_mint {
+                Some(mint) => self.find_token_account(recipient_lookup, mint).await,
+                None => Ok(None),
             }
-            Ok(None)
         };
 
         let (block_hash, sender_token_address, recipient_token_address) = futures::try_join!(self.get_latest_blockhash(), sender_token_future, recipient_token_future)?;
 
-        let token_program = match source_asset.asset_type {
-            AssetType::SPL => Some(SolanaTokenProgramId::Token),
-            AssetType::SPL2022 => Some(SolanaTokenProgramId::Token2022),
-            _ => None,
-        };
+        if let TransactionInputType::TransferNft(_, _) = input_type
+            && sender_mint.is_some()
+            && sender_token_address.is_none()
+        {
+            return Err("sender does not own Solana NFT token account".into());
+        }
 
         Ok(TransactionLoadMetadata::Solana {
             sender_token_address,
             recipient_token_address,
             token_program,
+            nft,
             block_hash: block_hash.value.blockhash,
         })
     }
@@ -72,6 +87,33 @@ impl<C: Client + Clone> ChainTransactionLoad for SolanaClient<C> {
     async fn get_transaction_fee_rates(&self, input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
         let prioritization_fees = self.get_recent_prioritization_fees().await?;
         Ok(calculate_fee_rates(&input_type, &prioritization_fees))
+    }
+}
+
+#[cfg(feature = "rpc")]
+impl<C: Client + Clone> SolanaClient<C> {
+    async fn detect_solana_nft(&self, mint: &str) -> Result<SolanaNftPreload, Box<dyn Error + Sync + Send>> {
+        let account = self.get_account_info_base64(mint).await?.value.ok_or("Solana NFT account not found")?;
+        if account.owner == METAPLEX_CORE_PROGRAM {
+            let data = account.data.first().ok_or("missing Metaplex Core asset data")?;
+            let collection = metaplex_core::decode_asset(data)?.collection().map(|pubkey| pubkey.to_base58());
+            return Ok(SolanaNftPreload {
+                token_program: None,
+                standard: SolanaNftStandard::Core { collection },
+            });
+        }
+        let token_program = get_token_program_id_by_address(&account.owner).ok_or_else(|| format!("unsupported Solana NFT owner program: {}", account.owner))?;
+        let metadata = self.get_metaplex_metadata(mint).await.ok();
+        let standard = match metadata.filter(|m| m.is_programmable()) {
+            Some(metadata) => SolanaNftStandard::ProgrammableNonFungible {
+                rule_set: metadata.rule_set().map(|pubkey| pubkey.to_base58()),
+            },
+            None => SolanaNftStandard::NonFungible,
+        };
+        Ok(SolanaNftPreload {
+            token_program: Some(token_program),
+            standard,
+        })
     }
 }
 
@@ -148,7 +190,7 @@ mod chain_integration_tests {
         assert_eq!(result.get_sender_token_address()?, Some("HEeranxp3y7kVQKVSLdZW1rUmnbs7bAtUTMu8o88Jash".to_string()));
 
         if let TransactionLoadMetadata::Solana { token_program, .. } = &result {
-            assert!(matches!(token_program, Some(SolanaTokenProgramId::Token)));
+            assert_eq!(token_program.as_ref(), Some(&SolanaTokenProgramId::Token));
         } else {
             panic!("expected solana metadata");
         }

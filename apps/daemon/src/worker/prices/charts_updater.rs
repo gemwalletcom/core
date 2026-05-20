@@ -158,6 +158,8 @@ fn bucketed_chart_rows(price_id: &str, values: &[ChartValue], bucket_size_second
 
 #[cfg(test)]
 mod tests {
+    use std::slice;
+
     use super::*;
 
     #[test]
@@ -166,7 +168,7 @@ mod tests {
             timestamp: 1_713_774_896,
             value: 123.45,
         };
-        let hourly = bucketed_chart_rows("bitcoin", &[value.clone()], SECONDS_PER_HOUR as i64).remove(0);
+        let hourly = bucketed_chart_rows("bitcoin", slice::from_ref(&value), SECONDS_PER_HOUR as i64).remove(0);
         let daily = bucketed_chart_rows("bitcoin", &[value], SECONDS_PER_DAY as i64).remove(0);
 
         assert_eq!(hourly.coin_id, "bitcoin");

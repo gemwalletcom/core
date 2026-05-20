@@ -18,6 +18,11 @@ impl ChainSigner for SolanaChainSigner {
         transaction::sign_single_signer_instructions(input, private_key, sender, instructions::token_transfer(input, sender)?)
     }
 
+    fn sign_nft_transfer(&self, input: &SignerInput, private_key: &[u8]) -> Result<String, SignerError> {
+        let sender = Pubkey::from_base58(&input.sender_address).map_err(SignerError::from_display)?;
+        transaction::sign_single_signer_instructions(input, private_key, sender, instructions::nft_transfer(input, sender)?)
+    }
+
     fn sign_swap(&self, input: &SignerInput, private_key: &[u8]) -> Result<Vec<String>, SignerError> {
         swap::sign(input, private_key)
     }

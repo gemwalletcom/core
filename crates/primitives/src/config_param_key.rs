@@ -12,7 +12,6 @@ pub enum ConfigParamKey {
     PriceProviderChartsHourlyDuration(PriceProvider),
     PriceProviderMetricsDuration(PriceProvider),
     PriceProviderCleanOutdatedDuration(PriceProvider),
-    PriceProviderAssetsMinScore(PriceProvider),
 }
 
 impl ConfigParamKey {
@@ -25,7 +24,6 @@ impl ConfigParamKey {
         let charts_hourly = PriceProvider::all().into_iter().map(Self::PriceProviderChartsHourlyDuration);
         let metrics = PriceProvider::all().into_iter().map(Self::PriceProviderMetricsDuration);
         let clean_outdated = PriceProvider::all().into_iter().map(Self::PriceProviderCleanOutdatedDuration);
-        let min_score = PriceProvider::all().into_iter().map(Self::PriceProviderAssetsMinScore);
         swapper
             .chain(assets)
             .chain(assets_new)
@@ -34,7 +32,6 @@ impl ConfigParamKey {
             .chain(charts_hourly)
             .chain(metrics)
             .chain(clean_outdated)
-            .chain(min_score)
             .collect()
     }
 
@@ -48,7 +45,6 @@ impl ConfigParamKey {
             Self::PriceProviderChartsHourlyDuration(provider) => format!("{}.{}", self.as_ref(), provider.as_ref()),
             Self::PriceProviderMetricsDuration(provider) => format!("{}.{}", self.as_ref(), provider.as_ref()),
             Self::PriceProviderCleanOutdatedDuration(provider) => format!("{}.{}", self.as_ref(), provider.as_ref()),
-            Self::PriceProviderAssetsMinScore(provider) => format!("{}.{}", self.as_ref(), provider.as_ref()),
         }
     }
 
@@ -62,8 +58,6 @@ impl ConfigParamKey {
             Self::PriceProviderChartsHourlyDuration(_) => "7d",
             Self::PriceProviderMetricsDuration(_) => "5m",
             Self::PriceProviderCleanOutdatedDuration(_) => "1d",
-            Self::PriceProviderAssetsMinScore(PriceProvider::Jupiter) => "50",
-            Self::PriceProviderAssetsMinScore(_) => "0",
         }
     }
 }

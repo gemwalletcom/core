@@ -1,4 +1,4 @@
-use crate::{SolanaTokenProgramId, TransactionLoadMetadata, stake_type::TronStakeData};
+use crate::{SolanaNftStandard, SolanaTokenProgramId, TransactionLoadMetadata, stake_type::TronStakeData};
 
 impl TransactionLoadMetadata {
     pub fn mock_aptos() -> Self {
@@ -54,6 +54,7 @@ impl TransactionLoadMetadata {
             sender_token_address: None,
             recipient_token_address: None,
             token_program: None,
+            nft: None,
             block_hash: block_hash.to_string(),
         }
     }
@@ -63,6 +64,29 @@ impl TransactionLoadMetadata {
             sender_token_address: sender_token_address.map(String::from),
             recipient_token_address: recipient_token_address.map(String::from),
             token_program,
+            nft: None,
+            block_hash: "11111111111111111111111111111111".to_string(),
+        }
+    }
+
+    pub fn mock_solana_nft(sender_token_address: &str, token_program: SolanaTokenProgramId, nft: SolanaNftStandard) -> Self {
+        TransactionLoadMetadata::Solana {
+            sender_token_address: Some(sender_token_address.to_string()),
+            recipient_token_address: None,
+            token_program: Some(token_program),
+            nft: Some(nft),
+            block_hash: "11111111111111111111111111111111".to_string(),
+        }
+    }
+
+    pub fn mock_solana_core_nft(collection: Option<&str>) -> Self {
+        TransactionLoadMetadata::Solana {
+            sender_token_address: None,
+            recipient_token_address: None,
+            token_program: None,
+            nft: Some(SolanaNftStandard::Core {
+                collection: collection.map(String::from),
+            }),
             block_hash: "11111111111111111111111111111111".to_string(),
         }
     }

@@ -11,9 +11,8 @@ pub mod validators;
 pub mod wallet_connect;
 
 use crate::config::chain::ChainConfig;
-use gem_solana;
 use primitives::{
-    Chain, SolanaTokenProgramId, StakeChain,
+    Chain, StakeChain,
     node_config::{self, Node},
 };
 use std::{collections::HashMap, str::FromStr};
@@ -113,14 +112,5 @@ impl Config {
 
     fn get_block_explorers(&self, chain: &str) -> Vec<String> {
         primitives::block_explorer::get_block_explorers_by_chain(chain).into_iter().map(|x| x.name()).collect()
-    }
-
-    fn get_solana_token_program(&self, id: &str) -> String {
-        let id = SolanaTokenProgramId::from_str(id).unwrap();
-        gem_solana::get_token_program_by_id(id).to_string()
-    }
-
-    fn get_solana_token_program_id(&self, address: &str) -> Option<String> {
-        gem_solana::get_token_program_id_by_address(address).ok().map(|x| x.as_ref().to_string())
     }
 }

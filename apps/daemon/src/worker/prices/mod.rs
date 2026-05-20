@@ -49,7 +49,7 @@ pub async fn jobs(ctx: WorkerContext, shutdown_rx: ShutdownReceiver) -> Result<V
         .map(|p| p.id.0)
         .collect();
     let endpoints = price_provider_endpoints(&settings);
-    let assets_providers: AssetsProviders = Arc::new(build_price_providers(&endpoints, enabled_providers.iter().copied(), config.as_ref())?);
+    let assets_providers: AssetsProviders = Arc::new(build_price_providers(&endpoints, enabled_providers.iter().copied()));
     let price_client = PriceClient::new(database.clone(), cacher_client.clone());
 
     let builder = ctx.plan_builder(WorkerService::Prices, config.as_ref(), shutdown_rx);
@@ -294,8 +294,8 @@ fn price_provider_endpoints(settings: &Settings) -> PriceProviderEndpoints {
     }
 }
 
-pub fn price_providers(settings: &Settings, config: &ConfigCacher) -> Result<PriceProviders, Box<dyn Error + Send + Sync>> {
-    build_price_providers(&price_provider_endpoints(settings), PriceProvider::all(), config)
+pub fn price_providers(settings: &Settings) -> PriceProviders {
+    build_price_providers(&price_provider_endpoints(settings), PriceProvider::all())
 }
 
 fn charts_history_job(

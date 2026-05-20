@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{UTXO, contract_call_data::ContractCallData, solana_token_program::SolanaTokenProgramId, stake_type::TronStakeData};
+use crate::{UTXO, contract_call_data::ContractCallData, solana_nft::SolanaNftStandard, solana_token_program::SolanaTokenProgramId, stake_type::TronStakeData};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct HyperliquidOrder {
@@ -19,6 +19,7 @@ pub enum TransactionLoadMetadata {
         sender_token_address: Option<String>,
         recipient_token_address: Option<String>,
         token_program: Option<SolanaTokenProgramId>,
+        nft: Option<SolanaNftStandard>,
         block_hash: String,
     },
     Ton {
@@ -241,6 +242,7 @@ mod tests {
             sender_token_address: None,
             recipient_token_address: None,
             token_program: Some(SolanaTokenProgramId::Token2022),
+            nft: None,
             block_hash: "block_hash".into(),
         };
         assert_eq!(metadata.get_solana_token_program_id().unwrap(), Some(SolanaTokenProgramId::Token2022));

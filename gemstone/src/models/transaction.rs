@@ -419,6 +419,7 @@ pub enum GemTransactionLoadMetadata {
         sender_token_address: Option<String>,
         recipient_token_address: Option<String>,
         token_program: Option<GemSolanaTokenProgramId>,
+        nft: Option<GemSolanaNftStandard>,
         block_hash: String,
     },
     Ton {
@@ -502,11 +503,13 @@ impl From<TransactionLoadMetadata> for GemTransactionLoadMetadata {
                 sender_token_address,
                 recipient_token_address,
                 token_program,
+                nft,
                 block_hash,
             } => GemTransactionLoadMetadata::Solana {
                 sender_token_address,
                 recipient_token_address,
                 token_program,
+                nft,
                 block_hash,
             },
             TransactionLoadMetadata::Ton {
@@ -590,11 +593,13 @@ impl From<GemTransactionLoadMetadata> for TransactionLoadMetadata {
                 sender_token_address,
                 recipient_token_address,
                 token_program,
+                nft,
                 block_hash,
             } => TransactionLoadMetadata::Solana {
                 sender_token_address,
                 recipient_token_address,
                 token_program,
+                nft,
                 block_hash,
             },
             GemTransactionLoadMetadata::Ton {

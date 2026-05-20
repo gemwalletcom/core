@@ -1,0 +1,148 @@
+{
+  "tx": {
+    "body": {
+      "messages": [
+        {
+          "@type": "/cosmos.bank.v1beta1.MsgSend",
+          "from_address": "cosmos1spam28rxfh39axghzlcusd98qhpkdarcq6umev2",
+          "to_address": "cosmos1hgp84me0lze8t4jfrwsr05aep2kr57zrk4gecx",
+          "amount": [
+            {
+              "denom": "uatom",
+              "amount": "99999999999999999999999999999999"
+            }
+          ]
+        }
+      ],
+      "memo": "reverted spam transfer",
+      "timeout_height": "0",
+      "extension_options": [],
+      "non_critical_extension_options": []
+    },
+    "auth_info": {
+      "signer_infos": [
+        {
+          "public_key": {
+            "@type": "/cosmos.crypto.secp256k1.PubKey",
+            "key": "A7Y9+R2a6pVf07i5P0dYqv5vLAkUn1d2P7YwW1Q4hH9S"
+          },
+          "mode_info": {
+            "single": {
+              "mode": "SIGN_MODE_DIRECT"
+            }
+          },
+          "sequence": "42"
+        }
+      ],
+      "fee": {
+        "amount": [
+          {
+            "denom": "uatom",
+            "amount": "2500"
+          }
+        ],
+        "gas_limit": "200000",
+        "payer": "",
+        "granter": ""
+      },
+      "tip": null
+    },
+    "signatures": [
+      "Q2xpZW50U2lnbmF0dXJlRG9lc05vdE1hdHRlckZvclBhcnNpbmdUZXN0cw=="
+    ]
+  },
+  "tx_response": {
+    "height": "26260000",
+    "txhash": "F8D05E52F23159D4545E516775E87DE6678AD2AA0B01BB8911C61861B8A60D10",
+    "codespace": "bank",
+    "code": 5,
+    "data": "",
+    "raw_log": "failed to execute message; message index: 0: 99999999999999999999999999999999uatom is larger than available balance: insufficient funds",
+    "logs": [],
+    "info": "",
+    "gas_wanted": "200000",
+    "gas_used": "81234",
+    "tx": {
+      "@type": "/cosmos.tx.v1beta1.Tx",
+      "body": {
+        "messages": [
+          {
+            "@type": "/cosmos.bank.v1beta1.MsgSend",
+            "from_address": "cosmos1spam28rxfh39axghzlcusd98qhpkdarcq6umev2",
+            "to_address": "cosmos1hgp84me0lze8t4jfrwsr05aep2kr57zrk4gecx",
+            "amount": [
+              {
+                "denom": "uatom",
+                "amount": "99999999999999999999999999999999"
+              }
+            ]
+          }
+        ],
+        "memo": "reverted spam transfer",
+        "timeout_height": "0",
+        "extension_options": [],
+        "non_critical_extension_options": []
+      },
+      "auth_info": {
+        "signer_infos": [
+          {
+            "public_key": {
+              "@type": "/cosmos.crypto.secp256k1.PubKey",
+              "key": "A7Y9+R2a6pVf07i5P0dYqv5vLAkUn1d2P7YwW1Q4hH9S"
+            },
+            "mode_info": {
+              "single": {
+                "mode": "SIGN_MODE_DIRECT"
+              }
+            },
+            "sequence": "42"
+          }
+        ],
+        "fee": {
+          "amount": [
+            {
+              "denom": "uatom",
+              "amount": "2500"
+            }
+          ],
+          "gas_limit": "200000",
+          "payer": "",
+          "granter": ""
+        },
+        "tip": null
+      },
+      "signatures": [
+        "Q2xpZW50U2lnbmF0dXJlRG9lc05vdE1hdHRlckZvclBhcnNpbmdUZXN0cw=="
+      ]
+    },
+    "timestamp": "2026-05-19T19:05:46Z",
+    "events": [
+      {
+        "type": "tx",
+        "attributes": [
+          {
+            "key": "fee",
+            "value": "2500uatom"
+          },
+          {
+            "key": "acc_seq",
+            "value": "cosmos1spam28rxfh39axghzlcusd98qhpkdarcq6umev2/42"
+          }
+        ]
+      },
+      {
+        "type": "message",
+        "attributes": [
+          {
+            "key": "action",
+            "value": "/cosmos.bank.v1beta1.MsgSend"
+          },
+          {
+            "key": "sender",
+            "value": "cosmos1spam28rxfh39axghzlcusd98qhpkdarcq6umev2"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -5,7 +5,7 @@ use async_trait::async_trait;
 use gem_client::ReqwestClient;
 use primitives::AssetId;
 
-use crate::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider, PriceProvider, PriceProviderAsset, PriceProviderConfig};
+use crate::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider, PriceProvider, PriceProviderAsset};
 
 use super::client::JupiterClient;
 use super::mapper::{map_token_asset, map_token_price, to_asset_price_mapping, to_jupiter_token_id};
@@ -13,25 +13,17 @@ use super::model::VerifiedToken;
 
 pub struct JupiterProvider {
     jupiter_client: JupiterClient,
-    config: PriceProviderConfig,
 }
 
 impl JupiterProvider {
-    pub fn new(client: ReqwestClient, config: PriceProviderConfig) -> Self {
+    pub fn new(client: ReqwestClient) -> Self {
         Self {
             jupiter_client: JupiterClient::new(client),
-            config,
         }
     }
 
     async fn verified_tokens(&self) -> Result<Vec<VerifiedToken>, Box<dyn Error + Send + Sync>> {
-        Ok(self
-            .jupiter_client
-            .get_verified_tokens()
-            .await?
-            .into_iter()
-            .filter(|t| t.organic_score >= self.config.min_score)
-            .collect())
+        self.jupiter_client.get_verified_tokens().await
     }
 }
 

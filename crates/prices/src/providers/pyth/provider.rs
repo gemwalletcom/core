@@ -9,14 +9,14 @@ use super::{
     client::PythClient,
     mapper::{asset_ids_for_feed_id, price_feed_id_for_chain},
 };
-use crate::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider, PriceProvider, PriceProviderAsset, PriceProviderConfig};
+use crate::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider, PriceProvider, PriceProviderAsset};
 
 pub struct PythProvider {
     pyth_client: PythClient,
 }
 
 impl PythProvider {
-    pub fn new(client: ReqwestClient, _config: PriceProviderConfig) -> Self {
+    pub fn new(client: ReqwestClient) -> Self {
         Self {
             pyth_client: PythClient::new(client),
         }

@@ -7,7 +7,7 @@ use coingecko::{client::CoinGeckoClient, get_coingecko_market_id_for_chain, get_
 use gem_client::ReqwestClient;
 use primitives::{AssetId, Chain, ChartValue, DurationExt};
 
-use crate::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider, PriceProvider, PriceProviderAsset, PriceProviderAssetMetadata, PriceProviderConfig};
+use crate::{AssetPriceFull, AssetPriceMapping, PriceAssetsProvider, PriceProvider, PriceProviderAsset, PriceProviderAssetMetadata};
 
 use super::mapper::{map_coin_info_metadata, map_coin_mappings, map_coin_markets, map_coins_to_assets, map_coins_to_mappings, map_market_chart};
 
@@ -19,7 +19,7 @@ pub struct CoinGeckoPricesProvider {
 }
 
 impl CoinGeckoPricesProvider {
-    pub fn new(api_key: &str, _config: PriceProviderConfig) -> Self {
+    pub fn new(api_key: &str) -> Self {
         Self {
             client: CoinGeckoClient::new(api_key),
         }

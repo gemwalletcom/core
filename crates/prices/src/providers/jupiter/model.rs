@@ -5,8 +5,6 @@ use serde::{Deserialize, Serialize};
 pub struct VerifiedToken {
     pub id: String,
     #[serde(default)]
-    pub organic_score: f64,
-    #[serde(default)]
     pub usd_price: f64,
     pub mcap: Option<f64>,
     pub fdv: Option<f64>,
