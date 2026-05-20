@@ -398,11 +398,8 @@ pub struct Claude {
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Swap {
-    pub mayan: Mayan,
     pub okx: Okx,
 }
-
-pub type Mayan = SecretKeySettings;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct Okx {

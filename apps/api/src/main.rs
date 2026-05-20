@@ -59,10 +59,7 @@ use websocket_prices::PriceObserverConfig;
 
 fn mount_routes(rocket: Rocket<Build>, admin_enabled: bool) -> Rocket<Build> {
     let rocket = rocket
-        .mount(
-            "/",
-            routes![status::get_status, status::get_health, swap::mayan::get_mayan_proxy, swap::mayan::post_mayan_proxy,],
-        )
+        .mount("/", routes![status::get_status, status::get_health])
         .mount(
             "/v1",
             routes![
@@ -241,7 +238,6 @@ async fn rocket_api(settings: Settings) -> Result<Rocket<Build>, Box<dyn std::er
     let redemption_client = RewardsRedemptionClient::new(database.clone(), stream_producer.clone());
     let notifications_client = NotificationsClient::new(database.clone());
     let near_intents_client = swap::NearIntentsProxyClient::new(cacher_client.clone());
-    let mayan_proxy_client = swap::mayan::MayanProxyClient::new(settings.swap.mayan.key.secret.clone());
     let okx_provider = OkxProvider::new(
         OkxClientConfig {
             api_key: settings.swap.okx.key.public.clone(),
@@ -284,7 +280,6 @@ async fn rocket_api(settings: Settings) -> Result<Rocket<Build>, Box<dyn std::er
         .manage(Mutex::new(wallets_client))
         .manage(Mutex::new(notifications_client))
         .manage(Mutex::new(near_intents_client))
-        .manage(mayan_proxy_client)
         .manage(okx_provider)
         .manage(Mutex::new(portfolio_client))
         .manage(auth_client)

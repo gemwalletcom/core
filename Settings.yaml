@@ -201,9 +201,6 @@ chains:
     url: https://rpc.stable.xyz
 
 swap:
-  mayan:
-    key:
-      secret: ""
   okx:
     key:
       public: ""
