@@ -259,6 +259,14 @@ mod swap_integration_tests {
         asset_constants::{BASE_USDC_ASSET_ID, POLYGON_USDT_ASSET_ID, SOLANA_USDC_ASSET_ID},
         swap::SwapStatus,
     };
+    use std::{future::Future, time::Instant};
+
+    async fn timed<T, E>(label: &str, future: impl Future<Output = Result<T, E>>) -> Result<T, E> {
+        let started_at = Instant::now();
+        let result = future.await;
+        println!("{label}: {:?}", started_at.elapsed());
+        result
+    }
 
     fn mayan_route(quote: &Quote) -> Result<MayanQuote, SwapperError> {
         let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
@@ -267,7 +275,7 @@ mod swap_integration_tests {
 
     #[tokio::test]
     async fn test_mayan_provider_fetch_swift_evm_quote_and_data() -> Result<(), SwapperError> {
-        let rpc_provider = Arc::new(NativeProvider::default());
+        let rpc_provider = Arc::new(NativeProvider::default().set_debug(false));
         let provider = Mayan::new(rpc_provider);
         let request = QuoteRequest {
             from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
@@ -278,8 +286,8 @@ mod swap_integration_tests {
             options: Options::new_with_slippage(200.into()),
         };
 
-        let quote = provider.get_quote(&request).await?;
-        let quote_data = provider.get_quote_data(&quote, FetchQuoteData::None).await?;
+        let quote = timed("mayan swift evm quote", provider.get_quote(&request)).await?;
+        let quote_data = timed("mayan swift evm quote data", provider.get_quote_data(&quote, FetchQuoteData::None)).await?;
 
         assert_eq!(quote.from_value, request.value);
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
@@ -297,7 +305,7 @@ mod swap_integration_tests {
 
     #[tokio::test]
     async fn test_mayan_provider_fetch_swift_solana_quote_and_data() -> Result<(), SwapperError> {
-        let rpc_provider = Arc::new(NativeProvider::default());
+        let rpc_provider = Arc::new(NativeProvider::default().set_debug(false));
         let provider = Mayan::new(rpc_provider);
         let request = QuoteRequest {
             from_asset: SwapperQuoteAsset::from(SOLANA_USDC_ASSET_ID.clone()),
@@ -308,8 +316,8 @@ mod swap_integration_tests {
             options: Options::new_with_slippage(200.into()),
         };
 
-        let quote = provider.get_quote(&request).await?;
-        let quote_data = provider.get_quote_data(&quote, FetchQuoteData::None).await?;
+        let quote = timed("mayan swift solana quote", provider.get_quote(&request)).await?;
+        let quote_data = timed("mayan swift solana quote data", provider.get_quote_data(&quote, FetchQuoteData::None)).await?;
 
         assert_eq!(quote.from_value, request.value);
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
@@ -328,7 +336,7 @@ mod swap_integration_tests {
 
     #[tokio::test]
     async fn test_mayan_provider_fetch_mctp_sui_quote_and_data() -> Result<(), SwapperError> {
-        let rpc_provider = Arc::new(NativeProvider::default());
+        let rpc_provider = Arc::new(NativeProvider::default().set_debug(false));
         let provider = Mayan::new(rpc_provider);
         let request = QuoteRequest {
             from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Sui)),
@@ -339,8 +347,8 @@ mod swap_integration_tests {
             options: Options::new_with_slippage(200.into()),
         };
 
-        let quote = provider.get_quote(&request).await?;
-        let quote_data = provider.get_quote_data(&quote, FetchQuoteData::None).await?;
+        let quote = timed("mayan mctp sui quote", provider.get_quote(&request)).await?;
+        let quote_data = timed("mayan mctp sui quote data", provider.get_quote_data(&quote, FetchQuoteData::None)).await?;
 
         assert_eq!(quote.from_value, request.value);
         assert!(quote.to_value.parse::<u64>().unwrap() > 0);
@@ -359,7 +367,7 @@ mod swap_integration_tests {
 
     #[tokio::test]
     async fn test_mayan_get_swap_result() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let rpc_provider = Arc::new(NativeProvider::default());
+        let rpc_provider = Arc::new(NativeProvider::default().set_debug(false));
         let provider = Mayan::new(rpc_provider);
         let tx_hash = "0xfb2464f06d38f39a274b2a5e3414dbed43ad405a06295aaeaded8865efc7d4f4";
         let result = provider.get_swap_result(Chain::Ethereum, tx_hash).await?;

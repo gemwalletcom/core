@@ -6,6 +6,7 @@ use crate::{
         model::MayanMctpQuote,
     },
 };
+use futures::try_join;
 use gem_sui::{
     SuiClient, is_sui_coin,
     models::CoinAsset,
@@ -32,37 +33,35 @@ impl PrefetchedSuiData {
         let from_token_verified_address = route.from_token.verified_address.clone().ok_or(SwapperError::InvalidRoute)?;
         let mctp_verified_input_address = route.mctp_verified_input_address.clone().ok_or(SwapperError::InvalidRoute)?;
         let mctp_input_treasury = route.mctp_input_treasury.clone().ok_or(SwapperError::InvalidRoute)?;
-        let transaction = TransactionBuilderInput::prefetch(client, sender, gas_budget).await.map_err(sui_error)?;
         let has_auction = route.has_auction == Some(true);
-        let input_coins = if route.from_token.contract.as_str() != mctp_input_contract.as_str() || is_sui_coin(&mctp_input_contract) {
-            Vec::new()
-        } else {
-            client.get_coin_assets_by_type(sender, &mctp_input_contract).await.map_err(sui_error)?
+        let transaction = async { TransactionBuilderInput::prefetch(client, sender, gas_budget).await.map_err(sui_error) };
+        let input_coins = async {
+            if route.from_token.contract.as_str() != mctp_input_contract.as_str() || is_sui_coin(&mctp_input_contract) {
+                Ok(Vec::new())
+            } else {
+                client.get_coin_assets_by_type(sender, &mctp_input_contract).await.map_err(sui_error)
+            }
         };
-        let mut object_ids = vec![
-            SUI_MCTP_STATE.to_string(),
-            SUI_CCTP_CORE_STATE.to_string(),
-            SUI_CCTP_TOKEN_STATE.to_string(),
-            SUI_CCTP_DENY_LIST.to_string(),
-            SUI_WORMHOLE_STATE.to_string(),
-            from_token_verified_address.clone(),
-            mctp_verified_input_address.clone(),
-            mctp_input_treasury.clone(),
-        ];
-        if has_auction {
-            object_ids.push(SUI_MCTP_FEE_MANAGER_STATE.to_string());
-        }
-        let fetched_objects = ResolvedObjectInput::fetch_multiple(client, object_ids.clone()).await.map_err(sui_error)?;
-        if fetched_objects.len() != object_ids.len() {
-            return Err(SwapperError::transaction_error("Failed to prefetch all Mayan Sui objects"));
-        }
+        let object_ids = sui_object_ids(has_auction, &from_token_verified_address, &mctp_verified_input_address, &mctp_input_treasury);
+        let fetched_objects = async {
+            let fetched_objects = ResolvedObjectInput::fetch_multiple(client, object_ids.clone()).await.map_err(sui_error)?;
+            if fetched_objects.len() != object_ids.len() {
+                return Err(SwapperError::transaction_error("Failed to prefetch all Mayan Sui objects"));
+            }
+            Ok(fetched_objects)
+        };
+        let mctp_package_id = fetch_mayan_sui_package_id(client, SUI_MCTP_STATE);
+        let fee_manager_package_id = async {
+            if has_auction {
+                fetch_mayan_sui_package_id(client, SUI_MCTP_FEE_MANAGER_STATE).await.map(Some)
+            } else {
+                Ok(None)
+            }
+        };
+        let (transaction, input_coins, fetched_objects, mctp_package_id, fee_manager_package_id) =
+            try_join!(transaction, input_coins, fetched_objects, mctp_package_id, fee_manager_package_id)?;
+        let object_ids = sui_object_ids(has_auction, &from_token_verified_address, &mctp_verified_input_address, &mctp_input_treasury);
         let objects = object_ids.into_iter().zip(fetched_objects).collect();
-        let mctp_package_id = fetch_mayan_sui_package_id(client, SUI_MCTP_STATE).await?;
-        let fee_manager_package_id = if has_auction {
-            Some(fetch_mayan_sui_package_id(client, SUI_MCTP_FEE_MANAGER_STATE).await?)
-        } else {
-            None
-        };
 
         Ok(Self {
             transaction,
@@ -76,6 +75,23 @@ impl PrefetchedSuiData {
             mctp_input_treasury,
         })
     }
+}
+
+fn sui_object_ids(has_auction: bool, from_token_verified_address: &str, mctp_verified_input_address: &str, mctp_input_treasury: &str) -> Vec<String> {
+    let mut object_ids = vec![
+        SUI_MCTP_STATE.to_string(),
+        SUI_CCTP_CORE_STATE.to_string(),
+        SUI_CCTP_TOKEN_STATE.to_string(),
+        SUI_CCTP_DENY_LIST.to_string(),
+        SUI_WORMHOLE_STATE.to_string(),
+        from_token_verified_address.to_string(),
+        mctp_verified_input_address.to_string(),
+        mctp_input_treasury.to_string(),
+    ];
+    if has_auction {
+        object_ids.push(SUI_MCTP_FEE_MANAGER_STATE.to_string());
+    }
+    object_ids
 }
 
 async fn fetch_mayan_sui_package_id(client: &SuiClient, state_object_id: &str) -> Result<String, SwapperError> {

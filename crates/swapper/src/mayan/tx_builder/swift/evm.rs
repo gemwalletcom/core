@@ -6,8 +6,10 @@ use crate::mayan::{client::MayanClient, model::MayanSwiftQuote};
 use crate::{
     Quote, SwapperError, SwapperQuoteData,
     approval::{DEFAULT_EVM_SWAP_GAS_LIMIT, check_approval_erc20, get_swap_gas_limit_with_approval},
+    mayan::constants::MAYAN_FORWARDER,
 };
 use alloy_primitives::U256;
+use futures::try_join;
 use gem_client::Client;
 use primitives::{AssetId, ChainType, swap::ApprovalData};
 use std::{fmt::Debug, str::FromStr, sync::Arc};
@@ -18,15 +20,15 @@ pub async fn build_quote_data<C>(client: &MayanClient<C>, quote: &Quote, route: 
 where
     C: Client + Clone + Send + Sync + Debug + 'static,
 {
-    let transaction = transaction::build(client, quote, route).await?;
+    let transaction = transaction::build(client, quote, route);
     let approval = approval_data(
         quote.request.wallet_address.clone(),
         quote.request.from_asset.asset_id(),
-        transaction.to.as_str(),
+        MAYAN_FORWARDER,
         U256::from_str(&quote.from_value)?,
         rpc_provider,
-    )
-    .await?;
+    );
+    let (transaction, approval) = try_join!(transaction, approval)?;
     let gas_limit = get_swap_gas_limit_with_approval(&approval, None, DEFAULT_EVM_SWAP_GAS_LIMIT);
     Ok(SwapperQuoteData::new_contract(transaction.to, transaction.value, transaction.data, approval, gas_limit))
 }

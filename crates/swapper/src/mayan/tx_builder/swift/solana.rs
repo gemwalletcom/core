@@ -4,6 +4,7 @@ mod transaction;
 
 use crate::mayan::{client::MayanClient, model::MayanSwiftQuote};
 use crate::{Quote, RpcProvider, SwapperError, SwapperQuoteData, client_factory::create_client_with_chain};
+use futures::try_join;
 use gem_client::Client;
 use gem_solana::{SolanaAddress, SolanaClient, encode_v0_transaction};
 use primitives::Chain;
@@ -16,8 +17,9 @@ where
 {
     let transaction = transaction::build(client, quote, route).await?;
     let rpc_client = SolanaClient::new(create_client_with_chain(rpc_provider, Chain::Solana));
-    let lookup_tables = rpc_client.get_address_lookup_tables(transaction.lookup_table_addresses).await.map_err(solana_error)?;
-    let blockhash = rpc_client.get_latest_blockhash().await.map_err(SwapperError::from)?.value.blockhash;
+    let lookup_tables = async { rpc_client.get_address_lookup_tables(transaction.lookup_table_addresses).await.map_err(solana_error) };
+    let blockhash = async { rpc_client.get_latest_blockhash().await.map(|response| response.value.blockhash).map_err(SwapperError::from) };
+    let (lookup_tables, blockhash) = try_join!(lookup_tables, blockhash)?;
     let data = encode_v0_transaction(
         SolanaAddress::parse(&quote.request.wallet_address).map_err(solana_error)?.into(),
         &blockhash,

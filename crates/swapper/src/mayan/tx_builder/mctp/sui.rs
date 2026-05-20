@@ -10,6 +10,7 @@ use crate::mayan::{
     wormhole_chain::{self, WormholeChain},
 };
 use crate::{Quote, RpcProvider, SwapperError, SwapperQuoteData, client_factory::create_sui_client, fees::default_referral_address};
+use futures::try_join;
 use gem_sui::tx_builder::prepare_transaction_json_replay;
 use gem_sui::{ESTIMATION_GAS_BUDGET, gas_budget::GAS_BUDGET_MULTIPLIER};
 use std::{fmt::Debug, fmt::Display, sync::Arc};
@@ -20,17 +21,22 @@ where
 {
     let sender = quote.request.wallet_address.as_str();
     let sui_client = create_sui_client(rpc_provider)?;
-    let prefetched = PrefetchedSuiData::prefetch(&sui_client, sender, route, ESTIMATION_GAS_BUDGET).await?;
     let destination_address = quote_destination_address(quote);
+    let mctp_input_contract = route.mctp_input_contract.as_deref().ok_or(SwapperError::InvalidRoute)?;
     let referrer_address = wormhole_chain::chain_for_name(&route.to_chain)
         .ok()
         .map(default_referral_address)
         .filter(|address| !address.is_empty());
-    let swap = get_swap_transaction(client, quote, route, &prefetched.mctp_input_contract, referrer_address).await?;
-    let swap_replay = match &swap {
-        Some(swap) => Some(prepare_transaction_json_replay(&sui_client, &swap.tx).await.map_err(sui_error)?),
-        None => None,
+    let prefetched = PrefetchedSuiData::prefetch(&sui_client, sender, route, ESTIMATION_GAS_BUDGET);
+    let swap = async {
+        let swap = get_swap_transaction(client, quote, route, mctp_input_contract, referrer_address).await?;
+        let swap_replay = match &swap {
+            Some(swap) => Some(prepare_transaction_json_replay(&sui_client, &swap.tx).await.map_err(sui_error)?),
+            None => None,
+        };
+        Ok::<_, SwapperError>((swap, swap_replay))
     };
+    let (prefetched, (swap, swap_replay)) = try_join!(prefetched, swap)?;
 
     let estimate = build_mctp_transaction(quote, route, &prefetched, destination_address, swap.as_ref(), swap_replay.as_ref(), ESTIMATION_GAS_BUDGET)?;
     let dry_run = sui_client.dry_run(estimate.base64_encoded()).await.map_err(SwapperError::transaction_error)?;

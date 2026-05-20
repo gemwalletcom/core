@@ -1,6 +1,7 @@
 use super::model::{TransactionArgument, TransactionCommand, TransactionInput};
 use crate::rpc::proto::{FunctionDescriptor, OpenSignature, open_signature::Reference};
 use crate::{SuiClient, SuiError, tx_builder::ResolvedObjectInput};
+use futures::future::try_join_all;
 use std::collections::{HashMap, HashSet};
 use sui_transaction_builder::ObjectInput;
 
@@ -12,7 +13,20 @@ struct MoveFunctionKey {
 }
 
 pub(super) async fn input_mutability(client: &SuiClient, commands: &[TransactionCommand]) -> Result<HashMap<usize, bool>, SuiError> {
-    let mut cache = HashMap::<MoveFunctionKey, FunctionDescriptor>::new();
+    let keys = commands
+        .iter()
+        .filter_map(|command| match command {
+            TransactionCommand::MoveCall { move_call } => Some(MoveFunctionKey {
+                package: move_call.package.clone(),
+                module: move_call.module.clone(),
+                function: move_call.function.clone(),
+            }),
+            _ => None,
+        })
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    let cache = fetch_functions(client, keys).await?;
     let mut mutable_inputs = HashMap::<usize, bool>::new();
 
     for command in commands {
@@ -24,13 +38,6 @@ pub(super) async fn input_mutability(client: &SuiClient, commands: &[Transaction
             module: move_call.module.clone(),
             function: move_call.function.clone(),
         };
-        if !cache.contains_key(&key) {
-            let function = client
-                .get_function(&key.package, &key.module, &key.function)
-                .await
-                .map_err(|err| SuiError::invalid_input(format!("Failed to fetch Sui Move function signature: {err}")))?;
-            cache.insert(key.clone(), function);
-        }
         let function = cache.get(&key).ok_or_else(|| SuiError::invalid_input("Missing cached Sui Move function signature"))?;
         for (argument, parameter) in move_call.arguments.iter().zip(&function.parameters) {
             if !is_mutable_parameter(parameter) {
@@ -43,6 +50,18 @@ pub(super) async fn input_mutability(client: &SuiClient, commands: &[Transaction
     }
 
     Ok(mutable_inputs)
+}
+
+async fn fetch_functions(client: &SuiClient, keys: Vec<MoveFunctionKey>) -> Result<HashMap<MoveFunctionKey, FunctionDescriptor>, SuiError> {
+    try_join_all(keys.into_iter().map(|key| async move {
+        let function = client
+            .get_function(&key.package, &key.module, &key.function)
+            .await
+            .map_err(|err| SuiError::invalid_input(format!("Failed to fetch Sui Move function signature: {err}")))?;
+        Ok((key, function))
+    }))
+    .await
+    .map(|functions| functions.into_iter().collect())
 }
 
 pub(super) async fn object_inputs(client: &SuiClient, inputs: &[TransactionInput], input_mutability: &HashMap<usize, bool>) -> Result<HashMap<usize, ObjectInput>, SuiError> {
