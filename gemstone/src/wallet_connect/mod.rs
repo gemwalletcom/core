@@ -4,7 +4,7 @@ use gem_wallet_connect::{
     WalletConnectResponseType as WcWalletConnectResponseType, WalletConnectTransaction as WcWalletConnectTransaction,
     WalletConnectTransactionType as WcWalletConnectTransactionType, WalletConnectVerifier, config_session_properties,
 };
-use primitives::{Chain, TransferDataOutputType, WCEthereumTransaction, WalletConnectCAIP2, WalletConnectRequest, WalletConnectionVerificationStatus};
+use primitives::{Chain, TransferDataOutputType, WCEthereumTransaction, WalletConnectCAIP2, WalletConnectLink, WalletConnectRequest, WalletConnectionVerificationStatus};
 use std::collections::HashMap;
 use std::str::FromStr;
 
@@ -24,6 +24,13 @@ pub enum WalletConnectionVerificationStatus {
     Unknown,
     Invalid,
     Malicious,
+}
+
+#[uniffi::remote(Enum)]
+pub enum WalletConnectLink {
+    Connect { uri: String },
+    Request,
+    Session { topic: String },
 }
 
 // UniFFI types
@@ -380,9 +387,14 @@ pub fn wallet_connect_app_short_name(metadata: primitives::WalletConnectionSessi
     metadata.short_name()
 }
 
+#[uniffi::export]
+pub fn wallet_connect_decode_url(url: &str) -> Option<WalletConnectLink> {
+    WalletConnectLink::from_url(url)
+}
+
 #[cfg(test)]
 mod tests {
-    use primitives::{Chain, SimulationWarning, SimulationWarningType};
+    use primitives::{Chain, SimulationWarning, SimulationWarningType, WalletConnectLink};
 
     #[test]
     fn short_name_strips_separators() {
@@ -415,5 +427,14 @@ mod tests {
                 ..
             }) if a.value.is_none()
         ));
+    }
+
+    #[test]
+    fn test_wallet_connect_decode_url() {
+        assert_eq!(
+            super::wallet_connect_decode_url("gem://wc?sessionTopic=abc123"),
+            Some(WalletConnectLink::Session { topic: "abc123".to_string() })
+        );
+        assert_eq!(super::wallet_connect_decode_url("https://gemwallet.com/perpetuals"), None);
     }
 }

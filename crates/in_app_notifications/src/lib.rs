@@ -41,7 +41,7 @@ fn notification_item(
 
 fn map_to_list_item(notification: &NotificationData, localizer: &LanguageLocalizer) -> CoreListItem {
     let id = notification.id.to_string();
-    let url = Some(Deeplink::Rewards.to_url());
+    let url = Some(Deeplink::Rewards { code: None }.to_gem_url());
 
     match notification.notification_type {
         NotificationType::ReferralJoined => {

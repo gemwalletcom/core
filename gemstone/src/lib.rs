@@ -5,6 +5,7 @@ pub mod api_client;
 pub mod auth;
 pub mod block_explorer;
 pub mod config;
+pub mod deeplink;
 pub mod ethereum;
 pub mod gateway;
 pub mod gem_swapper;
