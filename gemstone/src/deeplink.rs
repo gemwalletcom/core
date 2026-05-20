@@ -3,13 +3,9 @@ use primitives::{AssetId, Deeplink};
 #[uniffi::remote(Enum)]
 pub enum Deeplink {
     Asset { asset_id: AssetId },
-    Swap { from_asset_id: AssetId, to_asset_id: Option<AssetId> },
     Perpetuals,
     Rewards { code: Option<String> },
     Gift { code: Option<String> },
-    Buy { asset_id: AssetId, amount: Option<i32> },
-    Sell { asset_id: AssetId, amount: Option<i32> },
-    SetPriceAlert { asset_id: AssetId, price: Option<f64> },
 }
 
 #[uniffi::export]
