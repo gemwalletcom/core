@@ -12,6 +12,7 @@ use crate::{
             amount::fractional_amount,
             hypercore::hypercore_custom_payload,
             route::{quote_destination_address, swift_destination_address},
+            swift::swift_input_contract as route_swift_input_contract,
         },
         wormhole_chain::id_for_name as wormhole_chain_id,
     },
@@ -30,6 +31,16 @@ pub(super) struct EvmSwiftTransaction {
     pub(super) data: String,
 }
 
+impl EvmSwiftTransaction {
+    fn forwarder(value: impl Into<String>, data: Vec<u8>) -> Self {
+        Self {
+            to: MAYAN_FORWARDER.to_string(),
+            value: value.into(),
+            data: hex::encode_with_0x(&data),
+        }
+    }
+}
+
 struct EvmSwiftContext {
     amount_in: U256,
     swift_input_contract: String,
@@ -42,7 +53,7 @@ impl EvmSwiftContext {
     fn new(quote: &Quote, route: &MayanSwiftQuote) -> Result<Self, SwapperError> {
         let source_chain_id = wormhole_chain_id(&route.from_chain)?;
         let amount_in = U256::from_str(&quote.from_value)?;
-        let swift_input_contract = route.swift_input_contract.clone().ok_or(SwapperError::InvalidRoute)?;
+        let swift_input_contract = route_swift_input_contract(route)?.to_string();
         let swift_contract_address = Address::from_str(route.swift_mayan_contract.as_deref().ok_or(SwapperError::InvalidRoute)?)?;
         let swift_token_in = if route.swift_wrap_and_lock == Some(true) {
             Address::ZERO
@@ -95,11 +106,7 @@ fn build_direct_forward_transaction(route: &MayanSwiftQuote, context: &EvmSwiftC
         protocolData: Bytes::from(context.swift_call_data.clone()),
     }
     .abi_encode();
-    Ok(EvmSwiftTransaction {
-        to: MAYAN_FORWARDER.to_string(),
-        value: "0".to_string(),
-        data: hex::encode_with_0x(&data),
-    })
+    Ok(EvmSwiftTransaction::forwarder("0", data))
 }
 
 async fn build_swap_forward_transaction<C>(client: &MayanClient<C>, quote: &Quote, route: &MayanSwiftQuote, context: &EvmSwiftContext) -> Result<EvmSwiftTransaction, SwapperError>
@@ -131,11 +138,7 @@ where
             mayanData: Bytes::from(context.swift_call_data.clone()),
         }
         .abi_encode();
-        return Ok(EvmSwiftTransaction {
-            to: MAYAN_FORWARDER.to_string(),
-            value: context.amount_in.to_string(),
-            data: hex::encode_with_0x(&data),
-        });
+        return Ok(EvmSwiftTransaction::forwarder(context.amount_in.to_string(), data));
     }
 
     let data = MayanForwarder::swapAndForwardERC20Call {
@@ -150,9 +153,5 @@ where
         mayanData: Bytes::from(context.swift_call_data.clone()),
     }
     .abi_encode();
-    Ok(EvmSwiftTransaction {
-        to: MAYAN_FORWARDER.to_string(),
-        value: "0".to_string(),
-        data: hex::encode_with_0x(&data),
-    })
+    Ok(EvmSwiftTransaction::forwarder("0", data))
 }

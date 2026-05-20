@@ -1,12 +1,16 @@
 pub(in crate::mayan) mod evm;
 pub(in crate::mayan) mod solana;
 
-use super::{address::native_address_to_bytes32, route::is_hypercore_deposit};
+use super::{
+    address::native_address_to_bytes32,
+    amount::{bps_u8, gas_drop_amount, min_amount_out},
+    route::{is_hypercore_deposit, swift_destination_chain, swift_destination_chain_id},
+};
 use crate::{
     SwapperError,
     fees::default_referral_address,
     mayan::{
-        model::{MayanQuoteCommon, MayanSwiftQuote},
+        model::{MayanQuoteCommon, MayanSwiftQuote, QuoteType},
         wormhole_chain::{self, WormholeChain, id_for_name as wormhole_chain_id},
     },
 };
@@ -18,6 +22,46 @@ use rand::Rng;
 
 const SWIFT_PAYLOAD_TYPE_DEFAULT: u8 = 1;
 const SWIFT_PAYLOAD_TYPE_CUSTOM_PAYLOAD: u8 = 2;
+
+pub(super) struct SwiftOrderFields {
+    pub(super) destination_chain_id: u16,
+    pub(super) referrer: [u8; 32],
+    pub(super) token_out: [u8; 32],
+    pub(super) amount_out_min: u64,
+    pub(super) gas_drop: u64,
+    pub(super) cancel_fee: u64,
+    pub(super) refund_fee: u64,
+    pub(super) deadline: u64,
+    pub(super) referrer_bps: u8,
+    pub(super) auction_mode: u8,
+}
+
+impl SwiftOrderFields {
+    pub(super) fn new(route: &MayanSwiftQuote) -> Result<Self, SwapperError> {
+        let destination_chain_id = swift_destination_chain_id(route)?;
+        if !is_hypercore_deposit(route) && route.to_token.w_chain_id != destination_chain_id {
+            return Err(SwapperError::InvalidRoute);
+        }
+
+        let destination_chain = swift_destination_chain(route);
+        Ok(Self {
+            destination_chain_id,
+            referrer: referrer_bytes(&route.from_chain)?,
+            token_out: swift_to_token(route)?,
+            amount_out_min: min_amount_out(&route.min_amount_out, route.to_token.decimals, destination_chain, &QuoteType::Swift)?,
+            gas_drop: gas_drop_amount(&route.gas_drop, &route.to_chain, &QuoteType::Swift, is_hypercore_deposit(route))?,
+            cancel_fee: required_u64(route.cancel_relayer_fee64.as_deref())?,
+            refund_fee: required_u64(route.refund_relayer_fee64.as_deref())?,
+            deadline: required_u64(route.deadline64.as_deref())?,
+            referrer_bps: bps_u8(route.referrer_bps)?,
+            auction_mode: route.swift_auction_mode.ok_or(SwapperError::InvalidRoute)?,
+        })
+    }
+}
+
+pub(super) fn swift_input_contract(route: &MayanSwiftQuote) -> Result<&str, SwapperError> {
+    route.swift_input_contract.as_deref().ok_or(SwapperError::InvalidRoute)
+}
 
 pub(super) fn swift_to_token(route: &MayanQuoteCommon) -> Result<[u8; 32], SwapperError> {
     let (address, chain) = swift_to_token_address(route)?;
@@ -91,4 +135,8 @@ fn left_pad_16(bytes: &[u8]) -> Result<[u8; 16], SwapperError> {
     let mut padded = [0u8; 16];
     padded[16 - bytes.len()..].copy_from_slice(bytes);
     Ok(padded)
+}
+
+fn required_u64(value: Option<&str>) -> Result<u64, SwapperError> {
+    value.ok_or(SwapperError::InvalidRoute)?.parse::<u64>().map_err(SwapperError::from)
 }

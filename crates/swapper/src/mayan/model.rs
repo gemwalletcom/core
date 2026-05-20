@@ -2,10 +2,12 @@ use super::{
     constants::{MAYAN_FORWARDER, SDK_VERSION},
     wormhole_chain,
 };
-use crate::{amount_to_value, fees::default_referral_address};
+use crate::{SwapperError, amount_to_value, fees::default_referral_address};
+use num_bigint::BigUint;
+use number_formatter::BigNumberFormatter;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::{collections::BTreeSet, ops::Deref};
+use std::{collections::BTreeSet, ops::Deref, str::FromStr};
 
 use gem_evm::ethereum_address_checksum;
 pub use gem_sui::tx_builder::transaction_json::TransactionArgument as SuiTransactionArgument;
@@ -77,6 +79,21 @@ pub struct MayanQuoteCommon {
     pub deadline64: Option<String>,
     pub referrer_bps: Option<u32>,
     pub expected_amount_out_base_units: Option<String>,
+}
+
+impl MayanQuoteCommon {
+    pub(in crate::mayan) fn expected_output_value(&self) -> Result<String, SwapperError> {
+        if let Some(value) = &self.expected_amount_out_base_units {
+            return BigUint::from_str(value).map(|amount| amount.to_string()).map_err(SwapperError::from);
+        }
+
+        let amount = match &self.expected_amount_out {
+            Value::Number(number) => number.to_string(),
+            Value::String(value) => value.clone(),
+            Value::Null | Value::Bool(_) | Value::Array(_) | Value::Object(_) => return Err(SwapperError::InvalidRoute),
+        };
+        BigNumberFormatter::value_from_amount(&amount, self.to_token.decimals).map_err(SwapperError::from)
+    }
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -434,6 +451,23 @@ mod tests {
         assert_eq!(quote.swift_version, Some(SwiftVersion::V2));
         assert_eq!(quote.from_token.w_chain_id, 2);
         assert_eq!(quote.to_token.decimals, 9);
+    }
+
+    #[test]
+    fn test_expected_output_value() {
+        let mut route = MayanQuoteCommon {
+            expected_amount_out_base_units: Some("1237897283".to_string()),
+            ..Default::default()
+        };
+        assert_eq!(route.expected_output_value().unwrap(), "1237897283");
+
+        route.expected_amount_out_base_units = None;
+        route.expected_amount_out = serde_json::json!(1.237897283);
+        route.to_token = MayanToken {
+            decimals: 9,
+            ..Default::default()
+        };
+        assert_eq!(route.expected_output_value().unwrap(), "1237897283");
     }
 
     #[test]

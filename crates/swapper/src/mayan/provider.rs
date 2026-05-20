@@ -1,8 +1,9 @@
 use super::{
+    asset::{supported_assets as mayan_supported_assets, token_id_for_asset},
     client::MayanClient,
-    constants::{HYPERCORE_SPOT_USDC_CONTRACT, MAYAN_DEPOSIT_CONTRACTS, MAYAN_SEND_CONTRACTS},
+    constants::{MAYAN_DEPOSIT_CONTRACTS, MAYAN_SEND_CONTRACTS},
     mapper::map_swap_result,
-    model::{MayanChain, MayanQuote, MayanQuoteCommon, QuoteParams, SwiftVersion},
+    model::{MayanChain, MayanQuote, QuoteParams, SwiftVersion},
     tx_builder::{mctp, swift},
     wormhole_chain,
 };
@@ -15,24 +16,8 @@ use crate::{
 };
 use async_trait::async_trait;
 use gem_client::Client;
-use gem_evm::EVM_ZERO_ADDRESS;
-use gem_solana::WSOL_TOKEN_ADDRESS;
-use gem_sui::SUI_COIN_TYPE;
-use num_bigint::BigUint;
-use number_formatter::BigNumberFormatter;
-use primitives::{
-    AssetId, Chain, ChainType,
-    asset_constants::{
-        ARBITRUM_USDC_ASSET_ID, ARBITRUM_USDT_ASSET_ID, AVALANCHE_USDC_ASSET_ID, AVALANCHE_USDT_ASSET_ID, BASE_CBBTC_ASSET_ID, BASE_USDC_ASSET_ID, BASE_USDS_ASSET_ID,
-        BASE_WBTC_ASSET_ID, ETHEREUM_CBBTC_ASSET_ID, ETHEREUM_DAI_ASSET_ID, ETHEREUM_STETH_ASSET_ID, ETHEREUM_USDC_ASSET_ID, ETHEREUM_USDS_ASSET_ID, ETHEREUM_USDT_ASSET_ID,
-        ETHEREUM_WBTC_ASSET_ID, ETHEREUM_WETH_ASSET_ID, HYPERCORE_SPOT_USDC_ASSET_ID, HYPERCORE_SPOT_USDC_TOKEN_ID, HYPEREVM_USDC_ASSET_ID, HYPEREVM_USDT_ASSET_ID,
-        LINEA_USDC_E_ASSET_ID, LINEA_USDT_ASSET_ID, MONAD_USDC_ASSET_ID, MONAD_USDT_ASSET_ID, OPTIMISM_USDC_ASSET_ID, OPTIMISM_USDT_ASSET_ID, POLYGON_USDC_ASSET_ID,
-        POLYGON_USDT_ASSET_ID, SMARTCHAIN_USDC_ASSET_ID, SMARTCHAIN_USDT_ASSET_ID, SMARTCHAIN_WBTC_ASSET_ID, SOLANA_CBBTC_ASSET_ID, SOLANA_JITO_SOL_ASSET_ID, SOLANA_USDC_ASSET_ID,
-        SOLANA_USDS_ASSET_ID, SOLANA_USDT_ASSET_ID, SOLANA_WBTC_ASSET_ID, SUI_SBUSDT_ASSET_ID, SUI_USDC_ASSET_ID, SUI_WAL_ASSET_ID, UNICHAIN_DAI_ASSET_ID, UNICHAIN_USDC_ASSET_ID,
-    },
-};
-use serde_json::Value;
-use std::{collections::BTreeSet, fmt::Debug, str::FromStr, sync::Arc};
+use primitives::{Chain, ChainType};
+use std::{collections::BTreeSet, fmt::Debug, sync::Arc};
 
 #[derive(Debug)]
 pub struct Mayan<C>
@@ -90,28 +75,6 @@ where
         }
     }
 
-    fn map_asset_to_token_id(asset_id: &AssetId) -> String {
-        match (asset_id.chain, asset_id.token_id.as_deref()) {
-            (Chain::Solana, None) => WSOL_TOKEN_ADDRESS.to_string(),
-            (Chain::Sui, None) => SUI_COIN_TYPE.to_string(),
-            (Chain::HyperCore, Some(HYPERCORE_SPOT_USDC_TOKEN_ID)) => HYPERCORE_SPOT_USDC_CONTRACT.to_string(),
-            (_, None) => EVM_ZERO_ADDRESS.to_string(),
-            (_, Some(token_id)) => token_id.to_string(),
-        }
-    }
-
-    fn quote_output_value(route: &MayanQuoteCommon) -> Result<String, SwapperError> {
-        if let Some(value) = &route.expected_amount_out_base_units {
-            return BigUint::from_str(value).map(|amount| amount.to_string()).map_err(SwapperError::from);
-        }
-        let amount = match &route.expected_amount_out {
-            Value::Number(number) => number.to_string(),
-            Value::String(value) => value.clone(),
-            _ => return Err(SwapperError::InvalidRoute),
-        };
-        BigNumberFormatter::value_from_amount(&amount, route.to_token.decimals).map_err(SwapperError::from)
-    }
-
     fn referral_bps(request: &QuoteRequest, referral_fees: &ReferralFees) -> u32 {
         match request.from_asset.chain().chain_type() {
             ChainType::Ethereum => referral_fees.evm.bps,
@@ -132,55 +95,7 @@ where
     }
 
     fn supported_assets(&self) -> Vec<SwapperChainAsset> {
-        vec![
-            SwapperChainAsset::Assets(
-                Chain::Ethereum,
-                vec![
-                    ETHEREUM_USDT_ASSET_ID.clone(),
-                    ETHEREUM_USDC_ASSET_ID.clone(),
-                    ETHEREUM_DAI_ASSET_ID.clone(),
-                    ETHEREUM_USDS_ASSET_ID.clone(),
-                    ETHEREUM_WBTC_ASSET_ID.clone(),
-                    ETHEREUM_WETH_ASSET_ID.clone(),
-                    ETHEREUM_STETH_ASSET_ID.clone(),
-                    ETHEREUM_CBBTC_ASSET_ID.clone(),
-                ],
-            ),
-            SwapperChainAsset::Assets(
-                Chain::Solana,
-                vec![
-                    SOLANA_USDC_ASSET_ID.clone(),
-                    SOLANA_USDT_ASSET_ID.clone(),
-                    SOLANA_USDS_ASSET_ID.clone(),
-                    SOLANA_CBBTC_ASSET_ID.clone(),
-                    SOLANA_WBTC_ASSET_ID.clone(),
-                    SOLANA_JITO_SOL_ASSET_ID.clone(),
-                ],
-            ),
-            SwapperChainAsset::Assets(Chain::Sui, vec![SUI_USDC_ASSET_ID.clone(), SUI_SBUSDT_ASSET_ID.clone(), SUI_WAL_ASSET_ID.clone()]),
-            SwapperChainAsset::Assets(
-                Chain::SmartChain,
-                vec![SMARTCHAIN_USDT_ASSET_ID.clone(), SMARTCHAIN_USDC_ASSET_ID.clone(), SMARTCHAIN_WBTC_ASSET_ID.clone()],
-            ),
-            SwapperChainAsset::Assets(
-                Chain::Base,
-                vec![
-                    BASE_USDC_ASSET_ID.clone(),
-                    BASE_CBBTC_ASSET_ID.clone(),
-                    BASE_WBTC_ASSET_ID.clone(),
-                    BASE_USDS_ASSET_ID.clone(),
-                ],
-            ),
-            SwapperChainAsset::Assets(Chain::Polygon, vec![POLYGON_USDC_ASSET_ID.clone(), POLYGON_USDT_ASSET_ID.clone()]),
-            SwapperChainAsset::Assets(Chain::AvalancheC, vec![AVALANCHE_USDT_ASSET_ID.clone(), AVALANCHE_USDC_ASSET_ID.clone()]),
-            SwapperChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDC_ASSET_ID.clone(), ARBITRUM_USDT_ASSET_ID.clone()]),
-            SwapperChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_USDC_ASSET_ID.clone(), OPTIMISM_USDT_ASSET_ID.clone()]),
-            SwapperChainAsset::Assets(Chain::Linea, vec![LINEA_USDC_E_ASSET_ID.clone(), LINEA_USDT_ASSET_ID.clone()]),
-            SwapperChainAsset::Assets(Chain::Unichain, vec![UNICHAIN_USDC_ASSET_ID.clone(), UNICHAIN_DAI_ASSET_ID.clone()]),
-            SwapperChainAsset::Assets(Chain::Monad, vec![Chain::Monad.as_asset_id(), MONAD_USDC_ASSET_ID.clone(), MONAD_USDT_ASSET_ID.clone()]),
-            SwapperChainAsset::Assets(Chain::Hyperliquid, vec![HYPEREVM_USDT_ASSET_ID.clone(), HYPEREVM_USDC_ASSET_ID.clone()]),
-            SwapperChainAsset::Assets(Chain::HyperCore, vec![HYPERCORE_SPOT_USDC_ASSET_ID.clone()]),
-        ]
+        mayan_supported_assets()
     }
 
     async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
@@ -197,9 +112,9 @@ where
             .fetch_quotes(
                 QuoteParams {
                     amount_in64: from_value.clone(),
-                    from_token: Self::map_asset_to_token_id(&from_asset),
+                    from_token: token_id_for_asset(&from_asset),
                     from_chain: wormhole_chain::name_for_chain(from_asset.chain)?.to_string(),
-                    to_token: Self::map_asset_to_token_id(&to_asset),
+                    to_token: token_id_for_asset(&to_asset),
                     to_chain: wormhole_chain::name_for_chain(to_asset.chain)?.to_string(),
                     referrer: default_referral_address(Chain::Solana),
                     referrer_bps: Self::referral_bps(request, &referral_fees),
@@ -208,7 +123,7 @@ where
             )
             .await?;
         let route = Self::select_route(&routes, from_asset.chain.chain_type()).ok_or(SwapperError::NoQuoteAvailable)?;
-        let to_value = Self::quote_output_value(route.common())?;
+        let to_value = route.common().expected_output_value()?;
 
         Ok(Quote {
             from_value,
@@ -293,38 +208,8 @@ where
 mod tests {
     use super::*;
     use crate::alien::mock::ProviderMock;
-    use crate::mayan::model::MayanToken;
     use gem_client::testkit::MockClient;
     use std::collections::BTreeSet;
-
-    #[test]
-    fn test_map_asset_to_token_id() {
-        assert_eq!(Mayan::<MockClient>::map_asset_to_token_id(&AssetId::from_chain(Chain::Ethereum)), EVM_ZERO_ADDRESS);
-        assert_eq!(Mayan::<MockClient>::map_asset_to_token_id(&AssetId::from_chain(Chain::Solana)), WSOL_TOKEN_ADDRESS);
-        assert_eq!(Mayan::<MockClient>::map_asset_to_token_id(&AssetId::from_chain(Chain::Sui)), SUI_COIN_TYPE);
-        assert_eq!(Mayan::<MockClient>::map_asset_to_token_id(&HYPERCORE_SPOT_USDC_ASSET_ID), HYPERCORE_SPOT_USDC_CONTRACT);
-        assert_eq!(
-            Mayan::<MockClient>::map_asset_to_token_id(&BASE_USDC_ASSET_ID),
-            BASE_USDC_ASSET_ID.token_id.clone().unwrap()
-        );
-    }
-
-    #[test]
-    fn test_quote_output_value() {
-        let mut route = MayanQuoteCommon {
-            expected_amount_out_base_units: Some("1237897283".to_string()),
-            ..Default::default()
-        };
-        assert_eq!(Mayan::<MockClient>::quote_output_value(&route).unwrap(), "1237897283");
-
-        route.expected_amount_out_base_units = None;
-        route.expected_amount_out = serde_json::json!(1.237897283);
-        route.to_token = MayanToken {
-            decimals: 9,
-            ..Default::default()
-        };
-        assert_eq!(Mayan::<MockClient>::quote_output_value(&route).unwrap(), "1237897283");
-    }
 
     #[tokio::test]
     async fn test_get_vault_addresses() {

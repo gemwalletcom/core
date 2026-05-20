@@ -13,8 +13,8 @@ use crate::{
         tx_builder::{
             amount::value_to_query,
             hypercore::hypercore_custom_payload,
-            route::{quote_destination_address, swift_destination_address, swift_destination_chain_id},
-            swift::swift_random_key,
+            route::{quote_destination_address, swift_destination_address},
+            swift::{SwiftOrderFields, swift_input_contract as route_swift_input_contract, swift_random_key},
         },
     },
 };
@@ -48,6 +48,7 @@ struct SwiftBuildContext {
     state_account: Pubkey,
     relayer: Pubkey,
     relayer_account: Pubkey,
+    order_fields: SwiftOrderFields,
 }
 
 impl SwiftBuildContext {
@@ -57,13 +58,20 @@ impl SwiftBuildContext {
         let custom_payload = hypercore_custom_payload(route, quote_destination_address(quote))?;
         let referrer_address = Some(default_referral_address(Chain::Solana));
         let random_key = swift_random_key(route)?;
-        let order_hash = create_order_hash(route, &quote.request.wallet_address, &destination_address, &random_key, custom_payload.as_deref())?;
-        let destination_chain_id = swift_destination_chain_id(route)?;
-        let destination_chain_bytes = destination_chain_id.to_le_bytes();
+        let order_fields = SwiftOrderFields::new(route)?;
+        let order_hash = create_order_hash(
+            route,
+            &quote.request.wallet_address,
+            &destination_address,
+            &random_key,
+            custom_payload.as_deref(),
+            &order_fields,
+        )?;
+        let destination_chain_bytes = order_fields.destination_chain_id.to_le_bytes();
         let swift_program = SolanaAddress::parse(MAYAN_SWIFT_V2_PROGRAM_ID).map_err(solana_error)?.into();
         let (state, _) = find_program_address(&swift_program, &[b"STATE_SOURCE", &order_hash, &destination_chain_bytes]).map_err(solana_error)?;
         let token_program = swift_token_program(route);
-        let swift_input_contract = route.swift_input_contract.clone().ok_or(SwapperError::InvalidRoute)?;
+        let swift_input_contract = route_swift_input_contract(route)?.to_string();
         let swift_input_mint = if swift_input_contract == EVM_ZERO_ADDRESS {
             SolanaAddress::parse(WSOL_TOKEN_ADDRESS).map_err(solana_error)?.into()
         } else {
@@ -86,6 +94,7 @@ impl SwiftBuildContext {
             state_account,
             relayer,
             relayer_account,
+            order_fields,
         })
     }
 }
@@ -117,6 +126,7 @@ where
         &context.destination_address,
         context.random_key,
         custom_payload_account.as_ref().map(|(account, _)| account),
+        &context.order_fields,
     )?)?);
 
     if let Some((payload_account, nonce)) = custom_payload_account {

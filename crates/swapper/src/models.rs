@@ -163,6 +163,10 @@ pub enum SwapperChainAsset {
 }
 
 impl SwapperChainAsset {
+    pub fn assets(chain: Chain, assets: impl IntoIterator<Item = AssetId>) -> Self {
+        Self::Assets(chain, assets.into_iter().collect())
+    }
+
     pub fn get_chain(&self) -> Chain {
         match self {
             Self::All(chain) => *chain,
