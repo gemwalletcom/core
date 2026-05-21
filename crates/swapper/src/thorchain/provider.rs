@@ -49,6 +49,13 @@ impl ThorChain<RpcClient> {
     }
 }
 
+fn quote_input_value(from_asset: &THORChainAsset, request: &QuoteRequest) -> Result<String, SwapperError> {
+    if from_asset.use_evm_router() || from_asset.chain.is_evm_chain() {
+        return quote_value_after_reserve_by_chain(request);
+    }
+    Ok(request.value.clone())
+}
+
 #[async_trait]
 impl<C> Swapper for ThorChain<C>
 where
@@ -94,7 +101,7 @@ where
         let from_asset = THORChainAsset::from_asset_id(&request.from_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
         let to_asset = THORChainAsset::from_asset_id(&request.to_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
 
-        let from_value = quote_value_after_reserve_by_chain(request)?;
+        let from_value = quote_input_value(&from_asset, request)?;
         let value = super::asset::value_from(&from_value, from_asset.decimals as i32);
 
         if from_asset.chain != THORChainName::Thorchain {
