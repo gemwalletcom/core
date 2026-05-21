@@ -4,7 +4,7 @@ use super::{
     constants::{MAYAN_DEPOSIT_CONTRACTS, MAYAN_SEND_CONTRACTS},
     mapper::map_swap_result,
     model::{MayanChain, MayanQuote, QuoteParams, SwiftVersion},
-    tx_builder::{mctp, mono_chain, swift},
+    tx_builder::{fast_mctp, mctp, mono_chain, swift},
     wormhole_chain,
 };
 use crate::{
@@ -119,7 +119,7 @@ where
             )
             .await?;
         let route = Self::select_route(&routes, from_asset.chain, to_asset.chain).ok_or(SwapperError::NoQuoteAvailable)?;
-        let to_value = route.common().expected_output_value()?;
+        let to_value = route.common().expected_output_value(request.to_asset.decimals)?;
 
         Ok(Quote {
             from_value,
@@ -144,13 +144,15 @@ where
         match (quote.request.from_asset.chain().chain_type(), &route) {
             (ChainType::Ethereum, MayanQuote::Swift(route)) => swift::evm::build_quote_data(&self.price_client, quote, route, self.rpc_provider.clone()).await,
             (ChainType::Ethereum, MayanQuote::Mctp(route)) => mctp::evm::build_quote_data(&self.price_client, quote, route, self.rpc_provider.clone()).await,
+            (ChainType::Ethereum, MayanQuote::FastMctp(route)) => fast_mctp::evm::build_quote_data(&self.price_client, quote, route, self.rpc_provider.clone()).await,
             (ChainType::Ethereum, MayanQuote::MonoChain(route)) => mono_chain::evm::build_quote_data(quote, route, self.rpc_provider.clone()).await,
             (ChainType::Solana, MayanQuote::Swift(route)) => swift::solana::build_quote_data(&self.price_client, quote, route, self.rpc_provider.clone()).await,
             (ChainType::Solana, MayanQuote::Mctp(route)) => mctp::solana::build_quote_data(&self.price_client, quote, route, self.rpc_provider.clone()).await,
+            (ChainType::Solana, MayanQuote::FastMctp(route)) => fast_mctp::solana::build_quote_data(&self.price_client, quote, route, self.rpc_provider.clone()).await,
             (ChainType::Sui, MayanQuote::Mctp(route)) => mctp::sui::build_quote_data(&self.price_client, quote, route, self.rpc_provider.clone()).await,
-            (ChainType::Ethereum, MayanQuote::FastMctp(_))
-            | (ChainType::Solana, MayanQuote::FastMctp(_) | MayanQuote::MonoChain(_))
-            | (ChainType::Sui, MayanQuote::Swift(_) | MayanQuote::FastMctp(_) | MayanQuote::MonoChain(_)) => Err(SwapperError::InvalidRoute),
+            (ChainType::Solana, MayanQuote::MonoChain(_)) | (ChainType::Sui, MayanQuote::Swift(_) | MayanQuote::FastMctp(_) | MayanQuote::MonoChain(_)) => {
+                Err(SwapperError::InvalidRoute)
+            }
             (
                 ChainType::Bitcoin
                 | ChainType::Cosmos
@@ -216,6 +218,18 @@ where
                 .iter()
                 .find(|route| route.as_swift().is_some_and(|swift| swift.swift_version == Some(SwiftVersion::V2)))
                 .or_else(|| routes.iter().find(|route| route.as_mono_chain().is_some()))
+                .or_else(|| routes.iter().find(|route| route.as_fast_mctp().is_some()))
+                .or_else(|| routes.iter().find(|route| route.as_mctp().is_some())),
+            ChainType::Solana => routes
+                .iter()
+                .find(|route| route.as_swift().is_some_and(|swift| swift.swift_version == Some(SwiftVersion::V2)))
+                .or_else(|| {
+                    if destination_chain == Chain::Sui {
+                        None
+                    } else {
+                        routes.iter().find(|route| route.as_fast_mctp().is_some())
+                    }
+                })
                 .or_else(|| routes.iter().find(|route| route.as_mctp().is_some())),
             _ => routes
                 .iter()
@@ -228,11 +242,14 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::mayan::model::{MayanMctpQuote, MayanMonoChainQuote};
+    use crate::mayan::model::{MayanFastMctpQuote, MayanMctpQuote, MayanMonoChainQuote};
     use crate::models::Options;
     use crate::{SwapperQuoteAsset, alien::mock::ProviderMock};
     use gem_client::testkit::MockClient;
-    use primitives::{AssetId, asset_constants::SOLANA_USDC_TOKEN_ID};
+    use primitives::{
+        AssetId,
+        asset_constants::{ARBITRUM_USDC_ASSET_ID, HYPERCORE_SPOT_USDC_ASSET_ID, SOLANA_USDC_TOKEN_ID},
+    };
     use std::collections::BTreeSet;
 
     #[tokio::test]
@@ -273,11 +290,65 @@ mod tests {
         assert_eq!(addresses.send, expected_send);
     }
 
+    #[tokio::test]
+    async fn test_get_quote_rescales_mayan_base_units_to_destination_asset_decimals() {
+        let price_client = MockClient::new().with_get(|path| {
+            assert!(path.starts_with("/quote?"));
+            Ok(include_bytes!("test/quote_response_swift_hypercore.json").to_vec())
+        });
+        let provider = Mayan::with_clients(
+            MayanClient::new(price_client),
+            MayanClient::new(MockClient::new()),
+            Arc::new(ProviderMock::new("{}".to_string())),
+        );
+        let request = QuoteRequest {
+            from_asset: SwapperQuoteAsset {
+                id: ARBITRUM_USDC_ASSET_ID.to_string(),
+                symbol: "USDC".to_string(),
+                decimals: 6,
+            },
+            to_asset: SwapperQuoteAsset {
+                id: HYPERCORE_SPOT_USDC_ASSET_ID.to_string(),
+                symbol: "USDC".to_string(),
+                decimals: 8,
+            },
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
+            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
+            value: "7000000".to_string(),
+            options: Options::new_with_slippage(5.into()),
+        };
+
+        let quote = provider.get_quote(&request).await.unwrap();
+
+        assert_eq!(quote.to_value, "602333700");
+    }
+
     #[test]
     fn test_select_route_falls_back_to_mctp_for_non_sui_source() {
         let routes = vec![MayanQuote::Mctp(Box::new(MayanMctpQuote::mock()))];
 
         assert!(Mayan::<MockClient>::select_route(&routes, Chain::Ethereum, Chain::Sui).unwrap().as_mctp().is_some());
+        assert!(Mayan::<MockClient>::select_route(&routes, Chain::Solana, Chain::Sui).unwrap().as_mctp().is_some());
+    }
+
+    #[test]
+    fn test_select_route_prefers_fast_mctp_before_mctp_when_supported() {
+        let routes = vec![
+            MayanQuote::Mctp(Box::new(MayanMctpQuote::mock())),
+            MayanQuote::FastMctp(Box::new(MayanFastMctpQuote::mock())),
+        ];
+
+        assert!(Mayan::<MockClient>::select_route(&routes, Chain::Ethereum, Chain::Base).unwrap().as_fast_mctp().is_some());
+        assert!(Mayan::<MockClient>::select_route(&routes, Chain::Solana, Chain::Base).unwrap().as_fast_mctp().is_some());
+    }
+
+    #[test]
+    fn test_select_route_keeps_mctp_for_solana_to_sui_fast_mctp_gap() {
+        let routes = vec![
+            MayanQuote::FastMctp(Box::new(MayanFastMctpQuote::mock())),
+            MayanQuote::Mctp(Box::new(MayanMctpQuote::mock())),
+        ];
+
         assert!(Mayan::<MockClient>::select_route(&routes, Chain::Solana, Chain::Sui).unwrap().as_mctp().is_some());
     }
 

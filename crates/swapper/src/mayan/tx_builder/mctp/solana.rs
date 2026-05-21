@@ -11,20 +11,20 @@ use crate::{
             amount::{fractional_amount, gas_drop_amount, min_amount_out, optional_bps_u8, value_to_query},
             route::quote_destination_address,
             solana::{
-                self as solana_builder, SolanaTransaction, setup_instructions, setup_wraps_native_sol, solana_error, wrap_instruction_in_cpi_proxy, wrap_native_sol_instructions,
+                self as solana_builder, SolanaLedgerDeposit, SolanaTransaction, append_client_swap_instructions, append_ledger_deposit_instructions, solana_error,
+                wrap_instruction_in_cpi_proxy,
             },
         },
         wormhole_chain::{WormholeChain, id_for_name as wormhole_chain_id},
     },
 };
 use gem_client::Client;
-use gem_evm::EVM_ZERO_ADDRESS;
-use gem_solana::{SolanaAddress, instruction_from_primitive, instructions_from_primitives};
+use gem_solana::SolanaAddress;
 use rand::Rng;
 use solana_primitives::anchor::global_discriminator;
-use solana_primitives::associated_token::{create_associated_token_account_idempotent_with_address, get_associated_token_address_with_program_id};
+use solana_primitives::associated_token::get_associated_token_address_with_program_id;
 use solana_primitives::instructions::program_ids;
-use solana_primitives::{AccountMeta, Instruction, Pubkey, compute_budget, find_program_address, token};
+use solana_primitives::{AccountMeta, Instruction, Pubkey, find_program_address};
 use std::{fmt::Debug, sync::Arc};
 
 const LEDGER_ORDER_SEED: &[u8] = b"LEDGER_ORDER";
@@ -145,27 +145,21 @@ where
 }
 
 fn add_direct_mctp_instructions(route: &MayanMctpQuote, context: &MctpBuildContext, instructions: &mut Vec<Instruction>) -> Result<(), SwapperError> {
-    if let Some(priority_fee) = route.suggested_priority_fee.filter(|&fee| fee > 0) {
-        instructions.push(compute_budget::set_compute_unit_price(priority_fee));
-    }
+    let amount = route.effective_amount_in64.parse::<u64>()?;
+    append_ledger_deposit_instructions(
+        instructions,
+        SolanaLedgerDeposit {
+            user: &context.user,
+            relayer: &context.relayer,
+            ledger: &context.ledger,
+            ledger_account: &context.ledger_account,
+            mint: &context.mctp_input_mint,
+            amount,
+            suggested_priority_fee: route.suggested_priority_fee,
+        },
+    )?;
 
-    instructions.push(wrap_instruction_in_cpi_proxy(create_associated_token_account_idempotent_with_address(
-        &context.relayer,
-        &context.ledger_account,
-        &context.ledger,
-        &context.mctp_input_mint,
-        &program_ids::token_program(),
-    ))?);
-
-    let source_account = get_associated_token_address_with_program_id(&context.user, &context.mctp_input_mint, &program_ids::token_program());
-    instructions.push(wrap_instruction_in_cpi_proxy(token::transfer(
-        &source_account,
-        &context.ledger_account,
-        &context.user,
-        route.effective_amount_in64.parse::<u64>()?,
-    ))?);
-
-    add_ledger_instruction(route, context, route.effective_amount_in64.parse::<u64>()?, solana_relayer_fee(route)?, instructions)
+    add_ledger_instruction(route, context, amount, solana_relayer_fee(route)?, instructions)
 }
 
 async fn add_swap_instructions<C>(
@@ -196,17 +190,14 @@ where
         )
         .await?;
 
-    let setup = swap.setup_instructions.unwrap_or_default();
-    let compute_budget = swap.compute_budget_instructions.unwrap_or_default();
-    instructions.extend(instructions_from_primitives(compute_budget).map_err(solana_error)?);
-    if route.from_token.contract == EVM_ZERO_ADDRESS && !setup_wraps_native_sol(&setup, &context.user)? {
-        instructions.extend(wrap_native_sol_instructions(&context.user, route.effective_amount_in64.parse::<u64>()?)?);
-    }
-    instructions.extend(setup_instructions(setup, &context.relayer)?);
-    instructions.push(instruction_from_primitive(swap.swap_instruction).map_err(solana_error)?);
-    if let Some(cleanup_instruction) = swap.cleanup_instruction {
-        instructions.push(wrap_instruction_in_cpi_proxy(instruction_from_primitive(cleanup_instruction).map_err(solana_error)?)?);
-    }
+    let lookup_table_addresses = append_client_swap_instructions(
+        instructions,
+        swap,
+        &context.user,
+        &context.relayer,
+        &route.from_token.contract,
+        &route.effective_amount_in64,
+    )?;
 
     add_ledger_instruction(
         route,
@@ -216,7 +207,7 @@ where
         instructions,
     )?;
 
-    Ok(swap.address_lookup_table_addresses)
+    Ok(lookup_table_addresses)
 }
 
 fn add_ledger_instruction(

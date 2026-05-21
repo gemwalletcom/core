@@ -64,6 +64,13 @@ impl MayanQuote {
         }
     }
 
+    pub fn as_fast_mctp(&self) -> Option<&MayanFastMctpQuote> {
+        match self {
+            Self::FastMctp(route) => Some(route.as_ref()),
+            Self::Swift(_) | Self::Mctp(_) | Self::MonoChain(_) => None,
+        }
+    }
+
     pub fn as_mono_chain(&self) -> Option<&MayanMonoChainQuote> {
         match self {
             Self::MonoChain(route) => Some(route.as_ref()),
@@ -91,9 +98,12 @@ pub struct MayanQuoteCommon {
 }
 
 impl MayanQuoteCommon {
-    pub(in crate::mayan) fn expected_output_value(&self) -> Result<String, SwapperError> {
+    pub(in crate::mayan) fn expected_output_value(&self, output_decimals: u32) -> Result<String, SwapperError> {
+        let output_decimals = if output_decimals == 0 { self.to_token.decimals } else { output_decimals };
         if let Some(value) = &self.expected_amount_out_base_units {
-            return BigUint::from_str(value).map(|amount| amount.to_string()).map_err(SwapperError::from);
+            return BigUint::from_str(value)
+                .map(|amount| rescale_base_units(amount, self.to_token.decimals, output_decimals).to_string())
+                .map_err(SwapperError::from);
         }
 
         let amount = match &self.expected_amount_out {
@@ -101,7 +111,15 @@ impl MayanQuoteCommon {
             Value::String(value) => value.clone(),
             Value::Null | Value::Bool(_) | Value::Array(_) | Value::Object(_) => return Err(SwapperError::InvalidRoute),
         };
-        BigNumberFormatter::value_from_amount(&amount, self.to_token.decimals).map_err(SwapperError::from)
+        BigNumberFormatter::value_from_amount(&amount, output_decimals).map_err(SwapperError::from)
+    }
+}
+
+fn rescale_base_units(amount: BigUint, from_decimals: u32, to_decimals: u32) -> BigUint {
+    match to_decimals.cmp(&from_decimals) {
+        std::cmp::Ordering::Equal => amount,
+        std::cmp::Ordering::Greater => amount * BigUint::from(10_u32).pow(to_decimals - from_decimals),
+        std::cmp::Ordering::Less => amount / BigUint::from(10_u32).pow(from_decimals - to_decimals),
     }
 }
 
@@ -173,9 +191,21 @@ impl Deref for MayanMctpQuote {
 pub struct MayanFastMctpQuote {
     #[serde(flatten)]
     pub common: MayanQuoteCommon,
+    pub refund_relayer_fee64: Option<String>,
+    pub redeem_relayer_fee64: Option<String>,
+    pub redeem_relayer_fee: Option<Value>,
     pub min_middle_amount: Option<Value>,
     pub has_auction: Option<bool>,
     pub cheaper_chain: Option<String>,
+    pub fast_mctp_mayan_contract: Option<String>,
+    pub fast_mctp_input_contract: Option<String>,
+    pub fast_mctp_min_finality: Option<u32>,
+    pub circle_max_fee64: Option<String>,
+    pub solana_relayer_fee64: Option<String>,
+    pub relayer: Option<String>,
+    pub suggested_priority_fee: Option<u64>,
+    pub max_swap_accounts: Option<u32>,
+    pub max_swap_data_length: Option<u32>,
 }
 
 impl Deref for MayanFastMctpQuote {
@@ -277,6 +307,19 @@ impl GetSwapEvmParams {
             sdk_version: SDK_VERSION,
         }
     }
+
+    pub fn fast_mctp(route: &MayanFastMctpQuote, amount_in64: String, middle_token: String, referrer_address: Option<String>) -> Self {
+        Self {
+            forwarder_address: MAYAN_FORWARDER,
+            slippage_bps: route.slippage_bps,
+            referrer_address,
+            from_token: route.from_token.contract.clone(),
+            middle_token,
+            chain_name: route.from_chain.clone(),
+            amount_in64,
+            sdk_version: SDK_VERSION,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -341,6 +384,35 @@ impl GetSwapSolanaParams {
 
     pub fn mctp(
         route: &MayanMctpQuote,
+        min_middle_amount: String,
+        middle_token: String,
+        user_wallet: String,
+        amount_in64: String,
+        deposit_mode: &'static str,
+        referrer_address: Option<String>,
+        user_ledger: String,
+    ) -> Self {
+        Self {
+            min_middle_amount,
+            middle_token,
+            user_wallet,
+            slippage_bps: route.slippage_bps,
+            from_token: route.from_token.contract.clone(),
+            amount_in64,
+            deposit_mode,
+            fill_max_accounts: false,
+            tpm_token_account: None,
+            referrer_address,
+            chain_name: route.from_chain.clone(),
+            user_ledger,
+            max_swap_accounts: route.max_swap_accounts,
+            max_swap_data_length: route.max_swap_data_length,
+            sdk_version: SDK_VERSION,
+        }
+    }
+
+    pub fn fast_mctp(
+        route: &MayanFastMctpQuote,
         min_middle_amount: String,
         middle_token: String,
         user_wallet: String,
@@ -529,12 +601,27 @@ mod tests {
     }
 
     #[test]
+    fn test_decode_fast_mctp_quote() {
+        let route: MayanQuote = serde_json::from_str(include_str!("test/fast_mctp_quote.json")).unwrap();
+
+        let route = route.as_fast_mctp().unwrap();
+        assert_eq!(route.fast_mctp_input_contract.as_deref(), Some("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"));
+        assert_eq!(route.fast_mctp_min_finality, Some(1000));
+        assert_eq!(route.circle_max_fee64.as_deref(), Some("500"));
+        assert_eq!(route.redeem_relayer_fee64.as_deref(), Some("100000"));
+    }
+
+    #[test]
     fn test_expected_output_value() {
         let mut route = MayanQuoteCommon {
             expected_amount_out_base_units: Some("1237897283".to_string()),
+            to_token: MayanToken {
+                decimals: 9,
+                ..Default::default()
+            },
             ..Default::default()
         };
-        assert_eq!(route.expected_output_value().unwrap(), "1237897283");
+        assert_eq!(route.expected_output_value(9).unwrap(), "1237897283");
 
         route.expected_amount_out_base_units = None;
         route.expected_amount_out = serde_json::json!(1.237897283);
@@ -542,7 +629,21 @@ mod tests {
             decimals: 9,
             ..Default::default()
         };
-        assert_eq!(route.expected_output_value().unwrap(), "1237897283");
+        assert_eq!(route.expected_output_value(9).unwrap(), "1237897283");
+    }
+
+    #[test]
+    fn test_expected_output_value_rescales_base_units_to_asset_decimals() {
+        let route = MayanQuoteCommon {
+            expected_amount_out_base_units: Some("6023337".to_string()),
+            to_token: MayanToken {
+                decimals: 6,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        assert_eq!(route.expected_output_value(8).unwrap(), "602333700");
     }
 
     #[test]

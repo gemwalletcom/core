@@ -1,7 +1,15 @@
-use crate::{Quote, RpcProvider, SwapperError, SwapperQuoteData, client_factory::create_client_with_chain, mayan::constants::MAYAN_CPI_PROXY_PROGRAM_ID};
+use crate::{
+    Quote, RpcProvider, SwapperError, SwapperQuoteData,
+    client_factory::create_client_with_chain,
+    mayan::{constants::MAYAN_CPI_PROXY_PROGRAM_ID, model::SolanaClientSwap},
+};
 use futures::try_join;
 use gem_encoding::decode_base64;
-use gem_solana::{ASSOCIATED_TOKEN_ACCOUNT_PROGRAM, SYSTEM_PROGRAM_ID, SolanaAddress, SolanaClient, WSOL_TOKEN_ADDRESS, encode_v0_transaction, instruction_from_primitive};
+use gem_evm::EVM_ZERO_ADDRESS;
+use gem_solana::{
+    ASSOCIATED_TOKEN_ACCOUNT_PROGRAM, SYSTEM_PROGRAM_ID, SolanaAddress, SolanaClient, WSOL_TOKEN_ADDRESS, encode_v0_transaction, instruction_from_primitive,
+    instructions_from_primitives,
+};
 use primitives::{Chain, SolanaInstruction};
 use solana_primitives::associated_token::{create_associated_token_account_idempotent_with_address, get_associated_token_address_with_program_id};
 use solana_primitives::instructions::program_ids;
@@ -37,6 +45,61 @@ pub(in crate::mayan::tx_builder) async fn build_quote_data(
     let gas_limit = compute_budget::get_compute_unit_limit(&transaction.instructions).map(|limit| limit.to_string());
 
     Ok(SwapperQuoteData::new_contract(String::new(), "0".to_string(), data, None, gas_limit))
+}
+
+pub(in crate::mayan::tx_builder) struct SolanaLedgerDeposit<'a> {
+    pub user: &'a Pubkey,
+    pub relayer: &'a Pubkey,
+    pub ledger: &'a Pubkey,
+    pub ledger_account: &'a Pubkey,
+    pub mint: &'a Pubkey,
+    pub amount: u64,
+    pub suggested_priority_fee: Option<u64>,
+}
+
+pub(in crate::mayan::tx_builder) fn append_ledger_deposit_instructions(instructions: &mut Vec<Instruction>, deposit: SolanaLedgerDeposit<'_>) -> Result<(), SwapperError> {
+    if let Some(priority_fee) = deposit.suggested_priority_fee.filter(|&fee| fee > 0) {
+        instructions.push(compute_budget::set_compute_unit_price(priority_fee));
+    }
+
+    instructions.push(wrap_instruction_in_cpi_proxy(create_associated_token_account_idempotent_with_address(
+        deposit.relayer,
+        deposit.ledger_account,
+        deposit.ledger,
+        deposit.mint,
+        &program_ids::token_program(),
+    ))?);
+
+    let source_account = get_associated_token_address_with_program_id(deposit.user, deposit.mint, &program_ids::token_program());
+    instructions.push(wrap_instruction_in_cpi_proxy(token::transfer(
+        &source_account,
+        deposit.ledger_account,
+        deposit.user,
+        deposit.amount,
+    ))?);
+    Ok(())
+}
+
+pub(in crate::mayan::tx_builder) fn append_client_swap_instructions(
+    instructions: &mut Vec<Instruction>,
+    swap: SolanaClientSwap,
+    user: &Pubkey,
+    relayer: &Pubkey,
+    from_token_contract: &str,
+    amount_in64: &str,
+) -> Result<Vec<String>, SwapperError> {
+    let setup = swap.setup_instructions.unwrap_or_default();
+    let compute_budget = swap.compute_budget_instructions.unwrap_or_default();
+    instructions.extend(instructions_from_primitives(compute_budget).map_err(solana_error)?);
+    if from_token_contract == EVM_ZERO_ADDRESS && !setup_wraps_native_sol(&setup, user)? {
+        instructions.extend(wrap_native_sol_instructions(user, amount_in64.parse::<u64>()?)?);
+    }
+    instructions.extend(setup_instructions(setup, relayer)?);
+    instructions.push(instruction_from_primitive(swap.swap_instruction).map_err(solana_error)?);
+    if let Some(cleanup_instruction) = swap.cleanup_instruction {
+        instructions.push(wrap_instruction_in_cpi_proxy(instruction_from_primitive(cleanup_instruction).map_err(solana_error)?)?);
+    }
+    Ok(swap.address_lookup_table_addresses)
 }
 
 pub(in crate::mayan::tx_builder) fn setup_instructions(instructions: Vec<SolanaInstruction>, payer: &Pubkey) -> Result<Vec<Instruction>, SwapperError> {

@@ -13,14 +13,14 @@ use crate::{
             amount::value_to_query,
             hypercore::hypercore_custom_payload,
             route::{quote_destination_address, swift_destination_address},
-            solana::{SolanaTransaction, setup_instructions, setup_wraps_native_sol, solana_error, wrap_instruction_in_cpi_proxy, wrap_native_sol_instructions},
+            solana::{SolanaTransaction, append_client_swap_instructions, solana_error, wrap_instruction_in_cpi_proxy},
             swift::{SwiftOrderFields, swift_input_contract as route_swift_input_contract, swift_random_key},
         },
     },
 };
 use gem_client::Client;
 use gem_evm::EVM_ZERO_ADDRESS;
-use gem_solana::{SolanaAddress, WSOL_TOKEN_ADDRESS, instruction_from_primitive, instructions_from_primitives};
+use gem_solana::{SolanaAddress, WSOL_TOKEN_ADDRESS};
 use primitives::Chain;
 use rand::RngExt;
 use solana_primitives::associated_token::{create_associated_token_account_idempotent_with_address, get_associated_token_address_with_program_id};
@@ -185,18 +185,14 @@ where
         )
         .await?;
 
-    let setup = swap.setup_instructions.unwrap_or_default();
-    let compute_budget = swap.compute_budget_instructions.unwrap_or_default();
-    instructions.extend(instructions_from_primitives(compute_budget).map_err(solana_error)?);
-    if route.from_token.contract == EVM_ZERO_ADDRESS && !setup_wraps_native_sol(&setup, &context.trader)? {
-        instructions.extend(wrap_native_sol_instructions(&context.trader, route.effective_amount_in64.parse::<u64>()?)?);
-    }
-    instructions.extend(setup_instructions(setup, &context.relayer)?);
-    instructions.push(instruction_from_primitive(swap.swap_instruction).map_err(solana_error)?);
-    if let Some(cleanup_instruction) = swap.cleanup_instruction {
-        instructions.push(wrap_instruction_in_cpi_proxy(instruction_from_primitive(cleanup_instruction).map_err(solana_error)?)?);
-    }
-    Ok(swap.address_lookup_table_addresses)
+    append_client_swap_instructions(
+        instructions,
+        swap,
+        &context.trader,
+        &context.relayer,
+        &route.from_token.contract,
+        &route.effective_amount_in64,
+    )
 }
 
 fn create_custom_payload_account(instructions: &mut Vec<Instruction>, relayer: &Pubkey, custom_payload: Option<&[u8]>) -> Result<Option<(Pubkey, u16)>, SwapperError> {

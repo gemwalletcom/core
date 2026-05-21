@@ -8,7 +8,7 @@ use crate::{
         tx_builder::{
             address::native_address_to_bytes32,
             amount::{fractional_amount, gas_decimals, gas_drop_amount, min_amount_out, optional_bps_u8},
-            evm::{self as evm_builder, EvmTransaction, MayanForwarder},
+            evm::{self as evm_builder, EvmForwarderProtocolCall, EvmSwapForwardData, EvmTransaction},
             route::quote_destination_address,
             swift::{referrer_bytes, swift_to_token},
         },
@@ -19,7 +19,6 @@ use alloy_primitives::{Address, Bytes, FixedBytes, U256};
 use alloy_sol_types::{SolCall, sol};
 use gem_client::Client;
 use gem_evm::EVM_ZERO_ADDRESS;
-use primitives::decode_hex;
 use std::{fmt::Debug, str::FromStr, sync::Arc};
 
 const MCTP_PAYLOAD_TYPE_DEFAULT: u8 = 1;
@@ -55,91 +54,75 @@ sol! {
     }
 }
 
-struct EvmMctpProtocolCall {
-    contract_address: Address,
-    amount_in: U256,
-    data: Vec<u8>,
+fn mctp_protocol_call(quote: &Quote, route: &MayanMctpQuote) -> Result<EvmForwarderProtocolCall, SwapperError> {
+    if route.has_auction == Some(true) {
+        mctp_create_order_call(quote, route)
+    } else {
+        mctp_bridge_call(quote, route)
+    }
 }
 
-impl EvmMctpProtocolCall {
-    fn new(quote: &Quote, route: &MayanMctpQuote) -> Result<Self, SwapperError> {
-        if route.has_auction == Some(true) {
-            Self::create_order(quote, route)
-        } else {
-            Self::bridge(quote, route)
+fn mctp_create_order_call(quote: &Quote, route: &MayanMctpQuote) -> Result<EvmForwarderProtocolCall, SwapperError> {
+    let contract_address = mctp_contract_address(route)?;
+    let destination_chain_id = wormhole_chain_id(&route.to_chain)?;
+    let destination_address = native_address_to_bytes32(quote_destination_address(quote), destination_chain_id)?;
+    let amount_in = U256::from_str(&route.effective_amount_in64)?;
+    let token_in = Address::from_str(mctp_input_contract(route)?)?;
+    let referrer = referrer_bytes(&route.to_chain)?;
+    let data = MayanCircle::createOrderCall {
+        params: MayanCircle::OrderParams {
+            tokenIn: token_in,
+            amountIn: amount_in,
+            gasDrop: gas_drop_amount(&route.gas_drop, &route.to_chain, &QuoteType::Mctp, false)?,
+            destAddr: FixedBytes::from(destination_address),
+            destChain: destination_chain_id,
+            tokenOut: FixedBytes::from(swift_to_token(route)?),
+            minAmountOut: min_amount_out(&route.min_amount_out, route.to_token.decimals, &route.to_chain, &QuoteType::Mctp)?,
+            deadline: route.deadline64.as_deref().ok_or(SwapperError::InvalidRoute)?.parse::<u64>()?,
+            redeemFee: redeem_relayer_fee(route)?,
+            referrerAddr: FixedBytes::from(referrer),
+            referrerBps: optional_bps_u8(route.referrer_bps)?,
+        },
+    }
+    .abi_encode();
+    Ok(EvmForwarderProtocolCall::new(amount_in, contract_address, data))
+}
+
+fn mctp_bridge_call(quote: &Quote, route: &MayanMctpQuote) -> Result<EvmForwarderProtocolCall, SwapperError> {
+    let contract_address = mctp_contract_address(route)?;
+    let amount_in = U256::from_str(&route.effective_amount_in64)?;
+    let token_in = Address::from_str(mctp_input_contract(route)?)?;
+    let destination_chain_id = wormhole_chain_id(&route.to_chain)?;
+    let destination_address = FixedBytes::from(native_address_to_bytes32(quote_destination_address(quote), destination_chain_id)?);
+    let gas_drop = gas_drop_amount(&route.gas_drop, &route.to_chain, &QuoteType::Mctp, false)?;
+    let redeem_fee = redeem_relayer_fee(route)?;
+    let destination_domain = domain_for_wormhole_chain(&route.to_chain)?.id();
+
+    let data = if route.cheaper_chain.as_deref() == Some(route.from_chain.as_str()) {
+        MayanCircle::bridgeWithLockedFeeCall {
+            tokenIn: token_in,
+            amountIn: amount_in,
+            gasDrop: gas_drop,
+            redeemFee: U256::from(redeem_fee),
+            destDomain: destination_domain,
+            destAddr: destination_address,
         }
-    }
-
-    fn create_order(quote: &Quote, route: &MayanMctpQuote) -> Result<Self, SwapperError> {
-        let contract_address = mctp_contract_address(route)?;
-        let destination_chain_id = wormhole_chain_id(&route.to_chain)?;
-        let destination_address = native_address_to_bytes32(quote_destination_address(quote), destination_chain_id)?;
-        let amount_in = U256::from_str(&route.effective_amount_in64)?;
-        let token_in = Address::from_str(mctp_input_contract(route)?)?;
-        let referrer = referrer_bytes(&route.to_chain)?;
-        let data = MayanCircle::createOrderCall {
-            params: MayanCircle::OrderParams {
-                tokenIn: token_in,
-                amountIn: amount_in,
-                gasDrop: gas_drop_amount(&route.gas_drop, &route.to_chain, &QuoteType::Mctp, false)?,
-                destAddr: FixedBytes::from(destination_address),
-                destChain: destination_chain_id,
-                tokenOut: FixedBytes::from(swift_to_token(route)?),
-                minAmountOut: min_amount_out(&route.min_amount_out, route.to_token.decimals, &route.to_chain, &QuoteType::Mctp)?,
-                deadline: route.deadline64.as_deref().ok_or(SwapperError::InvalidRoute)?.parse::<u64>()?,
-                redeemFee: redeem_relayer_fee(route)?,
-                referrerAddr: FixedBytes::from(referrer),
-                referrerBps: optional_bps_u8(route.referrer_bps)?,
-            },
+        .abi_encode()
+    } else {
+        MayanCircle::bridgeWithFeeCall {
+            tokenIn: token_in,
+            amountIn: amount_in,
+            redeemFee: redeem_fee,
+            gasDrop: gas_drop,
+            destAddr: destination_address,
+            destDomain: destination_domain,
+            payloadType: MCTP_PAYLOAD_TYPE_DEFAULT,
+            customPayload: Bytes::new(),
         }
-        .abi_encode();
-        Ok(Self {
-            contract_address,
-            amount_in,
-            data,
-        })
-    }
+        .abi_encode()
+    };
 
-    fn bridge(quote: &Quote, route: &MayanMctpQuote) -> Result<Self, SwapperError> {
-        let contract_address = mctp_contract_address(route)?;
-        let amount_in = U256::from_str(&route.effective_amount_in64)?;
-        let token_in = Address::from_str(mctp_input_contract(route)?)?;
-        let destination_chain_id = wormhole_chain_id(&route.to_chain)?;
-        let destination_address = FixedBytes::from(native_address_to_bytes32(quote_destination_address(quote), destination_chain_id)?);
-        let gas_drop = gas_drop_amount(&route.gas_drop, &route.to_chain, &QuoteType::Mctp, false)?;
-        let redeem_fee = redeem_relayer_fee(route)?;
-        let destination_domain = domain_for_wormhole_chain(&route.to_chain)?.id();
-
-        let data = if route.cheaper_chain.as_deref() == Some(route.from_chain.as_str()) {
-            MayanCircle::bridgeWithLockedFeeCall {
-                tokenIn: token_in,
-                amountIn: amount_in,
-                gasDrop: gas_drop,
-                redeemFee: U256::from(redeem_fee),
-                destDomain: destination_domain,
-                destAddr: destination_address,
-            }
-            .abi_encode()
-        } else {
-            MayanCircle::bridgeWithFeeCall {
-                tokenIn: token_in,
-                amountIn: amount_in,
-                redeemFee: redeem_fee,
-                gasDrop: gas_drop,
-                destAddr: destination_address,
-                destDomain: destination_domain,
-                payloadType: MCTP_PAYLOAD_TYPE_DEFAULT,
-                customPayload: Bytes::new(),
-            }
-            .abi_encode()
-        };
-
-        Ok(Self {
-            contract_address,
-            amount_in,
-            data,
-        })
-    }
+    Ok(EvmForwarderProtocolCall::new(amount_in, contract_address, data))
 }
 
 pub async fn build_quote_data<C>(client: &MayanClient<C>, quote: &Quote, route: &MayanMctpQuote, rpc_provider: Arc<dyn RpcProvider>) -> Result<SwapperQuoteData, SwapperError>
@@ -153,35 +136,31 @@ async fn build<C>(client: &MayanClient<C>, quote: &Quote, route: &MayanMctpQuote
 where
     C: Client + Clone + Send + Sync + Debug + 'static,
 {
-    let protocol_call = EvmMctpProtocolCall::new(quote, route)?;
+    let protocol_call = mctp_protocol_call(quote, route)?;
     let bridge_fee = bridge_fee(route)?;
     if route.from_token.contract.eq_ignore_ascii_case(mctp_input_contract(route)?) {
-        return build_direct_forward_transaction(route, protocol_call, bridge_fee);
+        return build_direct_forward_transaction(route, &protocol_call, bridge_fee);
     }
 
-    build_swap_forward_transaction(client, route, protocol_call, bridge_fee).await
+    build_swap_forward_transaction(client, route, &protocol_call, bridge_fee).await
 }
 
-fn build_direct_forward_transaction(route: &MayanMctpQuote, protocol_call: EvmMctpProtocolCall, bridge_fee: U256) -> Result<EvmTransaction, SwapperError> {
+fn build_direct_forward_transaction(route: &MayanMctpQuote, protocol_call: &EvmForwarderProtocolCall, bridge_fee: U256) -> Result<EvmTransaction, SwapperError> {
     if route.from_token.contract.eq_ignore_ascii_case(EVM_ZERO_ADDRESS) {
         return Err(SwapperError::transaction_error("Mayan MCTP does not support direct native order creation"));
     }
 
-    let data = MayanForwarder::forwardERC20Call {
-        tokenIn: Address::from_str(&route.from_token.contract)?,
-        amountIn: protocol_call.amount_in,
-        permitParams: MayanForwarder::PermitParams::default(),
-        mayanProtocol: protocol_call.contract_address,
-        protocolData: Bytes::from(protocol_call.data),
-    }
-    .abi_encode();
-    Ok(EvmTransaction::forwarder(bridge_fee.to_string(), data))
+    Ok(evm_builder::build_forward_erc20_transaction(
+        Address::from_str(&route.from_token.contract)?,
+        protocol_call,
+        bridge_fee.to_string(),
+    ))
 }
 
 async fn build_swap_forward_transaction<C>(
     client: &MayanClient<C>,
     route: &MayanMctpQuote,
-    protocol_call: EvmMctpProtocolCall,
+    protocol_call: &EvmForwarderProtocolCall,
     bridge_fee: U256,
 ) -> Result<EvmTransaction, SwapperError>
 where
@@ -200,41 +179,27 @@ where
             ),
         )
         .await?;
-    let swap_router_address = Address::from_str(&swap.swap_router_address)?;
-    let swap_router_calldata = Bytes::from(decode_hex(&swap.swap_router_calldata)?);
-    let middle_token = Address::from_str(mctp_input_contract)?;
+    let swap = EvmSwapForwardData::new(&swap.swap_router_address, &swap.swap_router_calldata, mctp_input_contract, min_middle_amount)?;
 
     if route.from_token.contract.eq_ignore_ascii_case(EVM_ZERO_ADDRESS) {
         let amount_in = protocol_call
             .amount_in
             .checked_sub(bridge_fee)
             .ok_or_else(|| SwapperError::transaction_error("Amount in is less than bridge fee"))?;
-        let data = MayanForwarder::swapAndForwardEthCall {
-            amountIn: amount_in,
-            swapProtocol: swap_router_address,
-            swapData: swap_router_calldata,
-            middleToken: middle_token,
-            minMiddleAmount: min_middle_amount,
-            mayanProtocol: protocol_call.contract_address,
-            mayanData: Bytes::from(protocol_call.data),
-        }
-        .abi_encode();
-        return Ok(EvmTransaction::forwarder(protocol_call.amount_in.to_string(), data));
+        return Ok(evm_builder::build_swap_and_forward_eth_transaction(
+            protocol_call,
+            swap,
+            amount_in,
+            protocol_call.amount_in.to_string(),
+        ));
     }
 
-    let data = MayanForwarder::swapAndForwardERC20Call {
-        tokenIn: Address::from_str(&route.from_token.contract)?,
-        amountIn: protocol_call.amount_in,
-        permitParams: MayanForwarder::PermitParams::default(),
-        swapProtocol: swap_router_address,
-        swapData: swap_router_calldata,
-        middleToken: middle_token,
-        minMiddleAmount: min_middle_amount,
-        mayanProtocol: protocol_call.contract_address,
-        mayanData: Bytes::from(protocol_call.data),
-    }
-    .abi_encode();
-    Ok(EvmTransaction::forwarder(bridge_fee.to_string(), data))
+    Ok(evm_builder::build_swap_and_forward_erc20_transaction(
+        Address::from_str(&route.from_token.contract)?,
+        protocol_call,
+        swap,
+        bridge_fee.to_string(),
+    ))
 }
 
 fn mctp_contract_address(route: &MayanMctpQuote) -> Result<Address, SwapperError> {

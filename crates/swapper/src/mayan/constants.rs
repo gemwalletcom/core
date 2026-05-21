@@ -4,6 +4,7 @@ pub const MAYAN_SWIFT: &str = "0xC38e4e6A15593f908255214653d3D947CA1c2338";
 pub const MAYAN_FULFILL_HELPER: &str = "0xBC0663ef502F0Ee9676626ED5B418037252eFeb2";
 pub const MAYAN_PROGRAM_ID: &str = "FC4eXxkyrMPTjiYUpp4EAnkmwMbQyZ6NDCh1kfLn6vsf";
 pub const MAYAN_MCTP_PROGRAM_ID: &str = "dkpZqrxHFrhziEMQ931GLtfy11nFkCsfMftH9u6QwBU";
+pub const MAYAN_FAST_MCTP_PROGRAM_ID: &str = "Gx9rivpS3YR8pBFwMuP6omYqVxunpLvLkNn7ubNyuZZ5";
 pub const MAYAN_SWIFT_V2_PROGRAM_ID: &str = "mayan34VedncxdK2XobtvWFDXQASUTBXhUVzt2kKgny";
 pub const MAYAN_FEE_MANAGER_PROGRAM_ID: &str = "5VtQHnhs2pfVEr68qQsbTRwKh4JV5GTu9mBHgHFxpHeQ";
 pub const MAYAN_LOOKUP_TABLE_SOLANA: &str = "Ff3yi1meWQQ19VPZMzGg6H8JQQeRudiV7QtVtyzJyoht";

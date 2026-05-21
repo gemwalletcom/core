@@ -6,7 +6,7 @@ use crate::{
         model::{GetSwapEvmParams, GetSwapEvmResponse, MayanSwiftQuote},
         tx_builder::{
             amount::fractional_amount,
-            evm::{EvmTransaction, MayanForwarder},
+            evm::{self as evm_builder, EvmForwarderProtocolCall, EvmSwapForwardData, EvmTransaction},
             hypercore::hypercore_custom_payload,
             route::{quote_destination_address, swift_destination_address},
             swift::swift_input_contract as route_swift_input_contract,
@@ -18,15 +18,12 @@ use alloy_primitives::{Address, Bytes, U256};
 use alloy_sol_types::SolCall;
 use gem_client::Client;
 use gem_evm::EVM_ZERO_ADDRESS;
-use primitives::decode_hex;
 use std::{fmt::Debug, str::FromStr};
 
 struct EvmSwiftContext {
-    amount_in: U256,
     swift_input_contract: String,
-    swift_contract_address: Address,
     swift_token_in: Address,
-    swift_call_data: Vec<u8>,
+    protocol_call: EvmForwarderProtocolCall,
 }
 
 impl EvmSwiftContext {
@@ -43,7 +40,7 @@ impl EvmSwiftContext {
         let destination_address = swift_destination_address(quote, route);
         let custom_payload = hypercore_custom_payload(route, quote_destination_address(quote))?;
         let order = swift_order(quote, route, source_chain_id, destination_address.as_ref(), custom_payload.as_deref())?;
-        let swift_call_data = MayanSwiftV2::createOrderWithTokenCall {
+        let data = MayanSwiftV2::createOrderWithTokenCall {
             tokenIn: swift_token_in,
             amountIn: amount_in,
             params: order,
@@ -52,11 +49,9 @@ impl EvmSwiftContext {
         .abi_encode();
 
         Ok(Self {
-            amount_in,
             swift_input_contract,
-            swift_contract_address,
             swift_token_in,
-            swift_call_data,
+            protocol_call: EvmForwarderProtocolCall::new(amount_in, swift_contract_address, data),
         })
     }
 }
@@ -78,15 +73,7 @@ fn build_direct_forward_transaction(route: &MayanSwiftQuote, context: &EvmSwiftC
         return Err(SwapperError::transaction_error("Mayan Swift V2 does not support direct native order creation"));
     }
 
-    let data = MayanForwarder::forwardERC20Call {
-        tokenIn: context.swift_token_in,
-        amountIn: context.amount_in,
-        permitParams: MayanForwarder::PermitParams::default(),
-        mayanProtocol: context.swift_contract_address,
-        protocolData: Bytes::from(context.swift_call_data.clone()),
-    }
-    .abi_encode();
-    Ok(EvmTransaction::forwarder("0", data))
+    Ok(evm_builder::build_forward_erc20_transaction(context.swift_token_in, &context.protocol_call, "0"))
 }
 
 async fn build_swap_forward_transaction<C>(client: &MayanClient<C>, route: &MayanSwiftQuote, context: &EvmSwiftContext) -> Result<EvmTransaction, SwapperError>
@@ -103,35 +90,21 @@ where
             GetSwapEvmParams::swift(route, route.effective_amount_in64.clone(), context.swift_input_contract.clone()),
         )
         .await?;
-    let swap_router_address = Address::from_str(&swap.swap_router_address)?;
-    let swap_router_calldata = Bytes::from(decode_hex(&swap.swap_router_calldata)?);
-    let middle_token = Address::from_str(&context.swift_input_contract)?;
+    let swap = EvmSwapForwardData::new(&swap.swap_router_address, &swap.swap_router_calldata, &context.swift_input_contract, min_middle_amount)?;
 
     if route.from_token.contract.eq_ignore_ascii_case(EVM_ZERO_ADDRESS) {
-        let data = MayanForwarder::swapAndForwardEthCall {
-            amountIn: context.amount_in,
-            swapProtocol: swap_router_address,
-            swapData: swap_router_calldata,
-            middleToken: middle_token,
-            minMiddleAmount: min_middle_amount,
-            mayanProtocol: context.swift_contract_address,
-            mayanData: Bytes::from(context.swift_call_data.clone()),
-        }
-        .abi_encode();
-        return Ok(EvmTransaction::forwarder(context.amount_in.to_string(), data));
+        return Ok(evm_builder::build_swap_and_forward_eth_transaction(
+            &context.protocol_call,
+            swap,
+            context.protocol_call.amount_in,
+            context.protocol_call.amount_in.to_string(),
+        ));
     }
 
-    let data = MayanForwarder::swapAndForwardERC20Call {
-        tokenIn: Address::from_str(&route.from_token.contract)?,
-        amountIn: context.amount_in,
-        permitParams: MayanForwarder::PermitParams::default(),
-        swapProtocol: swap_router_address,
-        swapData: swap_router_calldata,
-        middleToken: middle_token,
-        minMiddleAmount: min_middle_amount,
-        mayanProtocol: context.swift_contract_address,
-        mayanData: Bytes::from(context.swift_call_data.clone()),
-    }
-    .abi_encode();
-    Ok(EvmTransaction::forwarder("0", data))
+    Ok(evm_builder::build_swap_and_forward_erc20_transaction(
+        Address::from_str(&route.from_token.contract)?,
+        &context.protocol_call,
+        swap,
+        "0",
+    ))
 }

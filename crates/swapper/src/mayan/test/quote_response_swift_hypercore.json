@@ -1,0 +1,27 @@
+{
+  "quotes": [
+    {
+      "type": "SWIFT",
+      "effectiveAmountIn64": "7000000",
+      "expectedAmountOut": 6.023337,
+      "expectedAmountOutBaseUnits": "6023337",
+      "minAmountOut": 6.520075,
+      "gasDrop": 0,
+      "etaSeconds": 3,
+      "fromToken": {
+        "contract": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+        "wChainId": 23,
+        "decimals": 6
+      },
+      "toToken": {
+        "contract": "0x000000000000000000000000000000000000ffff",
+        "wChainId": 65000,
+        "decimals": 6
+      },
+      "fromChain": "arbitrum",
+      "toChain": "hypercore",
+      "slippageBps": 5,
+      "swiftVersion": "V2"
+    }
+  ]
+}

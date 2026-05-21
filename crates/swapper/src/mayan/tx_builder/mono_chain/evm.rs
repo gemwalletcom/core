@@ -6,17 +6,17 @@ use crate::{
         model::MayanMonoChainQuote,
         tx_builder::{
             amount::fractional_amount,
-            evm::{self as evm_builder, EvmTransaction, MayanForwarder},
+            evm::{self as evm_builder, EvmForwarderProtocolCall, EvmSwapForwardData, EvmTransaction},
             hypercore::hypercore_deposit_dex,
             route::quote_destination_address,
         },
         wormhole_chain::WormholeChain,
     },
 };
-use alloy_primitives::{Address, Bytes, U256};
+use alloy_primitives::{Address, U256};
 use alloy_sol_types::{SolCall, sol};
 use gem_evm::EVM_ZERO_ADDRESS;
-use primitives::{asset_constants::HYPEREVM_USDC_TOKEN_ID, decode_hex};
+use primitives::asset_constants::HYPEREVM_USDC_TOKEN_ID;
 use std::{str::FromStr, sync::Arc};
 
 const MAX_BPS: u32 = 10_000;
@@ -27,43 +27,31 @@ sol! {
     }
 }
 
-struct HyperCoreDepositCall {
-    contract_address: Address,
-    amount_in: U256,
-    data: Vec<u8>,
-}
-
-impl HyperCoreDepositCall {
-    fn new(quote: &Quote, route: &MayanMonoChainQuote) -> Result<Self, SwapperError> {
-        if route.from_chain != WormholeChain::Hyperevm.name() || route.to_chain != WormholeChain::Hypercore.name() {
-            return Err(SwapperError::InvalidRoute);
-        }
-
-        let contract_address = Address::from_str(&route.mono_chain_mayan_contract)?;
-        let amount_in = U256::from_str(&route.effective_amount_in64)?;
-        let referrer_address = default_referral_address(quote.request.from_asset.chain());
-        let has_referrer = !referrer_address.is_empty();
-        let referrer_bps = match route.referrer_bps {
-            Some(value) if value <= MAX_BPS => value as u16,
-            Some(_) => return Err(SwapperError::InvalidRoute),
-            None => 0,
-        };
-        let data = MayanHyperCoreDeposit::depositToHyperCoreCall {
-            tokenIn: Address::from_str(HYPEREVM_USDC_TOKEN_ID)?,
-            amountIn: amount_in,
-            referrerBps: if has_referrer { referrer_bps } else { 0 },
-            referrerAddr: if has_referrer { Address::from_str(&referrer_address)? } else { Address::ZERO },
-            destAddr: Address::from_str(quote_destination_address(quote))?,
-            destDex: hypercore_deposit_dex(&route.to_token.contract)?,
-        }
-        .abi_encode();
-
-        Ok(Self {
-            contract_address,
-            amount_in,
-            data,
-        })
+fn hypercore_deposit_call(quote: &Quote, route: &MayanMonoChainQuote) -> Result<EvmForwarderProtocolCall, SwapperError> {
+    if route.from_chain != WormholeChain::Hyperevm.name() || route.to_chain != WormholeChain::Hypercore.name() {
+        return Err(SwapperError::InvalidRoute);
     }
+
+    let contract_address = Address::from_str(&route.mono_chain_mayan_contract)?;
+    let amount_in = U256::from_str(&route.effective_amount_in64)?;
+    let referrer_address = default_referral_address(quote.request.from_asset.chain());
+    let has_referrer = !referrer_address.is_empty();
+    let referrer_bps = match route.referrer_bps {
+        Some(value) if value <= MAX_BPS => value as u16,
+        Some(_) => return Err(SwapperError::InvalidRoute),
+        None => 0,
+    };
+    let data = MayanHyperCoreDeposit::depositToHyperCoreCall {
+        tokenIn: Address::from_str(HYPEREVM_USDC_TOKEN_ID)?,
+        amountIn: amount_in,
+        referrerBps: if has_referrer { referrer_bps } else { 0 },
+        referrerAddr: if has_referrer { Address::from_str(&referrer_address)? } else { Address::ZERO },
+        destAddr: Address::from_str(quote_destination_address(quote))?,
+        destDex: hypercore_deposit_dex(&route.to_token.contract)?,
+    }
+    .abi_encode();
+
+    Ok(EvmForwarderProtocolCall::new(amount_in, contract_address, data))
 }
 
 pub async fn build_quote_data(quote: &Quote, route: &MayanMonoChainQuote, rpc_provider: Arc<dyn RpcProvider>) -> Result<SwapperQuoteData, SwapperError> {
@@ -71,59 +59,42 @@ pub async fn build_quote_data(quote: &Quote, route: &MayanMonoChainQuote, rpc_pr
 }
 
 async fn build(quote: &Quote, route: &MayanMonoChainQuote) -> Result<EvmTransaction, SwapperError> {
-    let deposit_call = HyperCoreDepositCall::new(quote, route)?;
+    let deposit_call = hypercore_deposit_call(quote, route)?;
     if route.from_token.contract.eq_ignore_ascii_case(HYPEREVM_USDC_TOKEN_ID) {
-        return build_direct_forward_transaction(deposit_call);
+        return build_direct_forward_transaction(&deposit_call);
     }
 
-    build_swap_forward_transaction(route, deposit_call)
+    build_swap_forward_transaction(route, &deposit_call)
 }
 
-fn build_direct_forward_transaction(deposit_call: HyperCoreDepositCall) -> Result<EvmTransaction, SwapperError> {
-    let data = MayanForwarder::forwardERC20Call {
-        tokenIn: Address::from_str(HYPEREVM_USDC_TOKEN_ID)?,
-        amountIn: deposit_call.amount_in,
-        permitParams: MayanForwarder::PermitParams::default(),
-        mayanProtocol: deposit_call.contract_address,
-        protocolData: Bytes::from(deposit_call.data),
-    }
-    .abi_encode();
-    Ok(EvmTransaction::forwarder("0", data))
+fn build_direct_forward_transaction(deposit_call: &EvmForwarderProtocolCall) -> Result<EvmTransaction, SwapperError> {
+    Ok(evm_builder::build_forward_erc20_transaction(Address::from_str(HYPEREVM_USDC_TOKEN_ID)?, deposit_call, "0"))
 }
 
-fn build_swap_forward_transaction(route: &MayanMonoChainQuote, deposit_call: HyperCoreDepositCall) -> Result<EvmTransaction, SwapperError> {
-    let swap_router_address = Address::from_str(route.evm_swap_router_address.as_deref().ok_or(SwapperError::InvalidRoute)?)?;
-    let swap_router_calldata = Bytes::from(decode_hex(route.evm_swap_router_calldata.as_deref().ok_or(SwapperError::InvalidRoute)?)?);
-    let middle_token = Address::from_str(HYPEREVM_USDC_TOKEN_ID)?;
+fn build_swap_forward_transaction(route: &MayanMonoChainQuote, deposit_call: &EvmForwarderProtocolCall) -> Result<EvmTransaction, SwapperError> {
     let min_middle_amount = fractional_amount::<U256>(&route.min_amount_out, CCTP_TOKEN_DECIMALS)?;
+    let swap = EvmSwapForwardData::new(
+        route.evm_swap_router_address.as_deref().ok_or(SwapperError::InvalidRoute)?,
+        route.evm_swap_router_calldata.as_deref().ok_or(SwapperError::InvalidRoute)?,
+        HYPEREVM_USDC_TOKEN_ID,
+        min_middle_amount,
+    )?;
 
     if route.from_token.contract.eq_ignore_ascii_case(EVM_ZERO_ADDRESS) {
-        let data = MayanForwarder::swapAndForwardEthCall {
-            amountIn: deposit_call.amount_in,
-            swapProtocol: swap_router_address,
-            swapData: swap_router_calldata,
-            middleToken: middle_token,
-            minMiddleAmount: min_middle_amount,
-            mayanProtocol: deposit_call.contract_address,
-            mayanData: Bytes::from(deposit_call.data),
-        }
-        .abi_encode();
-        return Ok(EvmTransaction::forwarder(deposit_call.amount_in.to_string(), data));
+        return Ok(evm_builder::build_swap_and_forward_eth_transaction(
+            deposit_call,
+            swap,
+            deposit_call.amount_in,
+            deposit_call.amount_in.to_string(),
+        ));
     }
 
-    let data = MayanForwarder::swapAndForwardERC20Call {
-        tokenIn: Address::from_str(&route.from_token.contract)?,
-        amountIn: deposit_call.amount_in,
-        permitParams: MayanForwarder::PermitParams::default(),
-        swapProtocol: swap_router_address,
-        swapData: swap_router_calldata,
-        middleToken: middle_token,
-        minMiddleAmount: min_middle_amount,
-        mayanProtocol: deposit_call.contract_address,
-        mayanData: Bytes::from(deposit_call.data),
-    }
-    .abi_encode();
-    Ok(EvmTransaction::forwarder("0", data))
+    Ok(evm_builder::build_swap_and_forward_erc20_transaction(
+        Address::from_str(&route.from_token.contract)?,
+        deposit_call,
+        swap,
+        "0",
+    ))
 }
 
 #[cfg(test)]
