@@ -306,6 +306,8 @@ pub mod notification_data;
 pub use self::notification_data::{NotificationData, NotificationRewardsMetadata, NotificationRewardsRedeemMetadata};
 pub mod deeplink;
 pub use self::deeplink::Deeplink;
+pub mod url_action;
+pub use self::url_action::UrlAction;
 pub mod list_item;
 pub use self::list_item::{CoreEmoji, CoreListItem, CoreListItemBadge, CoreListItemIcon};
 pub mod notification;
