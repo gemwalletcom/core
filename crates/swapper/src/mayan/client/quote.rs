@@ -57,7 +57,7 @@ impl<C> MayanClient<C>
 where
     C: Client + Clone + Send + Sync + Debug + 'static,
 {
-    pub async fn fetch_quotes(&self, params: QuoteParams, input_decimals: u32) -> Result<Vec<MayanQuote>, SwapperError> {
+    pub async fn get_quotes(&self, params: QuoteParams, input_decimals: u32) -> Result<Vec<MayanQuote>, SwapperError> {
         let path = quote_path(params)?;
         let response = self.client.get::<QuoteResponse>(&path).await.map_err(|err| map_quote_error(err, input_decimals))?;
         Ok(response.quotes)

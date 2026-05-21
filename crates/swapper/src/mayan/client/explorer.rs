@@ -14,7 +14,7 @@ where
         self.client.get("/chains").await.map_err(SwapperError::from)
     }
 
-    pub async fn get_transaction_status(&self, tx_hash: &str) -> Result<MayanTransactionResult, SwapperError> {
-        self.client.get(&format!("/swap/trx/{tx_hash}")).await.map_err(SwapperError::from)
+    pub async fn get_transaction_status(&self, hash: &str) -> Result<MayanTransactionResult, SwapperError> {
+        self.client.get(&format!("/swap/trx/{hash}")).await.map_err(SwapperError::from)
     }
 }

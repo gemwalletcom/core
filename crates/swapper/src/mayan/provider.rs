@@ -109,7 +109,7 @@ where
         let referral_fees = Self::referral_fees(request);
         let routes = self
             .price_client
-            .fetch_quotes(
+            .get_quotes(
                 QuoteParams {
                     amount_in64: from_value.clone(),
                     from_token: token_id_for_asset(&from_asset),
@@ -274,7 +274,7 @@ mod swap_integration_tests {
     }
 
     #[tokio::test]
-    async fn test_mayan_provider_fetch_swift_evm_quote_and_data() -> Result<(), SwapperError> {
+    async fn test_mayan_provider_get_swift_evm_quote_and_data() -> Result<(), SwapperError> {
         let rpc_provider = Arc::new(NativeProvider::default().set_debug(false));
         let provider = Mayan::new(rpc_provider);
         let request = QuoteRequest {
@@ -304,7 +304,7 @@ mod swap_integration_tests {
     }
 
     #[tokio::test]
-    async fn test_mayan_provider_fetch_swift_solana_quote_and_data() -> Result<(), SwapperError> {
+    async fn test_mayan_provider_get_swift_solana_quote_and_data() -> Result<(), SwapperError> {
         let rpc_provider = Arc::new(NativeProvider::default().set_debug(false));
         let provider = Mayan::new(rpc_provider);
         let request = QuoteRequest {
@@ -335,7 +335,7 @@ mod swap_integration_tests {
     }
 
     #[tokio::test]
-    async fn test_mayan_provider_fetch_mctp_sui_quote_and_data() -> Result<(), SwapperError> {
+    async fn test_mayan_provider_get_mctp_sui_quote_and_data() -> Result<(), SwapperError> {
         let rpc_provider = Arc::new(NativeProvider::default().set_debug(false));
         let provider = Mayan::new(rpc_provider);
         let request = QuoteRequest {
@@ -369,8 +369,8 @@ mod swap_integration_tests {
     async fn test_mayan_get_swap_result() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let rpc_provider = Arc::new(NativeProvider::default().set_debug(false));
         let provider = Mayan::new(rpc_provider);
-        let tx_hash = "0xfb2464f06d38f39a274b2a5e3414dbed43ad405a06295aaeaded8865efc7d4f4";
-        let result = provider.get_swap_result(Chain::Ethereum, tx_hash).await?;
+        let hash = "0xfb2464f06d38f39a274b2a5e3414dbed43ad405a06295aaeaded8865efc7d4f4";
+        let result = provider.get_swap_result(Chain::Ethereum, hash).await?;
 
         assert_eq!(result.status, SwapStatus::Completed);
         let metadata = result.metadata.unwrap();

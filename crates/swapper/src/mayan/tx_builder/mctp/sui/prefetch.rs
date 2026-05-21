@@ -43,25 +43,24 @@ impl PrefetchedSuiData {
             }
         };
         let object_ids = sui_object_ids(has_auction, &from_token_verified_address, &mctp_verified_input_address, &mctp_input_treasury);
-        let fetched_objects = async {
-            let fetched_objects = ResolvedObjectInput::fetch_multiple(client, object_ids.clone()).await.map_err(sui_error)?;
-            if fetched_objects.len() != object_ids.len() {
+        let resolved_objects = async {
+            let objects = ResolvedObjectInput::get_multiple(client, object_ids.clone()).await.map_err(sui_error)?;
+            if objects.len() != object_ids.len() {
                 return Err(SwapperError::transaction_error("Failed to prefetch all Mayan Sui objects"));
             }
-            Ok(fetched_objects)
+            Ok(objects)
         };
-        let mctp_package_id = fetch_mayan_sui_package_id(client, SUI_MCTP_STATE);
+        let mctp_package_id = get_mayan_sui_package_id(client, SUI_MCTP_STATE);
         let fee_manager_package_id = async {
             if has_auction {
-                fetch_mayan_sui_package_id(client, SUI_MCTP_FEE_MANAGER_STATE).await.map(Some)
+                get_mayan_sui_package_id(client, SUI_MCTP_FEE_MANAGER_STATE).await.map(Some)
             } else {
                 Ok(None)
             }
         };
-        let (transaction, input_coins, fetched_objects, mctp_package_id, fee_manager_package_id) =
-            try_join!(transaction, input_coins, fetched_objects, mctp_package_id, fee_manager_package_id)?;
-        let object_ids = sui_object_ids(has_auction, &from_token_verified_address, &mctp_verified_input_address, &mctp_input_treasury);
-        let objects = object_ids.into_iter().zip(fetched_objects).collect();
+        let (transaction, input_coins, resolved_objects, mctp_package_id, fee_manager_package_id) =
+            try_join!(transaction, input_coins, resolved_objects, mctp_package_id, fee_manager_package_id)?;
+        let objects = object_ids.into_iter().zip(resolved_objects).collect();
 
         Ok(Self {
             transaction,
@@ -94,7 +93,7 @@ fn sui_object_ids(has_auction: bool, from_token_verified_address: &str, mctp_ver
     object_ids
 }
 
-async fn fetch_mayan_sui_package_id(client: &SuiClient, state_object_id: &str) -> Result<String, SwapperError> {
+async fn get_mayan_sui_package_id(client: &SuiClient, state_object_id: &str) -> Result<String, SwapperError> {
     let state: MayanStateObject = client.get_object_json(state_object_id.to_string()).await.map_err(sui_error)?;
     Ok(state.latest_package_id())
 }

@@ -21,7 +21,7 @@ enum ResolvedObjectOwner {
 }
 
 impl ResolvedObjectInput {
-    pub async fn fetch_multiple(client: &SuiClient, object_ids: Vec<String>) -> Result<Vec<Self>, SuiError> {
+    pub async fn get_multiple(client: &SuiClient, object_ids: Vec<String>) -> Result<Vec<Self>, SuiError> {
         client
             .get_multiple_objects(object_ids)
             .await

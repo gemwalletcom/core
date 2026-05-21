@@ -44,12 +44,12 @@ impl TransactionJsonReplay {
     }
 }
 
-pub async fn replay_transaction_json(client: &SuiClient, tx: &str) -> Result<ReplayedTransaction, SuiError> {
-    prepare_transaction_json_replay(client, tx).await?.replay()
+pub async fn replay_transaction_json(client: &SuiClient, transaction_json: &str) -> Result<ReplayedTransaction, SuiError> {
+    prepare_transaction_json_replay(client, transaction_json).await?.replay()
 }
 
-pub async fn prepare_transaction_json_replay(client: &SuiClient, tx: &str) -> Result<TransactionJsonReplay, SuiError> {
-    let transaction: TransactionBuilderJson = serde_json::from_str(tx).map_err(|err| SuiError::invalid_input(format!("Invalid Sui transaction JSON: {err}")))?;
+pub async fn prepare_transaction_json_replay(client: &SuiClient, transaction_json: &str) -> Result<TransactionJsonReplay, SuiError> {
+    let transaction: TransactionBuilderJson = serde_json::from_str(transaction_json).map_err(|err| SuiError::invalid_input(format!("Invalid Sui transaction JSON: {err}")))?;
     if transaction.version != 2 {
         return Err(SuiError::invalid_input(format!("Unsupported Sui transaction JSON version {}", transaction.version)));
     }

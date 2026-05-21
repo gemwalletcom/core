@@ -44,7 +44,7 @@ pub(super) fn create_init_instruction(
         )?
     };
 
-    let mut data = Vec::with_capacity(8 + 8 + 1 + 8 + 32 + 2 + 32 + 8 + 8 + 8 + 8 + 8 + 32 + 1 + 1 + 1 + 32);
+    let mut data = Vec::new();
     data.extend_from_slice(&global_discriminator("init_order"));
     data.extend_from_slice(&amount_in_min.to_le_bytes());
     data.push(u8::from(swift_input_contract == EVM_ZERO_ADDRESS));
