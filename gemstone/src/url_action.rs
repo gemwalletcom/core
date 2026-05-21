@@ -2,8 +2,8 @@ use primitives::{Deeplink, UrlAction, WalletConnectLink};
 
 #[uniffi::remote(Enum)]
 pub enum UrlAction {
-    Deeplink(Deeplink),
-    WalletConnect(WalletConnectLink),
+    Deeplink { deeplink: Deeplink },
+    WalletConnect { link: WalletConnectLink },
 }
 
 #[uniffi::export]
@@ -17,8 +17,8 @@ mod tests {
 
     #[test]
     fn test_url_action() {
-        assert!(matches!(url_action("https://gemwallet.com/tokens/bitcoin"), Some(UrlAction::Deeplink(_))));
-        assert!(matches!(url_action("gem://wc?sessionTopic=abc"), Some(UrlAction::WalletConnect(_))));
+        assert!(matches!(url_action("https://gemwallet.com/tokens/bitcoin"), Some(UrlAction::Deeplink { .. })));
+        assert!(matches!(url_action("gem://wc?sessionTopic=abc"), Some(UrlAction::WalletConnect { .. })));
         assert_eq!(url_action("https://example.com"), None);
     }
 }
