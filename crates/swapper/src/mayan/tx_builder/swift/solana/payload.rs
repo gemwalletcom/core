@@ -1,5 +1,4 @@
-use super::solana_error;
-use crate::{SwapperError, mayan::constants::MAYAN_PAYLOAD_WRITER_PROGRAM_ID};
+use crate::{SwapperError, mayan::constants::MAYAN_PAYLOAD_WRITER_PROGRAM_ID, mayan::tx_builder::solana::solana_error};
 use gem_solana::{SYSTEM_PROGRAM_ID, SolanaAddress};
 use solana_primitives::anchor::global_discriminator;
 use solana_primitives::{AccountMeta, Instruction, Pubkey};

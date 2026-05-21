@@ -14,7 +14,7 @@ use crate::mayan::{
 };
 use crate::{
     Quote, SwapperError,
-    mayan::tx_builder::{amount::bps_u8, swift::referrer_bytes},
+    mayan::tx_builder::{amount::optional_bps_u8, swift::referrer_bytes},
 };
 use gem_sui::{
     SUI_COIN_TYPE,
@@ -150,7 +150,7 @@ fn log_initialize_mctp(txb: &mut TransactionBuilder, route: &MayanMctpQuote, pre
 fn log_referrer(txb: &mut TransactionBuilder, route: &MayanMctpQuote) -> Result<(), SwapperError> {
     let referrer = referrer_bytes(&route.to_chain)?;
     let referrer = txb.pure(&Address::new(referrer));
-    let referrer_bps = txb.pure(&bps_u8(route.referrer_bps)?);
+    let referrer_bps = txb.pure(&optional_bps_u8(route.referrer_bps)?);
     let package = SuiAddress::parse(SUI_LOGGER_PACKAGE_ID).map_err(sui_error)?.into();
     move_call(txb, package, "referrer_logger", "log_referrer", &[], vec![referrer, referrer_bps]).map_err(sui_error)?;
     Ok(())

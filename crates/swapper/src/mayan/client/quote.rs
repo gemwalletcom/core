@@ -19,7 +19,7 @@ const QUOTE_DEFAULTS: [(&str, &str); 12] = [
     ("gasless", "false"),
     ("onlyDirect", "false"),
     ("fullList", "false"),
-    ("monoChain", "false"),
+    ("monoChain", "true"),
     ("solanaProgram", MAYAN_PROGRAM_ID),
     ("forwarderAddress", MAYAN_FORWARDER),
     ("slippageBps", "auto"),
@@ -112,7 +112,7 @@ mod tests {
 
         assert_eq!(
             path,
-            "/quote?wormhole=false&swift=true&mctp=true&shuttle=false&fastMctp=true&gasless=false&onlyDirect=false&fullList=false&monoChain=false&solanaProgram=FC4eXxkyrMPTjiYUpp4EAnkmwMbQyZ6NDCh1kfLn6vsf&forwarderAddress=0x337685fdaB40D39bd02028545a4FfA7D287cC3E2&slippageBps=auto&amountIn64=1000000&fromToken=0x0000000000000000000000000000000000000000&fromChain=ethereum&toToken=So11111111111111111111111111111111111111112&toChain=solana&referrer=0x1111111111111111111111111111111111111111&referrerBps=50&sdkVersion=14_0_0"
+            "/quote?wormhole=false&swift=true&mctp=true&shuttle=false&fastMctp=true&gasless=false&onlyDirect=false&fullList=false&monoChain=true&solanaProgram=FC4eXxkyrMPTjiYUpp4EAnkmwMbQyZ6NDCh1kfLn6vsf&forwarderAddress=0x337685fdaB40D39bd02028545a4FfA7D287cC3E2&slippageBps=auto&amountIn64=1000000&fromToken=0x0000000000000000000000000000000000000000&fromChain=ethereum&toToken=So11111111111111111111111111111111111111112&toChain=solana&referrer=0x1111111111111111111111111111111111111111&referrerBps=50&sdkVersion=14_1_0"
         );
     }
 

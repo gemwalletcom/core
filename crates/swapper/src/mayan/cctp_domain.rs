@@ -1,5 +1,7 @@
 use crate::{SwapperError, mayan::wormhole_chain::WormholeChain};
 
+pub(in crate::mayan) const CCTP_TOKEN_DECIMALS: u32 = 6;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u32)]
 pub(in crate::mayan) enum CCTPDomain {

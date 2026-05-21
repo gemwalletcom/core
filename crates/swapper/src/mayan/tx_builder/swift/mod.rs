@@ -3,7 +3,7 @@ pub(in crate::mayan) mod solana;
 
 use super::{
     address::native_address_to_bytes32,
-    amount::{bps_u8, gas_drop_amount, min_amount_out},
+    amount::{gas_drop_amount, min_amount_out, optional_bps_u8},
     route::{is_hypercore_deposit, swift_destination_chain, swift_destination_chain_id},
 };
 use crate::{
@@ -53,7 +53,7 @@ impl SwiftOrderFields {
             cancel_fee: required_u64(route.cancel_relayer_fee64.as_deref())?,
             refund_fee: required_u64(route.refund_relayer_fee64.as_deref())?,
             deadline: required_u64(route.deadline64.as_deref())?,
-            referrer_bps: bps_u8(route.referrer_bps)?,
+            referrer_bps: optional_bps_u8(route.referrer_bps)?,
             auction_mode: route.swift_auction_mode.ok_or(SwapperError::InvalidRoute)?,
         })
     }

@@ -4,7 +4,7 @@ import Gemstone
 
 let SWAP_OPTIONS = SwapperOptions(
     slippage: getDefaultSlippage(chain: "solana"),
-    fee: Config().getSwapConfig().referralFee,
+    fee: nil,
     useMaxAmount: false
 )
 

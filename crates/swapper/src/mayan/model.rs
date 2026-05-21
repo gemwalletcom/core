@@ -37,6 +37,7 @@ pub enum MayanQuote {
     Swift(Box<MayanSwiftQuote>),
     Mctp(Box<MayanMctpQuote>),
     FastMctp(Box<MayanFastMctpQuote>),
+    MonoChain(Box<MayanMonoChainQuote>),
 }
 
 impl MayanQuote {
@@ -45,20 +46,28 @@ impl MayanQuote {
             Self::Swift(route) => &route.common,
             Self::Mctp(route) => &route.common,
             Self::FastMctp(route) => &route.common,
+            Self::MonoChain(route) => &route.common,
         }
     }
 
     pub fn as_swift(&self) -> Option<&MayanSwiftQuote> {
         match self {
             Self::Swift(route) => Some(route.as_ref()),
-            Self::Mctp(_) | Self::FastMctp(_) => None,
+            Self::Mctp(_) | Self::FastMctp(_) | Self::MonoChain(_) => None,
         }
     }
 
     pub fn as_mctp(&self) -> Option<&MayanMctpQuote> {
         match self {
             Self::Mctp(route) => Some(route.as_ref()),
-            Self::Swift(_) | Self::FastMctp(_) => None,
+            Self::Swift(_) | Self::FastMctp(_) | Self::MonoChain(_) => None,
+        }
+    }
+
+    pub fn as_mono_chain(&self) -> Option<&MayanMonoChainQuote> {
+        match self {
+            Self::MonoChain(route) => Some(route.as_ref()),
+            Self::Swift(_) | Self::Mctp(_) | Self::FastMctp(_) => None,
         }
     }
 }
@@ -143,6 +152,12 @@ pub struct MayanMctpQuote {
     pub mctp_input_contract: Option<String>,
     pub mctp_verified_input_address: Option<String>,
     pub mctp_input_treasury: Option<String>,
+    pub mctp_mayan_contract: Option<String>,
+    pub solana_relayer_fee64: Option<String>,
+    pub relayer: Option<String>,
+    pub suggested_priority_fee: Option<u64>,
+    pub max_swap_accounts: Option<u32>,
+    pub max_swap_data_length: Option<u32>,
 }
 
 impl Deref for MayanMctpQuote {
@@ -164,6 +179,24 @@ pub struct MayanFastMctpQuote {
 }
 
 impl Deref for MayanFastMctpQuote {
+    type Target = MayanQuoteCommon;
+
+    fn deref(&self) -> &Self::Target {
+        &self.common
+    }
+}
+
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MayanMonoChainQuote {
+    #[serde(flatten)]
+    pub common: MayanQuoteCommon,
+    pub mono_chain_mayan_contract: String,
+    pub evm_swap_router_address: Option<String>,
+    pub evm_swap_router_calldata: Option<String>,
+}
+
+impl Deref for MayanMonoChainQuote {
     type Target = MayanQuoteCommon;
 
     fn deref(&self) -> &Self::Target {
@@ -231,6 +264,19 @@ impl GetSwapEvmParams {
             sdk_version: SDK_VERSION,
         }
     }
+
+    pub fn mctp(route: &MayanMctpQuote, amount_in64: String, middle_token: String, referrer_address: Option<String>) -> Self {
+        Self {
+            forwarder_address: MAYAN_FORWARDER,
+            slippage_bps: route.slippage_bps,
+            referrer_address,
+            from_token: route.from_token.contract.clone(),
+            middle_token,
+            chain_name: route.from_chain.clone(),
+            amount_in64,
+            sdk_version: SDK_VERSION,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -282,6 +328,35 @@ impl GetSwapSolanaParams {
             from_token: route.from_token.contract.clone(),
             amount_in64,
             deposit_mode: "SWIFT",
+            fill_max_accounts: false,
+            tpm_token_account: None,
+            referrer_address,
+            chain_name: route.from_chain.clone(),
+            user_ledger,
+            max_swap_accounts: route.max_swap_accounts,
+            max_swap_data_length: route.max_swap_data_length,
+            sdk_version: SDK_VERSION,
+        }
+    }
+
+    pub fn mctp(
+        route: &MayanMctpQuote,
+        min_middle_amount: String,
+        middle_token: String,
+        user_wallet: String,
+        amount_in64: String,
+        deposit_mode: &'static str,
+        referrer_address: Option<String>,
+        user_ledger: String,
+    ) -> Self {
+        Self {
+            min_middle_amount,
+            middle_token,
+            user_wallet,
+            slippage_bps: route.slippage_bps,
+            from_token: route.from_token.contract.clone(),
+            amount_in64,
+            deposit_mode,
             fill_max_accounts: false,
             tpm_token_account: None,
             referrer_address,

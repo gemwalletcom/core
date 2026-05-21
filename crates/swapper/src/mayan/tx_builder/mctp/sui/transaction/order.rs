@@ -11,7 +11,7 @@ use crate::{
         model::{MayanMctpQuote, QuoteType},
         tx_builder::{
             address::native_address_to_bytes32,
-            amount::{bps_u8, gas_drop_amount, min_amount_out},
+            amount::{gas_drop_amount, min_amount_out, optional_bps_u8},
             swift::{referrer_bytes, swift_to_token},
         },
         wormhole_chain::id_for_name as wormhole_chain_id,
@@ -57,7 +57,7 @@ pub(super) fn add_init_order_move_calls(
         txb.pure(&redeem_fee(route)?),
         txb.pure(&route.deadline64.as_deref().ok_or(SwapperError::InvalidRoute)?.parse::<u64>()?),
         txb.pure(&Address::new(referrer)),
-        txb.pure(&bps_u8(route.referrer_bps)?),
+        txb.pure(&optional_bps_u8(route.referrer_bps)?),
     ];
     let fee_ticket = move_call(
         txb,

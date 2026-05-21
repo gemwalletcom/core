@@ -1,39 +1,32 @@
 use super::{
     order::{create_init_instruction, create_order_hash},
     payload::{create_payload_writer_close_instruction, create_payload_writer_create_instruction},
-    solana_error,
 };
 use crate::{
     Quote, SwapperError,
     fees::default_referral_address,
     mayan::{
         client::MayanClient,
-        constants::{MAYAN_CPI_PROXY_PROGRAM_ID, MAYAN_LOOKUP_TABLE_SOLANA, MAYAN_PAYLOAD_WRITER_PROGRAM_ID, MAYAN_SWIFT_V2_PROGRAM_ID},
+        constants::{MAYAN_LOOKUP_TABLE_SOLANA, MAYAN_PAYLOAD_WRITER_PROGRAM_ID, MAYAN_SWIFT_V2_PROGRAM_ID},
         model::{GetSwapSolanaParams, MayanSwiftQuote, SolanaClientSwap},
         tx_builder::{
             amount::value_to_query,
             hypercore::hypercore_custom_payload,
             route::{quote_destination_address, swift_destination_address},
+            solana::{SolanaTransaction, setup_instructions, solana_error, wrap_instruction_in_cpi_proxy},
             swift::{SwiftOrderFields, swift_input_contract as route_swift_input_contract, swift_random_key},
         },
     },
 };
 use gem_client::Client;
-use gem_encoding::decode_base64;
 use gem_evm::EVM_ZERO_ADDRESS;
-use gem_solana::{ASSOCIATED_TOKEN_ACCOUNT_PROGRAM, SYSTEM_PROGRAM_ID, SolanaAddress, WSOL_TOKEN_ADDRESS, instruction_from_primitive, instructions_from_primitives};
-use primitives::{Chain, SolanaInstruction};
+use gem_solana::{SolanaAddress, WSOL_TOKEN_ADDRESS, instruction_from_primitive, instructions_from_primitives};
+use primitives::Chain;
 use rand::RngExt;
 use solana_primitives::associated_token::{create_associated_token_account_idempotent_with_address, get_associated_token_address_with_program_id};
 use solana_primitives::instructions::program_ids;
-use solana_primitives::{AccountMeta, Instruction, Pubkey, compute_budget, find_program_address, system, token};
+use solana_primitives::{Instruction, Pubkey, compute_budget, find_program_address, system, token};
 use std::fmt::Debug;
-
-#[derive(Debug)]
-pub(super) struct SolanaSwapTransaction {
-    pub(super) instructions: Vec<Instruction>,
-    pub(super) lookup_table_addresses: Vec<String>,
-}
 
 struct SwiftBuildContext {
     trader: Pubkey,
@@ -99,7 +92,7 @@ impl SwiftBuildContext {
     }
 }
 
-pub(super) async fn build<C>(client: &MayanClient<C>, quote: &Quote, route: &MayanSwiftQuote) -> Result<SolanaSwapTransaction, SwapperError>
+pub(super) async fn build<C>(client: &MayanClient<C>, quote: &Quote, route: &MayanSwiftQuote) -> Result<SolanaTransaction, SwapperError>
 where
     C: Client + Clone + Send + Sync + Debug + 'static,
 {
@@ -137,10 +130,7 @@ where
         )?)?);
     }
 
-    Ok(SolanaSwapTransaction {
-        instructions,
-        lookup_table_addresses,
-    })
+    Ok(SolanaTransaction::new(instructions, lookup_table_addresses))
 }
 
 fn add_direct_swift_instructions(route: &MayanSwiftQuote, context: &SwiftBuildContext, instructions: &mut Vec<Instruction>) -> Result<(), SwapperError> {
@@ -220,44 +210,6 @@ fn create_custom_payload_account(instructions: &mut Vec<Instruction>, relayer: &
         nonce,
     )?)?);
     Ok(Some((payload_account, nonce)))
-}
-
-fn setup_instructions(instructions: Vec<SolanaInstruction>, payer: &Pubkey) -> Result<Vec<Instruction>, SwapperError> {
-    instructions
-        .into_iter()
-        .map(|instruction| {
-            override_setup_payer(instruction, payer)
-                .and_then(|instruction| instruction_from_primitive(instruction).map_err(solana_error))
-                .and_then(wrap_instruction_in_cpi_proxy)
-        })
-        .collect()
-}
-
-fn override_setup_payer(mut instruction: SolanaInstruction, payer: &Pubkey) -> Result<SolanaInstruction, SwapperError> {
-    if instruction.accounts.is_empty() {
-        return Ok(instruction);
-    }
-    let data = decode_base64(&instruction.data).map_err(solana_error)?;
-    let should_override = match instruction.program_id.as_str() {
-        SYSTEM_PROGRAM_ID => data.starts_with(&[0, 0, 0, 0]),
-        ASSOCIATED_TOKEN_ACCOUNT_PROGRAM => data.is_empty() || data.as_slice() == [1],
-        _ => false,
-    };
-    if should_override {
-        instruction.accounts[0].pubkey = payer.to_string();
-    }
-    Ok(instruction)
-}
-
-fn wrap_instruction_in_cpi_proxy(instruction: Instruction) -> Result<Instruction, SwapperError> {
-    let mut accounts = Vec::with_capacity(instruction.accounts.len() + 1);
-    accounts.push(AccountMeta::new_readonly(instruction.program_id));
-    accounts.extend(instruction.accounts);
-    Ok(Instruction {
-        program_id: SolanaAddress::parse(MAYAN_CPI_PROXY_PROGRAM_ID).map_err(solana_error)?.into(),
-        accounts,
-        data: instruction.data,
-    })
 }
 
 fn swift_token_program(route: &MayanSwiftQuote) -> Pubkey {

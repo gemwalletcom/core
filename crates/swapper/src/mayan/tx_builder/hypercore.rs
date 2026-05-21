@@ -21,7 +21,7 @@ pub(super) fn hypercore_custom_payload(route: &MayanSwiftQuote, destination_addr
     Ok(Some(payload))
 }
 
-fn hypercore_deposit_dex(contract: &str) -> Result<u32, SwapperError> {
+pub(super) fn hypercore_deposit_dex(contract: &str) -> Result<u32, SwapperError> {
     if contract != EVM_ZERO_ADDRESS && !contract.eq_ignore_ascii_case(HYPERCORE_SPOT_USDC_CONTRACT) {
         return Err(SwapperError::NotSupportedAsset);
     }

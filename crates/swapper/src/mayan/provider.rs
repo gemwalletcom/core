@@ -4,7 +4,7 @@ use super::{
     constants::{MAYAN_DEPOSIT_CONTRACTS, MAYAN_SEND_CONTRACTS},
     mapper::map_swap_result,
     model::{MayanChain, MayanQuote, QuoteParams, SwiftVersion},
-    tx_builder::{mctp, swift},
+    tx_builder::{mctp, mono_chain, swift},
     wormhole_chain,
 };
 use crate::{
@@ -70,6 +70,13 @@ where
             | ChainType::HyperCore => false,
         }
     }
+
+    fn supports_chain_pair(&self, from_chain: Chain, to_chain: Chain) -> bool {
+        let supported_assets = mayan_supported_assets();
+        Self::supported_source_chain(from_chain)
+            && supported_assets.iter().any(|asset| asset.get_chain() == from_chain)
+            && supported_assets.iter().any(|asset| asset.get_chain() == to_chain)
+    }
 }
 
 #[async_trait]
@@ -86,7 +93,7 @@ where
     }
 
     async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
-        if !Self::supported_source_chain(request.from_asset.chain()) {
+        if !self.supports_chain_pair(request.from_asset.chain(), request.to_asset.chain()) {
             return Err(SwapperError::NotSupportedChain);
         }
 
@@ -109,7 +116,7 @@ where
                 request.from_asset.decimals,
             )
             .await?;
-        let route = Self::select_route(&routes, from_asset.chain.chain_type()).ok_or(SwapperError::NoQuoteAvailable)?;
+        let route = Self::select_route(&routes, from_asset.chain, to_asset.chain).ok_or(SwapperError::NoQuoteAvailable)?;
         let to_value = route.common().expected_output_value()?;
 
         Ok(Quote {
@@ -132,31 +139,31 @@ where
     async fn get_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
         let route: MayanQuote = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
-        match quote.request.from_asset.chain().chain_type() {
-            ChainType::Ethereum => {
-                let route = route.as_swift().ok_or(SwapperError::InvalidRoute)?;
-                swift::evm::build_quote_data(&self.price_client, quote, route, self.rpc_provider.clone()).await
-            }
-            ChainType::Solana => {
-                let route = route.as_swift().ok_or(SwapperError::InvalidRoute)?;
-                swift::solana::build_quote_data(&self.price_client, quote, route, self.rpc_provider.clone()).await
-            }
-            ChainType::Sui => {
-                let route = route.as_mctp().ok_or(SwapperError::InvalidRoute)?;
-                mctp::sui::build_quote_data(&self.price_client, quote, route, self.rpc_provider.clone()).await
-            }
-            ChainType::Bitcoin
-            | ChainType::Cosmos
-            | ChainType::Ton
-            | ChainType::Tron
-            | ChainType::Aptos
-            | ChainType::Xrp
-            | ChainType::Near
-            | ChainType::Stellar
-            | ChainType::Algorand
-            | ChainType::Polkadot
-            | ChainType::Cardano
-            | ChainType::HyperCore => Err(SwapperError::NotSupportedChain),
+        match (quote.request.from_asset.chain().chain_type(), &route) {
+            (ChainType::Ethereum, MayanQuote::Swift(route)) => swift::evm::build_quote_data(&self.price_client, quote, route, self.rpc_provider.clone()).await,
+            (ChainType::Ethereum, MayanQuote::Mctp(route)) => mctp::evm::build_quote_data(&self.price_client, quote, route, self.rpc_provider.clone()).await,
+            (ChainType::Ethereum, MayanQuote::MonoChain(route)) => mono_chain::evm::build_quote_data(quote, route, self.rpc_provider.clone()).await,
+            (ChainType::Solana, MayanQuote::Swift(route)) => swift::solana::build_quote_data(&self.price_client, quote, route, self.rpc_provider.clone()).await,
+            (ChainType::Solana, MayanQuote::Mctp(route)) => mctp::solana::build_quote_data(&self.price_client, quote, route, self.rpc_provider.clone()).await,
+            (ChainType::Sui, MayanQuote::Mctp(route)) => mctp::sui::build_quote_data(&self.price_client, quote, route, self.rpc_provider.clone()).await,
+            (ChainType::Ethereum, MayanQuote::FastMctp(_))
+            | (ChainType::Solana, MayanQuote::FastMctp(_) | MayanQuote::MonoChain(_))
+            | (ChainType::Sui, MayanQuote::Swift(_) | MayanQuote::FastMctp(_) | MayanQuote::MonoChain(_)) => Err(SwapperError::InvalidRoute),
+            (
+                ChainType::Bitcoin
+                | ChainType::Cosmos
+                | ChainType::Ton
+                | ChainType::Tron
+                | ChainType::Aptos
+                | ChainType::Xrp
+                | ChainType::Near
+                | ChainType::Stellar
+                | ChainType::Algorand
+                | ChainType::Polkadot
+                | ChainType::Cardano
+                | ChainType::HyperCore,
+                _,
+            ) => Err(SwapperError::NotSupportedChain),
         }
     }
 
@@ -181,12 +188,30 @@ impl<C> Mayan<C>
 where
     C: Client + Clone + Send + Sync + Debug + 'static,
 {
-    fn select_route(routes: &[MayanQuote], source_chain_type: ChainType) -> Option<&MayanQuote> {
-        match source_chain_type {
+    fn select_route(routes: &[MayanQuote], source_chain: Chain, destination_chain: Chain) -> Option<&MayanQuote> {
+        if source_chain == Chain::Hyperliquid && destination_chain == Chain::HyperCore {
+            return routes
+                .iter()
+                .find(|route| route.as_mono_chain().is_some())
+                .or_else(|| {
+                    routes
+                        .iter()
+                        .find(|route| route.as_swift().is_some_and(|swift| swift.swift_version == Some(SwiftVersion::V2)))
+                })
+                .or_else(|| routes.iter().find(|route| route.as_mctp().is_some()));
+        }
+
+        match source_chain.chain_type() {
             ChainType::Sui => routes.iter().find(|route| route.as_mctp().is_some()),
+            ChainType::Ethereum => routes
+                .iter()
+                .find(|route| route.as_swift().is_some_and(|swift| swift.swift_version == Some(SwiftVersion::V2)))
+                .or_else(|| routes.iter().find(|route| route.as_mono_chain().is_some()))
+                .or_else(|| routes.iter().find(|route| route.as_mctp().is_some())),
             _ => routes
                 .iter()
-                .find(|route| route.as_swift().is_some_and(|swift| swift.swift_version == Some(SwiftVersion::V2))),
+                .find(|route| route.as_swift().is_some_and(|swift| swift.swift_version == Some(SwiftVersion::V2)))
+                .or_else(|| routes.iter().find(|route| route.as_mctp().is_some())),
         }
     }
 }
@@ -195,6 +220,7 @@ where
 mod tests {
     use super::*;
     use crate::alien::mock::ProviderMock;
+    use crate::mayan::model::{MayanMctpQuote, MayanMonoChainQuote};
     use gem_client::testkit::MockClient;
     use std::collections::BTreeSet;
 
@@ -235,15 +261,50 @@ mod tests {
         assert_eq!(addresses.deposit, expected_deposit);
         assert_eq!(addresses.send, expected_send);
     }
+
+    #[test]
+    fn test_select_route_falls_back_to_mctp_for_non_sui_source() {
+        let routes = vec![MayanQuote::Mctp(Box::new(MayanMctpQuote::mock()))];
+
+        assert!(Mayan::<MockClient>::select_route(&routes, Chain::Ethereum, Chain::Sui).unwrap().as_mctp().is_some());
+        assert!(Mayan::<MockClient>::select_route(&routes, Chain::Solana, Chain::Sui).unwrap().as_mctp().is_some());
+    }
+
+    #[test]
+    fn test_select_route_prefers_mono_chain_for_hyperevm_to_hypercore() {
+        let routes = vec![
+            MayanQuote::Mctp(Box::new(MayanMctpQuote::mock())),
+            MayanQuote::MonoChain(Box::new(MayanMonoChainQuote::default())),
+        ];
+
+        assert!(
+            Mayan::<MockClient>::select_route(&routes, Chain::Hyperliquid, Chain::HyperCore)
+                .unwrap()
+                .as_mono_chain()
+                .is_some()
+        );
+    }
+
+    #[test]
+    fn test_supports_chain_pair_allows_hyperevm_to_hypercore_only() {
+        let provider = Mayan::with_clients(
+            MayanClient::new(MockClient::new()),
+            MayanClient::new(MockClient::new()),
+            Arc::new(ProviderMock::new("{}".to_string())),
+        );
+
+        assert!(provider.supports_chain_pair(Chain::Hyperliquid, Chain::HyperCore));
+        assert!(!provider.supports_chain_pair(Chain::HyperCore, Chain::Hyperliquid));
+    }
 }
 
 #[cfg(all(test, feature = "swap_integration_tests"))]
 mod swap_integration_tests {
     use super::*;
-    use crate::{FetchQuoteData, SwapperQuoteAsset, alien::reqwest_provider::NativeProvider, models::Options};
+    use crate::{FetchQuoteData, SwapperQuoteAsset, alien::reqwest_provider::NativeProvider, mayan::constants::MAYAN_FORWARDER, models::Options};
     use primitives::{
         AssetId,
-        asset_constants::{BASE_USDC_ASSET_ID, POLYGON_USDT_ASSET_ID, SOLANA_USDC_ASSET_ID},
+        asset_constants::{BASE_USDC_ASSET_ID, HYPERCORE_SPOT_USDC_ASSET_ID, HYPEREVM_USDC_ASSET_ID, POLYGON_USDT_ASSET_ID, SOLANA_USDC_ASSET_ID, SUI_USDC_ASSET_ID},
         swap::SwapStatus,
     };
     use std::{future::Future, time::Instant};
@@ -348,6 +409,91 @@ mod swap_integration_tests {
         assert_eq!(route.to_chain, wormhole_chain::WormholeChain::Base.name());
         assert!(quote_data.to.is_empty());
         assert_eq!(quote_data.value, "0");
+        assert!(!quote_data.data.is_empty());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_mayan_provider_get_mctp_solana_to_sui_quote_and_data() -> Result<(), SwapperError> {
+        let rpc_provider = Arc::new(NativeProvider::default().set_debug(false));
+        let provider = Mayan::new(rpc_provider);
+        let request = QuoteRequest {
+            from_asset: SwapperQuoteAsset::from(SOLANA_USDC_ASSET_ID.clone()),
+            to_asset: SwapperQuoteAsset::from(SUI_USDC_ASSET_ID.clone()),
+            wallet_address: "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy".to_string(),
+            destination_address: "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".to_string(),
+            value: "1000000".to_string(),
+            options: Options::new_with_slippage(200.into()),
+        };
+
+        let quote = timed("mayan mctp solana to sui quote", provider.get_quote(&request)).await?;
+        let quote_data = timed("mayan mctp solana to sui quote data", provider.get_quote_data(&quote, FetchQuoteData::None)).await?;
+
+        assert_eq!(quote.from_value, request.value);
+        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
+        let MayanQuote::Mctp(route) = mayan_route(&quote)? else {
+            return Err(SwapperError::InvalidRoute);
+        };
+        assert_eq!(route.from_chain, wormhole_chain::WormholeChain::Solana.name());
+        assert_eq!(route.to_chain, wormhole_chain::WormholeChain::Sui.name());
+        assert!(quote_data.to.is_empty());
+        assert_eq!(quote_data.value, "0");
+        assert!(!quote_data.data.is_empty());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_mayan_provider_get_mctp_evm_to_sui_quote_and_data() -> Result<(), SwapperError> {
+        let rpc_provider = Arc::new(NativeProvider::default().set_debug(false));
+        let provider = Mayan::new(rpc_provider);
+        let request = QuoteRequest {
+            from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
+            to_asset: SwapperQuoteAsset::from(SUI_USDC_ASSET_ID.clone()),
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
+            destination_address: "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".to_string(),
+            value: "100000000000000000".to_string(),
+            options: Options::new_with_slippage(200.into()),
+        };
+
+        let quote = timed("mayan mctp evm to sui quote", provider.get_quote(&request)).await?;
+        let quote_data = timed("mayan mctp evm to sui quote data", provider.get_quote_data(&quote, FetchQuoteData::None)).await?;
+
+        assert_eq!(quote.from_value, request.value);
+        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
+        let MayanQuote::Mctp(route) = mayan_route(&quote)? else {
+            return Err(SwapperError::InvalidRoute);
+        };
+        assert_eq!(route.from_chain, wormhole_chain::WormholeChain::Ethereum.name());
+        assert_eq!(route.to_chain, wormhole_chain::WormholeChain::Sui.name());
+        assert_eq!(quote_data.to, MAYAN_FORWARDER);
+        assert!(!quote_data.data.is_empty());
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_mayan_provider_get_mono_chain_hyperevm_to_hypercore_quote_and_data() -> Result<(), SwapperError> {
+        let rpc_provider = Arc::new(NativeProvider::default().set_debug(false));
+        let provider = Mayan::new(rpc_provider);
+        let request = QuoteRequest {
+            from_asset: SwapperQuoteAsset::from(HYPEREVM_USDC_ASSET_ID.clone()),
+            to_asset: SwapperQuoteAsset::from(HYPERCORE_SPOT_USDC_ASSET_ID.clone()),
+            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
+            destination_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
+            value: "1000000".to_string(),
+            options: Options::new_with_slippage(200.into()),
+        };
+
+        let quote = timed("mayan mono-chain hyperevm to hypercore quote", provider.get_quote(&request)).await?;
+        let quote_data = timed("mayan mono-chain hyperevm to hypercore quote data", provider.get_quote_data(&quote, FetchQuoteData::None)).await?;
+
+        assert_eq!(quote.from_value, request.value);
+        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
+        let MayanQuote::MonoChain(route) = mayan_route(&quote)? else {
+            return Err(SwapperError::InvalidRoute);
+        };
+        assert_eq!(route.from_chain, wormhole_chain::WormholeChain::Hyperevm.name());
+        assert_eq!(route.to_chain, wormhole_chain::WormholeChain::Hypercore.name());
+        assert_eq!(quote_data.to, MAYAN_FORWARDER);
         assert!(!quote_data.data.is_empty());
         Ok(())
     }

@@ -3,16 +3,9 @@ mod order;
 mod transaction;
 
 use crate::mayan::{client::MayanClient, model::MayanSwiftQuote};
-use crate::{
-    Quote, SwapperError, SwapperQuoteData,
-    approval::{DEFAULT_EVM_SWAP_GAS_LIMIT, check_approval_erc20, get_swap_gas_limit_with_approval},
-    mayan::constants::MAYAN_FORWARDER,
-};
-use alloy_primitives::U256;
-use futures::try_join;
+use crate::{Quote, SwapperError, SwapperQuoteData, mayan::tx_builder::evm as evm_builder};
 use gem_client::Client;
-use primitives::{AssetId, ChainType, swap::ApprovalData};
-use std::{fmt::Debug, str::FromStr, sync::Arc};
+use std::{fmt::Debug, sync::Arc};
 
 use crate::alien::RpcProvider;
 
@@ -20,27 +13,7 @@ pub async fn build_quote_data<C>(client: &MayanClient<C>, quote: &Quote, route: 
 where
     C: Client + Clone + Send + Sync + Debug + 'static,
 {
-    let transaction = transaction::build(client, quote, route);
-    let approval = approval_data(
-        quote.request.wallet_address.clone(),
-        quote.request.from_asset.asset_id(),
-        MAYAN_FORWARDER,
-        U256::from_str(&quote.from_value)?,
-        rpc_provider,
-    );
-    let (transaction, approval) = try_join!(transaction, approval)?;
-    let gas_limit = get_swap_gas_limit_with_approval(&approval, None, DEFAULT_EVM_SWAP_GAS_LIMIT);
-    Ok(SwapperQuoteData::new_contract(transaction.to, transaction.value, transaction.data, approval, gas_limit))
-}
-
-async fn approval_data(wallet_address: String, asset: AssetId, spender: &str, amount: U256, rpc_provider: Arc<dyn RpcProvider>) -> Result<Option<ApprovalData>, SwapperError> {
-    if asset.is_native() || asset.chain.chain_type() != ChainType::Ethereum {
-        return Ok(None);
-    }
-    let token = asset.token_id.ok_or(SwapperError::NotSupportedAsset)?;
-    Ok(check_approval_erc20(wallet_address, token, spender.to_string(), amount, rpc_provider, &asset.chain)
-        .await?
-        .approval_data())
+    evm_builder::build_quote_data(transaction::build(client, quote, route), quote, rpc_provider).await
 }
 
 #[cfg(test)]

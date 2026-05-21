@@ -1,15 +1,12 @@
-use super::{
-    contracts::{MayanForwarder, MayanSwiftV2},
-    order::swift_order,
-};
+use super::{contracts::MayanSwiftV2, order::swift_order};
 use crate::{
     Quote, SwapperError,
     mayan::{
         client::MayanClient,
-        constants::MAYAN_FORWARDER,
         model::{GetSwapEvmParams, GetSwapEvmResponse, MayanSwiftQuote},
         tx_builder::{
             amount::fractional_amount,
+            evm::{EvmTransaction, MayanForwarder},
             hypercore::hypercore_custom_payload,
             route::{quote_destination_address, swift_destination_address},
             swift::swift_input_contract as route_swift_input_contract,
@@ -21,25 +18,8 @@ use alloy_primitives::{Address, Bytes, U256};
 use alloy_sol_types::SolCall;
 use gem_client::Client;
 use gem_evm::EVM_ZERO_ADDRESS;
-use primitives::{decode_hex, hex};
+use primitives::decode_hex;
 use std::{fmt::Debug, str::FromStr};
-
-#[derive(Debug, Clone, PartialEq)]
-pub(super) struct EvmSwiftTransaction {
-    pub(super) to: String,
-    pub(super) value: String,
-    pub(super) data: String,
-}
-
-impl EvmSwiftTransaction {
-    fn forwarder(value: impl Into<String>, data: Vec<u8>) -> Self {
-        Self {
-            to: MAYAN_FORWARDER.to_string(),
-            value: value.into(),
-            data: hex::encode_with_0x(&data),
-        }
-    }
-}
 
 struct EvmSwiftContext {
     amount_in: U256,
@@ -81,7 +61,7 @@ impl EvmSwiftContext {
     }
 }
 
-pub(super) async fn build<C>(client: &MayanClient<C>, quote: &Quote, route: &MayanSwiftQuote) -> Result<EvmSwiftTransaction, SwapperError>
+pub(super) async fn build<C>(client: &MayanClient<C>, quote: &Quote, route: &MayanSwiftQuote) -> Result<EvmTransaction, SwapperError>
 where
     C: Client + Clone + Send + Sync + Debug + 'static,
 {
@@ -93,7 +73,7 @@ where
     }
 }
 
-fn build_direct_forward_transaction(route: &MayanSwiftQuote, context: &EvmSwiftContext) -> Result<EvmSwiftTransaction, SwapperError> {
+fn build_direct_forward_transaction(route: &MayanSwiftQuote, context: &EvmSwiftContext) -> Result<EvmTransaction, SwapperError> {
     if route.from_token.contract.eq_ignore_ascii_case(EVM_ZERO_ADDRESS) {
         return Err(SwapperError::transaction_error("Mayan Swift V2 does not support direct native order creation"));
     }
@@ -106,10 +86,10 @@ fn build_direct_forward_transaction(route: &MayanSwiftQuote, context: &EvmSwiftC
         protocolData: Bytes::from(context.swift_call_data.clone()),
     }
     .abi_encode();
-    Ok(EvmSwiftTransaction::forwarder("0", data))
+    Ok(EvmTransaction::forwarder("0", data))
 }
 
-async fn build_swap_forward_transaction<C>(client: &MayanClient<C>, quote: &Quote, route: &MayanSwiftQuote, context: &EvmSwiftContext) -> Result<EvmSwiftTransaction, SwapperError>
+async fn build_swap_forward_transaction<C>(client: &MayanClient<C>, quote: &Quote, route: &MayanSwiftQuote, context: &EvmSwiftContext) -> Result<EvmTransaction, SwapperError>
 where
     C: Client + Clone + Send + Sync + Debug + 'static,
 {
@@ -138,7 +118,7 @@ where
             mayanData: Bytes::from(context.swift_call_data.clone()),
         }
         .abi_encode();
-        return Ok(EvmSwiftTransaction::forwarder(context.amount_in.to_string(), data));
+        return Ok(EvmTransaction::forwarder(context.amount_in.to_string(), data));
     }
 
     let data = MayanForwarder::swapAndForwardERC20Call {
@@ -153,5 +133,5 @@ where
         mayanData: Bytes::from(context.swift_call_data.clone()),
     }
     .abi_encode();
-    Ok(EvmSwiftTransaction::forwarder("0", data))
+    Ok(EvmTransaction::forwarder("0", data))
 }

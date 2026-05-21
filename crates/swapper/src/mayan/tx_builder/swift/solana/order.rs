@@ -1,4 +1,3 @@
-use super::solana_error;
 use crate::{
     SwapperError,
     mayan::{
@@ -6,7 +5,8 @@ use crate::{
         model::MayanSwiftQuote,
         tx_builder::{
             address::native_address_to_bytes32,
-            amount::{bps_u8, fractional_amount},
+            amount::{fractional_amount, optional_bps_u8},
+            solana::solana_error,
             swift::{SwiftOrderFields, swift_custom_payload_hash, swift_input_contract as route_swift_input_contract, swift_payload_type, token_address_to_bytes32},
         },
         wormhole_chain::id_for_name as wormhole_chain_id,
@@ -59,7 +59,7 @@ pub(super) fn create_init_instruction(
     data.extend_from_slice(&fields.deadline.to_le_bytes());
     data.extend_from_slice(&fields.referrer);
     data.push(fields.referrer_bps);
-    data.push(bps_u8(route.protocol_bps)?);
+    data.push(optional_bps_u8(route.protocol_bps)?);
     data.push(fields.auction_mode);
     data.extend_from_slice(&random_key);
 
@@ -112,7 +112,7 @@ pub(super) fn create_order_hash(
     data.extend_from_slice(&fields.deadline.to_be_bytes());
     data.extend_from_slice(&fields.referrer);
     data.push(fields.referrer_bps);
-    data.push(bps_u8(route.protocol_bps)?);
+    data.push(optional_bps_u8(route.protocol_bps)?);
     data.push(fields.auction_mode);
     data.extend_from_slice(random_key);
     data.extend_from_slice(&swift_custom_payload_hash(custom_payload)?);

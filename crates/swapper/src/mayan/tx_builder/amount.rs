@@ -25,8 +25,11 @@ pub(super) fn gas_drop_amount(amount: &Value, chain: &str, quote_type: &QuoteTyp
     fractional_amount(amount, gas_decimals(chain)?.min(amount_decimals_cap(chain, quote_type)?))
 }
 
-pub(super) fn bps_u8(value: Option<u32>) -> Result<u8, SwapperError> {
-    value.unwrap_or(0).try_into().map_err(|_| SwapperError::InvalidRoute)
+pub(super) fn optional_bps_u8(value: Option<u32>) -> Result<u8, SwapperError> {
+    let Some(value) = value else {
+        return Ok(0);
+    };
+    value.try_into().map_err(|_| SwapperError::InvalidRoute)
 }
 
 pub(super) fn fractional_amount_value(amount: &Value, decimals: u32) -> Result<String, SwapperError> {
@@ -42,7 +45,7 @@ pub(super) fn value_to_query(amount: &Value) -> Result<String, SwapperError> {
     }
 }
 
-fn gas_decimals(chain: &str) -> Result<u32, SwapperError> {
+pub(super) fn gas_decimals(chain: &str) -> Result<u32, SwapperError> {
     match WormholeChain::from_name(chain)? {
         WormholeChain::Solana | WormholeChain::Sui | WormholeChain::Ton => Ok(9),
         _ => Ok(18),

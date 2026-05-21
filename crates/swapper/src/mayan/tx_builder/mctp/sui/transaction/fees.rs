@@ -1,15 +1,15 @@
 use crate::{
     SwapperError,
     mayan::{
+        cctp_domain::CCTP_TOKEN_DECIMALS,
         model::MayanMctpQuote,
         tx_builder::amount::{fractional_amount, value_to_query},
+        tx_builder::mctp::redeem_relayer_fee,
     },
 };
 
-const CCTP_TOKEN_DECIMALS: u32 = 6;
-
 pub(super) fn redeem_fee(route: &MayanMctpQuote) -> Result<u64, SwapperError> {
-    fractional_amount(route.redeem_relayer_fee.as_ref().ok_or(SwapperError::InvalidRoute)?, CCTP_TOKEN_DECIMALS)
+    redeem_relayer_fee(route)
 }
 
 pub(in crate::mayan::tx_builder::mctp::sui) fn bridge_amount(route: &MayanMctpQuote, mctp_input_contract: &str) -> Result<u64, SwapperError> {
