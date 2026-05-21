@@ -4,8 +4,8 @@ use super::{
     model::{QuoteDataRequest, QuoteRequest as JupiterRequest, QuoteResponse},
 };
 use crate::{
-    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData,
-    error::INVALID_ADDRESS, fees::default_referral_fees, solana,
+    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData, error::INVALID_ADDRESS,
+    fees::default_referral_fees, solana,
 };
 use alloy_primitives::U256;
 use async_trait::async_trait;

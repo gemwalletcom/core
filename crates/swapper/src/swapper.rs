@@ -1,7 +1,7 @@
 use crate::{
-    AssetList, FetchQuoteData, Permit2ApprovalData, ProviderType, Quote, QuoteRequest, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderMode,
-    SwapperQuoteData, across, alien::RpcProvider, cetus_clmm, chainflip, cross_chain::VaultAddresses, hyperliquid, jupiter, mayan, near_intents, panora,
-    proxy::provider_factory, relay, squid, stonfi, thorchain, uniswap,
+    AssetList, FetchQuoteData, Permit2ApprovalData, ProviderType, Quote, QuoteRequest, SwapQuoteError, SwapQuotes, SwapResult, Swapper, SwapperChainAsset, SwapperError,
+    SwapperProvider, SwapperProviderMode, SwapperQuoteData, across, alien::RpcProvider, cetus_clmm, chainflip, cross_chain::VaultAddresses, hyperliquid, jupiter, mayan,
+    near_intents, panora, proxy::provider_factory, relay, squid, stonfi, thorchain, uniswap,
 };
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
@@ -55,33 +55,6 @@ impl GemSwapper {
             }
         }
         gas_limit
-    }
-
-    fn prioritized_error(errors: &[SwapperError]) -> Option<SwapperError> {
-        let input_errors: Vec<_> = errors
-            .iter()
-            .filter_map(|err| match err {
-                SwapperError::InputAmountError { min_amount } => {
-                    let value = min_amount.as_ref().and_then(|s| s.parse::<u128>().ok());
-                    Some((value, min_amount.clone()))
-                }
-                _ => None,
-            })
-            .collect();
-
-        if input_errors.is_empty() {
-            return None;
-        }
-
-        input_errors
-            .iter()
-            .filter(|(value, _)| value.is_some())
-            .min_by_key(|(value, _)| *value)
-            .map(|(value, _)| {
-                let adjusted = value.and_then(|v| v.checked_mul(11)).map(|v| (v / 10).to_string());
-                SwapperError::InputAmountError { min_amount: adjusted }
-            })
-            .or(Some(SwapperError::InputAmountError { min_amount: None }))
     }
 
     fn sort_quotes_by_output_amount(quotes: &mut [Quote]) {
@@ -169,35 +142,35 @@ impl GemSwapper {
     }
 
     pub async fn get_quote(&self, request: &QuoteRequest) -> Result<Vec<Quote>, SwapperError> {
+        let SwapQuotes { quotes, .. } = self.get_quotes(request).await?;
+        if quotes.is_empty() {
+            return Err(SwapperError::NoQuoteAvailable);
+        }
+        Ok(quotes)
+    }
+
+    pub async fn get_quotes(&self, request: &QuoteRequest) -> Result<SwapQuotes, SwapperError> {
         let provider_ids: BTreeSet<_> = self.get_providers_for_request(request)?.into_iter().map(|p| p.id).collect();
         let providers = self.swappers.iter().filter(|x| provider_ids.contains(&x.provider().id)).collect::<Vec<_>>();
 
-        let quotes_futures = providers.into_iter().map(|x| x.get_quote(request));
+        let quotes_futures = providers.into_iter().map(|x| {
+            let provider_id = x.provider().id.id().to_string();
+            async move { x.get_quote(request).await.map_err(|e| (provider_id, e)) }
+        });
 
         let quote_results = futures::future::join_all(quotes_futures).await;
 
         let mut quotes = Vec::new();
         let mut errors = Vec::new();
-
         for result in quote_results {
             match result {
                 Ok(quote) => quotes.push(quote),
-                Err(err) => {
-                    errors.push(err);
-                }
+                Err((provider_id, err)) => errors.push(SwapQuoteError::new(Some(provider_id), err.to_string())),
             }
-        }
-
-        if quotes.is_empty() {
-            if let Some(error) = Self::prioritized_error(&errors) {
-                return Err(error);
-            }
-            return Err(SwapperError::NoQuoteAvailable);
         }
 
         Self::sort_quotes_by_output_amount(&mut quotes);
-
-        Ok(quotes)
+        Ok(SwapQuotes { quotes, errors })
     }
 
     pub async fn get_quote_by_provider(&self, provider: SwapperProvider, request: QuoteRequest) -> Result<Quote, SwapperError> {
@@ -343,7 +316,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_fetch_quote_input_amount_error() {
+    async fn test_get_quotes_collects_per_provider_errors() {
         let request = mock_quote(
             SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
             SwapperQuoteAsset::from(ETHEREUM_USDC_ASSET_ID.clone()),
@@ -354,39 +327,28 @@ mod tests {
             swappers: vec![
                 Box::new(MockSwapper::new(SwapperProvider::UniswapV3, || Err(SwapperError::InputAmountError { min_amount: None }))),
                 Box::new(MockSwapper::new(SwapperProvider::PancakeswapV3, || {
-                    Err(SwapperError::InputAmountError { min_amount: None })
-                })),
-                Box::new(MockSwapper::new(SwapperProvider::Jupiter, || Err(SwapperError::NoQuoteAvailable))),
-            ],
-        };
-        assert_eq!(gem_swapper.get_quote(&request).await, Err(SwapperError::InputAmountError { min_amount: None }));
-
-        let gem_swapper = GemSwapper {
-            rpc_provider: Arc::new(NativeProvider::default()),
-            swappers: vec![
-                Box::new(MockSwapper::new(SwapperProvider::UniswapV3, || {
-                    Err(SwapperError::InputAmountError {
-                        min_amount: Some("19630000".into()),
-                    })
-                })),
-                Box::new(MockSwapper::new(SwapperProvider::PancakeswapV3, || {
                     Err(SwapperError::InputAmountError {
                         min_amount: Some("1264000".into()),
                     })
                 })),
-                Box::new(MockSwapper::new(SwapperProvider::Jupiter, || {
-                    Err(SwapperError::InputAmountError {
-                        min_amount: Some("68000000".into()),
-                    })
-                })),
+                Box::new(MockSwapper::new(SwapperProvider::Jupiter, || Err(SwapperError::NoQuoteAvailable))),
             ],
         };
+        let result = gem_swapper.get_quotes(&request).await.unwrap();
+        assert!(result.quotes.is_empty());
+        assert_eq!(result.errors.len(), 3);
+
+        let providers: BTreeSet<_> = result.errors.iter().map(|e| e.provider.clone().unwrap()).collect();
         assert_eq!(
-            gem_swapper.get_quote(&request).await,
-            Err(SwapperError::InputAmountError {
-                min_amount: Some("1390400".into())
-            })
+            providers,
+            BTreeSet::from([
+                SwapperProvider::UniswapV3.id().to_string(),
+                SwapperProvider::PancakeswapV3.id().to_string(),
+                SwapperProvider::Jupiter.id().to_string(),
+            ])
         );
+        let pancake_error = result.errors.iter().find(|e| e.provider.as_deref() == Some(SwapperProvider::PancakeswapV3.id())).unwrap();
+        assert!(pancake_error.error.contains("1264000"));
     }
 
     #[test]

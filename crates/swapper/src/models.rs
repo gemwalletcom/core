@@ -93,6 +93,25 @@ pub struct Quote {
     pub eta_in_seconds: Option<u32>,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct SwapQuotes {
+    pub quotes: Vec<Quote>,
+    pub errors: Vec<SwapQuoteError>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct SwapQuoteError {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    pub error: String,
+}
+
+impl SwapQuoteError {
+    pub fn new(provider: Option<String>, error: String) -> Self {
+        Self { provider, error }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum ApprovalType {
     Approve(ApprovalData),

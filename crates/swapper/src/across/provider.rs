@@ -796,10 +796,7 @@ mod tests {
     #[cfg(all(test, feature = "swap_integration_tests", feature = "reqwest_provider"))]
     mod swap_integration_tests {
         use super::*;
-        use crate::{
-            FetchQuoteData, NativeProvider, Options, QuoteRequest, SwapperError,
-            fees::ReferralFee,
-        };
+        use crate::{FetchQuoteData, NativeProvider, Options, QuoteRequest, SwapperError, fees::ReferralFee};
         use primitives::{AssetId, Chain, swap::SwapStatus};
         use std::{sync::Arc, time::SystemTime};
 

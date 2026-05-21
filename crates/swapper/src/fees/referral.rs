@@ -40,13 +40,7 @@ impl ReferralFees {
                 Chain::Injective => &self.injective,
                 _ => &self.cosmos,
             },
-            ChainType::Bitcoin
-            | ChainType::Xrp
-            | ChainType::Stellar
-            | ChainType::Algorand
-            | ChainType::Polkadot
-            | ChainType::Cardano
-            | ChainType::HyperCore => return None,
+            ChainType::Bitcoin | ChainType::Xrp | ChainType::Stellar | ChainType::Algorand | ChainType::Polkadot | ChainType::Cardano | ChainType::HyperCore => return None,
         };
         Some(fee)
     }
