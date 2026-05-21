@@ -1,0 +1,35 @@
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "meta": {
+      "err": "ProgramAccountNotFound",
+      "fee": 5000,
+      "preBalances": [
+        100000,
+        0,
+        1
+      ],
+      "postBalances": [
+        95000,
+        0,
+        1
+      ],
+      "preTokenBalances": [],
+      "postTokenBalances": []
+    },
+    "transaction": {
+      "message": {
+        "accountKeys": [
+          "sender",
+          "recipient",
+          "11111111111111111111111111111111"
+        ],
+        "instructions": []
+      },
+      "signatures": [
+        "signature"
+      ]
+    }
+  },
+  "id": 1
+}

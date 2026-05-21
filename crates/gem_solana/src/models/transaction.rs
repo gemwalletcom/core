@@ -6,19 +6,22 @@ use std::collections::{HashMap, HashSet};
 use super::UInt64;
 use crate::models::token::{BigInt, TokenBalance, TokenBalanceChange};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 pub struct SolanaTransaction {
     pub meta: SolanaTransactionMeta,
     pub slot: UInt64,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Deserialize)]
 pub struct SolanaTransactionMeta {
-    pub err: Option<SolanaTransactionError>,
+    err: Option<serde_json::Value>,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct SolanaTransactionError {}
+impl SolanaTransactionMeta {
+    pub fn has_error(&self) -> bool {
+        self.err.is_some()
+    }
+}
 
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -32,6 +35,10 @@ pub struct Meta {
 }
 
 impl Meta {
+    pub fn has_error(&self) -> bool {
+        self.err.is_some()
+    }
+
     pub fn get_pre_token_balance(&self, account_index: i64) -> Option<TokenBalance> {
         self.pre_token_balances.iter().find(|b| b.account_index == account_index).cloned()
     }

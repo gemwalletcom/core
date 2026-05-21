@@ -96,7 +96,7 @@ impl<C: Client + Clone> SolanaClient<C> {
         self.rpc_call("getTokenAccountsByOwner", params).await
     }
 
-    pub async fn get_transaction(&self, signature: &str) -> Result<SolanaTransaction, JsonRpcError> {
+    pub async fn get_transaction(&self, signature: &str) -> Result<Option<SolanaTransaction>, JsonRpcError> {
         let params = serde_json::json!([signature, confirmed_config(serde_json::json!({ "maxSupportedTransactionVersion": 0 }))]);
         self.rpc_call("getTransaction", params).await
     }
