@@ -13,7 +13,7 @@ use crate::{
     client_factory::create_eth_client,
     cross_chain::VaultAddresses,
     eth_address,
-    fees::ReferralFee,
+    fees::{ReferralFee, default_referral_fees},
     models::*,
 };
 use alloy_primitives::{
@@ -100,7 +100,7 @@ impl Across {
         let topic2 = format!("{:#066x}", U256::from(deposit_id));
         let topics = vec![Some(topic0), Some(topic1), Some(topic2)];
 
-        let current_block = client.get_latest_block().await.map_err(|e| SwapperError::TransactionError(e.to_string()))?;
+        let current_block = client.get_latest_block().await.map_err(SwapperError::transaction_error)?;
         let from_block = current_block.saturating_sub(FILL_LOOKBACK_BLOCKS);
         let from_block_hex = format!("0x{:x}", from_block);
 
@@ -138,7 +138,7 @@ impl Across {
         create_eth_client(self.rpc_provider.clone(), chain)?
             .multicall3(calls)
             .await
-            .map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))
+            .map_err(SwapperError::compute_quote_error)
     }
 
     async fn estimate_gas_transaction(&self, chain: Chain, tx: TransactionObject) -> Result<U256, SwapperError> {
@@ -290,7 +290,7 @@ impl Across {
             let results = create_eth_client(self.rpc_provider.clone(), Chain::Monad)?
                 .multicall3(vec![feed.latest_round_call3()])
                 .await
-                .map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))?;
+                .map_err(SwapperError::compute_quote_error)?;
             ChainlinkPriceFeed::decoded_answer(&results[0])
         } else {
             ChainlinkPriceFeed::decoded_answer(&existing_results[3])
@@ -442,7 +442,7 @@ impl Swapper for Across {
         let relayer_fee_percent = relayer_calc.capital_fee_percent(&BigInt::from_str(&request.value).unwrap(), cost_config);
         let relayer_fee = fees::multiply(from_amount, relayer_fee_percent, cost_config.decimals);
 
-        let referral_config = request.options.fee.clone().unwrap_or_default().evm;
+        let referral_config = default_referral_fees().evm;
 
         // Calculate gas limit / price for relayer
         let remain_amount = from_amount - lpfee - relayer_fee;
@@ -796,10 +796,7 @@ mod tests {
     #[cfg(all(test, feature = "swap_integration_tests", feature = "reqwest_provider"))]
     mod swap_integration_tests {
         use super::*;
-        use crate::{
-            FetchQuoteData, NativeProvider, Options, QuoteRequest, SwapperError,
-            fees::{DEFAULT_STABLE_SWAP_REFERRAL_BPS, ReferralFee, ReferralFees},
-        };
+        use crate::{FetchQuoteData, NativeProvider, Options, QuoteRequest, SwapperError, fees::ReferralFee};
         use primitives::{AssetId, Chain, swap::SwapStatus};
         use std::{sync::Arc, time::SystemTime};
 
@@ -809,10 +806,6 @@ mod tests {
             let swap_provider = Across::boxed(network_provider.clone());
             let options = Options {
                 slippage: 100.into(),
-                fee: Some(ReferralFees::evm(ReferralFee {
-                    bps: DEFAULT_STABLE_SWAP_REFERRAL_BPS,
-                    address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
-                })),
                 use_max_amount: false,
             };
 
@@ -845,7 +838,6 @@ mod tests {
             let swap_provider = Across::boxed(network_provider.clone());
             let options = Options {
                 slippage: 100.into(),
-                fee: None,
                 use_max_amount: false,
             };
 

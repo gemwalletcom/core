@@ -26,32 +26,27 @@ impl ReferralFees {
         Self { evm, ..Default::default() }
     }
 
-    pub fn update_all_bps(&mut self, bps: u32) {
-        self.iter_mut().for_each(|fee| fee.update_bps(bps));
+    pub fn for_chain(&self, chain: Chain) -> Option<&ReferralFee> {
+        let fee = match chain.chain_type() {
+            ChainType::Ethereum => &self.evm,
+            ChainType::Solana => &self.solana,
+            ChainType::Sui => &self.sui,
+            ChainType::Ton => &self.ton,
+            ChainType::Tron => &self.tron,
+            ChainType::Near => &self.near,
+            ChainType::Aptos => &self.aptos,
+            ChainType::Cosmos => match chain {
+                Chain::Thorchain => &self.thorchain,
+                Chain::Injective => &self.injective,
+                _ => &self.cosmos,
+            },
+            ChainType::Bitcoin | ChainType::Xrp | ChainType::Stellar | ChainType::Algorand | ChainType::Polkadot | ChainType::Cardano | ChainType::HyperCore => return None,
+        };
+        Some(fee)
     }
 
-    fn iter_mut(&mut self) -> impl Iterator<Item = &mut ReferralFee> {
-        [
-            &mut self.evm,
-            &mut self.solana,
-            &mut self.thorchain,
-            &mut self.sui,
-            &mut self.ton,
-            &mut self.tron,
-            &mut self.near,
-            &mut self.aptos,
-            &mut self.cosmos,
-            &mut self.injective,
-        ]
-        .into_iter()
-    }
-}
-
-impl ReferralFee {
-    pub fn update_bps(&mut self, bps: u32) {
-        if !self.address.is_empty() || self.bps > 0 {
-            self.bps = bps;
-        }
+    pub fn bps_for_chain(&self, chain: Chain) -> u32 {
+        self.for_chain(chain).map(|fee| fee.bps).unwrap_or(0)
     }
 }
 
@@ -101,20 +96,7 @@ pub fn default_referral_fees() -> ReferralFees {
 }
 
 fn default_referral_fee(chain: Chain) -> ReferralFee {
-    let fees = default_referral_fees();
-    match chain {
-        Chain::Solana => fees.solana,
-        Chain::Thorchain => fees.thorchain,
-        Chain::Sui => fees.sui,
-        Chain::Ton => fees.ton,
-        Chain::Tron => fees.tron,
-        Chain::Near => fees.near,
-        Chain::Aptos => fees.aptos,
-        Chain::Injective => fees.injective,
-        _ if chain.chain_type() == ChainType::Cosmos => fees.cosmos,
-        _ if chain.chain_type() == ChainType::Ethereum => fees.evm,
-        _ => ReferralFee::default(),
-    }
+    default_referral_fees().for_chain(chain).cloned().unwrap_or_default()
 }
 
 pub fn default_referral_address(chain: Chain) -> String {

@@ -2,11 +2,21 @@ use primitives::Address as AddressTrait;
 use std::str::FromStr;
 use sui_types::Address;
 
+use crate::SuiError;
+
 pub struct SuiAddress(Address);
 
 impl From<SuiAddress> for Address {
     fn from(value: SuiAddress) -> Self {
         value.0
+    }
+}
+
+impl SuiAddress {
+    pub fn parse(address: &str) -> Result<Self, SuiError> {
+        Address::from_str(address)
+            .map(Self)
+            .map_err(|err| SuiError::invalid_input(format!("Invalid Sui address {address}: {err}")))
     }
 }
 
@@ -40,6 +50,8 @@ mod tests {
         assert!(validate_address(address));
         assert_eq!(parsed.as_bytes().len(), 32);
         assert_eq!(parsed.encode(), address);
+        assert_eq!(SuiAddress::parse(address).unwrap().encode(), address);
+        assert!(SuiAddress::parse("invalid").is_err());
         assert!(!validate_address("invalid"));
     }
 }

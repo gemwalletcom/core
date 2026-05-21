@@ -5,7 +5,7 @@ use crate::{alien::RpcProvider, client_factory::create_client_with_chain, solana
 
 use alloy_primitives::hex;
 use gem_encoding::encode_base64;
-use gem_solana::{jsonrpc::SolanaRpc, models::LatestBlockhash};
+use gem_solana::{jsonrpc::SolanaRpc, models::LatestBlockhash, try_decode_blockhash};
 use primitives::Chain;
 use solana_primitives::{AccountMeta, InstructionBuilder, Pubkey, TransactionBuilder, compute_budget::set_compute_unit_limit};
 use std::{str::FromStr, sync::Arc};
@@ -17,10 +17,7 @@ pub async fn build_solana_tx(fee_payer: &str, response: &SolanaVaultSwapResponse
 
     let rpc_client = create_client_with_chain(provider, Chain::Solana);
     let blockhash_response: LatestBlockhash = rpc_client.request(SolanaRpc::GetLatestBlockhash).await.map_err(|e| e.to_string())?;
-    let recent_blockhash = blockhash_response.value.blockhash;
-    let blockhash = bs58::decode(recent_blockhash).into_vec().map_err(|_| "Failed to decode blockhash".to_string())?;
-
-    let blockhash_array: [u8; 32] = blockhash.try_into().map_err(|_| "Failed to convert blockhash to array".to_string())?;
+    let blockhash_array = try_decode_blockhash(&blockhash_response.value.blockhash).ok_or_else(|| "Invalid Solana blockhash".to_string())?;
 
     let mut instruction = InstructionBuilder::new(program_id).data(data).build();
     response.accounts.iter().for_each(|account| {

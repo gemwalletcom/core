@@ -150,8 +150,8 @@ where
         if allow_discovery { first_known || second_known } else { first_known && second_known }
     }
 
-    fn referral_fee(request: &QuoteRequest) -> ReferralFee {
-        request.options.fee.clone().map(|fees| fees.ton).unwrap_or_else(|| default_referral_fees().ton)
+    fn referral_fee() -> ReferralFee {
+        default_referral_fees().ton
     }
 
     async fn quote_swap(
@@ -453,7 +453,7 @@ where
                 })
             })
             .transpose()?;
-        let referral_fee = Self::referral_fee(&quote.request);
+        let referral_fee = Self::referral_fee();
         let receiver_address = if quote.request.destination_address.is_empty() {
             &quote.request.wallet_address
         } else {

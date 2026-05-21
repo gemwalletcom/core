@@ -1,6 +1,10 @@
 use std::str::FromStr;
 
-use crate::{QuoteRequest, Route, SwapperError, eth_address, fees::apply_slippage_in_bp, uniswap::requires_native_wrapping};
+use crate::{
+    QuoteRequest, Route, SwapperError, eth_address,
+    fees::{apply_slippage_in_bp, default_referral_fees},
+    uniswap::requires_native_wrapping,
+};
 use alloy_primitives::{Address, U256};
 use gem_evm::uniswap::{
     actions::V4Action::{SETTLE, SWAP_EXACT_IN, TAKE},
@@ -19,7 +23,7 @@ pub fn build_commands(
     fee_token_is_input: bool,
 ) -> Result<Vec<UniversalRouterCommand>, SwapperError> {
     let options = request.options.clone();
-    let fee_options = options.fee.unwrap_or_default().evm;
+    let fee_options = default_referral_fees().evm;
     let recipient = eth_address::parse_str(&request.wallet_address)?;
 
     let input_is_native = requires_native_wrapping(&request.from_asset.asset_id());
@@ -126,10 +130,7 @@ fn build_v4_swap_command(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        fees::{ReferralFee, ReferralFees},
-        models::Options,
-    };
+    use crate::models::Options;
     use primitives::{
         AssetId, Chain,
         asset_constants::{CELO_USDT_TOKEN_ID, CELO_WETH_TOKEN_ID},
@@ -156,8 +157,10 @@ mod tests {
         };
         let commands = build_commands(&request, &token_celo, &token_usdt, 22_000_000_000_000_000_000, 14_804_757, &routes, None, false).unwrap();
 
-        assert_eq!(commands.len(), 1);
+        assert_eq!(commands.len(), 3);
         assert!(matches!(commands[0], UniversalRouterCommand::V4_SWAP { .. }));
+        assert!(matches!(commands[1], UniversalRouterCommand::PAY_PORTION(_)));
+        assert!(matches!(commands[2], UniversalRouterCommand::SWEEP(_)));
 
         // USDT -> CELO with fees: sweep instead of unwrap
         let request = QuoteRequest {
@@ -168,10 +171,6 @@ mod tests {
             value: "900000".into(),
             options: Options {
                 slippage: 50.into(),
-                fee: Some(ReferralFees::evm(ReferralFee {
-                    bps: 50,
-                    address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
-                })),
                 use_max_amount: false,
             },
         };

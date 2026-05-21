@@ -1,4 +1,4 @@
-use bigdecimal::{BigDecimal, ToPrimitive};
+use bigdecimal::{BigDecimal, RoundingMode, ToPrimitive};
 use num_bigint::{BigInt, BigUint};
 use std::str::FromStr;
 
@@ -58,6 +58,15 @@ impl BigNumberFormatter {
         let multiplier_decimal = BigDecimal::from(multiplier);
         let scaled_value = big_decimal * multiplier_decimal;
         Ok(scaled_value.with_scale(0).to_string())
+    }
+
+    pub fn value_from_amount_truncated(amount: &str, decimals: u32) -> Result<String, NumberFormatterError> {
+        let big_decimal = BigDecimal::from_str(amount).map_err(|_| NumberFormatterError::InvalidNumber(amount.to_string()))?;
+        if big_decimal < 0 {
+            return Err(NumberFormatterError::InvalidNumber(amount.to_string()));
+        }
+        let truncated = big_decimal.with_scale_round(i64::from(decimals), RoundingMode::Down);
+        Self::value_from_amount(&truncated.to_string(), decimals)
     }
 
     pub fn f64_as_value(amount: f64, decimals: u32) -> Option<String> {
@@ -136,6 +145,19 @@ mod tests {
         let result = BigNumberFormatter::value_from_amount("invalid", 3);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), NumberFormatterError::InvalidNumber("invalid".to_string()));
+    }
+
+    #[test]
+    fn test_value_from_amount_truncated() {
+        assert_eq!(BigNumberFormatter::value_from_amount_truncated("1.183818719", 8).unwrap(), "118381871");
+        assert_eq!(
+            BigNumberFormatter::value_from_amount_truncated("123456789012345678.123456789", 18).unwrap(),
+            "123456789012345678123456789000000000"
+        );
+        assert_eq!(
+            BigNumberFormatter::value_from_amount_truncated("-1", 9),
+            Err(NumberFormatterError::InvalidNumber("-1".to_string()))
+        );
     }
 
     #[test]

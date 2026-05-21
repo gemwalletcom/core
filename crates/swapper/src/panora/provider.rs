@@ -38,12 +38,12 @@ where
         }
     }
 
-    fn referral_fee(request: &QuoteRequest) -> ReferralFee {
-        request.options.fee.clone().map(|fees| fees.aptos).unwrap_or_else(|| default_referral_fees().aptos)
+    fn referral_fee() -> ReferralFee {
+        default_referral_fees().aptos
     }
 
     fn build_request(request: &QuoteRequest, from_value: &str) -> Result<model::QuoteRequest, SwapperError> {
-        let referral = Self::referral_fee(request);
+        let referral = Self::referral_fee();
         Ok(model::QuoteRequest {
             from_token_address: token_address(&request.from_asset),
             to_token_address: token_address(&request.to_asset),
@@ -137,7 +137,6 @@ mod tests {
             value: "100000000".to_string(),
             options: Options {
                 slippage: 100.into(),
-                fee: Some(default_referral_fees()),
                 use_max_amount: false,
             },
         }

@@ -10,6 +10,7 @@ use crate::{
     client_factory::create_sui_client,
     cross_chain::VaultAddresses,
     fees::DEFAULT_REFERRER,
+    fees::default_referral_fees,
     fees::quote_value_after_reserve_by_chain,
     near_intents::client::{base_url, explorer_url},
 };
@@ -102,21 +103,15 @@ where
             sui_client,
         }
     }
-    fn build_app_fee(options: &QuoteRequest) -> Option<Vec<AppFee>> {
-        let fee = options.options.fee.as_ref()?;
-
-        let referral = if !fee.near.address.is_empty() && fee.near.bps > 0 {
-            Some((&fee.near.address, fee.near.bps))
-        } else {
-            None
-        };
-
-        referral.map(|(address, bps)| {
-            vec![AppFee {
-                recipient: address.clone(),
-                fee: bps,
-            }]
-        })
+    fn build_app_fee() -> Option<Vec<AppFee>> {
+        let fee = default_referral_fees().near;
+        if fee.address.is_empty() || fee.bps == 0 {
+            return None;
+        }
+        Some(vec![AppFee {
+            recipient: fee.address,
+            fee: fee.bps,
+        }])
     }
 
     fn build_quote_request(&self, request: &QuoteRequest, mode: SwapType, amount: String, dry: bool) -> Result<NearQuoteRequest, SwapperError> {
@@ -138,7 +133,7 @@ where
             recipient: request.destination_address.clone(),
             swap_type: mode,
             slippage_tolerance: request.options.slippage.bps,
-            app_fees: Self::build_app_fee(request),
+            app_fees: Self::build_app_fee(),
             deposit_type: DEPOSIT_TYPE_ORIGIN.to_string(),
             refund_to: request.wallet_address.clone(),
             refund_type: DEPOSIT_TYPE_ORIGIN.to_string(),
@@ -558,7 +553,7 @@ mod tests {
 mod swap_integration_tests {
     use super::*;
     use crate::near_intents::assets::NEAR_INTENTS_BTC_NATIVE;
-    use crate::{FetchQuoteData, SwapperQuoteAsset, alien::reqwest_provider::NativeProvider, config::get_swap_config, models::Options};
+    use crate::{FetchQuoteData, SwapperQuoteAsset, alien::reqwest_provider::NativeProvider, models::Options};
     use primitives::{
         AssetId, Chain,
         asset_constants::{ARBITRUM_USDC_ASSET_ID, BASE_USDC_ASSET_ID},
@@ -570,11 +565,7 @@ mod swap_integration_tests {
         let rpc_provider = Arc::new(NativeProvider::new().set_debug(true));
         let provider = NearIntents::new(rpc_provider);
 
-        let swap_config = get_swap_config();
-        let options = Options {
-            fee: Some(swap_config.referral_fee),
-            ..Options::mock_exact(100)
-        };
+        let options = Options::mock_exact(100);
 
         let request = QuoteRequest {
             from_asset: SwapperQuoteAsset::from(ARBITRUM_USDC_ASSET_ID.clone()),

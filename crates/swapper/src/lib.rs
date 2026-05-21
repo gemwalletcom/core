@@ -19,6 +19,7 @@ pub mod config;
 pub mod error;
 pub mod hyperliquid;
 pub mod jupiter;
+pub mod mayan;
 pub mod models;
 pub mod near_intents;
 pub mod okx;

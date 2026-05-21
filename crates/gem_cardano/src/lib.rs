@@ -19,3 +19,8 @@ pub use rpc::client::CardanoClient;
 
 #[cfg(feature = "signer")]
 pub mod signer;
+
+#[cfg(any(feature = "rpc", feature = "signer"))]
+pub fn validate_address(address: &str) -> bool {
+    address::ShelleyAddress::parse(address).is_ok()
+}

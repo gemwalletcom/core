@@ -47,6 +47,16 @@ impl std::fmt::Display for SwapperError {
 
 impl std::error::Error for SwapperError {}
 
+impl SwapperError {
+    pub fn compute_quote_error(error: impl std::fmt::Display) -> Self {
+        Self::ComputeQuoteError(error.to_string())
+    }
+
+    pub fn transaction_error(error: impl std::fmt::Display) -> Self {
+        Self::TransactionError(error.to_string())
+    }
+}
+
 impl From<AlienError> for SwapperError {
     fn from(err: AlienError) -> Self {
         match err {
@@ -92,6 +102,12 @@ impl From<alloy_primitives::AddressError> for SwapperError {
     }
 }
 
+impl From<alloy_primitives::hex::FromHexError> for SwapperError {
+    fn from(err: alloy_primitives::hex::FromHexError) -> Self {
+        Self::ComputeQuoteError(format!("{INVALID_ADDRESS}: {err}"))
+    }
+}
+
 impl From<serde_json::Error> for SwapperError {
     fn from(err: serde_json::Error) -> Self {
         Self::ComputeQuoteError(format!("serde_json::Error: {err}"))
@@ -119,6 +135,12 @@ impl From<gem_solana::SolanaError> for SwapperError {
 impl From<primitives::AddressError> for SwapperError {
     fn from(err: primitives::AddressError) -> Self {
         Self::ComputeQuoteError(format!("{INVALID_ADDRESS}: {err}"))
+    }
+}
+
+impl From<primitives::HexError> for SwapperError {
+    fn from(err: primitives::HexError) -> Self {
+        Self::ComputeQuoteError(err.to_string())
     }
 }
 

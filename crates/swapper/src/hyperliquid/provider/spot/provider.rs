@@ -66,12 +66,12 @@ impl HyperCoreSpot {
 
     async fn load_spot_meta(&self) -> Result<SpotMeta, SwapperError> {
         let client = self.client()?;
-        client.get_spot_meta().await.map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))
+        client.get_spot_meta().await.map_err(SwapperError::compute_quote_error)
     }
 
     async fn load_orderbook(&self, coin: &str) -> Result<OrderbookResponse, SwapperError> {
         let client = self.client()?;
-        client.get_spot_orderbook(coin).await.map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))
+        client.get_spot_orderbook(coin).await.map_err(SwapperError::compute_quote_error)
     }
 
     fn resolve_token<'a>(&self, meta: &'a SpotMeta, asset: &'a SwapperQuoteAsset) -> Result<&'a SpotToken, SwapperError> {
@@ -230,7 +230,7 @@ impl Swapper for HyperCoreSpot {
                             fee: client.config.max_builder_fee_bps,
                         }),
                     ))
-                    .map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))?,
+                    .map_err(SwapperError::compute_quote_error)?,
                 }],
             },
             request: request.clone(),
@@ -243,7 +243,7 @@ impl Swapper for HyperCoreSpot {
     async fn get_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let route = quote.data.routes.first().ok_or(SwapperError::InvalidRoute)?;
         let order: PlaceOrder = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
-        let order_json = serde_json::to_string(&order).map_err(|err| SwapperError::TransactionError(err.to_string()))?;
+        let order_json = serde_json::to_string(&order).map_err(SwapperError::transaction_error)?;
 
         Ok(SwapperQuoteData::new_contract("".to_string(), quote.request.value.clone(), order_json, None, None))
     }

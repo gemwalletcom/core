@@ -26,4 +26,8 @@ impl SuiError {
     pub fn invalid_input(message: impl Into<String>) -> Self {
         Self::InvalidInput(message.into())
     }
+
+    pub fn from_display(error: impl Display) -> Self {
+        Self::invalid_input(error.to_string())
+    }
 }

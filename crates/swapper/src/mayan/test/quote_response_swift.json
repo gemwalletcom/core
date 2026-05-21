@@ -1,0 +1,26 @@
+{
+  "quotes": [
+    {
+      "type": "SWIFT",
+      "effectiveAmountIn64": "50000000000000000",
+      "expectedAmountOut": 1.2,
+      "minAmountOut": 1.1,
+      "gasDrop": 0,
+      "etaSeconds": 3,
+      "fromToken": {
+        "contract": "0x0000000000000000000000000000000000000000",
+        "wChainId": 2,
+        "decimals": 18
+      },
+      "toToken": {
+        "contract": "0x0000000000000000000000000000000000000000",
+        "wChainId": 1,
+        "decimals": 9
+      },
+      "fromChain": "ethereum",
+      "toChain": "solana",
+      "slippageBps": 75,
+      "swiftVersion": "V2"
+    }
+  ]
+}

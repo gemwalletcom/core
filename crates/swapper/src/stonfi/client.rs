@@ -84,11 +84,7 @@ where
     }
 
     async fn run_get_method(&self, address: &str, method: &str, stack: Vec<StackArg>) -> Result<RunGetMethodResult, SwapperError> {
-        let result = self
-            .ton_client
-            .run_get_method(address, method, stack)
-            .await
-            .map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))?;
+        let result = self.ton_client.run_get_method(address, method, stack).await.map_err(SwapperError::compute_quote_error)?;
         validate_run_get_method(method, result)
     }
 
@@ -97,7 +93,7 @@ where
             .ton_client
             .run_get_method_with_headers(address, method, stack, static_read_cache_headers())
             .await
-            .map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))?;
+            .map_err(SwapperError::compute_quote_error)?;
         validate_run_get_method(method, result)
     }
 }

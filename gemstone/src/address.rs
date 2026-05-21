@@ -43,7 +43,8 @@ pub fn validate_address(address: &str, chain: Chain) -> bool {
         ChainType::Algorand => gem_algorand::validate_address(address),
         ChainType::Xrp => gem_xrp::validate_address(address),
         ChainType::Polkadot => gem_polkadot::validate_address(address),
-        ChainType::Bitcoin | ChainType::Cardano => false,
+        ChainType::Bitcoin => false,
+        ChainType::Cardano => gem_cardano::validate_address(address),
     }
 }
 
@@ -69,6 +70,14 @@ mod tests {
         assert!(!validate_address("rnBFvgZphmN39GWzUJeUitaP22Fr9be75J", Chain::Xrp));
         assert!(validate_address("15e6w4u9nH4Tb9HdJco2Zua4y5DpHb1hHXBKBGkUrLMTpuXo", Chain::Polkadot));
         assert!(!validate_address("15e6w4u9nH4Tb9HdJco2Zua4y5DpHb1hHXBKBGkUrLMTpuXj", Chain::Polkadot));
+        assert!(validate_address(
+            "addr1q8043m5heeaydnvtmmkyuhe6qv5havvhsf0d26q3jygsspxlyfpyk6yqkw0yhtyvtr0flekj84u64az82cufmqn65zdsylzk23",
+            Chain::Cardano
+        ));
+        assert!(!validate_address(
+            "addr_test1qr4p6f6mm0q9kfyyd9u30umk9cc6gk0nxu25k5rsc4fp7ls7k0qqxslcwwj4gvn4yfmdyrfgwjt3ztuz4zpy4242u0m95r0n",
+            Chain::Cardano
+        ));
     }
 
     #[test]

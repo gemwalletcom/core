@@ -14,7 +14,8 @@ use super::{
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider,
-    SwapperQuoteData, approval::check_approval_erc20, config::get_swap_proxy_url, cross_chain::VaultAddresses, fees::DEFAULT_REFERRER, fees::quote_value_after_reserve_by_chain,
+    SwapperQuoteData, approval::check_approval_erc20, config::get_swap_proxy_url, cross_chain::VaultAddresses, fees::DEFAULT_REFERRER, fees::default_referral_fees,
+    fees::quote_value_after_reserve_by_chain,
 };
 
 #[derive(Debug)]
@@ -39,12 +40,13 @@ impl Relay<RpcClient> {
     }
 }
 
-fn resolve_app_fees(request: &QuoteRequest) -> Vec<RelayAppFee> {
-    let Some(fee) = request.options.fee.as_ref().map(|f| &f.evm) else {
+fn resolve_app_fees() -> Vec<RelayAppFee> {
+    let fee = default_referral_fees().evm;
+    if fee.address.is_empty() {
         return vec![];
-    };
+    }
     vec![RelayAppFee {
-        recipient: fee.address.clone(),
+        recipient: fee.address,
         fee: fee.bps.to_string(),
     }]
 }
@@ -71,7 +73,7 @@ where
 
         let origin_currency = asset_to_currency(&from_asset_id)?;
         let destination_currency = asset_to_currency(&to_asset_id)?;
-        let app_fees = resolve_app_fees(request);
+        let app_fees = resolve_app_fees();
         let from_value = quote_value_after_reserve_by_chain(request)?;
 
         let relay_request = RelayQuoteRequest {
@@ -102,7 +104,7 @@ where
                 routes: vec![Route {
                     input: from_asset_id,
                     output: to_asset_id,
-                    route_data: serde_json::to_string(&response).map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))?,
+                    route_data: serde_json::to_string(&response).map_err(SwapperError::compute_quote_error)?,
                 }],
                 slippage_bps: response.details.slippage_bps().unwrap_or(request.options.slippage.bps),
             },

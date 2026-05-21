@@ -33,7 +33,7 @@ where
         let value: Value = self.client.get(&path).await.map_err(SwapperError::from)?;
 
         if let Some(message) = value.get("message").and_then(Value::as_str) {
-            return Err(SwapperError::ComputeQuoteError(message.to_string()));
+            return Err(SwapperError::compute_quote_error(message));
         }
 
         let quotes = serde_json::from_value(value).map_err(SwapperError::from)?;

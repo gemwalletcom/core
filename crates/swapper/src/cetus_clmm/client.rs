@@ -331,7 +331,7 @@ impl CetusClmm {
             .sui_client
             .inspect_transaction_block(EMPTY_ADDRESS, &transaction, None)
             .await
-            .map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))?;
+            .map_err(SwapperError::compute_quote_error)?;
         if result.error.is_some() {
             return Ok(None);
         }

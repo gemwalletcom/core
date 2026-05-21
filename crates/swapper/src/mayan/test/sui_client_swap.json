@@ -1,0 +1,14 @@
+{
+  "tx": "{\"version\":2,\"inputs\":[],\"commands\":[]}",
+  "outCoin": {
+    "$kind": "Result",
+    "Result": 4
+  },
+  "whFeeCoin": {
+    "$kind": "NestedResult",
+    "NestedResult": [
+      0,
+      0
+    ]
+  }
+}

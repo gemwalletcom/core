@@ -1,5 +1,8 @@
 use sui_types::Address as SdkAddress;
 
+use serde_json::Value;
+
+use super::json::decode_json_value;
 use super::{Bcs, FieldMask, Status};
 use gem_encoding::protobuf::{proto_decode, proto_encode};
 
@@ -87,14 +90,14 @@ proto_decode!(BatchGetObjectsResponse {
 
 #[derive(Clone, Debug, Default)]
 pub enum GetObjectResult {
-    Object(Object),
+    Object(Box<Object>),
     Error(Status),
     #[default]
     Unknown,
 }
 
 proto_decode!(GetObjectResult {
-    1 => |value, field| *value = Self::Object(field.message()?),
+    1 => |value, field| *value = Self::Object(Box::new(field.message()?)),
     2 => |value, field| *value = Self::Error(field.message()?),
 });
 
@@ -106,17 +109,19 @@ pub struct Object {
     pub owner: Option<Owner>,
     pub object_type: Option<String>,
     pub contents: Option<Bcs>,
+    pub json: Option<Value>,
     pub balance: Option<u64>,
 }
 
 proto_decode!(Object {
-    2 => object_id: optional_string,
-    3 => version: optional_varint_u64,
-    4 => digest: optional_string,
-    5 => owner: optional_message,
-    6 => object_type: optional_string,
-    8 => contents: optional_message,
-    101 => balance: optional_varint_u64,
+    2 => |value, field| value.object_id = Some(field.string()?),
+    3 => |value, field| value.version = Some(field.varint()?),
+    4 => |value, field| value.digest = Some(field.string()?),
+    5 => |value, field| value.owner = Some(field.message()?),
+    6 => |value, field| value.object_type = Some(field.string()?),
+    8 => |value, field| value.contents = Some(field.message()?),
+    100 => |value, field| value.json = Some(decode_json_value(field.bytes()?)?),
+    101 => |value, field| value.balance = Some(field.varint()?),
 });
 
 #[derive(Clone, Debug, Default)]

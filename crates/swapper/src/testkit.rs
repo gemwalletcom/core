@@ -1,6 +1,6 @@
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Route, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteAsset, SwapperQuoteData, SwapperSlippage,
-    SwapperSlippageMode, config::get_swap_config, fees::default_referral_fees,
+    SwapperSlippageMode,
 };
 use async_trait::async_trait;
 use primitives::{AssetId, Chain, asset_constants::TON_USDT_TOKEN_ID};
@@ -77,8 +77,6 @@ impl Quote {
 }
 
 pub fn mock_quote(from_asset: SwapperQuoteAsset, to_asset: SwapperQuoteAsset) -> QuoteRequest {
-    let config = get_swap_config();
-
     QuoteRequest {
         from_asset,
         to_asset,
@@ -90,7 +88,6 @@ pub fn mock_quote(from_asset: SwapperQuoteAsset, to_asset: SwapperQuoteAsset) ->
                 mode: SwapperSlippageMode::Auto,
                 bps: 50,
             },
-            fee: Some(config.referral_fee.clone()),
             use_max_amount: false,
         },
     }
@@ -105,7 +102,6 @@ pub fn mock_ton(wallet_address: String) -> QuoteRequest {
         value: "1000000000".to_string(),
         options: Options {
             slippage: 100.into(),
-            fee: Some(default_referral_fees()),
             use_max_amount: false,
         },
     }

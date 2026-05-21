@@ -1,5 +1,5 @@
 use super::permit2_data::Permit2Data;
-use crate::{SwapperProvider, SwapperQuoteAsset, SwapperSlippage, config::DEFAULT_SLIPPAGE_BPS, fees::ReferralFees};
+use crate::{SwapperProvider, SwapperQuoteAsset, SwapperSlippage, config::DEFAULT_SLIPPAGE_BPS};
 pub use primitives::swap::SwapResult;
 use primitives::{
     AssetId, Chain,
@@ -66,7 +66,6 @@ pub struct QuoteRequest {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Options {
     pub slippage: SwapperSlippage,
-    pub fee: Option<ReferralFees>,
     pub use_max_amount: bool,
 }
 
@@ -80,7 +79,6 @@ impl Default for Options {
     fn default() -> Self {
         Self {
             slippage: DEFAULT_SLIPPAGE_BPS.into(),
-            fee: None,
             use_max_amount: false,
         }
     }
@@ -93,6 +91,25 @@ pub struct Quote {
     pub data: ProviderData,
     pub request: QuoteRequest,
     pub eta_in_seconds: Option<u32>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct SwapQuotes {
+    pub quotes: Vec<Quote>,
+    pub errors: Vec<SwapQuoteError>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct SwapQuoteError {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    pub error: String,
+}
+
+impl SwapQuoteError {
+    pub fn new(provider: Option<String>, error: String) -> Self {
+        Self { provider, error }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -163,6 +180,10 @@ pub enum SwapperChainAsset {
 }
 
 impl SwapperChainAsset {
+    pub fn assets(chain: Chain, assets: impl IntoIterator<Item = AssetId>) -> Self {
+        Self::Assets(chain, assets.into_iter().collect())
+    }
+
     pub fn get_chain(&self) -> Chain {
         match self {
             Self::All(chain) => *chain,
