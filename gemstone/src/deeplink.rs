@@ -5,7 +5,6 @@ pub enum Deeplink {
     Asset { asset_id: AssetId },
     Perpetuals,
     Rewards { code: Option<String> },
-    Gift { code: Option<String> },
 }
 
 #[uniffi::export]

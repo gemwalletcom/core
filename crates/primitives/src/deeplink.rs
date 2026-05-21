@@ -10,7 +10,6 @@ const PATH_TOKENS: &str = "tokens";
 const PATH_PERPETUALS: &str = "perpetuals";
 const PATH_REWARDS: &str = "rewards";
 const PATH_JOIN: &str = "join";
-const PATH_GIFT: &str = "gift";
 
 const QUERY_CODE: &str = "code";
 
@@ -19,7 +18,6 @@ pub enum Deeplink {
     Asset { asset_id: AssetId },
     Perpetuals,
     Rewards { code: Option<String> },
-    Gift { code: Option<String> },
 }
 
 impl Deeplink {
@@ -44,9 +42,6 @@ impl Deeplink {
             PATH_REWARDS | PATH_JOIN => Deeplink::Rewards {
                 code: params.first().cloned().or_else(|| query_value(&url, QUERY_CODE)),
             },
-            PATH_GIFT => Deeplink::Gift {
-                code: params.first().cloned().or_else(|| query_value(&url, QUERY_CODE)),
-            },
             _ => return None,
         };
         Some(deeplink)
@@ -60,7 +55,6 @@ impl Deeplink {
             },
             Deeplink::Perpetuals => format!("/{PATH_PERPETUALS}"),
             Deeplink::Rewards { code } => path_with_query(PATH_REWARDS, QUERY_CODE, code.clone()),
-            Deeplink::Gift { code } => path_with_query(PATH_GIFT, QUERY_CODE, code.clone()),
         }
     }
 }
@@ -128,7 +122,6 @@ mod tests {
             .to_url(),
             "https://gemwallet.com/rewards?code=gemcoder"
         );
-        assert_eq!(Deeplink::Gift { code: Some("abc".to_string()) }.to_url(), "https://gemwallet.com/gift?code=abc");
     }
 
     #[test]
@@ -179,10 +172,6 @@ mod tests {
             })
         );
         assert_eq!(Deeplink::from_url("https://gemwallet.com/join"), Some(Deeplink::Rewards { code: None }));
-        assert_eq!(
-            Deeplink::from_url("https://gemwallet.com/gift?code=abc"),
-            Some(Deeplink::Gift { code: Some("abc".to_string()) })
-        );
         assert_eq!(Deeplink::from_url("https://gemwallet.com/tokens"), None);
         assert_eq!(Deeplink::from_url("https://gemwallet.com/tokens/notachain"), None);
         assert_eq!(Deeplink::from_url("https://example.com/tokens/bitcoin"), None);
