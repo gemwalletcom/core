@@ -13,7 +13,7 @@ use crate::{
             amount::value_to_query,
             hypercore::hypercore_custom_payload,
             route::{quote_destination_address, swift_destination_address},
-            solana::{SolanaTransaction, setup_instructions, solana_error, wrap_instruction_in_cpi_proxy},
+            solana::{SolanaTransaction, setup_instructions, setup_wraps_native_sol, solana_error, wrap_instruction_in_cpi_proxy, wrap_native_sol_instructions},
             swift::{SwiftOrderFields, swift_input_contract as route_swift_input_contract, swift_random_key},
         },
     },
@@ -185,8 +185,13 @@ where
         )
         .await?;
 
-    instructions.extend(instructions_from_primitives(swap.compute_budget_instructions.unwrap_or_default()).map_err(solana_error)?);
-    instructions.extend(setup_instructions(swap.setup_instructions.unwrap_or_default(), &context.relayer)?);
+    let setup = swap.setup_instructions.unwrap_or_default();
+    let compute_budget = swap.compute_budget_instructions.unwrap_or_default();
+    instructions.extend(instructions_from_primitives(compute_budget).map_err(solana_error)?);
+    if route.from_token.contract == EVM_ZERO_ADDRESS && !setup_wraps_native_sol(&setup, &context.trader)? {
+        instructions.extend(wrap_native_sol_instructions(&context.trader, route.effective_amount_in64.parse::<u64>()?)?);
+    }
+    instructions.extend(setup_instructions(setup, &context.relayer)?);
     instructions.push(instruction_from_primitive(swap.swap_instruction).map_err(solana_error)?);
     if let Some(cleanup_instruction) = swap.cleanup_instruction {
         instructions.push(wrap_instruction_in_cpi_proxy(instruction_from_primitive(cleanup_instruction).map_err(solana_error)?)?);

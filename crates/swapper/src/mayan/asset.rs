@@ -70,7 +70,6 @@ pub fn supported_assets() -> Vec<SwapperChainAsset> {
 
 pub fn token_id_for_asset(asset_id: &AssetId) -> String {
     match (asset_id.chain, asset_id.token_id.as_deref()) {
-        (Chain::Solana, None) => WSOL_TOKEN_ADDRESS.to_string(),
         (Chain::Sui, None) => SUI_COIN_TYPE.to_string(),
         (Chain::HyperCore, Some(HYPERCORE_SPOT_USDC_TOKEN_ID)) => HYPERCORE_SPOT_USDC_CONTRACT.to_string(),
         (_, None) => EVM_ZERO_ADDRESS.to_string(),
@@ -130,7 +129,7 @@ mod tests {
     #[test]
     fn test_token_id_for_asset() {
         assert_eq!(token_id_for_asset(&AssetId::from_chain(Chain::Ethereum)), EVM_ZERO_ADDRESS);
-        assert_eq!(token_id_for_asset(&AssetId::from_chain(Chain::Solana)), WSOL_TOKEN_ADDRESS);
+        assert_eq!(token_id_for_asset(&AssetId::from_chain(Chain::Solana)), EVM_ZERO_ADDRESS);
         assert_eq!(token_id_for_asset(&AssetId::from_chain(Chain::Sui)), SUI_COIN_TYPE);
         assert_eq!(token_id_for_asset(&HYPERCORE_SPOT_USDC_ASSET_ID), HYPERCORE_SPOT_USDC_CONTRACT);
         assert_eq!(token_id_for_asset(&ETHEREUM_USDC_ASSET_ID), ETHEREUM_USDC_ASSET_ID.token_id.clone().unwrap());

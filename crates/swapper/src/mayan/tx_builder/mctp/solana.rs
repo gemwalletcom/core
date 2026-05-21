@@ -10,12 +10,15 @@ use crate::{
             address::native_address_to_bytes32,
             amount::{fractional_amount, gas_drop_amount, min_amount_out, optional_bps_u8, value_to_query},
             route::quote_destination_address,
-            solana::{self as solana_builder, SolanaTransaction, setup_instructions, solana_error, wrap_instruction_in_cpi_proxy},
+            solana::{
+                self as solana_builder, SolanaTransaction, setup_instructions, setup_wraps_native_sol, solana_error, wrap_instruction_in_cpi_proxy, wrap_native_sol_instructions,
+            },
         },
         wormhole_chain::{WormholeChain, id_for_name as wormhole_chain_id},
     },
 };
 use gem_client::Client;
+use gem_evm::EVM_ZERO_ADDRESS;
 use gem_solana::{SolanaAddress, instruction_from_primitive, instructions_from_primitives};
 use rand::Rng;
 use solana_primitives::anchor::global_discriminator;
@@ -193,8 +196,13 @@ where
         )
         .await?;
 
-    instructions.extend(instructions_from_primitives(swap.compute_budget_instructions.unwrap_or_default()).map_err(solana_error)?);
-    instructions.extend(setup_instructions(swap.setup_instructions.unwrap_or_default(), &context.relayer)?);
+    let setup = swap.setup_instructions.unwrap_or_default();
+    let compute_budget = swap.compute_budget_instructions.unwrap_or_default();
+    instructions.extend(instructions_from_primitives(compute_budget).map_err(solana_error)?);
+    if route.from_token.contract == EVM_ZERO_ADDRESS && !setup_wraps_native_sol(&setup, &context.user)? {
+        instructions.extend(wrap_native_sol_instructions(&context.user, route.effective_amount_in64.parse::<u64>()?)?);
+    }
+    instructions.extend(setup_instructions(setup, &context.relayer)?);
     instructions.push(instruction_from_primitive(swap.swap_instruction).map_err(solana_error)?);
     if let Some(cleanup_instruction) = swap.cleanup_instruction {
         instructions.push(wrap_instruction_in_cpi_proxy(instruction_from_primitive(cleanup_instruction).map_err(solana_error)?)?);
@@ -260,6 +268,7 @@ fn create_mctp_swap_ledger_instruction(route: &MayanMctpQuote, context: &MctpBui
     let destination_chain_id = wormhole_chain_id(&route.to_chain)?;
     let mctp_program = SolanaAddress::parse(MAYAN_MCTP_PROGRAM_ID).map_err(solana_error)?.into();
     let mut data = bridge_ledger_data(route, context, amount_in_min64, fee_solana, destination_chain_id)?;
+    data[..8].copy_from_slice(&global_discriminator("init_order_ledger_gasless"));
     data[8 + 32 + 8 + 8 + 8 + 8 + 2 + 32] = MCTP_MODE_SWAP;
     data.extend_from_slice(&native_address_to_bytes32(&context.token_out, destination_chain_id)?);
     data.extend_from_slice(&min_amount_out(&route.min_amount_out, route.to_token.decimals, &route.to_chain, &QuoteType::Mctp)?.to_le_bytes());
@@ -385,7 +394,26 @@ mod tests {
 
         assert_eq!(instruction.program_id.to_string(), MAYAN_MCTP_PROGRAM_ID);
         assert_eq!(instruction.accounts.len(), 8);
+        assert_eq!(instruction.accounts[3].pubkey.to_string(), MAYAN_MCTP_PROGRAM_ID);
+        assert_eq!(instruction.accounts[4].pubkey.to_string(), SOLANA_USDC_TOKEN_ID);
+        assert_eq!(instruction.accounts[7].pubkey, mctp_referrer_pubkey(&route).unwrap());
         assert_eq!(&instruction.data[..8], global_discriminator("init_bridge_ledger_gasless").as_slice());
         assert_eq!(instruction.data[8 + 32 + 8 + 8 + 8 + 8 + 2 + 32], MCTP_MODE_WITH_FEE);
+    }
+
+    #[test]
+    fn test_create_mctp_swap_ledger_instruction_uses_order_discriminator() {
+        let mut quote = Quote::mock(Chain::Solana, Some(SOLANA_USDC_TOKEN_ID));
+        quote.request.wallet_address = "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy".to_string();
+        quote.request.destination_address = "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".to_string();
+        let mut route = mctp_route();
+        route.has_auction = Some(true);
+        let context = MctpBuildContext::new(&quote, &route).unwrap();
+        let instruction = create_mctp_swap_ledger_instruction(&route, &context, 1_000_000, 179_182).unwrap();
+
+        assert_eq!(instruction.program_id.to_string(), MAYAN_MCTP_PROGRAM_ID);
+        assert_eq!(instruction.accounts.len(), 6);
+        assert_eq!(&instruction.data[..8], global_discriminator("init_order_ledger_gasless").as_slice());
+        assert_eq!(instruction.data[8 + 32 + 8 + 8 + 8 + 8 + 2 + 32], MCTP_MODE_SWAP);
     }
 }
