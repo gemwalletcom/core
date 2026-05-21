@@ -11,7 +11,7 @@ use crate::{
     SwapperQuoteData,
     config::{DEFAULT_SWAP_FEE_BPS, get_swap_proxy_url},
     cross_chain::VaultAddresses,
-    fees::quote_value_after_reserve_by_chain,
+    fees::{default_referral_fees, quote_value_after_reserve_by_chain},
 };
 
 #[derive(Debug)]
@@ -50,18 +50,17 @@ where
     }
 
     fn get_fee_address(request: &QuoteRequest) -> Option<String> {
-        let fees = request.options.fee.as_ref()?;
+        let fees = default_referral_fees();
         let chain = request.from_asset.chain();
         match chain {
-            Chain::Injective => Some(fees.injective.address.clone()).filter(|a| !a.is_empty()),
-            Chain::Cosmos => Some(fees.cosmos.address.clone()).filter(|a| !a.is_empty()),
+            Chain::Injective => Some(fees.injective.address).filter(|a: &String| !a.is_empty()),
+            Chain::Cosmos => Some(fees.cosmos.address).filter(|a: &String| !a.is_empty()),
             _ => {
                 let cosmos_chain = CosmosChain::from_chain(chain)?;
-                let base = &fees.cosmos.address;
-                if base.is_empty() {
+                if fees.cosmos.address.is_empty() {
                     return None;
                 }
-                CosmosAddress::convert(base, cosmos_chain.hrp()).ok()
+                CosmosAddress::convert(&fees.cosmos.address, cosmos_chain.hrp()).ok()
             }
         }
     }

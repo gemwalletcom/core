@@ -3,7 +3,7 @@ use crate::{
     alien::{RpcClient, RpcProvider},
     approval::{check_approval_erc20_with_client, check_approval_permit2_with_client, get_swap_gas_limit_with_approval},
     eth_address,
-    fees::apply_slippage_in_bp,
+    fees::{apply_slippage_in_bp, default_referral_fees},
     models::*,
     uniswap::{
         deadline::get_sig_deadline,
@@ -127,7 +127,7 @@ impl Swapper for UniswapV3 {
         let base_pair = get_base_pair(&evm_chain, use_weth).ok_or(SwapperError::ComputeQuoteError("base pair not found".into()))?;
 
         let fee_token_is_input = is_quote_input_fee_token(Some(&base_pair), request, token_in, token_out);
-        let fee_bps = request.options.clone().fee.unwrap_or_default().evm.bps;
+        let fee_bps = default_referral_fees().evm.bps;
 
         let quote_amount_in = if fee_token_is_input && fee_bps > 0 {
             apply_slippage_in_bp(&from_value, fee_bps)

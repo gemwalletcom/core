@@ -19,7 +19,7 @@ use gem_encoding::decode_base64;
 use gem_jsonrpc::{client::JsonRpcClient as GenericJsonRpcClient, types::JsonRpcError};
 use primitives::Chain;
 use solana_primitives::{AddressLookupTableAccount, Pubkey};
-use std::{collections::HashSet, error::Error, str::FromStr};
+use std::{error::Error, str::FromStr};
 
 #[cfg(feature = "rpc")]
 pub struct SolanaClient<C: Client + Clone> {
@@ -113,9 +113,7 @@ impl<C: Client + Clone> SolanaClient<C> {
         self.rpc_call("getLatestBlockhash", serde_json::json!([confirmed_config(serde_json::json!({}))])).await
     }
 
-    pub async fn get_address_lookup_tables(&self, mut addresses: Vec<String>) -> Result<Vec<AddressLookupTableAccount>, Box<dyn Error + Send + Sync>> {
-        let mut seen = HashSet::new();
-        addresses.retain(|address| seen.insert(address.clone()));
+    pub async fn get_address_lookup_tables(&self, addresses: Vec<String>) -> Result<Vec<AddressLookupTableAccount>, Box<dyn Error + Send + Sync>> {
         if addresses.is_empty() {
             return Ok(Vec::new());
         }

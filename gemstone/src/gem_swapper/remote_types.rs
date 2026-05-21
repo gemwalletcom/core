@@ -1,4 +1,3 @@
-use crate::config::swap_config::SwapReferralFees;
 use primitives::{AssetId, Chain};
 use std::str::FromStr;
 pub use swapper::{
@@ -68,7 +67,6 @@ pub struct SwapperProviderType {
 #[uniffi::remote(Record)]
 pub struct SwapperOptions {
     pub slippage: SwapperSlippage,
-    pub fee: Option<SwapReferralFees>,
     pub use_max_amount: bool,
 }
 

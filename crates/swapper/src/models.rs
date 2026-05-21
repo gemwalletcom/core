@@ -1,5 +1,5 @@
 use super::permit2_data::Permit2Data;
-use crate::{SwapperProvider, SwapperQuoteAsset, SwapperSlippage, config::DEFAULT_SLIPPAGE_BPS, fees::ReferralFees};
+use crate::{SwapperProvider, SwapperQuoteAsset, SwapperSlippage, config::DEFAULT_SLIPPAGE_BPS};
 pub use primitives::swap::SwapResult;
 use primitives::{
     AssetId, Chain,
@@ -66,7 +66,6 @@ pub struct QuoteRequest {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Options {
     pub slippage: SwapperSlippage,
-    pub fee: Option<ReferralFees>,
     pub use_max_amount: bool,
 }
 
@@ -80,7 +79,6 @@ impl Default for Options {
     fn default() -> Self {
         Self {
             slippage: DEFAULT_SLIPPAGE_BPS.into(),
-            fee: None,
             use_max_amount: false,
         }
     }

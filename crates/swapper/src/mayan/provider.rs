@@ -12,7 +12,7 @@ use crate::{
     SwapperQuoteData,
     config::get_swap_proxy_url,
     cross_chain::VaultAddresses,
-    fees::{ReferralFees, default_referral_address, default_referral_fees, quote_value_after_reserve_by_chain},
+    fees::{default_referral_address, default_referral_fees, quote_value_after_reserve_by_chain},
 };
 use async_trait::async_trait;
 use gem_client::Client;
@@ -53,10 +53,6 @@ where
         }
     }
 
-    fn referral_fees(request: &QuoteRequest) -> ReferralFees {
-        request.options.fee.clone().unwrap_or_else(default_referral_fees)
-    }
-
     fn supported_source_chain(chain: Chain) -> bool {
         match chain.chain_type() {
             ChainType::Ethereum | ChainType::Solana | ChainType::Sui => true,
@@ -72,15 +68,6 @@ where
             | ChainType::Polkadot
             | ChainType::Cardano
             | ChainType::HyperCore => false,
-        }
-    }
-
-    fn referral_bps(request: &QuoteRequest, referral_fees: &ReferralFees) -> u32 {
-        match request.from_asset.chain().chain_type() {
-            ChainType::Ethereum => referral_fees.evm.bps,
-            ChainType::Solana => referral_fees.solana.bps,
-            ChainType::Sui => referral_fees.sui.bps,
-            _ => referral_fees.solana.bps,
         }
     }
 }
@@ -106,7 +93,7 @@ where
         let from_value = quote_value_after_reserve_by_chain(request)?;
         let from_asset = request.from_asset.asset_id();
         let to_asset = request.to_asset.asset_id();
-        let referral_fees = Self::referral_fees(request);
+        let referral_fees = default_referral_fees();
         let routes = self
             .price_client
             .get_quotes(
@@ -117,7 +104,7 @@ where
                     to_token: token_id_for_asset(&to_asset),
                     to_chain: wormhole_chain::name_for_chain(to_asset.chain)?.to_string(),
                     referrer: default_referral_address(Chain::Solana),
-                    referrer_bps: Self::referral_bps(request, &referral_fees),
+                    referrer_bps: referral_fees.bps_for_chain(from_asset.chain),
                 },
                 request.from_asset.decimals,
             )

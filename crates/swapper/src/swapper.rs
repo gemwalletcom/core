@@ -1,13 +1,12 @@
 use crate::{
     AssetList, FetchQuoteData, Permit2ApprovalData, ProviderType, Quote, QuoteRequest, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderMode,
-    SwapperQuoteData, across, alien::RpcProvider, cetus_clmm, chainflip, cross_chain::VaultAddresses, fees::DEFAULT_STABLE_SWAP_REFERRAL_BPS, fees::is_stablecoin_symbol,
-    hyperliquid, jupiter, mayan, near_intents, panora, proxy::provider_factory, relay, squid, stonfi, thorchain, uniswap,
+    SwapperQuoteData, across, alien::RpcProvider, cetus_clmm, chainflip, cross_chain::VaultAddresses, hyperliquid, jupiter, mayan, near_intents, panora,
+    proxy::provider_factory, relay, squid, stonfi, thorchain, uniswap,
 };
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use primitives::{AssetId, Chain, EVMChain};
 use std::{
-    borrow::Cow,
     collections::{BTreeSet, HashSet},
     fmt::Debug,
     sync::Arc,
@@ -56,23 +55,6 @@ impl GemSwapper {
             }
         }
         gas_limit
-    }
-
-    fn transform_request<'a>(request: &'a QuoteRequest) -> Cow<'a, QuoteRequest> {
-        if !Self::is_stable_swap(request) || request.options.fee.is_none() {
-            return Cow::Borrowed(request);
-        }
-
-        let mut updated_request = request.clone();
-        if let Some(fees) = updated_request.options.fee.as_mut() {
-            fees.update_all_bps(DEFAULT_STABLE_SWAP_REFERRAL_BPS);
-        }
-
-        Cow::Owned(updated_request)
-    }
-
-    fn is_stable_swap(request: &QuoteRequest) -> bool {
-        is_stablecoin_symbol(&request.from_asset.symbol) && is_stablecoin_symbol(&request.to_asset.symbol)
     }
 
     fn prioritized_error(errors: &[SwapperError]) -> Option<SwapperError> {
@@ -190,8 +172,7 @@ impl GemSwapper {
         let provider_ids: BTreeSet<_> = self.get_providers_for_request(request)?.into_iter().map(|p| p.id).collect();
         let providers = self.swappers.iter().filter(|x| provider_ids.contains(&x.provider().id)).collect::<Vec<_>>();
 
-        let request_for_quote = Self::transform_request(request);
-        let quotes_futures = providers.into_iter().map(|x| x.get_quote(request_for_quote.as_ref()));
+        let quotes_futures = providers.into_iter().map(|x| x.get_quote(request));
 
         let quote_results = futures::future::join_all(quotes_futures).await;
 
@@ -221,8 +202,7 @@ impl GemSwapper {
 
     pub async fn get_quote_by_provider(&self, provider: SwapperProvider, request: QuoteRequest) -> Result<Quote, SwapperError> {
         let provider = self.get_swapper_by_provider(&provider)?;
-        let request_for_quote = Self::transform_request(&request);
-        provider.get_quote(request_for_quote.as_ref()).await
+        provider.get_quote(&request).await
     }
 
     pub async fn get_permit2_for_quote(&self, quote: &Quote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
@@ -251,7 +231,7 @@ impl GemSwapper {
 #[cfg(all(test, feature = "reqwest_provider"))]
 mod tests {
 
-    use std::{borrow::Cow, collections::BTreeSet, sync::Arc, vec};
+    use std::{collections::BTreeSet, sync::Arc, vec};
 
     use primitives::{
         AssetId, Chain,
@@ -260,38 +240,11 @@ mod tests {
 
     use super::*;
     use crate::{
-        Options, SwapperChainAsset, SwapperProvider, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode,
+        SwapperChainAsset, SwapperProvider, SwapperQuoteAsset,
         alien::reqwest_provider::NativeProvider,
-        fees::{DEFAULT_STABLE_SWAP_REFERRAL_BPS, DEFAULT_SWAP_FEE_BPS, ReferralFees},
         testkit::{MockSwapper, mock_quote},
         uniswap::default::{new_pancakeswap, new_uniswap_v3},
     };
-
-    fn build_request(from_symbol: &str, to_symbol: &str, fee: Option<ReferralFees>) -> QuoteRequest {
-        QuoteRequest {
-            from_asset: SwapperQuoteAsset {
-                id: format!("{}_asset", from_symbol),
-                symbol: from_symbol.to_string(),
-                decimals: 6,
-            },
-            to_asset: SwapperQuoteAsset {
-                id: format!("{}_asset", to_symbol),
-                symbol: to_symbol.to_string(),
-                decimals: 6,
-            },
-            wallet_address: "0xwallet".into(),
-            destination_address: "0xwallet".into(),
-            value: "1000000".into(),
-            options: Options {
-                slippage: SwapperSlippage {
-                    bps: 100,
-                    mode: SwapperSlippageMode::Exact,
-                },
-                fee,
-                use_max_amount: false,
-            },
-        }
-    }
 
     #[test]
     fn test_filter_by_provider_type() {
@@ -387,47 +340,6 @@ mod tests {
 
         assert!(GemSwapper::filter_supported_assets(supported_assets.clone(), asset_id_usdt.clone()));
         assert!(GemSwapper::filter_supported_assets(supported_assets, asset_id));
-    }
-
-    #[test]
-    fn test_is_stable_swap_detection() {
-        let stable_request = build_request("USDC", "USDT", None);
-        assert!(GemSwapper::is_stable_swap(&stable_request));
-
-        let non_stable_request = build_request("ETH", "USDC", None);
-        assert!(!GemSwapper::is_stable_swap(&non_stable_request));
-    }
-
-    #[test]
-    fn test_stable_swap_adjusts_fees() {
-        use crate::config::get_swap_config;
-
-        let request = build_request("USDC", "USDT", Some(get_swap_config().referral_fee));
-
-        let adjusted_request = match GemSwapper::transform_request(&request) {
-            Cow::Owned(req) => req,
-            Cow::Borrowed(_) => panic!("stable swap should adjust request"),
-        };
-        let adjusted_fees = adjusted_request.options.fee.unwrap();
-
-        assert_eq!(adjusted_fees.evm.bps, DEFAULT_STABLE_SWAP_REFERRAL_BPS);
-        assert_eq!(adjusted_fees.solana.bps, DEFAULT_STABLE_SWAP_REFERRAL_BPS);
-        assert_eq!(adjusted_fees.thorchain.bps, DEFAULT_STABLE_SWAP_REFERRAL_BPS);
-        assert_eq!(adjusted_fees.sui.bps, DEFAULT_STABLE_SWAP_REFERRAL_BPS);
-        assert_eq!(adjusted_fees.ton.bps, DEFAULT_STABLE_SWAP_REFERRAL_BPS);
-        assert_eq!(adjusted_fees.tron.bps, DEFAULT_STABLE_SWAP_REFERRAL_BPS);
-
-        let original_fees = request.options.fee.as_ref().unwrap();
-        assert_eq!(original_fees.evm.bps, DEFAULT_SWAP_FEE_BPS);
-    }
-
-    #[test]
-    fn test_transform_request_skips_when_not_applicable() {
-        let non_stable_request = build_request("ETH", "USDC", None);
-        assert!(matches!(GemSwapper::transform_request(&non_stable_request), Cow::Borrowed(_)));
-
-        let stable_without_fees = build_request("USDC", "USDT", None);
-        assert!(matches!(GemSwapper::transform_request(&stable_without_fees), Cow::Borrowed(_)));
     }
 
     #[tokio::test]
