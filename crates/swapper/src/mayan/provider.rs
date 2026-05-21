@@ -12,12 +12,14 @@ use crate::{
     SwapperQuoteData,
     config::get_swap_proxy_url,
     cross_chain::VaultAddresses,
-    fees::{default_referral_address, default_referral_fees, quote_value_after_reserve_by_chain},
+    fees::{default_referral_address, default_referral_fees, quote_value_after_reserve, quote_value_after_reserve_by_chain},
 };
 use async_trait::async_trait;
 use gem_client::Client;
 use primitives::{Chain, ChainType};
 use std::{collections::BTreeSet, fmt::Debug, sync::Arc};
+
+const SOLANA_NATIVE_SWAP_RESERVE: &str = "5000000";
 
 #[derive(Debug)]
 pub struct Mayan<C>
@@ -97,7 +99,7 @@ where
             return Err(SwapperError::NotSupportedChain);
         }
 
-        let from_value = quote_value_after_reserve_by_chain(request)?;
+        let from_value = quote_value_after_mayan_reserve(request)?;
         let from_asset = request.from_asset.asset_id();
         let to_asset = request.to_asset.asset_id();
         let referral_fees = default_referral_fees();
@@ -184,6 +186,13 @@ where
     }
 }
 
+fn quote_value_after_mayan_reserve(request: &QuoteRequest) -> Result<String, SwapperError> {
+    if request.options.use_max_amount && request.from_asset.chain() == Chain::Solana && request.from_asset.is_native() {
+        return quote_value_after_reserve(request, SOLANA_NATIVE_SWAP_RESERVE);
+    }
+    quote_value_after_reserve_by_chain(request)
+}
+
 impl<C> Mayan<C>
 where
     C: Client + Clone + Send + Sync + Debug + 'static,
@@ -219,9 +228,11 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::alien::mock::ProviderMock;
     use crate::mayan::model::{MayanMctpQuote, MayanMonoChainQuote};
+    use crate::models::Options;
+    use crate::{SwapperQuoteAsset, alien::mock::ProviderMock};
     use gem_client::testkit::MockClient;
+    use primitives::{AssetId, asset_constants::SOLANA_USDC_TOKEN_ID};
     use std::collections::BTreeSet;
 
     #[tokio::test]
@@ -295,6 +306,26 @@ mod tests {
 
         assert!(provider.supports_chain_pair(Chain::Hyperliquid, Chain::HyperCore));
         assert!(!provider.supports_chain_pair(Chain::HyperCore, Chain::Hyperliquid));
+    }
+
+    #[test]
+    fn test_quote_value_after_mayan_reserve_uses_larger_solana_native_reserve() {
+        let mut request = QuoteRequest {
+            from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Solana)),
+            to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Sui)),
+            wallet_address: "address".to_string(),
+            destination_address: "address".to_string(),
+            value: "105814789".to_string(),
+            options: Options {
+                use_max_amount: true,
+                ..Default::default()
+            },
+        };
+
+        assert_eq!(quote_value_after_mayan_reserve(&request).unwrap(), "100814789");
+
+        request.from_asset = SwapperQuoteAsset::from(AssetId::from_token(Chain::Solana, SOLANA_USDC_TOKEN_ID));
+        assert_eq!(quote_value_after_mayan_reserve(&request).unwrap(), "105814789");
     }
 }
 

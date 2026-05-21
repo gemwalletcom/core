@@ -185,7 +185,7 @@ where
                 value_to_query(min_middle_amount)?,
                 context.mctp_input_contract.clone(),
                 quote.request.wallet_address.clone(),
-                quote.from_value.clone(),
+                route.effective_amount_in64.clone(),
                 deposit_mode,
                 context.referrer_address.clone(),
                 context.ledger.to_string(),

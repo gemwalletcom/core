@@ -32,7 +32,7 @@ struct EvmSwiftContext {
 impl EvmSwiftContext {
     fn new(quote: &Quote, route: &MayanSwiftQuote) -> Result<Self, SwapperError> {
         let source_chain_id = wormhole_chain_id(&route.from_chain)?;
-        let amount_in = U256::from_str(&quote.from_value)?;
+        let amount_in = U256::from_str(&route.effective_amount_in64)?;
         let swift_input_contract = route_swift_input_contract(route)?.to_string();
         let swift_contract_address = Address::from_str(route.swift_mayan_contract.as_deref().ok_or(SwapperError::InvalidRoute)?)?;
         let swift_token_in = if route.swift_wrap_and_lock == Some(true) {
@@ -69,7 +69,7 @@ where
     if route.from_token.contract.eq_ignore_ascii_case(&context.swift_input_contract) {
         build_direct_forward_transaction(route, &context)
     } else {
-        build_swap_forward_transaction(client, quote, route, &context).await
+        build_swap_forward_transaction(client, route, &context).await
     }
 }
 
@@ -89,7 +89,7 @@ fn build_direct_forward_transaction(route: &MayanSwiftQuote, context: &EvmSwiftC
     Ok(EvmTransaction::forwarder("0", data))
 }
 
-async fn build_swap_forward_transaction<C>(client: &MayanClient<C>, quote: &Quote, route: &MayanSwiftQuote, context: &EvmSwiftContext) -> Result<EvmTransaction, SwapperError>
+async fn build_swap_forward_transaction<C>(client: &MayanClient<C>, route: &MayanSwiftQuote, context: &EvmSwiftContext) -> Result<EvmTransaction, SwapperError>
 where
     C: Client + Clone + Send + Sync + Debug + 'static,
 {
@@ -100,7 +100,7 @@ where
     let swap: GetSwapEvmResponse = client
         .get_swap(
             "/get-swap/evm",
-            GetSwapEvmParams::swift(route, quote.from_value.clone(), context.swift_input_contract.clone()),
+            GetSwapEvmParams::swift(route, route.effective_amount_in64.clone(), context.swift_input_contract.clone()),
         )
         .await?;
     let swap_router_address = Address::from_str(&swap.swap_router_address)?;

@@ -76,7 +76,7 @@ where
         .post_swap(
             "/get-swap/sui",
             GetSwapSuiParams {
-                amount_in64: quote.from_value.clone(),
+                amount_in64: route.effective_amount_in64.clone(),
                 input_coin_type: route.from_token.contract.clone(),
                 middle_coin_type: mctp_input_contract.to_string(),
                 user_wallet: quote.request.wallet_address.clone(),

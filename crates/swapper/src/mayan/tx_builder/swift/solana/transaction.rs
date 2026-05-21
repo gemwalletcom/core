@@ -178,7 +178,7 @@ where
                 min_middle_amount,
                 context.swift_input_contract.clone(),
                 quote.request.wallet_address.clone(),
-                quote.from_value.clone(),
+                route.effective_amount_in64.clone(),
                 context.referrer_address.clone(),
                 context.state.to_string(),
             ),

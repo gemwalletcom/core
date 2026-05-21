@@ -40,7 +40,7 @@ impl HyperCoreDepositCall {
         }
 
         let contract_address = Address::from_str(&route.mono_chain_mayan_contract)?;
-        let amount_in = U256::from_str(&quote.from_value)?;
+        let amount_in = U256::from_str(&route.effective_amount_in64)?;
         let referrer_address = default_referral_address(quote.request.from_asset.chain());
         let has_referrer = !referrer_address.is_empty();
         let referrer_bps = match route.referrer_bps {

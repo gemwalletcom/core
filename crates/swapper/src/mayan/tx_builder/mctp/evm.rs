@@ -74,7 +74,7 @@ impl EvmMctpProtocolCall {
         let contract_address = mctp_contract_address(route)?;
         let destination_chain_id = wormhole_chain_id(&route.to_chain)?;
         let destination_address = native_address_to_bytes32(quote_destination_address(quote), destination_chain_id)?;
-        let amount_in = U256::from_str(&quote.from_value)?;
+        let amount_in = U256::from_str(&route.effective_amount_in64)?;
         let token_in = Address::from_str(mctp_input_contract(route)?)?;
         let referrer = referrer_bytes(&route.to_chain)?;
         let data = MayanCircle::createOrderCall {
@@ -102,7 +102,7 @@ impl EvmMctpProtocolCall {
 
     fn bridge(quote: &Quote, route: &MayanMctpQuote) -> Result<Self, SwapperError> {
         let contract_address = mctp_contract_address(route)?;
-        let amount_in = U256::from_str(&quote.from_value)?;
+        let amount_in = U256::from_str(&route.effective_amount_in64)?;
         let token_in = Address::from_str(mctp_input_contract(route)?)?;
         let destination_chain_id = wormhole_chain_id(&route.to_chain)?;
         let destination_address = FixedBytes::from(native_address_to_bytes32(quote_destination_address(quote), destination_chain_id)?);
@@ -159,7 +159,7 @@ where
         return build_direct_forward_transaction(route, protocol_call, bridge_fee);
     }
 
-    build_swap_forward_transaction(client, quote, route, protocol_call, bridge_fee).await
+    build_swap_forward_transaction(client, route, protocol_call, bridge_fee).await
 }
 
 fn build_direct_forward_transaction(route: &MayanMctpQuote, protocol_call: EvmMctpProtocolCall, bridge_fee: U256) -> Result<EvmTransaction, SwapperError> {
@@ -180,7 +180,6 @@ fn build_direct_forward_transaction(route: &MayanMctpQuote, protocol_call: EvmMc
 
 async fn build_swap_forward_transaction<C>(
     client: &MayanClient<C>,
-    quote: &Quote,
     route: &MayanMctpQuote,
     protocol_call: EvmMctpProtocolCall,
     bridge_fee: U256,
@@ -193,7 +192,12 @@ where
     let swap: GetSwapEvmResponse = client
         .get_swap(
             "/get-swap/evm",
-            GetSwapEvmParams::mctp(route, quote.from_value.clone(), mctp_input_contract.to_string(), destination_referrer_address(route)?),
+            GetSwapEvmParams::mctp(
+                route,
+                route.effective_amount_in64.clone(),
+                mctp_input_contract.to_string(),
+                destination_referrer_address(route)?,
+            ),
         )
         .await?;
     let swap_router_address = Address::from_str(&swap.swap_router_address)?;
