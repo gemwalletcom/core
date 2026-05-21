@@ -1,4 +1,9 @@
-use crate::{SwapperError, eth_address, fees::apply_slippage_in_bp, models::*, uniswap::requires_native_wrapping};
+use crate::{
+    SwapperError, eth_address,
+    fees::{apply_slippage_in_bp, default_referral_fees},
+    models::*,
+    uniswap::requires_native_wrapping,
+};
 use gem_evm::uniswap::command::{ADDRESS_THIS, PayPortion, Permit2Permit, Sweep, Transfer, UniversalRouterCommand, UnwrapWeth, V3SwapExactIn, WrapEth};
 
 use alloy_primitives::{Address, Bytes, U256};
@@ -15,7 +20,7 @@ pub fn build_commands(
     fee_token_is_input: bool,
 ) -> Result<Vec<UniversalRouterCommand>, SwapperError> {
     let options = request.options.clone();
-    let fee_options = options.fee.unwrap_or_default().evm;
+    let fee_options = default_referral_fees().evm;
     let recipient = eth_address::parse_str(&request.wallet_address)?;
 
     let wrap_input_eth = requires_native_wrapping(&request.from_asset.asset_id());
@@ -117,10 +122,7 @@ pub fn build_commands(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{
-        fees::{ReferralFee, ReferralFees},
-        permit2_data::*,
-    };
+    use crate::permit2_data::*;
     use alloy_primitives::aliases::U256;
     use gem_evm::uniswap::{FeeTier, path::build_direct_pair};
     use primitives::{
@@ -132,7 +134,7 @@ mod tests {
 
     #[test]
     fn test_build_commands_eth_to_token() {
-        let mut request = QuoteRequest {
+        let request = QuoteRequest {
             // ETH -> USDC
             from_asset: AssetId::from(Chain::Ethereum, None).into(),
             to_asset: AssetId::from(Chain::Ethereum, Some(ETHEREUM_USDC_TOKEN_ID.into())).into(),
@@ -147,28 +149,9 @@ mod tests {
         let amount_in = U256::from(1000000000000000u64);
 
         let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred);
-        // without fee
-        let commands = super::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), &path, None, false).unwrap();
-
-        assert_eq!(commands.len(), 2);
-
-        assert!(matches!(commands[0], UniversalRouterCommand::WRAP_ETH(_)));
-        assert!(matches!(commands[1], UniversalRouterCommand::V3_SWAP_EXACT_IN(_)));
-
-        let options = Options {
-            slippage: 100.into(),
-            fee: Some(ReferralFees::evm(ReferralFee {
-                bps: 25,
-                address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
-            })),
-            use_max_amount: false,
-        };
-        request.options = options;
-
         let commands = super::build_commands(&request, &token_in, &token_out, amount_in, U256::from(0), &path, None, false).unwrap();
 
         assert_eq!(commands.len(), 4);
-
         assert!(matches!(commands[0], UniversalRouterCommand::WRAP_ETH(_)));
         assert!(matches!(commands[1], UniversalRouterCommand::V3_SWAP_EXACT_IN(_)));
         assert!(matches!(commands[2], UniversalRouterCommand::PAY_PORTION(_)));
@@ -208,10 +191,11 @@ mod tests {
         let path = build_direct_pair(&token_in, &token_out, FeeTier::FiveHundred);
         let commands = super::build_commands(&request, &token_in, &token_out, amount_in, U256::from(6507936), &path, Some(permit2_data.into()), false).unwrap();
 
-        assert_eq!(commands.len(), 2);
-
+        assert_eq!(commands.len(), 4);
         assert!(matches!(commands[0], UniversalRouterCommand::PERMIT2_PERMIT(_)));
         assert!(matches!(commands[1], UniversalRouterCommand::V3_SWAP_EXACT_IN(_)));
+        assert!(matches!(commands[2], UniversalRouterCommand::PAY_PORTION(_)));
+        assert!(matches!(commands[3], UniversalRouterCommand::SWEEP(_)));
     }
 
     #[test]
@@ -225,10 +209,6 @@ mod tests {
             value: "5064985".into(),
             options: Options {
                 slippage: 100.into(),
-                fee: Some(ReferralFees::evm(ReferralFee {
-                    bps: 25,
-                    address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
-                })),
                 use_max_amount: false,
             },
         };
@@ -267,10 +247,6 @@ mod tests {
             value: "10000000".into(),
             options: Options {
                 slippage: 100.into(),
-                fee: Some(ReferralFees::evm(ReferralFee {
-                    bps: 25,
-                    address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
-                })),
                 use_max_amount: false,
             },
         };
@@ -326,10 +302,6 @@ mod tests {
             value: "1000000000000000".into(),
             options: Options {
                 slippage: 100.into(),
-                fee: Some(ReferralFees::evm(ReferralFee {
-                    bps: 25,
-                    address: "0x3d83ec320541ae96c4c91e9202643870458fb290".into(),
-                })),
                 use_max_amount: false,
             },
         };
@@ -376,8 +348,10 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(commands.len(), 1);
+        assert_eq!(commands.len(), 3);
         assert!(matches!(commands[0], UniversalRouterCommand::V3_SWAP_EXACT_IN(_)));
+        assert!(matches!(commands[1], UniversalRouterCommand::PAY_PORTION(_)));
+        assert!(matches!(commands[2], UniversalRouterCommand::SWEEP(_)));
 
         // USDT -> CELO with fees: sweep instead of unwrap
         let request = QuoteRequest {
@@ -388,10 +362,6 @@ mod tests {
             value: "900000".into(),
             options: Options {
                 slippage: 50.into(),
-                fee: Some(ReferralFees::evm(ReferralFee {
-                    bps: 50,
-                    address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
-                })),
                 use_max_amount: false,
             },
         };

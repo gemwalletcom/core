@@ -20,7 +20,7 @@ pub struct PerpetualDocument {
 impl PerpetualDocument {
     pub fn new(perpetual: Perpetual, asset: Asset) -> Self {
         Self {
-            id: sanitize_index_primary_id(&perpetual.id),
+            id: sanitize_index_primary_id(&perpetual.id.to_string()),
             perpetual,
             asset,
         }

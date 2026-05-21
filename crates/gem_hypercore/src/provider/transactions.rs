@@ -6,8 +6,15 @@ use gem_client::Client;
 use primitives::Transaction;
 
 use crate::{
-    models::{order::UserFill, spot::SpotMeta, transaction_id::HyperCoreTransactionId},
-    provider::transactions_mapper::{map_user_fill_by_hash, map_user_fill_by_oid, map_user_fills},
+    models::{
+        order::UserFill,
+        spot::SpotMeta,
+        transaction_id::{HyperCoreActionId, HyperCoreTransactionId},
+    },
+    provider::{
+        transaction_state_mapper,
+        transactions_mapper::{map_user_fill_by_hash, map_user_fill_by_oid, map_user_fills},
+    },
     rpc::client::HyperCoreClient,
 };
 
@@ -36,7 +43,7 @@ impl<C: Client> ChainTransactions for HyperCoreClient<C> {
 
         match HyperCoreTransactionId::parse(hash) {
             Some(HyperCoreTransactionId::Order(oid)) => self.get_transaction_by_order_id(oid, hash).await,
-            Some(HyperCoreTransactionId::Action(nonce)) => self.get_transaction_by_action_id(hash, nonce).await,
+            Some(HyperCoreTransactionId::Action(action_id)) => self.get_transaction_by_action_id(hash, action_id).await,
             None => Ok(None),
         }
     }
@@ -48,9 +55,12 @@ impl<C: Client> HyperCoreClient<C> {
         let sender = response.tx.user.to_lowercase();
         self.cache_transaction_sender(hash, &sender)?;
 
-        let fills = self.get_user_fills_by_time(&sender, response.tx.time.saturating_sub(1_000)).await?;
-        let spot_meta = load_spot_meta_if_needed(self, &fills).await?;
-        Ok(map_user_fill_by_hash(&sender, fills, hash, spot_meta.as_ref()))
+        self.map_user_fills_with_spot_meta(
+            &sender,
+            response.tx.time.saturating_sub(transaction_state_mapper::ACTION_HISTORY_QUERY_LOOKBACK_MS as i64),
+            |fills, spot_meta| map_user_fill_by_hash(&sender, fills, hash, spot_meta),
+        )
+        .await
     }
 
     async fn get_transaction_by_order_id(&self, oid: u64, id: &str) -> Result<Option<Transaction>, Box<dyn Error + Sync + Send>> {
@@ -58,18 +68,53 @@ impl<C: Client> HyperCoreClient<C> {
             return Ok(None);
         };
 
-        let fills = self.get_user_fills_by_time(&sender, 0).await?;
-        let spot_meta = load_spot_meta_if_needed(self, &fills).await?;
-        Ok(map_user_fill_by_oid(&sender, fills, oid, spot_meta.as_ref()))
+        self.map_user_fills_with_spot_meta(&sender, 0, |fills, spot_meta| map_user_fill_by_oid(&sender, fills, oid, spot_meta))
+            .await
     }
 
-    async fn get_transaction_by_action_id(&self, id: &str, nonce: u64) -> Result<Option<Transaction>, Box<dyn Error + Sync + Send>> {
+    async fn get_transaction_by_action_id(&self, id: &str, action_id: HyperCoreActionId) -> Result<Option<Transaction>, Box<dyn Error + Sync + Send>> {
+        match action_id {
+            HyperCoreActionId::Order(nonce) => self.get_transaction_by_order_action_id(id, nonce).await,
+            HyperCoreActionId::Nonce(_) | HyperCoreActionId::CDeposit { .. } | HyperCoreActionId::CWithdraw { .. } | HyperCoreActionId::TokenDelegate { .. } => {
+                self.get_transaction_by_ledger_action_id(id, action_id).await
+            }
+        }
+    }
+
+    async fn get_transaction_by_order_action_id(&self, id: &str, nonce: u64) -> Result<Option<Transaction>, Box<dyn Error + Sync + Send>> {
         let Some(sender) = self.get_cached_transaction_sender(id)? else {
             return Ok(None);
         };
 
-        let hash = self.get_tx_hash_by_nonce(&sender, nonce).await?;
+        self.map_user_fills_with_spot_meta(
+            &sender,
+            nonce.saturating_sub(transaction_state_mapper::ACTION_HISTORY_QUERY_LOOKBACK_MS) as i64,
+            |fills, spot_meta| transaction_state_mapper::order_action_hash(&fills, nonce).and_then(|hash| map_user_fill_by_hash(&sender, fills, &hash, spot_meta)),
+        )
+        .await
+    }
+
+    async fn get_transaction_by_ledger_action_id(&self, id: &str, action_id: HyperCoreActionId) -> Result<Option<Transaction>, Box<dyn Error + Sync + Send>> {
+        let Some(sender) = self.get_cached_transaction_sender(id)? else {
+            return Ok(None);
+        };
+
+        let updates = self
+            .get_ledger_updates(&sender, action_id.nonce().saturating_sub(transaction_state_mapper::ACTION_HISTORY_QUERY_LOOKBACK_MS) as i64)
+            .await?;
+        let Some(hash) = transaction_state_mapper::ledger_action_hash(&updates, &action_id) else {
+            return Ok(None);
+        };
         self.get_transaction_by_tx_hash(&hash).await
+    }
+
+    async fn map_user_fills_with_spot_meta<F>(&self, sender: &str, start_time: i64, map: F) -> Result<Option<Transaction>, Box<dyn Error + Sync + Send>>
+    where
+        F: FnOnce(Vec<UserFill>, Option<&SpotMeta>) -> Option<Transaction>,
+    {
+        let fills = self.get_user_fills_by_time(sender, start_time).await?;
+        let spot_meta = load_spot_meta_if_needed(self, &fills).await?;
+        Ok(map(fills, spot_meta.as_ref()))
     }
 }
 

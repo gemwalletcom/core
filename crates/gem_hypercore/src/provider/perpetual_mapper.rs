@@ -7,7 +7,7 @@ use crate::models::{
     position::{AssetPositions, LeverageType, Position},
 };
 use primitives::{
-    Asset, AssetId, AssetType, Chain, Perpetual, PerpetualBalance, PerpetualDirection, PerpetualMarginType, PerpetualOrderType, PerpetualPosition, PerpetualProvider,
+    Asset, AssetId, AssetType, Chain, Perpetual, PerpetualBalance, PerpetualDirection, PerpetualId, PerpetualMarginType, PerpetualOrderType, PerpetualPosition, PerpetualProvider,
     PerpetualTriggerOrder,
     chart::{ChartCandleStick, ChartDateValue},
     known_assets::USDC_SYMBOL,
@@ -23,8 +23,8 @@ pub fn create_perpetual_asset_id(coin: &str) -> AssetId {
     crate::models::metadata::perpetual_asset_id(coin)
 }
 
-pub fn create_perpetual_id(coin: &str) -> String {
-    format!("{}_{}", PerpetualProvider::Hypercore.as_ref(), coin)
+pub fn create_perpetual_id(coin: &str) -> PerpetualId {
+    PerpetualId::new(PerpetualProvider::Hypercore, coin)
 }
 
 pub fn map_positions(positions: AssetPositions, address: String, orders: &[OpenOrder]) -> PerpetualPositionsSummary {
@@ -405,7 +405,7 @@ mod tests {
         assert_eq!(result.len(), 1);
 
         let eth_data = &result[0];
-        assert_eq!(eth_data.perpetual.id, "hypercore_ETH");
+        assert_eq!(eth_data.perpetual.id, PerpetualId::new(PerpetualProvider::Hypercore, "ETH"));
         assert_eq!(eth_data.perpetual.name, "ETH");
         assert_eq!(eth_data.perpetual.provider, PerpetualProvider::Hypercore);
         assert_eq!(eth_data.perpetual.price, 2102.5);

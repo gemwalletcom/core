@@ -1,0 +1,38 @@
+{
+  "effectiveAmountIn64": "5000000",
+  "expectedAmountOut": 4.98,
+  "minAmountOut": 4.9,
+  "gasDrop": 0,
+  "etaSeconds": 3,
+  "fromToken": {
+    "contract": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "wChainId": 1,
+    "decimals": 6
+  },
+  "toToken": {
+    "contract": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "wChainId": 30,
+    "decimals": 6
+  },
+  "fromChain": "solana",
+  "toChain": "base",
+  "slippageBps": 75,
+  "deadline64": "1778652330",
+  "referrerBps": 50,
+  "expectedAmountOutBaseUnits": "4980000",
+  "refundRelayerFee64": "4325",
+  "cancelRelayerFee64": "456",
+  "submitRelayerFee64": "1000",
+  "protocolBps": 3,
+  "minMiddleAmount": 4.95,
+  "swiftAuctionMode": 2,
+  "swiftInputContract": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+  "swiftInputDecimals": 6,
+  "swiftInputContractStandard": "spl",
+  "swiftWrapAndLock": false,
+  "swiftVersion": "V2",
+  "suggestedPriorityFee": 0,
+  "gasless": false,
+  "quoteId": "0x01",
+  "memoHex": "0x02"
+}

@@ -1,0 +1,14 @@
+{
+  "jsonrpc": "2.0",
+  "result": {
+    "blockTime": 1779324501,
+    "meta": {
+      "err": "ProgramAccountNotFound",
+      "status": {
+        "Err": "ProgramAccountNotFound"
+      }
+    },
+    "slot": 421096852
+  },
+  "id": 1779324510
+}

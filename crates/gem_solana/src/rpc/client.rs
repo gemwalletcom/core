@@ -6,7 +6,7 @@ use crate::models::{
     transaction::{BlockTransactions, SolanaTransaction},
 };
 use crate::{
-    COMMITMENT_CONFIRMED, Pubkey, STAKE_PROGRAM_ID,
+    COMMITMENT_CONFIRMED, STAKE_PROGRAM_ID, SolanaRpc,
     metaplex::{decode_metadata, metadata::Metadata},
 };
 use chain_traits::ChainProvider;
@@ -14,9 +14,11 @@ use chain_traits::ChainProvider;
 use chain_traits::{ChainAccount, ChainAddressStatus, ChainPerpetual, ChainTraits};
 #[cfg(feature = "rpc")]
 use gem_client::Client;
+use gem_encoding::decode_base64;
 #[cfg(feature = "rpc")]
 use gem_jsonrpc::{client::JsonRpcClient as GenericJsonRpcClient, types::JsonRpcError};
 use primitives::Chain;
+use solana_primitives::{AddressLookupTableAccount, Pubkey};
 use std::{error::Error, str::FromStr};
 
 #[cfg(feature = "rpc")]
@@ -94,7 +96,7 @@ impl<C: Client + Clone> SolanaClient<C> {
         self.rpc_call("getTokenAccountsByOwner", params).await
     }
 
-    pub async fn get_transaction(&self, signature: &str) -> Result<SolanaTransaction, JsonRpcError> {
+    pub async fn get_transaction(&self, signature: &str) -> Result<Option<SolanaTransaction>, JsonRpcError> {
         let params = serde_json::json!([signature, confirmed_config(serde_json::json!({ "maxSupportedTransactionVersion": 0 }))]);
         self.rpc_call("getTransaction", params).await
     }
@@ -109,6 +111,30 @@ impl<C: Client + Clone> SolanaClient<C> {
 
     pub async fn get_latest_blockhash(&self) -> Result<SolanaBlockhashResult, JsonRpcError> {
         self.rpc_call("getLatestBlockhash", serde_json::json!([confirmed_config(serde_json::json!({}))])).await
+    }
+
+    pub async fn get_address_lookup_tables(&self, addresses: Vec<String>) -> Result<Vec<AddressLookupTableAccount>, Box<dyn Error + Send + Sync>> {
+        if addresses.is_empty() {
+            return Ok(Vec::new());
+        }
+
+        let result: ValueResult<Vec<Option<AccountData>>> = self.client.request(SolanaRpc::GetMultipleAccounts(addresses.clone())).await?;
+        result
+            .value
+            .into_iter()
+            .enumerate()
+            .filter_map(|(index, account)| account.map(|account| (index, account)))
+            .map(|(index, account)| {
+                let data = account
+                    .data
+                    .first()
+                    .ok_or_else(|| -> Box<dyn Error + Send + Sync> { "Missing Solana account data".into() })?;
+                let bytes = decode_base64(data)?;
+                let address = Pubkey::from_str(&addresses[index])?;
+                AddressLookupTableAccount::from_account_data(address, &bytes)
+                    .map_err(|err| -> Box<dyn Error + Send + Sync> { format!("Invalid Solana address lookup table: {err}").into() })
+            })
+            .collect()
     }
 
     pub async fn get_staking_balance(&self, address: &str) -> Result<Vec<TokenAccountInfo>, JsonRpcError> {

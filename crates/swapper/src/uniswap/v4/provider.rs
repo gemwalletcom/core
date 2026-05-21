@@ -8,7 +8,7 @@ use crate::{
     approval::evm::{check_approval_erc20_with_client, check_approval_permit2_with_client},
     approval::get_swap_gas_limit_with_approval,
     eth_address,
-    fees::apply_slippage_in_bp,
+    fees::{apply_slippage_in_bp, default_referral_fees},
     uniswap::{
         deadline::get_sig_deadline,
         fee_token::is_quote_input_fee_token,
@@ -114,7 +114,7 @@ impl Swapper for UniswapV4 {
         let fee_tiers = self.get_tiers();
         let base_pair = get_base_pair(&evm_chain, is_native_erc20(from_chain)).ok_or(SwapperError::ComputeQuoteError("base pair not found".into()))?;
         let fee_token_is_input = is_quote_input_fee_token(Some(&base_pair), request, token_in, token_out);
-        let fee_bps = request.options.clone().fee.unwrap_or_default().evm.bps;
+        let fee_bps = default_referral_fees().evm.bps;
         let quote_amount_in = if fee_token_is_input && fee_bps > 0 {
             apply_slippage_in_bp(&from_value, fee_bps)
         } else {
@@ -286,11 +286,7 @@ mod tests {
 
     #[cfg(all(test, feature = "swap_integration_tests", feature = "reqwest_provider"))]
     mod swap_integration_tests {
-        use crate::{
-            FetchQuoteData, NativeProvider, Options, QuoteRequest, SwapperError,
-            fees::{ReferralFee, ReferralFees},
-            uniswap,
-        };
+        use crate::{FetchQuoteData, NativeProvider, Options, QuoteRequest, SwapperError, uniswap};
         use primitives::{AssetId, Chain};
         use std::{sync::Arc, time::SystemTime};
 
@@ -300,10 +296,6 @@ mod tests {
             let swap_provider = uniswap::default::boxed_uniswap_v4(network_provider.clone());
             let options = Options {
                 slippage: 100.into(),
-                fee: Some(ReferralFees::evm(ReferralFee {
-                    bps: 25,
-                    address: "0x0D9DAB1A248f63B0a48965bA8435e4de7497a3dC".into(),
-                })),
                 use_max_amount: false,
             };
 

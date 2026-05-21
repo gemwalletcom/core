@@ -1,0 +1,12 @@
+[
+  {
+    "time": 1779376556819,
+    "hash": "0xf0515f4aee4cd625f1cb043be9536a0203ca0030894ff4f8941a0a9dad40b010",
+    "delta": {
+      "type": "cStakingTransfer",
+      "token": "HYPE",
+      "amount": "0.01",
+      "isDeposit": true
+    }
+  }
+]

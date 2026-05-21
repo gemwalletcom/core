@@ -4,8 +4,8 @@ use super::{
     model::{QuoteDataRequest, QuoteRequest as JupiterRequest, QuoteResponse},
 };
 use crate::{
-    FetchQuoteData, Options, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData,
-    error::INVALID_ADDRESS, solana,
+    FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperQuoteData, error::INVALID_ADDRESS,
+    fees::default_referral_fees, solana,
 };
 use alloy_primitives::U256;
 use async_trait::async_trait;
@@ -60,12 +60,13 @@ where
         input.to_string()
     }
 
-    fn get_fee_token_account(&self, options: &Options, mint: &str, token_program: &str) -> Result<Option<String>, SwapperError> {
-        if let Some(fee) = &options.fee {
-            let fee_account = get_token_account(&fee.solana.address, mint, token_program)?;
-            return Ok(Some(fee_account));
+    fn get_fee_token_account(&self, mint: &str, token_program: &str) -> Result<Option<String>, SwapperError> {
+        let fee = default_referral_fees().solana;
+        if fee.address.is_empty() {
+            return Ok(None);
         }
-        Ok(None)
+        let fee_account = get_token_account(&fee.address, mint, token_program)?;
+        Ok(Some(fee_account))
     }
 
     async fn fetch_token_program(&self, mint: &str) -> Result<String, SwapperError> {
@@ -73,22 +74,19 @@ where
         let rpc_result: JsonRpcResult<ValueResult<Option<AccountData>>> = self.rpc_client.call_with_cache(&rpc_call, Some(u64::MAX)).await.map_err(SwapperError::from)?;
         let value = rpc_result.take()?;
 
-        value
-            .value
-            .map(|x| x.owner)
-            .ok_or_else(|| SwapperError::ComputeQuoteError("fetch_token_program error".to_string()))
+        value.value.map(|x| x.owner).ok_or_else(|| SwapperError::compute_quote_error("fetch_token_program error"))
     }
 
-    async fn fetch_fee_account(&self, options: &Options, input_mint: &str, output_mint: &str) -> Result<String, SwapperError> {
+    async fn fetch_fee_account(&self, input_mint: &str, output_mint: &str) -> Result<String, SwapperError> {
         let fee_mint = self.get_fee_mint(input_mint, output_mint);
         // if fee_mint is in preset, no need to fetch token program
         let token_program = if self.fee_mints.contains(fee_mint.as_str()) {
-            return Ok(self.get_fee_token_account(options, fee_mint.as_str(), TOKEN_PROGRAM)?.unwrap_or_default());
+            return Ok(self.get_fee_token_account(fee_mint.as_str(), TOKEN_PROGRAM)?.unwrap_or_default());
         } else {
             self.fetch_token_program(&fee_mint).await?
         };
 
-        let mut fee_account = self.get_fee_token_account(options, &fee_mint, &token_program)?.unwrap_or_default();
+        let mut fee_account = self.get_fee_token_account(&fee_mint, &token_program)?.unwrap_or_default();
         if fee_account.is_empty() {
             return Ok(fee_account);
         }
@@ -120,9 +118,8 @@ where
     async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
         let input_mint = self.get_asset_address(&request.from_asset.id)?;
         let output_mint = self.get_asset_address(&request.to_asset.id)?;
-        let swap_options = request.options.clone();
-        let slippage_bps = swap_options.slippage.bps;
-        let platform_fee_bps = swap_options.fee.unwrap_or_default().solana.bps;
+        let slippage_bps = request.options.slippage.bps;
+        let platform_fee_bps = default_referral_fees().solana.bps;
 
         let quote_request = JupiterRequest {
             input_mint: input_mint.clone(),
@@ -165,7 +162,7 @@ where
         let output_mint = route.output.token_id.clone().unwrap();
 
         let quote_response: QuoteResponse = serde_json::from_str(&route.route_data).map_err(|_| SwapperError::InvalidRoute)?;
-        let fee_account = self.fetch_fee_account(&quote.request.options, &input_mint, &output_mint).await?;
+        let fee_account = self.fetch_fee_account(&input_mint, &output_mint).await?;
 
         let request = QuoteDataRequest {
             user_public_key: quote.request.wallet_address.clone(),

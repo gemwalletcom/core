@@ -46,9 +46,6 @@ async fn get_user_coins(client: &SuiClient, owner: &str, coin_type: &str) -> Res
     if is_sui_coin(coin_type) {
         Ok(Vec::new())
     } else {
-        client
-            .get_coin_assets_by_type(owner, coin_type)
-            .await
-            .map_err(|err| SuiError::invalid_input(err.to_string()))
+        client.get_coin_assets_by_type(owner, coin_type).await.map_err(SuiError::from_display)
     }
 }

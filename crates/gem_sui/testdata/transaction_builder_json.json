@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "inputs": [
+    {
+      "Pure": {
+        "bytes": "AQAAAAAAAAA="
+      }
+    },
+    {
+      "UnresolvedObject": {
+        "objectId": "0x0000000000000000000000000000000000000000000000000000000000000006"
+      }
+    }
+  ],
+  "commands": [
+    {
+      "SplitCoins": {
+        "coin": {
+          "GasCoin": true
+        },
+        "amounts": [
+          {
+            "Input": 0
+          }
+        ]
+      }
+    },
+    {
+      "MoveCall": {
+        "package": "0x2",
+        "module": "coin",
+        "function": "value",
+        "typeArguments": [
+          "0x2::sui::SUI"
+        ],
+        "arguments": [
+          {
+            "NestedResult": [
+              0,
+              0
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

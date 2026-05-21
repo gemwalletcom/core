@@ -35,15 +35,28 @@ pub struct UserFee {
     pub active_referral_discount: f64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LedgerUpdate {
+    pub time: u64,
     pub hash: String,
     pub delta: LedgerDelta,
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LedgerDelta {
-    pub nonce: Option<u64>,
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "type", rename_all = "camelCase", rename_all_fields = "camelCase")]
+pub enum LedgerDelta {
+    Send {
+        nonce: u64,
+    },
+    SpotTransfer {
+        nonce: u64,
+    },
+    CStakingTransfer {
+        token: String,
+        amount: String,
+        is_deposit: bool,
+    },
+    #[serde(other)]
+    Other,
 }

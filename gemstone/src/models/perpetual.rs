@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use gem_hypercore::models::order::OpenOrder;
 use gem_hypercore::models::websocket::{HyperliquidSocketMessage, PositionsDiff};
 use primitives::{
-    Asset, AssetId, PerpetualDirection, PerpetualMarginType, PerpetualMarketData, PerpetualOrderType, PerpetualPosition, PerpetualProvider, PerpetualTriggerOrder,
+    Asset, AssetId, PerpetualDirection, PerpetualId, PerpetualMarginType, PerpetualMarketData, PerpetualOrderType, PerpetualPosition, PerpetualProvider, PerpetualTriggerOrder,
     chart::{ChartCandleStick, ChartCandleUpdate, ChartDateValue},
     perpetual::{Perpetual, PerpetualBalance, PerpetualData, PerpetualMetadata, PerpetualPositionsSummary},
 };
@@ -61,7 +61,7 @@ pub struct GemPerpetualBalance {
 #[uniffi::remote(Record)]
 pub struct GemPerpetualPosition {
     pub id: String,
-    pub perpetual_id: String,
+    pub perpetual_id: PerpetualId,
     pub asset_id: AssetId,
     pub size: f64,
     pub size_value: f64,
@@ -96,7 +96,7 @@ pub struct GemPerpetualMarketData {
 
 #[uniffi::remote(Record)]
 pub struct GemPerpetual {
-    pub id: String,
+    pub id: PerpetualId,
     pub name: String,
     pub provider: PerpetualProvider,
     pub asset_id: AssetId,

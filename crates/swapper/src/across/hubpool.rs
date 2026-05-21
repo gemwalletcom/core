@@ -37,7 +37,7 @@ impl HubPoolClient {
     }
 
     pub fn decoded_paused_call3(&self, result: &IMulticall3::Result) -> Result<bool, SwapperError> {
-        let value = decode_call3_return::<HubPoolInterface::pausedCall>(result).map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))?;
+        let value = decode_call3_return::<HubPoolInterface::pausedCall>(result).map_err(SwapperError::compute_quote_error)?;
         Ok(value)
     }
 
@@ -59,7 +59,7 @@ impl HubPoolClient {
 
     pub fn decoded_pooled_token_call3(&self, result: &IMulticall3::Result) -> Result<HubPoolInterface::PooledToken, SwapperError> {
         if result.success {
-            let decoded = HubPoolInterface::pooledTokensCall::abi_decode_returns(&result.returnData).map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))?;
+            let decoded = HubPoolInterface::pooledTokensCall::abi_decode_returns(&result.returnData).map_err(SwapperError::compute_quote_error)?;
             Ok(decoded)
         } else {
             Err(SwapperError::ComputeQuoteError("pooled token call failed".into()))
@@ -98,7 +98,7 @@ impl HubPoolClient {
     }
 
     pub fn decoded_current_time(&self, result: &IMulticall3::Result) -> Result<u32, SwapperError> {
-        let value = decode_call3_return::<HubPoolInterface::getCurrentTimeCall>(result).map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))?;
+        let value = decode_call3_return::<HubPoolInterface::getCurrentTimeCall>(result).map_err(SwapperError::compute_quote_error)?;
         value.try_into().map_err(|_| SwapperError::ComputeQuoteError("decode current time failed".into()))
     }
 
@@ -106,7 +106,7 @@ impl HubPoolClient {
         let call3 = self.utilization_call3(pool_token, amount);
         let call = EthereumRpc::Call(TransactionObject::new_call(&self.contract, call3.callData.to_vec()), BlockParameter::Latest);
         let result: String = self.client.request(call).await?;
-        let hex_data = HexDecode(result).map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))?;
+        let hex_data = HexDecode(result).map_err(SwapperError::compute_quote_error)?;
         let value = HubPoolInterface::liquidityUtilizationCurrentCall::abi_decode_returns(&hex_data).map_err(SwapperError::from)?;
         let result = BigInt::from_bytes_le(num_bigint::Sign::Plus, &value.to_le_bytes::<32>());
         Ok(result)

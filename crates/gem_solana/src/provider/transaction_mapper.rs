@@ -104,8 +104,8 @@ pub fn map_transaction(transaction: &BlockTransaction, block_time: i64) -> Optio
     let account_keys = transaction.transaction.message.account_keys.clone();
     let hash = transaction.transaction.signatures.first()?.to_string();
     let fee = transaction.meta.fee;
-    let state = if transaction.meta.err.is_some() {
-        TransactionState::Failed
+    let state = if transaction.meta.has_error() {
+        TransactionState::Reverted
     } else {
         TransactionState::Confirmed
     };
@@ -438,6 +438,15 @@ mod tests {
     }
 
     #[test]
+    fn test_transaction_error_maps_to_reverted() {
+        let result: JsonRpcResult<BlockTransaction> = serde_json::from_str(include_str!("../../testdata/transaction_reverted_program_account_not_found.json")).unwrap();
+
+        let transaction = map_transaction(&result.result, 1).unwrap();
+
+        assert_eq!(transaction.state, TransactionState::Reverted);
+    }
+
+    #[test]
     fn test_map_transaction_by_hash() {
         let result: JsonRpcResult<SingleTransaction> = serde_json::from_str(include_str!("../../testdata/usdc_transfer.json")).unwrap();
 
@@ -501,8 +510,8 @@ mod tests {
         let transaction = result.result;
 
         let state = if transaction.slot > 0 {
-            if transaction.meta.err.is_some() {
-                TransactionState::Failed
+            if transaction.meta.has_error() {
+                TransactionState::Reverted
             } else {
                 TransactionState::Confirmed
             }

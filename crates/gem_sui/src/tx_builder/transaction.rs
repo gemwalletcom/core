@@ -25,8 +25,8 @@ pub fn move_call(txb: &mut TransactionBuilder, package: Address, module: &str, f
         .collect::<Result<Vec<_>, _>>()?;
     let function = Function::new(
         package,
-        Identifier::new(module).map_err(|err| SuiError::invalid_input(err.to_string()))?,
-        Identifier::new(function).map_err(|err| SuiError::invalid_input(err.to_string()))?,
+        Identifier::new(module).map_err(SuiError::from_display)?,
+        Identifier::new(function).map_err(SuiError::from_display)?,
     )
     .with_type_args(type_args);
     Ok(txb.move_call(function, arguments))
@@ -74,8 +74,8 @@ pub fn finish_transaction(mut txb: TransactionBuilder, input: TransactionBuilder
     txb.set_gas_budget(input.gas_budget);
     txb.add_gas_objects(input.gas_objects);
 
-    let tx = txb.try_build().map_err(|err| SuiError::invalid_input(err.to_string()))?;
-    TxOutput::from_tx(&tx).map_err(|err| SuiError::invalid_input(err.to_string()))
+    let transaction = txb.try_build().map_err(SuiError::from_display)?;
+    TxOutput::from_tx(&transaction).map_err(SuiError::from_display)
 }
 
 pub fn decode_transaction<T: DeserializeOwned>(encoded: &str) -> Result<T, Box<dyn Error + Send + Sync>> {

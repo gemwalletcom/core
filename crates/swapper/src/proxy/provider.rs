@@ -1,15 +1,12 @@
 use alloy_primitives::U256;
 use async_trait::async_trait;
-use std::{collections::BTreeSet, fmt::Debug, str::FromStr, sync::Arc};
+use std::{fmt::Debug, str::FromStr, sync::Arc};
 
-use super::{
-    client::ProxyClient,
-    mayan::{MAYAN_DEPOSIT_CONTRACTS, MAYAN_SEND_CONTRACTS, MayanChain, MayanExplorer, MayanPrice, map_swap_result},
-};
+use super::client::ProxyClient;
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, SwapResult, Swapper, SwapperError, SwapperProvider, SwapperProviderMode, SwapperQuoteData,
     alien::{RpcClient, RpcProvider},
-    approval::{check_approval_erc20, get_swap_gas_limit_with_approval},
+    approval::{DEFAULT_EVM_SWAP_GAS_LIMIT, check_approval_erc20, get_swap_gas_limit_with_approval},
     config::get_swap_proxy_url,
     cross_chain::VaultAddresses,
     fees::{DEFAULT_AGGREGATOR_FEE_BPS, DEFAULT_SWAP_FEE_BPS},
@@ -18,11 +15,8 @@ use crate::{
 use gem_client::Client;
 use primitives::{
     Chain, ChainType,
-    known_assets::*,
     swap::{ApprovalData, ProxyQuote, ProxyQuoteRequest, SwapQuoteData},
 };
-
-const DEFAULT_GAS_LIMIT: u64 = 750_000;
 
 #[derive(Debug)]
 pub struct ProxyProvider<C>
@@ -51,7 +45,7 @@ where
     pub async fn check_approval_and_limit(&self, quote: &Quote, quote_data: &SwapQuoteData) -> Result<(Option<ApprovalData>, Option<String>), SwapperError> {
         if let Some(ref approval) = quote_data.approval {
             let approval = Some(approval.clone());
-            let gas_limit = get_swap_gas_limit_with_approval(&approval, quote_data.gas_limit.clone(), DEFAULT_GAS_LIMIT);
+            let gas_limit = get_swap_gas_limit_with_approval(&approval, quote_data.gas_limit.clone(), DEFAULT_EVM_SWAP_GAS_LIMIT);
             return Ok((approval, gas_limit));
         }
 
@@ -90,7 +84,7 @@ where
     ) -> Result<(Option<ApprovalData>, Option<String>), SwapperError> {
         let approval = check_approval_erc20(wallet_address, token, spender, amount, self.rpc_provider.clone(), chain).await?;
         let approval = approval.approval_data();
-        let gas_limit = get_swap_gas_limit_with_approval(&approval, swap_gas_limit, DEFAULT_GAS_LIMIT);
+        let gas_limit = get_swap_gas_limit_with_approval(&approval, swap_gas_limit, DEFAULT_EVM_SWAP_GAS_LIMIT);
         Ok((approval, gas_limit))
     }
 
@@ -141,48 +135,6 @@ impl ProxyProvider<RpcClient> {
             rpc_provider,
         )
     }
-
-    pub fn new_mayan(rpc_provider: Arc<dyn RpcProvider>) -> Self {
-        let assets = vec![
-            SwapperChainAsset::Assets(
-                Chain::Ethereum,
-                vec![
-                    ETHEREUM_USDT.id.clone(),
-                    ETHEREUM_USDC.id.clone(),
-                    ETHEREUM_DAI.id.clone(),
-                    ETHEREUM_USDS.id.clone(),
-                    ETHEREUM_WBTC.id.clone(),
-                    ETHEREUM_WETH.id.clone(),
-                    ETHEREUM_STETH.id.clone(),
-                    ETHEREUM_CBBTC.id.clone(),
-                ],
-            ),
-            SwapperChainAsset::Assets(
-                Chain::Solana,
-                vec![
-                    SOLANA_USDC.id.clone(),
-                    SOLANA_USDT.id.clone(),
-                    SOLANA_USDS.id.clone(),
-                    SOLANA_CBBTC.id.clone(),
-                    SOLANA_WBTC.id.clone(),
-                    SOLANA_JITO_SOL.id.clone(),
-                ],
-            ),
-            SwapperChainAsset::Assets(Chain::Sui, vec![SUI_USDC.id.clone(), SUI_SBUSDT.id.clone(), SUI_WAL.id.clone()]),
-            SwapperChainAsset::Assets(Chain::SmartChain, vec![SMARTCHAIN_USDT.id.clone(), SMARTCHAIN_USDC.id.clone(), SMARTCHAIN_WBTC.id.clone()]),
-            SwapperChainAsset::Assets(Chain::Base, vec![BASE_USDC.id.clone(), BASE_CBBTC.id.clone(), BASE_WBTC.id.clone(), BASE_USDS.id.clone()]),
-            SwapperChainAsset::Assets(Chain::Polygon, vec![POLYGON_USDC.id.clone(), POLYGON_USDT.id.clone()]),
-            SwapperChainAsset::Assets(Chain::AvalancheC, vec![AVALANCHE_USDT.id.clone(), AVALANCHE_USDC.id.clone()]),
-            SwapperChainAsset::Assets(Chain::Arbitrum, vec![ARBITRUM_USDC.id.clone(), ARBITRUM_USDT.id.clone()]),
-            SwapperChainAsset::Assets(Chain::Optimism, vec![OPTIMISM_USDC.id.clone(), OPTIMISM_USDT.id.clone()]),
-            SwapperChainAsset::Assets(Chain::Linea, vec![LINEA_USDC.id.clone(), LINEA_USDT.id.clone()]),
-            SwapperChainAsset::Assets(Chain::Unichain, vec![UNICHAIN_USDC.id.clone(), UNICHAIN_DAI.id.clone()]),
-            SwapperChainAsset::Assets(Chain::Monad, vec![MONAD_MON.id.clone(), MONAD_USDC.id.clone(), MONAD_USDT.id.clone()]),
-            SwapperChainAsset::Assets(Chain::Hyperliquid, vec![HYPEREVM_USDT.id.clone(), HYPEREVM_USDC.id.clone()]),
-        ];
-
-        Self::new_with_path(SwapperProvider::Mayan, "mayan", assets, rpc_provider)
-    }
 }
 
 #[async_trait]
@@ -220,7 +172,7 @@ where
                 routes: vec![Route {
                     input: request.from_asset.asset_id(),
                     output: request.to_asset.asset_id(),
-                    route_data: serde_json::to_string(&quote).map_err(|e| SwapperError::ComputeQuoteError(e.to_string()))?,
+                    route_data: serde_json::to_string(&quote).map_err(SwapperError::compute_quote_error)?,
                 }],
                 slippage_bps: request.options.slippage.bps,
             },
@@ -239,44 +191,19 @@ where
         Ok(SwapperQuoteData::new_contract(data.to, data.value, data.data, approval, gas_limit))
     }
 
-    async fn get_swap_result(&self, _chain: Chain, transaction_hash: &str) -> Result<SwapResult, SwapperError> {
-        match self.provider.id {
-            SwapperProvider::Mayan => {
-                let base_url = get_swap_proxy_url("mayan/explorer");
-                let client = MayanExplorer::new(base_url, self.rpc_provider.clone());
-                let result = client.get_transaction_status(transaction_hash).await?;
-                Ok(map_swap_result(&result))
-            }
-            _ => {
-                if self.provider.mode == SwapperProviderMode::OnChain {
-                    Ok(SwapResult {
-                        status: primitives::swap::SwapStatus::Completed,
-                        metadata: None,
-                    })
-                } else {
-                    Err(SwapperError::NotSupportedAsset)
-                }
-            }
+    async fn get_swap_result(&self, _chain: Chain, _transaction_hash: &str) -> Result<SwapResult, SwapperError> {
+        if self.provider.mode == SwapperProviderMode::OnChain {
+            Ok(SwapResult {
+                status: primitives::swap::SwapStatus::Completed,
+                metadata: None,
+            })
+        } else {
+            Err(SwapperError::NotSupportedAsset)
         }
     }
 
     async fn get_vault_addresses(&self, _from_timestamp: Option<u64>) -> Result<VaultAddresses, SwapperError> {
-        match self.provider.id {
-            SwapperProvider::Mayan => {
-                let base_url = get_swap_proxy_url("mayan/price");
-                let client = MayanPrice::new(base_url, self.rpc_provider.clone());
-                let api_addresses = client.get_chains().await.map(MayanChain::unique_addresses).unwrap_or_default();
-
-                let deposit: BTreeSet<String> = MAYAN_DEPOSIT_CONTRACTS.iter().map(|s| s.to_string()).chain(api_addresses.iter().cloned()).collect();
-                let send: BTreeSet<String> = MAYAN_SEND_CONTRACTS.iter().map(|s| s.to_string()).chain(api_addresses).collect();
-
-                Ok(VaultAddresses {
-                    deposit: deposit.into_iter().collect(),
-                    send: send.into_iter().collect(),
-                })
-            }
-            _ => Ok(VaultAddresses { deposit: vec![], send: vec![] }),
-        }
+        Ok(VaultAddresses { deposit: vec![], send: vec![] })
     }
 }
 
@@ -299,7 +226,7 @@ mod tests {
     #[test]
     fn test_referral_bps() {
         assert_eq!(mock_provider(SwapperProvider::Okx).referral_bps(), DEFAULT_AGGREGATOR_FEE_BPS);
-        assert_eq!(mock_provider(SwapperProvider::Mayan).referral_bps(), DEFAULT_SWAP_FEE_BPS);
+        assert_eq!(mock_provider(SwapperProvider::StonfiV2).referral_bps(), DEFAULT_SWAP_FEE_BPS);
     }
 
     #[tokio::test]
@@ -323,7 +250,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_evm_native_ignores_provider_gas_limit() {
-        let provider = mock_provider(SwapperProvider::Mayan);
+        let provider = mock_provider(SwapperProvider::Okx);
         let quote = Quote::mock(Chain::Ethereum, None);
         let data = SwapQuoteData::mock_with_gas_limit(Some("550000".to_string()));
 
@@ -352,128 +279,6 @@ mod tests {
         };
         let (approval, gas_limit) = provider.check_approval_and_limit(&quote, &data).await.unwrap();
         assert!(approval.is_some());
-        assert_eq!(gas_limit, Some(DEFAULT_GAS_LIMIT.to_string()));
-    }
-}
-
-#[cfg(all(test, feature = "swap_integration_tests"))]
-mod swap_integration_tests {
-    use super::*;
-    use crate::{
-        alien::reqwest_provider::NativeProvider,
-        {SwapperQuoteAsset, models::Options},
-    };
-    use primitives::{AssetId, swap::SwapStatus};
-
-    #[tokio::test]
-    async fn test_mayan_provider_fetch_quote() -> Result<(), SwapperError> {
-        let rpc_provider = Arc::new(NativeProvider::default());
-        let provider = ProxyProvider::new_mayan(rpc_provider);
-
-        let options = Options::new_with_slippage(200.into());
-
-        let request = QuoteRequest {
-            from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
-            to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Solana)),
-            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
-            destination_address: "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy".to_string(),
-            value: "50000000000000000".to_string(),
-            options,
-        };
-
-        let quote = provider.get_quote(&request).await?;
-
-        assert_eq!(quote.from_value, request.value);
-        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
-        assert_eq!(quote.data.provider, provider.provider().clone());
-        assert_eq!(quote.data.routes.len(), 1);
-        assert_eq!(quote.data.slippage_bps, 200);
-        assert!(quote.eta_in_seconds.is_some());
-
-        let route = &quote.data.routes[0];
-        assert_eq!(route.input, AssetId::from_chain(Chain::Ethereum));
-        assert_eq!(route.output, AssetId::from_chain(Chain::Solana));
-        assert!(!route.route_data.is_empty());
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    #[cfg(feature = "swap_integration_tests")]
-    async fn test_mayan_get_swap_result() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let rpc_provider = Arc::new(NativeProvider::default());
-        let provider = ProxyProvider::new_mayan(rpc_provider);
-
-        let tx_hash = "0x56acc6a58fc0bdd9e9be5cc2a3ff079b91b933f562cf0fe760f1d8d6b76f4876";
-        let result = provider.get_swap_result(Chain::Ethereum, tx_hash).await?;
-
-        assert_eq!(result.status, SwapStatus::Completed);
-        let metadata = result.metadata.unwrap();
-        assert_eq!(metadata.from_asset, AssetId::from_chain(Chain::Ethereum));
-        assert_eq!(metadata.to_asset, AssetId::from_chain(Chain::Sui));
-        assert!(!metadata.from_value.is_empty());
-        assert!(!metadata.to_value.is_empty());
-        assert_eq!(metadata.provider, Some("mayan".to_string()));
-
-        Ok(())
-    }
-
-    #[tokio::test]
-    async fn test_proxy_error_object_deserialization() {
-        let rpc_provider = Arc::new(NativeProvider::default());
-        let provider = ProxyProvider::new_mayan(rpc_provider);
-
-        let options = Options::new_with_slippage(200.into());
-
-        let request = QuoteRequest {
-            from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
-            to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Solana)),
-            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
-            destination_address: "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy".to_string(),
-            value: "1".to_string(), // 1 wei - too small
-            options,
-        };
-
-        let result = provider.get_quote(&request).await;
-
-        assert!(result.is_err(), "Expected error for tiny swap amount");
-        let err = result.unwrap_err();
-        println!("Received v=1 error object: {:?}", err);
-
-        let is_typed_error = matches!(
-            err,
-            SwapperError::InputAmountError { .. } | SwapperError::NoQuoteAvailable | SwapperError::NotSupportedAsset | SwapperError::ComputeQuoteError(_)
-        );
-        assert!(is_typed_error, "Expected a typed SwapperError, got: {:?}", err);
-    }
-
-    #[tokio::test]
-    async fn test_mayan_provider_fetch_quote_and_data() -> Result<(), SwapperError> {
-        let rpc_provider = Arc::new(NativeProvider::default());
-        let provider = ProxyProvider::new_mayan(rpc_provider);
-
-        let options = Options::new_with_slippage(200.into());
-
-        let request = QuoteRequest {
-            from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
-            to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Solana)),
-            wallet_address: "0x514BCb1F9AAbb904e6106Bd1052B66d2706dBbb7".to_string(),
-            destination_address: "7g2rVN8fAAQdPh1mkajpvELqYa3gWvFXJsBLnKfEQfqy".to_string(),
-            value: "50000000000000000".to_string(), // 0.05 ETH
-            options,
-        };
-
-        let quote = provider.get_quote(&request).await?;
-
-        assert!(quote.to_value.parse::<u64>().unwrap() > 0);
-        println!("Quote: from={} to={}", quote.from_value, quote.to_value);
-
-        let quote_data = provider.get_quote_data(&quote, FetchQuoteData::None).await?;
-
-        assert!(!quote_data.to.is_empty(), "Expected non-empty 'to' address");
-        assert!(!quote_data.data.is_empty(), "Expected non-empty calldata");
-        println!("Quote data: to={}, value={}", quote_data.to, quote_data.value);
-
-        Ok(())
+        assert_eq!(gas_limit, Some(DEFAULT_EVM_SWAP_GAS_LIMIT.to_string()));
     }
 }

@@ -1,27 +1,30 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
-pub const ACTION_ID_PREFIX: &str = "action:";
+pub const ACTION_ID_KEY: &str = "action";
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ExchangeRequest {
     pub action: ExchangeAction,
     pub nonce: u64,
 }
 
-impl ExchangeRequest {
-    pub fn get_nonce(data: &str) -> Option<u64> {
-        if let Some(value) = data.strip_prefix(ACTION_ID_PREFIX) {
-            return value.parse().ok();
-        }
-        serde_json::from_str::<ExchangeRequest>(data).ok().map(|r| r.nonce)
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ExchangeAction {
-    #[serde(rename = "type")]
-    pub action_type: String,
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "type", rename_all = "camelCase", rename_all_fields = "camelCase")]
+pub enum ExchangeAction {
+    Order,
+    CDeposit {
+        wei: u64,
+    },
+    CWithdraw {
+        wei: u64,
+    },
+    TokenDelegate {
+        wei: u64,
+        is_undelegate: bool,
+    },
+    #[serde(other)]
+    Other,
 }
 
 #[cfg(test)]
@@ -29,18 +32,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_get_nonce_from_action_id() {
-        assert_eq!(ExchangeRequest::get_nonce("action:1755132472149"), Some(1755132472149));
-    }
-
-    #[test]
-    fn test_get_nonce_from_json() {
+    fn test_exchange_request_parses_nonce() {
         let request = include_str!("../../testdata/hl_action_update_position_tp_sl.json").trim();
-        assert_eq!(ExchangeRequest::get_nonce(request), Some(1755132472149));
+        assert_eq!(serde_json::from_str::<ExchangeRequest>(request).unwrap().nonce, 1755132472149);
     }
 
     #[test]
-    fn test_get_nonce_invalid() {
-        assert_eq!(ExchangeRequest::get_nonce("not-json"), None);
+    fn test_exchange_request_rejects_invalid_json() {
+        assert!(serde_json::from_str::<ExchangeRequest>("not-json").is_err());
     }
 }

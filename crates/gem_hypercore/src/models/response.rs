@@ -166,7 +166,7 @@ mod tests {
     }
 
     #[test]
-    fn test_order_broadcast_fallback_uses_action_id() {
+    fn test_order_broadcast_without_order_id_uses_action_id() {
         let result = serde_json::from_str::<TransactionBroadcastResponse>(r#"{"status":"ok","response":{"type":"order"}}"#)
             .unwrap()
             .into_result(Some("action:123".to_string()));
@@ -184,7 +184,7 @@ mod tests {
     }
 
     #[test]
-    fn test_order_broadcast_fallback_without_action_id() {
+    fn test_order_broadcast_without_order_id_and_action_id_errors() {
         let result = serde_json::from_str::<TransactionBroadcastResponse>(r#"{"status":"ok","response":{"type":"order"}}"#)
             .unwrap()
             .into_result(None);

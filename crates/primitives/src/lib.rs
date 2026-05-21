@@ -243,6 +243,8 @@ pub use self::perpetual::{
 };
 pub mod search;
 pub use self::search::SearchResponse;
+pub mod perpetual_id;
+pub use self::perpetual_id::PerpetualId;
 pub mod perpetual_provider;
 pub use self::perpetual_provider::PerpetualProvider;
 pub mod perpetual_position;

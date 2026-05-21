@@ -17,7 +17,10 @@ use super::{
 };
 use crate::{
     FetchQuoteData, ProviderData, ProviderType, Quote, QuoteRequest, Route, RpcClient, RpcProvider, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperQuoteData,
-    approval::check_approval_erc20, cross_chain::VaultAddresses, fees::quote_value_after_reserve_by_chain, thorchain::client::ThorChainSwapClient,
+    approval::check_approval_erc20,
+    cross_chain::VaultAddresses,
+    fees::{default_referral_fees, quote_value_after_reserve_by_chain},
+    thorchain::client::ThorChainSwapClient,
 };
 
 pub struct ThorchainCrossChain;
@@ -109,7 +112,7 @@ where
             }
         }
 
-        let fee = request.options.clone().fee.unwrap_or_default().thorchain;
+        let fee = default_referral_fees().thorchain;
 
         let quote = self
             .client
@@ -152,7 +155,7 @@ where
     }
 
     async fn get_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
-        let fee = quote.request.options.clone().fee.unwrap_or_default().thorchain;
+        let fee = default_referral_fees().thorchain;
         let from_asset = THORChainAsset::from_asset_id(&quote.request.from_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
         let to_asset = THORChainAsset::from_asset_id(&quote.request.to_asset.id).ok_or(SwapperError::NotSupportedAsset)?;
 
@@ -269,7 +272,7 @@ mod tests {
 
         assert_eq!(data.to, "t1Ku2KLyndDPsR32jwnrTMd3yvi9tfFP8ML");
         assert_eq!(data.value, "10000000");
-        assert_eq!(data.memo, Some("=:b:bc1qdestination:0/1/0::0".to_string()));
+        assert_eq!(data.memo, Some("=:b:bc1qdestination:0/1/0:g1:50".to_string()));
     }
 }
 

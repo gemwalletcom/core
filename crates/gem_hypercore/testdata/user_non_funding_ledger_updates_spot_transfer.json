@@ -1,0 +1,18 @@
+[
+  {
+    "time": 1761611680099,
+    "hash": "0x1210f05525bce189138a042e558d8002126b003ac0b0005bb5d99ba7e4b0bb73",
+    "delta": {
+      "type": "spotTransfer",
+      "token": "USDC",
+      "amount": "1.0",
+      "usdcValue": "1.0",
+      "user": "0xba4d1d35bce0e8f28e5a3403e7a0b996c5d50ac4",
+      "destination": "0x9edcf9ff72088db8130c2512e5b4d3b5f34ceaf4",
+      "fee": "0.0",
+      "nativeTokenFee": "0.0",
+      "nonce": 1761611679622,
+      "feeToken": ""
+    }
+  }
+]

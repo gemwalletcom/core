@@ -239,18 +239,13 @@ impl<C: Client> HyperCoreClient<C> {
         .await
     }
 
-    pub async fn get_ledger_updates(&self, user: &str) -> Result<Vec<LedgerUpdate>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_ledger_updates(&self, user: &str, start_time: i64) -> Result<Vec<LedgerUpdate>, Box<dyn Error + Send + Sync>> {
         self.info(json!({
             "type": "userNonFundingLedgerUpdates",
-            "user": user
+            "user": user,
+            "startTime": start_time
         }))
         .await
-    }
-
-    pub async fn get_tx_hash_by_nonce(&self, user: &str, nonce: u64) -> Result<String, Box<dyn Error + Send + Sync>> {
-        let updates = self.get_ledger_updates(user).await?;
-        let update = updates.iter().find(|update| update.delta.nonce == Some(nonce)).ok_or("Nonce not found")?;
-        Ok(update.hash.clone())
     }
 
     pub async fn get_open_orders(&self, user: &str) -> Result<Vec<OpenOrder>, Box<dyn Error + Send + Sync>> {

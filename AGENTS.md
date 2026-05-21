@@ -24,6 +24,8 @@ Read this file first, then load the relevant skills for your current task. `proj
 
 ## Task Completion
 
+During active implementation, rebase conflict resolution, or compile-fix loops, prefer targeted build/test commands and defer broad clippy/format runs until the change is ready to commit. Do not skip the required clippy/format checks silently before final handoff; run them then, or report the exact reason they are still pending.
+
 Before finishing a task:
 1. **Review for simplification** — reduce duplication, extract helpers, consolidate modules, remove dead code
 2. **Keep changes minimal** — code must be concise and focused; reviewers cannot realistically review thousands of lines per PR, so only include what is necessary for the task

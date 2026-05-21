@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use num_bigint::{BigInt, BigUint};
-use primitives::{AssetId, Chain, NFTAssetId, NFTCollectionId};
+use primitives::{AssetId, Chain, NFTAssetId, NFTCollectionId, PerpetualId};
 use std::str::FromStr;
 
 uniffi::custom_type!(Chain, String, {
@@ -25,6 +25,12 @@ uniffi::custom_type!(NFTCollectionId, String, {
     remote,
     lower: |s| s.to_string(),
     try_lift: |s| NFTCollectionId::from_str(&s).map_err(|_| uniffi::deps::anyhow::Error::msg("Invalid NFTCollectionId")),
+});
+
+uniffi::custom_type!(PerpetualId, String, {
+    remote,
+    lower: |s| s.to_string(),
+    try_lift: |s| PerpetualId::from_str(&s).map_err(|_| uniffi::deps::anyhow::Error::msg("Invalid PerpetualId")),
 });
 
 pub type GemBigInt = BigInt;

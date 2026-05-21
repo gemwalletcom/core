@@ -18,12 +18,14 @@ pub mod transaction;
 #[cfg(feature = "signer")]
 pub mod signer;
 
-pub use address::validate_address;
+pub use address::{SolanaAddress, validate_address};
 pub use jsonrpc::SolanaRpc;
 pub use solana_primitives::{Pubkey, SolanaError, find_program_address};
-pub use transaction::{decode_transaction, try_decode_transaction};
+pub use transaction::{decode_transaction, encode_v0_transaction, instruction_from_primitive, instructions_from_primitives, try_decode_blockhash, try_decode_transaction};
 
 #[cfg(all(feature = "reqwest", not(feature = "rpc")))]
+pub use rpc::client::SolanaClient;
+#[cfg(feature = "rpc")]
 pub use rpc::client::SolanaClient;
 
 // Constants

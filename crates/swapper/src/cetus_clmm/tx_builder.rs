@@ -65,7 +65,7 @@ pub(super) async fn build_quote_data(
         ..
     } = PrefetchedTransactionData::prefetch(client, sender, route.input_coin_type(), None, object_ids, &pinned, ESTIMATION_GAS_BUDGET)
         .await
-        .map_err(|err| SwapperError::TransactionError(err.to_string()))?;
+        .map_err(SwapperError::transaction_error)?;
 
     let input = BuildInput {
         transaction,
@@ -74,10 +74,7 @@ pub(super) async fn build_quote_data(
     };
 
     let estimate = build_transaction(&resolver, quote, route, referral_fee, published_at, &input)?;
-    let dry_run = client
-        .dry_run(estimate.base64_encoded())
-        .await
-        .map_err(|err| SwapperError::TransactionError(err.to_string()))?;
+    let dry_run = client.dry_run(estimate.base64_encoded()).await.map_err(SwapperError::transaction_error)?;
     if dry_run.effects.status.status != "success" {
         let detail = dry_run.effects.status.error.as_deref().unwrap_or("no details available");
         if detail.contains("checked_package_version") {
@@ -88,11 +85,7 @@ pub(super) async fn build_quote_data(
         return Err(SwapperError::TransactionError(format!("Sui Cetus CLMM swap simulation failed: {detail}")));
     }
 
-    let fee = dry_run
-        .effects
-        .gas_used
-        .calculate_gas_budget()
-        .map_err(|err| SwapperError::TransactionError(err.to_string()))?;
+    let fee = dry_run.effects.gas_used.calculate_gas_budget().map_err(SwapperError::transaction_error)?;
     let gas_budget = fee * GAS_BUDGET_MULTIPLIER / 100;
     let output = build_transaction(&resolver, quote, route, referral_fee, published_at, &input.with_gas_budget(gas_budget))?;
 
@@ -365,12 +358,12 @@ fn inspect_transaction_kind_bytes(mut txb: TransactionBuilder) -> Result<Vec<u8>
     txb.set_gas_price(0);
     txb.set_gas_budget(0);
     txb.add_gas_objects(vec![ObjectInput::owned(Address::ZERO, 0, Digest::ZERO)]);
-    let tx = txb.try_build().map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))?;
-    bcs::to_bytes(&tx.kind).map_err(|err| SwapperError::ComputeQuoteError(err.to_string()))
+    let tx = txb.try_build().map_err(SwapperError::compute_quote_error)?;
+    bcs::to_bytes(&tx.kind).map_err(SwapperError::compute_quote_error)
 }
 
 fn error(err: impl Display) -> SwapperError {
-    SwapperError::TransactionError(err.to_string())
+    SwapperError::transaction_error(err)
 }
 
 #[cfg(test)]

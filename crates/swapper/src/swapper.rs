@@ -1,13 +1,12 @@
 use crate::{
-    AssetList, FetchQuoteData, Permit2ApprovalData, ProviderType, Quote, QuoteRequest, SwapResult, Swapper, SwapperChainAsset, SwapperError, SwapperProvider, SwapperProviderMode,
-    SwapperQuoteData, across, alien::RpcProvider, cetus_clmm, chainflip, cross_chain::VaultAddresses, fees::DEFAULT_STABLE_SWAP_REFERRAL_BPS, fees::is_stablecoin_symbol,
-    hyperliquid, jupiter, near_intents, panora, proxy::provider_factory, relay, squid, stonfi, thorchain, uniswap,
+    AssetList, FetchQuoteData, Permit2ApprovalData, ProviderType, Quote, QuoteRequest, SwapQuoteError, SwapQuotes, SwapResult, Swapper, SwapperChainAsset, SwapperError,
+    SwapperProvider, SwapperProviderMode, SwapperQuoteData, across, alien::RpcProvider, cetus_clmm, chainflip, cross_chain::VaultAddresses, hyperliquid, jupiter, mayan,
+    near_intents, panora, proxy::provider_factory, relay, squid, stonfi, thorchain, uniswap,
 };
 use num_bigint::BigInt;
 use num_traits::ToPrimitive;
 use primitives::{AssetId, Chain, EVMChain};
 use std::{
-    borrow::Cow,
     collections::{BTreeSet, HashSet},
     fmt::Debug,
     sync::Arc,
@@ -58,50 +57,6 @@ impl GemSwapper {
         gas_limit
     }
 
-    fn transform_request<'a>(request: &'a QuoteRequest) -> Cow<'a, QuoteRequest> {
-        if !Self::is_stable_swap(request) || request.options.fee.is_none() {
-            return Cow::Borrowed(request);
-        }
-
-        let mut updated_request = request.clone();
-        if let Some(fees) = updated_request.options.fee.as_mut() {
-            fees.update_all_bps(DEFAULT_STABLE_SWAP_REFERRAL_BPS);
-        }
-
-        Cow::Owned(updated_request)
-    }
-
-    fn is_stable_swap(request: &QuoteRequest) -> bool {
-        is_stablecoin_symbol(&request.from_asset.symbol) && is_stablecoin_symbol(&request.to_asset.symbol)
-    }
-
-    fn prioritized_error(errors: &[SwapperError]) -> Option<SwapperError> {
-        let input_errors: Vec<_> = errors
-            .iter()
-            .filter_map(|err| match err {
-                SwapperError::InputAmountError { min_amount } => {
-                    let value = min_amount.as_ref().and_then(|s| s.parse::<u128>().ok());
-                    Some((value, min_amount.clone()))
-                }
-                _ => None,
-            })
-            .collect();
-
-        if input_errors.is_empty() {
-            return None;
-        }
-
-        input_errors
-            .iter()
-            .filter(|(value, _)| value.is_some())
-            .min_by_key(|(value, _)| *value)
-            .map(|(value, _)| {
-                let adjusted = value.and_then(|v| v.checked_mul(11)).map(|v| (v / 10).to_string());
-                SwapperError::InputAmountError { min_amount: adjusted }
-            })
-            .or(Some(SwapperError::InputAmountError { min_amount: None }))
-    }
-
     fn sort_quotes_by_output_amount(quotes: &mut [Quote]) {
         quotes.sort_by(Self::compare_quotes_by_output_amount);
     }
@@ -127,7 +82,7 @@ impl GemSwapper {
             uniswap::default::boxed_oku(rpc_provider.clone()),
             uniswap::default::boxed_wagmi(rpc_provider.clone()),
             Box::new(stonfi::Stonfi::new(rpc_provider.clone())),
-            Box::new(provider_factory::new_mayan(rpc_provider.clone())),
+            Box::new(mayan::Mayan::new(rpc_provider.clone())),
             Box::new(panora::Panora::new(rpc_provider.clone())),
             Box::new(near_intents::NearIntents::new(rpc_provider.clone())),
             Box::new(chainflip::ChainflipProvider::new(rpc_provider.clone())),
@@ -187,42 +142,40 @@ impl GemSwapper {
     }
 
     pub async fn get_quote(&self, request: &QuoteRequest) -> Result<Vec<Quote>, SwapperError> {
+        let SwapQuotes { quotes, .. } = self.get_quotes(request).await?;
+        if quotes.is_empty() {
+            return Err(SwapperError::NoQuoteAvailable);
+        }
+        Ok(quotes)
+    }
+
+    pub async fn get_quotes(&self, request: &QuoteRequest) -> Result<SwapQuotes, SwapperError> {
         let provider_ids: BTreeSet<_> = self.get_providers_for_request(request)?.into_iter().map(|p| p.id).collect();
         let providers = self.swappers.iter().filter(|x| provider_ids.contains(&x.provider().id)).collect::<Vec<_>>();
 
-        let request_for_quote = Self::transform_request(request);
-        let quotes_futures = providers.into_iter().map(|x| x.get_quote(request_for_quote.as_ref()));
+        let quotes_futures = providers.into_iter().map(|x| {
+            let provider_id = x.provider().id.id().to_string();
+            async move { x.get_quote(request).await.map_err(|e| (provider_id, e)) }
+        });
 
         let quote_results = futures::future::join_all(quotes_futures).await;
 
         let mut quotes = Vec::new();
         let mut errors = Vec::new();
-
         for result in quote_results {
             match result {
                 Ok(quote) => quotes.push(quote),
-                Err(err) => {
-                    errors.push(err);
-                }
+                Err((provider_id, err)) => errors.push(SwapQuoteError::new(Some(provider_id), err.to_string())),
             }
-        }
-
-        if quotes.is_empty() {
-            if let Some(error) = Self::prioritized_error(&errors) {
-                return Err(error);
-            }
-            return Err(SwapperError::NoQuoteAvailable);
         }
 
         Self::sort_quotes_by_output_amount(&mut quotes);
-
-        Ok(quotes)
+        Ok(SwapQuotes { quotes, errors })
     }
 
     pub async fn get_quote_by_provider(&self, provider: SwapperProvider, request: QuoteRequest) -> Result<Quote, SwapperError> {
         let provider = self.get_swapper_by_provider(&provider)?;
-        let request_for_quote = Self::transform_request(&request);
-        provider.get_quote(request_for_quote.as_ref()).await
+        provider.get_quote(&request).await
     }
 
     pub async fn get_permit2_for_quote(&self, quote: &Quote) -> Result<Option<Permit2ApprovalData>, SwapperError> {
@@ -251,7 +204,7 @@ impl GemSwapper {
 #[cfg(all(test, feature = "reqwest_provider"))]
 mod tests {
 
-    use std::{borrow::Cow, collections::BTreeSet, sync::Arc, vec};
+    use std::{collections::BTreeSet, sync::Arc, vec};
 
     use primitives::{
         AssetId, Chain,
@@ -260,38 +213,11 @@ mod tests {
 
     use super::*;
     use crate::{
-        Options, SwapperChainAsset, SwapperProvider, SwapperQuoteAsset, SwapperSlippage, SwapperSlippageMode,
+        SwapperChainAsset, SwapperProvider, SwapperQuoteAsset,
         alien::reqwest_provider::NativeProvider,
-        fees::{DEFAULT_STABLE_SWAP_REFERRAL_BPS, DEFAULT_SWAP_FEE_BPS, ReferralFees},
         testkit::{MockSwapper, mock_quote},
         uniswap::default::{new_pancakeswap, new_uniswap_v3},
     };
-
-    fn build_request(from_symbol: &str, to_symbol: &str, fee: Option<ReferralFees>) -> QuoteRequest {
-        QuoteRequest {
-            from_asset: SwapperQuoteAsset {
-                id: format!("{}_asset", from_symbol),
-                symbol: from_symbol.to_string(),
-                decimals: 6,
-            },
-            to_asset: SwapperQuoteAsset {
-                id: format!("{}_asset", to_symbol),
-                symbol: to_symbol.to_string(),
-                decimals: 6,
-            },
-            wallet_address: "0xwallet".into(),
-            destination_address: "0xwallet".into(),
-            value: "1000000".into(),
-            options: Options {
-                slippage: SwapperSlippage {
-                    bps: 100,
-                    mode: SwapperSlippageMode::Exact,
-                },
-                fee,
-                use_max_amount: false,
-            },
-        }
-    }
 
     #[test]
     fn test_filter_by_provider_type() {
@@ -389,49 +315,8 @@ mod tests {
         assert!(GemSwapper::filter_supported_assets(supported_assets, asset_id));
     }
 
-    #[test]
-    fn test_is_stable_swap_detection() {
-        let stable_request = build_request("USDC", "USDT", None);
-        assert!(GemSwapper::is_stable_swap(&stable_request));
-
-        let non_stable_request = build_request("ETH", "USDC", None);
-        assert!(!GemSwapper::is_stable_swap(&non_stable_request));
-    }
-
-    #[test]
-    fn test_stable_swap_adjusts_fees() {
-        use crate::config::get_swap_config;
-
-        let request = build_request("USDC", "USDT", Some(get_swap_config().referral_fee));
-
-        let adjusted_request = match GemSwapper::transform_request(&request) {
-            Cow::Owned(req) => req,
-            Cow::Borrowed(_) => panic!("stable swap should adjust request"),
-        };
-        let adjusted_fees = adjusted_request.options.fee.unwrap();
-
-        assert_eq!(adjusted_fees.evm.bps, DEFAULT_STABLE_SWAP_REFERRAL_BPS);
-        assert_eq!(adjusted_fees.solana.bps, DEFAULT_STABLE_SWAP_REFERRAL_BPS);
-        assert_eq!(adjusted_fees.thorchain.bps, DEFAULT_STABLE_SWAP_REFERRAL_BPS);
-        assert_eq!(adjusted_fees.sui.bps, DEFAULT_STABLE_SWAP_REFERRAL_BPS);
-        assert_eq!(adjusted_fees.ton.bps, DEFAULT_STABLE_SWAP_REFERRAL_BPS);
-        assert_eq!(adjusted_fees.tron.bps, DEFAULT_STABLE_SWAP_REFERRAL_BPS);
-
-        let original_fees = request.options.fee.as_ref().unwrap();
-        assert_eq!(original_fees.evm.bps, DEFAULT_SWAP_FEE_BPS);
-    }
-
-    #[test]
-    fn test_transform_request_skips_when_not_applicable() {
-        let non_stable_request = build_request("ETH", "USDC", None);
-        assert!(matches!(GemSwapper::transform_request(&non_stable_request), Cow::Borrowed(_)));
-
-        let stable_without_fees = build_request("USDC", "USDT", None);
-        assert!(matches!(GemSwapper::transform_request(&stable_without_fees), Cow::Borrowed(_)));
-    }
-
     #[tokio::test]
-    async fn test_fetch_quote_input_amount_error() {
+    async fn test_get_quotes_collects_per_provider_errors() {
         let request = mock_quote(
             SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
             SwapperQuoteAsset::from(ETHEREUM_USDC_ASSET_ID.clone()),
@@ -442,39 +327,28 @@ mod tests {
             swappers: vec![
                 Box::new(MockSwapper::new(SwapperProvider::UniswapV3, || Err(SwapperError::InputAmountError { min_amount: None }))),
                 Box::new(MockSwapper::new(SwapperProvider::PancakeswapV3, || {
-                    Err(SwapperError::InputAmountError { min_amount: None })
-                })),
-                Box::new(MockSwapper::new(SwapperProvider::Jupiter, || Err(SwapperError::NoQuoteAvailable))),
-            ],
-        };
-        assert_eq!(gem_swapper.get_quote(&request).await, Err(SwapperError::InputAmountError { min_amount: None }));
-
-        let gem_swapper = GemSwapper {
-            rpc_provider: Arc::new(NativeProvider::default()),
-            swappers: vec![
-                Box::new(MockSwapper::new(SwapperProvider::UniswapV3, || {
-                    Err(SwapperError::InputAmountError {
-                        min_amount: Some("19630000".into()),
-                    })
-                })),
-                Box::new(MockSwapper::new(SwapperProvider::PancakeswapV3, || {
                     Err(SwapperError::InputAmountError {
                         min_amount: Some("1264000".into()),
                     })
                 })),
-                Box::new(MockSwapper::new(SwapperProvider::Jupiter, || {
-                    Err(SwapperError::InputAmountError {
-                        min_amount: Some("68000000".into()),
-                    })
-                })),
+                Box::new(MockSwapper::new(SwapperProvider::Jupiter, || Err(SwapperError::NoQuoteAvailable))),
             ],
         };
+        let result = gem_swapper.get_quotes(&request).await.unwrap();
+        assert!(result.quotes.is_empty());
+        assert_eq!(result.errors.len(), 3);
+
+        let providers: BTreeSet<_> = result.errors.iter().map(|e| e.provider.clone().unwrap()).collect();
         assert_eq!(
-            gem_swapper.get_quote(&request).await,
-            Err(SwapperError::InputAmountError {
-                min_amount: Some("1390400".into())
-            })
+            providers,
+            BTreeSet::from([
+                SwapperProvider::UniswapV3.id().to_string(),
+                SwapperProvider::PancakeswapV3.id().to_string(),
+                SwapperProvider::Jupiter.id().to_string(),
+            ])
         );
+        let pancake_error = result.errors.iter().find(|e| e.provider.as_deref() == Some(SwapperProvider::PancakeswapV3.id())).unwrap();
+        assert!(pancake_error.error.contains("1264000"));
     }
 
     #[test]

@@ -21,7 +21,10 @@ use crate::{
             update_leverage_typed_data, withdrawal_request_typed_data,
         },
     },
-    models::{action::ExchangeRequest, transaction_id::HyperCoreTransactionId},
+    models::{
+        action::ExchangeRequest,
+        transaction_id::{HyperCoreActionId, HyperCoreTransactionId},
+    },
     provider::{
         BroadcastProvider,
         transactions_mapper::{map_transaction_broadcast, map_transaction_broadcast_from_str},
@@ -32,9 +35,10 @@ use crate::{
 #[async_trait]
 impl<C: Client> ChainTransactionBroadcast for HyperCoreClient<C> {
     async fn transaction_broadcast(&self, data: String, _options: BroadcastOptions) -> Result<String, Box<dyn Error + Sync + Send>> {
-        let request = serde_json::from_str(&data)?;
+        let action_id = serde_json::from_str::<ExchangeRequest>(&data).ok().map(HyperCoreActionId::from);
+        let request: serde_json::Value = serde_json::from_str(&data)?;
         let response = self.exchange(request).await?;
-        let transaction_id = map_transaction_broadcast(response, &data)?;
+        let transaction_id = map_transaction_broadcast(response, action_id)?;
         let _ = cache_transaction_sender(self, &data, &transaction_id);
         Ok(transaction_id)
     }
@@ -61,20 +65,17 @@ struct SignedExchangeSignature {
 }
 
 fn cache_transaction_sender<C: Client>(client: &HyperCoreClient<C>, data: &str, transaction_id: &str) -> Result<(), Box<dyn Error + Sync + Send>> {
-    let signer = recover_sender_address(data)?;
+    let request: SignedExchangeRequest = serde_json::from_str(data)?;
+    let signer = recover_sender_address(&request)?;
     let sender = client.get_cached_agent_owner(&signer)?.unwrap_or(signer);
     client.cache_transaction_sender(transaction_id, &sender)?;
-
-    if let Some(nonce) = ExchangeRequest::get_nonce(data) {
-        client.cache_transaction_sender(&HyperCoreTransactionId::Action(nonce).to_string(), &sender)?;
-    }
+    client.cache_transaction_sender(&HyperCoreTransactionId::Action(HyperCoreActionId::Nonce(request.nonce)).to_string(), &sender)?;
 
     Ok(())
 }
 
-fn recover_sender_address(data: &str) -> Result<String, Box<dyn Error + Sync + Send>> {
-    let request: SignedExchangeRequest = serde_json::from_str(data)?;
-    let typed_data = typed_data_for_request(&request)?;
+fn recover_sender_address(request: &SignedExchangeRequest) -> Result<String, Box<dyn Error + Sync + Send>> {
+    let typed_data = typed_data_for_request(request)?;
     let digest = signer::hash_eip712(&typed_data)?;
     let signature = signature_from_request(&request.signature)?;
     let recovery_id = recovery_id_from_v(request.signature.v)?;
@@ -124,8 +125,8 @@ mod tests {
 
     #[test]
     fn test_recover_sender_address() {
-        let request = include_str!("../../testdata/hl_action_open_long_order.json").trim();
-        let address = recover_sender_address(request).unwrap();
+        let request = serde_json::from_str(include_str!("../../testdata/hl_action_open_long_order.json").trim()).unwrap();
+        let address = recover_sender_address(&request).unwrap();
 
         assert_eq!(address, "0xbbb0187503c3b5f08b03d674b9ac86ec30d790d2");
     }

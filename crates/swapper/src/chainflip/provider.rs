@@ -227,10 +227,7 @@ where
 
         let route_data: ChainflipRouteData = serde_json::from_str(&quote.data.routes[0].route_data)?;
         let chain = source_asset.chain.clone();
-        let price = route_data
-            .estimated_price
-            .parse::<f64>()
-            .map_err(|_| SwapperError::TransactionError("Invalid price".to_string()))?;
+        let price = route_data.estimated_price.parse::<f64>().map_err(|_| SwapperError::transaction_error("Invalid price"))?;
         let price_slippage = apply_slippage(price, quote.data.slippage_bps);
         let quote_asset_decimals = quote.request.to_asset.decimals;
         let base_asset_decimals = quote.request.from_asset.decimals;
