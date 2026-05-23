@@ -102,14 +102,14 @@ services:
       dynode_internal: {}
 
   redis:
-    image: redis:7.0-alpine
+    image: redis:8.6-alpine
     container_name: redis
     restart: always
     ports:
       - 6379:6379
 
   postgres:
-    image: postgres:latest
+    image: postgres:17
     container_name: postgres
     ports:
       - 5432:5432
@@ -131,7 +131,7 @@ services:
       RABBITMQ_DEFAULT_PASS: password
 
   meilisearch:
-    image: getmeili/meilisearch:v1.21.0
+    image: getmeili/meilisearch:v1.44.0
     container_name: meilisearch
     restart: always
     ports:
