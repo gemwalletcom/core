@@ -488,9 +488,9 @@ dependencies = [
 
 [[package]]
 name = "amq-protocol"
-version = "10.2.0"
+version = "10.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "95442d3faf08b9bed7491ceda36b0e0268126cb20d44e6e7573cf930d9aa5073"
+checksum = "81833d7f9d250dda1ca55020d6dad20f5a242ad917dd6edd7c21f626424653a5"
 dependencies = [
  "amq-protocol-tcp",
  "amq-protocol-types",
@@ -502,9 +502,9 @@ dependencies = [
 
 [[package]]
 name = "amq-protocol-tcp"
-version = "10.2.0"
+version = "10.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cc754c77e62e58ea7323c3f257a97f747ac57f0ff3f7a91185f484dc1cb25bd2"
+checksum = "889012b5e973bffd57bd668a9b184c2713754024ff1719164788e61ecb4450b5"
 dependencies = [
  "amq-protocol-uri",
  "async-rs",
@@ -515,9 +515,9 @@ dependencies = [
 
 [[package]]
 name = "amq-protocol-types"
-version = "10.2.0"
+version = "10.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7d8cb8fa210da5ec52799abf7ce45e2275b5a3f82ec4efafcd3e8161b7dbc9a8"
+checksum = "356da5abbf8f1ad806d6eb77161ad2c878d892d74f756021c5002973303abb05"
 dependencies = [
  "cookie-factory",
  "nom 8.0.0",
@@ -527,9 +527,9 @@ dependencies = [
 
 [[package]]
 name = "amq-protocol-uri"
-version = "10.2.0"
+version = "10.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0bc3e8b145641e20b57777a17b3bd7ba6bbdbb2b2ae2f26f6224be35e42c330"
+checksum = "e6c4982c5c729761a6e9c1464c2da53094c07e9cf45aa3daceb2620e17b1fce9"
 dependencies = [
  "amq-protocol-types",
  "percent-encoding",
@@ -4666,16 +4666,16 @@ dependencies = [
 
 [[package]]
 name = "lapin"
-version = "4.7.4"
+version = "4.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f296d806dbacc044135c9686a0d3e78b5122907d4d6604c72a825316139e9f2d"
+checksum = "0fd20e01fd92597ca352ca7ceed3c589851ebad279dfcada48aa4d24fd3a7caa"
 dependencies = [
  "amq-protocol",
  "async-rs",
  "async-trait",
- "atomic-waker",
  "backon",
  "cfg-if",
+ "event-listener",
  "flume",
  "futures-core",
  "futures-io",
