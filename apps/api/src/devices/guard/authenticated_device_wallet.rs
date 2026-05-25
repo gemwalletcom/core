@@ -5,7 +5,6 @@ use rocket::request::{FromRequest, Outcome};
 use storage::models::DeviceRow;
 
 use super::auth::{auth_error_outcome, authenticate, lookup_device_wallet};
-use crate::devices::constants::HEADER_WALLET_ID;
 use crate::devices::error::DeviceError;
 
 // Verifies control of the device key, then resolves a wallet attached to that device.
@@ -27,7 +26,7 @@ impl<'r> FromRequest<'r> for AuthenticatedDeviceWallet {
         };
 
         let Some(wallet_id_str) = auth.wallet_id else {
-            return auth_error_outcome(req, DeviceError::MissingHeader(HEADER_WALLET_ID), Some(&auth.device_id), None);
+            return auth_error_outcome(req, DeviceError::MissingWalletId, Some(&auth.device_id), None);
         };
 
         let (device_row, wallet_row) = match lookup_device_wallet(req, &auth.device_id, &wallet_id_str).await {

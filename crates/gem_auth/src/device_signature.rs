@@ -2,16 +2,9 @@ use alloy_primitives::hex;
 use ed25519_dalek::{Signature, VerifyingKey};
 use gem_encoding::decode_base64;
 
-pub const GEM_AUTH_SCHEME: &str = "Gem ";
-
-#[derive(Debug, PartialEq)]
-pub enum AuthScheme {
-    Gem,
-    Legacy,
-}
+const GEM_AUTH_SCHEME: &str = "Gem ";
 
 pub struct DeviceAuthPayload {
-    pub scheme: AuthScheme,
     pub device_id: String,
     pub timestamp: String,
     pub wallet_id: Option<String>,
@@ -28,18 +21,12 @@ pub fn parse_device_auth(header_value: &str) -> Option<DeviceAuthPayload> {
         return None;
     }
     Some(DeviceAuthPayload {
-        scheme: AuthScheme::Gem,
         device_id: parts[0].to_string(),
         timestamp: parts[1].to_string(),
         wallet_id: if parts[2].is_empty() { None } else { Some(parts[2].to_string()) },
         body_hash: parts[3].to_string(),
         signature: hex::decode(parts[4]).ok()?,
     })
-}
-
-// TODO: remove base64 fallback once all clients use hex signatures
-pub fn decode_signature(value: &str) -> Option<Vec<u8>> {
-    hex::decode(value).ok().or_else(|| decode_base64(value).ok())
 }
 
 pub fn verify_device_signature(public_key_hex: &str, message: &str, signature: &[u8]) -> bool {

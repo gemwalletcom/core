@@ -29,12 +29,7 @@ Wallet authentication endpoints require proof of wallet ownership via blockchain
 }
 ```
 
-Wallet-authenticated requests are still device-authenticated requests. Use the Gem `Authorization` header for device authentication where possible; existing clients may still use the legacy individual headers documented in [Device Authentication](DEVICE_AUTHENTICATION.md).
-
-For the current `WalletSigned<T>` guard, include:
-- `x-device-body-hash`: SHA256 hash of request body (hex)
-
-This binds the wallet-signed JSON body to the request body read by the guard. Moving this check fully into the Gem `Authorization` payload should be done with the legacy-removal PR.
+Wallet-authenticated requests are still device-authenticated requests. The request body hash is included in the signed `Authorization: Gem ...` device-auth payload, which binds the wallet-signed JSON body to the request.
 
 ## Nonce Request
 
@@ -77,7 +72,6 @@ GET /v2/devices/auth/nonce
 POST https://api.gemwallet.com/v2/devices/rewards/referrals/create
 Content-Type: application/json
 Authorization: Gem base64(<device_id_hex>.<timestamp_ms>.<wallet_id>.<body_hash_hex>.<signature_hex>)
-x-device-body-hash: a1b2c3d4e5f6...
 
 {
   "auth": {
