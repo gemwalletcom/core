@@ -118,15 +118,27 @@ pub fn adjust_signed_value(number: I256, bits: usize) -> Result<U256, SignerErro
         return SignerError::invalid_input_err(format!("Value out of range for signed integer with {bits} bits"));
     }
 
-    if bits == MAX_WORD_BYTES * 8 {
-        return Ok(number.into_raw());
-    }
+    Ok(number.into_raw())
+}
 
-    if number.is_negative() {
-        let abs = number.unsigned_abs();
-        let modulus = U256::from(1u64) << bits;
-        modulus.checked_sub(abs).ok_or_else(|| SignerError::invalid_input("Failed to encode signed integer"))
-    } else {
-        Ok(number.unsigned_abs())
+#[cfg(test)]
+mod tests {
+    use alloy_primitives::I256;
+
+    use super::{MAX_WORD_BYTES, adjust_signed_value};
+
+    #[test]
+    fn test_adjust_signed_value() {
+        let negative = adjust_signed_value(I256::try_from(-42).unwrap(), 32).unwrap().to_be_bytes::<MAX_WORD_BYTES>();
+        assert_eq!(negative[..31], [0xff; 31]);
+        assert_eq!(negative[31], 0xd6);
+
+        let positive = adjust_signed_value(I256::try_from(42).unwrap(), 32).unwrap().to_be_bytes::<MAX_WORD_BYTES>();
+        assert_eq!(positive[..31], [0; 31]);
+        assert_eq!(positive[31], 42);
+
+        assert!(adjust_signed_value(I256::try_from(-(1i128 << 31)).unwrap(), 32).is_ok());
+        assert!(adjust_signed_value(I256::try_from(1i128 << 31).unwrap(), 32).is_err());
+        assert!(adjust_signed_value(I256::try_from(-(1i128 << 31) - 1).unwrap(), 32).is_err());
     }
 }

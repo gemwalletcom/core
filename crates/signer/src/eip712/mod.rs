@@ -48,7 +48,7 @@ mod tests {
         let json = include_str!("../../testdata/eip712_signed_integers.json");
 
         let digest = hash_typed_data(json).expect("hash succeeds");
-        let expected = <[u8; 32]>::from_hex("10e6c8b7c51b08488a421a5492d4524439470010eb2f8c80c22b9d918d79a5a9").unwrap();
+        let expected = <[u8; 32]>::from_hex("c6bed7e6a1ec9d2737b1d7bbca1e966eff59e74e21d8e20a66351b2db82cfc6a").unwrap();
         assert_eq!(digest, expected);
     }
 
