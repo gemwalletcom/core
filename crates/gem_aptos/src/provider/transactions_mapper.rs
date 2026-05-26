@@ -98,10 +98,11 @@ fn map_swap_transaction(transaction: Transaction, events: Vec<Event>, chain: Cha
         ];
 
         let swap = SwapMapper::map_swap(&balance_diffs, &BigUint::from(0u8), &chain.as_asset_id(), Some(SwapProvider::Panora.id().to_owned()))?;
+        let asset_id = swap.from_asset.clone();
         let metadata = serde_json::to_value(&swap).ok();
         let to = meta.sender.clone();
 
-        return Some(build_transaction(meta, chain.as_asset_id(), to, swap.from_value, TransactionType::Swap, metadata));
+        return Some(build_transaction(meta, asset_id, chain.as_asset_id(), to, swap.from_value, TransactionType::Swap, metadata));
     }
 
     let withdraw_event = events.iter().find(|e| e.event_type == FUNGIBLE_ASSET_WITHDRAW_EVENT)?;
@@ -149,15 +150,17 @@ fn map_swap_transaction(transaction: Transaction, events: Vec<Event>, chain: Cha
     });
 
     let swap = SwapMapper::map_swap(&balance_diffs, &BigUint::from(0u8), &chain.as_asset_id(), provider)?;
+    let asset_id = swap.from_asset.clone();
     let metadata = serde_json::to_value(&swap).ok();
     let to = meta.sender.clone();
 
-    Some(build_transaction(meta, chain.as_asset_id(), to, swap.from_value, TransactionType::Swap, metadata))
+    Some(build_transaction(meta, asset_id, chain.as_asset_id(), to, swap.from_value, TransactionType::Swap, metadata))
 }
 
 fn build_transaction(
     meta: TransactionMeta,
     asset_id: AssetId,
+    fee_asset_id: AssetId,
     to: String,
     value: String,
     transaction_type: TransactionType,
@@ -165,14 +168,14 @@ fn build_transaction(
 ) -> PrimitivesTransaction {
     PrimitivesTransaction::new(
         meta.hash,
-        asset_id.clone(),
+        asset_id,
         meta.sender,
         to,
         None,
         transaction_type,
         meta.state,
         meta.fee,
-        asset_id,
+        fee_asset_id,
         value,
         None,
         metadata,
@@ -196,6 +199,7 @@ pub fn map_transaction(transaction: Transaction) -> Option<PrimitivesTransaction
                 let data: DelegationPoolAddStakeData = serde_json::from_value(event.data.clone()?).ok()?;
                 return Some(build_transaction(
                     meta,
+                    asset_id.clone(),
                     asset_id,
                     data.pool_address,
                     data.amount_added,
@@ -207,6 +211,7 @@ pub fn map_transaction(transaction: Transaction) -> Option<PrimitivesTransaction
                 let data: DelegationPoolUnlockStakeData = serde_json::from_value(event.data.clone()?).ok()?;
                 return Some(build_transaction(
                     meta,
+                    asset_id.clone(),
                     asset_id,
                     data.pool_address,
                     data.amount_unlocked,
@@ -231,7 +236,7 @@ pub fn map_transaction(transaction: Transaction) -> Option<PrimitivesTransaction
 
         let value = deposit_event.get_amount()?;
 
-        return Some(build_transaction(meta, asset_id, to, value, TransactionType::Transfer, None));
+        return Some(build_transaction(meta, asset_id.clone(), asset_id, to, value, TransactionType::Transfer, None));
     }
     None
 }
@@ -315,6 +320,8 @@ mod tests {
         assert_eq!(tx.to, "0x4eb20e735591a85bb58921ef2e6b55c385bba10e817ffe1e02e50deb6c594aef");
         assert_eq!(tx.state, TransactionState::Confirmed);
         assert_eq!(tx.transaction_type, TransactionType::Swap);
+        assert_eq!(tx.asset_id, AssetId::from_token(Chain::Aptos, APTOS_USDT_TOKEN_ID));
+        assert_eq!(tx.fee_asset_id, Chain::Aptos.as_asset_id());
         assert_eq!(tx.fee, "142600");
         assert!(tx.metadata.is_some());
 

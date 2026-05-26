@@ -105,8 +105,9 @@ fn map_transaction_type(
             _ => return None,
         };
         let owner = owner.clone()?;
+        let asset_id = swap.from_asset.clone();
         return Some((
-            chain.as_asset_id(),
+            asset_id,
             owner.clone(),
             owner,
             TransactionType::Swap,
@@ -366,6 +367,7 @@ mod tests {
         .unwrap();
 
         assert_eq!(swap.transaction_type, TransactionType::Swap);
+        assert_eq!(swap.asset_id, AssetId::from_token(Chain::Sui, TOKEN_A));
         assert_eq!(swap.value, "200");
         let metadata: TransactionSwapMetadata = serde_json::from_value(swap.metadata.unwrap()).unwrap();
         assert_eq!(metadata.from_asset, AssetId::from_token(Chain::Sui, TOKEN_A));
