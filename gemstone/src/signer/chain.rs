@@ -1,6 +1,7 @@
 use crate::{GemstoneError, models::transaction::GemSignerInput};
 use gem_algorand::AlgorandChainSigner;
 use gem_aptos::AptosChainSigner;
+use gem_bitcoin::signer::BitcoinChainSigner;
 use gem_cardano::signer::CardanoChainSigner;
 use gem_cosmos::signer::CosmosChainSigner;
 use gem_evm::signer::EvmChainSigner;
@@ -13,7 +14,7 @@ use gem_sui::signer::SuiChainSigner;
 use gem_ton::signer::TonChainSigner;
 use gem_tron::signer::TronChainSigner;
 use gem_xrp::signer::XrpChainSigner;
-use primitives::{Chain, ChainSigner, ChainType, EVMChain, SignerError, SignerInput};
+use primitives::{BitcoinChain, Chain, ChainSigner, ChainType, EVMChain, SignerError, SignerInput};
 use zeroize::Zeroizing;
 
 #[derive(uniffi::Object)]
@@ -41,7 +42,7 @@ impl GemChainSigner {
             ChainType::Xrp => Box::new(XrpChainSigner),
             ChainType::Polkadot => Box::new(PolkadotChainSigner),
             ChainType::Cardano => Box::new(CardanoChainSigner),
-            _ => todo!("Signer not implemented for chain {:?}", chain),
+            ChainType::Bitcoin => Box::new(BitcoinChainSigner::new_with_rbf(BitcoinChain::from_chain(chain).unwrap(), true)),
         };
 
         Self { chain, signer }

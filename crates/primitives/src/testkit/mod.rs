@@ -7,6 +7,7 @@ pub mod fiat_mock;
 pub mod gorush_mock;
 pub mod json;
 pub mod json_rpc;
+pub mod mock_zcash;
 pub mod nft_mock;
 pub mod perpetual_mock;
 pub mod quote_asset_mock;

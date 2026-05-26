@@ -389,14 +389,14 @@ mod tests {
 
     #[test]
     fn max_quote_keeps_transfer_amount() {
-        let mut request = QuoteRequest::mock(Chain::Tron, None);
+        let mut request = QuoteRequest::mock(Chain::Bitcoin, None);
         request.to_asset = SwapperQuoteAsset::from(AssetId::from_chain(Chain::Near));
-        request.value = "37000000".to_string();
+        request.value = "89100".to_string();
         request.options.use_max_amount = true;
 
         let quote_request = NearIntents::<RpcClient>::build_quote_request(&request, SwapType::FlexInput, true).unwrap();
 
-        assert_eq!(quote_request.amount, "37000000");
+        assert_eq!(quote_request.amount, "89100");
     }
 
     #[test]

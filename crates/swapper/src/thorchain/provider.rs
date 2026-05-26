@@ -221,7 +221,7 @@ mod tests {
     use std::sync::Arc;
 
     use super::*;
-    use crate::{Options, SwapperQuoteAsset, alien::mock::ProviderMock};
+    use crate::{Options, SwapperQuoteAsset, alien::mock::ProviderMock, testkit::mock_bitcoin_max_quote};
 
     #[test]
     fn test_min_value() {
@@ -242,6 +242,14 @@ mod tests {
         });
 
         assert!(has_zcash);
+    }
+
+    #[test]
+    fn test_quote_input_value_bitcoin_max_passes_value_through() {
+        let from_asset = THORChainAsset::from_asset_id(Chain::Bitcoin.as_ref()).unwrap();
+        let request = mock_bitcoin_max_quote(SwapperQuoteAsset::from(Chain::Solana.as_asset_id()));
+
+        assert_eq!(quote_input_value(&from_asset, &request).unwrap(), "89100");
     }
 
     #[tokio::test]
