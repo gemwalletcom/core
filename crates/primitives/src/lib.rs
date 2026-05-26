@@ -324,5 +324,8 @@ pub use self::metrics::{ConsumerStatus, ParserStatus, ReportedError};
 pub mod value_access;
 pub use self::value_access::{JsonDecode, ValueAccess};
 
+pub mod support;
+pub use self::support::{SupportAgent, SupportConversation, SupportConversationStatus, SupportMessage, SupportMessageDeliveryStatus, SupportMessageDirection};
+
 #[cfg(any(test, feature = "testkit"))]
 pub mod testkit;
