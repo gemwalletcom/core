@@ -1,0 +1,7 @@
+[package]
+name = "gem_keystore"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+bip39 = { workspace = true }

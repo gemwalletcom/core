@@ -1226,6 +1226,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "383d29d513d8764dcdc42ea295d979eb99c3c9f00607b3692cf68a431f7dca72"
 
 [[package]]
+name = "bip39"
+version = "2.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "90dbd31c98227229239363921e60fcf5e558e43ec69094d46fc4996f08d1d5bc"
+dependencies = [
+ "bitcoin_hashes",
+]
+
+[[package]]
 name = "bit-set"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3308,6 +3317,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "gem_keystore"
+version = "1.0.0"
+dependencies = [
+ "bip39",
+]
+
+[[package]]
 name = "gem_near"
 version = "1.0.0"
 dependencies = [
@@ -3578,6 +3594,7 @@ dependencies = [
  "gem_hash",
  "gem_hypercore",
  "gem_jsonrpc",
+ "gem_keystore",
  "gem_near",
  "gem_polkadot",
  "gem_solana",

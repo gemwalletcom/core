@@ -115,6 +115,7 @@ sui-types = { package = "sui-sdk-types", version = "0.3.0", features = [
     "serde",
 ] }
 k256 = { version = "0.13.4", features = ["ecdsa", "sha256"] }
+bip39 = { version = "2.2.2", default-features = false }
 
 uniffi = { version = "0.31.1" }
 regex = { version = "1.12.3" }

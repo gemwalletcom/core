@@ -41,6 +41,7 @@ gem_xrp = { path = "../crates/gem_xrp", features = ["rpc", "signer"] }
 gem_near = { path = "../crates/gem_near", features = ["rpc", "signer"] }
 gem_polkadot = { path = "../crates/gem_polkadot", features = ["rpc", "signer"] }
 gem_wallet_connect = { path = "../crates/gem_wallet_connect" }
+gem_keystore = { path = "../crates/gem_keystore" }
 chain_traits = { path = "../crates/chain_traits" }
 signer = { path = "../crates/signer" }
 number_formatter = { path = "../crates/number_formatter" }
