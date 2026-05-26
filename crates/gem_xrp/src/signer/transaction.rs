@@ -97,7 +97,7 @@ impl XrpTransaction {
         preimage.extend_from_slice(&SIGNING_PREFIX);
         preimage.extend_from_slice(&unsigned);
         let digest = sha512_half(&preimage);
-        let mut signature = ::signer::Signer::sign_digest(::signer::SignatureScheme::Secp256k1, digest.to_vec(), private_key.to_vec())?;
+        let mut signature = ::signer::Signer::sign_digest(::signer::SignatureScheme::Secp256k1, &digest, private_key)?;
         if signature.len() < 64 {
             return Err(SignerError::signing_error("secp256k1 signature too short"));
         }

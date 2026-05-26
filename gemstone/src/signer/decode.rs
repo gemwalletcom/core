@@ -4,7 +4,8 @@ use zeroize::Zeroizing;
 
 #[uniffi::export]
 pub fn decode_private_key(chain: Chain, value: String) -> Result<Vec<u8>, GemstoneError> {
-    Ok(signer::decode_private_key(&chain, &value)?.to_vec())
+    let mut private_key = signer::decode_private_key(&chain, &value)?;
+    Ok(std::mem::take(&mut private_key))
 }
 
 #[uniffi::export]

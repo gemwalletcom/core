@@ -14,6 +14,7 @@ use gem_ton::signer::TonChainSigner;
 use gem_tron::signer::TronChainSigner;
 use gem_xrp::signer::XrpChainSigner;
 use primitives::{Chain, ChainSigner, ChainType, EVMChain, SignerError, SignerInput};
+use zeroize::Zeroizing;
 
 #[derive(uniffi::Object)]
 pub struct GemChainSigner {
@@ -97,7 +98,8 @@ impl GemChainSigner {
     }
 
     pub fn sign_message(&self, message: Vec<u8>, private_key: Vec<u8>) -> Result<String, GemstoneError> {
-        self.dispatch_message(message, private_key, "message", |signer, msg, key| signer.sign_message(msg, key))
+        let private_key = Zeroizing::new(private_key);
+        self.dispatch_message(&message, private_key.as_slice(), "message", |signer, msg, key| signer.sign_message(msg, key))
     }
 }
 
@@ -107,16 +109,16 @@ impl GemChainSigner {
         F: Fn(&dyn ChainSigner, &SignerInput, &[u8]) -> Result<T, SignerError>,
     {
         let signer_input: SignerInput = input.into();
-        let key = private_key;
+        let private_key = Zeroizing::new(private_key);
 
-        method(self.signer.as_ref(), &signer_input, key.as_slice()).map_err(|err| map_signer_error(self.chain, action, err))
+        method(self.signer.as_ref(), &signer_input, private_key.as_slice()).map_err(|err| map_signer_error(self.chain, action, err))
     }
 
-    fn dispatch_message<T, F>(&self, message: Vec<u8>, private_key: Vec<u8>, action: &'static str, method: F) -> Result<T, GemstoneError>
+    fn dispatch_message<T, F>(&self, message: &[u8], private_key: &[u8], action: &'static str, method: F) -> Result<T, GemstoneError>
     where
         F: Fn(&dyn ChainSigner, &[u8], &[u8]) -> Result<T, SignerError>,
     {
-        method(self.signer.as_ref(), &message, &private_key).map_err(|err| map_signer_error(self.chain, action, err))
+        method(self.signer.as_ref(), message, private_key).map_err(|err| map_signer_error(self.chain, action, err))
     }
 }
 

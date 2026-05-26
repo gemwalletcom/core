@@ -12,7 +12,7 @@ pub(crate) fn sign_transaction(transaction: &AlgorandTransaction, private_key: &
     preimage.extend_from_slice(TX_TAG);
     preimage.extend_from_slice(&encoded);
 
-    let signature = Signer::sign_digest(SignatureScheme::Ed25519, preimage, private_key.to_vec())?;
+    let signature = Signer::sign_digest(SignatureScheme::Ed25519, &preimage, private_key)?;
     let signed = encode_signed_transaction(&encoded, &signature);
     Ok(hex::encode(signed))
 }

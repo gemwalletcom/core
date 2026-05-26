@@ -173,7 +173,7 @@ impl MessageSigner {
             }
             SignDigestType::Base58 => {
                 let hash = self.hash()?;
-                let signed = Signer::sign_digest(SignatureScheme::Ed25519, hash, private_key.to_vec())?;
+                let signed = Signer::sign_digest(SignatureScheme::Ed25519, &hash, private_key.as_slice())?;
                 Ok(self.get_result(&signed))
             }
         }

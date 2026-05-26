@@ -125,7 +125,7 @@ fn sign_contract(input: &SignerInput, contract: TronContract, fee_limit: u64, pr
 }
 
 fn sign_raw_hash(hash: &[u8], private_key: &[u8]) -> Result<String, SignerError> {
-    Ok(hex::encode(Signer::sign_digest(SignatureScheme::Secp256k1, hash.to_vec(), private_key.to_vec())?))
+    Ok(hex::encode(Signer::sign_digest(SignatureScheme::Secp256k1, hash, private_key)?))
 }
 
 fn encode_trc20_transfer(destination: &TronAddress, value: &str) -> Result<Vec<u8>, SignerError> {

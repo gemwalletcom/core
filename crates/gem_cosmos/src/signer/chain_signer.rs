@@ -152,7 +152,7 @@ impl CosmosChainSigner {
         let sign_doc_bytes = params.encode_sign_doc(&params.body_bytes, &auth_info_bytes);
 
         let digest = Self::sign_doc_digest(chain, &sign_doc_bytes);
-        let mut signature = Signer::sign_digest(SignatureScheme::Secp256k1, digest.to_vec(), private_key.to_vec())?;
+        let mut signature = Signer::sign_digest(SignatureScheme::Secp256k1, &digest, private_key)?;
         if signature.len() < 64 {
             return Err(SignerError::signing_error("secp256k1 signature too short"));
         }

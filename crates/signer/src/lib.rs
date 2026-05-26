@@ -10,8 +10,6 @@ pub(crate) mod testkit {
     pub const TEST_PRIVATE_KEY: &str = "1e9d38b5274152a78dff1a86fa464ceadc1f4238ca2c17060c3c507349424a34";
 }
 
-use zeroize::Zeroizing;
-
 pub use crate::address::Base32Address;
 pub use crate::ed25519::{ED25519_KEY_TYPE, Ed25519KeyPair};
 pub use crate::error::InvalidInput;
@@ -34,18 +32,16 @@ pub enum SignatureScheme {
 }
 
 impl Signer {
-    pub fn sign_digest(scheme: SignatureScheme, digest: Vec<u8>, private_key: Vec<u8>) -> Result<Vec<u8>, SignerError> {
-        let private_key = Zeroizing::new(private_key);
+    pub fn sign_digest(scheme: SignatureScheme, digest: &[u8], private_key: &[u8]) -> Result<Vec<u8>, SignerError> {
         match scheme {
-            SignatureScheme::Ed25519 => Ok(Ed25519KeyPair::from_private_key(&private_key)?.sign(&digest).to_vec()),
-            SignatureScheme::Secp256k1 => secp256k1::sign_digest_append_recovery(&digest, &private_key),
+            SignatureScheme::Ed25519 => Ok(Ed25519KeyPair::from_private_key(private_key)?.sign(digest).to_vec()),
+            SignatureScheme::Secp256k1 => secp256k1::sign_digest_append_recovery(digest, private_key),
         }
     }
 
     /// Sign a secp256k1 digest returning [r(32), s(32), v(1)] where v ∈ {27, 28}.
     pub fn sign_ethereum_digest(digest: &[u8], private_key: &[u8]) -> Result<Vec<u8>, SignerError> {
-        let private_key = Zeroizing::new(private_key.to_vec());
-        secp256k1::sign_ethereum_digest(digest, &private_key)
+        secp256k1::sign_ethereum_digest(digest, private_key)
     }
 
     pub fn sign_eip712(typed_data_json: &str, private_key: &[u8]) -> Result<String, SignerError> {
