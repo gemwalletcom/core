@@ -13,14 +13,6 @@ pub enum SupportConversationStatus {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[typeshare(swift = "Equatable, CaseIterable, Sendable")]
 #[serde(rename_all = "lowercase")]
-pub enum SupportMessageDirection {
-    Incoming,
-    Outgoing,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[typeshare(swift = "Equatable, CaseIterable, Sendable")]
-#[serde(rename_all = "lowercase")]
 pub enum SupportMessageDeliveryStatus {
     Sending,
     Sent,
@@ -34,6 +26,14 @@ pub struct SupportAgent {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub avatar_url: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[typeshare(swift = "Equatable, Sendable")]
+#[serde(tag = "type", content = "data", rename_all = "lowercase")]
+pub enum SupportMessageSender {
+    User,
+    Agent(SupportAgent),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -57,9 +57,7 @@ pub struct SupportMessage {
     pub id: String,
     pub conversation_id: String,
     pub content: String,
-    pub direction: SupportMessageDirection,
+    pub sender: SupportMessageSender,
     pub delivery_status: SupportMessageDeliveryStatus,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub agent: Option<SupportAgent>,
     pub created_at: DateTime<Utc>,
 }

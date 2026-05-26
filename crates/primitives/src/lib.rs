@@ -325,7 +325,7 @@ pub mod value_access;
 pub use self::value_access::{JsonDecode, ValueAccess};
 
 pub mod support;
-pub use self::support::{SupportAgent, SupportConversation, SupportConversationStatus, SupportMessage, SupportMessageDeliveryStatus, SupportMessageDirection};
+pub use self::support::{SupportAgent, SupportConversation, SupportConversationStatus, SupportMessage, SupportMessageDeliveryStatus, SupportMessageSender};
 
 #[cfg(any(test, feature = "testkit"))]
 pub mod testkit;
