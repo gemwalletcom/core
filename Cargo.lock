@@ -640,6 +640,7 @@ dependencies = [
  "storage",
  "streamer",
  "strum",
+ "support",
  "swapper",
  "tokio",
  "unic-langid",
@@ -7320,8 +7321,11 @@ dependencies = [
 name = "support"
 version = "1.0.0"
 dependencies = [
+ "cacher",
+ "chrono",
  "localizer",
  "primitives",
+ "reqwest 0.13.4",
  "serde",
  "serde_json",
  "storage",

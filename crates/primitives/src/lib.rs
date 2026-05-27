@@ -224,6 +224,11 @@ pub mod websocket;
 pub use self::websocket::{WebSocketPriceAction, WebSocketPriceActionType, WebSocketPricePayload};
 pub mod stream;
 pub use self::stream::{StreamBalanceUpdate, StreamEvent, StreamMessage, StreamMessagePrices, StreamTransactionsUpdate, StreamWalletUpdate, device_stream_channel};
+pub mod support;
+pub use self::support::{
+    SupportAgent, SupportConversation, SupportConversationStatus, SupportMessage, SupportMessageDeliveryStatus, SupportMessageInput, SupportMessageSender, SupportStreamEvent,
+    SupportTyping, SupportTypingStatus,
+};
 pub mod asset_balance;
 pub use self::asset_balance::{AddressBalances, AssetBalance, Balance};
 pub mod chain_address;
@@ -323,9 +328,6 @@ pub mod metrics;
 pub use self::metrics::{ConsumerStatus, ParserStatus, ReportedError};
 pub mod value_access;
 pub use self::value_access::{JsonDecode, ValueAccess};
-
-pub mod support;
-pub use self::support::{SupportAgent, SupportConversation, SupportConversationStatus, SupportMessage, SupportMessageDeliveryStatus, SupportMessageSender};
 
 #[cfg(any(test, feature = "testkit"))]
 pub mod testkit;

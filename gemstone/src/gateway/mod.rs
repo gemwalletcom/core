@@ -15,12 +15,13 @@ use crate::api_client::GemApiClient;
 use crate::models::*;
 use crate::transaction_state::StatusProvider;
 use chain_traits::ChainTraits;
+use std::error::Error as StdError;
 use std::future::Future;
 use std::sync::Arc;
 use swapper::swapper::GemSwapper as Swapper;
 use yielder::Yielder;
 
-use primitives::{AssetId, Chain, ChartPeriod, ScanAddressTarget, ScanTransactionPayload, TransactionPreloadInput};
+use primitives::{AssetId, Chain, ChartPeriod, ScanAddressTarget, ScanTransactionPayload, SupportMessageInput, TransactionPreloadInput};
 
 #[uniffi::export(with_foreign)]
 #[async_trait::async_trait]
@@ -47,7 +48,7 @@ impl GemGateway {
     async fn with_provider<T, F, Fut>(&self, chain: Chain, call: F) -> Result<T, GatewayError>
     where
         F: FnOnce(Arc<dyn ChainTraits>) -> Fut,
-        Fut: Future<Output = Result<T, Box<dyn std::error::Error + Send + Sync>>>,
+        Fut: Future<Output = Result<T, Box<dyn StdError + Send + Sync>>>,
     {
         let provider = self.chain_factory.create(chain).await?;
         call(provider).await.map_err(|e| GatewayError::NetworkError { msg: e.to_string() })
@@ -137,7 +138,7 @@ impl GemGateway {
     }
 
     pub async fn get_transaction_preload(&self, chain: Chain, input: GemTransactionPreloadInput) -> Result<GemTransactionLoadMetadata, GatewayError> {
-        let preload_input: primitives::TransactionPreloadInput = input.into();
+        let preload_input: TransactionPreloadInput = input.into();
         let metadata = self
             .with_provider(chain, |provider| async move { provider.get_transaction_preload(preload_input).await })
             .await?;
@@ -165,6 +166,29 @@ impl GemGateway {
         };
 
         self.api_client.scan_transaction(payload).await.map(Some).map_err(|e| GatewayError::NetworkError { msg: e })
+    }
+
+    pub async fn get_support_conversation(&self) -> Result<Option<GemSupportConversation>, GatewayError> {
+        self.api_client.support_conversation().await.map_err(|msg| GatewayError::NetworkError { msg })
+    }
+
+    pub async fn get_support_messages(&self, before: Option<i64>, after: Option<i64>) -> Result<Vec<GemSupportMessage>, GatewayError> {
+        self.api_client.support_messages(before, after).await.map_err(|msg| GatewayError::NetworkError { msg })
+    }
+
+    pub async fn send_support_message(&self, content: String) -> Result<GemSupportMessage, GatewayError> {
+        self.api_client
+            .send_support_message(SupportMessageInput { content })
+            .await
+            .map_err(|msg| GatewayError::NetworkError { msg })
+    }
+
+    pub async fn set_support_typing(&self, typing: GemSupportTyping) -> Result<bool, GatewayError> {
+        self.api_client.set_support_typing(typing).await.map_err(|msg| GatewayError::NetworkError { msg })
+    }
+
+    pub async fn update_support_last_seen(&self) -> Result<bool, GatewayError> {
+        self.api_client.update_support_last_seen().await.map_err(|msg| GatewayError::NetworkError { msg })
     }
 
     pub async fn get_fee(&self, chain: Chain, input: GemTransactionLoadInput, provider: Arc<dyn GemGatewayEstimateFee>) -> Result<Option<GemTransactionLoadFee>, GatewayError> {

@@ -6,7 +6,7 @@ use streamer::SupportWebhookPayload;
 use streamer::consumer::MessageConsumer;
 
 use primitives::Device;
-use support::{ChatwootWebhookPayload, EVENT_CONVERSATION_STATUS_CHANGED, EVENT_CONVERSATION_UPDATED, EVENT_MESSAGE_CREATED, SupportClient};
+use support::{ChatwootWebhookPayload, EVENT_CONVERSATION_STATUS_CHANGED, EVENT_CONVERSATION_UPDATED, EVENT_MESSAGE_CREATED, SupportClient, SupportProcessResult};
 
 pub struct SupportWebhookConsumer {
     support_client: SupportClient,
@@ -17,11 +17,14 @@ impl SupportWebhookConsumer {
         Self { support_client }
     }
 
-    async fn process_notification(&self, device: &Device, webhook: &ChatwootWebhookPayload) -> Result<usize, Box<dyn Error + Send + Sync>> {
+    async fn process_notification(&self, device: &Device, webhook: &ChatwootWebhookPayload) -> Result<SupportProcessResult, Box<dyn Error + Send + Sync>> {
         match webhook.event.as_str() {
             EVENT_MESSAGE_CREATED => self.support_client.handle_message_created(device, webhook).await,
-            EVENT_CONVERSATION_UPDATED | EVENT_CONVERSATION_STATUS_CHANGED => self.support_client.handle_conversation_updated(webhook).map(|_| 0),
-            _ => Ok(0),
+            EVENT_CONVERSATION_UPDATED | EVENT_CONVERSATION_STATUS_CHANGED => self.support_client.handle_conversation_updated(device, webhook).await,
+            _ => Ok(SupportProcessResult {
+                notifications: 0,
+                stream_events: 0,
+            }),
         }
     }
 }
@@ -52,8 +55,14 @@ impl MessageConsumer<SupportWebhookPayload, bool> for SupportWebhookConsumer {
         };
 
         match self.process_notification(&device, &webhook).await {
-            Ok(notifications) => {
-                info_with_fields!("support webhook processed", device_id = device_id, event = webhook.event, notifications = notifications);
+            Ok(result) => {
+                info_with_fields!(
+                    "support webhook processed",
+                    device_id = device_id,
+                    event = webhook.event,
+                    notifications = result.notifications,
+                    stream_events = result.stream_events
+                );
                 Ok(true)
             }
             Err(error) => {

@@ -4,8 +4,11 @@ edition = { workspace = true }
 version = { workspace = true }
 
 [dependencies]
+chrono = { workspace = true }
+reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+cacher = { path = "../cacher" }
 localizer = { path = "../localizer" }
 primitives = { path = "../primitives" }
 storage = { path = "../storage" }
