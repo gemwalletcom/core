@@ -4,6 +4,8 @@ use primitives::{AuthMessage, AuthNonce, Chain, hex::encode_with_0x};
 use signer::Signer;
 use zeroize::Zeroizing;
 
+const AUTH_SIGNING_BYTES_LENGTH: usize = 32;
+
 pub type GemAuthNonce = AuthNonce;
 
 #[uniffi::remote(Record)]
@@ -19,9 +21,9 @@ pub struct GemAuthMessage {
 }
 
 #[uniffi::export]
-pub fn create_auth_message(chain: Chain, address: &str, auth_nonce: GemAuthNonce) -> GemAuthMessage {
+pub fn create_auth_message(address: &str, auth_nonce: GemAuthNonce) -> GemAuthMessage {
     let auth_message = AuthMessage {
-        chain,
+        chain: Chain::Ethereum,
         address: address.to_string(),
         auth_nonce,
     };
@@ -34,11 +36,11 @@ pub fn create_auth_message(chain: Chain, address: &str, auth_nonce: GemAuthNonce
 
 #[uniffi::export]
 pub fn sign_auth_message_hash(hash: Vec<u8>, private_key: Vec<u8>) -> Result<String, GemstoneError> {
-    if hash.len() != 32 {
-        return Err(GemstoneError::from("Invalid auth message hash"));
-    }
     let private_key = Zeroizing::new(private_key);
-    let signature = Signer::sign_ethereum_digest(&hash, &private_key)?;
+    if hash.len() != AUTH_SIGNING_BYTES_LENGTH || private_key.len() != AUTH_SIGNING_BYTES_LENGTH {
+        return Err(GemstoneError::from("Invalid auth message signing input"));
+    }
+    let signature = Signer::sign_ethereum_digest(&hash, private_key.as_slice())?;
     Ok(encode_with_0x(&signature))
 }
 
@@ -47,12 +49,8 @@ mod tests {
     use super::*;
     use alloy_primitives::{Address, keccak256};
     use gem_auth::verify_auth_signature;
+    use primitives::testkit::signer_mock::TEST_PRIVATE_KEY;
     use signer::secp256k1_uncompressed_public_key;
-
-    const TEST_PRIVATE_KEY: [u8; 32] = [
-        0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c,
-        0x1d, 0x1e, 0x1f, 0x20,
-    ];
 
     #[test]
     fn test_sign_auth_message_hash() {
@@ -66,7 +64,7 @@ mod tests {
             address: address.clone(),
             auth_nonce: auth_nonce.clone(),
         };
-        let message = create_auth_message(Chain::Ethereum, &address, auth_nonce);
+        let message = create_auth_message(&address, auth_nonce);
 
         let signature = sign_auth_message_hash(message.hash, TEST_PRIVATE_KEY.to_vec()).unwrap();
 
@@ -74,10 +72,9 @@ mod tests {
     }
 
     #[test]
-    fn test_sign_auth_message_hash_rejects_invalid_hash_length() {
-        let result = sign_auth_message_hash(vec![0; 31], TEST_PRIVATE_KEY.to_vec());
-
-        assert!(result.is_err());
+    fn test_sign_auth_message_hash_rejects_invalid_input_length() {
+        assert!(sign_auth_message_hash(vec![0; 31], TEST_PRIVATE_KEY.to_vec()).is_err());
+        assert!(sign_auth_message_hash(vec![0; 32], vec![0; 31]).is_err());
     }
 
     fn address_from_private_key(private_key: &[u8]) -> String {
