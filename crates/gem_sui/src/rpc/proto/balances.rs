@@ -51,11 +51,13 @@ proto_decode!(ListBalancesResponse {
 pub struct Balance {
     pub coin_type: Option<String>,
     pub balance: Option<u64>,
+    pub address_balance: Option<u64>,
 }
 
 proto_decode!(Balance {
     1 => coin_type: optional_string,
     3 => balance: optional_varint_u64,
+    4 => address_balance: optional_varint_u64,
 });
 
 #[derive(Clone, Debug, Default)]

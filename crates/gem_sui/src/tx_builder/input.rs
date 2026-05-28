@@ -1,5 +1,5 @@
 #[cfg(feature = "rpc")]
-use crate::{SUI_COIN_TYPE, SuiClient, SuiError, models::CoinAsset};
+use crate::{SUI_COIN_TYPE, SuiClient, SuiError, models::Coin};
 #[cfg(feature = "rpc")]
 use futures::try_join;
 #[cfg(feature = "rpc")]
@@ -40,12 +40,12 @@ impl TransactionBuilderInput {
                 .to_u64()
                 .ok_or_else(|| SuiError::invalid_input("Sui gas price overflow"))
         };
-        let gas_coins = async { client.get_coin_assets_by_type(sender, SUI_COIN_TYPE).await.map_err(SuiError::from_display) };
+        let gas_coins = async { client.get_coins(sender, SUI_COIN_TYPE).await.map(|owned| owned.coins).map_err(SuiError::from_display) };
         let (gas_price, gas_coins) = try_join!(gas_price, gas_coins)?;
         if gas_coins.is_empty() {
             return Err(SuiError::NoGasCoins);
         }
-        let gas_objects = gas_coins.iter().map(CoinAsset::to_input).collect();
+        let gas_objects = gas_coins.iter().map(Coin::to_input).collect();
 
         Ok(Self::new(sender, gas_price, gas_budget, gas_objects))
     }

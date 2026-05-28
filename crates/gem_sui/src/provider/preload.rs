@@ -12,7 +12,7 @@ use primitives::{
 use crate::{
     ESTIMATION_GAS_BUDGET, SUI_COIN_TYPE,
     gas_budget::GAS_BUDGET_MULTIPLIER,
-    models::{SuiCoin, SuiObject},
+    models::{Coin, OwnedCoins, SuiObject},
 };
 use crate::{
     provider::preload_mapper::{map_transaction_data, map_transaction_rate_rates},
@@ -27,13 +27,13 @@ impl ChainTransactionLoad for SuiClient {
     }
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
-        let (gas_coins, coins, objects) = self.get_coins_for_input_type(input.sender_address.as_str(), input.input_type.clone()).await?;
+        let (sui_coins, token_coins, objects) = self.get_coins_for_input_type(input.sender_address.as_str(), input.input_type.clone()).await?;
 
-        let estimate_bytes = map_transaction_data(input.clone(), gas_coins.clone(), coins.clone(), objects.clone(), ESTIMATION_GAS_BUDGET)?;
+        let estimate_bytes = map_transaction_data(input.clone(), sui_coins.clone(), token_coins.clone(), objects.clone(), ESTIMATION_GAS_BUDGET)?;
         let fee = self.estimate_fee(&estimate_bytes, &input.gas_price, input.is_max_value).await?;
 
         let message_bytes = match estimated_gas_budget(&input.input_type, &fee)? {
-            Some(budget) => map_transaction_data(input, gas_coins, coins, objects, budget)?,
+            Some(budget) => map_transaction_data(input, sui_coins, token_coins, objects, budget)?,
             None => estimate_bytes,
         };
 
@@ -75,27 +75,27 @@ impl SuiClient {
         &self,
         address: &str,
         input_type: TransactionInputType,
-    ) -> Result<(Vec<SuiCoin>, Vec<SuiCoin>, Vec<SuiObject>), Box<dyn Error + Send + Sync>> {
+    ) -> Result<(OwnedCoins<Coin>, Option<OwnedCoins<Coin>>, Vec<SuiObject>), Box<dyn Error + Send + Sync>> {
         match input_type {
             TransactionInputType::Transfer(asset) => match asset.id.token_id {
-                None => Ok((self.get_coins(address, SUI_COIN_TYPE).await?, Vec::new(), Vec::new())),
+                None => Ok((self.get_coins(address, SUI_COIN_TYPE).await?, None, Vec::new())),
                 Some(token_id) => {
-                    let (gas_coins, coins) = futures::try_join!(self.get_coins(address, SUI_COIN_TYPE), self.get_coins(address, &token_id))?;
-                    Ok((gas_coins, coins, Vec::new()))
+                    let (gas_coins, token_coins) = futures::try_join!(self.get_coins(address, SUI_COIN_TYPE), self.get_coins(address, &token_id))?;
+                    Ok((gas_coins, Some(token_coins), Vec::new()))
                 }
             },
             TransactionInputType::Stake(_, stake_type) => match stake_type {
-                StakeType::Stake(_) => Ok((self.get_coins(address, SUI_COIN_TYPE).await?, Vec::new(), Vec::new())),
+                StakeType::Stake(_) => Ok((self.get_coins(address, SUI_COIN_TYPE).await?, None, Vec::new())),
                 StakeType::Unstake(delegation) => {
                     let (gas_coins, staked_object) = futures::try_join!(self.get_coins(address, SUI_COIN_TYPE), self.get_object(delegation.base.delegation_id.clone()))?;
-                    Ok((gas_coins, Vec::new(), vec![staked_object]))
+                    Ok((gas_coins, None, vec![staked_object]))
                 }
                 StakeType::Redelegate(_) | StakeType::Rewards(_) | StakeType::Withdraw(_) | StakeType::Freeze(_) | StakeType::Unfreeze(_) => {
                     Err("Unsupported stake type for Sui".into())
                 }
             },
-            TransactionInputType::Swap(_, _, _) => Ok((Vec::new(), Vec::new(), Vec::new())),
-            TransactionInputType::Generic(_, _, _) => Ok((Vec::new(), Vec::new(), Vec::new())),
+            TransactionInputType::Swap(_, _, _) => Ok((OwnedCoins::default(), None, Vec::new())),
+            TransactionInputType::Generic(_, _, _) => Ok((OwnedCoins::default(), None, Vec::new())),
             TransactionInputType::TransferNft(_, _) | TransactionInputType::Account(_, _) => Err("Unsupported transaction type for Sui".into()),
             _ => Err("Unsupported transaction type for Sui".into()),
         }

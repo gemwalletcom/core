@@ -1,10 +1,10 @@
 use crate::models::*;
 use std::error::Error;
 use std::str::FromStr;
-use sui_transaction_builder::{Argument, ObjectInput, TransactionBuilder};
-use sui_types::Address;
+use sui_transaction_builder::{ObjectInput, TransactionBuilder};
+use sui_types::{Address, TypeTag};
 
-use super::{TransactionBuilderInput, finish_transaction};
+use super::{TransactionBuilderInput, build_amount_coin, finish_transaction};
 
 fn build_transfer_ptb(input: &TransferInput) -> Result<TransactionBuilder, Box<dyn Error + Send + Sync>> {
     if let Some(err) = crate::validate_enough_balance(&input.coins, input.amount) {
@@ -17,66 +17,57 @@ fn build_transfer_ptb(input: &TransferInput) -> Result<TransactionBuilder, Box<d
     if input.send_max {
         let recipient_argument = ptb.pure(&recipient);
         let gas = ptb.gas();
-
         ptb.transfer_objects(vec![gas], recipient_argument);
+        return Ok(ptb);
+    }
+
+    let send_coin = if input.coins.address_balance >= input.amount {
+        let coin_type: TypeTag = input
+            .coins
+            .coin_type
+            .parse()
+            .map_err(|err| format!("invalid Sui native coin type {}: {err}", input.coins.coin_type))?;
+        ptb.funds_withdrawal_coin(coin_type, input.amount)
     } else {
         let amount = ptb.pure(&input.amount);
         let gas = ptb.gas();
         let mut split_results = ptb.split_coins(gas, vec![amount]);
-        let split_result = split_results.pop().expect("split_coins should return one argument");
-        let recipient_argument = ptb.pure(&recipient);
+        split_results.pop().expect("split_coins should return one argument")
+    };
 
-        ptb.transfer_objects(vec![split_result], recipient_argument);
-    }
+    let recipient_argument = ptb.pure(&recipient);
+    ptb.transfer_objects(vec![send_coin], recipient_argument);
 
     Ok(ptb)
 }
 
 pub fn encode_transfer(input: &TransferInput) -> Result<TxOutput, Box<dyn Error + Send + Sync>> {
     let ptb = build_transfer_ptb(input)?;
-    let gas_objects = input.coins.iter().map(|x| x.object.to_input()).collect::<Vec<_>>();
+    let gas_objects = input.coins.coins.iter().map(|x| x.object.to_input()).collect::<Vec<_>>();
     finish_transaction(ptb, TransactionBuilderInput::new(input.sender.as_str(), input.gas.price, input.gas.budget, gas_objects))
         .map_err(|err| Box::new(err) as Box<dyn Error + Send + Sync>)
 }
 
 fn build_token_transfer_ptb(input: &TokenTransferInput) -> Result<TransactionBuilder, Box<dyn Error + Send + Sync>> {
-    if let Some(err) = crate::validate_enough_balance(&input.tokens, input.amount) {
+    let tokens = &input.tokens;
+    if let Some(err) = crate::validate_enough_balance(tokens, input.amount) {
         return Err(err);
     }
-    let mut ptb = TransactionBuilder::new();
+
+    let coin_type: TypeTag = tokens.coin_type.parse().map_err(|err| format!("invalid Sui token coin type {}: {err}", tokens.coin_type))?;
     let recipient = Address::from_str(&input.recipient)?;
-
-    if input.tokens.is_empty() {
-        return Err("tokens vector is empty".into());
-    }
-
-    let mut coins_inputs: Vec<Argument> = input.tokens.clone().into_iter().map(|x| ptb.object(x.object.to_input())).collect();
-
-    // Get first coin
-    let first_coin = coins_inputs.remove(0);
-
-    // Merge coins if more than one
-    if !coins_inputs.is_empty() {
-        ptb.merge_coins(first_coin, coins_inputs);
-    }
-
-    // Split and transfer
-    let amount = ptb.pure(&input.amount);
-    let mut split_results = ptb.split_coins(first_coin, vec![amount]);
-    let split_result = split_results.pop().expect("split_coins should return one argument");
+    let mut ptb = TransactionBuilder::new();
+    let coin_object_inputs: Vec<ObjectInput> = tokens.coins.iter().map(|coin| coin.object.to_input()).collect();
+    let amount_coin = build_amount_coin(&mut ptb, coin_type, input.amount, tokens.address_balance, coin_object_inputs)?;
     let recipient_argument = ptb.pure(&recipient);
-    ptb.transfer_objects(vec![split_result], recipient_argument);
+    ptb.transfer_objects(vec![amount_coin], recipient_argument);
 
     Ok(ptb)
 }
 
 pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Box<dyn Error + Send + Sync>> {
     let ptb = build_token_transfer_ptb(input)?;
-    let gas_coin = ObjectInput::immutable(
-        input.gas_coin.object.object_id.parse().unwrap(),
-        input.gas_coin.object.version,
-        input.gas_coin.object.digest.parse().unwrap(),
-    );
+    let gas_coin = ObjectInput::immutable(input.gas_coin.object.object_id, input.gas_coin.object.version, input.gas_coin.object.digest);
     finish_transaction(ptb, TransactionBuilderInput::new(input.sender.as_str(), input.gas.price, input.gas.budget, vec![gas_coin]))
         .map_err(|err| Box::new(err) as Box<dyn Error + Send + Sync>)
 }
@@ -85,6 +76,7 @@ pub fn encode_token_transfer(input: &TokenTransferInput) -> Result<TxOutput, Box
 mod tests {
     use crate::{SUI_COIN_TYPE, tx_builder::decode_transaction};
     use gem_encoding::encode_base64;
+    use primitives::asset_constants::SUI_USDC_TOKEN_ID;
     use sui_types::Transaction;
 
     use super::*;
@@ -95,15 +87,19 @@ mod tests {
             sender: "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".into(),
             recipient: "0xe6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c2".into(),
             amount: 8993996480,
-            coins: vec![Coin {
-                coin_type: SUI_COIN_TYPE.into(),
-                balance: 8994756360,
-                object: Object {
-                    object_id: "0x9f258c85566d977b4c99bb6019560ba99c796e71291269d8f9f3cc9d9f37db46".into(),
-                    digest: "GoAwPNYEBKyAgzmQgnxW23bdhnHaLXcqT3o1nEZo4KPM".into(),
-                    version: 68419468,
-                },
-            }],
+            coins: OwnedCoins::new(
+                SUI_COIN_TYPE.into(),
+                vec![Coin {
+                    coin_type: SUI_COIN_TYPE.into(),
+                    balance: 8994756360,
+                    object: Object {
+                        object_id: "0x9f258c85566d977b4c99bb6019560ba99c796e71291269d8f9f3cc9d9f37db46".parse().unwrap(),
+                        digest: "GoAwPNYEBKyAgzmQgnxW23bdhnHaLXcqT3o1nEZo4KPM".parse().unwrap(),
+                        version: 68419468,
+                    },
+                }],
+                0,
+            ),
             send_max: true,
             gas: Gas { budget: 25_000_000, price: 750 },
         };
@@ -120,37 +116,42 @@ mod tests {
 
     #[test]
     fn test_encode_token_transfer() {
+        let suip_coin_type = "0xe4239cd951f6c53d9c41e25270d80d31f925ad1655e5ba5b543843d4a66975ee::SUIP::SUIP";
         let input = TokenTransferInput {
             sender: "0xa9bd0493f9bd1f792a4aedc1f99d54535a75a46c38fd56a8f2c6b7c8d75817a1".into(),
             recipient: "0xe6af80fe1b0b42fcd96762e5c70f5e8dae39f8f0ee0f118cac0d55b74e2927c2".into(),
             amount: 2400000000,
-            tokens: vec![
-                Coin {
-                    coin_type: "0xe4239cd951f6c53d9c41e25270d80d31f925ad1655e5ba5b543843d4a66975ee::SUIP::SUIP".into(),
-                    balance: 1400000000,
-                    object: Object {
-                        object_id: "0x1a6b6023d363f5dcad026f83ddb9bb0f987c941f10db2ab86571711a1a9a1ee6".into(),
-                        digest: "CCFDRi15n2mhBVGAoa594VynBKgSRbgZQZgjT4wxFu7B".into(),
-                        version: 67155000,
+            tokens: OwnedCoins::new(
+                suip_coin_type.into(),
+                vec![
+                    Coin {
+                        coin_type: suip_coin_type.into(),
+                        balance: 1400000000,
+                        object: Object {
+                            object_id: "0x1a6b6023d363f5dcad026f83ddb9bb0f987c941f10db2ab86571711a1a9a1ee6".parse().unwrap(),
+                            digest: "CCFDRi15n2mhBVGAoa594VynBKgSRbgZQZgjT4wxFu7B".parse().unwrap(),
+                            version: 67155000,
+                        },
                     },
-                },
-                Coin {
-                    coin_type: "0xe4239cd951f6c53d9c41e25270d80d31f925ad1655e5ba5b543843d4a66975ee::SUIP::SUIP".into(),
-                    balance: 1000000000,
-                    object: Object {
-                        object_id: "0x2fd950f33ecdf9e5d797ca3130811e7a973d4c1da5427ac0c910a8c5f6e8b72d".into(),
-                        digest: "7CsXhia2TGqy7bXnxH4WLbkzYJBPvCnNVuLvzByvLsRh".into(),
-                        version: 67154999,
+                    Coin {
+                        coin_type: suip_coin_type.into(),
+                        balance: 1000000000,
+                        object: Object {
+                            object_id: "0x2fd950f33ecdf9e5d797ca3130811e7a973d4c1da5427ac0c910a8c5f6e8b72d".parse().unwrap(),
+                            digest: "7CsXhia2TGqy7bXnxH4WLbkzYJBPvCnNVuLvzByvLsRh".parse().unwrap(),
+                            version: 67154999,
+                        },
                     },
-                },
-            ],
+                ],
+                0,
+            ),
             gas: Gas { budget: 25_000_000, price: 750 },
             gas_coin: Coin {
                 coin_type: SUI_COIN_TYPE.into(),
                 balance: 100000000,
                 object: Object {
-                    object_id: "0x890f8c604c7cb5cc194dbf4953ad3dbebd81ef7526be351d3514cc3cc26c9c1d".into(),
-                    digest: "3a2sHuj9pJg7RHub4w9EPyBtpxVfHzk52M91HErwMQ4J".into(),
+                    object_id: "0x890f8c604c7cb5cc194dbf4953ad3dbebd81ef7526be351d3514cc3cc26c9c1d".parse().unwrap(),
+                    digest: "3a2sHuj9pJg7RHub4w9EPyBtpxVfHzk52M91HErwMQ4J".parse().unwrap(),
                     version: 69035764,
                 },
             },
@@ -164,5 +165,62 @@ mod tests {
 
         assert_eq!(tx, expected_decoded);
         assert_eq!(b64_encoded, expected_tx);
+    }
+
+    #[test]
+    fn test_encode_token_transfer_from_address_balance() {
+        let input = TokenTransferInput {
+            sender: "0x1b4cd8b734f2465614678ca0450ce9c4f2ff4835c6a7545522892a1a8fb67991".into(),
+            recipient: "0xcf3abaeecfaf42990b8481c03000000000000000000000000000000000000000".into(),
+            amount: 200_000_000,
+            tokens: OwnedCoins::new(SUI_USDC_TOKEN_ID.into(), vec![], 2_605_380_809),
+            gas: Gas { budget: 25_000_000, price: 750 },
+            gas_coin: Coin::mock_sui(),
+        };
+
+        let output = encode_token_transfer(&input).unwrap();
+        let tx: Transaction = bcs::from_bytes(&output.tx_data).unwrap();
+        match tx.kind {
+            sui_types::TransactionKind::ProgrammableTransaction(ptb) => {
+                assert_eq!(ptb.inputs.len(), 2, "expected withdrawal + recipient inputs only");
+                assert!(matches!(ptb.inputs[0], sui_types::Input::FundsWithdrawal(_)), "first input must be FundsWithdrawal");
+                assert_eq!(ptb.commands.len(), 2, "expected redeem_funds + transfer_objects");
+            }
+            _ => panic!("expected ProgrammableTransaction"),
+        }
+    }
+
+    #[test]
+    fn test_encode_token_transfer_mixed_balance_and_coin() {
+        let input = TokenTransferInput {
+            sender: "0x1b4cd8b734f2465614678ca0450ce9c4f2ff4835c6a7545522892a1a8fb67991".into(),
+            recipient: "0xcf3abaeecfaf42990b8481c03000000000000000000000000000000000000000".into(),
+            amount: 200_000_000,
+            tokens: OwnedCoins::new(
+                SUI_USDC_TOKEN_ID.into(),
+                vec![Coin {
+                    coin_type: SUI_USDC_TOKEN_ID.into(),
+                    balance: 150_000_000,
+                    object: Object {
+                        object_id: "0xfa8dca3e71a9ab44eef5becf50358d9c665aef33522e77940ee840c03b385bf3".parse().unwrap(),
+                        digest: "HHwqY8eMncQPwrGtdbxGpJ7Sz1QacdvrcUNG9ywtxLs5".parse().unwrap(),
+                        version: 895_958_996,
+                    },
+                }],
+                60_000_000,
+            ),
+            gas: Gas { budget: 25_000_000, price: 750 },
+            gas_coin: Coin::mock_sui(),
+        };
+
+        let output = encode_token_transfer(&input).unwrap();
+        let tx: Transaction = bcs::from_bytes(&output.tx_data).unwrap();
+        match tx.kind {
+            sui_types::TransactionKind::ProgrammableTransaction(ptb) => {
+                assert!(ptb.inputs.iter().any(|inp| matches!(inp, sui_types::Input::FundsWithdrawal(_))));
+                assert!(ptb.inputs.iter().any(|inp| matches!(inp, sui_types::Input::ImmutableOrOwned(_))));
+            }
+            _ => panic!("expected ProgrammableTransaction"),
+        }
     }
 }

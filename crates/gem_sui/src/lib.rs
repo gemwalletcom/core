@@ -25,8 +25,8 @@ pub mod tx_builder;
 pub mod signer;
 
 pub use error::SuiError;
-use models::Coin;
 pub use models::ObjectId;
+use models::{Coin, OwnedCoins};
 use std::error::Error;
 use sui_transaction_builder::ObjectInput;
 use sui_types::Address;
@@ -71,14 +71,13 @@ pub fn sui_clock_object_input() -> ObjectInput {
     ObjectInput::shared(sui_clock_object_id(), 1, false)
 }
 
-pub fn validate_enough_balance(coins: &[Coin], amount: u64) -> Option<Box<dyn Error + Send + Sync>> {
-    if coins.is_empty() {
-        return Some("coins list is empty".into());
+pub fn validate_enough_balance(coins: &OwnedCoins<Coin>, amount: u64) -> Option<Box<dyn Error + Send + Sync>> {
+    let total = coins.total();
+    if total == 0 {
+        return Some("no spendable coin objects or address balance".into());
     }
-
-    let total_amount: u64 = coins.iter().map(|x| x.balance).sum();
-    if total_amount < amount {
-        return Some(format!("total amount ({}) is less than amount to send ({})", total_amount, amount).into());
+    if total < amount {
+        return Some(format!("total amount ({}) is less than amount to send ({})", total, amount).into());
     }
     None
 }

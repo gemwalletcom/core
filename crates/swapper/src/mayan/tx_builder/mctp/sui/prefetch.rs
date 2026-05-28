@@ -9,7 +9,7 @@ use crate::{
 use futures::try_join;
 use gem_sui::{
     SuiClient, is_sui_coin,
-    models::CoinAsset,
+    models::{Coin, OwnedCoins},
     tx_builder::{ResolvedObjectInput, TransactionBuilderInput},
 };
 use serde::Deserialize;
@@ -17,7 +17,7 @@ use std::collections::HashMap;
 
 pub(super) struct PrefetchedSuiData {
     pub(super) transaction: TransactionBuilderInput,
-    pub(super) input_coins: Vec<CoinAsset>,
+    pub(super) input_coins: OwnedCoins<Coin>,
     pub(super) objects: HashMap<String, ResolvedObjectInput>,
     pub(super) mctp_package_id: String,
     pub(super) fee_manager_package_id: Option<String>,
@@ -37,9 +37,9 @@ impl PrefetchedSuiData {
         let transaction = async { TransactionBuilderInput::prefetch(client, sender, gas_budget).await.map_err(sui_error) };
         let input_coins = async {
             if route.from_token.contract.as_str() != mctp_input_contract.as_str() || is_sui_coin(&mctp_input_contract) {
-                Ok(Vec::new())
+                Ok(OwnedCoins::default())
             } else {
-                client.get_coin_assets_by_type(sender, &mctp_input_contract).await.map_err(sui_error)
+                client.get_coins(sender, &mctp_input_contract).await.map_err(sui_error)
             }
         };
         let object_ids = sui_object_ids(has_auction, &from_token_verified_address, &mctp_verified_input_address, &mctp_input_treasury);

@@ -7,6 +7,7 @@ use serde_serializers::deserialize_bigint_from_str;
 
 #[cfg(feature = "rpc")]
 use super::account::Owner;
+use super::core::Coin;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -24,16 +25,57 @@ pub struct SuiObject {
     pub version: String,
 }
 
-#[cfg(feature = "rpc")]
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SuiCoin {
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OwnedCoins<T> {
     pub coin_type: String,
-    pub coin_object_id: String,
-    #[serde(deserialize_with = "deserialize_bigint_from_str")]
-    pub balance: BigInt,
-    pub version: String,
-    pub digest: String,
+    pub coins: Vec<T>,
+    pub address_balance: u64,
+}
+
+impl<T> Default for OwnedCoins<T> {
+    fn default() -> Self {
+        Self {
+            coin_type: String::new(),
+            coins: Vec::new(),
+            address_balance: 0,
+        }
+    }
+}
+
+impl<T> OwnedCoins<T> {
+    pub fn new(coin_type: String, coins: Vec<T>, address_balance: u64) -> Self {
+        Self {
+            coin_type,
+            coins,
+            address_balance,
+        }
+    }
+
+    pub fn map<U>(self, f: impl FnMut(T) -> U) -> OwnedCoins<U> {
+        OwnedCoins {
+            coin_type: self.coin_type,
+            coins: self.coins.into_iter().map(f).collect(),
+            address_balance: self.address_balance,
+        }
+    }
+
+    pub fn try_map<U, E>(self, f: impl FnMut(T) -> Result<U, E>) -> Result<OwnedCoins<U>, E> {
+        Ok(OwnedCoins {
+            coin_type: self.coin_type,
+            coins: self.coins.into_iter().map(f).collect::<Result<_, _>>()?,
+            address_balance: self.address_balance,
+        })
+    }
+}
+
+impl OwnedCoins<Coin> {
+    pub fn coin_total(&self) -> u64 {
+        self.coins.iter().map(|coin| coin.balance).sum()
+    }
+
+    pub fn total(&self) -> u64 {
+        self.coin_total().saturating_add(self.address_balance)
+    }
 }
 
 #[cfg(feature = "rpc")]
@@ -43,6 +85,8 @@ pub struct Balance {
     pub coin_type: String,
     #[serde(deserialize_with = "deserialize_bigint_from_str")]
     pub total_balance: BigInt,
+    #[serde(default)]
+    pub address_balance: u64, // Amount held in the per-address balance accumulator
 }
 
 #[cfg(feature = "rpc")]

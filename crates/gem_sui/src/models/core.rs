@@ -1,26 +1,33 @@
+use super::OwnedCoins;
 use bcs;
 use gem_encoding::encode_base64;
 use std::error::Error;
 use sui_transaction_builder::ObjectInput;
-use sui_types::Transaction;
+use sui_types::{Address, Digest, Transaction};
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct Coin {
     pub coin_type: String,
     pub balance: u64,
     pub object: Object,
 }
 
-#[derive(Debug, PartialEq, Clone)]
+impl Coin {
+    pub fn to_input(&self) -> ObjectInput {
+        self.object.to_input()
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct Object {
-    pub object_id: String,
-    pub digest: String,
+    pub object_id: Address,
+    pub digest: Digest,
     pub version: u64,
 }
 
 impl Object {
     pub fn to_input(&self) -> ObjectInput {
-        ObjectInput::owned(self.object_id.parse().unwrap(), self.version, self.digest.parse().unwrap())
+        ObjectInput::owned(self.object_id, self.version, self.digest)
     }
 }
 
@@ -36,7 +43,7 @@ pub struct StakeInput {
     pub validator: String,
     pub stake_amount: u64,
     pub gas: Gas,
-    pub coins: Vec<Coin>,
+    pub coins: OwnedCoins<Coin>,
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -52,7 +59,7 @@ pub struct TransferInput {
     pub sender: String,
     pub recipient: String,
     pub amount: u64,
-    pub coins: Vec<Coin>,
+    pub coins: OwnedCoins<Coin>,
     pub send_max: bool,
     pub gas: Gas,
 }
@@ -62,7 +69,7 @@ pub struct TokenTransferInput {
     pub sender: String,
     pub recipient: String,
     pub amount: u64,
-    pub tokens: Vec<Coin>,
+    pub tokens: OwnedCoins<Coin>,
     pub gas: Gas,
     pub gas_coin: Coin,
 }

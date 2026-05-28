@@ -19,7 +19,7 @@ use crate::{
 use gem_sui::{
     SUI_COIN_TYPE,
     address::SuiAddress,
-    models::TxOutput,
+    models::{OwnedCoins, TxOutput},
     sui_clock_object_input,
     tx_builder::{TransactionJsonReplay, build_input_coin, finish_transaction, move_call},
 };
@@ -112,7 +112,7 @@ fn add_publish_wormhole_message(
 ) -> Result<(), SwapperError> {
     let fee_coin = match wh_fee_coin {
         Some(coin) => coin,
-        None => build_input_coin(txb, SUI_COIN_TYPE, bridge_fee, &[]).map_err(sui_error)?,
+        None => build_input_coin(txb, SUI_COIN_TYPE, bridge_fee, &OwnedCoins::default()).map_err(sui_error)?,
     };
     let clock = txb.object(sui_clock_object_input());
     let wormhole_state = txb.object(prefetched.objects[SUI_WORMHOLE_STATE].input(true));

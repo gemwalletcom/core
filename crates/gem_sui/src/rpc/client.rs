@@ -18,7 +18,7 @@ use super::proto::{
 };
 use super::transport::default_transport;
 use crate::models::transaction::{SuiBroadcastTransaction, SuiTransaction};
-use crate::models::{Balance, Checkpoint, CoinAsset, Digest, InspectResult, SuiCoin, SuiCoinMetadata, SuiObject, TransactionBlocks};
+use crate::models::{Balance, Checkpoint, Coin, Digest, InspectResult, Object, OwnedCoins, SuiCoinMetadata, SuiObject, TransactionBlocks};
 use crate::{SUI_COIN_TYPE, SUI_COIN_TYPE_FULL};
 
 const TRANSACTION_READ_MASK: &[&str] = &[
@@ -95,16 +95,20 @@ impl SuiClient {
     }
 
     pub async fn get_balance(&self, address: String) -> Result<Balance, Box<dyn Error + Send + Sync>> {
+        self.get_balance_for_coin(&address, SUI_COIN_TYPE_FULL).await
+    }
+
+    pub async fn get_balance_for_coin(&self, address: &str, coin_type: &str) -> Result<Balance, Box<dyn Error + Send + Sync>> {
         let request = GetBalanceRequest {
-            owner: Some(address),
-            coin_type: Some(SUI_COIN_TYPE_FULL.to_string()),
+            owner: Some(address.to_string()),
+            coin_type: Some(coin_type.to_string()),
         };
         let response: GetBalanceResponse = self.grpc_unary(PATH_GET_BALANCE, request).await?;
-
-        let balance = response.balance.and_then(|balance| balance.balance).unwrap_or_default();
+        let balance = response.balance.unwrap_or_default();
         Ok(Balance {
-            coin_type: SUI_COIN_TYPE_FULL.to_string(),
-            total_balance: BigInt::from(balance),
+            coin_type: balance.coin_type.unwrap_or_else(|| coin_type.to_string()),
+            total_balance: BigInt::from(balance.balance.unwrap_or_default()),
+            address_balance: balance.address_balance.unwrap_or_default(),
         })
     }
 
@@ -125,6 +129,7 @@ impl SuiClient {
                     Ok(Balance {
                         coin_type: balance.coin_type.ok_or("missing Sui balance coin type")?,
                         total_balance: BigInt::from(balance.balance.ok_or("missing Sui balance amount")?),
+                        address_balance: balance.address_balance.unwrap_or_default(),
                     })
                 })
                 .collect::<Result<Vec<_>, Box<dyn Error + Send + Sync>>>()?;
@@ -167,7 +172,12 @@ impl SuiClient {
         Ok(BigInt::from(epoch.reference_gas_price.ok_or("missing Sui reference gas price")?))
     }
 
-    pub async fn get_coins(&self, address: &str, coin_type: &str) -> Result<Vec<SuiCoin>, Box<dyn Error + Send + Sync>> {
+    pub async fn get_coins(&self, address: &str, coin_type: &str) -> Result<OwnedCoins<Coin>, Box<dyn Error + Send + Sync>> {
+        let (objects, balance) = futures::try_join!(self.list_coin_objects(address, coin_type), self.get_balance_for_coin(address, coin_type),)?;
+        Ok(OwnedCoins::new(coin_type.to_string(), objects, balance.address_balance))
+    }
+
+    async fn list_coin_objects(&self, address: &str, coin_type: &str) -> Result<Vec<Coin>, Box<dyn Error + Send + Sync>> {
         let mut request = ListOwnedObjectsRequest {
             owner: Some(address.to_string()),
             page_size: Some(1000),
@@ -183,17 +193,22 @@ impl SuiClient {
                 .objects
                 .into_iter()
                 .map(|object| {
-                    Ok(SuiCoin {
-                        coin_type: object
-                            .object_type
-                            .ok_or("missing Sui coin object type")?
-                            .trim_start_matches("0x2::coin::Coin<")
-                            .trim_end_matches('>')
-                            .to_string(),
-                        coin_object_id: object.object_id.ok_or("missing Sui coin object id")?,
-                        balance: BigInt::from(object.balance.ok_or("missing Sui coin balance")?),
-                        version: object.version.ok_or("missing Sui coin version")?.to_string(),
-                        digest: object.digest.ok_or("missing Sui coin digest")?,
+                    let coin_type = object
+                        .object_type
+                        .ok_or("missing Sui coin object type")?
+                        .trim_start_matches("0x2::coin::Coin<")
+                        .trim_end_matches('>')
+                        .to_string();
+                    let object_id_str = object.object_id.ok_or("missing Sui coin object id")?;
+                    let digest_str = object.digest.ok_or("missing Sui coin digest")?;
+                    Ok(Coin {
+                        coin_type,
+                        balance: object.balance.ok_or("missing Sui coin balance")?,
+                        object: Object {
+                            object_id: Address::from_str(&object_id_str)?,
+                            digest: sui_types::Digest::from_str(&digest_str)?,
+                            version: object.version.ok_or("missing Sui coin version")?,
+                        },
                     })
                 })
                 .collect::<Result<Vec<_>, Box<dyn Error + Send + Sync>>>()?;
@@ -205,10 +220,6 @@ impl SuiClient {
         }
 
         Ok(coins)
-    }
-
-    pub async fn get_coin_assets_by_type(&self, address: &str, coin_type: &str) -> Result<Vec<CoinAsset>, Box<dyn Error + Send + Sync>> {
-        self.get_coins(address, coin_type).await?.into_iter().map(CoinAsset::try_from).collect()
     }
 
     pub async fn get_object(&self, object_id: String) -> Result<SuiObject, Box<dyn Error + Send + Sync>> {

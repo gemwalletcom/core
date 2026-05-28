@@ -1,12 +1,15 @@
 use super::{ObjectResolver, TransactionBuilderInput};
-use crate::{SuiClient, SuiError, is_sui_coin, models::CoinAsset};
+use crate::{
+    SuiClient, SuiError, is_sui_coin,
+    models::{Coin, OwnedCoins},
+};
 use futures::try_join;
 use std::collections::HashMap;
 
 pub struct PrefetchedTransactionData {
     pub transaction: TransactionBuilderInput,
-    pub input_coins: Vec<CoinAsset>,
-    pub output_coin: Option<CoinAsset>,
+    pub input_coins: OwnedCoins<Coin>,
+    pub output_coin: Option<Coin>,
     pub resolver: ObjectResolver,
 }
 
@@ -23,10 +26,10 @@ impl PrefetchedTransactionData {
         let output_coins_fut = async {
             match output_coin_type {
                 Some(coin_type) => get_user_coins(client, sender, coin_type).await,
-                None => Ok(Vec::new()),
+                None => Ok(OwnedCoins::default()),
             }
         };
-        let (transaction, input_coins, output_coins, resolver) = try_join!(
+        let (transaction, input_coins, output_owned, resolver) = try_join!(
             TransactionBuilderInput::prefetch(client, sender, gas_budget),
             get_user_coins(client, sender, input_coin_type),
             output_coins_fut,
@@ -36,16 +39,16 @@ impl PrefetchedTransactionData {
         Ok(Self {
             transaction,
             input_coins,
-            output_coin: output_coins.into_iter().next(),
+            output_coin: output_owned.coins.into_iter().next(),
             resolver,
         })
     }
 }
 
-async fn get_user_coins(client: &SuiClient, owner: &str, coin_type: &str) -> Result<Vec<CoinAsset>, SuiError> {
+async fn get_user_coins(client: &SuiClient, owner: &str, coin_type: &str) -> Result<OwnedCoins<Coin>, SuiError> {
     if is_sui_coin(coin_type) {
-        Ok(Vec::new())
+        Ok(OwnedCoins::default())
     } else {
-        client.get_coin_assets_by_type(owner, coin_type).await.map_err(SuiError::from_display)
+        client.get_coins(owner, coin_type).await.map_err(SuiError::from_display)
     }
 }

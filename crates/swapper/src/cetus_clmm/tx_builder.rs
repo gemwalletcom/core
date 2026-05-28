@@ -12,7 +12,7 @@ use gem_sui::{
     address::SuiAddress,
     gas_budget::GAS_BUDGET_MULTIPLIER,
     is_sui_coin,
-    models::{CoinAsset, TxOutput},
+    models::{Coin, OwnedCoins, TxOutput},
     sui_clock_object_input,
     tx_builder::{
         ObjectResolver, PrefetchedTransactionData, TransactionBuilderInput, balance_value, balance_zero, build_input_coin, destroy_zero_balance, finish_transaction, from_balance,
@@ -28,7 +28,7 @@ use sui_types::{Address, Digest};
 pub(super) struct BuildInput<'a> {
     pub transaction: TransactionBuilderInput,
     pub amount: u64,
-    pub from_coins: &'a [CoinAsset],
+    pub from_coins: &'a OwnedCoins<Coin>,
 }
 
 impl BuildInput<'_> {
