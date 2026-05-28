@@ -7,36 +7,31 @@ use crate::{
 use gem_encoding::decode_base64;
 use serde::de::DeserializeOwned;
 use std::{error::Error, str::FromStr};
-use sui_transaction_builder::{Argument, Function, ObjectInput, TransactionBuilder};
+use sui_transaction_builder::{Argument, Function, TransactionBuilder};
 use sui_types::{Address, Identifier, TypeTag};
 
 const MODULE_COIN: &str = "coin";
 const FUNCTION_ZERO: &str = "zero";
 
-/// Build a `Coin<T>` of exactly `amount`, preferring Address Balance, then merging coin objects.
-/// Caller must pre-validate that the combined sources cover `amount`.
-pub(crate) fn build_amount_coin(
-    txb: &mut TransactionBuilder,
-    coin_type_tag: TypeTag,
-    amount: u64,
-    address_balance: u64,
-    coin_object_inputs: Vec<ObjectInput>,
-) -> Result<Argument, SuiError> {
+/// Build a `Coin<T>` of exactly `amount`: pure withdrawal if Address Balance covers it, else coin objects topped up by the shortfall.
+pub(crate) fn build_amount_coin(txb: &mut TransactionBuilder, coin_type_tag: TypeTag, amount: u64, address_balance: u64, coins: &[Coin]) -> Result<Argument, SuiError> {
     if address_balance >= amount {
         return Ok(txb.funds_withdrawal_coin(coin_type_tag, amount));
     }
 
-    let mut coin_args: Vec<Argument> = coin_object_inputs.into_iter().map(|input| txb.object(input)).collect();
-    let primary = if address_balance > 0 {
-        txb.funds_withdrawal_coin(coin_type_tag, address_balance)
-    } else if !coin_args.is_empty() {
-        coin_args.remove(0)
-    } else {
+    if coins.is_empty() {
         return Err(SuiError::invalid_input("no coin sources for Sui amount"));
-    };
+    }
 
+    let coin_total: u64 = coins.iter().map(|c| c.balance).fold(0, u64::saturating_add);
+    let mut coin_args: Vec<Argument> = coins.iter().map(|c| txb.object(c.to_input())).collect();
+    let primary = coin_args.remove(0);
     if !coin_args.is_empty() {
         txb.merge_coins(primary, coin_args);
+    }
+    if let Some(shortfall) = amount.checked_sub(coin_total).filter(|s| *s > 0) {
+        let withdrawn = txb.funds_withdrawal_coin(coin_type_tag, shortfall);
+        txb.merge_coins(primary, vec![withdrawn]);
     }
 
     let amount_arg = txb.pure(&amount);
@@ -85,8 +80,7 @@ pub fn build_input_coin(txb: &mut TransactionBuilder, coin_type: &str, amount: u
     let type_tag: TypeTag = coin_type
         .parse()
         .map_err(|err| SuiError::invalid_input(format!("Invalid Sui coin type {coin_type}: {err}")))?;
-    let coin_inputs = source.coins.iter().map(Coin::to_input).collect();
-    build_amount_coin(txb, type_tag, amount, source.address_balance, coin_inputs)
+    build_amount_coin(txb, type_tag, amount, source.address_balance, &source.coins)
 }
 
 pub fn finish_transaction(mut txb: TransactionBuilder, input: TransactionBuilderInput) -> Result<TxOutput, SuiError> {

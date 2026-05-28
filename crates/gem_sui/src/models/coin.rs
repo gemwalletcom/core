@@ -70,7 +70,7 @@ impl<T> OwnedCoins<T> {
 
 impl OwnedCoins<Coin> {
     pub fn coin_total(&self) -> u64 {
-        self.coins.iter().map(|coin| coin.balance).sum()
+        self.coins.iter().map(|coin| coin.balance).fold(0, u64::saturating_add)
     }
 
     pub fn total(&self) -> u64 {
@@ -86,7 +86,8 @@ pub struct Balance {
     #[serde(deserialize_with = "deserialize_bigint_from_str")]
     pub total_balance: BigInt,
     #[serde(default)]
-    pub address_balance: u64, // Amount held in the per-address balance accumulator
+    /// Amount in the per-address balance accumulator.
+    pub address_balance: u64,
 }
 
 #[cfg(feature = "rpc")]

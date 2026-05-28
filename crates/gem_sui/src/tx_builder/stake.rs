@@ -8,7 +8,7 @@ use std::{error::Error, str::FromStr};
 use sui_transaction_builder::{Function, ObjectInput, TransactionBuilder};
 use sui_types::{Address, Identifier, TypeTag};
 
-use super::{TransactionBuilderInput, finish_transaction};
+use super::{TransactionBuilderInput, finish_transaction, transfer::requires_hybrid_funding};
 
 pub const SUI_REQUEST_ADD_STAKE: &str = "request_add_stake";
 pub const SUI_REQUEST_WITHDRAW_STAKE: &str = "request_withdraw_stake";
@@ -16,6 +16,12 @@ pub const SUI_REQUEST_WITHDRAW_STAKE: &str = "request_withdraw_stake";
 fn build_split_and_stake_ptb(input: &StakeInput) -> Result<TransactionBuilder, Box<dyn Error + Send + Sync>> {
     if let Some(err) = crate::validate_enough_balance(&input.coins, input.stake_amount) {
         return Err(err);
+    }
+    if input.coins.coins.is_empty() {
+        return Err("No SUI coins available for gas".into());
+    }
+    if requires_hybrid_funding(&input.coins, input.stake_amount) {
+        return Err("Sui stake: amount requires combining Address Balance with Coin<SUI> objects, which is not supported".into());
     }
 
     let stake_chain = primitives::StakeChain::Sui;
@@ -27,7 +33,6 @@ fn build_split_and_stake_ptb(input: &StakeInput) -> Result<TransactionBuilder, B
 
     let mut ptb = TransactionBuilder::new();
 
-    // Acquire the staking coin: from Address Balance when it can cover the amount, otherwise split from gas.
     let stake_coin = if input.coins.address_balance >= input.stake_amount {
         let coin_type: TypeTag = input
             .coins

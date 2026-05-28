@@ -6,9 +6,19 @@ use sui_types::{Address, TypeTag};
 
 use super::{TransactionBuilderInput, build_amount_coin, finish_transaction};
 
+pub(super) fn requires_hybrid_funding(coins: &OwnedCoins<Coin>, amount: u64) -> bool {
+    coins.address_balance < amount && coins.coin_total() < amount
+}
+
 fn build_transfer_ptb(input: &TransferInput) -> Result<TransactionBuilder, Box<dyn Error + Send + Sync>> {
     if let Some(err) = crate::validate_enough_balance(&input.coins, input.amount) {
         return Err(err);
+    }
+    if input.coins.coins.is_empty() {
+        return Err("No SUI coins available for gas".into());
+    }
+    if !input.send_max && requires_hybrid_funding(&input.coins, input.amount) {
+        return Err("Sui native transfer: amount requires combining Address Balance with Coin<SUI> objects, which is not supported".into());
     }
 
     let recipient = Address::from_str(&input.recipient)?;
@@ -57,8 +67,7 @@ fn build_token_transfer_ptb(input: &TokenTransferInput) -> Result<TransactionBui
     let coin_type: TypeTag = tokens.coin_type.parse().map_err(|err| format!("invalid Sui token coin type {}: {err}", tokens.coin_type))?;
     let recipient = Address::from_str(&input.recipient)?;
     let mut ptb = TransactionBuilder::new();
-    let coin_object_inputs: Vec<ObjectInput> = tokens.coins.iter().map(|coin| coin.object.to_input()).collect();
-    let amount_coin = build_amount_coin(&mut ptb, coin_type, input.amount, tokens.address_balance, coin_object_inputs)?;
+    let amount_coin = build_amount_coin(&mut ptb, coin_type, input.amount, tokens.address_balance, &tokens.coins)?;
     let recipient_argument = ptb.pure(&recipient);
     ptb.transfer_objects(vec![amount_coin], recipient_argument);
 
@@ -219,8 +228,53 @@ mod tests {
             sui_types::TransactionKind::ProgrammableTransaction(ptb) => {
                 assert!(ptb.inputs.iter().any(|inp| matches!(inp, sui_types::Input::FundsWithdrawal(_))));
                 assert!(ptb.inputs.iter().any(|inp| matches!(inp, sui_types::Input::ImmutableOrOwned(_))));
+                let withdrawals: Vec<u64> = ptb
+                    .inputs
+                    .iter()
+                    .filter_map(|inp| match inp {
+                        sui_types::Input::FundsWithdrawal(w) => w.amount(),
+                        _ => None,
+                    })
+                    .collect();
+                assert_eq!(withdrawals, vec![50_000_000], "expected shortfall withdrawal only");
             }
             _ => panic!("expected ProgrammableTransaction"),
         }
+    }
+
+    #[test]
+    fn test_encode_native_transfer_without_gas_coin_rejected() {
+        let input = TransferInput {
+            sender: "0x1b4cd8b734f2465614678ca0450ce9c4f2ff4835c6a7545522892a1a8fb67991".into(),
+            recipient: "0xcf3abaeecfaf42990b8481c03000000000000000000000000000000000000000".into(),
+            amount: 1_000_000,
+            coins: OwnedCoins::new(SUI_COIN_TYPE.into(), vec![], 2_000_000),
+            send_max: false,
+            gas: Gas { budget: 25_000_000, price: 750 },
+        };
+        let err = encode_transfer(&input).expect_err("missing Coin<SUI> for gas must be rejected early");
+        assert!(err.to_string().contains("No SUI coins available for gas"), "got: {err}");
+    }
+
+    #[test]
+    fn test_encode_native_transfer_hybrid_rejected() {
+        let input = TransferInput {
+            sender: "0x1b4cd8b734f2465614678ca0450ce9c4f2ff4835c6a7545522892a1a8fb67991".into(),
+            recipient: "0xcf3abaeecfaf42990b8481c03000000000000000000000000000000000000000".into(),
+            amount: 8_000_000_000,
+            coins: OwnedCoins::new(
+                SUI_COIN_TYPE.into(),
+                vec![Coin {
+                    coin_type: SUI_COIN_TYPE.into(),
+                    balance: 5_000_000_000,
+                    object: Object::mock(),
+                }],
+                4_000_000_000,
+            ),
+            send_max: false,
+            gas: Gas { budget: 25_000_000, price: 750 },
+        };
+        let err = encode_transfer(&input).expect_err("hybrid native SUI must be rejected");
+        assert!(err.to_string().contains("not supported"), "error must explain hybrid is unsupported: {err}");
     }
 }
