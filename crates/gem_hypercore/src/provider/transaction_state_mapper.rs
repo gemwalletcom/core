@@ -1,7 +1,7 @@
 use crate::models::{
     order::{FillDirection, UserFill},
     transaction_id::HyperCoreActionId,
-    user::{LedgerDelta, LedgerUpdate},
+    user::{DelegatorHistoryDelta, DelegatorHistoryUpdate, LedgerDelta, LedgerUpdate},
 };
 use number_formatter::BigNumberFormatter;
 use primitives::{
@@ -11,6 +11,7 @@ use primitives::{
 
 pub const ACTION_HISTORY_QUERY_LOOKBACK_MS: u64 = 5_000;
 const ACTION_HISTORY_MATCH_WINDOW_MS: u64 = 5 * 60 * 1_000;
+const DELEGATOR_WITHDRAWAL_INITIATED: &str = "initiated";
 
 fn perpetual_fill_type_and_direction(dir: &FillDirection) -> Option<(TransactionType, PerpetualDirection)> {
     match dir {
@@ -69,10 +70,7 @@ pub fn map_transaction_state_order(fills: Vec<UserFill>, oid: u64, request_id: S
 }
 
 pub fn map_transaction_state_order_action(fills: Vec<UserFill>, nonce: u64, request_id: String) -> TransactionUpdate {
-    match order_action_hash(&fills, nonce) {
-        Some(hash) => confirmed_hash_change(request_id, hash),
-        None => TransactionUpdate::new_state(TransactionState::Pending),
-    }
+    transaction_update_from_hash(order_action_hash(&fills, nonce), request_id)
 }
 
 pub fn order_action_hash(fills: &[UserFill], nonce: u64) -> Option<String> {
@@ -84,10 +82,11 @@ pub fn order_action_hash(fills: &[UserFill], nonce: u64) -> Option<String> {
 }
 
 pub fn map_transaction_state_action(updates: Vec<LedgerUpdate>, action_id: HyperCoreActionId, request_id: String) -> TransactionUpdate {
-    match ledger_action_hash(&updates, &action_id) {
-        Some(hash) => confirmed_hash_change(request_id, hash),
-        None => TransactionUpdate::new_state(TransactionState::Pending),
-    }
+    transaction_update_from_hash(ledger_action_hash(&updates, &action_id), request_id)
+}
+
+pub fn map_transaction_state_staking_action(updates: Vec<DelegatorHistoryUpdate>, action_id: HyperCoreActionId, request_id: String) -> TransactionUpdate {
+    transaction_update_from_hash(delegator_history_action_hash(&updates, &action_id), request_id)
 }
 
 pub fn ledger_action_hash(updates: &[LedgerUpdate], action_id: &HyperCoreActionId) -> Option<String> {
@@ -95,6 +94,15 @@ pub fn ledger_action_hash(updates: &[LedgerUpdate], action_id: &HyperCoreActionI
     updates
         .iter()
         .filter_map(|update| ledger_match_delta(update, action_id, nonce).map(|delta| (delta, update)))
+        .min_by_key(|(delta, _)| *delta)
+        .map(|(_, update)| update.hash.clone())
+}
+
+fn delegator_history_action_hash(updates: &[DelegatorHistoryUpdate], action_id: &HyperCoreActionId) -> Option<String> {
+    let nonce = action_id.nonce();
+    updates
+        .iter()
+        .filter_map(|update| delegator_history_match_delta(update, action_id, nonce).map(|delta| (delta, update)))
         .min_by_key(|(delta, _)| *delta)
         .map(|(_, update)| update.hash.clone())
 }
@@ -114,13 +122,31 @@ fn ledger_match_delta(update: &LedgerUpdate, action_id: &HyperCoreActionId, nonc
                 return None;
             }
 
-            let Ok(update_wei) = BigNumberFormatter::value_from_amount(amount, HYPERCORE_HYPE.decimals as u32) else {
-                return None;
-            };
-
-            action_history_time_delta(update.time, nonce).filter(|_| update_wei == wei.to_string())
+            action_history_time_delta(update.time, nonce).filter(|_| amount_matches_wei(amount, wei))
         }
         LedgerDelta::Send { .. } | LedgerDelta::SpotTransfer { .. } | LedgerDelta::Other => None,
+    }
+}
+
+fn delegator_history_match_delta(update: &DelegatorHistoryUpdate, action_id: &HyperCoreActionId, nonce: u64) -> Option<u64> {
+    let matches_action = match (&update.delta, action_id) {
+        (DelegatorHistoryDelta { c_deposit: Some(delta), .. }, HyperCoreActionId::CDeposit { wei, .. }) => amount_matches_wei(&delta.amount, *wei),
+        (DelegatorHistoryDelta { delegate: Some(delta), .. }, HyperCoreActionId::TokenDelegate { wei, is_undelegate, .. }) => {
+            delta.is_undelegate == *is_undelegate && amount_matches_wei(&delta.amount, *wei)
+        }
+        (DelegatorHistoryDelta { withdrawal: Some(delta), .. }, HyperCoreActionId::CWithdraw { wei, .. }) => {
+            delta.phase == DELEGATOR_WITHDRAWAL_INITIATED && amount_matches_wei(&delta.amount, *wei)
+        }
+        _ => false,
+    };
+
+    if matches_action { action_history_time_delta(update.time, nonce) } else { None }
+}
+
+fn amount_matches_wei(amount: &str, wei: u64) -> bool {
+    match BigNumberFormatter::value_from_amount(amount, HYPERCORE_HYPE.decimals as u32) {
+        Ok(update_wei) => update_wei == wei.to_string(),
+        Err(_) => false,
     }
 }
 
@@ -129,8 +155,11 @@ fn action_history_time_delta(time: u64, nonce: u64) -> Option<u64> {
     if delta <= ACTION_HISTORY_MATCH_WINDOW_MS { Some(delta) } else { None }
 }
 
-fn confirmed_hash_change(request_id: String, hash: String) -> TransactionUpdate {
-    TransactionUpdate::new(TransactionState::Confirmed, vec![TransactionChange::HashChange { old: request_id, new: hash }])
+fn transaction_update_from_hash(hash: Option<String>, request_id: String) -> TransactionUpdate {
+    match hash {
+        Some(hash) => TransactionUpdate::new(TransactionState::Confirmed, vec![TransactionChange::HashChange { old: request_id, new: hash }]),
+        None => TransactionUpdate::new_state(TransactionState::Pending),
+    }
 }
 
 #[cfg(test)]
@@ -246,8 +275,7 @@ mod tests {
     #[test]
     fn test_map_transaction_state_action_without_matching_nonce_stays_pending() {
         let updates = serde_json::from_str(include_str!("../../testdata/user_non_funding_ledger_updates_action_hash.json")).unwrap();
-        let action_id = HyperCoreActionId::Nonce(1777960893093);
-        let update = map_transaction_state_action(updates, action_id, "action:1777960893093".to_string());
+        let update = map_transaction_state_action(updates, HyperCoreActionId::Nonce(1777960893093), "action:1777960893093".to_string());
 
         assert_eq!(update.state, TransactionState::Pending);
         assert!(update.changes.is_empty());
@@ -332,6 +360,59 @@ mod tests {
                 }]
             )
         );
+    }
+
+    #[test]
+    fn test_map_transaction_state_staking_action_confirms_delegator_history_actions() {
+        let updates: Vec<DelegatorHistoryUpdate> = serde_json::from_str(include_str!("../../testdata/delegator_history_staking_actions.json")).unwrap();
+
+        for (request_id, action_id, expected_hash) in [
+            (
+                "action:cDeposit:1000000:1780081714468",
+                HyperCoreActionId::CDeposit {
+                    wei: 1_000_000,
+                    nonce: 1780081714468,
+                },
+                "0x945b910697cd885a95d5043c857c0d0201b300ec32c0a72c38243c5956c16245",
+            ),
+            (
+                "action:tokenDelegate:1000000:stake:1780081715280",
+                HyperCoreActionId::TokenDelegate {
+                    wei: 1_000_000,
+                    is_undelegate: false,
+                    nonce: 1780081715280,
+                },
+                "0x0cfde0fb239ef8630e77043c857c1502025000e0be921735b0c68c4de292d24d",
+            ),
+            (
+                "action:cWithdraw:3001423:1780078264489",
+                HyperCoreActionId::CWithdraw {
+                    wei: 3_001_423,
+                    nonce: 1780078264489,
+                },
+                "0x7b435a1210afafef7cbd043c84b8d402064e00f7aba2cec11f0c0564cfa389da",
+            ),
+            (
+                "action:tokenDelegate:3001423:unstake:1780078264488",
+                HyperCoreActionId::TokenDelegate {
+                    wei: 3_001_423,
+                    is_undelegate: true,
+                    nonce: 1780078264488,
+                },
+                "0xc24f99bd90d6d68ac3c9043c84b8c90201c000a32bd9f55c661845104fdab075",
+            ),
+        ] {
+            assert_eq!(
+                map_transaction_state_staking_action(updates.clone(), action_id, request_id.to_string()),
+                TransactionUpdate::new(
+                    TransactionState::Confirmed,
+                    vec![TransactionChange::HashChange {
+                        old: request_id.to_string(),
+                        new: expected_hash.to_string(),
+                    }]
+                )
+            );
+        }
     }
 
     #[test]

@@ -9,7 +9,7 @@ use crate::models::{
     referral::Referral,
     response::ExplorerTransactionResponse,
     spot::{OrderbookResponse, SpotMeta},
-    user::{AgentSession, LedgerUpdate, UserAbstractionMode, UserFee, UserRole},
+    user::{AgentSession, DelegatorHistoryUpdate, LedgerUpdate, UserAbstractionMode, UserFee, UserRole},
 };
 use chain_traits::ChainTraits;
 use gem_client::{CONTENT_TYPE, Client, ClientExt, ContentType};
@@ -244,6 +244,14 @@ impl<C: Client> HyperCoreClient<C> {
             "type": "userNonFundingLedgerUpdates",
             "user": user,
             "startTime": start_time
+        }))
+        .await
+    }
+
+    pub async fn get_delegator_history(&self, user: &str) -> Result<Vec<DelegatorHistoryUpdate>, Box<dyn Error + Send + Sync>> {
+        self.info(json!({
+            "type": "delegatorHistory",
+            "user": user
         }))
         .await
     }

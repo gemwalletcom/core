@@ -1,0 +1,43 @@
+[
+  {
+    "time": 1780081714469,
+    "hash": "0x945b910697cd885a95d5043c857c0d0201b300ec32c0a72c38243c5956c16245",
+    "delta": {
+      "cDeposit": {
+        "amount": "0.01"
+      }
+    }
+  },
+  {
+    "time": 1780081715281,
+    "hash": "0x0cfde0fb239ef8630e77043c857c1502025000e0be921735b0c68c4de292d24d",
+    "delta": {
+      "delegate": {
+        "validator": "0x3e5b2598a32ebf003ad5a7254faa3d04ff41d9fe",
+        "amount": "0.01",
+        "isUndelegate": false
+      }
+    }
+  },
+  {
+    "time": 1780078270596,
+    "hash": "0x7b435a1210afafef7cbd043c84b8d402064e00f7aba2cec11f0c0564cfa389da",
+    "delta": {
+      "withdrawal": {
+        "amount": "0.03001423",
+        "phase": "initiated"
+      }
+    }
+  },
+  {
+    "time": 1780078269817,
+    "hash": "0xc24f99bd90d6d68ac3c9043c84b8c90201c000a32bd9f55c661845104fdab075",
+    "delta": {
+      "delegate": {
+        "validator": "0x000000000056f99d36b6f2e0c51fd41496bbacb8",
+        "amount": "0.03001423",
+        "isUndelegate": true
+      }
+    }
+  }
+]

@@ -44,6 +44,42 @@ pub struct LedgerUpdate {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DelegatorHistoryUpdate {
+    pub time: u64,
+    pub hash: String,
+    pub delta: DelegatorHistoryDelta,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DelegatorHistoryDelta {
+    pub c_deposit: Option<DelegatorAmountDelta>,
+    pub delegate: Option<DelegatorDelegateDelta>,
+    pub withdrawal: Option<DelegatorWithdrawalDelta>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DelegatorAmountDelta {
+    pub amount: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DelegatorDelegateDelta {
+    pub amount: String,
+    pub is_undelegate: bool,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DelegatorWithdrawalDelta {
+    pub amount: String,
+    pub phase: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "type", rename_all = "camelCase", rename_all_fields = "camelCase")]
 pub enum LedgerDelta {
     Send {
