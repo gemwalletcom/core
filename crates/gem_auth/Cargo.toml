@@ -24,3 +24,4 @@ jsonwebtoken = { workspace = true, optional = true }
 [dev-dependencies]
 alloy-signer = { workspace = true }
 alloy-signer-local = { workspace = true }
+primitives = { path = "../primitives", features = ["testkit"] }
