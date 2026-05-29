@@ -2,9 +2,6 @@ use crate::address::TronAddress;
 use crate::models::WitnessesList;
 use primitives::{Address as _, Chain, DelegationValidator, StakeValidator};
 
-const SYSTEM_UNSTAKING_VALIDATOR_ID: &str = "system";
-const SYSTEM_UNSTAKING_VALIDATOR_NAME: &str = "Unstaking";
-
 pub fn map_validators(witnesses: WitnessesList) -> Vec<StakeValidator> {
     witnesses.witnesses.into_iter().map(|x| StakeValidator::new(x.address, x.url)).collect()
 }
@@ -26,14 +23,7 @@ pub fn map_staking_validators(witnesses: WitnessesList, apy: Option<f64>) -> Vec
         })
         .collect();
 
-    validators.push(DelegationValidator::stake(
-        Chain::Tron,
-        SYSTEM_UNSTAKING_VALIDATOR_ID.to_string(),
-        SYSTEM_UNSTAKING_VALIDATOR_NAME.to_string(),
-        true,
-        0.0,
-        default_apy,
-    ));
+    validators.push(DelegationValidator::system(Chain::Tron));
 
     validators
 }
@@ -79,8 +69,8 @@ mod tests {
         assert_eq!(validators[1].id, "TEqyWRKCzREYC2bK2fc3j7pp8XjAa6tJK1");
         assert!(!validators[1].is_active);
 
-        assert_eq!(validators[2].id, SYSTEM_UNSTAKING_VALIDATOR_ID);
-        assert_eq!(validators[2].name, SYSTEM_UNSTAKING_VALIDATOR_NAME);
+        assert_eq!(validators[2].id, DelegationValidator::SYSTEM_ID);
+        assert_eq!(validators[2].name, DelegationValidator::SYSTEM_NAME);
         assert!(validators[2].is_active);
     }
 }

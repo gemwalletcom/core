@@ -11,8 +11,6 @@ use super::staking_mapper::map_staking_validators;
 use crate::rpc::client::TronClient;
 use crate::rpc::constants::{GET_WITNESS_127_PAY_PER_BLOCK, GET_WITNESS_PAY_PER_BLOCK};
 
-const SYSTEM_VALIDATOR_ID: &str = "system";
-
 #[async_trait]
 impl<C: Client + Clone> ChainStaking for TronClient<C> {
     async fn get_staking_apy(&self) -> Result<Option<f64>, Box<dyn Error + Sync + Send>> {
@@ -70,7 +68,7 @@ impl<C: Client + Clone> ChainStaking for TronClient<C> {
                         rewards: BigUint::from(0u32),
                         completion_date: Some(completion_date),
                         delegation_id: completion_date.timestamp().to_string(),
-                        validator_id: SYSTEM_VALIDATOR_ID.to_string(),
+                        validator_id: DelegationValidator::SYSTEM_ID.to_string(),
                     });
                 }
             }

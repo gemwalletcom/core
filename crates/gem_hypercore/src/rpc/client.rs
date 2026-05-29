@@ -1,5 +1,5 @@
 use crate::models::{
-    balance::{Balances, DelegationBalance, StakeBalance, Validator},
+    balance::{Balances, DelegationBalance, DelegatorHistoryEntry, StakeBalance, Validator},
     candlestick::Candlestick,
     metadata::HypercoreMetadataResponse,
     order::{OpenOrder, UserFill},
@@ -113,6 +113,10 @@ impl<C: Client> HyperCoreClient<C> {
 
     pub async fn get_staking_delegations(&self, user: &str) -> Result<Vec<DelegationBalance>, Box<dyn Error + Send + Sync>> {
         self.info(json!({"type": "delegations", "user": user})).await
+    }
+
+    pub async fn get_staking_history(&self, user: &str) -> Result<Vec<DelegatorHistoryEntry>, Box<dyn Error + Send + Sync>> {
+        self.info(json!({"type": "delegatorHistory", "user": user})).await
     }
 
     pub async fn get_staking_apy(&self) -> Result<f64, Box<dyn Error + Send + Sync>> {
