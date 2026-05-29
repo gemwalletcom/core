@@ -47,8 +47,8 @@ pub fn map_balance_tokens(spot_balances: &Balances, spot_tokens: &[SpotToken], t
 
 pub fn map_balance_staking(balance: &StakeBalance, chain: Chain) -> Result<AssetBalance, Box<dyn Error + Sync + Send>> {
     let native_decimals = Asset::from_chain(chain).decimals as u32;
-    let available_biguint = BigNumberFormatter::value_from_amount_biguint(&balance.delegated.to_string(), native_decimals).unwrap_or_default();
-    let pending_biguint = BigNumberFormatter::value_from_amount_biguint(&balance.total_pending_withdrawal.to_string(), native_decimals).unwrap_or_default();
+    let available_biguint = BigNumberFormatter::value_from_amount_biguint(&balance.delegated, native_decimals).unwrap_or_default();
+    let pending_biguint = BigNumberFormatter::value_from_amount_biguint(&balance.total_pending_withdrawal, native_decimals).unwrap_or_default();
 
     Ok(AssetBalance::new_balance(
         chain.as_asset_id(),
@@ -138,9 +138,9 @@ mod tests {
     #[test]
     fn test_map_balance_staking() {
         let stake_balance = StakeBalance {
-            delegated: 100.0,
-            undelegated: 0.0,
-            total_pending_withdrawal: 10.0,
+            delegated: "100.0".to_string(),
+            undelegated: "0.0".to_string(),
+            total_pending_withdrawal: "10.0".to_string(),
         };
         let result = map_balance_staking(&stake_balance, Chain::HyperCore).unwrap();
 

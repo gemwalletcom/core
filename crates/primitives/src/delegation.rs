@@ -66,6 +66,9 @@ pub struct DelegationValidator {
 }
 
 impl DelegationValidator {
+    pub const SYSTEM_ID: &str = "system";
+    pub const SYSTEM_NAME: &str = "Unstaking";
+
     pub fn stake(chain: Chain, id: String, name: String, is_active: bool, commission: f64, apr: f64) -> Self {
         Self {
             chain,
@@ -76,6 +79,10 @@ impl DelegationValidator {
             apr,
             provider_type: StakeProviderType::Stake,
         }
+    }
+
+    pub fn system(chain: Chain) -> Self {
+        Self::stake(chain, Self::SYSTEM_ID.to_string(), Self::SYSTEM_NAME.to_string(), true, 0.0, 0.0)
     }
 }
 

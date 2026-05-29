@@ -103,8 +103,7 @@ impl HyperCoreSigner {
                 Ok(vec![deposit_action, delegate_action])
             }
             StakeType::Unstake(delegation) => {
-                let balance = delegation.base.balance.to_string();
-                let wei = BigNumberFormatter::value_as_u64(&balance, 0).map_err(|err| SignerError::InvalidInput(err.to_string()))?;
+                let wei = BigNumberFormatter::value_as_u64(&input.value, 0).map_err(|err| SignerError::InvalidInput(err.to_string()))?;
 
                 let undelegate_request = TokenDelegate::new(delegation.validator.id.clone(), wei, true, nonce_incrementer.next_val());
                 let undelegate_action = self.sign_token_delegate(undelegate_request, private_key)?;
@@ -438,7 +437,7 @@ mod tests {
     }
 
     #[test]
-    fn unstake_actions_have_unique_nonces() {
+    fn unstake_uses_entered_amount_and_unique_nonces() {
         let signer = HyperCoreSigner;
         let asset = Asset::from_chain(Chain::HyperCore);
         let delegation = Delegation {
@@ -456,7 +455,7 @@ mod tests {
             price: None,
         };
         let input = TransactionLoadInput {
-            value: "0".into(),
+            value: "60000000".into(),
             sender_address: "0xsender".into(),
             destination_address: "".into(),
             ..TransactionLoadInput::mock_with_input_type(TransactionInputType::Stake(asset, StakeType::Unstake(delegation)))
@@ -467,16 +466,19 @@ mod tests {
         let responses = signer.sign_stake_action(&input, &private_key).expect("should sign");
         assert_eq!(responses.len(), 2);
 
-        let nonces: Vec<u64> = responses
-            .iter()
-            .map(|payload| {
-                let value: serde_json::Value = serde_json::from_str(payload).expect("valid json");
-                value["action"]["nonce"].as_u64().expect("action nonce")
-            })
-            .collect();
+        let undelegate: serde_json::Value = serde_json::from_str(&responses[0]).expect("json");
+        let withdraw: serde_json::Value = serde_json::from_str(&responses[1]).expect("json");
 
-        assert_eq!(nonces.len(), 2);
-        assert!(nonces[0] < nonces[1], "unstake actions should advance nonce");
+        assert_eq!(undelegate["action"]["type"], "tokenDelegate");
+        assert_eq!(undelegate["action"]["isUndelegate"], true);
+        assert_eq!(withdraw["action"]["type"], "cWithdraw");
+
+        assert_eq!(undelegate["action"]["wei"].as_u64().expect("undelegate wei"), 60000000);
+        assert_eq!(withdraw["action"]["wei"].as_u64().expect("withdraw wei"), 60000000);
+
+        let undelegate_nonce = undelegate["action"]["nonce"].as_u64().expect("nonce");
+        let withdraw_nonce = withdraw["action"]["nonce"].as_u64().expect("nonce");
+        assert!(undelegate_nonce < withdraw_nonce, "unstake actions should advance nonce");
     }
 
     #[test]

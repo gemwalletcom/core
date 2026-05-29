@@ -34,20 +34,16 @@ pub struct Token {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StakeBalance {
-    #[serde(deserialize_with = "deserialize_f64_from_str")]
-    pub delegated: f64,
-    #[serde(deserialize_with = "deserialize_f64_from_str")]
-    pub undelegated: f64,
-    #[serde(deserialize_with = "deserialize_f64_from_str")]
-    pub total_pending_withdrawal: f64,
+    pub delegated: String,
+    pub undelegated: String,
+    pub total_pending_withdrawal: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DelegationBalance {
     pub validator: String,
-    #[serde(deserialize_with = "deserialize_f64_from_str")]
-    pub amount: f64,
+    pub amount: String,
     pub locked_until_timestamp: u64,
 }
 
