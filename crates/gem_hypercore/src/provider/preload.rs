@@ -11,14 +11,14 @@ use primitives::{
 
 use crate::is_spot_swap;
 use crate::provider::fee_calculator::{calculate_perpetual_fee_amount, calculate_spot_fee_amount};
-use crate::provider::preload_cache::HyperCoreCache;
+use crate::provider::preload_cache::{HyperCoreCache, UserFeeRates};
 use crate::provider::preload_mapper::get_approvals_and_credentials;
 use crate::rpc::client::HyperCoreClient;
 
 impl<C: Client> HyperCoreClient<C> {
-    async fn get_order(&self, sender_address: &str) -> Result<(HyperliquidOrder, i64), Box<dyn Error + Sync + Send>> {
+    async fn get_order(&self, sender_address: &str) -> Result<(HyperliquidOrder, UserFeeRates), Box<dyn Error + Sync + Send>> {
         let cache = HyperCoreCache::new(self.preferences.clone(), self.config.clone());
-        let (agent_required, referral_required, builder_required, fee_rate, agent_address, agent_private_key) = get_approvals_and_credentials(
+        let (agent_required, referral_required, builder_required, fee_rates, agent_address, agent_private_key) = get_approvals_and_credentials(
             &cache,
             sender_address,
             self.secure_preferences.clone(),
@@ -38,7 +38,7 @@ impl<C: Client> HyperCoreClient<C> {
                 agent_address,
                 agent_private_key,
             },
-            fee_rate,
+            fee_rates,
         ))
     }
 }
@@ -60,9 +60,9 @@ impl<C: Client> ChainTransactionLoad for HyperCoreClient<C> {
             }
             TransactionInputType::Swap(from_asset, to_asset, _) => {
                 let (fee_amount, order) = if is_spot_swap(from_asset.chain(), to_asset.chain()) {
-                    let (order, fee_rate) = self.get_order(&input.sender_address).await?;
+                    let (order, fee_rates) = self.get_order(&input.sender_address).await?;
                     let swap_data = input.input_type.get_swap_data().map_err(|err| err.to_string())?;
-                    let fee_amount = calculate_spot_fee_amount(swap_data, from_asset, to_asset, fee_rate, self.config.max_builder_fee_bps)?;
+                    let fee_amount = calculate_spot_fee_amount(swap_data, from_asset, to_asset, fee_rates.spot_cross, self.config.max_builder_fee_bps)?;
 
                     (fee_amount, Some(order))
                 } else {
@@ -82,8 +82,8 @@ impl<C: Client> ChainTransactionLoad for HyperCoreClient<C> {
                     PerpetualType::Close(data) => data.fiat_value,
                     PerpetualType::Modify(_) => 0.0,
                 };
-                let (order, fee_rate) = self.get_order(&input.sender_address).await?;
-                let fee_amount = calculate_perpetual_fee_amount(fiat_value, fee_rate);
+                let (order, fee_rates) = self.get_order(&input.sender_address).await?;
+                let fee_amount = calculate_perpetual_fee_amount(fiat_value, fee_rates.perpetual_cross);
 
                 Ok(TransactionLoadData {
                     fee: TransactionFee::new_from_fee(fee_amount),

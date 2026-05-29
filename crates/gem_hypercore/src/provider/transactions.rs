@@ -89,7 +89,10 @@ impl<C: Client> HyperCoreClient<C> {
         self.map_user_fills_with_spot_meta(
             &sender,
             nonce.saturating_sub(transaction_state_mapper::ACTION_HISTORY_QUERY_LOOKBACK_MS) as i64,
-            |fills, spot_meta| transaction_state_mapper::order_action_hash(&fills, nonce).and_then(|hash| map_user_fill_by_hash(&sender, fills, &hash, spot_meta)),
+            |fills, spot_meta| {
+                let oid = transaction_state_mapper::order_action_fill(&fills, nonce)?.oid;
+                map_user_fill_by_oid(&sender, fills, oid, spot_meta)
+            },
         )
         .await
     }

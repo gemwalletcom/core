@@ -244,6 +244,7 @@ mod tests {
         assert_eq!(by_order_id.hash, TEST_TRANSACTION_ID);
         assert_eq!(transaction.asset_id.to_string(), "hypercore_perpetual::HYPE");
         assert_eq!(transaction.fee_asset_id, HYPERCORE_SPOT_USDC_ASSET_ID.clone());
+        assert_eq!(transaction.fee, "666786");
         assert_eq!(transaction.from, "0xabc");
         assert_eq!(transaction.to, "0xabc");
 
@@ -293,6 +294,10 @@ mod tests {
         assert_eq!(transactions.len(), 2);
         assert_eq!(transactions[0].hash, "0xshared");
         assert_eq!(transactions[1].hash, "0xshared");
+
+        let mut fees = transactions.iter().map(|tx| tx.fee.as_str()).collect::<Vec<_>>();
+        fees.sort_unstable();
+        assert_eq!(fees, vec!["24236", "85686"]);
     }
 
     #[test]

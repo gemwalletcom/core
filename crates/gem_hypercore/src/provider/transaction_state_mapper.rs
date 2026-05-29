@@ -1,13 +1,15 @@
-use crate::models::{
-    order::{FillDirection, UserFill},
-    transaction_id::HyperCoreActionId,
-    user::{DelegatorHistoryDelta, DelegatorHistoryUpdate, LedgerDelta, LedgerUpdate},
-};
 use number_formatter::BigNumberFormatter;
 use primitives::{
     PerpetualDirection, PerpetualProvider, TransactionChange, TransactionMetadata, TransactionPerpetualMetadata, TransactionState, TransactionType, TransactionUpdate,
     known_assets::HYPERCORE_HYPE,
 };
+
+use crate::models::{
+    order::{FillDirection, UserFill},
+    transaction_id::HyperCoreActionId,
+    user::{DelegatorHistoryDelta, DelegatorHistoryUpdate, LedgerDelta, LedgerUpdate},
+};
+use crate::perpetual_formatter::usdc_value;
 
 pub const ACTION_HISTORY_QUERY_LOOKBACK_MS: u64 = 5_000;
 const ACTION_HISTORY_MATCH_WINDOW_MS: u64 = 5 * 60 * 1_000;
@@ -53,8 +55,9 @@ pub fn map_transaction_state_order(fills: Vec<UserFill>, oid: u64, request_id: S
     match &last_fill.dir {
         FillDirection::Buy | FillDirection::Sell => {}
         FillDirection::OpenLong | FillDirection::OpenShort | FillDirection::CloseLong | FillDirection::CloseShort => {
-            let (_, metadata) = prepare_perpetual_fill(&matching_fills, last_fill).unwrap();
-            update.changes.push(TransactionChange::Metadata(TransactionMetadata::Perpetual(metadata)));
+            if let Some(changes) = perpetual_fill_changes(&matching_fills, last_fill) {
+                update.changes.extend(changes);
+            }
         }
         FillDirection::Other(_) => return TransactionUpdate::new_state(TransactionState::Pending),
     }
@@ -70,15 +73,29 @@ pub fn map_transaction_state_order(fills: Vec<UserFill>, oid: u64, request_id: S
 }
 
 pub fn map_transaction_state_order_action(fills: Vec<UserFill>, nonce: u64, request_id: String) -> TransactionUpdate {
-    transaction_update_from_hash(order_action_hash(&fills, nonce), request_id)
+    let Some(fill) = order_action_fill(&fills, nonce) else {
+        return TransactionUpdate::new_state(TransactionState::Pending);
+    };
+
+    let hash = fill.hash.clone();
+    let matching_fills: Vec<_> = fills.iter().filter(|item| item.oid == fill.oid).collect();
+    let mut update = TransactionUpdate::new(TransactionState::Confirmed, vec![TransactionChange::HashChange { old: request_id, new: hash }]);
+
+    if let Some(last_fill) = matching_fills.iter().max_by_key(|fill| fill.time)
+        && let Some(changes) = perpetual_fill_changes(&matching_fills, last_fill)
+    {
+        update.changes.extend(changes);
+    }
+
+    update
 }
 
-pub fn order_action_hash(fills: &[UserFill], nonce: u64) -> Option<String> {
+pub(crate) fn order_action_fill(fills: &[UserFill], nonce: u64) -> Option<&UserFill> {
     fills
         .iter()
         .filter_map(|fill| action_history_time_delta(fill.time, nonce).filter(|_| !fill.hash.is_empty()).map(|delta| (delta, fill)))
         .min_by_key(|(delta, _)| *delta)
-        .map(|(_, fill)| fill.hash.clone())
+        .map(|(_, fill)| fill)
 }
 
 pub fn map_transaction_state_action(updates: Vec<LedgerUpdate>, action_id: HyperCoreActionId, request_id: String) -> TransactionUpdate {
@@ -162,10 +179,22 @@ fn transaction_update_from_hash(hash: Option<String>, request_id: String) -> Tra
     }
 }
 
+fn perpetual_fill_changes(matching_fills: &[&UserFill], last_fill: &UserFill) -> Option<Vec<TransactionChange>> {
+    let (_, metadata) = prepare_perpetual_fill(matching_fills, last_fill)?;
+    let fee: f64 = matching_fills.iter().map(|fill| fill.fee + fill.builder_fee.unwrap_or(0.0)).sum();
+    let network_fee = usdc_value(fee).parse().ok()?;
+
+    Some(vec![
+        TransactionChange::Metadata(TransactionMetadata::Perpetual(metadata)),
+        TransactionChange::NetworkFee(network_fee),
+    ])
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::models::order::{FillDirection, UserFill};
+    use num_bigint::BigInt;
 
     #[test]
     fn test_map_transaction_state_order() {
@@ -176,7 +205,7 @@ mod tests {
         let update = map_transaction_state_order(fills, oid, request_id.clone());
 
         assert_eq!(update.state, TransactionState::Confirmed);
-        assert_eq!(update.changes.len(), 2);
+        assert_eq!(update.changes.len(), 3);
 
         let metadata_change = update.changes.iter().find_map(|change| {
             if let TransactionChange::Metadata(TransactionMetadata::Perpetual(metadata)) = change {
@@ -191,6 +220,12 @@ mod tests {
         assert_eq!(metadata.direction, PerpetualDirection::Long);
         assert_eq!(metadata.is_liquidation, Some(false));
         assert_eq!(metadata.provider, Some(PerpetualProvider::Hypercore));
+
+        let network_fee_change = update
+            .changes
+            .iter()
+            .find_map(|change| if let TransactionChange::NetworkFee(fee) = change { Some(fee) } else { None });
+        assert_eq!(network_fee_change, Some(&BigInt::from(666786)));
 
         let hash_change = update.changes.iter().find_map(|change| {
             if let TransactionChange::HashChange { old, new } = change {
@@ -252,6 +287,27 @@ mod tests {
                 new: "0xd16518b18533f577d2de043763f8ad020482009720371449752dc4044437cf62".to_string(),
             }
         );
+    }
+
+    #[test]
+    fn test_map_transaction_state_order_action_includes_perpetual_fee() {
+        let fills: Vec<UserFill> = serde_json::from_str(include_str!("../../testdata/user_fills_multiple.json")).unwrap();
+        let request_id = "action:order:1759700579000".to_string();
+        let update = map_transaction_state_order_action(fills, 1759700579000, request_id.clone());
+
+        assert_eq!(update.state, TransactionState::Confirmed);
+        assert_eq!(
+            update.changes[0],
+            TransactionChange::HashChange {
+                old: request_id,
+                new: "0x9b4d63110c57f2e19cc7042ce90e300202f500f6a75b11b33f160e63cb5bcccc".to_string(),
+            }
+        );
+        let network_fee_change = update
+            .changes
+            .iter()
+            .find_map(|change| if let TransactionChange::NetworkFee(fee) = change { Some(fee) } else { None });
+        assert_eq!(network_fee_change, Some(&BigInt::from(666786)));
     }
 
     #[test]

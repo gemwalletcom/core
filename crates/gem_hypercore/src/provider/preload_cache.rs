@@ -8,7 +8,12 @@ use std::future::Future;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-pub struct HyperCoreCache {
+pub(crate) struct UserFeeRates {
+    pub(crate) perpetual_cross: f64,
+    pub(crate) spot_cross: f64,
+}
+
+pub(crate) struct HyperCoreCache {
     preferences: Arc<dyn Preferences>,
     config: HypercoreConfig,
 }
@@ -17,10 +22,12 @@ impl HyperCoreCache {
     const REFERRAL_APPROVED_KEY: &'static str = "referral_approved";
     const BUILDER_FEE_APPROVED_KEY: &'static str = "builder_fee_approved";
     const AGENT_VALID_UNTIL_KEY: &'static str = "agent_valid_until";
-    const USER_FEES_KEY: &'static str = "user_fees";
+    const USER_PERPETUAL_FEE_RATE_KEY: &'static str = "user_perpetual_fee_rate";
+    const USER_SPOT_FEE_RATE_KEY: &'static str = "user_spot_fee_rate";
     const USER_FEES_TTL: u64 = 86_400 * 7;
+    const USER_FEE_RATE_SCALE: f64 = 1_000_000_000.0;
 
-    pub fn new(preferences: Arc<dyn Preferences>, config: HypercoreConfig) -> Self {
+    pub(crate) fn new(preferences: Arc<dyn Preferences>, config: HypercoreConfig) -> Self {
         Self { preferences, config }
     }
 
@@ -32,7 +39,7 @@ impl HyperCoreCache {
         Ok(SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs() as i64)
     }
 
-    pub async fn needs_referral_approval<F>(&self, address: &str, checker: F) -> Result<bool, Box<dyn Error + Send + Sync>>
+    pub(crate) async fn needs_referral_approval<F>(&self, address: &str, checker: F) -> Result<bool, Box<dyn Error + Send + Sync>>
     where
         F: Future<Output = Result<Referral, Box<dyn Error + Send + Sync>>>,
     {
@@ -52,7 +59,7 @@ impl HyperCoreCache {
         Ok(needs_approval)
     }
 
-    pub async fn needs_builder_fee_approval<F>(&self, address: &str, checker: F) -> Result<bool, Box<dyn Error + Send + Sync>>
+    pub(crate) async fn needs_builder_fee_approval<F>(&self, address: &str, checker: F) -> Result<bool, Box<dyn Error + Send + Sync>>
     where
         F: Future<Output = Result<u32, Box<dyn Error + Send + Sync>>>,
     {
@@ -72,24 +79,37 @@ impl HyperCoreCache {
         Ok(needs_approval)
     }
 
-    pub async fn get_user_fee_rate<F>(&self, address: &str, fetcher: F) -> Result<i64, Box<dyn Error + Send + Sync>>
+    pub(crate) async fn get_user_fee_rates<F>(&self, address: &str, fetcher: F) -> Result<UserFeeRates, Box<dyn Error + Send + Sync>>
     where
         F: Future<Output = Result<UserFee, Box<dyn Error + Send + Sync>>>,
     {
-        let cache_key = self.cache_key(address, Self::USER_FEES_KEY);
+        let perpetual_cache_key = self.cache_key(address, Self::USER_PERPETUAL_FEE_RATE_KEY);
+        let spot_cache_key = self.cache_key(address, Self::USER_SPOT_FEE_RATE_KEY);
 
-        if let Some(cached_rate) = self.preferences.get_i64_with_ttl(&cache_key, Self::USER_FEES_TTL)? {
-            return Ok(cached_rate);
+        if let (Some(perpetual_cross), Some(spot_cross)) = (
+            self.preferences.get_i64_with_ttl(&perpetual_cache_key, Self::USER_FEES_TTL)?,
+            self.preferences.get_i64_with_ttl(&spot_cache_key, Self::USER_FEES_TTL)?,
+        ) {
+            return Ok(UserFeeRates {
+                perpetual_cross: perpetual_cross as f64 / Self::USER_FEE_RATE_SCALE,
+                spot_cross: spot_cross as f64 / Self::USER_FEE_RATE_SCALE,
+            });
         }
 
         let user_fees = fetcher.await?;
-        let rate = (user_fees.user_cross_rate * (1.0 - user_fees.active_referral_discount) * 100000.0) as i64;
+        let discount = 1.0 - user_fees.active_referral_discount;
+        let perpetual_cross = (user_fees.user_cross_rate * discount * Self::USER_FEE_RATE_SCALE).round() as i64;
+        let spot_cross = (user_fees.user_spot_cross_rate * discount * Self::USER_FEE_RATE_SCALE).round() as i64;
 
-        self.preferences.set_i64_with_ttl(&cache_key, rate, Self::USER_FEES_TTL)?;
-        Ok(rate)
+        self.preferences.set_i64_with_ttl(&perpetual_cache_key, perpetual_cross, Self::USER_FEES_TTL)?;
+        self.preferences.set_i64_with_ttl(&spot_cache_key, spot_cross, Self::USER_FEES_TTL)?;
+        Ok(UserFeeRates {
+            perpetual_cross: perpetual_cross as f64 / Self::USER_FEE_RATE_SCALE,
+            spot_cross: spot_cross as f64 / Self::USER_FEE_RATE_SCALE,
+        })
     }
 
-    pub async fn manage_agent<F>(
+    pub(crate) async fn manage_agent<F>(
         &self,
         sender_address: &str,
         secure_preferences: Arc<dyn primitives::Preferences>,
