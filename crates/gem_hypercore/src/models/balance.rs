@@ -1,7 +1,6 @@
 use gem_evm::ethereum_address_checksum;
 use serde::{Deserialize, Serialize};
 use serde_serializers::deserialize_f64_from_str;
-use strum::{Display, EnumString};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -35,73 +34,22 @@ pub struct Token {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StakeBalance {
-    #[serde(deserialize_with = "deserialize_f64_from_str")]
-    pub delegated: f64,
-    #[serde(deserialize_with = "deserialize_f64_from_str")]
-    pub undelegated: f64,
-    #[serde(deserialize_with = "deserialize_f64_from_str")]
-    pub total_pending_withdrawal: f64,
+    pub delegated: String,
+    pub undelegated: String,
+    pub total_pending_withdrawal: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DelegationBalance {
     pub validator: String,
-    #[serde(deserialize_with = "deserialize_f64_from_str")]
-    pub amount: f64,
+    pub amount: String,
     pub locked_until_timestamp: u64,
 }
 
 impl DelegationBalance {
     pub fn validator_address(&self) -> String {
         ethereum_address_checksum(&self.validator).unwrap_or(self.validator.clone())
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DelegatorHistoryEntry {
-    pub time: u64,
-    pub delta: DelegatorDelta,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DelegatorDelta {
-    pub withdrawal: Option<DelegatorWithdrawal>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DelegatorWithdrawal {
-    #[serde(deserialize_with = "deserialize_f64_from_str")]
-    pub amount: f64,
-    pub phase: WithdrawalPhase,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Display, EnumString)]
-#[serde(from = "String", into = "String")]
-pub enum WithdrawalPhase {
-    #[strum(serialize = "initiated")]
-    Initiated,
-    #[strum(serialize = "finalized")]
-    Finalized,
-    #[strum(default)]
-    Other(String),
-}
-
-impl From<String> for WithdrawalPhase {
-    fn from(value: String) -> Self {
-        match value.parse() {
-            Ok(phase) => phase,
-            Err(_) => WithdrawalPhase::Other(value),
-        }
-    }
-}
-
-impl From<WithdrawalPhase> for String {
-    fn from(value: WithdrawalPhase) -> Self {
-        value.to_string()
     }
 }
 
