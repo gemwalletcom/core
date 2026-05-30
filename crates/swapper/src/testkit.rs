@@ -95,6 +95,15 @@ pub fn mock_quote(from_asset: SwapperQuoteAsset, to_asset: SwapperQuoteAsset) ->
     }
 }
 
+pub fn mock_bitcoin_max_quote(to_asset: SwapperQuoteAsset) -> QuoteRequest {
+    let mut request = mock_quote(SwapperQuoteAsset::from(AssetId::from_chain(Chain::Bitcoin)), to_asset);
+    request.wallet_address = "bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4".into();
+    request.destination_address = "11111111111111111111111111111111".into();
+    request.value = "89100".into();
+    request.options.use_max_amount = true;
+    request
+}
+
 pub fn mock_ton(wallet_address: String) -> QuoteRequest {
     QuoteRequest {
         from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ton)),

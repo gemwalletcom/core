@@ -1,5 +1,15 @@
 use crate::models::transaction::{Input, Output, Transaction};
 
+#[cfg(feature = "signer")]
+pub fn unsigned_transaction() -> bitcoin::Transaction {
+    bitcoin::consensus::encode::deserialize(&hex::decode(unsigned_transaction_hex()).unwrap()).unwrap()
+}
+
+#[cfg(feature = "signer")]
+pub fn unsigned_transaction_hex() -> &'static str {
+    "0200000000010100000000000000000000000000000000000000000000000000000000000000010000000000ffffffff011027000000000000160014751e76e8199196d454941c45d1b3a323f1433bd600000000"
+}
+
 impl Transaction {
     pub fn mock() -> Self {
         Self {

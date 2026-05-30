@@ -6,8 +6,8 @@ publish = false
 
 [features]
 default = []
-rpc = ["dep:chain_traits", "dep:gem_client"]
-signer = ["dep:signer", "dep:gem_hash", "dep:hex"]
+rpc = ["dep:chain_traits", "dep:gem_client", "signer"]
+signer = ["dep:bech32", "dep:bitcoin", "dep:bitcoincash-addr", "dep:bs58", "dep:gem_hash", "dep:hex", "dep:signer"]
 reqwest = ["gem_client/reqwest"]
 unit_tests = ["signer"]
 chain_integration_tests = ["rpc", "reqwest", "primitives/testkit", "settings/testkit"]
@@ -29,8 +29,14 @@ serde_serializers = { path = "../serde_serializers", features = ["bigint"] }
 signer = { path = "../signer", optional = true }
 gem_hash = { path = "../gem_hash", optional = true }
 hex = { workspace = true, optional = true }
+bitcoin = { workspace = true, optional = true }
+bitcoincash-addr = { workspace = true, optional = true }
+bech32 = { workspace = true, optional = true }
+bs58 = { workspace = true, optional = true }
 
 [dev-dependencies]
+gem_client = { path = "../gem_client", features = ["testkit"] }
 tokio = { workspace = true, features = ["macros", "rt"] }
 reqwest = { workspace = true }
+primitives = { path = "../primitives", features = ["testkit"] }
 settings = { path = "../settings", features = ["testkit"] }

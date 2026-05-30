@@ -23,7 +23,7 @@ use crate::{
     fees::{DEFAULT_CHAINFLIP_FEE_BPS, apply_slippage_in_bp, quote_value_after_reserve_by_chain},
     solana::DEFAULT_SWAP_GAS_LIMIT,
 };
-use primitives::{ChainType, chain::Chain, swap::QuoteAsset};
+use primitives::{Asset, ChainType, chain::Chain, swap::QuoteAsset};
 
 const DEFAULT_SWAP_ERC20_GAS_LIMIT: u64 = 100_000;
 
@@ -59,35 +59,63 @@ where
             rpc_provider,
         }
     }
+}
 
-    fn map_asset_id(asset: &QuoteAsset) -> ChainflipAsset {
-        let asset_id = asset.asset_id();
-        let chain_name = capitalize_first_letter(asset_id.chain.as_ref());
-        ChainflipAsset {
-            chain: chain_name,
-            asset: asset.symbol.clone(),
-        }
+struct ChainflipQuoteRequestData {
+    from_value: String,
+    quote_request: ChainflipQuoteRequest,
+}
+
+fn map_asset_id(asset: &QuoteAsset) -> ChainflipAsset {
+    let asset_id = asset.asset_id();
+    let chain_name = capitalize_first_letter(asset_id.chain.as_ref());
+    let symbol = if asset.symbol.is_empty() && asset_id.is_native() {
+        Asset::from_chain(asset_id.chain).symbol
+    } else {
+        asset.symbol.clone()
+    };
+    ChainflipAsset { chain: chain_name, asset: symbol }
+}
+
+fn get_quote_value(request: &QuoteRequest) -> Result<String, SwapperError> {
+    let value = quote_value_after_reserve_by_chain(request)?;
+    if !request.options.use_max_amount || !request.from_asset.asset_id().is_native() {
+        return Ok(value);
     }
-
-    fn get_quote_value(request: &QuoteRequest) -> Result<String, SwapperError> {
-        let value = quote_value_after_reserve_by_chain(request)?;
-        if !request.options.use_max_amount || !request.from_asset.asset_id().is_native() {
-            return Ok(value);
-        }
-        match request.from_asset.chain() {
-            Chain::Solana => {
-                let amount: u64 = value.parse().map_err(|_| SwapperError::ComputeQuoteError(format!("invalid amount: {value}")))?;
-                let reserved = amount.saturating_sub(SOLANA_VAULT_SWAP_RESERVE);
-                if reserved == 0 {
-                    return Err(SwapperError::InputAmountError {
-                        min_amount: Some(SOLANA_VAULT_SWAP_RESERVE.to_string()),
-                    });
-                }
-                Ok(reserved.to_string())
+    match request.from_asset.chain() {
+        Chain::Solana => {
+            let amount: u64 = value.parse().map_err(|_| SwapperError::ComputeQuoteError(format!("invalid amount: {value}")))?;
+            let reserved = amount.saturating_sub(SOLANA_VAULT_SWAP_RESERVE);
+            if reserved == 0 {
+                return Err(SwapperError::InputAmountError {
+                    min_amount: Some(SOLANA_VAULT_SWAP_RESERVE.to_string()),
+                });
             }
-            _ => Ok(value),
+            Ok(reserved.to_string())
         }
+        _ => Ok(value),
     }
+}
+
+fn build_quote_request(request: &QuoteRequest) -> Result<ChainflipQuoteRequestData, SwapperError> {
+    let from_value = get_quote_value(request)?;
+    let src_asset = map_asset_id(&request.from_asset);
+    let dest_asset = map_asset_id(&request.to_asset);
+    let fee_bps = DEFAULT_CHAINFLIP_FEE_BPS;
+
+    Ok(ChainflipQuoteRequestData {
+        from_value: from_value.clone(),
+        quote_request: ChainflipQuoteRequest {
+            amount: from_value,
+            src_chain: src_asset.chain,
+            src_asset: src_asset.asset,
+            dest_chain: dest_asset.chain,
+            dest_asset: dest_asset.asset,
+            is_vault_swap: true,
+            dca_enabled: true,
+            broker_commission_bps: Some(fee_bps),
+        },
+    })
 }
 
 fn get_best_quote(mut quotes: Vec<QuoteResponse>, fee_bps: u32) -> (BigUint, u32, u32, ChainflipRouteData) {
@@ -171,27 +199,10 @@ where
     }
 
     async fn get_quote(&self, request: &QuoteRequest) -> Result<Quote, SwapperError> {
-        if request.from_asset.chain().chain_type() == ChainType::Bitcoin {
-            return Err(SwapperError::NoQuoteAvailable);
-        }
-
-        let from_value = Self::get_quote_value(request)?;
-        let src_asset = Self::map_asset_id(&request.from_asset);
-        let dest_asset = Self::map_asset_id(&request.to_asset);
-
         let fee_bps = DEFAULT_CHAINFLIP_FEE_BPS;
-        let quote_request = ChainflipQuoteRequest {
-            amount: from_value.clone(),
-            src_chain: src_asset.chain.clone(),
-            src_asset: src_asset.asset.clone(),
-            dest_chain: dest_asset.chain,
-            dest_asset: dest_asset.asset,
-            is_vault_swap: true,
-            dca_enabled: true,
-            broker_commission_bps: Some(fee_bps),
-        };
+        let quote_request_data = build_quote_request(request)?;
 
-        let quotes = match self.chainflip_client.get_quote(&quote_request).await {
+        let quotes = match self.chainflip_client.get_quote(&quote_request_data.quote_request).await {
             Ok(quotes) => quotes,
             Err(err) => return Err(map_chainflip_quote_error(err, request.from_asset.decimals)),
         };
@@ -202,8 +213,8 @@ where
         let (egress_amount, slippage_bps, eta_in_seconds, route_data) = get_best_quote(quotes, fee_bps);
 
         Ok(Quote {
-            from_value,
             min_from_value: None,
+            from_value: quote_request_data.from_value,
             to_value: egress_amount.to_string(),
             data: ProviderData {
                 provider: self.provider.clone(),
@@ -221,8 +232,8 @@ where
 
     async fn get_quote_data(&self, quote: &Quote, _data: FetchQuoteData) -> Result<SwapperQuoteData, SwapperError> {
         let from_asset = quote.request.from_asset.asset_id();
-        let source_asset = Self::map_asset_id(&quote.request.from_asset);
-        let destination_asset = Self::map_asset_id(&quote.request.to_asset);
+        let source_asset = map_asset_id(&quote.request.from_asset);
+        let destination_asset = map_asset_id(&quote.request.to_asset);
 
         let input_amount: BigUint = quote.from_value.parse()?;
 
@@ -339,6 +350,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{Options, SwapperQuoteAsset};
+    use primitives::AssetId;
 
     #[test]
     fn test_chainflip_min_amount_error() {
@@ -359,6 +372,31 @@ mod tests {
                 min_amount: Some("1230000".into())
             }
         );
+    }
+
+    #[test]
+    fn test_build_quote_request_supports_bitcoin_source() {
+        let request = QuoteRequest {
+            from_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Bitcoin)),
+            to_asset: SwapperQuoteAsset::from(AssetId::from_chain(Chain::Ethereum)),
+            value: "89100".to_string(),
+            options: Options {
+                use_max_amount: true,
+                ..Default::default()
+            },
+            ..QuoteRequest::mock(Chain::Bitcoin, None)
+        };
+
+        let quote_request = build_quote_request(&request).unwrap();
+
+        assert_eq!(quote_request.from_value, "74100");
+        assert_eq!(quote_request.quote_request.amount, "74100");
+        assert_eq!(quote_request.quote_request.src_chain, "Bitcoin");
+        assert_eq!(quote_request.quote_request.src_asset, "BTC");
+        assert_eq!(quote_request.quote_request.dest_chain, "Ethereum");
+        assert_eq!(quote_request.quote_request.dest_asset, "ETH");
+        assert!(quote_request.quote_request.is_vault_swap);
+        assert_eq!(quote_request.quote_request.broker_commission_bps, Some(DEFAULT_CHAINFLIP_FEE_BPS));
     }
 
     #[test]

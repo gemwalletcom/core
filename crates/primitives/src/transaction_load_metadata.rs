@@ -131,6 +131,13 @@ impl TransactionLoadMetadata {
         }
     }
 
+    pub fn get_branch_id(&self) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
+        match self {
+            TransactionLoadMetadata::Zcash { branch_id, .. } => Ok(branch_id.clone()),
+            _ => Err("Branch ID not available for this metadata type".into()),
+        }
+    }
+
     pub fn get_account_number(&self) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
         match self {
             TransactionLoadMetadata::Cosmos { account_number, .. } => Ok(*account_number),

@@ -1,6 +1,5 @@
 use async_trait::async_trait;
 use chain_traits::ChainTransactionLoad;
-use futures;
 use num_bigint::BigInt;
 use number_formatter::BigNumberFormatter;
 use std::error::Error;
@@ -13,6 +12,7 @@ use primitives::{
 use crate::models::Address;
 use crate::provider::preload_mapper::{map_transaction_preload, map_transaction_preload_zcash, map_utxos};
 use crate::rpc::client::BitcoinClient;
+use crate::signer::estimate_transaction_fee;
 
 #[async_trait]
 impl<C: Client> ChainTransactionLoad for BitcoinClient<C> {
@@ -32,10 +32,9 @@ impl<C: Client> ChainTransactionLoad for BitcoinClient<C> {
     }
 
     async fn get_transaction_load(&self, input: TransactionLoadInput) -> Result<TransactionLoadData, Box<dyn Error + Sync + Send>> {
-        Ok(TransactionLoadData {
-            fee: input.default_fee(),
-            metadata: input.metadata,
-        })
+        let fee = estimate_transaction_fee(self.chain, &input)?;
+
+        Ok(TransactionLoadData { fee, metadata: input.metadata })
     }
 
     async fn get_transaction_fee_rates(&self, _input_type: TransactionInputType) -> Result<Vec<FeeRate>, Box<dyn Error + Sync + Send>> {
@@ -45,9 +44,7 @@ impl<C: Client> ChainTransactionLoad for BitcoinClient<C> {
                 let (slow, normal, fast) = futures::try_join!(self.get_fee(priority.slow), self.get_fee(priority.normal), self.get_fee(priority.fast))?;
                 Ok(map_fee_rates(slow, normal, fast, self.chain))
             }
-            BitcoinChain::Zcash => {
-                return Ok(vec![FeeRate::new(FeePriority::Normal, GasPriceType::regular(BigInt::from(1_000).clone()))]);
-            }
+            BitcoinChain::Zcash => Ok(vec![FeeRate::new(FeePriority::Normal, GasPriceType::regular(BigInt::from(1_000)))]),
         }
     }
 
@@ -86,6 +83,13 @@ fn map_fee_rates(slow: BigInt, normal: BigInt, fast: BigInt, chain: BitcoinChain
 #[cfg(test)]
 mod tests {
     use super::*;
+    use gem_client::testkit::MockClient;
+    use primitives::TransactionLoadMetadata;
+
+    use crate::{
+        rpc::client::BitcoinClient,
+        testkit::signer_mock::{transfer_input, utxo_with},
+    };
 
     #[test]
     fn test_calculate_fee_rate() {
@@ -119,5 +123,29 @@ mod tests {
         let rates = map_fee_rates(BigInt::from(1000), BigInt::from(1000), BigInt::from(1000), BitcoinChain::Doge);
         assert_eq!(FeeRate::find(&rates, FeePriority::Normal).unwrap().gas_price_type.gas_price(), BigInt::from(2000));
         assert_eq!(FeeRate::find(&rates, FeePriority::Fast).unwrap().gas_price_type.gas_price(), BigInt::from(3000));
+    }
+
+    #[tokio::test]
+    async fn test_get_transaction_load_estimates_with_signer_planner() {
+        let client = BitcoinClient::new(MockClient::new(), BitcoinChain::BitcoinCash);
+        let mut input = transfer_input(BitcoinChain::BitcoinCash).input;
+        input.metadata = TransactionLoadMetadata::Bitcoin {
+            utxos: vec![utxo_with(
+                "0000000000000000000000000000000000000000000000000000000000000001",
+                0,
+                "50000",
+                &input.sender_address,
+            )],
+        };
+
+        let load = client.get_transaction_load(input).await.unwrap();
+
+        assert_eq!(load.fee.fee, BigInt::from(1130u64));
+
+        let client = BitcoinClient::new(MockClient::new(), BitcoinChain::Zcash);
+        let input = transfer_input(BitcoinChain::Zcash).input;
+        let load = client.get_transaction_load(input).await.unwrap();
+
+        assert_eq!(load.fee.fee, BigInt::from(10000u64));
     }
 }
