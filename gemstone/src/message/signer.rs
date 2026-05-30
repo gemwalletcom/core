@@ -4,11 +4,12 @@ use base64::Engine;
 use base64::engine::general_purpose::STANDARD as BASE64;
 use bs58;
 use gem_evm::message::eip191_hash_message;
+use gem_solana::signer::SolanaChainSigner;
 use gem_sui::signer as sui_signer;
 use gem_ton::address::base64_to_hex_address;
 use gem_ton::signer::{TonSignDataResponse, TonSignMessageData, TonSignResult, TonSigner};
 use primitives::hex::encode_with_0x;
-use signer::{SIGNATURE_LENGTH, SignatureScheme, Signer, ensure_ethereum_signature_recovery_id_offset, hash_eip712};
+use signer::{SIGNATURE_LENGTH, Signer, ensure_ethereum_signature_recovery_id_offset, hash_eip712};
 use std::time::{SystemTime, UNIX_EPOCH};
 use sui_types::PersonalMessage;
 
@@ -19,7 +20,7 @@ use super::{
 };
 use crate::{GemstoneError, siwe::SiweMessage};
 use gem_tron::signer::tron_hash_message;
-use primitives::SimulationPayloadField;
+use primitives::{Chain, ChainSigner, SimulationPayloadField};
 use zeroize::Zeroizing;
 
 fn siwe_or_text_preview(chain: primitives::Chain, data: &[u8]) -> MessagePreview {
@@ -133,10 +134,7 @@ impl MessageSigner {
                 let digest = hash_eip712(&json)?;
                 Ok(digest.to_vec())
             }
-            SignDigestType::Base58 => {
-                let decoded = bs58::decode(&self.message.data).into_vec().map_err(|e| GemstoneError::from(e.to_string()))?;
-                Ok(decoded)
-            }
+            SignDigestType::Base58 => bs58::decode(&self.message.data).into_vec().map_err(|e| GemstoneError::from(e.to_string())),
         }
     }
 
@@ -172,9 +170,11 @@ impl MessageSigner {
                 Ok(encode_with_0x(&signature))
             }
             SignDigestType::Base58 => {
-                let hash = self.hash()?;
-                let signed = Signer::sign_digest(SignatureScheme::Ed25519, &hash, private_key.as_slice())?;
-                Ok(self.get_result(&signed))
+                if self.message.chain != Chain::Solana {
+                    return Err(GemstoneError::from(format!("Base58 sign message is not supported for {:?}", self.message.chain)));
+                }
+                let message = self.hash()?;
+                SolanaChainSigner.sign_message(&message, private_key.as_slice()).map_err(GemstoneError::from)
             }
         }
     }
@@ -375,6 +375,20 @@ Issued At: 2026-03-09T15:48:34.458Z"#;
         let result = decoder.get_result(result_data);
 
         assert_eq!(result, "3LRFsmWKLfsR7G5PqjytR");
+    }
+
+    #[test]
+    fn test_base58_sign_rejects_non_solana_chain() {
+        let decoder = MessageSigner::new(SignMessage {
+            chain: Chain::Ethereum,
+            sign_type: SignDigestType::Base58,
+            data: b"hello".to_vec(),
+        });
+
+        assert_eq!(
+            decoder.sign(TEST_PRIVATE_KEY.to_vec()).unwrap_err().to_string(),
+            "Base58 sign message is not supported for ethereum"
+        );
     }
 
     #[test]

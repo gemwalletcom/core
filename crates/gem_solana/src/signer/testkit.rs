@@ -1,7 +1,7 @@
 use gem_encoding::decode_base64;
 use primitives::testkit::signer_mock::TEST_PRIVATE_KEY;
 use primitives::{SolanaTokenProgramId, TransactionLoadMetadata};
-use solana_primitives::{Pubkey, VersionedTransaction, get_address};
+use solana_primitives::{CompiledInstruction, LegacyMessage, MessageHeader, Pubkey, VersionedTransaction, get_address};
 
 pub const TEST_RECIPIENT: &str = "EN2sCsJ1WDV8UFqsiTXHcUPUxQ4juE71eCknHYYMifkd";
 pub const TEST_SENDER_TOKEN_ADDRESS: &str = "HEeranxp3y7kVQKVSLdZW1rUmnbs7bAtUTMu8o88Jash";
@@ -24,6 +24,26 @@ pub fn private_key_base58(value: &str) -> Vec<u8> {
 
 pub fn base58_transaction(encoded_base64: &str) -> String {
     bs58::encode(decode_base64(encoded_base64).unwrap()).into_string()
+}
+
+pub fn mock_legacy_transaction() -> VersionedTransaction {
+    VersionedTransaction::Legacy {
+        signatures: vec![],
+        message: LegacyMessage {
+            header: MessageHeader {
+                num_required_signatures: 1,
+                num_readonly_signed_accounts: 0,
+                num_readonly_unsigned_accounts: 1,
+            },
+            account_keys: vec![Pubkey::new([1; 32]), Pubkey::new([2; 32])],
+            recent_blockhash: [3; 32],
+            instructions: vec![CompiledInstruction {
+                program_id_index: 1,
+                accounts: vec![0],
+                data: vec![],
+            }],
+        },
+    }
 }
 
 pub fn program_id(transaction: &VersionedTransaction, index: usize) -> String {
