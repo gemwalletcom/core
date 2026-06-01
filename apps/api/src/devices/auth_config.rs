@@ -6,13 +6,12 @@ pub struct JwtConfig {
 }
 
 pub struct AuthConfig {
-    pub enabled: bool,
     pub tolerance: Duration,
     pub jwt: JwtConfig,
 }
 
 impl AuthConfig {
-    pub fn new(enabled: bool, tolerance: Duration, jwt: JwtConfig) -> Self {
-        Self { enabled, tolerance, jwt }
+    pub fn new(tolerance: Duration, jwt: JwtConfig) -> Self {
+        Self { tolerance, jwt }
     }
 }

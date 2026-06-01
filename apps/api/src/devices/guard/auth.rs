@@ -7,7 +7,7 @@ use storage::models::{DeviceRow, WalletRow};
 use storage::{Database, DatabaseClient, WalletsRepository};
 
 use crate::devices::auth_config::AuthConfig;
-use crate::devices::constants::{DEVICE_ID_LENGTH, HEADER_DEVICE_ID, HEADER_WALLET_ID};
+use crate::devices::constants::DEVICE_ID_LENGTH;
 use crate::devices::error::DeviceError;
 use crate::devices::signature::{parse_auth_components, verify_request_signature};
 use crate::responders::cache_error;
@@ -24,6 +24,7 @@ pub(super) fn auth_error_outcome<T>(req: &Request<'_>, error: DeviceError, devic
         | DeviceError::InvalidTimestamp
         | DeviceError::TimestampExpired
         | DeviceError::InvalidSignature
+        | DeviceError::MissingWalletId
         | DeviceError::InvalidAuthorizationFormat => Status::Unauthorized,
         DeviceError::DeviceNotFound | DeviceError::WalletNotFound => Status::NotFound,
         DeviceError::DatabaseUnavailable | DeviceError::DatabaseError => Status::InternalServerError,
@@ -49,22 +50,6 @@ pub(super) async fn authenticate<T>(req: &Request<'_>) -> Result<AuthResult, Out
         panic!("AuthConfig not configured");
     };
 
-    if !config.enabled {
-        let device_id = req
-            .headers()
-            .get_one(HEADER_DEVICE_ID)
-            .ok_or_else(|| auth_error_outcome(req, DeviceError::MissingHeader(HEADER_DEVICE_ID), None, None))?;
-
-        if device_id.len() != DEVICE_ID_LENGTH {
-            return Err(auth_error_outcome(req, DeviceError::InvalidDeviceId, Some(device_id), None));
-        }
-
-        return Ok(AuthResult {
-            device_id: device_id.to_string(),
-            wallet_id: req.headers().get_one(HEADER_WALLET_ID).map(|s| s.to_string()),
-        });
-    }
-
     let components = parse_auth_components(req).map_err(|e| auth_error_outcome(req, e, None, None))?;
 
     if components.device_id.len() != DEVICE_ID_LENGTH {
@@ -76,11 +61,9 @@ pub(super) async fn authenticate<T>(req: &Request<'_>) -> Result<AuthResult, Out
         Error((status, msg))
     })?;
 
-    let wallet_id = components.wallet_id.clone().or_else(|| req.headers().get_one(HEADER_WALLET_ID).map(|s| s.to_string()));
-
     Ok(AuthResult {
         device_id: components.device_id,
-        wallet_id,
+        wallet_id: components.wallet_id,
     })
 }
 

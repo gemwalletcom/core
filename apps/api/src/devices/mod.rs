@@ -29,7 +29,7 @@ use primitives::rewards::{RedemptionRequest, RedemptionResult, RewardRedemptionO
 use primitives::{
     AddressName, AssetId, AuthNonce, ChainAddress, FiatAssets, FiatQuote, FiatQuoteRequest, FiatQuoteType, FiatQuoteUrl, FiatQuotes, InAppNotification, NFTData, PortfolioAssets,
     PortfolioAssetsRequest, PriceAlerts, ReportNft, RewardEvent, Rewards, ScanTransaction, ScanTransactionPayload, Transaction, TransactionsResponse, WalletConfigurationResult,
-    WalletSubscriptionChains,
+    WalletId, WalletSubscriptionChains,
 };
 use rocket::{State, delete, get, post, put, serde::json::Json, tokio::sync::Mutex};
 use std::sync::Arc;
@@ -193,7 +193,7 @@ pub async fn redeem_device_rewards_v2(
     request: WalletSigned<RedemptionRequest>,
     client: &State<Mutex<RewardsRedemptionClient>>,
 ) -> Result<ApiResponse<RedemptionResult>, ApiError> {
-    if !request.matches_multicoin_wallet(&device.wallet_identifier) {
+    if WalletId::Multicoin(request.address.clone()) != device.wallet_identifier {
         return Err(ApiError::BadRequest("Wallet signature mismatch".to_string()));
     }
 

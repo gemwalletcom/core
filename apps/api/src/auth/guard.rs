@@ -1,7 +1,8 @@
+use crate::devices::signature::parse_auth_components;
 use crate::responders::cache_error;
 use gem_auth::{AuthClient, verify_auth_signature};
 use gem_hash::sha2::sha256;
-use primitives::{AuthMessage, AuthenticatedRequest, WalletId};
+use primitives::{AuthMessage, AuthenticatedRequest};
 use rocket::data::{FromData, Outcome, ToByteUnit};
 use rocket::http::Status;
 use rocket::outcome::Outcome::{Error, Success};
@@ -33,7 +34,8 @@ async fn verify_wallet_signature<'r, T: DeserializeOwned + Send, O>(req: &'r Req
 
     let raw_body = bytes.into_inner();
 
-    if let Some(expected_hash) = req.headers().get_one("x-device-body-hash") {
+    if let Ok(components) = parse_auth_components(req) {
+        let expected_hash = components.body_hash;
         let actual_hash = hex::encode(sha256(&raw_body));
         if actual_hash != expected_hash {
             return Err(error_outcome(req, Status::BadRequest, "Body hash mismatch"));
@@ -76,12 +78,6 @@ pub struct WalletSigned<T> {
     pub data: T,
 }
 
-impl<T> WalletSigned<T> {
-    pub fn matches_multicoin_wallet(&self, wallet_id: &WalletId) -> bool {
-        WalletId::Multicoin(self.address.clone()) == *wallet_id
-    }
-}
-
 #[rocket::async_trait]
 impl<'r, T: DeserializeOwned + Send> FromData<'r> for WalletSigned<T> {
     type Error = String;
@@ -96,30 +92,5 @@ impl<'r, T: DeserializeOwned + Send> FromData<'r> for WalletSigned<T> {
             address: verified.address,
             data: verified.data,
         })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::WalletSigned;
-    use primitives::{Chain, WalletId};
-
-    const ADDRESS: &str = "0x1111111111111111111111111111111111111111";
-    const OTHER_ADDRESS: &str = "0x2222222222222222222222222222222222222222";
-
-    fn signed_wallet(address: &str) -> WalletSigned<()> {
-        WalletSigned {
-            address: address.to_string(),
-            data: (),
-        }
-    }
-
-    #[test]
-    fn test_matches_multicoin_wallet() {
-        let request = signed_wallet(ADDRESS);
-
-        assert!(request.matches_multicoin_wallet(&WalletId::Multicoin(ADDRESS.to_string())));
-        assert!(!request.matches_multicoin_wallet(&WalletId::Multicoin(OTHER_ADDRESS.to_string())));
-        assert!(!request.matches_multicoin_wallet(&WalletId::Single(Chain::Ethereum, ADDRESS.to_string())));
     }
 }

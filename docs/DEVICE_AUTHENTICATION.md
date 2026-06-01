@@ -2,9 +2,7 @@
 
 ## Overview
 
-All `/v2/devices/*` endpoints require Ed25519 request signing. New clients should use the Gem `Authorization` header. Individual `x-device-*` headers remain supported for existing clients and should be treated as legacy compatibility.
-
-## Gem Authorization Header
+All `/v2/devices/*` endpoints require Ed25519 request signing with a single Gem `Authorization` header. Legacy individual `x-device-*` and `x-wallet-id` headers are no longer accepted.
 
 ```
 Authorization: Gem base64(<device_id_hex>.<timestamp_ms>.<wallet_id>.<body_hash_hex>.<signature_hex>)
@@ -32,49 +30,20 @@ Examples:
 1706000000000.GET./v2/devices/assets.multicoin_0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb.e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 ```
 
-## Legacy Individual Headers
-
-The server still accepts individual headers for compatibility:
-
-- `x-device-id`: 64-character hex Ed25519 public key
-- `x-device-signature`: Ed25519 signature, hex or base64
-- `x-device-timestamp`: Unix timestamp in milliseconds
-- `x-device-body-hash`: 64-character hex SHA256 hash of the request body
-- `x-wallet-id`: wallet identifier for wallet-scoped endpoints
-
-**Signed message:**
-
-```
-v1.{timestamp}.{method}.{path}.{bodyHash}
-```
-
-The legacy signed message does not include `walletId`; new clients should not add new dependencies on this format.
-
 ## Request Examples
 
-### Gem Wallet-scoped Endpoint
+### Wallet-scoped Endpoint
 
 ```http
 GET /v2/devices/assets?from_timestamp=1234567890
 Authorization: Gem base64(abc123...def456.1706000000000.multicoin_0x742d...f0bEb.e3b0c44...b855.aabb11...)
 ```
 
-### Gem Non-wallet Endpoint
+### Non-wallet Endpoint
 
 ```http
 GET /v2/devices
 Authorization: Gem base64(abc123...def456.1706000000000..e3b0c44...b855.aabb11...)
-```
-
-### Legacy Individual Headers
-
-```http
-GET /v2/devices/assets?from_timestamp=1234567890
-x-device-id: abc123...def456
-x-wallet-id: multicoin_0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb
-x-device-signature: aabb11...
-x-device-timestamp: 1706000000000
-x-device-body-hash: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 ```
 
 ## Implementation
