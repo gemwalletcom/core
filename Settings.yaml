@@ -220,6 +220,10 @@ scan:
       public: ""
       secret: ""
 
+support:
+  url: "https://support.gemwallet.com"
+  website_token: "GkTYRSL8msUHt3qcZzDxoDNJ"
+
 parser:
   timeout: 1s
   shutdown:

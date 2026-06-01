@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use typeshare::typeshare;
 
-use crate::{AssetId, InAppNotification, TransactionId, WalletId, WebSocketPricePayload};
+use crate::{AssetId, InAppNotification, SupportStreamEvent, TransactionId, WalletId, WebSocketPricePayload};
 
 pub const DEVICE_STREAM_CHANNEL_PREFIX: &str = "stream:device:";
 
@@ -22,6 +22,7 @@ pub enum StreamEvent {
     Perpetual(StreamWalletUpdate),
     InAppNotification(StreamNotificationUpdate),
     FiatTransaction(StreamWalletUpdate),
+    Support(SupportStreamEvent),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

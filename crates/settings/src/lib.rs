@@ -36,6 +36,7 @@ pub struct Settings {
     pub chains: Chains,
     pub pusher: Pusher,
     pub scan: Scan,
+    pub support: Support,
     pub nft: NFT,
     pub ankr: Ankr,
     pub trongrid: Trongrid,
@@ -330,6 +331,12 @@ pub struct Scan {
     pub timeout: Duration,
     pub hashdit: UrlKeySettings,
     pub goplus: UrlKeySettings,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct Support {
+    pub url: String,
+    pub website_token: String,
 }
 
 impl Settings {
